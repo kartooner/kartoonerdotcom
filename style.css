@@ -1,0 +1,243 @@
+:root {
+    --bg-color: #1a1b26;
+    --text-color: #ffffff;
+    --accent-color: #64ffda;
+    --secondary-color: #a4b0f5;
+    --tertiary-color: #2f3148;
+    --font-main: 'Manrope', sans-serif;
+    --skills-color: #bbc3d1;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--bg-color) url(/img/bg.jpg);
+    background-size: cover;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 40px;
+}
+
+.writings-button {
+    background-color: var(--tertiary-color);
+    color: var(--secondary-color);
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.writings-button:hover, .writings-button:focus {
+    background-color: #1e1f2f;
+    color: var(--text-color);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 2rem;
+}
+
+.profile-title {
+    flex: 1;
+}
+
+h1, h2, h3, h4 {
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 2.8em;
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+h2 {
+    color: #e6e6fa;
+    font-size: 1.6em;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+h3 {
+    color: #e6e6fa;
+    font-size: 1.3em;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.bio {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+    font-weight: 300;
+}
+
+.top-skills-box {
+    border: 1px solid var(--tertiary-color);
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.top-skills-box strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #e6e6fa;
+}
+
+.top-skills-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.top-skills-list li {
+    display: inline;
+}
+
+.top-skills-list li:not(:last-child)::after {
+    content: " • ";
+    margin: 0 5px;
+    color: var(--accent-color);
+}
+
+.skills-container, .experience-philosophy-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.skills-column, .experience-column, .philosophy-column {
+    width: 48%;
+}
+
+.skills-list {
+    list-style-type: none;
+    padding-left: 20px;
+    margin: 0;
+}
+
+.skills-list li {
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    font-weight: 300;
+    color: var(--skills-color);
+    position: relative;
+}
+
+.skills-list li::before {
+    content: "•";
+    color: var(--accent-color);
+    position: absolute;
+    left: -20px;
+    top: 0;
+}
+
+.experience {
+    margin-bottom: 20px;
+}
+
+.experience h4 {
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.experience p {
+    color: #8892b0;
+    margin-top: 0;
+    font-size: 0.9em;
+    font-weight: 300;
+}
+
+.experience a, .social-links a {
+    color: var(--text-color);
+    text-decoration: underline;
+    transition: opacity 0.3s ease;
+}
+
+.experience a:hover, .social-links a:hover,
+.experience a:focus, .social-links a:focus {
+    opacity: 0.8;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--tertiary-color);
+    margin: 40px 0;
+}
+
+.social-links {
+    margin-top: 40px;
+}
+
+.social-links a {
+    margin-right: 15px;
+    font-size: 1em;
+    font-weight: 400;
+}
+
+.changelog {
+    color: var(--skills-color);
+    font-size: 0.8em;
+    margin-top: 2rem;
+    font-style: italic;
+}
+
+.changelog a {
+    color: var(--skills-color);
+}
+
+.changelog a:hover {
+    opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-image {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+
+    .skills-column, .experience-column, .philosophy-column {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        font-size: 2.2em;
+    }
+
+    h2 {
+        font-size: 1.4em;
+    }
+}
