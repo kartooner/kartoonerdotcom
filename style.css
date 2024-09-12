@@ -12,37 +12,25 @@ body {
     font-family: var(--font-main);
     background: var(--bg-color) url(/img/bg.jpg);
     background-size: cover;
-    color: var(--text-color);
     line-height: 1.6;
     margin: 0;
     padding: 20px;
 }
 
 .container {
+    color: var(--text-color);
     max-width: 800px;
     margin: 0 auto;
+}
+
+main {
+    color: var(--text-color);
 }
 
 header {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 40px;
-}
-
-.writings-button {
-    background-color: var(--tertiary-color);
-    color: var(--secondary-color);
-    padding: 10px 15px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 0.9em;
-    font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.writings-button:hover, .writings-button:focus {
-    background-color: #1e1f2f;
-    color: var(--text-color);
 }
 
 .profile-header {
