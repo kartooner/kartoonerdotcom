@@ -1,3 +1,12 @@
+/* CSS Reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 :root {
     --bg-color: #1a1b26;
     --text-color: #ffffff;
