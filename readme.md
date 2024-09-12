@@ -10,7 +10,7 @@ Hey there! I'm Erik Sagen, a Lead Product UX Designer with over two decades of e
 
 ## 🚀 Features
 
-- **Responsive Design:** Looks great on desktops, tablets, and mobiles.
+- **Responsive Design:** Looks great on desktops, tablets, and mobile things.
 - **Accessibility-Focused:** Built with inclusive design principles to ensure everyone can enjoy the content.
 - **Smooth Animations:** Subtle animations that bring the site to life without overwhelming.
 - **Professional Portfolio:** Showcases my top skills, work experience, and design philosophy.
@@ -21,7 +21,7 @@ Hey there! I'm Erik Sagen, a Lead Product UX Designer with over two decades of e
 
 - **HTML5 & CSS3:** The backbone of the site.
 - **CSS Flexbox:** For those sleek, responsive layouts.
-- **WebAwesome Library:** Bringing in custom buttons and icons to enhance interactivity.
+- **WebAwesome Library:** Bringing in custom components powered by Web Components.
 - **Google Fonts:** Featuring the [Manrope](https://fonts.google.com/specimen/Manrope) typeface for a modern look.
 - **SVG Icons:** Crisp and scalable visuals that complement the design.
 
@@ -31,11 +31,11 @@ Want to check out the code or make your own tweaks? Here's how to get started:
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/kartooner/kartooner.git
+   git clone https://github.com/kartooner/kartoonerdotcom.git
    ```
 2. **Navigate to the Project Folder:**
    ```bash
-   cd kartooner
+   cd kartooner.com
    ```
 3. **Open in Your Favorite Editor:**
    - Use VS Code, Sublime Text, Atom, or any editor that sparks joy.
@@ -88,10 +88,6 @@ I'd love to hear from you! Whether you have questions, feedback, or just want to
 - **Email:** [erik@kartooner.com](mailto:erik@kartooner.com)
 - **LinkedIn:** [linkedin.com/in/eriksagen](https://linkedin.com/in/eriksagen)
 - **Threads:** [@kartooner](https://www.threads.net/@kartooner)
-
-## 📝 Changelog
-
-Stay updated with the latest tweaks and improvements in the [CHANGELOG.md](./CHANGELOG.md) file.
 
 ---
 
