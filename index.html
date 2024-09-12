@@ -12,14 +12,20 @@
 </head>
 <body>
     <div class="container">
+        <!-- Skip Navigation Link 
+        <a href="#main-content" class="skip-link">Skip to main content</a>-->
+
         <header>
-            <nav>
-                <wa-button href="https://medium.com/@kartooner" target="_blank">Things I've written on Medium &nbsp;<wa-icon slot="suffix" name="arrow-up-right-from-square" variant="solid"></wa-icon></wa-button>
+            <nav aria-label="Main Navigation">
+                <wa-button href="https://medium.com/@kartooner" target="_blank" aria-label="Things I've written on Medium, opens in a new tab">
+                    Things I've written on Medium 
+                    &nbsp;<wa-icon slot="suffix" name="arrow-up-right-from-square" variant="solid" aria-hidden="true"></wa-icon>
+                </wa-button>
             </nav>
         </header>
         
-        <main>
-            <h1>Hi, I'm Erik Sagen 🎨</h1>
+        <main id="main-content">
+            <h1>Hi, I'm Erik Sagen <span role="img" aria-label="Palette">🎨</span></h1>
             <h2>Lead Product UX Designer</h2>
             
             <p class="bio">With over two decades in UI/UX design, illustration, and web development, I specialize in leading teams to create user-centric designs. My background as a storyteller, former game designer, and voice-over talent enriches my approach to design leadership, allowing me to bring a unique perspective to every project.</p>
@@ -86,21 +92,22 @@
             </div>
             
             <div class="social-links">
-                <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer">Threads</a>
-                <a href="https://linkedin.com/in/eriksagen" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-                <a href="mailto:erik@kartooner.com">Email</a>
+                <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer">
+                    Threads
+                </a>
+                <a href="https://linkedin.com/in/eriksagen" target="_blank" rel="noopener noreferrer">
+                    LinkedIn
+                </a>
+                <a href="mailto:erik@kartooner.com">
+                    Email
+                </a>
             </div>
         </main>
 
-         <footer>
+        <footer>
             <p class="changelog">// Changelog 9.12.24: Updated font to <a href="https://fonts.google.com/specimen/Manrope" title="Manrope from Google Fonts">Manrope</a> from Inter.</p>
         </footer>
     </div>
 
-    <script>
-        window.onbeforeunload = function () {
-            window.scrollTo(0, 0);
-        }
-    </script>
 </body>
 </html>
