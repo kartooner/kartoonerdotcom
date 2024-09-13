@@ -90,7 +90,7 @@ h3 {
 }
 
 p {
-    margin-bottom: 2.5em;
+    margin-bottom: 2.5rem; /* 40px */
 }
 
 .bio {
