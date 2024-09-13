@@ -29,6 +29,7 @@
             text-align: center;
             margin-bottom: 40px;
             text-shadow: 3px 3px #9400d3;
+            animation: glow 1.5s ease-in-out infinite alternate;
         }
         h2 {
             font-size: 2.2em;
@@ -43,6 +44,10 @@
             max-width: 100%;
             height: auto;
             margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        img:hover {
+            transform: scale(1.02);
         }
         .meta {
             font-size: 0.9em;
@@ -55,15 +60,21 @@
         }
         .post-list li {
             margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        .post-list li:hover {
+            transform: translateX(10px);
         }
         .post-list a {
             color: #fff;
             text-decoration: none;
             font-size: 1.2em;
             font-weight: bold;
+            transition: color 0.3s ease;
         }
         .post-list a:hover {
-            text-decoration: underline;
+            color: #ff69b4;
+            text-decoration: none;
         }
         .view-all {
             display: inline-block;
@@ -78,9 +89,35 @@
             letter-spacing: 1px;
             font-family: 'Fascinate', cursive;
             font-size: 0.9em;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         .view-all:hover {
             background-color: #9400d3;
+            transform: scale(1.05);
+        }
+        .view-all::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+        .view-all:hover::after {
+            left: 100%;
+        }
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px #ff69b4, 0 0 10px #ff69b4, 0 0 15px #ff69b4, 0 0 20px #ff69b4;
+            }
+            to {
+                text-shadow: 0 0 10px #ff69b4, 0 0 20px #ff69b4, 0 0 30px #ff69b4, 0 0 40px #ff69b4;
+            }
         }
     </style>
 </head>
