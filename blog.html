@@ -4,177 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Journal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fascinate&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Avenir', 'Helvetica Neue', Arial, sans-serif;
-            background-color: #0a0a2a;
-            color: #ffffff;
+            font-family: Arial, sans-serif;
             line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
+            color: #333;
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
         }
-        h1, h2, h3 {
-            font-family: 'Fascinate', cursive;
-            color: #ff69b4;
-            letter-spacing: 1px;
-        }
-        h1 {
-            font-size: 3.5em;
-            text-transform: uppercase; 
+        .logo {
             text-align: center;
-            margin-bottom: 40px;
-            text-shadow: 2px 2px #9400d3;
-            position: relative;
-            display: inline-block;
-        }
-        h1::after {
-            content: 'Journal';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            color: transparent;
-            text-shadow: 2px 2px 3px rgba(255, 105, 180, 0.7);
-            animation: glow 4s ease-in-out infinite alternate;
-        }
-        h2 {
-            font-size: 2.2em;
-            margin-top: 40px;
-            line-height: 1.2;
-        }
-        h3 {
-            font-size: 1.8em;
-            margin-top: 30px;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            margin-bottom: 20px;
-            transition: transform 0.3s ease;
-        }
-        img:hover {
-            transform: scale(1.02);
-        }
-        .meta {
-            font-size: 0.9em;
-            color: #ff69b4;
-            margin-bottom: 20px;
-        }
-        .post-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .post-list li {
-            margin-bottom: 20px;
-            transition: transform 0.3s ease;
-        }
-        .post-list li:hover {
-            transform: translateX(10px);
-        }
-        .post-list a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 1.2em;
+            font-size: 2.5em;
             font-weight: bold;
-            transition: color 0.3s ease;
+            margin-bottom: 20px;
         }
-        .post-list a:hover {
-            color: #ff69b4;
+        .divider {
+            border-top: 1px solid #ccc;
+            margin-bottom: 30px;
+        }
+        .post {
+            margin-bottom: 40px;
+        }
+        .post-date {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .post-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        .post-content {
+            margin-bottom: 20px;
+        }
+        .recent-posts {
+            margin-top: 40px;
+        }
+        .recent-post {
+            margin-bottom: 20px;
+        }
+        .recent-post a {
+            font-size: 1.2em;
+            color: #333;
             text-decoration: none;
+        }
+        .recent-post a:hover {
+            text-decoration: underline;
         }
         .view-all {
             display: inline-block;
-            margin-top: 20px;
             padding: 10px 20px;
-            background-color: #ff69b4;
-            color: #0a0a2a;
+            background-color: #007bff;
+            color: white;
             text-decoration: none;
             border-radius: 5px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: 'Fascinate', cursive;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
         .view-all:hover {
-            background-color: #9400d3;
-            transform: scale(1.05);
-        }
-        .view-all::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: rotate(45deg);
-            transition: all 0.3s ease;
-        }
-        .view-all:hover::after {
-            left: 100%;
-        }
-        @keyframes glow {
-            0%, 100% {
-                text-shadow: 2px 2px 3px rgba(255, 105, 180, 0.7);
-            }
-            50% {
-                text-shadow: 2px 2px 10px rgba(255, 105, 180, 0.9);
-            }
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Journal</h1>
-        </header>
-        
-        <main>
-            <article>
-                <h2>The Pond Fellows of Garabound Way</h2>
-                <img src="/api/placeholder/800/400" alt="Featured image for latest blog post">
-                <p>This is where the body text of your latest blog post would go. The font used here is Avenir, providing a clean and modern look while still evoking an 80s feel when combined with the color scheme and header font.</p>
-                <p>Add more paragraphs as needed for your blog post content.</p>
-                <div class="meta">Posted on September 12, 2024 by Author Name</div>
-            </article>
-            
-            <h3>Recent Posts</h3>
-            <ul class="post-list">
-                <li>
-                    <a href="#">Another Interesting Blog Post Title</a>
-                    <div class="meta">September 10, 2024</div>
-                </li>
-                <li>
-                    <a href="#">A Fascinating Topic to Explore</a>
-                    <div class="meta">September 8, 2024</div>
-                </li>
-                <li>
-                    <a href="#">Thoughts on a Recent Event</a>
-                    <div class="meta">September 6, 2024</div>
-                </li>
-                <li>
-                    <a href="#">Reflections on the 80s</a>
-                    <div class="meta">September 4, 2024</div>
-                </li>
-                <li>
-                    <a href="#">The Impact of Retro Culture</a>
-                    <div class="meta">September 2, 2024</div>
-                </li>
-            </ul>
-            
-            <a href="#" class="view-all">View All Entries</a>
-        </main>
+    <div class="logo">Journal</div>
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Sep 13, 2024</div>
+        <h2 class="post-title">Caravans and sand</h2>
+        <div class="post-content">
+            <p>There are two things in my life that keep me going: books and video games. Both a form of escapism but one that's a lot more interactive than the other. I love video games. From my first outing with Mario back in the late 80s, jumping on turtle shells and breaking blocks, nothing else besides my art has given me such joy in the moment.</p>
+            <p>Which brings me to what I'd like to talk about today; the recent release of Caravan Sandwitch, an oddly named game that exudes so much of that joy I'm describing. It's a game where you drive around in an off-road vehicle and explore the world.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Sep 02, 2024</div>
+        <h2 class="post-title">Grandma</h2>
+        <div class="post-content">
+            <p>Not a day goes by where I'm not thinking about my grandma. To be specific, my Dad's mother, who helped raise my brother and I for nearly 15 years of our lives. Old red as we called her, unfairly or not, she was our rock.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Aug 24, 2024</div>
+        <h2 class="post-title">Odin's influence</h2>
+        <div class="post-content">
+            <p>We recently had to surrender our dog to a local humane society and here is my ode to Odin.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="recent-posts">
+        <h3>Recent Posts</h3>
+        <div class="recent-post">
+            <a href="#">Here is the post title</a>
+            <div class="post-date">July 19, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">Another interesting post</a>
+            <div class="post-date">July 15, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">Yet another great article</a>
+            <div class="post-date">July 10, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">One more for good measure</a>
+            <div class="post-date">July 5, 2024</div>
+        </div>
+        <a href="#" class="view-all">View all posts</a>
     </div>
 </body>
 </html>
