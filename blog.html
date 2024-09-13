@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal Blog</title>
+    <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
+
         body {
             font-family: var(--font-main);
             line-height: 1.6;
@@ -19,9 +20,15 @@
             padding: 20px;
         }
 
+        .post img {
+            margin: 1em 0;
+            width: 100%;
+        }
+
         .logo {
             text-align: center;
-            font-size: 2.5rem;
+            font-family: var(--font-blog);
+            font-size: 4rem;
             font-weight: bold;
             margin-bottom: 20px;
             color: var(--accent-color);
@@ -32,27 +39,33 @@
         }
 
         .post-date {
-            color: var(--secondary-color);
+            color: var(--skills-color);
             margin-bottom: 10px;
         }
 
         .post-title {
-            font-size: 1.8rem;
+            font-family: var(--font-blog);
+            font-size: 2rem;
             margin-bottom: 10px;
             color: var(--heading-color);
         }
 
+        .post-title a {
+            text-decoration: none;
+        }
+
+        .post-title a:hover {
+            color: var(--accent-color);
+        }
+
         .post-content {
             margin-bottom: 20px;
-            color: var(--experience-text-color);
+            color: var(--skills-color);
         }
 
         .recent-posts {
+            font-family: var(--font-blog);
             margin-top: 40px;
-        }
-
-        .recent-posts h3 {
-            color: var(--heading-color);
         }
 
         .recent-post {
@@ -60,14 +73,20 @@
         }
 
         .recent-post a {
-            font-size: 1.2rem;
-            color: var(--secondary-color);
+            font-size: 1.4rem;
+            color: var(--text-color);
             text-decoration: none;
         }
 
         .recent-post a:hover {
             color: var(--accent-color);
-            text-decoration: underline;
+            text-decoration: none;
+        }
+
+        footer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2.5rem; /* 40px */
         }
 
         .view-all {
@@ -92,8 +111,9 @@
 
     <div class="post">
         <div class="post-date">Sep 13, 2024</div>
-        <h2 class="post-title">Caravans and sand</h2>
+        <h2 class="post-title"><a href="#">Caravans and sand</a></h2>
         <div class="post-content">
+            <img src="https://placehold.co/800x400.png" alt="Placeholder image" />
             <p>There are two things in my life that keep me going: books and video games. Both a form of escapism but one that's a lot more interactive than the other. I love video games. From my first outing with Mario back in the late 80s, jumping on turtle shells and breaking blocks, nothing else besides my art has given me such joy in the moment.</p>
             <p>Which brings me to what I'd like to talk about today; the recent release of Caravan Sandwitch, an oddly named game that exudes so much of that joy I'm describing. It's a game where you drive around in an off-road vehicle and explore the world.</p>
         </div>
@@ -103,7 +123,7 @@
 
     <div class="post">
         <div class="post-date">Sep 02, 2024</div>
-        <h2 class="post-title">Grandma</h2>
+        <h2 class="post-title"><a href="#">Grandma</a></h2>
         <div class="post-content">
             <p>Not a day goes by where I'm not thinking about my grandma. To be specific, my Dad's mother, who helped raise my brother and I for nearly 15 years of our lives. Old red as we called her, unfairly or not, she was our rock.</p>
         </div>
@@ -113,7 +133,7 @@
 
     <div class="post">
         <div class="post-date">Aug 24, 2024</div>
-        <h2 class="post-title">Odin's influence</h2>
+        <h2 class="post-title"><a href="#">Odin's influence</a></h2>
         <div class="post-content">
             <p>We recently had to surrender our dog to a local humane society and here is my ode to Odin.</p>
         </div>

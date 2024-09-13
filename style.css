@@ -7,6 +7,12 @@
     padding: 0;
 }
 
+@font-face {
+    font-family: 'Cartridge'; src: url(./assets/Cartridge-Regular.woff2) format('woff2'), url('./assets/Cartridge-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
     --bg-color: #1a1b26;
     --text-color: #ffffff;
@@ -14,6 +20,7 @@
     --secondary-color: #a4b0f5;
     --tertiary-color: #2f3148;
     --font-main: 'Manrope', sans-serif;
+    --font-blog: 'Cartridge', sans-serif;
     --skills-color: #bbc3d1;
     --heading-color: #e6e6fa;
     --experience-text-color: #8892b0;
