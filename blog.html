@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Blog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1a1b26;
+            --text-color: #ffffff;
+            --accent-color: #64ffda;
+            --secondary-color: #a4b0f5;
+            --tertiary-color: #2f3148;
+            --font-main: 'Manrope', sans-serif;
+            --skills-color: #bbc3d1;
+            --heading-color: #e6e6fa;
+            --experience-text-color: #8892b0;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .divider {
+            border-top: 1px solid var(--tertiary-color);
+            margin-bottom: 30px;
+        }
+
+        .post {
+            margin-bottom: 40px;
+        }
+
+        .post-date {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .post-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--heading-color);
+        }
+
+        .post-content {
+            margin-bottom: 20px;
+            color: var(--experience-text-color);
+        }
+
+        .recent-posts {
+            margin-top: 40px;
+        }
+
+        .recent-posts h3 {
+            color: var(--heading-color);
+        }
+
+        .recent-post {
+            margin-bottom: 20px;
+        }
+
+        .recent-post a {
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .recent-post a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        .view-all {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--tertiary-color);
+            color: var(--accent-color);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .view-all:hover {
+            background-color: var(--secondary-color);
+            color: var(--bg-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">Journal</div>
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Sep 13, 2024</div>
+        <h2 class="post-title">Caravans and sand</h2>
+        <div class="post-content">
+            <p>There are two things in my life that keep me going: books and video games. Both a form of escapism but one that's a lot more interactive than the other. I love video games. From my first outing with Mario back in the late 80s, jumping on turtle shells and breaking blocks, nothing else besides my art has given me such joy in the moment.</p>
+            <p>Which brings me to what I'd like to talk about today; the recent release of Caravan Sandwitch, an oddly named game that exudes so much of that joy I'm describing. It's a game where you drive around in an off-road vehicle and explore the world.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Sep 02, 2024</div>
+        <h2 class="post-title">Grandma</h2>
+        <div class="post-content">
+            <p>Not a day goes by where I'm not thinking about my grandma. To be specific, my Dad's mother, who helped raise my brother and I for nearly 15 years of our lives. Old red as we called her, unfairly or not, she was our rock.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="post">
+        <div class="post-date">Aug 24, 2024</div>
+        <h2 class="post-title">Odin's influence</h2>
+        <div class="post-content">
+            <p>We recently had to surrender our dog to a local humane society and here is my ode to Odin.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="recent-posts">
+        <h3>Recent Posts</h3>
+        <div class="recent-post">
+            <a href="#">Here is the post title</a>
+            <div class="post-date">July 19, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">Another interesting post</a>
+            <div class="post-date">July 15, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">Yet another great article</a>
+            <div class="post-date">July 10, 2024</div>
+        </div>
+        <div class="recent-post">
+            <a href="#">One more for good measure</a>
+            <div class="post-date">July 5, 2024</div>
+        </div>
+        <a href="#" class="view-all">View all posts</a>
+    </div>
+</body>
+</html>
