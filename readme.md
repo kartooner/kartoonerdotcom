@@ -53,7 +53,7 @@ Want to check out the code or make your own tweaks? Here's how to get started:
 - **Expand and Experiment:**
   - Add new sections or features as you learn and grow. Keep things semantically sound for better accessibility.
 - **Animate with Purpose:**
-  - Enhance user experience with thoughtful CSS animations. Check out the [CSS Animations Guide](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations) for inspiration.
+  - Check out the [CSS Animations Guide](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations) for inspiration.
 
 ## 🤝 Let's Collaborate
 
@@ -66,7 +66,7 @@ I'm always open to collaboration and new ideas! If you want to contribute or hav
    ```
 3. **Commit Your Changes:**
    ```bash
-   git commit -m "Add some awesome feature"
+   git commit -m "Add an awesome feature"
    ```
 4. **Push to Your Branch:**
    ```bash
@@ -91,6 +91,6 @@ I'd love to hear from you! Whether you have questions, feedback, or just want to
 
 ---
 
-Thanks for stopping by my repo! Dive in, explore, and feel free to reach out. Let's create something amazing together! 🚀
+Thanks for stopping by my repo! Dive in, explore, and feel free to reach out. 🚀
 
 ---
