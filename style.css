@@ -8,7 +8,9 @@
 }
 
 @font-face {
-    font-family: 'Cartridge Rough'; src: url(../assets/Cartridge-Rough.woff2) format('woff2'), url('../assets/Cartridge-Rough.woff') format('woff');
+    font-family: 'Cartridge Rough'; 
+    src: url(../assets/Cartridge-Rough.woff2) format('woff2'), 
+         url('../assets/Cartridge-Rough.woff') format('woff');
     font-weight: normal;
     font-style: normal;
 }
@@ -18,14 +20,12 @@
     --text-color: #ffffff;
     --accent-color: #64ffda;
     --secondary-color: #a4b0f5;
-    --tertiary-color: #2f3148;
+    --tertiary-color: #4a4e65; /* Updated for better contrast */
     --font-main: 'Manrope', sans-serif;
     --font-secondary: 'Cartridge Rough', sans-serif;
     --skills-color: #bbc3d1;
     --heading-color: #e6e6fa;
-    --experience-text-color: #8892b0;
-    /* Base font size for rem calculations */
-    font-size: 16px;
+    --experience-text-color: #97a1c6; /* Updated for better contrast */
 }
 
 body {
@@ -34,7 +34,7 @@ body {
     background-size: cover;
     line-height: 1.6;
     margin: 0;
-    padding: 1.25rem; /* 20px */
+    padding: 1.25rem;
     color: var(--text-color);
 }
 
@@ -51,7 +51,7 @@ main {
 header {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 2.5rem; /* 40px */
+    margin-bottom: 2.5rem;
 }
 
 .profile-header {
@@ -94,7 +94,7 @@ h2 {
 
 h3 {
     font-size: 1.3rem;
-    margin-bottom: 0.625rem; /* 10px */
+    margin-bottom: 0.625rem;
 }
 
 p {
@@ -103,22 +103,22 @@ p {
 
 .bio {
     font-size: 1.1rem;
-    margin-bottom: 1.875rem; /* 30px */
+    margin-bottom: 1.875rem;
     font-weight: 300;
 }
 
 .top-skills-box {
     border: 1px solid var(--tertiary-color);
-    padding: 0.9375rem; /* 15px */
-    border-radius: 0.3125rem; /* 5px */
+    padding: 0.9375rem;
+    border-radius: 0.3125rem;
     font-size: 0.9rem;
-    margin-bottom: 1.875rem; /* 30px */
+    margin-bottom: 1.875rem;
     text-align: center;
 }
 
 .top-skills-box strong {
     display: block;
-    margin-bottom: 0.625rem; /* 10px */
+    margin-bottom: 0.625rem;
     color: var(--heading-color);
 }
 
@@ -132,7 +132,7 @@ p {
 
 .top-skills-list li:not(:last-child)::after {
     content: " • ";
-    margin: 0 0.3125rem; /* 5px */
+    margin: 0 0.3125rem;
     color: var(--accent-color);
 }
 
@@ -141,7 +141,7 @@ p {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
-    margin-bottom: 2.5rem; /* 40px */
+    margin-bottom: 2.5rem;
 }
 
 .skills-column,
@@ -158,8 +158,8 @@ p {
 
 .skills-list li {
     position: relative;
-    padding-left: 1.25rem; /* 20px */
-    margin-bottom: 0.625rem; /* 10px */
+    padding-left: 1.25rem;
+    margin-bottom: 0.625rem;
     font-size: 0.9rem;
     font-weight: 300;
     color: var(--skills-color);
@@ -174,11 +174,11 @@ p {
 }
 
 .experience {
-    margin-bottom: 1.25rem; /* 20px */
+    margin-bottom: 1.25rem;
 }
 
 .experience h4 {
-    margin-bottom: 0.3125rem; /* 5px */
+    margin-bottom: 0.3125rem;
     font-size: 1.1rem;
 }
 
@@ -203,15 +203,15 @@ a:focus {
     border: 0;
     height: 1px;
     background-color: var(--tertiary-color);
-    margin: 2.5rem 0; /* 40px */
+    margin: 2.5rem 0;
 }
 
 .social-links {
-    margin-top: 2.5rem; /* 40px */
+    margin-top: 2.5rem;
 }
 
 .social-links a {
-    margin-right: 0.9375rem; /* 15px */
+    margin-right: 0.9375rem;
     font-size: 1rem;
     font-weight: 400;
 }
@@ -231,6 +231,29 @@ a:focus {
     opacity: 0.8;
 }
 
+/* Skip Link Styling */
+.skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+    padding: 0.5rem 1rem;
+    z-index: 1000;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: bold;
+    visibility: hidden;
+}
+
+.skip-link:focus {
+    visibility: visible;
+    outline: 2px solid var(--accent-color);
+}
+
+/* Responsive Layout */
 @media (max-width: 600px) {
     .profile-header {
         flex-direction: column;
@@ -246,7 +269,7 @@ a:focus {
     .experience-column,
     .philosophy-column {
         width: 100%;
-        margin-bottom: 1.25rem; /* 20px */
+        margin-bottom: 1.25rem;
     }
 
     h1 {
@@ -266,7 +289,7 @@ a:focus {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px); /* Slightly move up */
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -275,12 +298,10 @@ a:focus {
 }
 
 /* Animation Classes */
-
-/* Common animation properties */
 .animate-fade-in {
-    opacity: 0; /* Initial state for animation */
+    opacity: 0;
     animation-name: fadeIn;
-    animation-fill-mode: forwards; /* Retain the final state after animation */
+    animation-fill-mode: forwards;
     animation-timing-function: ease-out;
 }
 
@@ -304,7 +325,7 @@ a:focus {
 @media (prefers-reduced-motion: reduce) {
     .animate-fade-in {
         animation: none;
-        opacity: 1; /* Ensure elements are visible */
-        transform: none; /* Remove any transformations */
+        opacity: 1;
+        transform: none;
     }
 }
