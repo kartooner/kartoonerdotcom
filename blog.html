@@ -63,18 +63,6 @@
             color: var(--skills-color);
         }
         
-        blockquote {
-            font-family: var(--font-secondary);
-            font-size: 1.5rem;
-            padding-left: 1em;
-            border-left: 3px solid var(--accent-color);
-            margin-bottom: 1em;
-        }
-        
-        blockquote p {
-            margin: 0;
-        }
-        
         blockquote p.source {
             font-family: var(--font-main);
             font-size: 1rem;
@@ -87,6 +75,11 @@
         .recent-posts {
             font-family: var(--font-secondary);
             margin-top: 40px;
+        }
+        
+        .recent-posts h3 {
+            font-size: 2rem;
+            color: var(--accent-color);
         }
 
         .recent-post {
@@ -114,7 +107,7 @@
 </head>
 <body>
     <h1 class="logo">Blog</h1>
-    <div class="divider"></div>
+    <hr class="divider" />
 
     <div class="post">
         <div class="post-date"># Sep 13, 2024</div>
@@ -123,12 +116,12 @@
             <img src="https://placehold.co/800x400.png" alt="Placeholder image" />
             <p>There are two things in my life that keep me going: books and video games. Both a form of escapism but one that's a lot more interactive than the other. I love video games. From my first outing with Mario back in the late 80s, jumping on turtle shells and breaking blocks, nothing else besides my art has given me such joy in the moment.</p>
             <p>Which brings me to what I'd like to talk about today; the recent release of Caravan Sandwitch, an oddly named game that exudes so much of that joy I'm describing. It's a game where you drive around in an off-road vehicle and explore the world.</p>
-            <blockquote><p>Here is a blockquote with a source.</p><p class="source">Maggie Pataeo</p></blockquote>
+            <blockquote><p>Here is a blockquote with a source that could get quite long in as far as length and so it needs a good line-height.</p><p class="source">Maggie Pataeo</p></blockquote>
             <p>And here is some more awesome paragraphs with content to ensure the blockquote stays in its lane.</p>
         </div>
     </div>
 
-    <div class="divider"></div>
+    <hr class="divider" />
 
     <div class="post">
         <div class="post-date"># Sep 02, 2024</div>
@@ -139,7 +132,7 @@
         </div>
     </div>
 
-    <div class="divider"></div>
+    <hr class="divider" />
 
     <div class="post">
         <div class="post-date"># Aug 24, 2024</div>
@@ -149,25 +142,25 @@
         </div>
     </div>
 
-    <div class="divider"></div>
+    <hr class="divider /">
 
     <div class="recent-posts">
-        <h3>Recent Posts</h3>
+        <h3>From the archive</h3>
         <div class="recent-post">
             <a href="#">Here is the post title</a>
-            <div class="post-date">July 19, 2024</div>
+            <p class="post-date">July 19, 2024</p>
         </div>
         <div class="recent-post">
             <a href="#">Another interesting post</a>
-            <div class="post-date">July 15, 2024</div>
+            <p class="post-date">July 15, 2024</p>
         </div>
         <div class="recent-post">
             <a href="#">Yet another great article</a>
-            <div class="post-date">July 10, 2024</div>
+            <p class="post-date">July 10, 2024</p>
         </div>
         <div class="recent-post">
             <a href="#">One more for good measure</a>
-            <div class="post-date">July 5, 2024</div>
+            <p class="post-date">July 5, 2024</p>
         </div>
         <footer>
             <wa-button href="#" class="view-all">View all posts</wa-button>
