@@ -127,7 +127,7 @@ ol {
 }
 
 dt {
-    font-weight: bold;
+    font-weight: bold; /* Terms */
 }
 
 .bio {
