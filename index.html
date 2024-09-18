@@ -104,6 +104,34 @@
             font-size: 0.9rem;
             font-weight: 300;
         }
+        
+        /* Responsive Layout */
+        @media (max-width: 600px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-image {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+
+            .skills-column,
+            .experience-column,
+            .philosophy-column {
+                width: 100%;
+                margin-bottom: 1.25rem;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+        }
 
     </style>
 </head>
