@@ -32,12 +32,10 @@
 body {
     font-family: var(--font-main);
     font-size: 1rem;
-    background: var(--bg-color) url(../img/bg.jpg) no-repeat;
     background-size: cover;
     line-height: 1.6;
     margin: 0;
     padding: 2em;
-    color: var(--text-color);
 }
 
 .container,
@@ -81,7 +79,6 @@ h4 {
     margin-top: 0;
     font-family: var(--font-secondary);
     font-weight: 500;
-    color: var(--heading-color);
 }
 
 h1 {
@@ -130,96 +127,6 @@ dt {
     font-weight: bold; /* Terms */
 }
 
-.bio {
-    font-size: 1.1rem;
-    margin-bottom: 1.875rem;
-    font-weight: 300;
-}
-
-.top-skills-box {
-    border: 1px solid var(--tertiary-color);
-    padding: 1em;
-    border-radius: 0.3125rem;
-    font-size: 0.9rem;
-    margin-bottom: 1.875rem;
-    text-align: center;
-}
-
-.top-skills-box ul {
-    margin-bottom: 0;
-}
-
-.top-skills-box strong {
-    display: block;
-    margin-bottom: 0.625rem;
-    color: var(--heading-color);
-}
-
-.top-skills-list {
-    list-style: none;
-}
-
-.top-skills-list li {
-    display: inline;
-}
-
-.top-skills-list li:not(:last-child)::after {
-    content: " • ";
-    margin: 0 0.3125rem;
-    color: var(--accent-color);
-}
-
-.skills-container,
-.experience-philosophy-container {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    margin-bottom: 2.5rem;
-}
-
-.skills-column,
-.experience-column,
-.philosophy-column {
-    width: 48%;
-}
-
-.skills-list {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.skills-list li {
-    position: relative;
-    padding-left: 1.25rem;
-    margin-bottom: 0.625rem;
-    font-size: 0.9rem;
-    font-weight: 300;
-    color: var(--skills-color);
-}
-
-.skills-list li::before {
-    content: "•";
-    color: var(--accent-color);
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-.experience {
-    margin-bottom: 1.25rem;
-}
-
-.experience h4 {
-    margin-bottom: 0.3125rem;
-    font-size: 1.1rem;
-}
-
-.experience p {
-    color: var(--experience-text-color);
-    font-size: 0.9rem;
-    font-weight: 300;
-}
 
 a {
     color: var(--text-color);
