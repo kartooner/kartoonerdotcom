@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="style.css">
     <style>
         body {
-            background: var(--bg-color) url(../img/bg.jpg) no-repeat;
+            background: var(--bg-color) url(./img/bg.jpg) no-repeat;
             background-size: cover;
         }
         .bio {
@@ -105,15 +105,6 @@
         
         /* Responsive Layout */
         @media (max-width: 600px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .profile-image {
-                margin-right: 0;
-                margin-bottom: 1rem;
-            }
 
             .skills-column,
             .experience-column,
@@ -179,7 +170,7 @@
                 </div>
             </div>
             
-            <wa-divider class="divider"></wa-divider>
+            <hr class="divider">
             
             <div class="experience-philosophy-container">
                 <div class="experience-column">
