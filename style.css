@@ -157,10 +157,13 @@ a:focus {
     font-weight: 400;
 }
 
+footer p {
+    margin-top: 2rem;
+}
+
 .changelog {
     color: var(--skills-color);
     font-size: 0.8rem;
-    margin-top: 2rem;
     font-style: italic;
 }
 
