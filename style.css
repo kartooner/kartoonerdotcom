@@ -253,7 +253,7 @@ a:focus {
 .top-skills-box {
     background: rgba(39, 39, 39, 0.09);
     backdrop-filter: blur(60px);
-    border: 2px solid rgba(255, 255, 255, 0.012);
+    border: 2px solid rgb(95 149 227 / 11%);
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.3);
     padding: 1em;
     border-radius: 0.3125rem;
