@@ -12,19 +12,27 @@
             url("../assets/Cartridge-Rough.woff") format("woff");
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 :root {
+    /* Base colors */
     --bg-color: #1a1b26;
     --text-color: #ffffff;
+
+    /* Theme colors */
     --accent-color: #64ffda;
     --secondary-color: #a4b0f5;
     --tertiary-color: #4a4e65;
-    --font-main: "Manrope", sans-serif;
-    --font-secondary: "Cartridge Rough", sans-serif;
+
+    /* Specific use colors */
     --skills-color: #bbc3d1;
     --heading-color: #e6e6fa;
     --experience-text-color: #97a1c6;
+
+    /* Fonts */
+    --font-main: "Manrope", sans-serif;
+    --font-secondary: "Cartridge Rough", sans-serif;
 }
 
 body {
@@ -33,7 +41,6 @@ body {
     background: #1a1b26 url(../img/bg.jpg) no-repeat;
     background-size: cover;
     line-height: 1.6;
-    margin: 0;
     padding: 2em;
 }
 
@@ -178,24 +185,20 @@ footer p {
 /* Skip Link Styling */
 .skip-link {
     position: absolute;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--accent-color);
-    color: var(--bg-color);
-    padding: 0.5rem 1rem;
-    z-index: 1000;
-    border-radius: 4px;
-    text-align: center;
-    margin-bottom: 2rem;
-    font-weight: bold;
-    visibility: hidden;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
 }
 
 .skip-link:focus {
-    visibility: visible;
-    outline: 2px solid var(--accent-color);
+    left: 50%;
+    width: auto;
+    height: auto;
+    overflow: auto;
 }
+
 
 /* ==========================================
    Animations
