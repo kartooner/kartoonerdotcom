@@ -260,10 +260,10 @@ footer p {
 }
 
 .top-skills-box {
-    background: rgba(39, 39, 39, 0.09);
-    backdrop-filter: blur(60px);
-    border: 2px solid rgb(95 149 227 / 11%);
-    box-shadow: 0 0 80px rgba(0, 0, 0, 0.3);
+    background-image: radial-gradient(circle, #2c9ecb1a, #a1177708);
+    background-color: rgb(255 255 255 / 0%);
+    border: 1px solid rgb(255 255 255 / 6%);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     padding: 1em;
     border-radius: 0.3125rem;
     font-size: 1rem;
