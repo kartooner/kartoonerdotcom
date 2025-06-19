@@ -152,12 +152,15 @@ dt {
 a {
     color: var(--text-color);
     text-decoration: underline;
-    transition: opacity 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 a:hover,
 a:focus {
-    opacity: 0.8;
+    color: var(--accent-color);
+    text-decoration: underline;
+    outline: none;
 }
 
 .divider {
@@ -167,14 +170,20 @@ a:focus {
     margin: 2rem 0;
 }
 
-.social-links {
+.site-navigation {
     margin-top: 2.5rem;
 }
 
-.social-links a {
+.site-navigation a {
     margin-right: 0.9375rem;
     font-size: 1rem;
     font-weight: 400;
+    transition: all 0.3s ease;
+}
+
+.site-navigation a:hover,
+.site-navigation a:focus {
+    transform: translateY(-2px);
 }
 
 footer p {
@@ -189,27 +198,50 @@ footer p {
 
 .changelog a {
     color: var(--skills-color);
+    border-bottom: 1px dotted var(--skills-color);
+    text-decoration: none;
 }
 
-.changelog a:hover {
-    opacity: 0.8;
+.changelog a:hover,
+.changelog a:focus {
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--accent-color);
 }
 
 /* Skip Link Styling */
 .skip-link {
     position: absolute;
     left: -9999px;
-    top: auto;
+    top: 0;
     width: 1px;
     height: 1px;
     overflow: hidden;
+    background-color: var(--bg-color);
+    color: var(--accent-color);
+    z-index: 9999;
+    transition: all 0.2s ease;
 }
 
 .skip-link:focus {
     left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
     width: auto;
     height: auto;
     overflow: auto;
+    border: 2px solid var(--accent-color);
+    border-radius: 4px;
+    outline: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+}
+
+/* Enhanced focus styles for keyboard navigation */
+a:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+    text-decoration: underline;
+    color: var(--accent-color);
 }
 
 
@@ -372,6 +404,7 @@ footer p {
 }
 
 .experience {
+    margin-top: 1rem;
     margin-bottom: 1.25rem;
 }
 

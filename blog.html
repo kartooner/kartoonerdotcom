@@ -52,10 +52,14 @@
 
         .post-title a {
             text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
-        .post-title a:hover {
+        .post-title a:hover,
+        .post-title a:focus {
             color: var(--accent-color);
+            transform: translateX(5px);
         }
 
         .post-content {
@@ -90,11 +94,31 @@
             font-size: 1.4rem;
             color: var(--text-color);
             text-decoration: none;
+            position: relative;
+            padding-left: 0;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
-        .recent-post a:hover {
+        .recent-post a:hover,
+        .recent-post a:focus {
             color: var(--accent-color);
+            padding-left: 10px;
             text-decoration: none;
+        }
+
+        .recent-post a::before {
+            content: "→";
+            position: absolute;
+            left: -20px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .recent-post a:hover::before,
+        .recent-post a:focus::before {
+            left: 0;
+            opacity: 1;
         }
 
         footer {
