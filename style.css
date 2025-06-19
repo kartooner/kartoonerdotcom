@@ -297,7 +297,7 @@ footer p {
     background: linear-gradient(
             to right,
             rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.1) 50%,
             rgba(255, 255, 255, 0) 100%
     ); /* The sheen gradient */
     transform: skewX(-45deg) translateX(-100%); /* Skewed and off-screen initially */
