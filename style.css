@@ -1,5 +1,8 @@
 /* Reset box sizing and margins */
 * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -37,10 +40,10 @@
 
 body {
     font-family: var(--font-main);
-    font-size: 1rem;
+    font-size: 16px;
     background: #1a1b26 url(../img/bg.jpg) no-repeat;
     background-size: cover;
-    line-height: 1.6;
+    line-height: 1.5;
     padding: 2em;
 }
 
@@ -58,6 +61,10 @@ header {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 2.5rem;
+}
+
+.current-role {
+    margin: 0.625rem 0 0.625rem;
 }
 
 .profile-header {
@@ -85,6 +92,7 @@ h4 {
     margin-top: 0;
     font-family: var(--font-secondary);
     font-weight: 500;
+    line-height: 1.2;
 }
 
 h1 {
@@ -103,6 +111,11 @@ h3 {
 
 h2, h3 {
     margin-bottom: 0.625rem;
+}
+
+p, ul, li {
+    line-height: 1.6;
+    max-width: 70ch; /* For optimal line length of roughly 70 characters */
 }
 
 p {
@@ -255,7 +268,8 @@ footer p {
 
 .bio {
     font-size: 1.1rem;
-    margin-bottom: 1.875rem;
+    line-height: 1.5;
+    margin-bottom: 2rem;
     font-weight: 300;
 }
 
