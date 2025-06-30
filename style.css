@@ -433,6 +433,106 @@ a:focus-visible {
     font-weight: 300;
 }
 
+.review-card {
+    margin: 0;
+    padding: 0;
+}
+
+.review-image {
+    position: relative;
+    width: 150px;
+    aspect-ratio: 2/3;
+    overflow: hidden;
+}
+
+.review-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+}
+
+.review-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    border-radius: 7px;
+}
+
+.movie-title {
+    color: #ffffff;
+    font-size: 1rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.review-date {
+    color: #ccc;
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+}
+
+.review-card a {
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+}
+
+.review-error {
+    color: #ff6b6b;
+    text-align: center;
+}
+
+#reviews-container {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+/* Media query for tablets and smaller screens */
+@media (max-width: 768px) {
+    #reviews-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .review-image {
+        width: 100%;
+        aspect-ratio: 16/9; /* Wider aspect ratio for better readability on mobile */
+    }
+
+    .movie-title {
+        font-size: 1.2rem; /* Larger font size for better readability */
+    }
+
+    .review-date {
+        font-size: 1rem;
+    }
+
+    .review-card a {
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+}
+
+/* Additional adjustments for very small screens */
+@media (max-width: 480px) {
+    #reviews-container {
+        padding: 1rem;
+    }
+}
+
+
 /* Arcade GIF Styling */
 .arcade-gif {
     text-align: center;
