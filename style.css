@@ -167,7 +167,6 @@ a[target="_blank"]:after {
     background-size: contain;
     background-repeat: no-repeat;
     vertical-align: middle;
-    filter: invert(1);
 }
 
 a:hover,
@@ -176,6 +175,11 @@ a:focus {
     text-decoration: underline;
     outline: none;
 }
+
+a[target="_blank"] svg {
+    color: var(--accent-color);
+}
+
 
 .divider {
     border: 0;
