@@ -1,55 +1,20 @@
 // config.js
 const CONFIG = {
-    LETTERBOXD_USERNAME: process.env.LETTERBOXD_USERNAME || 'kartooner',
-    CORS_PROXY: process.env.CORS_PROXY || 'https://cors-anywhere.herokuapp.com/',
-    MAX_RETRIES: 3,
+    LETTERBOXD_USERNAME: 'kartooner', // Hardcoded for production since it's public anyway
+    RSS_URL: 'https://letterboxd.com/kartooner/rss/', // Direct RSS URL
+    MAX_RETRIES: 2,
     RETRY_DELAY: 1000,
-    CACHE_DURATION: 1800000, // 30 minutes in milliseconds
 };
 
 // letterboxdService.js
 class LetterboxdService {
     constructor() {
-        this.cache = new Map();
+        this.lastFetch = null;
     }
 
     async fetchReviews() {
-        const cacheKey = `reviews_${CONFIG.LETTERBOXD_USERNAME}`;
-        const cachedData = this.getFromCache(cacheKey);
-
-        if (cachedData) {
-            return cachedData;
-        }
-
-        const reviews = await this.fetchWithRetry();
-        this.setCache(cacheKey, reviews);
-        return reviews;
-    }
-
-    getFromCache(key) {
-        const cached = this.cache.get(key);
-        if (cached && Date.now() - cached.timestamp < CONFIG.CACHE_DURATION) {
-            return cached.data;
-        }
-        return null;
-    }
-
-    setCache(key, data) {
-        this.cache.set(key, {
-            data,
-            timestamp: Date.now()
-        });
-    }
-
-    async fetchWithRetry(retryCount = 0) {
         try {
-            const rssUrl = `https://letterboxd.com/${CONFIG.LETTERBOXD_USERNAME}/rss/`;
-            const response = await fetch(CONFIG.CORS_PROXY + rssUrl, {
-                headers: {
-                    'Origin': window.location.origin
-                }
-            });
-
+            const response = await this.fetchWithRetry();
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -57,11 +22,22 @@ class LetterboxdService {
             const data = await response.text();
             return this.parseReviews(data);
         } catch (error) {
+            console.error('Fetch error:', error);
+            throw error;
+        }
+    }
+
+    async fetchWithRetry(retryCount = 0) {
+        try {
+            // Using RSSBox as a CORS-friendly proxy
+            const proxyUrl = `https://rssbox.herokuapp.com/feed/${CONFIG.RSS_URL}`;
+            return await fetch(proxyUrl);
+        } catch (error) {
             if (retryCount < CONFIG.MAX_RETRIES) {
                 await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
                 return this.fetchWithRetry(retryCount + 1);
             }
-            throw new Error(`Failed to fetch reviews after ${CONFIG.MAX_RETRIES} attempts: ${error.message}`);
+            throw error;
         }
     }
 
@@ -69,15 +45,23 @@ class LetterboxdService {
         try {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
+
+            if (xmlDoc.querySelector('parsererror')) {
+                throw new Error('XML parsing failed');
+            }
+
             const items = xmlDoc.querySelectorAll('item');
+            if (!items.length) {
+                throw new Error('No reviews found');
+            }
 
             return Array.from(items)
                 .slice(0, 3)
                 .map(item => this.parseReviewItem(item))
-                .filter(review => review !== null);
+                .filter(Boolean);
         } catch (error) {
-            console.error('Error parsing XML:', error);
-            return [];
+            console.error('Parse error:', error);
+            throw error;
         }
     }
 
@@ -86,14 +70,19 @@ class LetterboxdService {
             const description = item.querySelector('description')?.textContent || '';
             const imgMatch = description.match(/<img src="([^"]+)"/);
 
+            if (!imgMatch) {
+                console.warn('No image found for review');
+                return null;
+            }
+
             return {
                 title: item.querySelector('title')?.textContent?.trim() || 'Untitled',
                 link: item.querySelector('link')?.textContent?.trim() || '#',
-                imageUrl: imgMatch ? imgMatch[1] : '',
+                imageUrl: imgMatch[1],
                 date: new Date(item.querySelector('pubDate')?.textContent || Date.now())
             };
         } catch (error) {
-            console.error('Error parsing review item:', error);
+            console.error('Review parsing error:', error);
             return null;
         }
     }
@@ -101,90 +90,78 @@ class LetterboxdService {
 
 // reviewsUI.js
 class ReviewsUI {
-    constructor(containerId, service) {
+    constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.service = service;
-        this.isLoading = false;
+        this.service = new LetterboxdService();
     }
 
     async initialize() {
         try {
             this.showLoading();
             const reviews = await this.service.fetchReviews();
+
+            if (!reviews || reviews.length === 0) {
+                this.showError('No reviews available');
+                return;
+            }
+
             this.render(reviews);
         } catch (error) {
-            this.showError(error);
-        } finally {
-            this.hideLoading();
+            this.showError('Unable to load reviews');
+            console.error('Initialization error:', error);
         }
     }
 
     showLoading() {
-        this.isLoading = true;
-        this.container.innerHTML = '<div class="loading">Loading reviews...</div>';
-    }
-
-    hideLoading() {
-        this.isLoading = false;
-    }
-
-    showError(error) {
-        console.error('Error:', error);
         this.container.innerHTML = `
-      <div class="review-error">
-        Unable to load reviews. Please try again later.
+      <div class="loading">
+        Loading latest watches...
+        <div class="loading-spinner"></div>
       </div>
     `;
     }
 
-    formatDate(date) {
-        try {
-            return new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        } catch {
-            return 'Invalid Date';
-        }
+    showError(message) {
+        this.container.innerHTML = `
+      <div class="review-error">
+        ${message}. Please try again later.
+      </div>
+    `;
     }
 
     render(reviews) {
-        if (!reviews.length) {
-            this.container.innerHTML = '<div class="review-error">No recent reviews found</div>';
-            return;
-        }
-
         this.container.innerHTML = reviews
-            .map(review => this.createReviewCard(review))
+            .map(review => `
+        <article class="review-card">
+          <div class="review-image">
+            <img 
+              src="${review.imageUrl}" 
+              alt="${this.escapeHtml(review.title)}" 
+              loading="lazy"
+            >
+            <div class="review-overlay">
+              <h4 class="movie-title">${this.escapeHtml(review.title)}</h4>
+              <div class="review-date">${this.formatDate(review.date)}</div>
+              <a 
+                href="${this.escapeHtml(review.link)}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                View on Letterboxd →
+              </a>
+            </div>
+          </div>
+        </article>
+      `)
             .join('');
     }
 
-    createReviewCard(review) {
-        return `
-      <article class="review-card">
-        <div class="review-image">
-          <img 
-            src="${review.imageUrl}" 
-            alt="${this.escapeHtml(review.title)}" 
-            loading="lazy"
-            onerror="this.src='fallback-image.jpg'"
-          >
-          <div class="review-overlay">
-            <h4 class="movie-title">${this.escapeHtml(review.title)}</h4>
-            <div class="review-date">${this.formatDate(review.date)}</div>
-            <a 
-              href="${this.escapeHtml(review.link)}" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="review-link"
-            >
-              View on Letterboxd →
-            </a>
-          </div>
-        </div>
-      </article>
-    `;
+    formatDate(date) {
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     }
 
     escapeHtml(unsafe) {
@@ -197,16 +174,34 @@ class ReviewsUI {
     }
 }
 
-// main.js
-document.addEventListener('DOMContentLoaded', () => {
-    const letterboxdService = new LetterboxdService();
-    const reviewsUI = new ReviewsUI('reviews-container', letterboxdService);
-    reviewsUI.initialize();
+// Add loading spinner CSS
+const style = document.createElement('style');
+style.textContent = `
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
 
-    // Optional: Refresh reviews periodically
-    setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            reviewsUI.initialize();
-        }
-    }, CONFIG.CACHE_DURATION);
+  .loading-spinner {
+    margin: 1rem auto;
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #00b020;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    const reviews = new ReviewsUI('reviews-container');
+    reviews.initialize();
 });
