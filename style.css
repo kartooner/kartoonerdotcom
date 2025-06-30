@@ -343,7 +343,7 @@ a:focus-visible {
 }
 
 .top-skills-box ul {
-    margin-bottom: 0;
+    margin: auto;
 }
 
 .top-skills-box strong {
