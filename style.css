@@ -439,6 +439,7 @@ a:focus-visible {
     gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    padding-top: 20px;
 }
 
 .review-card {
@@ -530,7 +531,6 @@ a:focus-visible {
 @media (min-width: 768px) {
     #reviews-container {
         grid-template-columns: repeat(3, 1fr);
-        padding-top: 20px;
     }
 
     .review-card {
