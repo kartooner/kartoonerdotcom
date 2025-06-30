@@ -527,18 +527,6 @@ a:focus-visible {
     border-radius: 8px;
 }
 
-/* Desktop optimization */
-@media (min-width: 768px) {
-    #reviews-container {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    .review-card {
-        max-width: 300px;
-    }
-}
-
-
 /* Arcade GIF Styling */
 .arcade-gif {
     text-align: center;
