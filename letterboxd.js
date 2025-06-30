@@ -1,7 +1,6 @@
 // config.js
 const CONFIG = {
-    LETTERBOXD_USERNAME: 'kartooner', // Hardcoded for production since it's public anyway
-    RSS_URL: 'https://letterboxd.com/kartooner/rss/', // Direct RSS URL
+    LETTERBOXD_USERNAME: 'kartooner',
     MAX_RETRIES: 2,
     RETRY_DELAY: 1000,
 };
@@ -9,18 +8,28 @@ const CONFIG = {
 // letterboxdService.js
 class LetterboxdService {
     constructor() {
-        this.lastFetch = null;
+        // Using RapidAPI's RSS to JSON converter
+        this.API_URL = 'https://api.rss2json.com/v1/api.json';
+        this.API_KEY = 'YOUR_FREE_RSS2JSON_API_KEY'; // Get free API key from rss2json.com
     }
 
     async fetchReviews() {
         try {
             const response = await this.fetchWithRetry();
+
             if (!response.ok) {
+                console.error('Response not OK:', response.status, response.statusText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.text();
-            return this.parseReviews(data);
+            const data = await response.json();
+
+            if (!data.items) {
+                console.error('Invalid data structure:', data);
+                throw new Error('Invalid data received');
+            }
+
+            return this.parseReviews(data.items);
         } catch (error) {
             console.error('Fetch error:', error);
             throw error;
@@ -29,9 +38,13 @@ class LetterboxdService {
 
     async fetchWithRetry(retryCount = 0) {
         try {
-            // Using RSSBox as a CORS-friendly proxy
-            const proxyUrl = `https://rssbox.herokuapp.com/feed/${CONFIG.RSS_URL}`;
-            return await fetch(proxyUrl);
+            const params = new URLSearchParams({
+                rss_url: `https://letterboxd.com/${CONFIG.LETTERBOXD_USERNAME}/rss/`,
+                api_key: this.API_KEY,
+                count: 3
+            });
+
+            return await fetch(`${this.API_URL}?${params}`);
         } catch (error) {
             if (retryCount < CONFIG.MAX_RETRIES) {
                 await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
@@ -41,48 +54,29 @@ class LetterboxdService {
         }
     }
 
-    parseReviews(xmlData) {
+    parseReviews(items) {
         try {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlData, 'text/xml');
-
-            if (xmlDoc.querySelector('parsererror')) {
-                throw new Error('XML parsing failed');
-            }
-
-            const items = xmlDoc.querySelectorAll('item');
-            if (!items.length) {
-                throw new Error('No reviews found');
-            }
-
-            return Array.from(items)
+            return items
                 .slice(0, 3)
-                .map(item => this.parseReviewItem(item))
-                .filter(Boolean);
+                .map(item => ({
+                    title: item.title || 'Untitled',
+                    link: item.link || '#',
+                    imageUrl: this.extractImageUrl(item.description),
+                    date: new Date(item.pubDate)
+                }))
+                .filter(review => review.imageUrl);
         } catch (error) {
             console.error('Parse error:', error);
             throw error;
         }
     }
 
-    parseReviewItem(item) {
+    extractImageUrl(description) {
         try {
-            const description = item.querySelector('description')?.textContent || '';
-            const imgMatch = description.match(/<img src="([^"]+)"/);
-
-            if (!imgMatch) {
-                console.warn('No image found for review');
-                return null;
-            }
-
-            return {
-                title: item.querySelector('title')?.textContent?.trim() || 'Untitled',
-                link: item.querySelector('link')?.textContent?.trim() || '#',
-                imageUrl: imgMatch[1],
-                date: new Date(item.querySelector('pubDate')?.textContent || Date.now())
-            };
+            const imgMatch = description.match(/<img[^>]+src="([^">]+)"/);
+            return imgMatch ? imgMatch[1] : null;
         } catch (error) {
-            console.error('Review parsing error:', error);
+            console.error('Image extraction error:', error);
             return null;
         }
     }
@@ -101,14 +95,14 @@ class ReviewsUI {
             const reviews = await this.service.fetchReviews();
 
             if (!reviews || reviews.length === 0) {
-                this.showError('No reviews available');
+                this.showError('No reviews found');
                 return;
             }
 
             this.render(reviews);
         } catch (error) {
-            this.showError('Unable to load reviews');
             console.error('Initialization error:', error);
+            this.showError(error.message);
         }
     }
 
@@ -124,7 +118,11 @@ class ReviewsUI {
     showError(message) {
         this.container.innerHTML = `
       <div class="review-error">
-        ${message}. Please try again later.
+        Unable to load reviews. Please try again later.
+        <br>
+        <button onclick="location.reload()" class="retry-button">
+          Retry
+        </button>
       </div>
     `;
     }
@@ -138,6 +136,7 @@ class ReviewsUI {
               src="${review.imageUrl}" 
               alt="${this.escapeHtml(review.title)}" 
               loading="lazy"
+              onerror="this.onerror=null; this.src='https://placehold.co/200x300/png?text=Movie'"
             >
             <div class="review-overlay">
               <h4 class="movie-title">${this.escapeHtml(review.title)}</h4>
@@ -174,7 +173,7 @@ class ReviewsUI {
     }
 }
 
-// Add loading spinner CSS
+// Add styles
 const style = document.createElement('style');
 style.textContent = `
   .loading {
@@ -196,6 +195,21 @@ style.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  .retry-button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #00b020;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .retry-button:hover {
+    background-color: #009018;
   }
 `;
 document.head.appendChild(style);
