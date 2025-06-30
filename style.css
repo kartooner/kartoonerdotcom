@@ -155,6 +155,7 @@ a {
     text-decoration: underline;
     transition: all 0.3s ease;
     position: relative;
+    color: inherit;
 }
 
 a[target="_blank"]:after {
