@@ -1,84 +1,46 @@
-// config.js
-const CONFIG = {
-    LETTERBOXD_USERNAME: 'kartooner',
-    MAX_RETRIES: 2,
-    RETRY_DELAY: 1000,
-};
-
 // letterboxdService.js
 class LetterboxdService {
     constructor() {
-        // Using RapidAPI's RSS to JSON converter
-        this.API_URL = 'https://api.rss2json.com/v1/api.json';
-        this.API_KEY = 'YOUR_FREE_RSS2JSON_API_KEY'; // Get free API key from rss2json.com
+        this.username = 'kartooner';
     }
 
     async fetchReviews() {
         try {
-            const response = await this.fetchWithRetry();
+            // Using a simple and reliable proxy service
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://letterboxd.com/${this.username}/rss/`)}`;
 
+            const response = await fetch(proxyUrl);
             if (!response.ok) {
-                console.error('Response not OK:', response.status, response.statusText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Network response was not ok');
             }
 
-            const data = await response.json();
-
-            if (!data.items) {
-                console.error('Invalid data structure:', data);
-                throw new Error('Invalid data received');
-            }
-
-            return this.parseReviews(data.items);
+            const xmlText = await response.text();
+            return this.parseRSS(xmlText);
         } catch (error) {
             console.error('Fetch error:', error);
             throw error;
         }
     }
 
-    async fetchWithRetry(retryCount = 0) {
-        try {
-            const params = new URLSearchParams({
-                rss_url: `https://letterboxd.com/${CONFIG.LETTERBOXD_USERNAME}/rss/`,
-                api_key: this.API_KEY,
-                count: 3
-            });
+    parseRSS(xmlText) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlText, 'text/xml');
+        const items = doc.querySelectorAll('item');
 
-            return await fetch(`${this.API_URL}?${params}`);
-        } catch (error) {
-            if (retryCount < CONFIG.MAX_RETRIES) {
-                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
-                return this.fetchWithRetry(retryCount + 1);
-            }
-            throw error;
-        }
-    }
+        return Array.from(items)
+            .slice(0, 3)
+            .map(item => {
+                const description = item.querySelector('description').textContent;
+                const imageMatch = description.match(/<img[^>]+src="([^">]+)"/);
 
-    parseReviews(items) {
-        try {
-            return items
-                .slice(0, 3)
-                .map(item => ({
-                    title: item.title || 'Untitled',
-                    link: item.link || '#',
-                    imageUrl: this.extractImageUrl(item.description),
-                    date: new Date(item.pubDate)
-                }))
-                .filter(review => review.imageUrl);
-        } catch (error) {
-            console.error('Parse error:', error);
-            throw error;
-        }
-    }
-
-    extractImageUrl(description) {
-        try {
-            const imgMatch = description.match(/<img[^>]+src="([^">]+)"/);
-            return imgMatch ? imgMatch[1] : null;
-        } catch (error) {
-            console.error('Image extraction error:', error);
-            return null;
-        }
+                return {
+                    title: item.querySelector('title').textContent,
+                    link: item.querySelector('link').textContent,
+                    imageUrl: imageMatch ? imageMatch[1] : null,
+                    date: new Date(item.querySelector('pubDate').textContent)
+                };
+            })
+            .filter(item => item.imageUrl);
     }
 }
 
@@ -95,14 +57,13 @@ class ReviewsUI {
             const reviews = await this.service.fetchReviews();
 
             if (!reviews || reviews.length === 0) {
-                this.showError('No reviews found');
-                return;
+                throw new Error('No reviews found');
             }
 
             this.render(reviews);
         } catch (error) {
-            console.error('Initialization error:', error);
-            this.showError(error.message);
+            console.error('Failed to load reviews:', error);
+            this.showError();
         }
     }
 
@@ -115,12 +76,11 @@ class ReviewsUI {
     `;
     }
 
-    showError(message) {
+    showError() {
         this.container.innerHTML = `
       <div class="review-error">
-        Unable to load reviews. Please try again later.
-        <br>
-        <button onclick="location.reload()" class="retry-button">
+        Unable to load reviews. 
+        <button onclick="window.location.reload()" class="retry-button">
           Retry
         </button>
       </div>
@@ -134,15 +94,21 @@ class ReviewsUI {
           <div class="review-image">
             <img 
               src="${review.imageUrl}" 
-              alt="${this.escapeHtml(review.title)}" 
+              alt="${review.title}" 
               loading="lazy"
               onerror="this.onerror=null; this.src='https://placehold.co/200x300/png?text=Movie'"
             >
             <div class="review-overlay">
-              <h4 class="movie-title">${this.escapeHtml(review.title)}</h4>
-              <div class="review-date">${this.formatDate(review.date)}</div>
+              <h4 class="movie-title">${review.title}</h4>
+              <div class="review-date">
+                ${review.date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            })}
+              </div>
               <a 
-                href="${this.escapeHtml(review.link)}" 
+                href="${review.link}" 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
@@ -154,26 +120,15 @@ class ReviewsUI {
       `)
             .join('');
     }
-
-    formatDate(date) {
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-
-    escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 }
 
-// Add styles
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    const reviews = new ReviewsUI('reviews-container');
+    reviews.initialize();
+});
+
+// Add minimal required styles
 const style = document.createElement('style');
 style.textContent = `
   .loading {
@@ -197,25 +152,25 @@ style.textContent = `
     100% { transform: rotate(360deg); }
   }
 
+  .review-error {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+
   .retry-button {
-    margin-top: 1rem;
+    display: block;
+    margin: 1rem auto;
     padding: 0.5rem 1rem;
-    background-color: #00b020;
+    background: #00b020;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
   }
 
   .retry-button:hover {
-    background-color: #009018;
+    background: #009018;
   }
 `;
 document.head.appendChild(style);
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    const reviews = new ReviewsUI('reviews-container');
-    reviews.initialize();
-});
