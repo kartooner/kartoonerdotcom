@@ -185,7 +185,7 @@ a[target="_blank"] svg {
     border: 0;
     height: 1px;
     background-color: var(--tertiary-color);
-    margin: 2rem 0;
+    margin: 2.5rem 0;
 }
 
 .site-navigation {
@@ -437,6 +437,46 @@ a:focus-visible {
     font-weight: 300;
 }
 
+.reading-section {
+    margin-bottom: 2.5rem;
+}
+
+.reading-section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+}
+
+.book-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.book-cover {
+    width: 96px;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+.book-info h3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--heading-color);
+    margin: 0 0 0.5rem;
+}
+
+.book-info p {
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 65ch;
+    margin: 0;
+}
+
+
 #reviews-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -478,7 +518,6 @@ a:focus-visible {
     transform: scale(1.05);
 }
 
-/* New overlay styles */
 .review-info {
     position: absolute;
     inset: 0;
