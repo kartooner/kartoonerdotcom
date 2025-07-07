@@ -442,8 +442,8 @@ a:focus-visible {
 }
 
 .link-share-section h2 {
+    margin-bottom: 1rem;
     font-size: 1.6rem;
-    margin-bottom: 1.2rem;
 }
 
 .link-grid {
@@ -526,8 +526,8 @@ a:focus-visible {
     color: var(--text-color);
     font-size: 1rem;
     line-height: 1.6;
-    max-width: 65ch;
-    margin: 0;
+    max-width: 70ch;
+    margin: 0 auto;
 }
 
 #reviews-container {
