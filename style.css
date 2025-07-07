@@ -475,15 +475,6 @@ a:focus-visible {
     margin: 0 0 0.5rem;
 }
 
-.link-info h3 a {
-    color: inherit;
-    text-decoration: none;
-}
-
-.link-info h3 a:hover {
-    text-decoration: underline;
-}
-
 .link-info p {
     color: var(--text-color);
     font-size: 1rem;
