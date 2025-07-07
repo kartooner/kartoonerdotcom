@@ -526,7 +526,6 @@ a:focus-visible {
     color: var(--text-color);
     font-size: 1rem;
     line-height: 1.6;
-    max-width: 70ch;
     margin: 0 auto;
 }
 
