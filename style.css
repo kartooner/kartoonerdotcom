@@ -115,6 +115,7 @@ h2, h3 {
 }
 
 p, ul, li {
+    font-size: 1rem;
     line-height: 1.6;
     max-width: 70ch; /* For optimal line length of roughly 70 characters */
 }
