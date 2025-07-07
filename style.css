@@ -648,6 +648,33 @@ a:focus-visible {
    ========================================== */
 
 @media (max-width: 600px) {
+
+    body {
+        font-size: 14px;
+        padding: 1em;
+    }
+
+    .top-skills-box {
+        font-size: 0.9rem;
+        padding: 0.75em;
+    }
+
+    .book-info h3 {
+        font-size: 1rem;
+    }
+
+    .book-info p {
+        font-size: 0.9rem;
+    }
+
+    footer p {
+        font-size: 0.9rem;
+    }
+
+    .site-navigation a {
+        font-size: 0.9rem;
+    }
+
     .skills-column,
     .experience-column,
     .philosophy-column {
