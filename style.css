@@ -90,7 +90,7 @@ h1,
 h2,
 h3,
 h4 {
-    margin-top: 0;
+    margin-bottom: 1rem;
     font-family: var(--font-secondary);
     font-weight: 500;
     line-height: 1.2;
@@ -120,7 +120,8 @@ p, ul, li {
 }
 
 p {
-    margin-bottom: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 blockquote {
@@ -179,7 +180,6 @@ a:focus {
 a[target="_blank"] svg {
     color: var(--accent-color);
 }
-
 
 .divider {
     border: 0;
@@ -530,14 +530,13 @@ a:focus-visible {
     margin: 0;
 }
 
-
 #reviews-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    padding-top: 20px;
+    padding-top: 10px;
 }
 
 .review-card {
