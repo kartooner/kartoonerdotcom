@@ -33,6 +33,12 @@
 <div class="container">
     <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
 
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
 
@@ -207,5 +213,53 @@
 <script src="weather.js"></script>
 <script src="letterboxd.js"></script>
 <script src="content-loader.js"></script>
+<script>
+// Theme toggle functionality
+(function() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('.theme-toggle-icon');
+    const themeText = themeToggle.querySelector('.theme-toggle-text');
+    const htmlElement = document.documentElement;
+    
+    // Get saved theme from localStorage or default to 'dark'
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    // Apply saved theme
+    htmlElement.setAttribute('data-theme', savedTheme);
+    updateToggleButton(savedTheme);
+    
+    // Add click event listener
+    themeToggle.addEventListener('click', function() {
+        const currentTheme = htmlElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        // Update theme
+        htmlElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateToggleButton(newTheme);
+    });
+    
+    // Update button state based on theme
+    function updateToggleButton(theme) {
+        if (theme === 'light') {
+            themeIcon.textContent = '☀️';
+            themeText.textContent = 'Light mode';
+            themeToggle.setAttribute('aria-pressed', 'true');
+        } else {
+            themeIcon.textContent = '🌙';
+            themeText.textContent = 'Dark mode';
+            themeToggle.setAttribute('aria-pressed', 'false');
+        }
+    }
+    
+    // Keyboard support
+    themeToggle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            themeToggle.click();
+        }
+    });
+})();
+</script>
 </body>
 </html>
