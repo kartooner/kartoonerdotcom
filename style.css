@@ -40,6 +40,9 @@
     --skills-color: #bbc3d1;
     --heading-color: #e6e6fa;
     --experience-text-color: #97a1c6;
+    
+    /* Link-out glyph color for accessibility */
+    --link-out-glyph-color: #ffffff;
 }
 
 /* Light theme */
@@ -57,6 +60,9 @@
     --skills-color: #4a5568;
     --heading-color: #2d3748;
     --experience-text-color: #718096;
+    
+    /* Link-out glyph color for accessibility */
+    --link-out-glyph-color: #2d3748;
 }
 
 body {
@@ -185,10 +191,43 @@ a[target="_blank"]:after {
     width: 0.8em;
     height: 0.8em;
     margin-left: 0.2em;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
     background-size: contain;
     background-repeat: no-repeat;
     vertical-align: middle;
+    opacity: 0.8;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Dark theme link-out glyph */
+:root a[target="_blank"]:after,
+[data-theme="dark"] a[target="_blank"]:after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
+}
+
+/* Light theme link-out glyph */
+[data-theme="light"] a[target="_blank"]:after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d3748' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
+}
+
+/* Hover and focus states for accessibility */
+a[target="_blank"]:hover:after,
+a[target="_blank"]:focus:after {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Enhanced contrast for hover/focus in light theme */
+[data-theme="light"] a[target="_blank"]:hover:after,
+[data-theme="light"] a[target="_blank"]:focus:after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230066cc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
+}
+
+/* Enhanced contrast for hover/focus in dark theme */
+:root a[target="_blank"]:hover:after,
+[data-theme="dark"] a[target="_blank"]:hover:after,
+:root a[target="_blank"]:focus:after,
+[data-theme="dark"] a[target="_blank"]:focus:after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364ffda' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
 }
 
 a:hover,
