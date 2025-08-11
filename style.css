@@ -894,7 +894,7 @@ a:focus-visible {
 .doodle-lines {
   position: relative;
   width: 100%;
-  height: 120px;
+  height: 80px;
   overflow: hidden;
 }
 
@@ -909,104 +909,92 @@ a:focus-visible {
 }
 
 .line-1 {
-  animation: doodle-float-1 8s ease-in-out infinite;
-  stroke-dasharray: 5 3;
+  animation: subtle-float-1 12s ease-in-out infinite, color-shift-1 16s ease-in-out infinite;
 }
 
 .line-2 {
-  animation: doodle-float-2 10s ease-in-out infinite;
-  stroke-dasharray: 8 2;
-  animation-delay: -2s;
+  animation: subtle-float-2 15s ease-in-out infinite, color-shift-2 20s ease-in-out infinite;
+  animation-delay: -3s, -5s;
 }
 
 .line-3 {
-  animation: doodle-float-3 12s ease-in-out infinite;
-  stroke-dasharray: 6 4;
-  animation-delay: -4s;
+  animation: subtle-float-3 18s ease-in-out infinite, color-shift-3 24s ease-in-out infinite;
+  animation-delay: -6s, -8s;
 }
 
-@keyframes doodle-float-1 {
+@keyframes subtle-float-1 {
   0%, 100% { 
-    transform: translateY(0px) rotate(0deg);
-    stroke: #6366f1;
-    opacity: 0.7;
-  }
-  25% { 
-    transform: translateY(-3px) rotate(0.5deg);
-    stroke: #8b5cf6;
     opacity: 0.6;
   }
   50% { 
-    transform: translateY(2px) rotate(-0.3deg);
-    stroke: #ec4899;
-    opacity: 0.8;
-  }
-  75% { 
-    transform: translateY(-1px) rotate(0.2deg);
-    stroke: #f59e0b;
-    opacity: 0.5;
+    opacity: 0.4;
   }
 }
 
-@keyframes doodle-float-2 {
+@keyframes subtle-float-2 {
   0%, 100% { 
-    transform: translateY(0px) rotate(0deg);
-    stroke: #8b5cf6;
-    opacity: 0.6;
+    opacity: 0.5;
+  }
+  50% { 
+    opacity: 0.7;
+  }
+}
+
+@keyframes subtle-float-3 {
+  0%, 100% { 
+    opacity: 0.4;
   }
   33% { 
-    transform: translateY(3px) rotate(-0.4deg);
-    stroke: #06b6d4;
-    opacity: 0.7;
+    opacity: 0.6;
   }
   66% { 
-    transform: translateY(-2px) rotate(0.3deg);
-    stroke: #10b981;
-    opacity: 0.5;
+    opacity: 0.3;
   }
 }
 
-@keyframes doodle-float-3 {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg);
-    stroke: #ec4899;
-    opacity: 0.5;
-  }
-  20% { 
-    transform: translateY(-2px) rotate(0.3deg);
-    stroke: #d946ef;
-    opacity: 0.6;
-  }
-  40% { 
-    transform: translateY(1px) rotate(-0.2deg);
-    stroke: #f43f5e;
-    opacity: 0.7;
-  }
-  60% { 
-    transform: translateY(-1px) rotate(0.4deg);
-    stroke: #fb7185;
-    opacity: 0.5;
-  }
-  80% { 
-    transform: translateY(2px) rotate(-0.1deg);
-    stroke: #fbbf24;
-    opacity: 0.6;
-  }
+/* Color animations - separate for better browser support */
+.line-1 {
+  animation: subtle-float-1 12s ease-in-out infinite, color-shift-1 16s ease-in-out infinite;
+}
+
+.line-2 {
+  animation: subtle-float-2 15s ease-in-out infinite, color-shift-2 20s ease-in-out infinite;
+  animation-delay: -3s, -5s;
+}
+
+.line-3 {
+  animation: subtle-float-3 18s ease-in-out infinite, color-shift-3 24s ease-in-out infinite;
+  animation-delay: -6s, -8s;
+}
+
+@keyframes color-shift-1 {
+  0%, 100% { stroke: #6366f1; }
+  50% { stroke: #8b5cf6; }
+}
+
+@keyframes color-shift-2 {
+  0%, 100% { stroke: #8b5cf6; }
+  50% { stroke: #06b6d4; }
+}
+
+@keyframes color-shift-3 {
+  0%, 100% { stroke: #ec4899; }
+  33% { stroke: #d946ef; }
+  66% { stroke: #f43f5e; }
 }
 
 /* ACCESSIBILITY: Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .doodle-line { 
     animation: none !important; 
-    opacity: 0.4 !important;
-    transform: none !important;
+    opacity: 0.3 !important;
   }
 }
 
 /* ACCESSIBILITY: High contrast support */
 @media (prefers-contrast: high) {
   .doodle-line { 
-    opacity: 0.9 !important;
+    opacity: 0.8 !important;
     stroke-width: 3 !important;
   }
 }
@@ -1014,7 +1002,7 @@ a:focus-visible {
 /* Mobile responsive */
 @media (max-width: 768px) {
   .doodle-lines { 
-    height: 100px; 
+    height: 60px; 
   }
   .doodle-line { 
     stroke-width: 1.5; 
