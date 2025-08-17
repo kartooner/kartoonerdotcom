@@ -906,81 +906,117 @@ a:focus-visible {
 .doodle-line {
   stroke-linecap: round;
   stroke-linejoin: round;
+  transform-origin: center;
 }
 
 .line-1 {
-  animation: subtle-float-1 12s ease-in-out infinite, color-shift-1 16s ease-in-out infinite;
+  animation:
+    vertical-float-1 14s ease-in-out infinite,
+    color-phase-1 18s ease-in-out infinite,
+    opacity-pulse-1 12s ease-in-out infinite;
 }
 
 .line-2 {
-  animation: subtle-float-2 15s ease-in-out infinite, color-shift-2 20s ease-in-out infinite;
-  animation-delay: -3s, -5s;
+  animation:
+    vertical-float-2 16s ease-in-out infinite,
+    color-phase-2 22s ease-in-out infinite,
+    opacity-pulse-2 15s ease-in-out infinite;
+  animation-delay: -4s, -6s, -3s;
 }
 
 .line-3 {
-  animation: subtle-float-3 18s ease-in-out infinite, color-shift-3 24s ease-in-out infinite;
-  animation-delay: -6s, -8s;
+  animation:
+    vertical-float-3 20s ease-in-out infinite,
+    color-phase-3 26s ease-in-out infinite,
+    opacity-pulse-3 18s ease-in-out infinite;
+  animation-delay: -8s, -10s, -6s;
 }
 
-@keyframes subtle-float-1 {
-  0%, 100% { 
-    opacity: 0.6;
+/* Vertical movement animations */
+@keyframes vertical-float-1 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  25% {
+    transform: translateY(-8px);
   }
   50% { 
-    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  75% {
+    transform: translateY(-3px);
   }
 }
 
-@keyframes subtle-float-2 {
-  0%, 100% { 
-    opacity: 0.5;
-  }
-  50% { 
-    opacity: 0.7;
-  }
-}
-
-@keyframes subtle-float-3 {
-  0%, 100% { 
-    opacity: 0.4;
+@keyframes vertical-float-2 {
+  0%, 100% {
+    transform: translateY(2px);
   }
   33% { 
-    opacity: 0.6;
+    transform: translateY(-6px);
   }
   66% { 
-    opacity: 0.3;
+    transform: translateY(8px);
   }
 }
 
-/* Color animations - separate for better browser support */
-.line-1 {
-  animation: subtle-float-1 12s ease-in-out infinite, color-shift-1 16s ease-in-out infinite;
+@keyframes vertical-float-3 {
+  0%, 100% {
+    transform: translateY(-2px);
+  }
+  20% {
+    transform: translateY(6px);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(3px);
+  }
+  80% {
+    transform: translateY(-7px);
+  }
 }
 
-.line-2 {
-  animation: subtle-float-2 15s ease-in-out infinite, color-shift-2 20s ease-in-out infinite;
-  animation-delay: -3s, -5s;
+/* Enhanced color phase animations with 1990s colors */
+@keyframes color-phase-1 {
+  0% { stroke: #FF6B9D; }      /* Hot pink */
+  25% { stroke: #C770F0; }     /* Purple */
+  50% { stroke: #70D0E4; }     /* Cyan */
+  75% { stroke: #6BCF7F; }     /* Mint green */
+  100% { stroke: #FF6B9D; }    /* Back to hot pink */
 }
 
-.line-3 {
-  animation: subtle-float-3 18s ease-in-out infinite, color-shift-3 24s ease-in-out infinite;
-  animation-delay: -6s, -8s;
+@keyframes color-phase-2 {
+  0% { stroke: #FFD93D; }      /* Yellow */
+  33% { stroke: #FF6B35; }     /* Orange red */
+  66% { stroke: #6BCF7F; }     /* Mint green */
+  100% { stroke: #FFD93D; }    /* Back to yellow */
 }
 
-@keyframes color-shift-1 {
-  0%, 100% { stroke: #6366f1; }
-  50% { stroke: #8b5cf6; }
+@keyframes color-phase-3 {
+  0% { stroke: #C770F0; }      /* Purple */
+  20% { stroke: #70D0E4; }     /* Cyan */
+  40% { stroke: #FF9AA2; }     /* Light coral */
+  60% { stroke: #FFB7B2; }     /* Peach */
+  80% { stroke: #FFDAC1; }     /* Light orange */
+  100% { stroke: #C770F0; }    /* Back to purple */
 }
 
-@keyframes color-shift-2 {
-  0%, 100% { stroke: #8b5cf6; }
-  50% { stroke: #06b6d4; }
+/* Opacity pulse animations - more subtle */
+@keyframes opacity-pulse-1 {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
 }
 
-@keyframes color-shift-3 {
-  0%, 100% { stroke: #ec4899; }
-  33% { stroke: #d946ef; }
-  66% { stroke: #f43f5e; }
+@keyframes opacity-pulse-2 {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes opacity-pulse-3 {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.6; }
 }
 
 /* ACCESSIBILITY: Respect reduced motion preferences */
@@ -988,6 +1024,7 @@ a:focus-visible {
   .doodle-line { 
     animation: none !important; 
     opacity: 0.3 !important;
+    transform: none !important;
   }
 }
 
@@ -1013,7 +1050,22 @@ a:focus-visible {
   .line-3 { 
     stroke-width: 1.7; 
   }
-}
+
+  /* Reduce movement on mobile for better performance */
+  @keyframes vertical-float-1 {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @keyframes vertical-float-2 {
+    0%, 100% { transform: translateY(1px); }
+    50% { transform: translateY(-3px); }
+  }
+
+  @keyframes vertical-float-3 {
+    0%, 100% { transform: translateY(-1px); }
+    50% { transform: translateY(2px); }
+  }
 }
 
 /*
