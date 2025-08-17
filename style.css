@@ -437,6 +437,13 @@ a:focus-visible {
     overflow: hidden; /* To hide the part of the sheen outside the div */
 }
 
+/* Light theme override for more subtle shadow */
+[data-theme="light"] .top-skills-box {
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-image: radial-gradient(circle, rgba(0, 102, 204, 0.03), rgba(0, 102, 204, 0.01));
+}
+
 .top-skills-box::before {
     content: "";
     position: absolute;
@@ -1004,7 +1011,7 @@ a:focus-visible {
   20% { stroke: #70D0E4; }     /* Cyan */
   40% { stroke: #FF9AA2; }     /* Light coral */
   60% { stroke: #FFB7B2; }     /* Peach */
-  80% { stroke: #FFDAC1; }     /* Light orange */
+  80% { stroke: #FFDAC1;     /* Light orange */
   100% { stroke: #C770F0; }    /* Back to purple */
 }
 
