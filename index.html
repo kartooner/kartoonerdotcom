@@ -9,6 +9,8 @@
     <meta property="og:image" content="https://www.kartooner.com/img/erik-social-preview.jpg">
     <meta property="og:url" content="https://www.kartooner.com">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="author" content="Erik Sagen">
+    <meta name="theme-color" content="#191970">
     <title>Erik Sagen - Lead Product UX Designer</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
@@ -99,17 +101,17 @@
                 <h3>Work experience</h3>
                 <div class="experience">
                     <h4>Lead Product UX Designer at <a href="https://www.paychex.com" aria-label="Link to Paychex, opens in a new tab" target="_blank" rel="noopener noreferrer">Paychex</a></h4>
-                    <p>Feb 2018 — Present</p>
+                    <p><time datetime="2018-02">Feb 2018</time> — Present</p>
                 </div>
 
                 <div class="experience">
                     <h4>Senior Product Designer at <a href="https://www.aol.com" aria-label="Link to AOL, opens in a new tab" target="_blank" rel="noopener noreferrer">AOL</a></h4>
-                    <p>Jun 2007 — Jun 2017</p>
+                    <p><time datetime="2007-06">Jun 2007</time> — <time datetime="2017-06">Jun 2017</time></p>
                 </div>
 
                 <div class="experience">
                     <h4>Designer at <a href="https://www.magnatag.com" aria-label="Link to Magnatag Visible Systems, opens in a new tab" target="_blank" rel="noopener noreferrer">Magnatag Visible Systems</a></h4>
-                    <p>Jan 2007 — Jun 2007</p>
+                    <p><time datetime="2007-01">Jan 2007</time> — <time datetime="2007-06">Jun 2007</time></p>
                 </div>
             </div>
 
@@ -121,14 +123,13 @@
 
         <hr class="divider">
 
-        <aside id="link-share" class="link-share-section">
+        <aside id="link-share" class="link-share-section" role="complementary">
             <h2 aria-label="Recent links">File &gt; Open Recent</h2>
 
             <div class="link-grid">
-                <!-- Content will be dynamically loaded from content.json -->
                 <div class="link-card">
                     <img
-                            src="/img/pathfinder-thumb.png"
+                            src="img/pathfinder-thumb.png"
                             alt="Simple illustration of a few nodes connected by lines"
                             class="link-thumb"
                     />
@@ -144,7 +145,7 @@
 
                 <div class="link-card">
                     <img
-                            src="/img/og-friendly-introduction-to-svg.png"
+                            src="img/og-friendly-introduction-to-svg.png"
                             alt="Hero image of a friendly introduction to SVG"
                             class="link-thumb"
                     />
@@ -162,10 +163,9 @@
 
         <hr class="divider">
 
-        <aside id="reading" class="reading-section">
+        <aside id="reading" class="reading-section" role="complementary">
             <h2>Currently reading</h2>
             <div class="book-entry">
-                <!-- Content will be dynamically loaded from content.json -->
                 <img
                         src="/img/big-dumb-eyes-cover.jpg"
                         alt="Book cover of Big Dumb Eyes"
@@ -226,53 +226,6 @@
 <script src="weather.js"></script>
 <script src="letterboxd.js"></script>
 <script src="content-loader.js"></script>
-<script>
-// Theme toggle functionality
-(function() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = themeToggle.querySelector('.theme-toggle-icon');
-    const themeText = themeToggle.querySelector('.theme-toggle-text');
-    const htmlElement = document.documentElement;
-    
-    // Get saved theme from localStorage or default to 'dark'
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    
-    // Apply saved theme
-    htmlElement.setAttribute('data-theme', savedTheme);
-    updateToggleButton(savedTheme);
-    
-    // Add click event listener
-    themeToggle.addEventListener('click', function() {
-        const currentTheme = htmlElement.getAttribute('data-theme') || 'dark';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        // Update theme
-        htmlElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateToggleButton(newTheme);
-    });
-    
-    // Update button state based on theme
-    function updateToggleButton(theme) {
-        if (theme === 'light') {
-            themeIcon.textContent = '☀️';
-            themeText.textContent = 'Light mode';
-            themeToggle.setAttribute('aria-pressed', 'true');
-        } else {
-            themeIcon.textContent = '🌙';
-            themeText.textContent = 'Dark mode';
-            themeToggle.setAttribute('aria-pressed', 'false');
-        }
-    }
-    
-    // Keyboard support
-    themeToggle.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            themeToggle.click();
-        }
-    });
-})();
-</script>
+<script src="theme-toggle.js"></script>
 </body>
 </html>
