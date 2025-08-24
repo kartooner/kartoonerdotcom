@@ -1,4 +1,7 @@
-/* Reset box sizing and margins */
+/* ==========================================
+   CSS Reset & Base Styles
+   ========================================== */
+
 * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -8,15 +11,23 @@
     padding: 0;
 }
 
+/* ==========================================
+   Font Imports
+   ========================================== */
+
 @font-face {
     font-family: "Cartridge Rough";
     src:
-            url(../assets/Cartridge-Rough.woff2) format("woff2"),
-            url("../assets/Cartridge-Rough.woff") format("woff");
+        url(assets/Cartridge-Rough.woff2) format("woff2"),
+        url("assets/Cartridge-Rough.woff") format("woff");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
 }
+
+/* ==========================================
+   CSS Custom Properties (Variables)
+   ========================================== */
 
 :root {
     /* Fonts */
@@ -59,6 +70,10 @@
     --experience-text-color: #718096;
 }
 
+/* ==========================================
+   Base Layout & Typography
+   ========================================== */
+
 body {
     font-family: var(--font-main);
     font-size: 16px;
@@ -77,33 +92,9 @@ main {
     margin: 0 auto;
 }
 
-header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 2.5rem;
-}
-
-.current-role {
-    margin-bottom: 1em;
-}
-
-.profile-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.profile-image {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 2rem;
-}
-
-.profile-title {
-    flex: 1;
-}
+/* ==========================================
+   Typography
+   ========================================== */
 
 h1,
 h2,
@@ -145,6 +136,16 @@ p {
     margin-bottom: 1rem;
 }
 
+ul,
+ol {
+    margin-left: 1em;
+    margin-bottom: 1em;
+}
+
+dt {
+    font-weight: bold; /* Terms */
+}
+
 blockquote {
     font-family: var(--font-secondary);
     font-size: 1.5rem;
@@ -162,15 +163,9 @@ blockquote .source {
     margin-top: 1em;
 }
 
-ul,
-ol {
-    margin-left: 1em;
-    margin-bottom: 1em;
-}
-
-dt {
-    font-weight: bold; /* Terms */
-}
+/* ==========================================
+   Links & Navigation
+   ========================================== */
 
 a {
     color: var(--text-color);
@@ -202,6 +197,7 @@ a[target="_blank"] svg {
     color: var(--accent-color);
 }
 
+/* Light theme link adjustments */
 [data-theme="light"] a[target="_blank"]:after {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230066cc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
 }
@@ -211,12 +207,17 @@ a[target="_blank"] svg {
     stroke: var(--accent-color);
 }
 
-.divider {
-    border: 0;
-    height: 1px;
-    background-color: var(--tertiary-color);
-    margin: 2.5rem 0;
+/* Enhanced focus styles for keyboard navigation */
+a:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+    text-decoration: underline;
+    color: var(--accent-color);
 }
+
+/* ==========================================
+   Site Navigation
+   ========================================== */
 
 .site-navigation {
     margin-top: 2.5rem;
@@ -234,27 +235,9 @@ a[target="_blank"] svg {
     transform: translateY(-2px);
 }
 
-footer p {
-    margin-top: 2rem;
-}
-
-.changelog {
-    color: var(--skills-color);
-    font-size: 0.8rem;
-    font-style: italic;
-}
-
-.changelog a {
-    color: var(--skills-color);
-    border-bottom: 1px dotted var(--skills-color);
-    text-decoration: none;
-}
-
-.changelog a:hover,
-.changelog a:focus {
-    color: var(--accent-color);
-    border-bottom: 1px solid var(--accent-color);
-}
+/* ==========================================
+   Accessibility Features
+   ========================================== */
 
 /* Skip Link Styling */
 .skip-link {
@@ -284,7 +267,10 @@ footer p {
     text-decoration: none;
 }
 
-/* Theme Toggle Styling */
+/* ==========================================
+   Theme Toggle
+   ========================================== */
+
 .theme-toggle {
     position: fixed;
     top: 2rem;
@@ -329,21 +315,6 @@ footer p {
     white-space: nowrap;
 }
 
-/* Responsive toggle - hide text on smaller screens */
-@media (max-width: 600px) {
-    .theme-toggle {
-        top: 1rem;
-        right: 1rem;
-        padding: 0.75rem;
-        min-width: 48px; /* Slightly larger for mobile */
-        min-height: 48px;
-    }
-    
-    .theme-toggle-text {
-        display: none;
-    }
-}
-
 /* Light theme adjustments for toggle */
 [data-theme="light"] .theme-toggle {
     background: rgba(0, 0, 0, 0.1);
@@ -355,66 +326,47 @@ footer p {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Enhanced focus styles for keyboard navigation */
-a:focus-visible {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 3px;
-    text-decoration: underline;
-    color: var(--accent-color);
-}
-
-
 /* ==========================================
-   Animations
+   Layout Components
    ========================================== */
 
-/* Fade-in Animation Keyframes */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 2.5rem;
 }
 
-/* Animation Classes */
-.animate-fade-in {
-    opacity: 0;
-    animation-name: fadeIn;
-    animation-fill-mode: forwards;
-    animation-timing-function: ease-out;
+.current-role {
+    margin-bottom: 1em;
 }
 
-/* Specific animations for each section with different delays */
-.animate-header {
-    animation-duration: 1s;
-    animation-delay: 0.3s;
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
 }
 
-.animate-main {
-    animation-duration: 1s;
-    animation-delay: 0.6s;
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 2rem;
 }
 
-.animate-footer {
-    animation-duration: 1s;
-    animation-delay: 0.9s;
+.profile-title {
+    flex: 1;
 }
 
-/* Disable animations for users who prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    .animate-fade-in {
-        animation: none;
-        opacity: 1;
-        transform: none;
-    }
+.divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--tertiary-color);
+    margin: 2.5rem 0;
 }
 
 /* ==========================================
-   Page-specific Styles
+   Content Sections
    ========================================== */
 
 .bio {
@@ -423,6 +375,7 @@ a:focus-visible {
     margin-bottom: 2rem;
 }
 
+/* Top Skills Box */
 .top-skills-box {
     background-image: radial-gradient(circle, #2c9ecb1a, #a1177708);
     background-color: rgb(255 255 255 / 0%);
@@ -452,10 +405,10 @@ a:focus-visible {
     width: 100%;
     height: 100%;
     background: linear-gradient(
-            to right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.1) 50%,
-            rgba(255, 255, 255, 0) 100%
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0) 100%
     ); /* The sheen gradient */
     transform: skewX(-45deg) translateX(-100%); /* Skewed and off-screen initially */
     transition: transform 1.5s ease; /* Transition for the sheen movement */
@@ -491,6 +444,7 @@ a:focus-visible {
     color: var(--accent-color);
 }
 
+/* Skills and Experience Containers */
 .skills-container,
 .experience-philosophy-container {
     display: flex;
@@ -505,31 +459,8 @@ a:focus-visible {
     width: 48%;
 }
 
-.skills-list {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.skills-list li {
-    position: relative;
-    padding-left: 1.25rem;
-    margin-bottom: 0.625rem;
-    font-size: 1.1rem;
-    font-weight: 300;
-    color: var(--skills-color);
-}
-
-.skills-list li::before {
-    content: "•";
-    color: var(--accent-color);
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-.experience-column h3, .skills-column h3, .philosophy-column h3
-{
+/* Column Headers with Icons */
+.experience-column h3, .skills-column h3, .philosophy-column h3 {
     position: relative;
     padding-left: 1.6em;
 }
@@ -579,6 +510,31 @@ a:focus-visible {
     opacity: 0.8;
 }
 
+/* Skills List */
+.skills-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.skills-list li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.625rem;
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--skills-color);
+}
+
+.skills-list li::before {
+    content: "•";
+    color: var(--accent-color);
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Experience Entries */
 .experience {
     margin-top: 1rem;
     margin-bottom: 1.25rem;
@@ -594,6 +550,10 @@ a:focus-visible {
     font-size: 0.9rem;
     font-weight: 300;
 }
+
+/* ==========================================
+   Link Share Section
+   ========================================== */
 
 .link-share-section {
     margin-bottom: 3rem;
@@ -640,6 +600,10 @@ a:focus-visible {
     margin: 0 auto;
 }
 
+/* ==========================================
+   Reading Section
+   ========================================== */
+
 .reading-section {
     margin-bottom: 2.5rem;
 }
@@ -677,6 +641,10 @@ a:focus-visible {
     line-height: 1.6;
     margin: 0 auto;
 }
+
+/* ==========================================
+   Movie Reviews Section
+   ========================================== */
 
 #reviews-container {
     display: grid;
@@ -727,11 +695,11 @@ a:focus-visible {
     flex-direction: column;
     justify-content: flex-end;
     background: linear-gradient(
-            to bottom,
-            transparent 0%,
-            rgba(0, 0, 0, 0.2) 40%,
-            rgba(0, 0, 0, 0.7) 70%,
-            rgba(0, 0, 0, 0.85) 100%
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.2) 40%,
+        rgba(0, 0, 0, 0.7) 70%,
+        rgba(0, 0, 0, 0.85) 100%
     );
     color: white;
     opacity: 0.95;
@@ -771,6 +739,33 @@ a:focus-visible {
     border-radius: 8px;
 }
 
+/* ==========================================
+   Footer Components
+   ========================================== */
+
+footer p {
+    margin-top: 2rem;
+}
+
+.changelog {
+    color: var(--skills-color);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.changelog a {
+    color: var(--skills-color);
+    border-bottom: 1px dotted var(--skills-color);
+    text-decoration: none;
+}
+
+.changelog a:hover,
+.changelog a:focus {
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--accent-color);
+}
+
+/* Webring */
 .webring {
     margin-top: 2rem;
     padding: 1rem;
@@ -810,7 +805,7 @@ a:focus-visible {
     transform: translateY(-2px);
 }
 
-/* Arcade GIF Styling */
+/* Arcade GIF */
 .arcade-gif {
     text-align: center;
     margin-top: 1.5rem;
@@ -831,30 +826,145 @@ a:focus-visible {
 }
 
 /* ==========================================
-   Responsive Layout
+   Decorative Elements
    ========================================== */
 
-@media (max-width: 600px) {
+.doodle-lines {
+    position: relative;
+    width: 100%;
+    height: 84px;
+    overflow: hidden;
+}
 
+.doodle-svg {
+    width: 100%;
+    height: 100%;
+    shape-rendering: geometricPrecision;
+    image-rendering: optimizeQuality;
+}
+
+.doodle-line {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform-origin: center;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: geometricPrecision;
+}
+
+/* Doodle line animations for desktop */
+@media (min-width: 769px) {
+    .line-1 {
+        animation: vertical-float-1 8s ease-in-out infinite;
+    }
+
+    .line-2 {
+        animation: vertical-float-2 6s ease-in-out infinite;
+    }
+
+    .line-3 {
+        animation: vertical-float-3 10s ease-in-out infinite;
+    }
+}
+
+/* ==========================================
+   Animations
+   ========================================== */
+
+/* Fade-in Animation Keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Doodle Line Float Animations */
+@keyframes vertical-float-1 {
+    0%, 100% { transform: translateY(0px); }
+    25% { transform: translateY(-6px); }
+    50% { transform: translateY(3px); }
+    75% { transform: translateY(-2px); }
+}
+
+@keyframes vertical-float-2 {
+    0%, 100% { transform: translateY(2px); }
+    33% { transform: translateY(-4px); }
+    66% { transform: translateY(5px); }
+}
+
+@keyframes vertical-float-3 {
+    0%, 100% { transform: translateY(-1px); }
+    20% { transform: translateY(4px); }
+    40% { transform: translateY(-3px); }
+    60% { transform: translateY(2px); }
+    80% { transform: translateY(-4px); }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+    opacity: 0;
+    animation-name: fadeIn;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
+}
+
+/* Specific animations for each section with different delays */
+.animate-header {
+    animation-duration: 1s;
+    animation-delay: 0.3s;
+}
+
+.animate-main {
+    animation-duration: 1s;
+    animation-delay: 0.6s;
+}
+
+.animate-footer {
+    animation-duration: 1s;
+    animation-delay: 0.9s;
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ==========================================
+   Responsive Design
+   ========================================== */
+
+/* Tablet and smaller screens */
+@media (max-width: 768px) {
+    .doodle-lines { 
+        height: 60px; 
+    }
+
+    .doodle-line {
+        stroke-width: 1.5; 
+    }
+
+    .line-2 {
+        stroke-width: 1.3; 
+    }
+
+    .line-3 {
+        stroke-width: 1.7; 
+    }
+}
+
+/* Mobile screens */
+@media (max-width: 600px) {
     body {
         font-size: 14px;
         padding: 1em;
-    }
-
-    .top-skills-box {
-        font-size: 0.9rem;
-        padding: 0.75em;
-    }
-
-    .site-navigation a {
-        font-size: 0.9rem;
-    }
-
-    .skills-column,
-    .experience-column,
-    .philosophy-column {
-        width: 100%;
-        margin-bottom: 1.25rem;
     }
 
     h1 {
@@ -863,6 +973,37 @@ a:focus-visible {
 
     h2 {
         font-size: 1.4rem;
+    }
+
+    /* Theme toggle adjustments */
+    .theme-toggle {
+        top: 1rem;
+        right: 1rem;
+        padding: 0.75rem;
+        min-width: 48px;
+        min-height: 48px;
+    }
+    
+    .theme-toggle-text {
+        display: none;
+    }
+
+    /* Layout adjustments */
+    .skills-column,
+    .experience-column,
+    .philosophy-column {
+        width: 100%;
+        margin-bottom: 1.25rem;
+    }
+
+    /* Component adjustments */
+    .top-skills-box {
+        font-size: 0.9rem;
+        padding: 0.75em;
+    }
+
+    .site-navigation a {
+        font-size: 0.9rem;
     }
 
     .arcade-gif img {
@@ -891,79 +1032,12 @@ a:focus-visible {
     }
 
     .book-info h3 {
-        font-size: 1.1rem;  /* Increased from 1.1rem to be larger than paragraph text */
+        font-size: 1.1rem;
     }
 
     .book-info p {
-        font-size: 1rem;    /* Keep paragraph size the same */
+        font-size: 1rem;
     }
-}
-
-/* ==========================================
-   Doodle Lines Animation
-   ========================================== */
-
-.doodle-lines {
-  position: relative;
-  width: 100%;
-  height: 84px;
-  overflow: hidden;
-}
-
-.doodle-svg {
-  width: 100%;
-  height: 100%;
-  shape-rendering: geometricPrecision;
-  image-rendering: optimizeQuality;
-}
-
-.doodle-line {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transform-origin: center;
-  vector-effect: non-scaling-stroke;
-  shape-rendering: geometricPrecision;
-}
-
-/* Mobile responsive - only modify what needs to change */
-@media (max-width: 768px) {
-  .doodle-lines { 
-    height: 60px; 
-  }
-
-  .doodle-line {
-    stroke-width: 1.5; 
-  }
-
-  .line-2 {
-    stroke-width: 1.3; 
-  }
-
-  .line-3 {
-    stroke-width: 1.7; 
-  }
-
-  /* Reduce movement amplitude on mobile for better performance */
-  @keyframes vertical-float-1 {
-    0%, 100% { transform: translateY(0px); }
-    25% { transform: translateY(-4px); }
-    50% { transform: translateY(2px); }
-    75% { transform: translateY(-1px); }
-  }
-
-  @keyframes vertical-float-2 {
-    0%, 100% { transform: translateY(1px); }
-    33% { transform: translateY(-3px); }
-    66% { transform: translateY(4px); }
-  }
-
-  @keyframes vertical-float-3 {
-    0%, 100% { transform: translateY(-1px); }
-    20% { transform: translateY(3px); }
-    40% { transform: translateY(-2px); }
-    60% { transform: translateY(1px); }
-    80% { transform: translateY(-3px); }
-  }
 }
 
 /*
