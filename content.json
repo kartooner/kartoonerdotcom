@@ -1,18 +1,18 @@
 {
   "recentLinks": [
     {
-      "title": "Pathfinder",
-      "url": "https://www.matthewsiu.com/pathfinder",
-      "thumbnail": "/img/pathfinder-thumb.png",
-      "alt": "Simple illustration of a few nodes connected by lines",
-      "description": "From its creator: \"[A] tool for exploring the space between two concepts\". Fascinating."
+      "title": "How to draw a Space Invader",
+      "url": "https://muffinman.io/blog/invaders/",
+      "thumbnail": "/img/invader-thumb.png",
+      "alt": "A sketchy render of a Space Invader",
+      "description": "A fun, interactive article about how to draw a Space Invader using simple shapes."
     },
     {
-      "title": "A Friendly Introduction to SVG",
-      "url": "https://www.joshwcomeau.com/svg/friendly-introduction-to-svg/",
-      "thumbnail": "/img/og-friendly-introduction-to-svg.png",
-      "alt": "Hero image of a friendly introduction to SVG",
-      "description": "I can't think of a better description other than what the title already conveys."
+      "title": "The Management Skill Nobody Talks About",
+      "url": "https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/",
+      "thumbnail": "/img/manager-thumb.jpeg",
+      "alt": "A cartoon of a frustrated manager",
+      "description": "Managing people and expectations is hard."
     }
   ],
   "currentlyReading": {

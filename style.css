@@ -420,6 +420,11 @@ header {
     opacity: 1; /* Make the sheen visible on hover */
 }
 
+/* Light theme specific sheen effect */
+[data-theme="light"] .top-skills-box::before {
+    background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent); /* Blue sheen for light theme */
+}
+
 .top-skills-box ul {
     margin: auto;
 }
