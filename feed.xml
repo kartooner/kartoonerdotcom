@@ -5,7 +5,7 @@
         <link>https://kartooner.com</link>
         <description>Recent links and currently reading from Erik Sagen</description>
         <language>en-US</language>
-        <lastBuildDate>Mon, 25 Aug 2025 14:39:07 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 25 Aug 2025 21:03:02 GMT</lastBuildDate>
         <atom:link href="https://kartooner.com/feed.xml" rel="self" type="application/rss+xml"/>
         
         <item>
@@ -13,7 +13,7 @@
             <link>https://muffinman.io/blog/invaders/</link>
             <description>A fun, interactive article about how to draw a Space Invader using simple shapes.</description>
             <category>Recent Links</category>
-            <pubDate>Mon, 25 Aug 2025 14:39:07 GMT</pubDate>
+            <pubDate>Mon, 25 Aug 2025 21:03:02 GMT</pubDate>
             <guid>https://muffinman.io/blog/invaders/</guid>
         </item>
         <item>
@@ -21,15 +21,31 @@
             <link>https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/</link>
             <description>Managing people and expectations is hard.</description>
             <category>Recent Links</category>
-            <pubDate>Mon, 25 Aug 2025 14:39:07 GMT</pubDate>
+            <pubDate>Mon, 25 Aug 2025 21:03:02 GMT</pubDate>
             <guid>https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/</guid>
+        </item>
+        <item>
+            <title>Example Archived Link</title>
+            <link>https://example.com/archived-article</link>
+            <description>This is an example of how archived links work.</description>
+            <category>Archives - 2024-12</category>
+            <pubDate>Sun, 15 Dec 2024 10:30:00 GMT</pubDate>
+            <guid>https://example.com/archived-article-2024-12</guid>
+        </item>
+        <item>
+            <title>Another Old Link</title>
+            <link>https://example.com/old-article</link>
+            <description>An older link from November 2024.</description>
+            <category>Archives - 2024-11</category>
+            <pubDate>Fri, 01 Nov 2024 04:00:00 GMT</pubDate>
+            <guid>https://example.com/old-article-2024-11</guid>
         </item>
         <item>
             <title>Currently Reading: Big Dumb Eyes</title>
             <link>https://a.co/d/89esz80</link>
             <description>Erik is currently reading "Big Dumb Eyes" by Nate Bargatze. I first learned about Nate back when Valve made a Portal spin-off called &quot;Aperture Desk Job&quot; to help demo the Steam Deck&#039;s capabilities. His performance in the game and on stage is whip-smart and hilarious; same goes for this book.</description>
             <category>Currently Reading</category>
-            <pubDate>Mon, 25 Aug 2025 14:39:07 GMT</pubDate>
+            <pubDate>Mon, 25 Aug 2025 21:03:02 GMT</pubDate>
             <guid>currently-reading-big-dumb-eyes</guid>
         </item>
     </channel>

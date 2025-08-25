@@ -37,6 +37,37 @@ function generateRSSFeed() {
             });
         }
         
+        // Add archived links by month/year
+        if (content.archives && typeof content.archives === 'object') {
+            Object.entries(content.archives).forEach(([yearMonth, archivedLinks]) => {
+                if (Array.isArray(archivedLinks)) {
+                    archivedLinks.forEach(link => {
+                        // Use link's date if available, otherwise parse from yearMonth
+                        let itemDate = currentDate;
+                        if (link.date) {
+                            itemDate = new Date(link.date).toUTCString();
+                        } else {
+                            // Try to parse yearMonth (e.g., "2024-08" -> August 2024)
+                            const [year, month] = yearMonth.split('-');
+                            if (year && month) {
+                                itemDate = new Date(parseInt(year), parseInt(month) - 1, 1).toUTCString();
+                            }
+                        }
+                        
+                        rssItems.push(`
+        <item>
+            <title>${escapeXml(link.title || 'Archived Link')}</title>
+            <link>${escapeXml(link.url || '')}</link>
+            <description>${escapeXml(link.description || '')}</description>
+            <category>Archives - ${yearMonth}</category>
+            <pubDate>${itemDate}</pubDate>
+            <guid>${escapeXml(link.url || '')}-${yearMonth}</guid>
+        </item>`);
+                    });
+                }
+            });
+        }
+        
         // Add currently reading book as RSS item
         if (content.currentlyReading) {
             const book = content.currentlyReading;
