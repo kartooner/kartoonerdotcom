@@ -756,6 +756,13 @@ footer p {
     color: var(--skills-color);
     font-size: 0.8rem;
     font-style: italic;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px dotted rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .changelog {
+    border-top: 1px dotted rgba(0, 0, 0, 0.15);
 }
 
 .changelog a {
@@ -969,7 +976,7 @@ footer p {
 @media (max-width: 600px) {
     body {
         font-size: 14px;
-        padding: 1em;
+        padding: 1.5em;
     }
 
     h1 {
