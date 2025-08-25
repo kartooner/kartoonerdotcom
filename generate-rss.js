@@ -11,7 +11,7 @@ function escapeXml(text) {
         .replace(/'/g, '&#039;');
 }
 
-function generateRSSFeed() {
+function generateAtomFeed() {
     try {
         // Read content.json
         const contentPath = path.join(__dirname, 'content.json');
@@ -20,20 +20,24 @@ function generateRSSFeed() {
         const siteUrl = 'https://kartooner.com';
         const currentDate = new Date().toUTCString();
         
-        let rssItems = [];
+        let atomEntries = [];
         
-        // Add recent links as RSS items
+        // Add recent links as Atom entries
         if (content.recentLinks && Array.isArray(content.recentLinks)) {
             content.recentLinks.forEach(link => {
-                rssItems.push(`
-        <item>
-            <title>${escapeXml(link.title || 'Recent Link')}</title>
-            <link>${escapeXml(link.url || '')}</link>
-            <description>${escapeXml(link.description || '')}</description>
-            <category>Recent Links</category>
-            <pubDate>${currentDate}</pubDate>
-            <guid>${escapeXml(link.url || '')}</guid>
-        </item>`);
+                atomEntries.push(`
+  <entry xml:lang="en">
+    <title><![CDATA[${link.title || 'Recent Link'}]]></title>
+    <published>${new Date().toISOString()}</published>
+    <updated>${new Date().toISOString()}</updated>
+    <link href="${escapeXml(link.url || '')}" type="text/html" />
+    <id>${escapeXml(link.url || '')}</id>
+    <author>
+      <name><![CDATA[Erik Sagen]]></name>
+    </author>
+    <category term="Recent Links" />
+    <content type="html"><![CDATA[${link.description || ''}]]></content>
+  </entry>`);
             });
         }
         
@@ -54,59 +58,66 @@ function generateRSSFeed() {
                             }
                         }
                         
-                        rssItems.push(`
-        <item>
-            <title>${escapeXml(link.title || 'Archived Link')}</title>
-            <link>${escapeXml(link.url || '')}</link>
-            <description>${escapeXml(link.description || '')}</description>
-            <category>Archives - ${yearMonth}</category>
-            <pubDate>${itemDate}</pubDate>
-            <guid>${escapeXml(link.url || '')}-${yearMonth}</guid>
-        </item>`);
+                        atomEntries.push(`
+  <entry xml:lang="en">
+    <title><![CDATA[${link.title || 'Archived Link'}]]></title>
+    <published>${new Date(itemDate).toISOString()}</published>
+    <updated>${new Date(itemDate).toISOString()}</updated>
+    <link href="${escapeXml(link.url || '')}" type="text/html" />
+    <id>${escapeXml(link.url || '')}-${yearMonth}</id>
+    <author>
+      <name><![CDATA[Erik Sagen]]></name>
+    </author>
+    <category term="Archives - ${yearMonth}" />
+    <content type="html"><![CDATA[${link.description || ''}]]></content>
+  </entry>`);
                     });
                 }
             });
         }
         
-        // Add currently reading book as RSS item
+        // Add currently reading book as Atom entry
         if (content.currentlyReading) {
             const book = content.currentlyReading;
-            rssItems.push(`
-        <item>
-            <title>Currently Reading: ${escapeXml(book.title || 'Unknown Book')}</title>
-            <link>${escapeXml(book.url || '')}</link>
-            <description>Erik is currently reading "${escapeXml(book.title || '')}" by ${escapeXml(book.author || 'Unknown Author')}. ${escapeXml(book.review || '')}</description>
-            <category>Currently Reading</category>
-            <pubDate>${currentDate}</pubDate>
-            <guid>currently-reading-${escapeXml((book.title || '').toLowerCase().replace(/\s+/g, '-'))}</guid>
-        </item>`);
+            atomEntries.push(`
+  <entry xml:lang="en">
+    <title><![CDATA[Currently Reading: ${book.title || 'Unknown Book'}]]></title>
+    <published>${new Date().toISOString()}</published>
+    <updated>${new Date().toISOString()}</updated>
+    <link href="${escapeXml(book.url || '')}" type="text/html" />
+    <id>currently-reading-${escapeXml((book.title || '').toLowerCase().replace(/\s+/g, '-'))}</id>
+    <author>
+      <name><![CDATA[Erik Sagen]]></name>
+    </author>
+    <category term="Currently Reading" />
+    <content type="html"><![CDATA[Erik is currently reading "${book.title || ''}" by ${book.author || 'Unknown Author'}. ${book.review || ''}]]></content>
+  </entry>`);
         }
         
-        const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-    <channel>
-        <title>Erik's Links &amp; Reading</title>
-        <link>${siteUrl}</link>
-        <description>Recent links and currently reading from Erik Sagen</description>
-        <language>en-US</language>
-        <lastBuildDate>${currentDate}</lastBuildDate>
-        <atom:link href="${siteUrl}/feed.xml" rel="self" type="application/rss+xml"/>
-        ${rssItems.join('')}
-    </channel>
-</rss>`;
+        const atomContent = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title><![CDATA[Erik's Links & Reading]]></title>
+  <subtitle><![CDATA[Recent links and currently reading from Erik Sagen]]></subtitle>
+  <link href="${siteUrl}/atom.xml" rel="self" type="application/atom+xml" />
+  <link href="${siteUrl}" />
+  <generator uri="${siteUrl}">Erik's Site</generator>
+  <updated>${new Date().toISOString()}</updated>
+  <id>${siteUrl}/atom.xml</id>
+  ${atomEntries.join('')}
+</feed>`;
         
-        // Write RSS file
-        const rssPath = path.join(__dirname, 'feed.xml');
-        fs.writeFileSync(rssPath, rssContent, 'utf8');
+        // Write Atom file
+        const atomPath = path.join(__dirname, 'atom.xml');
+        fs.writeFileSync(atomPath, atomContent, 'utf8');
         
-        console.log('RSS feed generated successfully at feed.xml');
-        console.log(`Generated ${rssItems.length} items`);
+        console.log('Atom feed generated successfully at atom.xml');
+        console.log(`Generated ${atomEntries.length} entries`);
         
     } catch (error) {
-        console.error('Error generating RSS feed:', error);
+        console.error('Error generating Atom feed:', error);
         process.exit(1);
     }
 }
 
 // Run the generator
-generateRSSFeed();
+generateAtomFeed();
