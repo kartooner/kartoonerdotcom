@@ -10,8 +10,7 @@
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         body {
-            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
-            background-size: cover;
+            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -114,7 +113,17 @@
     </style>
 </head>
 <body>
-    <div class="entry-header">
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
+    <main id="main-content" tabindex="-1">
+        <div class="entry-header">
         <h1 class="logo"><a href="/journal">← Back to Journal</a></h1>
         <div class="entry-date">Aug 28, 2025</div>
         <h1 class="entry-title">Here we go again</h1>
@@ -151,5 +160,8 @@
     <div class="home-link">
         <a href="/">← Back to Home</a>
     </div>
+    </main>
+    
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>

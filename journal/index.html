@@ -11,8 +11,7 @@
     <style>
 
         body {
-            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
-            background-size: cover;
+            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -155,7 +154,17 @@
     </style>
 </head>
 <body>
-    <h1 class="logo">Journal</h1>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
+    <main id="main-content" tabindex="-1">
+        <h1 class="logo">Journal</h1>
     <hr class="divider" />
 
     
@@ -196,5 +205,8 @@
     <div class="home-link">
         <a href="/">← Back to Home</a>
     </div>
+    </main>
+    
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>
