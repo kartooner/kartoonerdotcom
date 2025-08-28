@@ -2,7 +2,7 @@ Title: Here we go again
 Date: 2025-08-28T10:00:00Z
 Tags: writing, personal
 Excerpt: It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.
-Images: /img/sketch-of-kcd2.jpg
+Images: /img/sketch-of-kcd2.JPG
 ---
 
 It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this (blogging).
