@@ -224,8 +224,7 @@ a:focus-visible {
    ========================================== */
 
 .site-navigation {
-    margin-top: 3rem;
-    padding: 2rem 0;
+    margin-bottom: 1rem;
 }
 
 .site-navigation a {
@@ -846,7 +845,7 @@ footer p {
 /* Arcade GIF */
 .arcade-gif {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 2.5rem;
 }
 
 .arcade-gif img {
