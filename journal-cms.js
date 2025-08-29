@@ -442,7 +442,7 @@ function generateJournalHtml(journal) {
 
     const postsHtml = entries.map(entry => {
         const contentHtml = convertMarkdownToHtml(entry.content);
-        const subtitleHtml = entry.subtitle ? `<h3>${entry.subtitle}</h3>` : '';
+        const subtitleHtml = entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : '';
         const imagesHtml = entry.images ? entry.images.map(img => 
             `<img src="${img}" alt="Journal entry image" data-progressive loading="lazy" />`).join('\n            ') : '';
 
@@ -527,6 +527,14 @@ function generateJournalHtml(journal) {
             font-size: 1rem;
             margin-bottom: 15px;
             font-style: italic;
+        }
+        
+        .post-subtitle {
+            font-family: var(--font-secondary);
+            font-size: 1.2rem;
+            color: var(--skills-color);
+            font-style: italic;
+            margin-bottom: 20px;
         }
 
         .post-content {
