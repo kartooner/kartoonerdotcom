@@ -80,11 +80,16 @@ class ProgressiveImageLoader {
     enhanceImage(img) {
         if (!img.src) return;
         
-        // Create skeleton that overlays the image position
+        // Create a wrapper div that exactly contains the image
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.width = img.style.width || '100%';
+        wrapper.style.height = 'auto';
+        
+        // Create skeleton that matches the image
         const skeleton = document.createElement('div');
         skeleton.className = 'image-skeleton';
-        
-        // Position skeleton to exactly overlay the image
         skeleton.style.position = 'absolute';
         skeleton.style.top = '0';
         skeleton.style.left = '0';
@@ -93,15 +98,10 @@ class ProgressiveImageLoader {
         skeleton.style.zIndex = '1';
         skeleton.style.pointerEvents = 'none';
         
-        // Make the image's parent container relative if it isn't already
-        const parent = img.parentElement;
-        const parentStyle = window.getComputedStyle(parent);
-        if (parentStyle.position === 'static') {
-            parent.style.position = 'relative';
-        }
-        
-        // Insert skeleton as sibling after the image
-        img.parentNode.insertBefore(skeleton, img.nextSibling);
+        // Wrap the image
+        img.parentNode.insertBefore(wrapper, img);
+        wrapper.appendChild(img);
+        wrapper.appendChild(skeleton);
         
         // Add progressive class and hide image initially
         img.classList.add('progressive-img');
@@ -143,7 +143,7 @@ class ProgressiveImageLoader {
             loader.src = originalSrc;
         }, 100);
         
-        console.log('Progressive Images: Enhanced image with skeleton overlay:', originalSrc);
+        console.log('Progressive Images: Enhanced image with skeleton wrapper:', originalSrc);
     }
 
     /**
