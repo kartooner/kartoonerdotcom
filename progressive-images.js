@@ -1,234 +1,166 @@
 /**
- * Progressive Image Enhancement Loader
- * Serves different image resolutions based on device capabilities and network conditions
- * Provides graceful fallbacks and progressive enhancement
+ * Simple Progressive Image Loader with Skeleton Loading
+ * Creates a smooth loading experience with animated skeletons
+ * No need for multiple image variants - just better UX!
  */
 
 class ProgressiveImageLoader {
     constructor() {
-        this.isSlowConnection = this.detectSlowConnection();
+        this.addSkeletonStyles();
         this.init();
     }
 
     /**
-     * Detect if user is on a slow connection
-     * Uses Network Information API with fallbacks
+     * Add CSS for skeleton loading animation
      */
-    detectSlowConnection() {
-        // Check Network Information API (modern browsers)
-        if ('connection' in navigator) {
-            const conn = navigator.connection;
-            
-            // Consider 2G, slow-2g, or low data savings mode as slow
-            if (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') {
-                return true;
+    addSkeletonStyles() {
+        if (document.querySelector('#progressive-image-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'progressive-image-styles';
+        style.textContent = `
+            .image-skeleton {
+                position: relative;
+                overflow: hidden;
+                background: linear-gradient(90deg, 
+                    var(--skeleton-bg, #f0f0f0) 25%, 
+                    var(--skeleton-shimmer, #e0e0e0) 50%, 
+                    var(--skeleton-bg, #f0f0f0) 75%);
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.5s infinite;
+                border-radius: 4px;
             }
             
-            // Consider 3G with data saver enabled as slow
-            if (conn.effectiveType === '3g' && conn.saveData) {
-                return true;
+            [data-theme="dark"] .image-skeleton {
+                --skeleton-bg: rgba(255, 255, 255, 0.1);
+                --skeleton-shimmer: rgba(255, 255, 255, 0.15);
             }
             
-            // Consider very low downlink as slow (< 1 Mbps)
-            if (conn.downlink && conn.downlink < 1) {
-                return true;
+            @keyframes skeleton-shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
             }
-        }
-        
-        // Fallback: check if user has data saver enabled
-        if ('connection' in navigator && navigator.connection.saveData) {
-            return true;
-        }
-        
-        // Default to false (assume fast connection)
-        return false;
+            
+            .progressive-img {
+                transition: opacity 0.3s ease;
+                opacity: 0;
+            }
+            
+            .progressive-img.loaded {
+                opacity: 1;
+            }
+            
+            .progressive-img.error {
+                opacity: 1;
+                filter: grayscale(1) brightness(0.8);
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
-     * Get appropriate image suffix based on device and connection
+     * Create skeleton placeholder that matches image dimensions
      */
-    getImageSuffix(baseName) {
-        const isMobile = window.innerWidth <= 768;
-        const isRetina = window.devicePixelRatio >= 2;
+    createSkeleton(img, fallbackWidth = '100%', fallbackHeight = '200px') {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'image-skeleton';
         
-        // For slow connections, prioritize smaller images
-        if (this.isSlowConnection) {
-            return isMobile ? '-mobile' : '-tablet';
-        }
+        // Try to match the image's dimensions
+        const computedStyle = window.getComputedStyle(img);
+        skeleton.style.width = computedStyle.width || fallbackWidth;
+        skeleton.style.height = computedStyle.height || fallbackHeight;
+        skeleton.style.minHeight = '200px'; // Ensure minimum height for blog images
         
-        // For fast connections, serve based on screen size and pixel density
-        if (isMobile) {
-            return isRetina ? '-mobile@2x' : '-mobile';
-        } else if (window.innerWidth <= 1024) {
-            return isRetina ? '-tablet@2x' : '-tablet';
-        } else {
-            return isRetina ? '-desktop@2x' : '-desktop';
-        }
+        return skeleton;
     }
 
     /**
-     * Generate image variants object from base image path
+     * Enhanced image loading with skeleton and error handling
      */
-    generateImageVariants(basePath) {
-        const parts = basePath.split('.');
-        const extension = parts.pop();
-        const nameWithPath = parts.join('.');
+    enhanceImage(img) {
+        if (!img.src) return;
         
-        return {
-            mobile: `${nameWithPath}-mobile.${extension}`,
-            mobileRetina: `${nameWithPath}-mobile@2x.${extension}`,
-            tablet: `${nameWithPath}-tablet.${extension}`,
-            tabletRetina: `${nameWithPath}-tablet@2x.${extension}`,
-            desktop: `${nameWithPath}-desktop.${extension}`,
-            desktopRetina: `${nameWithPath}-desktop@2x.${extension}`,
-            original: basePath
-        };
-    }
-
-    /**
-     * Check if an image variant exists
-     */
-    async imageExists(url) {
-        try {
-            const response = await fetch(url, { method: 'HEAD' });
-            return response.ok;
-        } catch {
-            return false;
-        }
-    }
-
-    /**
-     * Create responsive picture element
-     */
-    createResponsivePicture(src, alt = '', className = '') {
-        const variants = this.generateImageVariants(src);
+        const container = document.createElement('div');
+        container.style.position = 'relative';
+        container.style.display = 'inline-block';
+        container.style.width = '100%';
         
-        // Create picture element
-        const picture = document.createElement('picture');
-        if (className) {
-            picture.className = className;
-        }
+        // Create skeleton
+        const skeleton = this.createSkeleton(img);
         
-        // Mobile source (up to 768px)
-        const mobileSource = document.createElement('source');
-        mobileSource.media = '(max-width: 768px)';
-        mobileSource.srcset = this.isSlowConnection 
-            ? variants.mobile
-            : `${variants.mobile} 1x, ${variants.mobileRetina} 2x`;
+        // Wrap the image
+        img.parentNode.insertBefore(container, img);
+        container.appendChild(skeleton);
+        container.appendChild(img);
         
-        // Tablet source (769px to 1024px)
-        const tabletSource = document.createElement('source');
-        tabletSource.media = '(max-width: 1024px)';
-        tabletSource.srcset = this.isSlowConnection
-            ? variants.tablet
-            : `${variants.tablet} 1x, ${variants.tabletRetina} 2x`;
+        // Add progressive class
+        img.classList.add('progressive-img');
         
-        // Desktop source (1025px+)
-        const desktopSource = document.createElement('source');
-        desktopSource.media = '(min-width: 1025px)';
-        desktopSource.srcset = this.isSlowConnection
-            ? variants.desktop
-            : `${variants.desktop} 1x, ${variants.desktopRetina} 2x`;
+        // Store original src and clear it to prevent immediate loading
+        const originalSrc = img.src;
+        img.src = '';
         
-        // Fallback img element
-        const img = document.createElement('img');
-        img.src = variants.original; // Fallback to original
-        img.alt = alt;
-        img.loading = 'lazy';
+        // Create a new image for actual loading
+        const loader = new Image();
         
-        // Progressive enhancement: if variants don't exist, fallback gracefully
-        this.addFallbackLogic(picture, variants);
-        
-        // Assemble picture element
-        picture.appendChild(mobileSource);
-        picture.appendChild(tabletSource);  
-        picture.appendChild(desktopSource);
-        picture.appendChild(img);
-        
-        return picture;
-    }
-
-    /**
-     * Add fallback logic for missing image variants
-     */
-    addFallbackLogic(pictureElement, variants) {
-        const sources = pictureElement.querySelectorAll('source');
-        const img = pictureElement.querySelector('img');
-        
-        // Listen for load errors and fallback to original
-        sources.forEach(source => {
-            source.addEventListener('error', () => {
-                // If source fails, remove it to fallback to next source or img
-                source.remove();
-            });
-        });
-        
-        // Ultimate fallback: if img fails, try original
-        if (img) {
-            img.addEventListener('error', () => {
-                if (img.src !== variants.original) {
-                    img.src = variants.original;
+        loader.onload = () => {
+            // Image loaded successfully
+            img.src = originalSrc;
+            img.classList.add('loaded');
+            
+            // Remove skeleton after transition
+            setTimeout(() => {
+                if (skeleton.parentNode) {
+                    skeleton.remove();
                 }
-            });
-        }
+            }, 300);
+        };
+        
+        loader.onerror = () => {
+            // Image failed to load
+            img.src = originalSrc; // Try original anyway
+            img.classList.add('error');
+            
+            // Show a subtle error state
+            skeleton.style.background = 'repeating-linear-gradient(45deg, rgba(255,0,0,0.1), rgba(255,0,0,0.1) 10px, transparent 10px, transparent 20px)';
+            skeleton.style.animation = 'none';
+            
+            // Remove skeleton after showing error
+            setTimeout(() => {
+                if (skeleton.parentNode) {
+                    skeleton.remove();
+                }
+            }, 1000);
+        };
+        
+        // Start loading with a small delay to show skeleton
+        setTimeout(() => {
+            loader.src = originalSrc;
+        }, 100);
+        
+        console.log('Progressive Images: Enhanced image with skeleton:', originalSrc);
     }
 
     /**
-     * Replace existing img elements with progressive versions
+     * Process all images marked for progressive loading
      */
     enhanceExistingImages() {
         const images = document.querySelectorAll('img[data-progressive]');
         
-        console.log(`Progressive Images: Found ${images.length} images to potentially enhance`);
-        console.log(`Progressive Images: Slow connection detected: ${this.isSlowConnection}`);
+        console.log(`Progressive Images: Found ${images.length} images to enhance with skeletons`);
         
         images.forEach(img => {
-            const src = img.src || img.dataset.src;
+            // Remove the marker attribute
+            img.removeAttribute('data-progressive');
             
-            if (src) {
-                console.log(`Progressive Images: Processing image: ${src}`);
-                
-                // For now, just keep original images until we have variants
-                // This ensures images still load properly while we build the progressive system
-                console.log('Progressive Images: Keeping original image (progressive enhancement disabled until variants exist):', src);
-                
-                // Just remove the data-progressive attribute to mark as processed
-                img.removeAttribute('data-progressive');
+            // Add lazy loading if not already present
+            if (!img.hasAttribute('loading')) {
+                img.loading = 'lazy';
             }
-        });
-    }
-
-    /**
-     * Create a simple responsive img with srcset (for basic enhancement)
-     */
-    createSimpleResponsiveImg(src, alt = '', className = '') {
-        const variants = this.generateImageVariants(src);
-        const img = document.createElement('img');
-        
-        img.src = variants.original;
-        img.alt = alt;
-        if (className) img.className = className;
-        img.loading = 'lazy';
-        
-        // Build srcset based on connection speed
-        if (!this.isSlowConnection) {
-            img.srcset = `
-                ${variants.mobile} 480w,
-                ${variants.mobileRetina} 960w,
-                ${variants.tablet} 768w,
-                ${variants.tabletRetina} 1536w,
-                ${variants.desktop} 1200w,
-                ${variants.desktopRetina} 2400w
-            `.replace(/\s+/g, ' ').trim();
             
-            img.sizes = `
-                (max-width: 768px) 100vw,
-                (max-width: 1024px) 768px,
-                1200px
-            `.replace(/\s+/g, ' ').trim();
-        }
-        
-        return img;
+            // Enhance with skeleton loading
+            this.enhanceImage(img);
+        });
     }
 
     /**
@@ -243,25 +175,38 @@ class ProgressiveImageLoader {
         } else {
             this.enhanceExistingImages();
         }
-
-        // Monitor connection changes (if supported)
-        if ('connection' in navigator) {
-            navigator.connection.addEventListener('change', () => {
-                this.isSlowConnection = this.detectSlowConnection();
-                // Could reload images with new strategy, but that might be jarring
-                console.log('Connection changed. Slow connection:', this.isSlowConnection);
+        
+        // Watch for new images added dynamically
+        if (window.MutationObserver) {
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) { // Element node
+                            const newImages = node.querySelectorAll ? 
+                                node.querySelectorAll('img[data-progressive]') : 
+                                [];
+                            newImages.forEach(img => {
+                                img.removeAttribute('data-progressive');
+                                this.enhanceImage(img);
+                            });
+                        }
+                    });
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
             });
         }
     }
 
     /**
-     * Public method to create responsive images programmatically
+     * Public method to manually enhance an image
      */
-    static createResponsiveImage(src, alt = '', className = '', useSimple = false) {
+    static enhanceImage(img) {
         const loader = new ProgressiveImageLoader();
-        return useSimple 
-            ? loader.createSimpleResponsiveImg(src, alt, className)
-            : loader.createResponsivePicture(src, alt, className);
+        loader.enhanceImage(img);
     }
 }
 
