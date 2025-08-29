@@ -235,7 +235,7 @@ function generateEntryPages(journal) {
         const contentHtml = convertMarkdownToHtml(entry.content);
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
         const imagesHtml = entry.images ? entry.images.map(img => 
-            `<img src="${img}" alt="Journal entry image" />`).join('\n            ') : '';
+            `<img src="${img}" alt="Journal entry image" data-progressive loading="lazy" />`).join('\n            ') : '';
 
         const template = `<!DOCTYPE html>
 <html lang="en">
@@ -406,6 +406,7 @@ function generateEntryPages(journal) {
     </div>
     
     <script src="/theme-toggle.js"></script>
+    <script src="/progressive-images.js"></script>
 </body>
 </html>`;
 
@@ -443,7 +444,7 @@ function generateJournalHtml(journal) {
         const contentHtml = convertMarkdownToHtml(entry.content);
         const subtitleHtml = entry.subtitle ? `<h3>${entry.subtitle}</h3>` : '';
         const imagesHtml = entry.images ? entry.images.map(img => 
-            `<img src="${img}" alt="Journal entry image" />`).join('\n            ') : '';
+            `<img src="${img}" alt="Journal entry image" data-progressive loading="lazy" />`).join('\n            ') : '';
 
         return `
     <div class="post">
@@ -662,6 +663,7 @@ function generateJournalHtml(journal) {
     </div>
     
     <script src="/theme-toggle.js"></script>
+    <script src="/progressive-images.js"></script>
 </body>
 </html>`;
 
@@ -799,6 +801,7 @@ function generateArchiveHtml(journal) {
     </main>
     
     <script src="/theme-toggle.js"></script>
+    <script src="/progressive-images.js"></script>
 </body>
 </html>`;
 
