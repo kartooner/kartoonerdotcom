@@ -179,14 +179,21 @@ class ProgressiveImageLoader {
     enhanceExistingImages() {
         const images = document.querySelectorAll('img[data-progressive]');
         
+        console.log(`Progressive Images: Found ${images.length} images to potentially enhance`);
+        console.log(`Progressive Images: Slow connection detected: ${this.isSlowConnection}`);
+        
         images.forEach(img => {
             const src = img.src || img.dataset.src;
-            const alt = img.alt;
-            const className = img.className;
             
             if (src) {
-                const picture = this.createResponsivePicture(src, alt, className);
-                img.parentNode.replaceChild(picture, img);
+                console.log(`Progressive Images: Processing image: ${src}`);
+                
+                // For now, just keep original images until we have variants
+                // This ensures images still load properly while we build the progressive system
+                console.log('Progressive Images: Keeping original image (progressive enhancement disabled until variants exist):', src);
+                
+                // Just remove the data-progressive attribute to mark as processed
+                img.removeAttribute('data-progressive');
             }
         });
     }
