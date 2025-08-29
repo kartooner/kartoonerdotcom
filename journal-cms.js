@@ -195,6 +195,29 @@ function convertMarkdownToHtml(markdown) {
             continue;
         }
         
+        // Check if it's a heading (single line starting with #)
+        if (lines.length === 1) {
+            const line = lines[0].trim();
+            const h1Match = line.match(/^# (.+)$/);
+            const h2Match = line.match(/^## (.+)$/);
+            const h3Match = line.match(/^### (.+)$/);
+            const h4Match = line.match(/^#### (.+)$/);
+            
+            if (h4Match) {
+                convertedBlocks.push(`<h4>${h4Match[1]}</h4>`);
+                continue;
+            } else if (h3Match) {
+                convertedBlocks.push(`<h3>${h3Match[1]}</h3>`);
+                continue;
+            } else if (h2Match) {
+                convertedBlocks.push(`<h2>${h2Match[1]}</h2>`);
+                continue;
+            } else if (h1Match) {
+                convertedBlocks.push(`<h1>${h1Match[1]}</h1>`);
+                continue;
+            }
+        }
+        
         // Regular paragraph
         convertedBlocks.push(`<p>${block.replace(/\n/g, ' ')}</p>`);
     }
@@ -327,6 +350,25 @@ function generateEntryPages(journal) {
         .home-link a:hover {
             color: var(--accent-color);
         }
+
+        .feed-links {
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feed-links a {
+            color: var(--skills-color);
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+
+        .feed-links a:hover {
+            color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -352,6 +394,10 @@ function generateEntryPages(journal) {
     </div>
     <div class="home-link">
         <a href="/">← Back to Home</a>
+        <div class="feed-links">
+            <a href="/journal-atom.xml">Atom Feed</a>
+            <a href="/journal-feed.xml">RSS Feed</a>
+        </div>
     </div>
 </body>
 </html>`;
@@ -559,6 +605,25 @@ function generateJournalHtml(journal) {
             color: var(--accent-color);
         }
 
+        .feed-links {
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feed-links a {
+            color: var(--skills-color);
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+
+        .feed-links a:hover {
+            color: var(--accent-color);
+        }
+
     </style>
 </head>
 <body>
@@ -578,6 +643,10 @@ function generateJournalHtml(journal) {
     
     <div class="home-link">
         <a href="/">← Back to Home</a>
+        <div class="feed-links">
+            <a href="/journal-atom.xml">Atom Feed</a>
+            <a href="/journal-feed.xml">RSS Feed</a>
+        </div>
     </div>
 </body>
 </html>`;
@@ -625,6 +694,8 @@ function generateArchiveHtml(journal) {
     <title>Archive - Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
+    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         body {
             background: var(--bg-color) url(img/bg.jpg) no-repeat;
@@ -658,6 +729,12 @@ function generateArchiveHtml(journal) {
             padding: 20px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="light"] .archive-entry {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .entry-date {
@@ -688,14 +765,27 @@ function generateArchiveHtml(journal) {
     </style>
 </head>
 <body>
-    <h1 class="logo">Archive</h1>
-    <hr class="divider" />
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
 
-    ${yearsHtml}
+    <main id="main-content" tabindex="-1">
+        <h1 class="logo">Archive</h1>
+        <hr class="divider" />
 
-    <div style="text-align: center; margin: 40px 0;">
-        <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
-    </div>
+        ${yearsHtml}
+
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
+        </div>
+    </main>
+    
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>`;
 
@@ -746,6 +836,48 @@ function generateRSSFeed(journal) {
     }
 }
 
+function generateAtomFeed(journal) {
+    const entries = journal.entries
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 10); // Latest 10 entries
+
+    const atomEntries = entries.map(entry => {
+        const contentHtml = convertMarkdownToHtml(entry.content);
+        return `
+  <entry xml:lang="en">
+    <title><![CDATA[${entry.title}]]></title>
+    <published>${new Date(entry.date).toISOString()}</published>
+    <updated>${new Date(entry.date).toISOString()}</updated>
+    <link href="https://kartooner.com/entry/${entry.id}.html" type="text/html" />
+    <id>https://kartooner.com/entry/${entry.id}.html</id>
+    <author>
+      <name><![CDATA[Erik Sagen]]></name>
+    </author>
+    <category term="Journal" />
+    <content type="html"><![CDATA[${contentHtml}]]></content>
+  </entry>`;
+    }).join('');
+
+    const atomContent = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title><![CDATA[Erik's Journal]]></title>
+  <subtitle><![CDATA[Personal journal entries from Erik Sagen]]></subtitle>
+  <link href="https://kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
+  <link href="https://kartooner.com/journal" />
+  <generator uri="https://kartooner.com">Journal CMS</generator>
+  <updated>${new Date().toISOString()}</updated>
+  <id>https://kartooner.com/journal-atom.xml</id>
+  ${atomEntries}
+</feed>`;
+
+    try {
+        fs.writeFileSync(path.join(__dirname, 'journal-atom.xml'), atomContent, 'utf8');
+        console.log('Atom feed generated successfully.');
+    } catch (error) {
+        console.error('Error generating Atom feed:', error.message);
+    }
+}
+
 async function addEntry() {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -786,6 +918,7 @@ async function addEntry() {
         generateArchiveHtml(journal);
         generateEntryPages(journal);
         generateRSSFeed(journal);
+        generateAtomFeed(journal);
         
         console.log(`\nEntry "${title}" added successfully!`);
         console.log(`ID: ${id}`);
@@ -803,6 +936,7 @@ function regenerateAll() {
     generateArchiveHtml(journal);
     generateEntryPages(journal);
     generateRSSFeed(journal);
+    generateAtomFeed(journal);
     console.log('All files regenerated successfully!');
 }
 
@@ -812,6 +946,7 @@ function syncFromStories() {
     generateArchiveHtml(journal);
     generateEntryPages(journal);
     generateRSSFeed(journal);
+    generateAtomFeed(journal);
     console.log('Stories synced and all files regenerated successfully!');
 }
 

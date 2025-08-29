@@ -11,7 +11,8 @@
     <style>
 
         body {
-            background: var(--bg-color);
+            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
+            background-size: cover;
             max-width: 800px;
             margin: 0 auto;
         }
@@ -151,23 +152,71 @@
             color: var(--accent-color);
         }
 
+        .feed-links {
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feed-links a {
+            color: var(--skills-color);
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+
+        .feed-links a:hover {
+            color: var(--accent-color);
+        }
+
     </style>
 </head>
 <body>
-    <!-- Skip Navigation Link -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
-
-    <main id="main-content" tabindex="-1">
-        <h1 class="logo">Journal</h1>
+    <h1 class="logo">Journal</h1>
     <hr class="divider" />
 
     
+    <div class="post">
+        <div class="post-date"><a href="/entry/the-pole-on-the-corner.html">#</a> &bull; Aug 29, 2025</div>
+        <h2 class="post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h2>
+        <div class="post-byline">by Erik Sagen</div>
+        
+        <div class="post-content">
+            <img src="/img/power-pole.jpg" alt="Journal entry image" />
+            <p>Sometimes you think you know every corner of your neighborhood—until one day you don't.</p>
+
+<p>I was driving near my house when I turned past a corner and asked my wife, "Has that pole always been there?" She didn't even hesitate. "Always. Well, since we moved here."</p>
+
+<p>And I thought about The Truman Show.</p>
+
+<h2>Noticing the Cracks</h2>
+
+<p>If you haven't seen it, the movie follows a man who slowly realizes his entire life has been staged for television. Despite how carefully the world was built, cracks start to show. A light falls from the sky. He notices people around him anticipating his reactions, as if the world really does revolve around him.</p>
+
+<p>That noticing changes everything.</p>
+
+<p>Once Truman starts to see past the edges of what he thought was real, he can't stop. He questions. He experiments. He pushes. He's not just living in the world handed to him anymore—he's searching for the one beyond it.</p>
+
+<h2>Past the Fringe</h2>
+
+<p>I think about that a lot. How easy it is to move through life on autopilot. Same drive, same walk, same routine. But every once in a while something breaks through. A pole you somehow never saw. A mural on a wall. The way light falls on mid-afternoon grass.</p>
+
+<p>Those are Truman moments.</p>
+
+<p>Little reminders that there's always more to notice, more to try, more to experience.</p>
+
+<p>Every day I wake up, I want to carry a bit of that with me. Noticing. Asking questions. Testing the edges of the world I've grown comfortable in.</p>
+
+<p>Sometimes all it takes is noticing one thing you've been passing by to see how much else has been hiding in plain sight.</p>
+
+<p>And that's enough to keep me looking.</p>
+        </div>
+    </div>
+
+    <hr class="divider" />
+
     <div class="post">
         <div class="post-date"><a href="/entry/here-we-go-again.html">#</a> &bull; Aug 28, 2025</div>
         <h2 class="post-title"><a href="/entry/here-we-go-again.html">Here we go again</a></h2>
@@ -204,9 +253,10 @@
     
     <div class="home-link">
         <a href="/">← Back to Home</a>
+        <div class="feed-links">
+            <a href="/journal-atom.xml">Atom Feed</a>
+            <a href="/journal-feed.xml">RSS Feed</a>
+        </div>
     </div>
-    </main>
-    
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>

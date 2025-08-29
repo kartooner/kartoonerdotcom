@@ -6,9 +6,12 @@
     <title>Archive - Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
+    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         body {
-            background: var(--bg-color);
+            background: var(--bg-color) url(img/bg.jpg) no-repeat;
+            background-size: cover;
             max-width: 800px;
             margin: 0 auto;
         }
@@ -38,6 +41,12 @@
             padding: 20px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="light"] .archive-entry {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .entry-date {
@@ -79,12 +88,17 @@
 
     <main id="main-content" tabindex="-1">
         <h1 class="logo">Archive</h1>
-    <hr class="divider" />
+        <hr class="divider" />
 
-    
+        
         <div class="year-section">
             <h2>2025</h2>
             
+            <div class="archive-entry">
+                <div class="entry-date">Aug 29, 2025</div>
+                <h3><a href="entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h3>
+                <p class="entry-excerpt">Sometimes you think you know every corner of your neighborhood—until one day you don't.</p>
+            </div>
             <div class="archive-entry">
                 <div class="entry-date">Aug 28, 2025</div>
                 <h3><a href="entry/here-we-go-again.html">Here we go again</a></h3>
@@ -92,11 +106,11 @@
             </div>
         </div>
 
-    <div style="text-align: center; margin: 40px 0;">
-        <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
-    </div>
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
+        </div>
     </main>
     
-    <script src="theme-toggle.js"></script>
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>
