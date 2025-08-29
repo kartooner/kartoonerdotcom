@@ -3,9 +3,8 @@ Date: 2025-08-29T05:33:01Z
 Tags: writing, personal
 Excerpt: Sometimes you think you know every corner of your neighborhood—until one day you don't.
 Images: /img/power-pole.jpg
+Subtitle: Sometimes you think you know every corner of your neighborhood—until one day you don't.
 ---
-
-Sometimes you think you know every corner of your neighborhood—until one day you don't.
 
 I was driving near my house when I turned past a corner and asked my wife, "Has that pole always been there?" She didn't even hesitate. "Always. Well, since we moved here."
 

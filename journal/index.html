@@ -11,7 +11,8 @@
     <style>
 
         body {
-            background: var(--bg-color);
+            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
+            background-size: cover;
             max-width: 800px;
             margin: 0 auto;
         }
@@ -170,86 +171,9 @@
             color: var(--accent-color);
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-color);
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            min-height: 44px;
-            min-width: 44px;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: var(--accent-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .theme-toggle:focus {
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        .theme-toggle-icon {
-            font-size: 1.2rem;
-            transition: transform 0.3s ease;
-        }
-
-        .theme-toggle-text {
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        /* Light theme adjustments for toggle */
-        [data-theme="light"] .theme-toggle {
-            background: rgba(0, 0, 0, 0.1);
-            border-color: rgba(0, 0, 0, 0.2);
-        }
-
-        [data-theme="light"] .theme-toggle:hover {
-            background: rgba(0, 0, 0, 0.15);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .theme-toggle {
-                top: 1rem;
-                right: 1rem;
-                padding: 0.75rem;
-                min-width: 48px;
-                min-height: 48px;
-            }
-            
-            .theme-toggle-text {
-                display: none;
-            }
-        }
-
     </style>
 </head>
 <body>
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
-
     <h1 class="logo">Journal</h1>
     <hr class="divider" />
 
@@ -258,12 +182,10 @@
         <div class="post-date"><a href="/entry/the-pole-on-the-corner.html">#</a> &bull; Aug 29, 2025</div>
         <h2 class="post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h2>
         <div class="post-byline">by Erik Sagen</div>
-        
+        <h3>Sometimes you think you know every corner of your neighborhood—until one day you don't.</h3>
         <div class="post-content">
             <img src="/img/power-pole.jpg" alt="Journal entry image" />
-            <p>Sometimes you think you know every corner of your neighborhood—until one day you don't.</p>
-
-<p>I was driving near my house when I turned past a corner and asked my wife, "Has that pole always been there?" She didn't even hesitate. "Always. Well, since we moved here."</p>
+            <p>I was driving near my house when I turned past a corner and asked my wife, "Has that pole always been there?" She didn't even hesitate. "Always. Well, since we moved here."</p>
 
 <p>And I thought about The Truman Show.</p>
 
@@ -334,7 +256,5 @@
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
     </div>
-
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>
