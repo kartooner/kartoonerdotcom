@@ -249,8 +249,7 @@ function generateEntryPages(journal) {
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         body {
-            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
-            background-size: cover;
+            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -372,6 +371,12 @@ function generateEntryPages(journal) {
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
     <div class="entry-header">
         <h1 class="logo"><a href="/journal">← Back to Journal</a></h1>
         <div class="entry-date">${formatDate(entry.date)}</div>
@@ -399,6 +404,8 @@ function generateEntryPages(journal) {
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
     </div>
+    
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>`;
 
@@ -464,8 +471,7 @@ function generateJournalHtml(journal) {
     <style>
 
         body {
-            background: var(--bg-color) url(/img/bg.jpg) no-repeat;
-            background-size: cover;
+            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -627,6 +633,12 @@ function generateJournalHtml(journal) {
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
     <h1 class="logo">Journal</h1>
     <hr class="divider" />
 
@@ -648,6 +660,8 @@ function generateJournalHtml(journal) {
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
     </div>
+    
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>`;
 
@@ -698,8 +712,7 @@ function generateArchiveHtml(journal) {
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         body {
-            background: var(--bg-color) url(img/bg.jpg) no-repeat;
-            background-size: cover;
+            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
         }
