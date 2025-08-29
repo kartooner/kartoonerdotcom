@@ -80,32 +80,38 @@ class ProgressiveImageLoader {
     enhanceImage(img) {
         if (!img.src) return;
         
-        const container = document.createElement('div');
-        container.style.position = 'relative';
-        container.style.display = 'inline-block';
-        container.style.width = '100%';
+        // Create skeleton that overlays the image position
+        const skeleton = document.createElement('div');
+        skeleton.className = 'image-skeleton';
         
-        // Create skeleton
-        const skeleton = this.createSkeleton(img);
+        // Position skeleton to exactly overlay the image
+        skeleton.style.position = 'absolute';
+        skeleton.style.top = '0';
+        skeleton.style.left = '0';
+        skeleton.style.width = '100%';
+        skeleton.style.height = '100%';
+        skeleton.style.zIndex = '1';
+        skeleton.style.pointerEvents = 'none';
         
-        // Wrap the image
-        img.parentNode.insertBefore(container, img);
-        container.appendChild(skeleton);
-        container.appendChild(img);
+        // Make the image's parent container relative if it isn't already
+        const parent = img.parentElement;
+        const parentStyle = window.getComputedStyle(parent);
+        if (parentStyle.position === 'static') {
+            parent.style.position = 'relative';
+        }
         
-        // Add progressive class
+        // Insert skeleton as sibling after the image
+        img.parentNode.insertBefore(skeleton, img.nextSibling);
+        
+        // Add progressive class and hide image initially
         img.classList.add('progressive-img');
         
-        // Store original src and clear it to prevent immediate loading
+        // Store original src and create loader
         const originalSrc = img.src;
-        img.src = '';
-        
-        // Create a new image for actual loading
         const loader = new Image();
         
         loader.onload = () => {
-            // Image loaded successfully
-            img.src = originalSrc;
+            // Image loaded successfully - show it
             img.classList.add('loaded');
             
             // Remove skeleton after transition
@@ -117,11 +123,10 @@ class ProgressiveImageLoader {
         };
         
         loader.onerror = () => {
-            // Image failed to load
-            img.src = originalSrc; // Try original anyway
+            // Image failed to load - show error state
             img.classList.add('error');
             
-            // Show a subtle error state
+            // Update skeleton to show error
             skeleton.style.background = 'repeating-linear-gradient(45deg, rgba(255,0,0,0.1), rgba(255,0,0,0.1) 10px, transparent 10px, transparent 20px)';
             skeleton.style.animation = 'none';
             
@@ -138,7 +143,7 @@ class ProgressiveImageLoader {
             loader.src = originalSrc;
         }, 100);
         
-        console.log('Progressive Images: Enhanced image with skeleton:', originalSrc);
+        console.log('Progressive Images: Enhanced image with skeleton overlay:', originalSrc);
     }
 
     /**
