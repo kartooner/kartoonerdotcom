@@ -27,7 +27,7 @@ class GitHubActivity {
             </div>
         `;
         
-        document.body.appendChild(container);
+        document.querySelector('.container').appendChild(container);
     }
 
     attachEventListeners() {
@@ -206,7 +206,10 @@ class GitHubActivity {
     }
 }
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready, but only on index.html
 document.addEventListener('DOMContentLoaded', () => {
-    new GitHubActivity();
+    // Only activate GitHub activity on the homepage
+    if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        new GitHubActivity();
+    }
 });

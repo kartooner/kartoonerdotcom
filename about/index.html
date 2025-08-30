@@ -38,13 +38,16 @@
 
 <div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
-        <nav class="back-navigation" aria-label="Back to main site">
-            <a href="/" aria-label="Go back to homepage">← Back to Home</a>
-        </nav>
+        <div class="home-link">
+            <a href="/">← Back to Home</a>
+        </div>
         
         <h1>About me</h1>
         
-        <p>Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories, and putting on plays and magic shows with my cousins. I was glued to cartoons like Darkwing Duck and TMNT, later shows like Reboot and Boy Meets World. Movies like Back to the Future, Jurassic Park, and Who Framed Roger Rabbit shaped a lot of how I see stories.</p>
+        <div class="about-intro">
+            <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive />
+            <p>Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories, and putting on plays and magic shows with my cousins. I was glued to cartoons like Darkwing Duck and TMNT, later shows like Reboot and Boy Meets World. Movies like Back to the Future, Jurassic Park, and Who Framed Roger Rabbit shaped a lot of how I see stories.</p>
+        </div>
 
         <hr class="divider">
 
@@ -139,19 +142,6 @@
     </main>
 
     <footer class="animate-fade-in animate-footer">
-        <div class="arcade-gif">
-            <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-        </div>
-
-        <div class="webring">
-            <strong>CSS Joy Webring</strong>
-            <div class="webring-links">
-                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
-            </div>
-        </div>
-
         <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
