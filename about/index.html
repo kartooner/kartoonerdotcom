@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Erik Sagen</title>
+    <meta name="description" content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
+    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
+    
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="About - Erik Sagen">
+    <meta property="og:description" content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    <meta property="og:image" content="https://kartooner.com/img/og-preview.png">
+    <meta property="og:url" content="https://kartooner.com/about">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About - Erik Sagen">
+    <meta name="twitter:description" content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
+</head>
+<body>
+    <!-- Skip Navigation Link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
+<div class="container">
+    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+        <nav class="back-navigation" aria-label="Back to main site">
+            <a href="/" aria-label="Go back to homepage">← Back to Home</a>
+        </nav>
+        
+        <h1>About me</h1>
+        
+        <p>Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories, and putting on plays and magic shows with my cousins. I was glued to cartoons like Darkwing Duck and TMNT, later shows like Reboot and Boy Meets World. Movies like Back to the Future, Jurassic Park, and Who Framed Roger Rabbit shaped a lot of how I see stories.</p>
+
+        <hr class="divider">
+
+        <!-- File > Open Recent Section -->
+        <aside id="link-share" class="link-share-section animate-fade-in" role="complementary">
+            <h2 aria-label="Recent links">File &gt; Open Recent</h2>
+
+            <div class="link-grid">
+                <div class="link-card">
+                    <img
+                            src="img/pathfinder-thumb.png"
+                            alt="Simple illustration of a few nodes connected by lines"
+                            class="link-thumb"
+                            data-progressive
+                    />
+                    <div class="link-info">
+                        <h3>
+                            <a href="https://www.matthewsiu.com/pathfinder" target="_blank" rel="noopener noreferrer">
+                                Pathfinder
+                            </a>
+                        </h3>
+                        <p>From its creator: "[A] tool for exploring the space between two concepts." Fascinating.</p>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <img
+                            src="img/og-friendly-introduction-to-svg.png"
+                            alt="Hero image of a friendly introduction to SVG"
+                            class="link-thumb"
+                            data-progressive
+                    />
+                    <div class="link-info">
+                        <h3>
+                            <a href="https://www.joshwcomeau.com/svg/friendly-introduction-to-svg/" target="_blank" rel="noopener noreferrer">
+                                A Friendly Introduction to SVG
+                            </a>
+                        </h3>
+                        <p>I can't think of a better description other than what the title already conveys.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <hr class="divider">
+
+        <!-- Currently Reading Section -->
+        <aside id="reading" class="reading-section animate-fade-in" role="complementary">
+            <h2>Currently reading</h2>
+            <div class="book-entry">
+                <img
+                        src="/img/big-dumb-eyes-cover.jpg"
+                        alt="Book cover of Big Dumb Eyes"
+                        class="book-cover"
+                        data-progressive
+                />
+                <div class="book-info">
+                    <h3><a href="https://a.co/d/89esz80" target="_blank" rel="noopener noreferrer" aria-label="View Big Dumb Eyes book listing">Big Dumb Eyes</a> by Nate Bargatze</h3>
+                    <p>I first learned about Nate back when Valve made a Portal spin-off called "Aperture Desk Job" to help demo the Steam Deck's capabilities. His performance in the game and on stage is whip-smart and hilarious; the same goes for this book.</p>
+                </div>
+            </div>
+        </aside>
+
+        <hr class="divider">
+
+        <!-- Movies Section -->
+        <section class="recently-watched animate-fade-in">
+            <h2>Movies I've recently watched <span aria-hidden="true">🍿</span></h2>
+            <div id="reviews-container" class="reviews-grid">
+                <!-- Reviews will be injected here -->
+                <div class="reviews-loading">Loading latest watches...</div>
+            </div>
+        </section>
+
+        <hr class="divider">
+
+        <!-- Contact Section -->
+        <section class="contact-section animate-fade-in">
+            <h2>Let's connect</h2>
+            <nav class="contact-links" aria-label="Contact and social links">
+                <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Follow me on Threads, opens in a new tab">
+                    Threads
+                </a>
+                <a href="https://linkedin.com/in/eriksagen" target="_blank" rel="noopener noreferrer" aria-label="Visit my LinkedIn page, opens in a new tab">
+                    LinkedIn
+                </a>
+                <a href="https://medium.com/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Link to Medium articles by Erik Sagen, opens in a new tab">
+                    Things I've written on Medium
+                </a>
+            </nav>
+        </section>
+    </main>
+
+    <footer class="animate-fade-in animate-footer">
+        <div class="arcade-gif">
+            <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
+        </div>
+
+        <div class="webring">
+            <strong>CSS Joy Webring</strong>
+            <div class="webring-links">
+                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
+                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
+                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+            </div>
+        </div>
+
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+    </footer>
+</div>
+
+<script src="../weather.js"></script>
+<script src="../letterboxd.js"></script>
+<script>
+(function () {
+  function escapeHtml(text) {
+    if (typeof text !== 'string') return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function renderRecentLinks(links) {
+    var grid = document.querySelector('#link-share .link-grid');
+    if (!grid || !Array.isArray(links)) return;
+    grid.innerHTML = '';
+
+    links.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'link-card';
+      card.innerHTML =
+        '<img src="' + escapeHtml(item.thumbnail || '') + '" alt="' + escapeHtml(item.alt || item.title || '') + '" class="link-thumb" data-progressive />' +
+        '<div class="link-info">' +
+        '  <h3>' +
+        '    <a href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title || '') + '</a>' +
+        '  </h3>' +
+        '  <p>' + escapeHtml(item.description || '') + '</p>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  function renderCurrentlyReading(book) {
+    var entry = document.querySelector('#reading .book-entry');
+    if (!entry || !book) return;
+
+    entry.innerHTML =
+      '<img src="' + escapeHtml(book.thumbnail || '') + '" alt="' + escapeHtml(book.alt || book.title || '') + '" class="book-cover" data-progressive />' +
+      '<div class="book-info">' +
+      '  <h3><a href="' + escapeHtml(book.url || '#') + '" target="_blank" rel="noopener noreferrer" aria-label="View ' + escapeHtml(book.title || '') + '">' + escapeHtml(book.title || '') + '</a> by ' + escapeHtml(book.author || '') + '</h3>' +
+      '  <p>' + escapeHtml(book.review || '') + '</p>' +
+      '</div>';
+  }
+
+  function init() {
+    fetch('../content.json', { cache: 'no-cache' })
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        try { renderRecentLinks(data.recentLinks); } catch (e) { /* no-op */ }
+        try { renderCurrentlyReading(data.currentlyReading); } catch (e) { /* no-op */ }
+      })
+      .catch(function () { /* leave fallback HTML */ });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+<script src="../theme-toggle.js"></script>
+<script src="../progressive-images.js"></script>
+</body>
+</html>

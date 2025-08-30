@@ -165,32 +165,88 @@ function convertMarkdownToHtml(markdown) {
     for (let block of blocks) {
         const lines = block.split('\n');
         
+        // Check if it's a code block (fenced with ``` or indented)
+        if ((lines[0].trim().startsWith('```') && lines[lines.length - 1].trim().startsWith('```')) ||
+            lines.every(line => line.startsWith('    ') || line.trim() === '')) {
+            
+            if (lines[0].trim().startsWith('```')) {
+                // Fenced code block
+                const language = lines[0].replace('```', '').trim();
+                const codeLines = lines.slice(1, -1);
+                const code = codeLines.join('\n');
+                convertedBlocks.push(`<pre><code class="language-${language || 'text'}">${escapeHtml(code)}</code></pre>`);
+            } else {
+                // Indented code block
+                const code = lines.map(line => line.replace(/^    /, '')).join('\n');
+                convertedBlocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
+            }
+            continue;
+        }
+        
+        // Check if it's a table (pipe-separated)
+        if (lines.length >= 2 && lines.every(line => line.includes('|'))) {
+            const headerRow = lines[0].split('|').map(cell => cell.trim()).filter(cell => cell);
+            const separatorRow = lines[1];
+            
+            // Check if second row is separator (contains - and |)
+            if (separatorRow.includes('-') && separatorRow.includes('|')) {
+                const dataRows = lines.slice(2);
+                
+                let tableHtml = '<table><thead><tr>';
+                headerRow.forEach(header => {
+                    tableHtml += `<th>${processInlineMarkdown(header)}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+                
+                dataRows.forEach(row => {
+                    const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+                    if (cells.length > 0) {
+                        tableHtml += '<tr>';
+                        cells.forEach(cell => {
+                            tableHtml += `<td>${processInlineMarkdown(cell)}</td>`;
+                        });
+                        tableHtml += '</tr>';
+                    }
+                });
+                
+                tableHtml += '</tbody></table>';
+                convertedBlocks.push(tableHtml);
+                continue;
+            }
+        }
+        
         // Check if it's a blockquote block
         if (lines.every(line => line.trim().startsWith('>'))) {
             const quoteLines = lines.map(line => line.replace(/^>\s*/, ''));
             const sourceMatch = quoteLines[quoteLines.length - 1].match(/^— (.+)$/);
             
             if (sourceMatch) {
-                const quote = quoteLines.slice(0, -1).join(' ');
-                const source = sourceMatch[1];
+                const quote = processInlineMarkdown(quoteLines.slice(0, -1).join(' '));
+                const source = processInlineMarkdown(sourceMatch[1]);
                 convertedBlocks.push(`<blockquote><p>${quote}</p><p class="source">${source}</p></blockquote>`);
             } else {
-                const quote = quoteLines.join(' ');
+                const quote = processInlineMarkdown(quoteLines.join(' '));
                 convertedBlocks.push(`<blockquote><p>${quote}</p></blockquote>`);
             }
             continue;
         }
         
-        // Check if it's an unordered list block
-        if (lines.every(line => line.trim().startsWith('-'))) {
-            const items = lines.map(line => `<li>${line.replace(/^-\s*/, '')}</li>`).join('');
+        // Check if it's an unordered list block (- or * or +)
+        if (lines.every(line => line.trim().match(/^[-*+]\s/))) {
+            const items = lines.map(line => {
+                const content = line.replace(/^[-*+]\s*/, '');
+                return `<li>${processInlineMarkdown(content)}</li>`;
+            }).join('');
             convertedBlocks.push(`<ul>${items}</ul>`);
             continue;
         }
         
         // Check if it's an ordered list block
         if (lines.every(line => line.trim().match(/^\d+\.\s/))) {
-            const items = lines.map(line => `<li>${line.replace(/^\d+\.\s*/, '')}</li>`).join('');
+            const items = lines.map(line => {
+                const content = line.replace(/^\d+\.\s*/, '');
+                return `<li>${processInlineMarkdown(content)}</li>`;
+            }).join('');
             convertedBlocks.push(`<ol>${items}</ol>`);
             continue;
         }
@@ -202,27 +258,79 @@ function convertMarkdownToHtml(markdown) {
             const h2Match = line.match(/^## (.+)$/);
             const h3Match = line.match(/^### (.+)$/);
             const h4Match = line.match(/^#### (.+)$/);
+            const h5Match = line.match(/^##### (.+)$/);
+            const h6Match = line.match(/^###### (.+)$/);
             
-            if (h4Match) {
-                convertedBlocks.push(`<h4>${h4Match[1]}</h4>`);
+            if (h6Match) {
+                convertedBlocks.push(`<h6>${processInlineMarkdown(h6Match[1])}</h6>`);
+                continue;
+            } else if (h5Match) {
+                convertedBlocks.push(`<h5>${processInlineMarkdown(h5Match[1])}</h5>`);
+                continue;
+            } else if (h4Match) {
+                convertedBlocks.push(`<h4>${processInlineMarkdown(h4Match[1])}</h4>`);
                 continue;
             } else if (h3Match) {
-                convertedBlocks.push(`<h3>${h3Match[1]}</h3>`);
+                convertedBlocks.push(`<h3>${processInlineMarkdown(h3Match[1])}</h3>`);
                 continue;
             } else if (h2Match) {
-                convertedBlocks.push(`<h2>${h2Match[1]}</h2>`);
+                convertedBlocks.push(`<h2>${processInlineMarkdown(h2Match[1])}</h2>`);
                 continue;
             } else if (h1Match) {
-                convertedBlocks.push(`<h1>${h1Match[1]}</h1>`);
+                convertedBlocks.push(`<h1>${processInlineMarkdown(h1Match[1])}</h1>`);
                 continue;
             }
         }
         
+        // Check if it's a horizontal rule
+        if (lines.length === 1 && lines[0].trim().match(/^(-{3,}|\*{3,}|_{3,})$/)) {
+            convertedBlocks.push('<hr>');
+            continue;
+        }
+        
         // Regular paragraph
-        convertedBlocks.push(`<p>${block.replace(/\n/g, ' ')}</p>`);
+        const paragraphContent = block.replace(/\n/g, ' ');
+        convertedBlocks.push(`<p>${processInlineMarkdown(paragraphContent)}</p>`);
     }
     
     return convertedBlocks.join('\n\n');
+}
+
+// Helper function to process inline markdown (bold, italic, links, code, etc.)
+function processInlineMarkdown(text) {
+    // Escape HTML first
+    let processed = escapeHtml(text);
+    
+    // Process inline code first (so it's not affected by other formatting)
+    processed = processed.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Process links [text](url)
+    processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    
+    // Process bold **text** or __text__
+    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    processed = processed.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+    
+    // Process italic *text* or _text_ (but not inside words)
+    processed = processed.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>');
+    processed = processed.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
+    
+    // Process strikethrough ~~text~~
+    processed = processed.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    
+    return processed;
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = { innerHTML: '' };
+    div.textContent = text;
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function generateEntryPages(journal) {
@@ -317,6 +425,88 @@ function generateEntryPages(journal) {
         .entry-content {
             color: var(--skills-color);
             line-height: 1.6;
+        }
+        
+        /* Code styling */
+        .entry-content pre {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        [data-theme="dark"] .entry-content pre {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .entry-content code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        [data-theme="dark"] .entry-content code {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .entry-content pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        /* Table styling */
+        .entry-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            overflow-x: auto;
+            display: block;
+            white-space: nowrap;
+        }
+        
+        .entry-content table thead {
+            display: table-header-group;
+        }
+        
+        .entry-content table tbody {
+            display: table-row-group;
+        }
+        
+        .entry-content table tr {
+            display: table-row;
+        }
+        
+        .entry-content table th,
+        .entry-content table td {
+            display: table-cell;
+            border: 1px solid var(--skills-color);
+            padding: 0.5rem;
+            text-align: left;
+            white-space: normal;
+        }
+        
+        .entry-content table th {
+            background: rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        
+        [data-theme="dark"] .entry-content table th {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Links */
+        .entry-content a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        
+        .entry-content a:hover {
+            border-bottom-color: var(--accent-color);
         }
         
         blockquote p.source {
@@ -540,6 +730,88 @@ function generateJournalHtml(journal) {
         .post-content {
             margin-bottom: 20px;
             color: var(--skills-color);
+        }
+        
+        /* Code styling */
+        .post-content pre {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        [data-theme="dark"] .post-content pre {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .post-content code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9em;
+        }
+        
+        [data-theme="dark"] .post-content code {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .post-content pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        /* Table styling */
+        .post-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            overflow-x: auto;
+            display: block;
+            white-space: nowrap;
+        }
+        
+        .post-content table thead {
+            display: table-header-group;
+        }
+        
+        .post-content table tbody {
+            display: table-row-group;
+        }
+        
+        .post-content table tr {
+            display: table-row;
+        }
+        
+        .post-content table th,
+        .post-content table td {
+            display: table-cell;
+            border: 1px solid var(--skills-color);
+            padding: 0.5rem;
+            text-align: left;
+            white-space: normal;
+        }
+        
+        .post-content table th {
+            background: rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        
+        [data-theme="dark"] .post-content table th {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Links */
+        .post-content a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        
+        .post-content a:hover {
+            border-bottom-color: var(--accent-color);
         }
         
         blockquote p.source {
