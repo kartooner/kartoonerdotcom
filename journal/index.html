@@ -6,14 +6,13 @@
     <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
-    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
 
-        body {
+        .journal-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         h1, h2, h3 {
@@ -141,6 +140,25 @@
             margin-bottom: 2.5rem; /* 40px */
         }
 
+        .view-all {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid var(--tertiary-color) !important;
+            border-radius: 4px !important;
+            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
+            background: none !important;
+            display: inline-block !important;
+        }
+
+        .view-all:hover {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-2px) !important;
+            background: none !important;
+        }
+
         .home-link {
             text-align: center;
             margin-top: 15px;
@@ -181,17 +199,25 @@
     </style>
 </head>
 <body>
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <h1 class="logo">Journal</h1>
-    <hr class="divider" />
+    <div class="journal-container">
+        <h1 class="logo animate-fade-in animate-header">Journal</h1>
+        <hr class="divider animate-fade-in animate-header" />
 
-    
-    <div class="post">
+        
+        <div class="post animate-fade-in animate-main">
         <div class="post-date"><a href="/entry/the-pole-on-the-corner.html">#</a> &bull; Aug 29, 2025</div>
         <h2 class="post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h2>
         <div class="post-byline">by Erik Sagen</div>
@@ -226,9 +252,9 @@
         </div>
     </div>
 
-    <hr class="divider" />
+    <hr class="divider animate-fade-in animate-main" />
 
-    <div class="post">
+    <div class="post animate-fade-in animate-main">
         <div class="post-date"><a href="/entry/here-we-go-again.html">#</a> &bull; Aug 28, 2025</div>
         <h2 class="post-title"><a href="/entry/here-we-go-again.html">Here we go again</a></h2>
         <div class="post-byline">by Erik Sagen</div>
@@ -255,16 +281,16 @@
 
     <hr class="divider" />
 
-    <div class="recent-posts">
+    <div class="recent-posts animate-fade-in animate-footer">
         
         <footer>
-            <wa-button href="/archive.html" class="view-all">View all posts</wa-button>
+            <a href="/archive.html" class="view-all">View all posts</a>
         </footer>
     </div>
+    </div>
     
-    <div class="home-link">
-        <a href="/">← Back to Home</a>
-        <div class="feed-links">
+    <div class="feed-links animate-fade-in animate-footer">
+        <div style="text-align: center; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
             <a href="/journal-atom.xml">Atom Feed</a>
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>

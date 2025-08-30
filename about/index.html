@@ -30,6 +30,13 @@
     <!-- Skip Navigation Link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about" class="current" aria-current="page">About</a>
+        <a href="/journal">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle Button -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
@@ -38,18 +45,16 @@
 
 <div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
-        <div class="home-link">
-            <a href="/">← Back to Home</a>
-        </div>
         
         <h1>About me</h1>
         
         <div class="about-intro">
             <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive />
-            <p>Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories, and putting on plays and magic shows with my cousins. I was glued to cartoons like Darkwing Duck and TMNT, later shows like Reboot and Boy Meets World. Movies like Back to the Future, Jurassic Park, and Who Framed Roger Rabbit shaped a lot of how I see stories.</p>
+            <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories and putting on plays with my cousins. I was glued to cartoons like Darkwing Duck and TMNT and movies like Back to the Future and Jurassic Park shaped a lot of how I see the world and the stories within it.</p>
+            <p>These days I lead design teams for work. Outside of that I'm usually drawing, writing, watching movies, playing games, or tinkering with projects like this one. Most nights it's simple: a book or time with my family.</p>
+            <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when there's no clear answer; asking why helps me see a little better and shape what I'm working on.</p>
+            <p>By the way, if you're curious about what I'm consuming here's a sampling:</p>
         </div>
-
-        <hr class="divider">
 
         <!-- File > Open Recent Section -->
         <aside id="link-share" class="link-share-section animate-fade-in" role="complementary">
@@ -92,10 +97,8 @@
             </div>
         </aside>
 
-        <hr class="divider">
-
         <!-- Currently Reading Section -->
-        <aside id="reading" class="reading-section animate-fade-in" role="complementary">
+        <aside id="reading" class="reading-section currently-reading animate-fade-in" role="complementary">
             <h2>Currently reading</h2>
             <div class="book-entry">
                 <img
@@ -111,8 +114,6 @@
             </div>
         </aside>
 
-        <hr class="divider">
-
         <!-- Movies Section -->
         <section class="recently-watched animate-fade-in">
             <h2>Movies I've recently watched <span aria-hidden="true">🍿</span></h2>
@@ -127,7 +128,7 @@
         <!-- Contact Section -->
         <section class="contact-section animate-fade-in">
             <h2>Let's connect</h2>
-            <nav class="contact-links" aria-label="Contact and social links">
+            <nav class="site-navigation" aria-label="Contact and social links">
                 <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Follow me on Threads, opens in a new tab">
                     Threads
                 </a>

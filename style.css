@@ -83,7 +83,7 @@ body {
     font-size: 16px;
     background-color: var(--bg-color);
     line-height: 1.5;
-    padding: 2em;
+    padding: 0 0 2em 0;
 }
 
 .container,
@@ -94,6 +94,7 @@ main {
 .container {
     max-width: 900px;
     margin: 0 auto;
+    padding: 0 2em;
 }
 
 /* ==========================================
@@ -111,7 +112,7 @@ h4 {
 }
 
 h1 {
-    font-size: 3.6rem;
+    font-size: 4.2rem;
     margin-bottom: 0;
 }
 
@@ -220,7 +221,100 @@ a:focus-visible {
 }
 
 /* ==========================================
-   Site Navigation
+   Persistent Navigation & Decorative Elements
+   ========================================== */
+
+.persistent-nav {
+    text-align: center;
+    margin: 0 0 3rem 0;
+    padding: 1.5rem 0;
+    background: rgba(var(--accent-rgb), 0.03);
+    backdrop-filter: blur(10px);
+    width: 100%;
+}
+
+/* Doodle lines for index page */
+.doodle-lines {
+    position: relative;
+    width: 100%;
+    height: 84px;
+    margin: -2rem 0 -1rem 0;
+    overflow: hidden;
+}
+
+.doodle-svg {
+    width: 100%;
+    height: 100%;
+    shape-rendering: geometricPrecision;
+    image-rendering: optimizeQuality;
+}
+
+.doodle-line {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform-origin: center;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: geometricPrecision;
+}
+
+/* Doodle line animations for desktop */
+@media (min-width: 769px) {
+    .line-1 {
+        animation: vertical-float-1 8s ease-in-out infinite;
+    }
+
+    .line-2 {
+        animation: vertical-float-2 6s ease-in-out infinite;
+    }
+
+    .line-3 {
+        animation: vertical-float-3 10s ease-in-out infinite;
+    }
+}
+
+.persistent-nav a {
+    margin: 0 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.persistent-nav a:hover,
+.persistent-nav a:focus {
+    color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.persistent-nav a.current {
+    color: var(--accent-color);
+    font-weight: 600;
+    position: relative;
+}
+
+.persistent-nav a.current::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: -5%;
+    width: 110%;
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='%2364ffda' stroke-width='6' fill='none' opacity='0.7' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    transform: rotate(-1deg);
+    z-index: -1;
+}
+
+/* Light theme variation */
+[data-theme="light"] .persistent-nav a.current::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='%230066cc' stroke-width='6' fill='none' opacity='0.7' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* ==========================================
+   Site Navigation (Bottom Links)
    ========================================== */
 
 .site-navigation {
@@ -651,34 +745,42 @@ header {
    ========================================== */
 
 .about-intro {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    flex-wrap: wrap;
     margin-bottom: 2rem;
+}
+
+.intro-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+    color: var(--heading-color);
+}
+
+.currently-reading {
+    background: rgba(var(--accent-rgb), 0.08);
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 2rem 0;
 }
 
 .author-headshot {
     width: 120px;
-    height: auto;
-    border-radius: 8px;
+    height: 120px;
+    border-radius: 50%;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
-    float: left;
-    margin-right: 1.5rem;
-    margin-bottom: 1rem;
+    display: block;
+    margin: 0 auto 2rem auto;
+    object-fit: cover;
 }
 
 @media (max-width: 768px) {
     .about-intro {
-        flex-direction: column;
-        align-items: center;
         text-align: center;
     }
     
     .author-headshot {
-        float: none;
-        margin-right: 0;
+        margin: 0 auto 2rem auto;
     }
 }
 
@@ -686,7 +788,7 @@ header {
     display: flex;
     align-items: flex-start;
     gap: 1.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .book-cover {
@@ -695,6 +797,11 @@ header {
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
+}
+
+.book-info {
+    flex: 1;
+    min-width: 0;
 }
 
 .book-info h3 {
@@ -708,7 +815,7 @@ header {
     color: var(--text-color);
     font-size: 1rem;
     line-height: 1.6;
-    margin: 0 auto;
+    margin: 0 0 1rem 0;
 }
 
 /* ==========================================
@@ -902,46 +1009,6 @@ footer p {
     opacity: 1;
 }
 
-/* ==========================================
-   Decorative Elements
-   ========================================== */
-
-.doodle-lines {
-    position: relative;
-    width: 100%;
-    height: 84px;
-    overflow: hidden;
-}
-
-.doodle-svg {
-    width: 100%;
-    height: 100%;
-    shape-rendering: geometricPrecision;
-    image-rendering: optimizeQuality;
-}
-
-.doodle-line {
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transform-origin: center;
-    vector-effect: non-scaling-stroke;
-    shape-rendering: geometricPrecision;
-}
-
-/* Doodle line animations for desktop */
-@media (min-width: 769px) {
-    .line-1 {
-        animation: vertical-float-1 8s ease-in-out infinite;
-    }
-
-    .line-2 {
-        animation: vertical-float-2 6s ease-in-out infinite;
-    }
-
-    .line-3 {
-        animation: vertical-float-3 10s ease-in-out infinite;
-    }
-}
 
 /* ==========================================
    Animations
@@ -1041,7 +1108,7 @@ footer p {
 @media (max-width: 600px) {
     body {
         font-size: 14px;
-        padding: 1.5em;
+        padding: 0 0 1.5em 0;
     }
 
     h1 {

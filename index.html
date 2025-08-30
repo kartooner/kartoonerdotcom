@@ -32,6 +32,22 @@
     </script>
 </head>
 <body>
+<!-- Skip Navigation Link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Persistent Navigation -->
+<nav class="persistent-nav" aria-label="Site navigation">
+    <a href="/" class="current" aria-current="page">Home</a>
+    <a href="/about">About</a>
+    <a href="/journal">Journal</a>
+</nav>
+
+<!-- Theme Toggle -->
+<button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+    <span class="theme-toggle-icon">🌙</span>
+    <span class="theme-toggle-text">Dark mode</span>
+</button>
+
 <div class="doodle-lines" role="img" aria-label="Decorative hand-drawn lines">
   <svg class="doodle-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
     <path class="doodle-line line-1" 
@@ -45,16 +61,8 @@
           fill="none" stroke="#ec4899" stroke-width="2.2" opacity="0.5"/>
   </svg>
 </div>
-<div class="container">
-    <!-- Skip Navigation Link -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
 
+<div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
 
         <h1><span lang="no">Hei Der</span>, I'm Erik Sagen</h1>
@@ -125,13 +133,7 @@
 
         <hr class="divider">
 
-        <nav class="site-navigation" aria-label="Site navigation and contact links">
-            <a href="/about" aria-label="Learn more about me">
-                About
-            </a>
-            <a href="/journal" aria-label="Read my personal journal">
-                Journal
-            </a>
+        <nav class="site-navigation" aria-label="Connect and social links">
             <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Visit my Bluesky profile, opens in a new tab">
                 Bluesky
             </a>

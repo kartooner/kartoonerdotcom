@@ -6,13 +6,12 @@
     <title>Here we go again - Erik's Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
-    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
-        body {
+        .entry-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         h1, h2, h3 {
@@ -94,6 +93,25 @@
             justify-content: center;
             margin: 40px 0;
         }
+
+        .view-all {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid var(--tertiary-color) !important;
+            border-radius: 4px !important;
+            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
+            background: none !important;
+            display: inline-block !important;
+        }
+
+        .view-all:hover {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-2px) !important;
+            background: none !important;
+        }
         
         .home-link {
             text-align: center;
@@ -132,14 +150,25 @@
     </style>
 </head>
 <body>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="entry-header">
-        <h1 class="logo"><a href="/journal">← Back to Journal</a></h1>
+    <div class="entry-container">
+
+    <div class="entry-header" id="main-content">
         <div class="entry-date">Aug 28, 2025</div>
         <h1 class="entry-title">Here we go again</h1>
         <div class="entry-byline">by Erik Sagen</div>
@@ -170,14 +199,13 @@
     <hr class="divider" />
     
     <div class="navigation">
-        <wa-button href="/archive.html" class="view-all">View all posts</wa-button>
+        <a href="/archive.html" class="view-all">View all posts</a>
     </div>
-    <div class="home-link">
-        <a href="/">← Back to Home</a>
-        <div class="feed-links">
-            <a href="/journal-atom.xml">Atom Feed</a>
-            <a href="/journal-feed.xml">RSS Feed</a>
-        </div>
+    <div class="feed-links">
+        <a href="/journal-atom.xml">Atom Feed</a>
+        <a href="/journal-feed.xml">RSS Feed</a>
+    </div>
+    
     </div>
     
     <script src="/theme-toggle.js"></script>
