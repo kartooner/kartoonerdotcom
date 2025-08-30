@@ -356,10 +356,11 @@ function generateEntryPages(journal) {
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
-        body {
+        .entry-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         h1, h2, h3 {
@@ -523,27 +524,30 @@ function generateEntryPages(journal) {
             justify-content: center;
             margin: 40px 0;
         }
-        
-        .home-link {
-            text-align: center;
-            margin-top: 20px;
+
+        .view-all {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid var(--tertiary-color) !important;
+            border-radius: 4px !important;
+            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
+            background: none !important;
+            display: inline-block !important;
         }
-        
-        .home-link a {
-            color: var(--skills-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-        
-        .home-link a:hover {
-            color: var(--accent-color);
+
+        .view-all:hover {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-2px) !important;
+            background: none !important;
         }
 
         .feed-links {
             text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -561,38 +565,51 @@ function generateEntryPages(journal) {
     </style>
 </head>
 <body>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="entry-header">
-        <h1 class="logo"><a href="/journal">← Back to Journal</a></h1>
-        <div class="entry-date">${formatDate(entry.date)}</div>
-        <h1 class="entry-title">${entry.title}</h1>
-        <div class="entry-byline">by Erik Sagen</div>
-        ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
-    </div>
-
-    <div class="entry">
-        <div class="entry-content">
-            ${imagesHtml}
-            ${contentHtml}
+    <div class="entry-container">
+        <div class="entry-header" id="main-content">
+            <div class="entry-date">${formatDate(entry.date)}</div>
+            <h1 class="entry-title">${entry.title}</h1>
+            <div class="entry-byline">by Erik Sagen</div>
+            ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
         </div>
-    </div>
 
-    <hr class="divider" />
-    
-    <div class="navigation">
-        <wa-button href="/archive.html" class="view-all">View all posts</wa-button>
-    </div>
-    <div class="home-link">
-        <a href="/">← Back to Home</a>
+        <div class="entry">
+            <div class="entry-content">
+                ${imagesHtml}
+                ${contentHtml}
+            </div>
+        </div>
+
+        <hr class="divider" />
+        
+        <div class="navigation">
+            <a href="/archive.html" class="view-all">View all posts</a>
+        </div>
+        
         <div class="feed-links">
             <a href="/journal-atom.xml">Atom Feed</a>
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
+        
+        <footer class="animate-fade-in animate-footer">
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        </footer>
     </div>
     
     <script src="/theme-toggle.js"></script>
@@ -661,10 +678,11 @@ function generateJournalHtml(journal) {
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
 
-        body {
+        .journal-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         h1, h2, h3 {
@@ -874,28 +892,29 @@ function generateJournalHtml(journal) {
             margin-bottom: 2.5rem; /* 40px */
         }
 
-        .home-link {
-            text-align: center;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .view-all {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid var(--tertiary-color) !important;
+            border-radius: 4px !important;
+            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
+            background: none !important;
+            display: inline-block !important;
         }
 
-        .home-link a {
-            color: var(--skills-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-
-        .home-link a:hover {
-            color: var(--accent-color);
+        .view-all:hover {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-2px) !important;
+            background: none !important;
         }
 
         .feed-links {
             text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -914,32 +933,42 @@ function generateJournalHtml(journal) {
     </style>
 </head>
 <body>
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <h1 class="logo">Journal</h1>
-    <hr class="divider" />
+    <div class="journal-container">
+        <h1 class="logo animate-fade-in animate-header">Journal</h1>
+        <hr class="divider animate-fade-in animate-header" />
 
-    ${postsHtml}
+        ${postsHtml}
 
-    <hr class="divider" />
+        <hr class="divider animate-fade-in animate-main" />
 
-    <div class="recent-posts">
-        ${recentEntries}
-        <footer>
-            <wa-button href="/archive.html" class="view-all">View all posts</wa-button>
-        </footer>
-    </div>
-    
-    <div class="home-link">
-        <a href="/">← Back to Home</a>
-        <div class="feed-links">
+        <div class="recent-posts animate-fade-in animate-footer">
+            ${recentEntries}
+            <footer>
+                <a href="/archive.html" class="view-all">View all posts</a>
+            </footer>
+        </div>
+        
+        <div class="feed-links animate-fade-in animate-footer">
             <a href="/journal-atom.xml">Atom Feed</a>
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
+        
+        <footer class="animate-fade-in animate-footer">
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        </footer>
     </div>
     
     <script src="/theme-toggle.js"></script>
@@ -993,10 +1022,11 @@ function generateArchiveHtml(journal) {
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
-        body {
+        .archive-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         .logo {
@@ -1063,22 +1093,35 @@ function generateArchiveHtml(journal) {
     <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <main id="main-content" tabindex="-1">
-        <h1 class="logo">Archive</h1>
-        <hr class="divider" />
+    <div class="archive-container">
+        <main id="main-content" tabindex="-1">
+            <h1 class="logo">Archive</h1>
+            <hr class="divider" />
 
-        ${yearsHtml}
+            ${yearsHtml}
 
-        <div style="text-align: center; margin: 40px 0;">
-            <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
-        </div>
-    </main>
+            <div style="text-align: center; margin: 40px 0;">
+                <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
+            </div>
+            
+            <footer class="animate-fade-in animate-footer">
+                <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            </footer>
+        </main>
+    </div>
     
     <script src="/theme-toggle.js"></script>
     <script src="/progressive-images.js"></script>

@@ -9,10 +9,11 @@
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
-        body {
+        .entry-container {
             background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
+            padding: 0 2em;
         }
         
         h1, h2, h3 {
@@ -176,27 +177,30 @@
             justify-content: center;
             margin: 40px 0;
         }
-        
-        .home-link {
-            text-align: center;
-            margin-top: 20px;
+
+        .view-all {
+            color: var(--text-color) !important;
+            text-decoration: none !important;
+            padding: 0.5rem 1rem !important;
+            border: 1px solid var(--tertiary-color) !important;
+            border-radius: 4px !important;
+            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
+            background: none !important;
+            display: inline-block !important;
         }
-        
-        .home-link a {
-            color: var(--skills-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-        
-        .home-link a:hover {
-            color: var(--accent-color);
+
+        .view-all:hover {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            transform: translateY(-2px) !important;
+            background: none !important;
         }
 
         .feed-links {
             text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -214,24 +218,34 @@
     </style>
 </head>
 <body>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal" class="current" aria-current="page">Journal</a>
+    </nav>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
         <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="entry-header">
-        <h1 class="logo"><a href="/journal">← Back to Journal</a></h1>
-        <div class="entry-date">Aug 28, 2025</div>
-        <h1 class="entry-title">Here we go again</h1>
-        <div class="entry-byline">by Erik Sagen</div>
-        
-    </div>
+    <div class="entry-container">
+        <div class="entry-header" id="main-content">
+            <div class="entry-date">Aug 28, 2025</div>
+            <h1 class="entry-title">Here we go again</h1>
+            <div class="entry-byline">by Erik Sagen</div>
+            
+        </div>
 
-    <div class="entry">
-        <div class="entry-content">
-            <img src="/img/sketch-of-kcd2.JPG" alt="Journal entry image" data-progressive loading="lazy" />
-            <p>It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
+        <div class="entry">
+            <div class="entry-content">
+                <img src="/img/sketch-of-kcd2.JPG" alt="Journal entry image" data-progressive loading="lazy" />
+                <p>It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
 
 <p>Life filled up. Work, kids, projects, distractions-a-plenty; stacking until writing slides further down the list. I&#39;d open a blank page, stare at it, then close it again.</p>
 
@@ -246,20 +260,23 @@
 <p>Comments aren&#39;t working here yet, so if you feel like responding, we&#39;ll end up doing the ironic thing and take that back to the social platform.</p>
 
 <p>P.S. If you&#39;re reading this, thanks for showing up. Feels good to show up again, too.</p>
+            </div>
         </div>
-    </div>
 
-    <hr class="divider" />
-    
-    <div class="navigation">
-        <wa-button href="/archive.html" class="view-all">View all posts</wa-button>
-    </div>
-    <div class="home-link">
-        <a href="/">← Back to Home</a>
+        <hr class="divider" />
+        
+        <div class="navigation">
+            <a href="/archive.html" class="view-all">View all posts</a>
+        </div>
+        
         <div class="feed-links">
             <a href="/journal-atom.xml">Atom Feed</a>
             <a href="/journal-feed.xml">RSS Feed</a>
         </div>
+        
+        <footer class="animate-fade-in animate-footer">
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        </footer>
     </div>
     
     <script src="/theme-toggle.js"></script>
