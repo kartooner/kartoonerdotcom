@@ -787,7 +787,6 @@ header {
 
 @media (max-width: 768px) {
     .about-intro {
-        text-align: center;
         margin-top: 2rem;
     }
     
