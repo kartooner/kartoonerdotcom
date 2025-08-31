@@ -240,7 +240,7 @@ a:focus-visible {
     margin: 0 0 3rem 0;
     padding: 1.5rem 0;
     background: rgba(var(--accent-rgb), 0.015);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(2px);
     width: 100%;
 }
 
