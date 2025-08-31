@@ -103,9 +103,43 @@ main {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 2em;
+}
+
+/* Main content responsive grid */
+.main-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+}
+
+/* Two-column layout for larger screens */
+@media (min-width: 1024px) {
+    .main-content-grid {
+        grid-template-columns: 45% 55%;
+        gap: 4rem;
+    }
+    
+    .left-column {
+        padding-right: 1rem;
+    }
+    
+    .right-column {
+        padding-left: 0.5rem;
+    }
+    
+    /* Tighten up the main heading line-height on desktop */
+    h1 {
+        line-height: 1;
+    }
+    
+    /* Line break for desktop only */
+    .desktop-break::before {
+        content: '\A';
+        white-space: pre;
+    }
 }
 
 /* ==========================================
@@ -249,7 +283,7 @@ a:focus-visible {
     position: relative;
     width: 100%;
     height: 84px;
-    margin: -2rem 0 -1rem 0;
+    margin: -3.5rem 0 1rem 0;
     overflow: hidden;
 }
 
@@ -1112,6 +1146,17 @@ footer p {
 
     .line-3 {
         stroke-width: 1.7; 
+    }
+    
+    /* Reset to single column on tablets and smaller */
+    .main-content-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .left-column,
+    .right-column {
+        padding: 0;
     }
 }
 
