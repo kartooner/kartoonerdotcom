@@ -9,7 +9,8 @@ const STORIES_DIR = path.join(__dirname, 'stories');
 const ENTRY_DIR = path.join(__dirname, 'entry');
 const JOURNAL_DIR = path.join(__dirname, 'journal');
 const JOURNAL_HTML = path.join(JOURNAL_DIR, 'index.html');
-const ARCHIVE_HTML = path.join(__dirname, 'archive.html');
+const ARCHIVE_DIR = path.join(__dirname, 'archive');
+const ARCHIVE_HTML = path.join(ARCHIVE_DIR, 'index.html');
 
 function loadJournal() {
     try {
@@ -357,7 +358,6 @@ function generateEntryPages(journal) {
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         .entry-container {
-            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
             padding: 0 2em;
@@ -583,9 +583,8 @@ function generateEntryPages(journal) {
 
     <div class="entry-container">
         <div class="entry-header" id="main-content">
-            <div class="entry-date">${formatDate(entry.date)}</div>
+            <div class="entry-date"># &bull; ${formatDate(entry.date)} &bull; Erik Sagen</div>
             <h1 class="entry-title">${entry.title}</h1>
-            <div class="entry-byline">by Erik Sagen</div>
             ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
         </div>
 
@@ -599,7 +598,7 @@ function generateEntryPages(journal) {
         <hr class="divider" />
         
         <div class="navigation">
-            <a href="/archive.html" class="view-all">View all posts</a>
+            <a href="/archive" class="view-all">View all posts</a>
         </div>
         
         <div class="feed-links">
@@ -679,7 +678,6 @@ function generateJournalHtml(journal) {
     <style>
 
         .journal-container {
-            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
             padding: 0 2em;
@@ -957,7 +955,7 @@ function generateJournalHtml(journal) {
         <div class="recent-posts animate-fade-in animate-footer">
             ${recentEntries}
             <footer>
-                <a href="/archive.html" class="view-all">View all posts</a>
+                <a href="/archive" class="view-all">View all posts</a>
             </footer>
         </div>
         
@@ -985,6 +983,11 @@ function generateJournalHtml(journal) {
 }
 
 function generateArchiveHtml(journal) {
+    // Create archive directory if it doesn't exist
+    if (!fs.existsSync(ARCHIVE_DIR)) {
+        fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
+    }
+
     const entriesByYear = journal.entries
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .reduce((acc, entry) => {
@@ -1000,7 +1003,7 @@ function generateArchiveHtml(journal) {
             const entriesHtml = entries.map(entry => `
             <div class="archive-entry">
                 <div class="entry-date">${formatDate(entry.date)}</div>
-                <h3><a href="entry/${entry.id}.html">${entry.title}</a></h3>
+                <h3><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
                 <p class="entry-excerpt">${entry.excerpt}</p>
             </div>`).join('');
 
@@ -1018,12 +1021,11 @@ function generateArchiveHtml(journal) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archive - Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         .archive-container {
-            background: var(--bg-color);
             max-width: 800px;
             margin: 0 auto;
             padding: 0 2em;
@@ -1113,9 +1115,6 @@ function generateArchiveHtml(journal) {
 
             ${yearsHtml}
 
-            <div style="text-align: center; margin: 40px 0;">
-                <a href="journal" style="color: var(--accent-color); text-decoration: none;">← Back to Journal</a>
-            </div>
             
             <footer class="animate-fade-in animate-footer">
                 <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
