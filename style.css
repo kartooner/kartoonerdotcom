@@ -631,6 +631,13 @@ header {
     overflow-wrap: break-word;
 }
 
+.philosophy-column p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    font-style: italic;
+    color: var(--skills-color);
+}
+
 /* Column Headers with Icons */
 .experience-column h3, .skills-column h3, .philosophy-column h3 {
     position: relative;
@@ -692,9 +699,10 @@ header {
 .skills-list li {
     position: relative;
     padding-left: 1.25rem;
-    margin-bottom: 0.625rem;
-    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.05rem;
     font-weight: 300;
+    line-height: 1.4;
     color: var(--skills-color);
 }
 
