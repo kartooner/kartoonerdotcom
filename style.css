@@ -118,7 +118,7 @@ main {
 /* Two-column layout for larger screens */
 @media (min-width: 1024px) {
     .main-content-grid {
-        grid-template-columns: 45% 55%;
+        grid-template-columns: 45% 50%;
         gap: 4rem;
     }
     
@@ -128,6 +128,8 @@ main {
     
     .right-column {
         padding-left: 0.5rem;
+        max-width: 100%;
+        overflow: hidden;
     }
     
     /* Tighten up the main heading line-height on desktop */
@@ -624,7 +626,9 @@ header {
 .skills-column,
 .experience-column,
 .philosophy-column {
-    width: 48%;
+    width: 47%;
+    max-width: 47%;
+    overflow-wrap: break-word;
 }
 
 /* Column Headers with Icons */
