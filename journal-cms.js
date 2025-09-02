@@ -654,9 +654,8 @@ function generateJournalHtml(journal) {
 
         return `
     <div class="post">
-        <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${formatDate(entry.date)}</div>
+        <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${formatDate(entry.date)} &bull; Erik Sagen</div>
         <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
-        <div class="post-byline">by Erik Sagen</div>
         ${subtitleHtml}
         <div class="post-content">
             ${imagesHtml}
@@ -728,12 +727,6 @@ function generateJournalHtml(journal) {
             transform: translateX(5px);
         }
 
-        .post-byline {
-            color: var(--skills-color);
-            font-size: 1rem;
-            margin-bottom: 15px;
-            font-style: italic;
-        }
         
         .post-subtitle {
             font-family: var(--font-secondary);
