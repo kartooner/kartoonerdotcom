@@ -1199,6 +1199,20 @@ footer p {
     .right-column {
         padding: 0;
     }
+    
+    /* Stack skills and experience sections on mobile */
+    .skills-container,
+    .experience-philosophy-container {
+        flex-direction: column;
+    }
+    
+    .skills-column,
+    .experience-column,
+    .philosophy-column {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1.5rem;
+    }
 }
 
 /* Mobile screens */
@@ -1229,13 +1243,7 @@ footer p {
         display: none;
     }
 
-    /* Layout adjustments */
-    .skills-column,
-    .experience-column,
-    .philosophy-column {
-        width: 100%;
-        margin-bottom: 1.25rem;
-    }
+    /* Layout adjustments - column styles now handled in tablet breakpoint */
 
     /* Component adjustments */
     .top-skills-box {
