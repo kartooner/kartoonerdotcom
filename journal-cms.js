@@ -402,9 +402,9 @@ function generateEntryPages(journal) {
 
         .entry-title {
             font-family: var(--font-secondary);
-            font-size: 2.8rem;
-            line-height: 1em;
-            margin-bottom: 10px;
+            font-size: 3.2rem;
+            line-height: 0.95;
+            margin-bottom: 15px;
             color: var(--heading-color);
         }
         
