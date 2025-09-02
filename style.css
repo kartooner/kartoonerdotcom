@@ -132,9 +132,9 @@ main {
         overflow: hidden;
     }
     
-    /* Tighten up the main heading line-height on desktop */
+    /* Reset main heading line-height on desktop */
     h1 {
-        line-height: 0.85;
+        line-height: 1;
     }
     
     /* Line break for desktop only */
