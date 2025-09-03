@@ -290,6 +290,10 @@ a:focus-visible {
     width: 100%;
 }
 
+[data-theme="light"] .persistent-nav {
+    background: rgba(128, 128, 128, 0.35);
+}
+
 /* Doodle lines for index page */
 .doodle-lines {
     position: relative;
