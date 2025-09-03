@@ -25,6 +25,16 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: "Cartridge Regular";
+    src:
+        url(assets/Cartridge-Regular.woff2) format("woff2"),
+        url("assets/Cartridge-Regular.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ==========================================
    CSS Custom Properties (Variables)
    ========================================== */
@@ -33,6 +43,7 @@
     /* Fonts */
     --font-main: "Manrope", sans-serif;
     --font-secondary: "Cartridge Rough", sans-serif;
+    --font-display: "Cartridge Regular", sans-serif;
 }
 
 /* Dark theme (default) */
@@ -132,8 +143,8 @@ main {
         overflow: hidden;
     }
     
-    /* Reset main heading line-height on desktop */
-    h1 {
+    /* Reset main heading line-height on desktop when broken up */
+    h1:has(.desktop-break) {
         line-height: 1;
     }
     
@@ -275,8 +286,7 @@ a:focus-visible {
     text-align: center;
     margin: 0 0 3rem 0;
     padding: 1.5rem 0;
-    background: rgba(var(--accent-rgb), 0.015);
-    backdrop-filter: blur(2px);
+    background: rgba(20, 20, 90, 0.35);
     width: 100%;
 }
 
@@ -517,6 +527,7 @@ header {
    ========================================== */
 
 .bio {
+    font-family: "Cartridge Regular", var(--font-display), var(--font-secondary), sans-serif;
     font-size: 1.1rem;
     line-height: 1.5;
     margin-bottom: 2rem;

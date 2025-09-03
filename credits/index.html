@@ -3,73 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credits - Erik Sagen</title>
-    <meta name="description" content="Credits and acknowledgments for the technology, resources, and people that make this website possible.">
+    <title>Special Thanks - Erik Sagen</title>
+    <meta name="description" content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="/style.css">
     
     <!-- Open Graph meta tags -->
-    <meta property="og:title" content="Credits - Erik Sagen">
-    <meta property="og:description" content="Credits and acknowledgments for the technology, resources, and people that make this website possible.">
+    <meta property="og:title" content="Special Thanks - Erik Sagen">
+    <meta property="og:description" content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
     <meta property="og:image" content="https://kartooner.com/img/og-preview.png">
     <meta property="og:url" content="https://kartooner.com/credits">
     <meta property="og:type" content="website">
     
     <!-- Twitter Card meta tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Credits - Erik Sagen">
-    <meta name="twitter:description" content="Credits and acknowledgments for the technology, resources, and people that make this website possible.">
+    <meta name="twitter:title" content="Special Thanks - Erik Sagen">
+    <meta name="twitter:description" content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
     <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
     
     <style>
-        /* Credits page specific container width override */
+        /* Movie poster credits styling */
         .container {
-            max-width: 800px;
+            max-width: 1200px;
         }
         
-        .credits-section {
-            margin-bottom: 2rem;
+        .credits-poster {
+            background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-secondary, var(--bg-color)) 100%);
+            min-height: 80vh;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
         }
         
-        .credits-section h2 {
-            font-size: 1.5rem;
+        .credits-poster::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(var(--accent-rgb, 130, 87, 229), 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb, 130, 87, 229), 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .poster-title {
+            text-align: center;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .credits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 3rem;
+        }
+        
+        .credit-block {
+            background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
+            border-radius: 8px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .credit-block:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(var(--accent-rgb, 130, 87, 229), 0.2);
+        }
+        
+        .credit-category {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .credit-category::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: var(--accent-color);
+        }
+        
+        .credit-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .credit-item {
             margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .credit-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .credit-name {
+            font-weight: 600;
             color: var(--text-color);
         }
         
-        .credits-section h3 {
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-            margin-top: 1.5rem;
+        .credit-role {
+            font-size: 0.85rem;
             color: var(--text-color-secondary);
+            font-style: italic;
         }
         
-        .credits-section p, 
-        .credits-section ul {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-        }
-        
-        .credits-section ul {
-            padding-left: 1.5rem;
-        }
-        
-        .credits-section li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .credits-section a {
-            color: var(--accent-color);
-            text-decoration: underline;
-            text-underline-offset: 0.2em;
+        .credit-link {
+            color: var(--text-color);
             transition: opacity 0.2s ease;
         }
         
-        .credits-section a:hover {
+        .credit-link:hover {
             opacity: 0.8;
+        }
+        
+        .poster-footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            border-top: 1px solid rgba(var(--text-rgb, 255, 255, 255), 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .poster-footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        .poster-footer a:hover {
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .credits-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .credits-poster {
+                padding: 2rem 1rem;
+            }
+            
+            .poster-title {
+                margin-bottom: 2rem;
+            }
         }
     </style>
 </head>
@@ -93,50 +199,117 @@
 <div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
         
-        <h1>Credits</h1>
-        
-        <div class="credits-section">
-            <p>This site is a labor of love, built with care and attention to detail. Here's what makes it all possible:</p>
+        <div class="credits-poster">
+            <h1 class="poster-title">Special Thanks</h1>
             
-            <h2>Tech & Code</h2>
-            <p>This website is hand-crafted using:</p>
-            <ul>
-                <li><strong>HTML5, CSS3, and JavaScript</strong> - The core foundation, written from scratch</li>
-                <li><strong>Progressive web app features</strong> - For better performance and user experience</li>
-                <li><strong>Semantic HTML</strong> - For accessibility and better structure</li>
-            </ul>
+            <div class="credits-grid">
+                
+                <div class="credit-block">
+                    <div class="credit-category">Tech & Code</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name">HTML5, CSS3 & JavaScript</div>
+                            <div class="credit-role">Core foundation, written from scratch</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">Progressive web app</div>
+                            <div class="credit-role">Enhanced performance & user experience</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">Semantic HTML</div>
+                            <div class="credit-role">Accessibility & structure</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="credit-block">
+                    <div class="credit-category">Typography</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://fonts.google.com/specimen/Manrope" target="_blank" rel="noopener noreferrer" class="credit-link">Manrope</a></div>
+                            <div class="credit-role">Primary typeface for body text and headings</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://simplebits.shop/products/cartridge" target="_blank" rel="noopener noreferrer" class="credit-link">Cartridge</a></div>
+                            <div class="credit-role">Display font by <a href="https://www.simplebits.com" target="_blank" rel="noopener noreferrer" class="credit-link">Dan Cedarholm</a></div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="credit-block">
+                    <div class="credit-category">Services & APIs</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://letterboxd.com/" target="_blank" rel="noopener noreferrer" class="credit-link">Letterboxd</a></div>
+                            <div class="credit-role">Movie reviews and watchlist integration</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">Weather API</div>
+                            <div class="credit-role">Local weather information in footer</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://github.com/" target="_blank" rel="noopener noreferrer" class="credit-link">GitHub</a></div>
+                            <div class="credit-role">Code hosting and version control</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="credit-block">
+                    <div class="credit-category">Web Standards</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://webri.ng/webring/cssjoy/" target="_blank" rel="noopener noreferrer" class="credit-link">CSS Joy Webring</a></div>
+                            <div class="credit-role">Connecting with fellow web creators</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://www.w3.org/" target="_blank" rel="noopener noreferrer" class="credit-link">W3C Standards</a></div>
+                            <div class="credit-role">Accessibility & semantic markup best practices</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">Progressive enhancement</div>
+                            <div class="credit-role">Building for everyone, every device</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="credit-block">
+                    <div class="credit-category">Honorary Mentions</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://www.pexels.com/" target="_blank" rel="noopener noreferrer" class="credit-link">Pexels</a></div>
+                            <div class="credit-role">High-quality stock photography</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">My family</div>
+                            <div class="credit-role">Patience while I tinker with code</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">Fellow developers</div>
+                            <div class="credit-role">Sharing knowledge & inspiring better work</div>
+                        </li>
+                        <li class="credit-item">
+                            <div class="credit-name">You</div>
+                            <div class="credit-role">For visiting and reading this</div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="credit-block">
+                    <div class="credit-category">Open Source</div>
+                    <ul class="credit-list">
+                        <li class="credit-item">
+                            <div class="credit-name"><a href="https://github.com/kartooner/kartoonerdotcom" target="_blank" rel="noopener noreferrer" class="credit-link">Available on GitHub</a></div>
+                            <div class="credit-role">MIT License - explore, learn, use in your projects</div>
+                        </li>
+                    </ul>
+                </div>
+                
+            </div>
             
-            <h2>Typography</h2>
-            <p>The fonts that give this site its personality:</p>
-            <ul>
-                <li><strong><a href="https://fonts.google.com/specimen/Manrope" target="_blank" rel="noopener noreferrer">Manrope</a></strong> - Primary typeface for body text and headings</li>
-                <li><strong><a href="https://simplebits.shop/products/cartridge" target="_blank" rel="noopener noreferrer">Cartridge</a></strong> - Display font by <a href="https://www.simplebits.com" target="_blank" rel="noopener noreferrer">Dan Cedarholm</a>, used for special emphasis and character</li>
-            </ul>
-            
-            <h2>Services & APIs</h2>
-            <ul>
-                <li><strong><a href="https://letterboxd.com/" target="_blank" rel="noopener noreferrer">Letterboxd</a></strong> - Movie reviews and watchlist integration</li>
-                <li><strong>Weather API</strong> - Local weather information in the footer</li>
-                <li><strong><a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a></strong> - Code hosting and version control</li>
-            </ul>
-            
-            <h2>Community & Web Standards</h2>
-            <ul>
-                <li><strong><a href="https://webri.ng/webring/cssjoy/" target="_blank" rel="noopener noreferrer">CSS Joy Webring</a></strong> - Connecting with fellow web creators who share a passion for thoughtful design</li>
-                <li><strong><a href="https://www.w3.org/" target="_blank" rel="noopener noreferrer">W3C Web Standards</a></strong> - Following best practices for accessibility and semantic markup</li>
-                <li><strong>Progressive enhancement</strong> - Building for everyone, regardless of their device or connection</li>
-            </ul>
-            
-            <h2>Special Thanks</h2>
-            <ul>
-                <li><strong><a href="https://www.pexels.com/" target="_blank" rel="noopener noreferrer">Pexels</a></strong> - High-quality stock photography</li>
-                <li><strong>My family</strong> - For their patience while I tinker with code</li>
-                <li><strong>Fellow designers and developers</strong> - Who share knowledge and inspire better work</li>
-                <li><strong>You</strong> - For visiting and reading this</li>
-            </ul>
-            
-            <h2>Open Source</h2>
-            <p>This website's code is <a href="https://github.com/kartooner/kartoonerdotcom" target="_blank" rel="noopener noreferrer">available on GitHub</a> under the MIT License. Feel free to explore, learn from it, or use parts of it in your own projects.</p>
+            <div class="poster-footer">
+                This site is a labor of love, built with care and attention to detail.<br>
+                Here's what makes it all possible.
+            </div>
         </div>
 
         <hr class="divider">
@@ -162,12 +335,10 @@
     </main>
 
     <footer class="animate-fade-in animate-footer">
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/credits">Credits</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/credits">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
 
-<script src="../weather.js"></script>
-<script src="../theme-toggle.js"></script>
-<script src="../progressive-images.js"></script>
+<script src="/app.min.js"></script>
 </body>
 </html>

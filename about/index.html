@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
     <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     
@@ -178,12 +178,11 @@
     </main>
 
     <footer class="animate-fade-in animate-footer">
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/credits">Credits</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/credits">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
 
-<script src="../weather.js"></script>
-<script src="../letterboxd.js"></script>
+<script src="/letterboxd.js"></script>
 <script>
 (function () {
   function escapeHtml(text) {
@@ -229,7 +228,7 @@
   }
 
   function init() {
-    fetch('../content.json', { cache: 'no-cache' })
+    fetch('/content.json', { cache: 'no-cache' })
       .then(function (response) { return response.json(); })
       .then(function (data) {
         try { renderRecentLinks(data.recentLinks); } catch (e) { /* no-op */ }
@@ -245,7 +244,6 @@
   }
 })();
 </script>
-<script src="../theme-toggle.js"></script>
-<script src="../progressive-images.js"></script>
+<script src="/app.min.js"></script>
 </body>
 </html>
