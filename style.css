@@ -515,29 +515,17 @@ header {
     margin-bottom: 1em;
 }
 
-.profile-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.profile-image {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 2rem;
-}
-
-.profile-title {
-    flex: 1;
-}
 
 .divider {
     border: 0;
     height: 1px;
     background-color: var(--tertiary-color);
     margin: 2rem 0;
+}
+
+/* Light theme divider enhancement for better contrast */
+[data-theme="light"] .divider {
+    background-color: rgba(45, 55, 72, 0.2);
 }
 
 /* ==========================================
@@ -596,12 +584,6 @@ header {
     opacity: 1;
 }
 
-/* Desktop-only mouse following effect */
-@media (min-width: 769px) {
-    .top-skills-box.mouse-following::before {
-        transition: none;
-    }
-}
 
 /* Light theme specific sheen effect */
 [data-theme="light"] .top-skills-box::before {
@@ -872,15 +854,6 @@ header {
     object-fit: cover;
 }
 
-@media (max-width: 768px) {
-    .about-intro {
-        margin-top: 2rem;
-    }
-    
-    .author-headshot {
-        margin: 0 auto 2rem auto;
-    }
-}
 
 .book-entry {
     display: flex;
@@ -1242,6 +1215,15 @@ footer p {
         max-width: 100%;
         margin-bottom: 1.5rem;
     }
+
+    /* About page specific styles */
+    .about-intro {
+        margin-top: 2rem;
+    }
+    
+    .author-headshot {
+        margin: 0 auto 2rem auto;
+    }
 }
 
 /* Mobile screens */
@@ -1312,8 +1294,6 @@ footer p {
     .book-info h3 {
         font-size: 1.1rem;
     }
-}
-
 
     .book-info p {
         font-size: 1rem;
