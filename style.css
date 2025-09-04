@@ -291,7 +291,21 @@ a:focus-visible {
 }
 
 [data-theme="light"] .persistent-nav {
-    background: rgba(128, 128, 128, 0.35);
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-color) 100%);
+    position: relative;
+}
+
+[data-theme="light"] .persistent-nav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(var(--accent-rgb), 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb), 0.08) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 /* Doodle lines for index page */
@@ -501,29 +515,17 @@ header {
     margin-bottom: 1em;
 }
 
-.profile-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.profile-image {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 2rem;
-}
-
-.profile-title {
-    flex: 1;
-}
 
 .divider {
     border: 0;
     height: 1px;
     background-color: var(--tertiary-color);
     margin: 2rem 0;
+}
+
+/* Light theme divider enhancement for better contrast */
+[data-theme="light"] .divider {
+    background-color: rgba(45, 55, 72, 0.2);
 }
 
 /* ==========================================
@@ -582,12 +584,6 @@ header {
     opacity: 1;
 }
 
-/* Desktop-only mouse following effect */
-@media (min-width: 769px) {
-    .top-skills-box.mouse-following::before {
-        transition: none;
-    }
-}
 
 /* Light theme specific sheen effect */
 [data-theme="light"] .top-skills-box::before {
@@ -858,15 +854,6 @@ header {
     object-fit: cover;
 }
 
-@media (max-width: 768px) {
-    .about-intro {
-        margin-top: 2rem;
-    }
-    
-    .author-headshot {
-        margin: 0 auto 2rem auto;
-    }
-}
 
 .book-entry {
     display: flex;
@@ -1228,6 +1215,15 @@ footer p {
         max-width: 100%;
         margin-bottom: 1.5rem;
     }
+
+    /* About page specific styles */
+    .about-intro {
+        margin-top: 2rem;
+    }
+    
+    .author-headshot {
+        margin: 0 auto 2rem auto;
+    }
 }
 
 /* Mobile screens */
@@ -1298,8 +1294,6 @@ footer p {
     .book-info h3 {
         font-size: 1.1rem;
     }
-}
-
 
     .book-info p {
         font-size: 1rem;
