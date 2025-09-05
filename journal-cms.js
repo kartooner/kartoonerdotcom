@@ -619,8 +619,7 @@ function generateEntryPages(journal) {
         </footer>
     </div>
     
-    <script src="/theme-toggle.js"></script>
-    <script src="/progressive-images.js"></script>
+    <script src="/app.min.js"></script>
 </body>
 </html>`;
 
@@ -737,14 +736,13 @@ function generateJournalHtml(journal) {
         .post-subtitle {
             font-family: var(--font-secondary);
             font-size: 1.2rem;
-            color: var(--skills-color);
-            font-style: italic;
+            color: var(--text-color);
             margin-bottom: 20px;
         }
 
         .post-content {
             margin-bottom: 20px;
-            color: var(--skills-color);
+            color: var(--text-color);
         }
         
         /* Code styling */
@@ -968,8 +966,7 @@ function generateJournalHtml(journal) {
         </footer>
     </div>
     
-    <script src="/theme-toggle.js"></script>
-    <script src="/progressive-images.js"></script>
+    <script src="/app.min.js"></script>
 </body>
 </html>`;
 
@@ -1120,8 +1117,7 @@ function generateArchiveHtml(journal) {
         </main>
     </div>
     
-    <script src="/theme-toggle.js"></script>
-    <script src="/progressive-images.js"></script>
+    <script src="/app.min.js"></script>
 </body>
 </html>`;
 
