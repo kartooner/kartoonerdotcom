@@ -149,11 +149,21 @@ function syncStoriesFromFolder() {
 }
 
 function formatDate(date) {
-    return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    }).format(new Date(date));
+    try {
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+            console.warn(`Invalid date value: ${date}`);
+            return 'Invalid Date';
+        }
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).format(parsedDate);
+    } catch (error) {
+        console.warn(`Error formatting date ${date}:`, error.message);
+        return 'Invalid Date';
+    }
 }
 
 function convertMarkdownToHtml(markdown) {
@@ -354,8 +364,6 @@ function generateEntryPages(journal) {
     <title>${entry.title} - Erik's Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
-    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         .entry-container {
             max-width: 800px;
@@ -672,8 +680,6 @@ function generateJournalHtml(journal) {
     <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
-    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
 
         .journal-container {
@@ -984,7 +990,8 @@ function generateArchiveHtml(journal) {
     const entriesByYear = journal.entries
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .reduce((acc, entry) => {
-            const year = new Date(entry.date).getFullYear();
+            const entryDate = new Date(entry.date);
+            const year = entryDate.getTime() ? entryDate.getFullYear() : new Date().getFullYear();
             if (!acc[year]) acc[year] = [];
             acc[year].push(entry);
             return acc;
@@ -1015,8 +1022,6 @@ function generateArchiveHtml(journal) {
     <title>Archive - Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/themes/default.css" />
-    <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.2/dist/webawesome.loader.js"></script>
     <style>
         .archive-container {
             max-width: 800px;
@@ -1140,7 +1145,7 @@ function generateRSSFeed(journal) {
       <title><![CDATA[${entry.title}]]></title>
       <link>https://kartooner.com/entry/${entry.id}.html</link>
       <guid>https://kartooner.com/entry/${entry.id}.html</guid>
-      <pubDate>${new Date(entry.date).toUTCString()}</pubDate>
+      <pubDate>${new Date(entry.date).getTime() ? new Date(entry.date).toUTCString() : new Date().toUTCString()}</pubDate>
       <description><![CDATA[${entry.excerpt}]]></description>
       <content:encoded><![CDATA[${contentHtml}]]></content:encoded>
     </item>`;
@@ -1177,8 +1182,8 @@ function generateAtomFeed(journal) {
         return `
   <entry xml:lang="en">
     <title><![CDATA[${entry.title}]]></title>
-    <published>${new Date(entry.date).toISOString()}</published>
-    <updated>${new Date(entry.date).toISOString()}</updated>
+    <published>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</published>
+    <updated>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</updated>
     <link href="https://kartooner.com/entry/${entry.id}.html" type="text/html" />
     <id>https://kartooner.com/entry/${entry.id}.html</id>
     <author>

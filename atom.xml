@@ -5,13 +5,13 @@
   <link href="https://kartooner.com/atom.xml" rel="self" type="application/atom+xml" />
   <link href="https://kartooner.com" />
   <generator uri="https://kartooner.com">Erik's Site</generator>
-  <updated>2025-08-25T21:03:02Z</updated>
+  <updated>2025-09-05T15:43:08.421Z</updated>
   <id>https://kartooner.com/atom.xml</id>
   
   <entry xml:lang="en">
-    <title><![CDATA[How to draw a Space Invader]]></title>
-    <published>2025-08-25T21:03:02Z</published>
-    <updated>2025-08-25T21:03:02Z</updated>
+    <title><![CDATA[How to Draw a Space Invader]]></title>
+    <published>2025-09-05T15:43:08.421Z</published>
+    <updated>2025-09-05T15:43:08.421Z</updated>
     <link href="https://muffinman.io/blog/invaders/" type="text/html" />
     <id>https://muffinman.io/blog/invaders/</id>
     <author>
@@ -20,11 +20,10 @@
     <category term="Recent Links" />
     <content type="html"><![CDATA[A fun, interactive article about how to draw a Space Invader using simple shapes.]]></content>
   </entry>
-  
   <entry xml:lang="en">
     <title><![CDATA[The Management Skill Nobody Talks About]]></title>
-    <published>2025-08-25T21:03:02Z</published>
-    <updated>2025-08-25T21:03:02Z</updated>
+    <published>2025-09-05T15:43:08.421Z</published>
+    <updated>2025-09-05T15:43:08.421Z</updated>
     <link href="https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/" type="text/html" />
     <id>https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/</id>
     <author>
@@ -33,11 +32,10 @@
     <category term="Recent Links" />
     <content type="html"><![CDATA[Managing people and expectations is hard.]]></content>
   </entry>
-  
   <entry xml:lang="en">
     <title><![CDATA[Example Archived Link]]></title>
-    <published>2024-12-15T10:30:00Z</published>
-    <updated>2024-12-15T10:30:00Z</updated>
+    <published>2024-12-15T10:30:00.000Z</published>
+    <updated>2024-12-15T10:30:00.000Z</updated>
     <link href="https://example.com/archived-article" type="text/html" />
     <id>https://example.com/archived-article-2024-12</id>
     <author>
@@ -46,11 +44,10 @@
     <category term="Archives - 2024-12" />
     <content type="html"><![CDATA[This is an example of how archived links work.]]></content>
   </entry>
-  
   <entry xml:lang="en">
     <title><![CDATA[Another Old Link]]></title>
-    <published>2024-11-01T04:00:00Z</published>
-    <updated>2024-11-01T04:00:00Z</updated>
+    <published>2024-11-01T04:00:00.000Z</published>
+    <updated>2024-11-01T04:00:00.000Z</updated>
     <link href="https://example.com/old-article" type="text/html" />
     <id>https://example.com/old-article-2024-11</id>
     <author>
@@ -59,11 +56,10 @@
     <category term="Archives - 2024-11" />
     <content type="html"><![CDATA[An older link from November 2024.]]></content>
   </entry>
-  
   <entry xml:lang="en">
     <title><![CDATA[Currently Reading: Big Dumb Eyes]]></title>
-    <published>2025-08-25T21:03:02Z</published>
-    <updated>2025-08-25T21:03:02Z</updated>
+    <published>2025-09-05T15:43:08.421Z</published>
+    <updated>2025-09-05T15:43:08.421Z</updated>
     <link href="https://a.co/d/89esz80" type="text/html" />
     <id>currently-reading-big-dumb-eyes</id>
     <author>
