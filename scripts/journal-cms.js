@@ -642,16 +642,14 @@ function generateJournalHtml(journal) {
 
     const entries = journal.entries
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 3); // Show latest 3 posts
+        .slice(0, 1); // Show only the latest post in full
 
     const recentEntries = journal.entries
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(3, 7) // Next 4 posts for archive section
+        .slice(1, 4) // Next 3 posts for compact list
         .map(entry => `
-        <div class="recent-post">
-            <a href="/entry/${entry.id}.html">${entry.title}</a>
-            <p class="post-date">${formatDate(entry.date)}</p>
-        </div>`).join('');
+                <dt><a href="/entry/${entry.id}.html">${entry.title}</a></dt>
+                <dd>${entry.subtitle || entry.excerpt}</dd>`).join('\n                ');
 
     const postsHtml = entries.map(entry => {
         const contentHtml = convertMarkdownToHtml(entry.content);
@@ -844,13 +842,24 @@ function generateJournalHtml(journal) {
         .recent-posts h3 {
             font-size: 2rem;
             color: var(--accent-color);
+            margin-bottom: 30px;
         }
 
-        .recent-post {
-            margin-bottom: 20px;
+        .post-list {
+            margin: 0;
+            padding: 0;
         }
-
-        .recent-post a {
+        
+        .post-list dt {
+            margin-bottom: 8px;
+            margin-top: 25px;
+        }
+        
+        .post-list dt:first-child {
+            margin-top: 0;
+        }
+        
+        .post-list dt a {
             font-size: 1.4rem;
             color: var(--text-color);
             text-decoration: none;
@@ -858,27 +867,38 @@ function generateJournalHtml(journal) {
             padding-left: 0;
             transition: all 0.3s ease;
             display: inline-block;
+            font-weight: 500;
         }
 
-        .recent-post a:hover,
-        .recent-post a:focus {
+        .post-list dt a:hover,
+        .post-list dt a:focus {
             color: var(--accent-color);
-            padding-left: 10px;
+            padding-left: 15px;
             text-decoration: none;
         }
 
-        .recent-post a::before {
+        .post-list dt a::before {
             content: "→";
             position: absolute;
             left: -20px;
             opacity: 0;
             transition: all 0.3s ease;
+            color: var(--accent-color);
         }
 
-        .recent-post a:hover::before,
-        .recent-post a:focus::before {
+        .post-list dt a:hover::before,
+        .post-list dt a:focus::before {
             left: 0;
             opacity: 1;
+        }
+        
+        .post-list dd {
+            color: var(--skills-color);
+            margin-left: 0;
+            margin-bottom: 0;
+            font-size: 1rem;
+            line-height: 1.4;
+            font-style: italic;
         }
 
         footer {
@@ -951,7 +971,12 @@ function generateJournalHtml(journal) {
         <hr class="divider animate-fade-in animate-main" />
 
         <div class="recent-posts animate-fade-in animate-footer">
-            ${recentEntries}
+            <h3>Recent posts</h3>
+            
+            <dl class="post-list">
+                ${recentEntries}
+            </dl>
+            
             <footer>
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
