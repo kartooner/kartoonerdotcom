@@ -408,7 +408,10 @@ a:focus-visible {
    ========================================== */
 
 .site-navigation {
-    margin-bottom: 1rem;
+    background: rgba(var(--accent-rgb), 0.08);
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 2rem 0;
 }
 
 .site-navigation a {
