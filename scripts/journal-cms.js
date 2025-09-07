@@ -435,7 +435,7 @@ function generateEntryPages(journal) {
             line-height: 1.6;
         }
         
-        .entry-content p:first-child {
+        .entry-content p:first-of-type {
             font-size: 1.2rem;
             line-height: 1.5;
         }
@@ -747,7 +747,7 @@ function generateJournalHtml(journal) {
             color: var(--text-color);
         }
         
-        .post-content p:first-child {
+        .post-content p:first-of-type {
             font-size: 1.2rem;
             line-height: 1.5;
         }
