@@ -580,7 +580,7 @@ function generateEntryPages(journal) {
         <a href="/">Home</a>
         <a href="/about">About</a>
         <a href="/journal" class="current" aria-current="page">Journal</a>
-        <a href="/contact/">Contact</a>
+        <a href="/contact">Contact</a>
     </nav>
     
     <!-- Theme Toggle -->
@@ -933,7 +933,7 @@ function generateJournalHtml(journal) {
         <a href="/">Home</a>
         <a href="/about">About</a>
         <a href="/journal" class="current" aria-current="page">Journal</a>
-        <a href="/contact/">Contact</a>
+        <a href="/contact">Contact</a>
     </nav>
     
     <!-- Theme Toggle -->
@@ -1096,7 +1096,7 @@ function generateArchiveHtml(journal) {
         <a href="/">Home</a>
         <a href="/about">About</a>
         <a href="/journal" class="current" aria-current="page">Journal</a>
-        <a href="/contact/">Contact</a>
+        <a href="/contact">Contact</a>
     </nav>
     
     <!-- Theme Toggle -->
