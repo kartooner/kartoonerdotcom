@@ -863,8 +863,6 @@ function generateJournalHtml(journal) {
             font-size: 1.4rem;
             color: var(--text-color);
             text-decoration: none;
-            position: relative;
-            padding-left: 0;
             transition: all 0.3s ease;
             display: inline-block;
             font-weight: 500;
@@ -873,38 +871,22 @@ function generateJournalHtml(journal) {
         .post-list dt a:hover,
         .post-list dt a:focus {
             color: var(--accent-color);
-            padding-left: 15px;
             text-decoration: none;
-        }
-
-        .post-list dt a::before {
-            content: "→";
-            position: absolute;
-            left: -20px;
-            opacity: 0;
-            transition: all 0.3s ease;
-            color: var(--accent-color);
-        }
-
-        .post-list dt a:hover::before,
-        .post-list dt a:focus::before {
-            left: 0;
-            opacity: 1;
         }
         
         .post-list dd {
-            color: var(--skills-color);
+            color: var(--text-color);
             margin-left: 0;
             margin-bottom: 0;
             font-size: 1rem;
             line-height: 1.4;
-            font-style: italic;
         }
 
         footer {
             display: flex;
             justify-content: center;
             margin-bottom: 2.5rem; /* 40px */
+            margin-top: 40px;
         }
 
         .view-all {
