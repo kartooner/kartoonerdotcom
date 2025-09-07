@@ -45,8 +45,8 @@
             border-radius: 4px;
             font-family: var(--font-main);
             font-size: 1rem;
-            background: var(--background-color);
-            color: var(--text-color);
+            background: #ffffff;
+            color: #333333;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
             box-sizing: border-box;
         }
@@ -64,7 +64,7 @@
         }
 
         .submit-button {
-            background: var(--accent-color);
+            background: #6366f1;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -91,7 +91,7 @@
 
         .contact-intro h1 {
             font-family: var(--font-secondary);
-            font-size: 3rem;
+            font-size: 5rem;
             color: var(--accent-color);
             margin-bottom: 1rem;
         }
@@ -101,6 +101,28 @@
             font-size: 1.1rem;
             max-width: 600px;
             margin: 0 auto;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 128, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 128, 0, 0.3);
+            margin: 2rem 0;
+        }
+
+        .success-message h2 {
+            font-family: var(--font-secondary);
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .success-message p {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
         }
     </style>
 </head>
@@ -113,7 +135,7 @@
         <a href="/">Home</a>
         <a href="/about">About</a>
         <a href="/journal">Journal</a>
-        <a href="/Contact" class="current" aria-current="page">Contact</a>
+        <a href="/contact" class="current" aria-current="page">Contact</a>
     </nav>
 
     <!-- Theme Toggle -->
@@ -129,7 +151,8 @@
                 <p>Have a project in mind? Want to collaborate? Or just want to say hello? I'd love to hear from you.</p>
             </div>
 
-            <form class="contact-form" method="POST" id="contactForm">
+            <form class="contact-form" method="POST" id="contactForm" netlify>
+                <input type="hidden" name="form-name" value="contact" />
                 <div class="form-group">
                     <label for="name">Name *</label>
                     <input type="text" id="name" name="name" required>
@@ -147,6 +170,12 @@
 
                 <button type="submit" class="submit-button">Send Message</button>
             </form>
+
+            <div id="successMessage" class="success-message" style="display: none;">
+                <h2>Message has been sent across the tubes.</h2>
+                <p>Once I have my staff of robotic eels read it, I'll be sure to get back to you.</p>
+                <button onclick="resetForm()" class="submit-button">Send another message</button>
+            </div>
         </main>
 
         <footer class="animate-fade-in animate-footer">
@@ -156,32 +185,40 @@
 
     <script src="/app.min.js"></script>
     <script>
-        // Obfuscate email to prevent spam bots
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('contactForm');
-            const emailParts = ['erik', 'kartooner', 'com'];
-            const email = emailParts[0] + '@' + emailParts[1] + '.' + emailParts[2];
+            const successMessage = document.getElementById('successMessage');
             
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
                 const formData = new FormData(form);
-                const name = formData.get('name');
-                const userEmail = formData.get('email');
-                const message = formData.get('message');
                 
-                // Create mailto link
-                const subject = encodeURIComponent('Contact from ' + name);
-                const body = encodeURIComponent(
-                    'Name: ' + name + '\n' +
-                    'Email: ' + userEmail + '\n\n' +
-                    'Message:\n' + message
-                );
-                
-                const mailtoLink = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
-                window.location.href = mailtoLink;
+                // Submit to Netlify
+                fetch('/', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(formData).toString()
+                })
+                .then(() => {
+                    // Show success message
+                    form.style.display = 'none';
+                    successMessage.style.display = 'block';
+                })
+                .catch((error) => {
+                    alert('Oops! There was an error sending your message. Please try again.');
+                });
             });
         });
+
+        function resetForm() {
+            const form = document.getElementById('contactForm');
+            const successMessage = document.getElementById('successMessage');
+            
+            form.reset();
+            form.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
     </script>
 </body>
 </html>
