@@ -1,2 +1,3 @@
 - Always run a local server using Node.
 - Use sentence casing on UI labels where it makes sense.
+- Update build scripts when we make navigation changes.
