@@ -14,7 +14,7 @@ function escapeXml(text) {
 function generateAtomFeed() {
     try {
         // Read content.json
-        const contentPath = path.join(__dirname, 'content.json');
+        const contentPath = path.join(__dirname, '..', 'content.json');
         const content = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
         
         const siteUrl = 'https://kartooner.com';
@@ -107,7 +107,7 @@ function generateAtomFeed() {
 </feed>`;
         
         // Write Atom file
-        const atomPath = path.join(__dirname, 'atom.xml');
+        const atomPath = path.join(__dirname, '..', 'atom.xml');
         fs.writeFileSync(atomPath, atomContent, 'utf8');
         
         console.log('Atom feed generated successfully at atom.xml');

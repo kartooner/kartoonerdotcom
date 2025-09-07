@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const contentFilePath = path.join(__dirname, 'content.json');
+const contentFilePath = path.join(__dirname, '..', 'content.json');
 
 console.log('🔍 Watching content.json for changes...');
 console.log('📁 File path:', contentFilePath);
@@ -16,7 +16,7 @@ function debounceRegeneration() {
     regenerationTimeout = setTimeout(() => {
         try {
             console.log('📝 Content changed, regenerating RSS feed...');
-            execSync('node generate-rss.js', { stdio: 'inherit' });
+            execSync('node js/generate-rss.js', { stdio: 'inherit' });
             console.log('✅ RSS feed updated successfully!\n');
         } catch (error) {
             console.error('❌ Error regenerating RSS feed:', error.message);

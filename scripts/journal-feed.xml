@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Erik's Journal</title>
+    <link>https://kartooner.com</link>
+    <description>Personal journal entries from Erik Sagen</description>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 07 Sep 2025 16:42:47 GMT</lastBuildDate>
+    <generator>Journal CMS</generator>
+    
+  </channel>
+</rss>

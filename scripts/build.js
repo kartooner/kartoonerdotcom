@@ -9,7 +9,7 @@ console.log('📝 Building Journal...\n');
 try {
     // Sync stories from /stories folder
     console.log('🔄 Syncing stories from /stories folder...');
-    execSync('node journal-cms.js sync', { stdio: 'inherit' });
+    execSync('node scripts/journal-cms.js sync', { stdio: 'inherit' });
     
     console.log('\n✅ Build complete! Files generated:');
     console.log('   - journal/index.html');

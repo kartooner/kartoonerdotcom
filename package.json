@@ -4,14 +4,14 @@
   "description": "Erik's personal journal site with flat file CMS",
   "main": "index.js",
   "scripts": {
-    "build": "node blog.js build",
-    "status": "node build-js.js",
-    "dev": "node blog.js watch",
-    "watch": "node blog.js watch",
+    "build": "node scripts/blog.js build",
+    "status": "node scripts/build-js.js",
+    "dev": "node scripts/blog.js watch",
+    "watch": "node scripts/blog.js watch",
     "serve": "node -e \"const http = require('http'); const fs = require('fs'); const path = require('path'); const server = http.createServer((req, res) => { let filePath = '.' + req.url; if (filePath === './') filePath = './index.html'; if (filePath === './journal') filePath = './journal/index.html'; if (filePath === './about') filePath = './about/index.html'; if (filePath === './thanks') filePath = './thanks/index.html'; if (filePath === './archive') filePath = './archive/index.html'; const extname = String(path.extname(filePath)).toLowerCase(); const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpg', '.gif': 'image/gif', '.wav': 'audio/wav', '.mp4': 'video/mp4', '.woff': 'application/font-woff', '.ttf': 'application/font-ttf', '.eot': 'application/vnd.ms-fontobject', '.otf': 'application/font-otf', '.svg': 'application/image/svg+xml' }; const contentType = mimeTypes[extname] || 'application/octet-stream'; fs.readFile(filePath, (error, content) => { if (error) { if(error.code == 'ENOENT') { res.writeHead(404); res.end('File not found'); } else { res.writeHead(500); res.end('Server error'); } } else { res.writeHead(200, { 'Content-Type': contentType }); res.end(content, 'utf-8'); } }); }); server.listen(8000); console.log('Server running at http://localhost:8000/');\"",
-    "sync": "node blog.js sync",
-    "add": "node journal-cms.js add",
-    "list": "node journal-cms.js list",
+    "sync": "node scripts/blog.js sync",
+    "add": "node scripts/journal-cms.js add",
+    "list": "node scripts/journal-cms.js list",
     "optimize-images": "bash convert-to-webp.sh"
   },
   "repository": {

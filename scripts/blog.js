@@ -10,9 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const JOURNAL_FILE = path.join(__dirname, 'journal-entries.json');
-const STORIES_DIR = path.join(__dirname, 'stories');
-const CONTENT_FILE = path.join(__dirname, 'content.json');
+const JOURNAL_FILE = path.join(__dirname, '..', 'journal-entries.json');
+const STORIES_DIR = path.join(__dirname, '..', 'stories');
+const CONTENT_FILE = path.join(__dirname, '..', 'content.json');
 
 class BlogBuilder {
     constructor() {
@@ -33,9 +33,9 @@ class BlogBuilder {
             this.syncStories();
             
             // Step 2: Generate RSS feeds if generate-rss.js exists
-            if (fs.existsSync('generate-rss.js')) {
+            if (fs.existsSync('js/generate-rss.js')) {
                 console.log('📡 Generating RSS feeds...');
-                execSync('node generate-rss.js', { stdio: 'pipe' });
+                execSync('node js/generate-rss.js', { stdio: 'pipe' });
             }
             
             console.log('✅ Build complete!');
@@ -100,7 +100,7 @@ class BlogBuilder {
     // Sync stories (simplified version of journal-cms.js sync)
     syncStories() {
         // Use existing journal-cms.js sync functionality
-        execSync('node journal-cms.js sync', { stdio: 'pipe' });
+        execSync('node scripts/journal-cms.js sync', { stdio: 'pipe' });
     }
 
     // Quick sync without full build
