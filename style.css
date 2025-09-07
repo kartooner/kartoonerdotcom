@@ -44,6 +44,35 @@
     --font-main: "Manrope", sans-serif;
     --font-secondary: "Cartridge Rough", sans-serif;
     --font-display: "Cartridge Regular", sans-serif;
+    
+    /* Typography Scale - Based on 1.2 (minor third) ratio */
+    --text-xs: 0.75rem;      /* 12px */
+    --text-sm: 0.875rem;     /* 14px */
+    --text-base: 1rem;       /* 16px */
+    --text-lg: 1.2rem;       /* 19.2px */
+    --text-xl: 1.44rem;      /* 23px */
+    --text-2xl: 1.728rem;    /* 27.6px */
+    --text-3xl: 2.074rem;    /* 33.2px */
+    --text-4xl: 2.488rem;    /* 39.8px */
+    --text-5xl: 2.986rem;    /* 47.8px */
+    --text-6xl: 3.583rem;    /* 57.3px */
+    --text-7xl: 4.3rem;      /* 68.8px */
+    
+    /* Line heights - Mathematical scale */
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 1.75;
+    
+    /* Spacing scale */
+    --space-xs: 0.5rem;      /* 8px */
+    --space-sm: 0.75rem;     /* 12px */
+    --space-base: 1rem;      /* 16px */
+    --space-lg: 1.5rem;      /* 24px */
+    --space-xl: 2rem;        /* 32px */
+    --space-2xl: 3rem;       /* 48px */
+    --space-3xl: 4rem;       /* 64px */
 }
 
 /* Dark theme (default) */
@@ -98,14 +127,14 @@
 
 body {
     font-family: var(--font-main);
-    font-size: 16px;
+    font-size: var(--text-base);
     background-color: var(--bg-color);
     background-image: 
         radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0),
         radial-gradient(circle at 3px 3px, rgba(255,255,255,0.02) 1px, transparent 0);
     background-size: 8px 8px, 12px 12px;
-    line-height: 1.5;
-    padding: 0 0 2em 0;
+    line-height: var(--leading-normal);
+    padding: 0 0 var(--space-xl) 0;
 }
 
 .container,
@@ -159,62 +188,137 @@ main {
    Typography
    ========================================== */
 
+/* Heading hierarchy */
 h1,
 h2,
 h3,
-h4 {
-    margin-bottom: 1rem;
+h4,
+h5,
+h6 {
     font-family: var(--font-secondary);
     font-weight: 500;
-    line-height: 1.2;
+    line-height: var(--leading-tight);
+    margin-top: 0;
+    margin-bottom: var(--space-base);
 }
 
 h1 {
-    font-size: 4.2rem;
-    margin-bottom: 0;
+    font-size: var(--text-7xl);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--space-sm);
 }
 
 h2 {
-    font-size: 1.6rem;
-    margin-top: 0.5rem;
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-sm);
 }
 
 h3 {
-    font-size: 1.3rem;
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-sm);
 }
 
-h2, h3 {
-    margin-bottom: 0.625rem;
+h4 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-xs);
 }
 
-p, ul, li {
-    font-size: 1rem;
+h5 {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-xs);
+}
+
+h6 {
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-xs);
+}
+
+/* Body text hierarchy */
+p, 
+ul, 
+ol, 
+li {
+    font-size: var(--text-base);
     font-weight: 300;
-    line-height: 1.6;
-    max-width: 70ch; /* For optimal line length of roughly 70 characters */
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-base);
+    max-width: 70ch; /* Optimal line length */
 }
 
-p {
-    margin-top: 0;
-    margin-bottom: 1rem;
+.text-large {
+    font-size: var(--text-lg);
+    line-height: var(--leading-normal);
 }
 
+.text-small {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+}
+
+/* Additional typography utilities */
+.text-xs {
+    font-size: var(--text-xs);
+    line-height: var(--leading-normal);
+}
+
+.text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--leading-normal);
+}
+
+.text-2xl {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-snug);
+}
+
+.text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-snug);
+}
+
+/* Line height utilities */
+.leading-tight {
+    line-height: var(--leading-tight);
+}
+
+.leading-normal {
+    line-height: var(--leading-normal);
+}
+
+.leading-relaxed {
+    line-height: var(--leading-relaxed);
+}
+
+/* List styling */
 ul,
 ol {
-    margin-left: 1em;
-    margin-bottom: 1em;
+    margin-left: var(--space-lg);
+    margin-bottom: var(--space-base);
 }
 
+li {
+    margin-bottom: var(--space-xs);
+}
+
+/* Definition lists */
 dt {
-    font-weight: bold; /* Terms */
+    font-weight: bold;
+    margin-bottom: var(--space-xs);
 }
 
+dd {
+    margin-left: var(--space-lg);
+    margin-bottom: var(--space-base);
+}
+
+/* Blockquotes */
 blockquote {
     font-family: var(--font-secondary);
-    font-size: 1.5rem;
-    padding-left: 1em;
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+    padding-left: var(--space-lg);
     border-left: 3px solid var(--accent-color);
-    margin-bottom: 1em;
+    margin-bottom: var(--space-base);
 }
 
 blockquote p {
@@ -348,13 +452,19 @@ a:focus-visible {
 }
 
 .persistent-nav a {
-    margin: 0 1.5rem;
-    font-size: 1.1rem;
+    margin: 0 var(--space-lg);
+    font-size: var(--text-lg);
     font-weight: 500;
     text-decoration: none;
     color: var(--text-color);
     transition: all 0.3s ease;
     position: relative;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
 }
 
 .persistent-nav a:hover,
@@ -388,18 +498,62 @@ a:focus-visible {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='%230066cc' stroke-width='3' fill='none' opacity='0.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* Mobile navigation adjustments */
-@media (max-width: 600px) {
+/* ==========================================
+   Responsive Typography
+   ========================================== */
+
+/* Tablet breakpoint (768px) */
+@media (max-width: 768px) {
+    h1 {
+        font-size: var(--text-6xl);
+    }
+    
+    h2 {
+        font-size: var(--text-xl);
+    }
+    
+    h3 {
+        font-size: var(--text-lg);
+    }
+    
     .persistent-nav a {
-        margin: 0 0.8rem;
-        font-size: 1rem;
+        font-size: var(--text-base);
+        margin: 0 var(--space-sm);
+        padding: var(--space-sm);
+        min-height: 44px;
     }
 }
 
+/* Mobile breakpoint (480px) */
 @media (max-width: 480px) {
+    body {
+        font-size: var(--text-sm);
+        padding: 0 0 var(--space-lg) 0;
+    }
+    
+    h1 {
+        font-size: var(--text-5xl);
+        line-height: 1.1; /* Tighter for mobile when it naturally breaks */
+    }
+    
+    h2 {
+        font-size: var(--text-lg);
+    }
+    
+    h3 {
+        font-size: var(--text-base);
+    }
+    
+    p, ul, ol, li {
+        font-size: var(--text-sm);
+        line-height: var(--leading-relaxed);
+    }
+    
     .persistent-nav a {
-        margin: 0 0.5rem;
-        font-size: 0.9rem;
+        font-size: var(--text-sm);
+        margin: 0 var(--space-xs);
+        padding: var(--space-sm) var(--space-xs);
+        min-height: 44px;
     }
 }
 
@@ -830,12 +984,34 @@ header {
    ========================================== */
 
 .reading-section {
-    margin-bottom: 2.5rem;
+    margin-bottom: var(--space-3xl);
 }
 
 .reading-section h2 {
-    font-size: 1.6rem;
-    margin-bottom: 1rem;
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-base);
+}
+
+/* Movies Section */
+.recently-watched {
+    margin-top: var(--space-3xl);
+    margin-bottom: var(--space-3xl);
+}
+
+.recently-watched h2 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-xl);
+}
+
+/* Contact Section */
+.contact-section {
+    margin-top: var(--space-3xl);
+    margin-bottom: var(--space-xl);
+}
+
+.contact-section h2 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-xl);
 }
 
 /* ==========================================
@@ -1244,20 +1420,8 @@ footer p {
     }
 }
 
-/* Mobile screens */
-@media (max-width: 600px) {
-    body {
-        font-size: 14px;
-        padding: 0 0 1.5em 0;
-    }
-
-    h1 {
-        font-size: 2.2rem;
-    }
-
-    h2 {
-        font-size: 1.4rem;
-    }
+/* Mobile screens - continued styles */
+@media (max-width: 480px) {
 
     /* Theme toggle adjustments */
     .theme-toggle {

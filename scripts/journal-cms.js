@@ -6,10 +6,10 @@ const readline = require('readline');
 
 const JOURNAL_FILE = path.join(__dirname, 'journal-entries.json');
 const STORIES_DIR = path.join(__dirname, 'stories');
-const ENTRY_DIR = path.join(__dirname, 'entry');
-const JOURNAL_DIR = path.join(__dirname, 'journal');
+const ENTRY_DIR = path.join(__dirname, '..', 'entry');
+const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
 const JOURNAL_HTML = path.join(JOURNAL_DIR, 'index.html');
-const ARCHIVE_DIR = path.join(__dirname, 'archive');
+const ARCHIVE_DIR = path.join(__dirname, '..', 'archive');
 const ARCHIVE_HTML = path.join(ARCHIVE_DIR, 'index.html');
 
 function loadJournal() {
@@ -436,8 +436,8 @@ function generateEntryPages(journal) {
         }
         
         .entry-content p:first-of-type {
-            font-size: 1.2rem;
-            line-height: 1.5;
+            font-size: var(--text-lg);
+            line-height: var(--leading-normal);
         }
         
         /* Code styling */
@@ -748,8 +748,8 @@ function generateJournalHtml(journal) {
         }
         
         .post-content p:first-of-type {
-            font-size: 1.2rem;
-            line-height: 1.5;
+            font-size: var(--text-lg);
+            line-height: var(--leading-normal);
         }
         
         /* Code styling */

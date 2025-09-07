@@ -73,8 +73,8 @@
         }
         
         .post-content p:first-of-type {
-            font-size: 1.2rem;
-            line-height: 1.5;
+            font-size: var(--text-lg);
+            line-height: var(--leading-normal);
         }
         
         /* Code styling */
@@ -278,7 +278,6 @@
     </button>
 
     <div class="journal-container">
-        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
         <hr class="divider animate-fade-in animate-header" />
 
@@ -313,6 +312,7 @@
             <h3>Recent posts</h3>
             
             <dl class="post-list">
+                
                 <dt><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></dt>
                 <dd>Sometimes you think you know every corner of your neighborhood—until one day you don't.</dd>
                 
@@ -325,8 +325,6 @@
             </footer>
         </div>
         
-        </main>
-
         <div class="feed-links animate-fade-in animate-footer">
             <a href="/journal-atom.xml">Atom Feed</a>
             <a href="/journal-feed.xml">RSS Feed</a>
