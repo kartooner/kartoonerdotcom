@@ -549,20 +549,8 @@ a:focus-visible {
    Responsive Typography
    ========================================== */
 
-/* Mobile breakpoint (500px) */
-@media (max-width: 500px) {
-    h1 {
-        font-size: var(--text-6xl);
-    }
-    
-    h2 {
-        font-size: var(--text-xl);
-    }
-    
-    h3 {
-        font-size: var(--text-lg);
-    }
-    
+/* Tablet/Mobile navigation breakpoint (750px) */
+@media (max-width: 750px) {
     /* Show menu button on tablet and mobile - centered */
     .mobile-menu-toggle {
         display: block;
@@ -688,6 +676,26 @@ a:focus-visible {
     /* Adjust current page indicator for mobile */
     .nav-links a.current::after {
         display: none;
+    }
+
+    /* Theme toggle - shrink to emoji only on tablet */
+    .theme-toggle-text {
+        display: none;
+    }
+}
+
+/* Mobile breakpoint (500px) */
+@media (max-width: 500px) {
+    h1 {
+        font-size: var(--text-6xl);
+    }
+    
+    h2 {
+        font-size: var(--text-xl);
+    }
+    
+    h3 {
+        font-size: var(--text-lg);
     }
 }
 
@@ -1605,10 +1613,6 @@ footer p {
         padding: 0.75rem;
         min-width: 48px;
         min-height: 48px;
-    }
-    
-    .theme-toggle-text {
-        display: none;
     }
 
     /* Layout adjustments - column styles now handled in tablet breakpoint */
