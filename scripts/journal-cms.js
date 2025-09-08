@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const JOURNAL_FILE = path.join(__dirname, 'journal-entries.json');
+const JOURNAL_FILE = path.join(__dirname, '..', 'journal-entries.json');
 const STORIES_DIR = path.join(__dirname, 'stories');
 const ENTRY_DIR = path.join(__dirname, '..', 'entry');
 const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
