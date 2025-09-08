@@ -1596,7 +1596,7 @@ footer p {
 }
 
 /* Mobile screens - continued styles */
-@media (max-width: 480px) {
+@media (max-width: 500px) {
 
     /* Theme toggle adjustments - move left to avoid overlap */
     .theme-toggle {
