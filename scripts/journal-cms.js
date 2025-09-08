@@ -582,9 +582,21 @@ function generateEntryPages(journal) {
     
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal" class="current" aria-current="page">Journal</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/contact">Contact</a>
+        </div>
     </nav>
     
     <!-- Theme Toggle -->
@@ -941,9 +953,21 @@ function generateJournalHtml(journal) {
 <body>
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal" class="current" aria-current="page">Journal</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/contact">Contact</a>
+        </div>
     </nav>
     
     <!-- Theme Toggle -->
@@ -952,7 +976,7 @@ function generateJournalHtml(journal) {
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="journal-container">
+    <div class="journal-container animate-fade-in animate-main">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
         <hr class="divider animate-fade-in animate-header" />
 
@@ -1108,9 +1132,21 @@ function generateArchiveHtml(journal) {
     
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal" class="current" aria-current="page">Journal</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/contact">Contact</a>
+        </div>
     </nav>
     
     <!-- Theme Toggle -->

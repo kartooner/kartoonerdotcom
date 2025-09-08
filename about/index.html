@@ -51,6 +51,13 @@
             display: block;
             margin: auto;
         }
+
+        .logo {
+            text-align: center;
+            font-family: var(--font-secondary);
+            font-size: 5rem;
+            color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -59,9 +66,21 @@
     
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about" class="current" aria-current="page">About</a>
-        <a href="/journal">Journal</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about" class="current" aria-current="page">About</a>
+            <a href="/journal">Journal</a>
+            <a href="/contact">Contact</a>
+        </div>
     </nav>
     
     <!-- Theme Toggle Button -->
@@ -73,7 +92,7 @@
 <div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
         
-        <h1>About me</h1>
+        <h1 class="logo animate-fade-in animate-header">About me</h1>
         
         <div class="about-intro">
             <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive />
@@ -156,6 +175,7 @@
         <!-- Contact Section -->
         <section class="contact-section animate-fade-in">
             <h2>Let's connect</h2>
+            <p>I sometimes frequent social media so that's the best place.</p>
             <nav class="site-navigation" aria-label="Contact and social links">
                 <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Follow me on Bluesky, opens in a new tab">
                     Bluesky

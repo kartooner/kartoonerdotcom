@@ -79,9 +79,21 @@
     
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal" class="current" aria-current="page">Journal</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/contact">Contact</a>
+        </div>
     </nav>
     
     <!-- Theme Toggle -->
@@ -96,25 +108,6 @@
             <hr class="divider" />
 
             
-        <div class="year-section">
-            <h2>2025</h2>
-            
-            <div class="archive-entry">
-                <div class="entry-date">Sep 5, 2025</div>
-                <h3><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h3>
-                <p class="entry-excerpt">When movies, music, and games came together perfectly.</p>
-            </div>
-            <div class="archive-entry">
-                <div class="entry-date">Aug 29, 2025</div>
-                <h3><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h3>
-                <p class="entry-excerpt">Sometimes you think you know every corner of your neighborhood—until one day you don't.</p>
-            </div>
-            <div class="archive-entry">
-                <div class="entry-date">Aug 28, 2025</div>
-                <h3><a href="/entry/here-we-go-again.html">Here we go again</a></h3>
-                <p class="entry-excerpt">It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.</p>
-            </div>
-        </div>
 
             
             <footer class="animate-fade-in animate-footer">

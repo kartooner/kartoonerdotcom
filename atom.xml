@@ -5,25 +5,25 @@
   <link href="https://kartooner.com/atom.xml" rel="self" type="application/atom+xml" />
   <link href="https://kartooner.com" />
   <generator uri="https://kartooner.com">Erik's Site</generator>
-  <updated>2025-09-07T16:42:47.328Z</updated>
+  <updated>2025-09-08T23:07:30.892Z</updated>
   <id>https://kartooner.com/atom.xml</id>
   
   <entry xml:lang="en">
-    <title><![CDATA[How to Draw a Space Invader]]></title>
-    <published>2025-09-07T16:42:47.328Z</published>
-    <updated>2025-09-07T16:42:47.328Z</updated>
-    <link href="https://muffinman.io/blog/invaders/" type="text/html" />
-    <id>https://muffinman.io/blog/invaders/</id>
+    <title><![CDATA[American advertisements of the 1930s – in pictures]]></title>
+    <published>2025-09-08T23:07:30.892Z</published>
+    <updated>2025-09-08T23:07:30.892Z</updated>
+    <link href="https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures" type="text/html" />
+    <id>https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
     <category term="Recent Links" />
-    <content type="html"><![CDATA[A fun, interactive article about how to draw a Space Invader using simple shapes.]]></content>
+    <content type="html"><![CDATA[The Guardian showcases some amazing 1930s adverts.]]></content>
   </entry>
   <entry xml:lang="en">
     <title><![CDATA[The Management Skill Nobody Talks About]]></title>
-    <published>2025-09-07T16:42:47.328Z</published>
-    <updated>2025-09-07T16:42:47.328Z</updated>
+    <published>2025-09-08T23:07:30.892Z</published>
+    <updated>2025-09-08T23:07:30.892Z</updated>
     <link href="https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/" type="text/html" />
     <id>https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/</id>
     <author>
@@ -33,39 +33,15 @@
     <content type="html"><![CDATA[Managing people and expectations is hard.]]></content>
   </entry>
   <entry xml:lang="en">
-    <title><![CDATA[Example Archived Link]]></title>
-    <published>2024-12-15T10:30:00.000Z</published>
-    <updated>2024-12-15T10:30:00.000Z</updated>
-    <link href="https://example.com/archived-article" type="text/html" />
-    <id>https://example.com/archived-article-2024-12</id>
-    <author>
-      <name><![CDATA[Erik Sagen]]></name>
-    </author>
-    <category term="Archives - 2024-12" />
-    <content type="html"><![CDATA[This is an example of how archived links work.]]></content>
-  </entry>
-  <entry xml:lang="en">
-    <title><![CDATA[Another Old Link]]></title>
-    <published>2024-11-01T04:00:00.000Z</published>
-    <updated>2024-11-01T04:00:00.000Z</updated>
-    <link href="https://example.com/old-article" type="text/html" />
-    <id>https://example.com/old-article-2024-11</id>
-    <author>
-      <name><![CDATA[Erik Sagen]]></name>
-    </author>
-    <category term="Archives - 2024-11" />
-    <content type="html"><![CDATA[An older link from November 2024.]]></content>
-  </entry>
-  <entry xml:lang="en">
-    <title><![CDATA[Currently Reading: Big Dumb Eyes]]></title>
-    <published>2025-09-07T16:42:47.328Z</published>
-    <updated>2025-09-07T16:42:47.328Z</updated>
-    <link href="https://a.co/d/89esz80" type="text/html" />
-    <id>currently-reading-big-dumb-eyes</id>
+    <title><![CDATA[Currently Reading: Creative Intelligence: Don't Ask AI, Think With It]]></title>
+    <published>2025-09-08T23:07:30.892Z</published>
+    <updated>2025-09-08T23:07:30.892Z</updated>
+    <link href="https://books.apple.com/us/book/creative-intelligence/id6749276436" type="text/html" />
+    <id>currently-reading-creative-intelligence:-don&#039;t-ask-ai,-think-with-it</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
     <category term="Currently Reading" />
-    <content type="html"><![CDATA[Erik is currently reading "Big Dumb Eyes" by Nate Bargatze. I first learned about Nate back when Valve made a Portal spin-off called "Aperture Desk Job" to help demo the Steam Deck's capabilities. His performance in the game and on stage is whip-smart and hilarious; same goes for this book.]]></content>
+    <content type="html"><![CDATA[Erik is currently reading "Creative Intelligence: Don't Ask AI, Think With It" by Greg Storey. Garbage in, garbage out. This book is a great reminder that AI is a tool to augment human creativity, not replace it. It provides practical strategies for leveraging AI to enhance creative processes, emphasizing the importance of human intuition and critical thinking in the age of artificial intelligence.]]></content>
   </entry>
 </feed>

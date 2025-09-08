@@ -1,11 +1,11 @@
 {
   "recentLinks": [
     {
-      "title": "How to Draw a Space Invader",
-      "url": "https://muffinman.io/blog/invaders/",
-      "thumbnail": "/img/invader-thumb.png",
-      "alt": "A sketchy render of a Space Invader",
-      "description": "A fun, interactive article about how to draw a Space Invader using simple shapes."
+      "title": "American advertisements of the 1930s – in pictures",
+      "url": "https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures",
+      "thumbnail": "/img/1930s-thumb.png",
+      "alt": "A 1930s style advert for Seagrams",
+      "description": "The Guardian showcases some amazing 1930s adverts."
     },
     {
       "title": "The Management Skill Nobody Talks About",
@@ -16,34 +16,11 @@
     }
   ],
   "currentlyReading": {
-    "title": "Big Dumb Eyes",
-    "url": "https://a.co/d/89esz80",
-    "author": "Nate Bargatze",
-    "thumbnail": "https://bookoutlet.com/_next/image?url=https%3A%2F%2Fimages.bookoutlet.com%2Fcovers%2Flarge%2Fisbn978153%2F9781538768464-l.jpg&w=1920&q=75",
-    "alt": "Book cover of Big Dumb Eyes",
-    "review": "I first learned about Nate back when Valve made a Portal spin-off called \"Aperture Desk Job\" to help demo the Steam Deck's capabilities. His performance in the game and on stage is whip-smart and hilarious; same goes for this book."
-  },
-  "archives": {
-    "2024-12": [
-      {
-        "title": "Example Archived Link",
-        "url": "https://example.com/archived-article",
-        "thumbnail": "/img/example-thumb.png",
-        "alt": "Example thumbnail",
-        "description": "This is an example of how archived links work.",
-        "paragraphs": [
-          "This is the first paragraph of additional content that provides more context.",
-          "This is a second paragraph with even more details about the archived link."
-        ],
-        "date": "2024-12-15T10:30:00Z"
-      }
-    ],
-    "2024-11": [
-      {
-        "title": "Another Old Link",
-        "url": "https://example.com/old-article",
-        "description": "An older link from November 2024."
-      }
-    ]
+    "title": "Creative Intelligence: Don't Ask AI, Think With It",
+    "url": "https://books.apple.com/us/book/creative-intelligence/id6749276436",
+    "author": "Greg Storey",
+    "thumbnail": "img/creative-intel-cover.jpg",
+    "alt": "Book cover of Creative Intelligence",
+    "review": "Garbage in, garbage out. This book is a great reminder that AI is a tool to augment human creativity, not replace it. It provides practical strategies for leveraging AI to enhance creative processes, emphasizing the importance of human intuition and critical thinking in the age of artificial intelligence."
   }
 }

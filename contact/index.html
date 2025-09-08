@@ -132,10 +132,21 @@
 
     <!-- Persistent Navigation -->
     <nav class="persistent-nav" aria-label="Site navigation">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal">Journal</a>
-        <a href="/contact" class="current" aria-current="page">Contact</a>
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+        
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal">Journal</a>
+            <a href="/contact" class="current" aria-current="page">Contact</a>
+        </div>
     </nav>
 
     <!-- Theme Toggle -->
