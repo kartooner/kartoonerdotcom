@@ -1211,6 +1211,9 @@ header {
 .entry img,
 .post-content img,
 .entry-content img {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
     margin: 30px 0;
     position: relative;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
