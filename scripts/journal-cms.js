@@ -5,7 +5,7 @@ const path = require('path');
 const readline = require('readline');
 
 const JOURNAL_FILE = path.join(__dirname, '..', 'journal-entries.json');
-const STORIES_DIR = path.join(__dirname, 'stories');
+const STORIES_DIR = path.join(__dirname, '..', 'stories');
 const ENTRY_DIR = path.join(__dirname, '..', 'entry');
 const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
 const JOURNAL_HTML = path.join(JOURNAL_DIR, 'index.html');
@@ -375,10 +375,6 @@ function generateEntryPages(journal) {
             color: var(--text-color);
         }
 
-        .entry img {
-            margin: 1em 0;
-            width: 100%;
-        }
 
         .logo {
             text-align: center;
@@ -705,10 +701,6 @@ function generateJournalHtml(journal) {
             color: var(--text-color);
         }
 
-        .post img {
-            margin: 1em 0;
-            width: 100%;
-        }
 
         .logo {
             text-align: center;

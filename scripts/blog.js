@@ -32,7 +32,11 @@ class BlogBuilder {
             console.log('📖 Syncing stories...');
             this.syncStories();
             
-            // Step 2: Generate RSS feeds if generate-rss.js exists
+            // Step 2: Ensure all journal entry pages have proper image sizing
+            console.log('🖼️ Ensuring proper image sizing in journal entries...');
+            this.ensureImageSizing();
+            
+            // Step 3: Generate RSS feeds if generate-rss.js exists
             if (fs.existsSync('js/generate-rss.js')) {
                 console.log('📡 Generating RSS feeds...');
                 execSync('node js/generate-rss.js', { stdio: 'pipe' });
@@ -108,6 +112,35 @@ class BlogBuilder {
         console.log('🔄 Quick sync...');
         this.syncStories();
         console.log('✅ Sync complete!');
+    }
+
+    // Clean up journal entry files (remove inline styles, rely on global CSS)
+    ensureImageSizing() {
+        const entryDir = path.join(__dirname, '..', 'entry');
+        if (!fs.existsSync(entryDir)) return;
+
+        const entryFiles = fs.readdirSync(entryDir).filter(file => file.endsWith('.html'));
+        
+        for (const file of entryFiles) {
+            const filePath = path.join(entryDir, file);
+            let content = fs.readFileSync(filePath, 'utf8');
+            
+            // Remove inline styles from img tags (rely on global CSS instead)
+            content = content.replace(
+                /<img([^>]*?)style="[^"]*?"([^>]*?)>/g,
+                '<img$1$2>'
+            );
+            
+            // Remove any remaining inline image CSS blocks
+            content = content.replace(
+                /\s*\.(?:entry|post) img \{[^}]*\}\s*/g,
+                ''
+            );
+            
+            fs.writeFileSync(filePath, content, 'utf8');
+        }
+        
+        console.log(`🖼️ Cleaned up ${entryFiles.length} entry files (removed inline styles)`);
     }
 }
 

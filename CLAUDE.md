@@ -2,3 +2,4 @@
 - Use sentence casing on UI labels where it makes sense.
 - Update build scripts when we make navigation changes.
 - journal-entries.json exists in the root.
+- Blog stories are located in `/stories/` directory (not `/scripts/stories/`).

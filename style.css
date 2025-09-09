@@ -1214,30 +1214,13 @@ header {
     max-width: 100%;
     width: 100%;
     height: auto;
-    margin: 30px 0;
-    position: relative;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    clip-path: polygon(0% 0%, calc(100% - 2vmin) 0%, 100% 2vmin, 100% 100%, 0% 100%);
+    margin: 10px 0 15px 0;
 }
 
-/* Folded corner shadow */
+/* Post and entry content containers */
 .post-content,
 .entry-content {
     position: relative;
-}
-
-.post-content::after,
-.entry-content::after {
-    content: '';
-    position: absolute;
-    top: 15px;
-    right: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 2vmin 0 0 2vmin;
-    border-color: rgba(0,0,0,0.2) transparent transparent transparent;
-    pointer-events: none;
 }
 
 
