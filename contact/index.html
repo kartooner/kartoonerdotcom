@@ -204,11 +204,11 @@
                 <p>Have a project in mind? Want to collaborate? Or just want to say hello? I'd love to hear from you.</p>
             </div>
 
-            <form class="contact-form" method="POST" id="contactForm">
-                <!-- FormSubmit configuration -->
-                <input type="hidden" name="_captcha" value="false">
-                <input type="hidden" name="_next" value="">
-                <input type="hidden" name="_subject" value="New contact from kartooner.com">
+            <form class="contact-form" method="POST" action="https://api.web3forms.com/submit" id="contactForm">
+                <!-- Web3Forms configuration -->
+                <input type="hidden" name="access_key" value="2821095f-dff0-4448-9247-7df348a55161">
+                <input type="hidden" name="subject" value="New message from kartooner.com">
+                <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
                 
                 <div class="form-group">
                     <label for="name">Name *</label>
@@ -248,28 +248,31 @@
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('contactForm');
             const successMessage = document.getElementById('successMessage');
-            const nextInput = form.querySelector('input[name="_next"]');
             
-            // Obfuscate email to prevent spam bots
-            const emailParts = ['erik', 'kartooner', 'com'];
-            const email = emailParts[0] + '@' + emailParts[1] + '.' + emailParts[2];
-            
-            // Set FormSubmit action URL with obfuscated email
-            form.action = 'https://formsubmit.co/' + email;
-            
-            // Set the redirect URL to show our custom success message
-            nextInput.value = window.location.origin + window.location.pathname + '?sent=true';
-            
-            // Check if form was just submitted (from redirect)
-            if (window.location.search.includes('sent=true')) {
-                form.style.display = 'none';
-                successMessage.style.display = 'block';
+            // Handle form submission with web3forms
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
                 
-                // Clean up URL without page reload
-                const url = new URL(window.location);
-                url.searchParams.delete('sent');
-                window.history.replaceState({}, document.title, url.pathname);
-            }
+                const formData = new FormData(form);
+                
+                try {
+                    const response = await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        form.style.display = 'none';
+                        successMessage.style.display = 'block';
+                    } else {
+                        alert('Error sending message. Please try again.');
+                    }
+                } catch (error) {
+                    alert('Error sending message. Please try again.');
+                }
+            });
         });
 
         function resetForm() {
