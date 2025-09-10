@@ -124,6 +124,48 @@
             font-size: 1.1rem;
             margin-bottom: 1.5rem;
         }
+
+        .darkwing-peek {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background-image: url('../img/darkwing-sprite.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.5s ease-in-out;
+        }
+
+        @media (min-width: 769px) {
+            .darkwing-peek {
+                bottom: 0;
+                right: 20px;
+            }
+            
+            .darkwing-peek.show {
+                opacity: 1;
+                transform: translateY(-20px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .darkwing-peek {
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%) translateY(100%);
+                width: 80px;
+                height: 80px;
+            }
+            
+            .darkwing-peek.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -198,6 +240,9 @@
         </footer>
     </div>
 
+    <!-- Darkwing Duck peek animation -->
+    <div class="darkwing-peek" id="darkwingPeek"></div>
+
     <script src="/app.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -235,6 +280,37 @@
             form.style.display = 'block';
             successMessage.style.display = 'none';
         }
+
+        // Darkwing Duck random peek animation
+        function initDarkwingPeek() {
+            const darkwingElement = document.getElementById('darkwingPeek');
+            
+            function randomPeek() {
+                // Random delay between 5-15 seconds
+                const delay = Math.random() * 10000 + 5000;
+                
+                setTimeout(() => {
+                    // Show Darkwing
+                    darkwingElement.classList.add('show');
+                    
+                    // Hide after 2-4 seconds
+                    const hideDelay = Math.random() * 2000 + 2000;
+                    setTimeout(() => {
+                        darkwingElement.classList.remove('show');
+                        // Schedule next peek
+                        randomPeek();
+                    }, hideDelay);
+                }, delay);
+            }
+            
+            // Start the random peek cycle
+            randomPeek();
+        }
+        
+        // Initialize Darkwing peek animation after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initDarkwingPeek();
+        });
     </script>
 </body>
 </html>
