@@ -591,6 +591,12 @@ function generateEntryPages(journal) {
             font-size: 0.9rem;
         }
 
+        .feed-links p .material-symbols-outlined {
+            font-size: 1.1rem;
+            margin-right: 0.5rem;
+            vertical-align: text-bottom;
+        }
+
         
         /* Responsive scaling for entry title */
         @media (max-width: 768px) {
@@ -656,7 +662,7 @@ function generateEntryPages(journal) {
         </div>
         
         <div class="feed-links">
-            <p><strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
+            <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
             <div class="feed-links-row">
                 <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
@@ -997,6 +1003,12 @@ function generateJournalHtml(journal) {
             font-size: 0.9rem;
         }
 
+        .feed-links p .material-symbols-outlined {
+            font-size: 1.1rem;
+            margin-right: 0.5rem;
+            vertical-align: text-bottom;
+        }
+
 
     </style>
 </head>
@@ -1047,7 +1059,7 @@ function generateJournalHtml(journal) {
         </div>
         
         <div class="feed-links animate-fade-in animate-footer">
-            <p><strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
+            <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
             <div class="feed-links-row">
                 <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
