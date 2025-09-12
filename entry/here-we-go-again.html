@@ -48,7 +48,7 @@
 
         .entry-title {
             font-family: var(--font-secondary);
-            font-size: 3.2rem;
+            font-size: 4.5rem;
             line-height: 0.95;
             margin-bottom: 15px;
             color: var(--heading-color);
@@ -212,6 +212,19 @@
         .feed-links a:hover {
             color: var(--accent-color);
         }
+        
+        /* Responsive scaling for entry title */
+        @media (max-width: 768px) {
+            .entry-title {
+                font-size: 3.5rem;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .entry-title {
+                font-size: 2.8rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -233,6 +246,7 @@
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -283,7 +297,7 @@
         </div>
         
         <footer class="animate-fade-in animate-footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     

@@ -363,6 +363,7 @@ function generateEntryPages(journal) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${entry.title} - Erik's Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
         .entry-container {
@@ -406,7 +407,7 @@ function generateEntryPages(journal) {
 
         .entry-title {
             font-family: var(--font-secondary);
-            font-size: 3.2rem;
+            font-size: 4.5rem;
             line-height: 0.95;
             margin-bottom: 15px;
             color: var(--heading-color);
@@ -553,22 +554,55 @@ function generateEntryPages(journal) {
         }
 
         .feed-links {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(var(--accent-rgb), 0.08);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .feed-links p {
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary, var(--skills-color));
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .feed-links-row {
+            display: flex;
+            gap: 1.5rem;
         }
 
         .feed-links a {
             color: var(--skills-color);
             text-decoration: none;
             font-size: 0.8rem;
-            margin: 0 10px;
             transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
         }
 
         .feed-links a:hover {
             color: var(--accent-color);
+        }
+
+        .feed-links .material-symbols-outlined {
+            font-size: 0.9rem;
+        }
+
+        
+        /* Responsive scaling for entry title */
+        @media (max-width: 768px) {
+            .entry-title {
+                font-size: 3.5rem;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .entry-title {
+                font-size: 2.8rem;
+            }
         }
     </style>
 </head>
@@ -622,12 +656,15 @@ function generateEntryPages(journal) {
         </div>
         
         <div class="feed-links">
-            <a href="/journal-atom.xml">Atom Feed</a>
-            <a href="/journal-feed.xml">RSS Feed</a>
+            <p><strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
+            <div class="feed-links-row">
+                <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
+                <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
+            </div>
         </div>
         
         <footer class="animate-fade-in animate-footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
@@ -688,6 +725,7 @@ function generateJournalHtml(journal) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
 
@@ -922,23 +960,43 @@ function generateJournalHtml(journal) {
         }
 
         .feed-links {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(var(--accent-rgb), 0.08);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .feed-links p {
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary, var(--skills-color));
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .feed-links-row {
+            display: flex;
+            gap: 1.5rem;
         }
 
         .feed-links a {
             color: var(--skills-color);
             text-decoration: none;
             font-size: 0.8rem;
-            margin: 0 10px;
             transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
         }
 
         .feed-links a:hover {
             color: var(--accent-color);
         }
+
+        .feed-links .material-symbols-outlined {
+            font-size: 0.9rem;
+        }
+
 
     </style>
 </head>
@@ -989,12 +1047,15 @@ function generateJournalHtml(journal) {
         </div>
         
         <div class="feed-links animate-fade-in animate-footer">
-            <a href="/journal-atom.xml">Atom Feed</a>
-            <a href="/journal-feed.xml">RSS Feed</a>
+            <p><strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
+            <div class="feed-links-row">
+                <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
+                <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
+            </div>
         </div>
         
         <footer class="animate-fade-in animate-footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
@@ -1050,6 +1111,7 @@ function generateArchiveHtml(journal) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archive - Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
         .archive-container {
