@@ -547,6 +547,13 @@ a:focus-visible {
    Responsive Typography
    ========================================== */
 
+/* Theme toggle text hiding for narrower screens */
+@media (max-width: 900px) {
+    .theme-toggle-text {
+        display: none;
+    }
+}
+
 /* Tablet/Mobile navigation breakpoint (750px) */
 @media (max-width: 750px) {
     /* Show menu button on tablet and mobile - centered */
@@ -676,10 +683,6 @@ a:focus-visible {
         display: none;
     }
 
-    /* Theme toggle - shrink to emoji only on tablet */
-    .theme-toggle-text {
-        display: none;
-    }
 }
 
 /* Mobile breakpoint (500px) */
@@ -805,7 +808,7 @@ a:focus-visible {
 
 .theme-toggle {
     position: fixed;
-    top: 2rem;
+    top: 1.5rem;
     right: 2rem;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
