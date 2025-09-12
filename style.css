@@ -1794,6 +1794,58 @@ footer p {
     background: rgba(128, 128, 128, 0.4);
 }
 
+/* ==========================================
+   Feed Links & Social Media Sections
+   ========================================== */
+
+.feed-links {
+    background: rgba(var(--accent-rgb), 0.08);
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+}
+
+.feed-links p {
+    text-align: left;
+    font-size: 0.9rem;
+    color: var(--text-color-secondary, var(--skills-color));
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.feed-links-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.feed-links a {
+    color: var(--skills-color);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.feed-links a:hover {
+    color: var(--accent-color);
+}
+
+.feed-links .material-symbols-outlined {
+    font-size: 0.9rem;
+}
+
+.feed-links p .material-symbols-outlined {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    vertical-align: text-bottom;
+}
+
+[data-theme="dark"] .feed-links p strong {
+    color: var(--text-color);
+}
+
 /*
  * ╔════════════════════════════════════════╗
  * ║           INVISIBLE BOY                ║
