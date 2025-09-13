@@ -60,9 +60,9 @@
     --font-secondary: "Cartridge Rough", sans-serif;
     --font-display: "Cartridge Regular", sans-serif;
     
-    /* Typography Scale - Based on 1.2 (minor third) ratio */
-    --text-xs: 0.75rem;      /* 12px */
-    --text-sm: 0.875rem;     /* 14px */
+    /* Typography Scale - Based on 1.2 (minor third) ratio - AA Compliant sizes */
+    --text-xs: 0.875rem;     /* 14px - Minimum for AA compliance */
+    --text-sm: 1rem;         /* 16px - Standard base size */
     --text-base: 1rem;       /* 16px */
     --text-lg: 1.2rem;       /* 19.2px */
     --text-xl: 1.44rem;      /* 23px */
@@ -1501,7 +1501,7 @@ footer p {
 
 .changelog {
     color: var(--skills-color);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-style: italic;
     margin-top: 1.5rem;
     padding-top: 1rem;
@@ -1803,7 +1803,7 @@ footer p {
 .under-construction {
     text-align: center;
     margin-bottom: 1.5rem;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     position: relative;
     padding: 1rem 0;
 }
