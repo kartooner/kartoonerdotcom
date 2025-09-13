@@ -12,7 +12,8 @@
       "Bash(magick:*)",
       "Bash(npm install:*)",
       "Bash(sharp:*)",
-      "Bash(csso:*)"
+      "Bash(csso:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []
