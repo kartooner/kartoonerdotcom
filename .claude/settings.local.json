@@ -6,7 +6,13 @@
       "Bash(node:*)",
       "Bash(npm run serve:*)",
       "Bash(npm run build:*)",
-      "WebFetch(domain:web3forms.com)"
+      "WebFetch(domain:web3forms.com)",
+      "Bash(find:*)",
+      "Bash(sort:*)",
+      "Bash(magick:*)",
+      "Bash(npm install:*)",
+      "Bash(sharp:*)",
+      "Bash(csso:*)"
     ],
     "deny": [],
     "ask": []

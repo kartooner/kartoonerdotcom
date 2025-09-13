@@ -354,7 +354,7 @@ function generateEntryPages(journal) {
         const contentHtml = convertMarkdownToHtml(entry.content);
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
         const imagesHtml = entry.images ? entry.images.map(img => 
-            `<img src="${img}" alt="Journal entry image" data-progressive loading="lazy" />`).join('\n            ') : '';
+            `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
 
         const template = `<!DOCTYPE html>
 <html lang="en">
@@ -402,7 +402,7 @@ function generateEntryPages(journal) {
         .entry-date {
             color: var(--skills-color);
             margin-bottom: 10px;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .entry-title {
@@ -553,27 +553,27 @@ function generateEntryPages(journal) {
             background: none !important;
         }
 
-        .feed-links {
+        .info-section {
             background: rgba(var(--accent-rgb), 0.08);
             padding: 2rem;
             border-radius: 8px;
             margin: 2rem 0;
         }
 
-        .feed-links p {
+        .info-section p {
             text-align: left;
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: var(--text-color-secondary, var(--skills-color));
             margin-bottom: 0.75rem;
             line-height: 1.4;
         }
 
-        .feed-links-row {
+        .info-section-row {
             display: flex;
             gap: 1.5rem;
         }
 
-        .feed-links a {
+        .info-section a {
             color: var(--skills-color);
             text-decoration: none;
             font-size: 0.8rem;
@@ -583,15 +583,15 @@ function generateEntryPages(journal) {
             gap: 0.375rem;
         }
 
-        .feed-links a:hover {
+        .info-section a:hover {
             color: var(--accent-color);
         }
 
-        .feed-links .material-symbols-outlined {
-            font-size: 0.9rem;
+        .info-section .material-symbols-outlined {
+            font-size: 1rem;
         }
 
-        .feed-links p .material-symbols-outlined {
+        .info-section p .material-symbols-outlined {
             font-size: 1.1rem;
             margin-right: 0.5rem;
             vertical-align: text-bottom;
@@ -661,9 +661,9 @@ function generateEntryPages(journal) {
             <a href="/archive" class="view-all">View all posts</a>
         </div>
         
-        <div class="feed-links">
+        <div class="info-section">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
-            <div class="feed-links-row">
+            <div class="info-section-row">
                 <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
@@ -710,7 +710,7 @@ function generateJournalHtml(journal) {
         const contentHtml = convertMarkdownToHtml(entry.content);
         const subtitleHtml = entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : '';
         const imagesHtml = entry.images ? entry.images.map(img => 
-            `<img src="${img}" alt="Journal entry image" data-progressive loading="lazy" />`).join('\n            ') : '';
+            `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
 
         return `
     <div class="post">
@@ -965,27 +965,27 @@ function generateJournalHtml(journal) {
             background: none !important;
         }
 
-        .feed-links {
+        .info-section {
             background: rgba(var(--accent-rgb), 0.08);
             padding: 2rem;
             border-radius: 8px;
             margin: 2rem 0;
         }
 
-        .feed-links p {
+        .info-section p {
             text-align: left;
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: var(--text-color-secondary, var(--skills-color));
             margin-bottom: 0.75rem;
             line-height: 1.4;
         }
 
-        .feed-links-row {
+        .info-section-row {
             display: flex;
             gap: 1.5rem;
         }
 
-        .feed-links a {
+        .info-section a {
             color: var(--skills-color);
             text-decoration: none;
             font-size: 0.8rem;
@@ -995,15 +995,15 @@ function generateJournalHtml(journal) {
             gap: 0.375rem;
         }
 
-        .feed-links a:hover {
+        .info-section a:hover {
             color: var(--accent-color);
         }
 
-        .feed-links .material-symbols-outlined {
-            font-size: 0.9rem;
+        .info-section .material-symbols-outlined {
+            font-size: 1rem;
         }
 
-        .feed-links p .material-symbols-outlined {
+        .info-section p .material-symbols-outlined {
             font-size: 1.1rem;
             margin-right: 0.5rem;
             vertical-align: text-bottom;
@@ -1060,7 +1060,7 @@ function generateJournalHtml(journal) {
         
         <div class="feed-links animate-fade-in animate-footer">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
-            <div class="feed-links-row">
+            <div class="info-section-row">
                 <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
@@ -1167,7 +1167,7 @@ function generateArchiveHtml(journal) {
         
         .entry-date {
             color: var(--skills-color);
-            font-size: 0.9rem;
+            font-size: 1rem;
             margin-bottom: 5px;
         }
         
