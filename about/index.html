@@ -52,7 +52,36 @@
         /* Darkwing sprite as divider */
         .darkwing-sprite {
             display: block;
-            margin: auto;
+            margin: 2rem auto;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .darkwing-sprite:hover {
+            transform: scale(1.05);
+        }
+        
+        .darkwing-sprite:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 4px;
+        }
+        
+        /* Look animation keyframes */
+        @keyframes darkwing-look {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-15deg) scale(1.1); }
+            50% { transform: rotate(15deg) scale(1.1); }
+            75% { transform: rotate(-8deg) scale(1.05); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        
+        .darkwing-sprite.looking {
+            animation: darkwing-look 0.8s ease-in-out;
         }
 
         .logo {
@@ -106,7 +135,7 @@
             
             <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when there's no clear answer; asking why helps me see a little better and shape what I'm working on.</p>
             
-            <img src="../img/darkwing-sprite.png" alt="Darkwing sprite" width="100px" height="100px" data-progressive class="darkwing-sprite" />
+            <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around" width="100px" height="100px" data-progressive class="darkwing-sprite" tabindex="0" role="button" aria-label="Darkwing Duck easter egg - click to animate" />
         </div>
 
         <!-- File > Open Recent Section -->
@@ -256,6 +285,45 @@
     init();
   }
 })();
+</script>
+
+<script>
+// Darkwing Duck interactive animation
+document.addEventListener('DOMContentLoaded', function() {
+    const darkwingSprite = document.querySelector('.darkwing-sprite');
+    
+    if (darkwingSprite) {
+        function triggerLookAnimation() {
+            // Prevent multiple animations at once
+            if (darkwingSprite.classList.contains('looking')) {
+                return;
+            }
+            
+            // Add animation class
+            darkwingSprite.classList.add('looking');
+            
+            // Remove class after animation completes
+            setTimeout(() => {
+                darkwingSprite.classList.remove('looking');
+            }, 800); // Match animation duration
+        }
+        
+        // Add click/tap event listeners
+        darkwingSprite.addEventListener('click', triggerLookAnimation);
+        darkwingSprite.addEventListener('touchstart', function(e) {
+            e.preventDefault(); // Prevent double-tap zoom
+            triggerLookAnimation();
+        });
+        
+        // Add keyboard support (Enter and Space)
+        darkwingSprite.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                triggerLookAnimation();
+            }
+        });
+    }
+});
 </script>
 <script src="/app.min.js"></script>
 </body>
