@@ -168,6 +168,13 @@
                 transform: translateX(-50%) translateY(-20px);
             }
         }
+        
+        /* Respect reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .darkwing-peek {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>

@@ -83,6 +83,17 @@
         .darkwing-sprite.looking {
             animation: darkwing-look 0.8s ease-in-out;
         }
+        
+        /* Respect reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .darkwing-sprite.looking {
+                animation: none !important;
+            }
+            
+            .darkwing-sprite:hover {
+                transform: none !important;
+            }
+        }
 
         .logo {
             text-align: center;

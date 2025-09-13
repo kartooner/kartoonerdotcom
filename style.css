@@ -1916,6 +1916,39 @@ footer p {
     color: var(--text-color);
 }
 
+/* ==========================================
+   Accessibility - Reduced Motion Support
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    /* Disable all animations and transitions for users with motion sensitivity */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    /* Specifically disable floating animations for doodle lines */
+    .line-1,
+    .line-2,
+    .line-3 {
+        animation: none !important;
+    }
+    
+    /* Disable fade-in animations */
+    .animate-fade-in,
+    .animate-main,
+    .animate-header,
+    .animate-footer {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
 /*
  * ╔════════════════════════════════════════╗
  * ║           INVISIBLE BOY                ║
