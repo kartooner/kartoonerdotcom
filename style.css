@@ -1501,12 +1501,10 @@ footer {
     background: rgba(20, 20, 90, 0.35);
     margin-bottom: 0;
     padding: 2rem 0;
-    border-top: 1px dotted rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="light"] footer {
     background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-color) 100%);
-    border-top: 1px dotted rgba(0, 0, 0, 0.15);
     position: relative;
 }
 
