@@ -14,7 +14,8 @@
       "Bash(sharp:*)",
       "Bash(csso:*)",
       "Bash(sed:*)",
-      "Read(//d/**)"
+      "Read(//d/**)",
+      "WebFetch(domain:corsproxy.io)"
     ],
     "deny": [],
     "ask": []
