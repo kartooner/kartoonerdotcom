@@ -283,6 +283,15 @@
             vertical-align: text-bottom;
         }
 
+        .medium-article-separator {
+            margin: 1.5rem 0;
+            padding: 1rem 0;
+            border-top: 1px dotted rgba(255,255,255,0.2);
+        }
+
+        [data-theme="light"] .medium-article-separator {
+            border-top: 1px dotted rgba(0,0,0,0.15);
+        }
 
     </style>
 </head>
@@ -347,20 +356,23 @@
             <h3>Recent posts</h3>
             
             <dl class="post-list">
-                
+
                 <dt><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></dt>
                 <dd>Sometimes you think you know every corner of your neighborhood—until one day you don't.</dd>
-                
+
                 <dt><a href="/entry/here-we-go-again.html">Here we go again</a></dt>
                 <dd>It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.</dd>
             </dl>
-            
+
+            <div class="medium-article-separator">
+                <dt style="margin-bottom: 0.25rem;"><a href="https://medium.com/@kartooner/just-make-stuff-722ddebea4db?source=rss-d55845b101c6------2" target="_blank" rel="noopener noreferrer">Just Make Stuff</a></dt>
+                <dd style="margin-left: 0; font-style: italic; opacity: 0.8;">My latest article on Medium</dd>
+            </div>
+
             <footer>
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
         </div>
-
-        <p style="margin: 2rem 0; font-size: 1rem; color: var(--text-color);">My latest article on Medium talks about: <a href="https://medium.com/@kartooner/just-make-stuff-722ddebea4db?source=rss-d55845b101c6------2" target="_blank" rel="noopener noreferrer">Just Make Stuff</a>.</p>
 
         <div class="feed-links animate-fade-in animate-footer">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
