@@ -1695,7 +1695,7 @@ footer p {
 /* Tablet screens - extra right margin */
 @media (max-width: 1024px) {
     .container {
-        padding-right: 3em;
+        padding: 0 3em;
     }
     
     /* Additional padding for right column content */

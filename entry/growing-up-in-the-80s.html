@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <style>
         .entry-container {
             max-width: 800px;
@@ -45,7 +44,7 @@
         .entry-date {
             color: var(--skills-color);
             margin-bottom: 10px;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .entry-title {
@@ -196,27 +195,27 @@
             background: none !important;
         }
 
-        .feed-links {
+        .info-section {
             background: rgba(var(--accent-rgb), 0.08);
             padding: 2rem;
             border-radius: 8px;
             margin: 2rem 0;
         }
 
-        .feed-links p {
+        .info-section p {
             text-align: left;
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: var(--text-color-secondary, var(--skills-color));
             margin-bottom: 0.75rem;
             line-height: 1.4;
         }
 
-        .feed-links-row {
+        .info-section-row {
             display: flex;
             gap: 1.5rem;
         }
 
-        .feed-links a {
+        .info-section a {
             color: var(--skills-color);
             text-decoration: none;
             font-size: 0.8rem;
@@ -226,13 +225,20 @@
             gap: 0.375rem;
         }
 
-        .feed-links a:hover {
+        .info-section a:hover {
             color: var(--accent-color);
         }
 
-        .feed-links .material-symbols-outlined {
-            font-size: 0.9rem;
+        .info-section .material-symbols-outlined {
+            font-size: 1rem;
         }
+
+        .info-section p .material-symbols-outlined {
+            font-size: 1.1rem;
+            margin-right: 0.5rem;
+            vertical-align: text-bottom;
+        }
+
         
         /* Responsive scaling for entry title */
         @media (max-width: 768px) {
@@ -267,7 +273,6 @@
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -287,7 +292,7 @@
 
         <div class="entry">
             <div class="entry-content">
-                <img src="/img/land-before-time-cover.jpg" alt="Movie poster for The Land Before Time showing young dinosaurs in a lush prehistoric landscape" data-progressive loading="lazy" />
+                <img src="/img/land-before-time-cover.jpg" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />
                 <p>Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us. Probably Skittles and a medium Coke, if I had to guess.</p>
 
 <p>On the big screen is The Land Before Time, this amazing animated movie by Don Bluth about dinosaurs. I can&#39;t look away.</p>
@@ -319,10 +324,10 @@
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
         </div>
-
+        
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="arcade-gif">
-                <img src="/img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
+                <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
             </div>
 
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
