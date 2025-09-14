@@ -669,10 +669,27 @@ function generateEntryPages(journal) {
             </div>
         </div>
         
-        <footer class="animate-fade-in animate-footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
+    </main>
+</div>
+
+<footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+    <div class="footer-container">
+        <div class="arcade-gif">
+            <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
+        </div>
+
+        <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
+            <strong>CSS Joy Webring</strong>
+            <div class="webring-links">
+                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
+                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
+                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+            </div>
+        </div>
+
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </div>
+</footer>
     
     <script src="/app.min.js"></script>
 </body>
@@ -1066,10 +1083,27 @@ function generateJournalHtml(journal) {
             </div>
         </div>
         
-        <footer class="animate-fade-in animate-footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
+    </main>
+</div>
+
+<footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+    <div class="footer-container">
+        <div class="arcade-gif">
+            <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
+        </div>
+
+        <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
+            <strong>CSS Joy Webring</strong>
+            <div class="webring-links">
+                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
+                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
+                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+            </div>
+        </div>
+
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </div>
+</footer>
     
     <script src="/app.min.js"></script>
 </body>
@@ -1229,8 +1263,23 @@ function generateArchiveHtml(journal) {
             ${yearsHtml}
 
             
-            <footer class="animate-fade-in animate-footer">
-                <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+                <div class="footer-container">
+                    <div class="arcade-gif">
+                        <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
+                    </div>
+
+                    <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
+                        <strong>CSS Joy Webring</strong>
+                        <div class="webring-links">
+                            <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
+                            <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
+                            <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+                        </div>
+                    </div>
+
+                    <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+                </div>
             </footer>
         </main>
     </div>
