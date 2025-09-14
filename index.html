@@ -39,22 +39,22 @@
 <a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- Persistent Navigation -->
-<nav class="persistent-nav" aria-label="Site navigation">
+<nav class="persistent-nav" aria-label="Main site navigation" role="navigation">
     <!-- Mobile menu button -->
-    <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+    <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu" aria-haspopup="true">
         <span class="menu-text">Menu</span>
     </button>
     
     <!-- Navigation links -->
-    <div class="nav-links">
-        <button class="mobile-close-button" aria-label="Close navigation menu">
+    <div class="nav-links" id="nav-menu" role="menu" aria-labelledby="mobile-menu-toggle">
+        <button class="mobile-close-button" aria-label="Close navigation menu" role="menuitem">
             <span class="close-text">×</span>
         </button>
-        <a href="/" class="current" aria-current="page">Home</a>
-        <a href="/about">About</a>
-        <a href="/journal">Journal</a>
-        <a href="/voice-acting">Voice Acting</a>
-        <a href="/contact">Contact</a>
+        <a href="/" class="current" aria-current="page" role="menuitem">Home</a>
+        <a href="/about" role="menuitem">About</a>
+        <a href="/journal" role="menuitem">Journal</a>
+        <a href="/voice-acting" role="menuitem">Voice Acting</a>
+        <a href="/contact" role="menuitem">Contact</a>
     </div>
 </nav>
 
@@ -79,7 +79,7 @@
 </div>
 
 <div class="container">
-    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1" role="main" aria-label="Main content">
 
         <div class="main-content-grid">
             <div class="left-column">
@@ -153,9 +153,9 @@
 
 
 
-        <section class="contact-section">
+        <section class="contact-section" role="region" aria-labelledby="contact-heading">
             <div class="info-section">
-                <p><span class="material-symbols-outlined">communities</span> <strong>Let's connect.</strong> Find me on these social media platforms:</p>
+                <p><span class="material-symbols-outlined">communities</span> <strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
                 <div class="info-section-row">
                     <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Visit my Bluesky profile, opens in a new tab">Bluesky</a>
                     <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Visit my Threads profile, opens in a new tab">Threads</a>
@@ -167,13 +167,13 @@
 
     </main>
 
-    <footer class="animate-fade-in animate-footer">
+    <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
 
         <div class="arcade-gif">
             <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
         </div>
 
-        <div class="webring">
+        <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
             <strong>CSS Joy Webring</strong>
             <div class="webring-links">
                 <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>

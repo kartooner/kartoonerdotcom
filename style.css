@@ -389,11 +389,13 @@ a[target="_blank"] svg {
 }
 
 /* Enhanced focus styles for keyboard navigation */
-a:focus-visible {
-    outline: 2px solid var(--accent-color);
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid var(--accent-color);
     outline-offset: 3px;
     text-decoration: underline;
     color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--bg-color);
 }
 
 /* ==========================================
@@ -429,10 +431,11 @@ a:focus-visible {
     color: var(--accent-color);
 }
 
-.mobile-menu-toggle:focus {
-    outline: 2px solid var(--accent-color);
+.mobile-menu-toggle:focus-visible {
+    outline: 3px solid var(--accent-color);
     outline-offset: 3px;
     color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--bg-color);
 }
 
 /* Menu text styling */
@@ -630,9 +633,10 @@ a:focus-visible {
         color: var(--accent-color);
     }
     
-    .mobile-close-button:focus {
-        outline: 2px solid var(--accent-color);
-        outline-offset: 2px;
+    .mobile-close-button:focus-visible {
+        outline: 3px solid var(--accent-color);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 1px var(--bg-color);
     }
     
     .close-text {
@@ -886,9 +890,10 @@ a:focus-visible {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.theme-toggle:focus {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
+.theme-toggle:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 1px var(--bg-color);
 }
 
 .theme-toggle-icon {
