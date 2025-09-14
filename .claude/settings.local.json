@@ -17,7 +17,8 @@
       "Read(//d/**)",
       "WebFetch(domain:corsproxy.io)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:api.allorigins.win)"
+      "WebFetch(domain:api.allorigins.win)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []
