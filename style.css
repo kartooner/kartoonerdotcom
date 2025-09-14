@@ -1498,28 +1498,10 @@ header {
 
 footer {
     width: 100%;
-    background: rgba(20, 20, 90, 0.35);
     margin-bottom: 2rem;
     padding: 2rem 0;
 }
 
-[data-theme="light"] footer {
-    background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-color) 100%);
-    position: relative;
-}
-
-[data-theme="light"] footer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(var(--accent-rgb), 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb), 0.08) 0%, transparent 50%);
-    pointer-events: none;
-}
 
 .footer-container {
     max-width: 1200px;
@@ -1948,6 +1930,68 @@ footer p {
 }
 
 [data-theme="dark"] .info-section p strong {
+    color: var(--text-color);
+}
+
+.feed-links {
+    background: rgba(var(--accent-rgb), 0.12);
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+.feed-links p {
+    text-align: left;
+    font-size: 1rem;
+    color: var(--text-color-secondary, var(--skills-color));
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.feed-links .info-section-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.feed-links a {
+    color: var(--skills-color);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    min-height: 44px;
+    min-width: 44px;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
+}
+
+.feed-links a:hover {
+    color: var(--accent-color);
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: rgba(var(--accent-rgb), 0.3);
+    transform: translateY(-1px);
+}
+
+.feed-links .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-size: 0.9rem;
+}
+
+.feed-links p .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    vertical-align: text-bottom;
+}
+
+[data-theme="dark"] .feed-links p strong {
     color: var(--text-color);
 }
 
