@@ -18,7 +18,9 @@
       "WebFetch(domain:corsproxy.io)",
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:api.allorigins.win)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:letterboxd.com)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []

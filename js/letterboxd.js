@@ -2,7 +2,7 @@
 class ReviewsUI {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://letterboxd.com/kartooner/rss/');
+        this.proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://letterboxd.com/kartooner/rss/');
         this.fallbackJsonUrl = 'letterboxd-fallback.json';
         this.profileUrl = 'https://letterboxd.com/kartooner/';
         this.fetchTimeoutMs = 6000;
