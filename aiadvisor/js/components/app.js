@@ -244,139 +244,49 @@ const AIProjectAdvisor = () => {
                             Analysis complete. Results are now displayed.
                         </div>
 
-                        {/* Results Header with Context */}
-                        <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <h2 id="results-heading" className="sr-only">Analysis Results</h2>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Analysis for:</span>
-                                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
-                                    </div>
-                                    <p className="text-gray-700 italic">"{concept}"</p>
+                        {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
+                        <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
+                            <h2 id="results-heading" className="sr-only">Analysis Results</h2>
+
+                            {/* Top Bar: Concept + Industry + New Button */}
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <span className="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded font-medium flex-shrink-0">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
+                                    <span className="text-sm text-gray-700 italic truncate">"{concept}"</span>
                                 </div>
                                 <button
                                     onClick={handleEditConcept}
-                                    className="ml-4 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+                                    className="px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors font-medium flex items-center gap-1.5 flex-shrink-0 ml-3"
                                     aria-label="Start a new analysis with different concept"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    New Analysis
+                                    New
                                 </button>
                             </div>
-                        </div>
 
-                        {/* Jump Navigation */}
-                        <nav aria-label="Quick navigation to analysis sections" className="sticky top-0 z-10 bg-white shadow-md rounded-lg mb-6 p-4">
-                            <div className="flex flex-wrap gap-2 items-center justify-center">
-                                <span className="text-sm font-medium text-gray-600 mr-2" aria-hidden="true">Jump to:</span>
-                                <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors" aria-label="Jump to Overview section">Overview</button>
-                                <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors" aria-label="Jump to OOUX Workflow section">OOUX Workflow</button>
-                                <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors" aria-label="Jump to Design Principles section">Design Principles</button>
-                                <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors" aria-label="Jump to Technical section">Technical</button>
-                                <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors" aria-label="Jump to Risks section">Risks</button>
-                                <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors" aria-label="Jump to Examples section">Examples</button>
+                            {/* Detected Pattern Banner */}
+                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-4">
+                                <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
+                                <div className="text-lg font-bold">{analysis.detectedPattern}</div>
                             </div>
-                        </nav>
 
-                        {/* Methodology Explanation Modal */}
-                        {showMethodology && (
-                            <div
-                                className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-                                onClick={() => setShowMethodology(false)}
-                                role="dialog"
-                                aria-modal="true"
-                                aria-labelledby="methodology-title"
-                            >
-                                <div className="bg-white rounded-lg shadow-2xl max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                    <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg z-10">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <Icon name="Lightbulb" />
-                                                <h2 id="methodology-title" className="text-2xl font-bold">How This Analysis Works</h2>
-                                            </div>
-                                            <button
-                                                onClick={() => setShowMethodology(false)}
-                                                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-                                                aria-label="Close methodology explanation"
-                                            >
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 space-y-6 text-sm text-gray-700">
-                                        <div>
-                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">📊 Complexity Scoring</h4>
-                                            <p className="mb-3">The complexity score (0-100) is calculated based on 8 factors:</p>
-                                            <ul className="list-disc list-inside space-y-2 ml-2">
-                                                <li><strong>AI Type:</strong> LLM implementations are more complex than traditional ML</li>
-                                                <li><strong>User Interaction:</strong> Co-pilot UIs require more sophisticated design than backstage processing</li>
-                                                <li><strong>Cross-System Integration:</strong> Multi-system workflows increase complexity significantly</li>
-                                                <li><strong>Real-Time Requirements:</strong> Real-time processing adds infrastructure and performance challenges</li>
-                                                <li><strong>Workflow Complexity:</strong> More workflow steps = more edge cases to handle</li>
-                                                <li><strong>Data Volume:</strong> Historical or high-volume data analysis increases technical requirements</li>
-                                                <li><strong>Predictive Features:</strong> Forecasting and recommendations require advanced ML capabilities</li>
-                                                <li><strong>Risk Factors:</strong> More identified risks indicate higher project complexity</li>
-                                            </ul>
-                                        </div>
-
-                                        <div className="border-t pt-6">
-                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">🎓 Carnegie Mellon Design Principles</h4>
-                                            <p className="mb-3">Based on research from Carnegie Mellon University's Human-Computer Interaction Institute, these 9 principles guide human-AI interaction design:</p>
-                                            <ul className="list-disc list-inside space-y-2 ml-2">
-                                                <li><strong>Control & Choice:</strong> Users should maintain agency over AI actions</li>
-                                                <li><strong>Uncertainty:</strong> Systems should communicate AI confidence and limitations</li>
-                                                <li><strong>Clear Limits:</strong> Be transparent about what AI can and cannot do</li>
-                                                <li><strong>History:</strong> Support access to past interactions and versions</li>
-                                                <li><strong>Flexible Flow:</strong> Allow non-linear workflows and user preferences</li>
-                                                <li><strong>Exploration:</strong> Enable users to try variations and compare options</li>
-                                                <li><strong>Trust & Clarity:</strong> Explain AI reasoning and decisions</li>
-                                                <li><strong>Errors:</strong> Design for graceful error handling and recovery</li>
-                                                <li><strong>Memory:</strong> Manage what AI remembers and let users control it</li>
-                                            </ul>
-                                            <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Principles are recommended based on your project's AI type, interaction model, and detected features.</p>
-                                        </div>
-
-                                        <div className="border-t pt-6">
-                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">🔄 Workflow Pattern Detection</h4>
-                                            <p className="mb-3">The system identifies 1 of 12 universal AI workflow patterns:</p>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <span>• Auto-Approval</span>
-                                                <span>• Anomaly Detection</span>
-                                                <span>• Intelligent Scoring</span>
-                                                <span>• Predictive Intelligence</span>
-                                                <span>• Unified Entity View</span>
-                                                <span>• Cross-System Orchestration</span>
-                                                <span>• Natural Language Q&A</span>
-                                                <span>• Intelligent Search</span>
-                                                <span>• Impact Analysis</span>
-                                                <span>• Resource Optimization</span>
-                                                <span>• Real-Time Processing</span>
-                                                <span>• Smart Aggregation</span>
-                                            </div>
-                                            <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Each pattern includes pre-built OOUX workflows, configuration needs, and domain-specific examples.</p>
-                                        </div>
-
-                                        <div className="border-t pt-6">
-                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">📦 OOUX (Object-Oriented UX)</h4>
-                                            <p>Objects are defined with core content, metadata, actions, and relationships to create a complete system model following OOUX methodology.</p>
-                                        </div>
-                                    </div>
+                            {/* Jump Navigation */}
+                            <nav aria-label="Quick navigation to analysis sections" className="px-4 py-3 bg-white border-t border-gray-200">
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <span className="text-xs text-gray-500 mr-1 flex-shrink-0" aria-hidden="true">Jump:</span>
+                                    <button onClick={() => scrollToSection('overview')} className="px-2 py-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-100 transition-colors" aria-label="Jump to Overview section">Overview</button>
+                                    <button onClick={() => scrollToSection('ooux')} className="px-2 py-1 text-xs bg-cyan-50 text-cyan-700 border border-cyan-200 rounded hover:bg-cyan-100 transition-colors" aria-label="Jump to OOUX Workflow section">OOUX</button>
+                                    <button onClick={() => scrollToSection('principles')} className="px-2 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition-colors" aria-label="Jump to Design Principles section">Principles</button>
+                                    <button onClick={() => scrollToSection('technical')} className="px-2 py-1 text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded hover:bg-orange-100 transition-colors" aria-label="Jump to Technical section">Technical</button>
+                                    <button onClick={() => scrollToSection('risks')} className="px-2 py-1 text-xs bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors" aria-label="Jump to Risks section">Risks</button>
+                                    <button onClick={() => scrollToSection('examples')} className="px-2 py-1 text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors" aria-label="Jump to Examples section">Examples</button>
                                 </div>
-                            </div>
-                        )}
+                            </nav>
+                        </section>
 
                         <div className="space-y-6">
-                            {/* Detected Pattern - Moved Up */}
-                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-                                <h3 className="text-lg font-semibold mb-2">Detected Workflow Pattern</h3>
-                                <p className="text-xl font-bold">{analysis.detectedPattern}</p>
-                            </div>
 
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
@@ -786,6 +696,101 @@ const AIProjectAdvisor = () => {
                         )}
                         </div>
                     </>
+                )}
+
+                {/* Methodology Explanation Modal - Available Always */}
+                {showMethodology && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50"
+                        style={{zIndex: 9999}}
+                        onClick={() => setShowMethodology(false)}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="methodology-modal-title"
+                    >
+                        <div className="fixed inset-0 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg" style={{zIndex: 10}}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z" />
+                                            </svg>
+                                            <h2 id="methodology-modal-title" className="text-2xl font-bold">How This Analysis Works</h2>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowMethodology(false)}
+                                            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                                            aria-label="Close methodology explanation"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 space-y-6 text-sm text-gray-700">
+                                    <div>
+                                        <h3 className="font-semibold text-indigo-700 mb-3 text-lg">📊 Complexity Scoring</h3>
+                                        <p className="mb-3">The complexity score (0-100) is calculated based on 8 factors:</p>
+                                        <ul className="list-disc list-inside space-y-2 ml-2">
+                                            <li><strong>AI Type:</strong> LLM implementations are more complex than traditional ML</li>
+                                            <li><strong>User Interaction:</strong> Co-pilot UIs require more sophisticated design than backstage processing</li>
+                                            <li><strong>Cross-System Integration:</strong> Multi-system workflows increase complexity significantly</li>
+                                            <li><strong>Real-Time Requirements:</strong> Real-time processing adds infrastructure and performance challenges</li>
+                                            <li><strong>Workflow Complexity:</strong> More workflow steps = more edge cases to handle</li>
+                                            <li><strong>Data Volume:</strong> Historical or high-volume data analysis increases technical requirements</li>
+                                            <li><strong>Predictive Features:</strong> Forecasting and recommendations require advanced ML capabilities</li>
+                                            <li><strong>Risk Factors:</strong> More identified risks indicate higher project complexity</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="border-t pt-6">
+                                        <h3 className="font-semibold text-indigo-700 mb-3 text-lg">🎓 Carnegie Mellon Design Principles</h3>
+                                        <p className="mb-3">Based on research from Carnegie Mellon University's Human-Computer Interaction Institute, these 9 principles guide human-AI interaction design:</p>
+                                        <ul className="list-disc list-inside space-y-2 ml-2">
+                                            <li><strong>Control & Choice:</strong> Users should maintain agency over AI actions</li>
+                                            <li><strong>Uncertainty:</strong> Systems should communicate AI confidence and limitations</li>
+                                            <li><strong>Clear Limits:</strong> Be transparent about what AI can and cannot do</li>
+                                            <li><strong>History:</strong> Support access to past interactions and versions</li>
+                                            <li><strong>Flexible Flow:</strong> Allow non-linear workflows and user preferences</li>
+                                            <li><strong>Exploration:</strong> Enable users to try variations and compare options</li>
+                                            <li><strong>Trust & Clarity:</strong> Explain AI reasoning and decisions</li>
+                                            <li><strong>Errors:</strong> Design for graceful error handling and recovery</li>
+                                            <li><strong>Memory:</strong> Manage what AI remembers and let users control it</li>
+                                        </ul>
+                                        <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Principles are recommended based on your project's AI type, interaction model, and detected features.</p>
+                                    </div>
+
+                                    <div className="border-t pt-6">
+                                        <h3 className="font-semibold text-indigo-700 mb-3 text-lg">🔄 Workflow Pattern Detection</h3>
+                                        <p className="mb-3">The system identifies 1 of 12 universal AI workflow patterns:</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <span>• Auto-Approval</span>
+                                            <span>• Anomaly Detection</span>
+                                            <span>• Intelligent Scoring</span>
+                                            <span>• Predictive Intelligence</span>
+                                            <span>• Unified Entity View</span>
+                                            <span>• Cross-System Orchestration</span>
+                                            <span>• Natural Language Q&A</span>
+                                            <span>• Intelligent Search</span>
+                                            <span>• Impact Analysis</span>
+                                            <span>• Resource Optimization</span>
+                                            <span>• Real-Time Processing</span>
+                                            <span>• Smart Aggregation</span>
+                                        </div>
+                                        <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Each pattern includes pre-built OOUX workflows, configuration needs, and domain-specific examples.</p>
+                                    </div>
+
+                                    <div className="border-t pt-6">
+                                        <h3 className="font-semibold text-indigo-700 mb-3 text-lg">📦 OOUX (Object-Oriented UX)</h3>
+                                        <p>Objects are defined with core content, metadata, actions, and relationships to create a complete system model following OOUX methodology.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
