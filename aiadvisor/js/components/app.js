@@ -102,22 +102,27 @@ const AIProjectAdvisor = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded">
+                Skip to main content
+            </a>
             <div className="max-w-5xl mx-auto">
                 {/* Input Section */}
-                <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
+                <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                    <h1 id="input-heading" className="text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
                     <p className="text-gray-600 mb-6">
                         Design intelligent AI workflows for any industry with OOUX and CMU design principles
                     </p>
 
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-2">
                             Industry
                         </label>
                         <select
+                            id="industry-select"
                             value={industry}
                             onChange={(e) => setIndustry(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            aria-label="Select industry for analysis"
                         >
                             <option value="generic">Generic (Domain Agnostic)</option>
                             <option value="hcm">Human Capital Management</option>
@@ -128,21 +133,30 @@ const AIProjectAdvisor = () => {
                     </div>
 
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="concept-input" className="block text-sm font-medium text-gray-700 mb-2">
                             Project Concept
                         </label>
                         <textarea
+                            id="concept-input"
                             value={concept}
                             onChange={(e) => setConcept(e.target.value)}
                             placeholder={getPlaceholder()}
                             className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                            aria-describedby="concept-description"
+                            aria-label="Enter your AI project concept or idea"
                         />
+                        <span id="concept-description" className="sr-only">
+                            Describe your AI project idea. You can also select a template below for quick start examples.
+                        </span>
                     </div>
-                    
+
                     <button
                         onClick={handleAnalyze}
                         disabled={!concept.trim() || isAnalyzing}
                         className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                        aria-label={isAnalyzing ? 'Analyzing project...' : 'Analyze project'}
+                        aria-disabled={!concept.trim() || isAnalyzing}
+                        aria-live="polite"
                     >
                         {isAnalyzing ? (
                             <>
@@ -168,25 +182,28 @@ const AIProjectAdvisor = () => {
 
                 {/* Templates Gallery */}
                 {!analysis && showTemplates && TEMPLATES[industry] && (
-                    <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                    <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-800">Quick Start Templates</h2>
+                                <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Quick Start Templates</h2>
                                 <p className="text-sm text-gray-600 mt-1">Click any template to analyze</p>
                             </div>
                             <button
                                 onClick={() => setShowTemplates(false)}
                                 className="text-sm text-gray-500 hover:text-gray-700"
+                                aria-label="Hide templates gallery"
                             >
                                 Hide
                             </button>
                         </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
                             {TEMPLATES[industry].map((template, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => handleTemplateClick(template)}
                                     className="text-left p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                                    role="listitem"
+                                    aria-label={`${template.title}: ${template.description}. Complexity: ${template.complexity}. Click to analyze.`}
                                 >
                                     <div className="flex items-start justify-between mb-2">
                                         <Icon name={template.icon} />
@@ -223,10 +240,15 @@ const AIProjectAdvisor = () => {
                 {/* Results Section */}
                 {analysis && (
                     <>
+                        <div role="status" aria-live="polite" className="sr-only">
+                            Analysis complete. Results are now displayed.
+                        </div>
+
                         {/* Results Header with Context */}
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg p-6 mb-6">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
+                                    <h2 id="results-heading" className="sr-only">Analysis Results</h2>
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Analysis for:</span>
                                         <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
@@ -236,6 +258,7 @@ const AIProjectAdvisor = () => {
                                 <button
                                     onClick={handleEditConcept}
                                     className="ml-4 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+                                    aria-label="Start a new analysis with different concept"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -246,33 +269,40 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Jump Navigation */}
-                        <div className="sticky top-0 z-10 bg-white shadow-md rounded-lg mb-6 p-4">
+                        <nav aria-label="Quick navigation to analysis sections" className="sticky top-0 z-10 bg-white shadow-md rounded-lg mb-6 p-4">
                             <div className="flex flex-wrap gap-2 items-center justify-center">
-                                <span className="text-sm font-medium text-gray-600 mr-2">Jump to:</span>
-                                <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">Overview</button>
-                                <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors">OOUX Workflow</button>
-                                <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors">Design Principles</button>
-                                <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">Technical</button>
-                                <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">Risks</button>
-                                <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors">Examples</button>
+                                <span className="text-sm font-medium text-gray-600 mr-2" aria-hidden="true">Jump to:</span>
+                                <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors" aria-label="Jump to Overview section">Overview</button>
+                                <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors" aria-label="Jump to OOUX Workflow section">OOUX Workflow</button>
+                                <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors" aria-label="Jump to Design Principles section">Design Principles</button>
+                                <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors" aria-label="Jump to Technical section">Technical</button>
+                                <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors" aria-label="Jump to Risks section">Risks</button>
+                                <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors" aria-label="Jump to Examples section">Examples</button>
                             </div>
-                        </div>
+                        </nav>
 
                         {/* Methodology Explanation Modal */}
                         {showMethodology && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowMethodology(false)}>
+                            <div
+                                className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                                onClick={() => setShowMethodology(false)}
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="methodology-title"
+                            >
                                 <div className="bg-white rounded-lg shadow-2xl max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                    <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg">
+                                    <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg z-10">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <Icon name="Lightbulb" />
-                                                <h2 className="text-2xl font-bold">How This Analysis Works</h2>
+                                                <h2 id="methodology-title" className="text-2xl font-bold">How This Analysis Works</h2>
                                             </div>
                                             <button
                                                 onClick={() => setShowMethodology(false)}
                                                 className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                                                aria-label="Close methodology explanation"
                                             >
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             </button>
