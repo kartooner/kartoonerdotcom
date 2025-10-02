@@ -57,7 +57,19 @@ const AIProjectAdvisor = () => {
     const handleTemplateClick = (template) => {
         setConcept(template.concept);
         setShowTemplates(false);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsAnalyzing(true);
+
+        // Auto-analyze after setting the concept
+        setTimeout(() => {
+            const result = analyzeProject(template.concept, industry);
+            setAnalysis(result);
+            setSelectedPrinciples(result.recommended);
+            setIsAnalyzing(false);
+            // Scroll to results after analysis
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 100);
+        }, 500);
     };
 
     const toggleSection = (section) => {
@@ -237,6 +249,87 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         <div className="space-y-6">
+                            {/* Methodology Explanation */}
+                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg shadow-md p-4">
+                                <button
+                                    onClick={() => setShowMethodology(!showMethodology)}
+                                    className="w-full flex items-center justify-between text-left"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="Lightbulb" />
+                                        <span className="font-semibold text-gray-800">How does this analysis work?</span>
+                                    </div>
+                                    <span className="text-sm text-gray-600">{showMethodology ? 'Hide' : 'Show'}</span>
+                                </button>
+
+                                {showMethodology && (
+                                    <div className="mt-4 space-y-4 text-sm text-gray-700">
+                                        <div>
+                                            <h4 className="font-semibold text-indigo-700 mb-2">📊 Complexity Scoring</h4>
+                                            <p className="mb-2">The complexity score (0-100) is calculated based on 8 factors:</p>
+                                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                                <li><strong>AI Type:</strong> LLM implementations are more complex than traditional ML</li>
+                                                <li><strong>User Interaction:</strong> Co-pilot UIs require more sophisticated design than backstage processing</li>
+                                                <li><strong>Cross-System Integration:</strong> Multi-system workflows increase complexity significantly</li>
+                                                <li><strong>Real-Time Requirements:</strong> Real-time processing adds infrastructure and performance challenges</li>
+                                                <li><strong>Workflow Complexity:</strong> More workflow steps = more edge cases to handle</li>
+                                                <li><strong>Data Volume:</strong> Historical or high-volume data analysis increases technical requirements</li>
+                                                <li><strong>Predictive Features:</strong> Forecasting and recommendations require advanced ML capabilities</li>
+                                                <li><strong>Risk Factors:</strong> More identified risks indicate higher project complexity</li>
+                                            </ul>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-semibold text-indigo-700 mb-2">🎓 Carnegie Mellon Design Principles</h4>
+                                            <p className="mb-2">Based on research from Carnegie Mellon University's Human-Computer Interaction Institute, these 9 principles guide human-AI interaction design:</p>
+                                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                                <li><strong>Control & Choice:</strong> Users should maintain agency over AI actions</li>
+                                                <li><strong>Uncertainty:</strong> Systems should communicate AI confidence and limitations</li>
+                                                <li><strong>Clear Limits:</strong> Be transparent about what AI can and cannot do</li>
+                                                <li><strong>History:</strong> Support access to past interactions and versions</li>
+                                                <li><strong>Flexible Flow:</strong> Allow non-linear workflows and user preferences</li>
+                                                <li><strong>Exploration:</strong> Enable users to try variations and compare options</li>
+                                                <li><strong>Trust & Clarity:</strong> Explain AI reasoning and decisions</li>
+                                                <li><strong>Errors:</strong> Design for graceful error handling and recovery</li>
+                                                <li><strong>Memory:</strong> Manage what AI remembers and let users control it</li>
+                                            </ul>
+                                            <p className="mt-2 text-xs text-gray-600 italic">Principles are recommended based on your project's AI type, interaction model, and detected features.</p>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-semibold text-indigo-700 mb-2">🔄 Workflow Pattern Detection</h4>
+                                            <p className="mb-2">The system identifies 1 of 12 universal AI workflow patterns:</p>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <span>• Auto-Approval</span>
+                                                <span>• Anomaly Detection</span>
+                                                <span>• Intelligent Scoring</span>
+                                                <span>• Predictive Intelligence</span>
+                                                <span>• Unified Entity View</span>
+                                                <span>• Cross-System Orchestration</span>
+                                                <span>• Natural Language Q&A</span>
+                                                <span>• Intelligent Search</span>
+                                                <span>• Impact Analysis</span>
+                                                <span>• Resource Optimization</span>
+                                                <span>• Real-Time Processing</span>
+                                                <span>• Smart Aggregation</span>
+                                            </div>
+                                            <p className="mt-2 text-xs text-gray-600 italic">Each pattern includes pre-built OOUX workflows, configuration needs, and domain-specific examples.</p>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-semibold text-indigo-700 mb-2">📦 OOUX (Object-Oriented UX)</h4>
+                                            <p>Objects are defined with core content, metadata, actions, and relationships to create a complete system model following OOUX methodology.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Detected Pattern - Moved Up */}
+                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                                <h3 className="text-lg font-semibold mb-2">Detected Workflow Pattern</h3>
+                                <p className="text-xl font-bold">{analysis.detectedPattern}</p>
+                            </div>
+
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
@@ -283,12 +376,6 @@ const AIProjectAdvisor = () => {
                                     <p className="text-xs text-gray-500">Est. effort: {analysis.complexity.effort}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Detected Pattern */}
-                        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-                            <h3 className="text-lg font-semibold mb-2">Detected Workflow Pattern</h3>
-                            <p className="text-xl font-bold">{analysis.detectedPattern}</p>
                         </div>
 
                         {/* OOUX Workflow - Simplified for space */}
