@@ -1,0 +1,11 @@
+# Block all search engines from specific folders
+User-agent: *
+Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
+Disallow: /uploads/
+Disallow: /backup/
+Disallow: /aiadvisor/
+
+# Allow all other pages
+Allow: /

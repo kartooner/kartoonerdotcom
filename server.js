@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const zlib = require('zlib');
 
 const port = 3000;
 const mimeTypes = {
@@ -54,8 +55,37 @@ const server = http.createServer((req, res) => {
         res.end('Server Error');
       }
     } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
+      // Set caching headers for static assets
+      const headers = { 'Content-Type': contentType };
+
+      if (ext === '.css' || ext === '.js' || ext === '.woff2' || ext === '.woff' || ext === '.ttf') {
+        headers['Cache-Control'] = 'public, max-age=31536000'; // 1 year
+      } else if (ext === '.html') {
+        headers['Cache-Control'] = 'public, max-age=3600'; // 1 hour
+      } else if (ext === '.png' || ext === '.jpg' || ext === '.gif' || ext === '.webp' || ext === '.svg') {
+        headers['Cache-Control'] = 'public, max-age=86400'; // 1 day
+      }
+
+      // Check if client accepts gzip
+      const acceptEncoding = req.headers['accept-encoding'] || '';
+      const shouldCompress = (ext === '.html' || ext === '.css' || ext === '.js' || ext === '.json' || ext === '.xml') &&
+                            acceptEncoding.includes('gzip') && content.length > 1024;
+
+      if (shouldCompress) {
+        headers['Content-Encoding'] = 'gzip';
+        zlib.gzip(content, (err, compressedContent) => {
+          if (err) {
+            res.writeHead(500);
+            res.end('Compression Error');
+          } else {
+            res.writeHead(200, headers);
+            res.end(compressedContent);
+          }
+        });
+      } else {
+        res.writeHead(200, headers);
+        res.end(content);
+      }
     }
   });
 });

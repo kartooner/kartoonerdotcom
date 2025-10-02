@@ -1,0 +1,29 @@
+
+# Prevent directory listing
+Options -Indexes
+
+# Block access to specific folders
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Return 403 Forbidden for these directories
+    RewriteRule ^admin(/.*)?$ - [F,L]
+    RewriteRule ^aiadvisor(/.*)?$ - [F,L]
+    RewriteRule ^private(/.*)?$ - [F,L]
+    RewriteRule ^temp(/.*)?$ - [F,L]
+    RewriteRule ^uploads(/.*)?$ - [F,L]
+    RewriteRule ^backup(/.*)?$ - [F,L]
+</IfModule>
+
+# Alternative method using Directory directives
+# Uncomment if the above doesn't work on your server
+# <DirectoryMatch "^/.*(admin|aiadvisor|private|temp|uploads|backup)">
+#     Order Deny,Allow
+#     Deny from all
+# </DirectoryMatch>
+
+# Prevent access to sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

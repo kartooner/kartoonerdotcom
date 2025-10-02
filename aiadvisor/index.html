@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Advisor - Universal Intelligence Workflows</title>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- Load core modules (domain-agnostic) -->
+    <script type="text/babel" src="js/config/icons.js"></script>
+    <script type="text/babel" src="js/config/principles.js"></script>
+    <script type="text/babel" src="js/config/workflow-patterns.js"></script>
+    <script type="text/babel" src="js/logic/detect.js"></script>
+    
+    <!-- Optional: Load domain-specific templates (uncomment to use) -->
+    <!-- <script type="text/babel" src="js/domains/hcm.js"></script> -->
+    <!-- <script type="text/babel" src="js/domains/finance.js"></script> -->
+    
+    <!-- Load remaining logic and components -->
+    <script type="text/babel" src="js/logic/workflow-generator.js"></script>
+    <script type="text/babel" src="js/logic/analyze.js"></script>
+    <script type="text/babel" src="js/components/app.js"></script>
+    <script type="text/babel" src="js/main.js"></script>
+</body>
+</html>

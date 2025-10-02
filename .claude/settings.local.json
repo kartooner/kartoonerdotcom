@@ -20,7 +20,8 @@
       "WebFetch(domain:api.allorigins.win)",
       "Bash(cd:*)",
       "WebFetch(domain:letterboxd.com)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

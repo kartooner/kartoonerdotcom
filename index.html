@@ -14,10 +14,96 @@
     <title>Erik Sagen - Lead Product UX Designer</title>
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&family=Material+Symbols+Outlined&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <style>
+        /* Critical CSS - Above the fold styles */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        :root {
+            --font-main: "Manrope", sans-serif;
+            --font-secondary: "Cartridge Rough", sans-serif;
+            --text-base: 1rem;
+            --text-lg: 1.2rem;
+            --text-2xl: 1.728rem;
+            --text-7xl: 4.3rem;
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-base: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --leading-tight: 1.25;
+            --leading-normal: 1.5;
+            --leading-relaxed: 1.625;
+        }
+
+        :root, [data-theme="dark"] {
+            --bg-color: #191970;
+            --text-color: #ffffff;
+            --accent-color: #64ffda;
+            --secondary-color: #b8c4f5;
+            --skills-color: #d1d8e0;
+            --heading-color: #f0f2ff;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #F5FBFF;
+            --text-color: #2d3748;
+            --accent-color: #0052a3;
+            --secondary-color: #4a5568;
+            --skills-color: #2d3748;
+            --heading-color: #1a202c;
+        }
+
+        body {
+            font-family: var(--font-main);
+            font-size: var(--text-base);
+            background-color: var(--bg-color);
+            line-height: var(--leading-normal);
+            color: var(--text-color);
+            padding: 0 0 var(--space-xl) 0;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2em; }
+
+        h1 {
+            font-family: var(--font-secondary);
+            font-size: var(--text-7xl);
+            line-height: var(--leading-tight);
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+        }
+
+        h2 {
+            font-family: var(--font-secondary);
+            font-size: var(--text-2xl);
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 8px;
+            text-decoration: none;
+            z-index: 1000;
+        }
+
+        .skip-link:focus { top: 6px; }
+    </style>
     <link rel="stylesheet" href="/style.min.css">
     <script type="application/ld+json">
         {
