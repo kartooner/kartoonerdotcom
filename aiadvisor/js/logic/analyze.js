@@ -183,11 +183,12 @@ function analyzeProject(concept, industry = 'generic') {
     // Detect Objects and Pattern
     const relevantObjects = detectRelevantObjects(concept);
     const detectedPattern = detectWorkflowPattern(concept);
-    
+
     // Generate OOUX Workflow
     const oouxWorkflow = generateWorkflow(concept, detectedPattern, relevantObjects);
 
-    return {
+    // Create initial result
+    const result = {
         aiType,
         aiTypeReason,
         visibility,
@@ -201,4 +202,9 @@ function analyzeProject(concept, industry = 'generic') {
         oouxWorkflow,
         detectedPattern: WORKFLOW_PATTERNS[detectedPattern]?.name || 'Generic Workflow'
     };
+
+    // Calculate complexity score
+    result.complexity = calculateComplexity(concept, result);
+
+    return result;
 }

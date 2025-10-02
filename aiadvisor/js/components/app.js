@@ -14,6 +14,7 @@ const AIProjectAdvisor = () => {
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(true);
     const [collapsed, setCollapsed] = useState({
         ooux: false,
         principles: false,
@@ -36,6 +37,7 @@ const AIProjectAdvisor = () => {
 
     const handleAnalyze = () => {
         setIsAnalyzing(true);
+        setShowTemplates(false);
         // Simulate async analysis with a short delay for UX
         setTimeout(() => {
             const result = analyzeProject(concept, industry);
@@ -48,6 +50,13 @@ const AIProjectAdvisor = () => {
     const handleEditConcept = () => {
         setAnalysis(null);
         setIsAnalyzing(false);
+        setShowTemplates(true);
+    };
+
+    const handleTemplateClick = (template) => {
+        setConcept(template.concept);
+        setShowTemplates(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const toggleSection = (section) => {
@@ -134,6 +143,60 @@ const AIProjectAdvisor = () => {
                     </button>
                 </div>
 
+                {/* Templates Gallery */}
+                {!analysis && showTemplates && TEMPLATES[industry] && (
+                    <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800">Quick Start Templates</h2>
+                                <p className="text-sm text-gray-600 mt-1">Click any template to analyze</p>
+                            </div>
+                            <button
+                                onClick={() => setShowTemplates(false)}
+                                className="text-sm text-gray-500 hover:text-gray-700"
+                            >
+                                Hide
+                            </button>
+                        </div>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {TEMPLATES[industry].map((template, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleTemplateClick(template)}
+                                    className="text-left p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <Icon name={template.icon} />
+                                        <span className={`text-xs px-2 py-1 rounded ${
+                                            template.complexity === 'low' ? 'bg-green-100 text-green-700' :
+                                            template.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
+                                        }`}>
+                                            {template.complexity}
+                                        </span>
+                                    </div>
+                                    <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-indigo-600">{template.title}</h3>
+                                    <p className="text-xs text-gray-600">{template.description}</p>
+                                </button>
+                            ))}
+                        </div>
+                        {!TEMPLATES[industry] || TEMPLATES[industry].length === 0 ? (
+                            <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
+                        ) : null}
+                    </div>
+                )}
+
+                {!analysis && !showTemplates && (
+                    <div className="text-center mb-6">
+                        <button
+                            onClick={() => setShowTemplates(true)}
+                            className="text-sm text-indigo-600 hover:text-indigo-700 underline"
+                        >
+                            Show Templates
+                        </button>
+                    </div>
+                )}
+
                 {/* Results Section */}
                 {analysis && (
                     <>
@@ -173,8 +236,8 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         <div className="space-y-6">
-                            {/* AI Type & Interaction */}
-                            <div id="overview" className="grid md:grid-cols-2 gap-6">
+                            {/* AI Type, Interaction & Complexity */}
+                            <div id="overview" className="grid md:grid-cols-3 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                                     <Icon name="Brain" />
@@ -194,6 +257,29 @@ const AIProjectAdvisor = () => {
                                 <div className="bg-purple-50 rounded-lg p-4">
                                     <div className="text-2xl font-bold text-purple-600 mb-2 capitalize">{analysis.visibility}</div>
                                     <p className="text-sm text-gray-600">{analysis.visibilityReason}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                    <Icon name="Wrench" />
+                                    <span className="ml-2">Complexity</span>
+                                </h3>
+                                <div className={`rounded-lg p-4 ${
+                                    analysis.complexity.level === 'Low' ? 'bg-green-50' :
+                                    analysis.complexity.level === 'Medium' ? 'bg-yellow-50' :
+                                    'bg-red-50'
+                                }`}>
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <div className={`text-2xl font-bold ${
+                                            analysis.complexity.level === 'Low' ? 'text-green-600' :
+                                            analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
+                                            'text-red-600'
+                                        }`}>{analysis.complexity.level}</div>
+                                        <div className="text-sm text-gray-600">({analysis.complexity.score}/100)</div>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-1">{analysis.complexity.description}</p>
+                                    <p className="text-xs text-gray-500">Est. effort: {analysis.complexity.effort}</p>
                                 </div>
                             </div>
                         </div>
@@ -404,6 +490,38 @@ const AIProjectAdvisor = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Complexity Breakdown */}
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <Icon name="Wrench" />
+                                <span className="ml-2">Complexity Breakdown</span>
+                            </h3>
+                            <div className="space-y-2">
+                                {analysis.complexity.factors.map((factor, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`w-2 h-2 rounded-full ${
+                                                factor.impact === 'High' ? 'bg-red-500' :
+                                                factor.impact === 'Medium' ? 'bg-yellow-500' :
+                                                'bg-green-500'
+                                            }`}></span>
+                                            <span className="text-sm font-medium text-gray-700">{factor.factor}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-xs px-2 py-1 rounded ${
+                                                factor.impact === 'High' ? 'bg-red-100 text-red-700' :
+                                                factor.impact === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-green-100 text-green-700'
+                                            }`}>
+                                                {factor.impact}
+                                            </span>
+                                            <span className="text-sm font-bold text-gray-600">+{factor.points}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
                         {/* Technical, Risks, etc. - Condensed */}
                         <div id="technical" className="grid md:grid-cols-2 gap-6">
