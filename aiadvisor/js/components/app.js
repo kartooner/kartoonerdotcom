@@ -341,6 +341,7 @@ const AIProjectAdvisor = () => {
                             </div>
                         )}
 
+                        <div className="space-y-6">
                             {/* Detected Pattern - Moved Up */}
                             <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
                                 <h3 className="text-lg font-semibold mb-2">Detected Workflow Pattern</h3>

@@ -21,7 +21,9 @@
       "Bash(cd:*)",
       "WebFetch(domain:letterboxd.com)",
       "WebFetch(domain:localhost)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(curl -s http://localhost:3000/aiadvisor/index.html)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
