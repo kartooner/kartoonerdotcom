@@ -102,7 +102,7 @@ const AIProjectAdvisor = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded">
+            <a href="#main-content" className="skip-link">
                 Skip to main content
             </a>
             <div className="max-w-5xl mx-auto">

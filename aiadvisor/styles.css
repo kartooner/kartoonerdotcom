@@ -28,15 +28,21 @@ html {
     border-width: 0;
 }
 
-.focus\:not-sr-only:focus {
-    position: static;
-    width: auto;
-    height: auto;
-    padding: inherit;
-    margin: inherit;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
+/* Skip link - visible only on focus */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 999;
+    padding: 0.5rem 1rem;
+    background-color: #4f46e5;
+    color: white;
+    text-decoration: none;
+    border-radius: 0.25rem;
+}
+
+.skip-link:focus {
+    left: 1rem;
+    top: 1rem;
 }
 
 /* Enhanced focus styles for accessibility */
