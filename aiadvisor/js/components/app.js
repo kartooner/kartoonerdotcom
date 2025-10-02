@@ -178,7 +178,7 @@ const AIProjectAdvisor = () => {
                             How does this analysis work?
                         </button>
                     </div>
-                </div>
+                </section>
 
                 {/* Templates Gallery */}
                 {!analysis && showTemplates && TEMPLATES[industry] && (
@@ -223,7 +223,7 @@ const AIProjectAdvisor = () => {
                         {!TEMPLATES[industry] || TEMPLATES[industry].length === 0 ? (
                             <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
                         ) : null}
-                    </div>
+                    </section>
                 )}
 
                 {!analysis && !showTemplates && (
