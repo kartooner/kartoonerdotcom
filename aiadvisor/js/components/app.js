@@ -106,95 +106,51 @@ const AIProjectAdvisor = () => {
                 Skip to main content
             </a>
             <div className="max-w-5xl mx-auto">
-                {/* Input Section */}
-                <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                    <h1 id="input-heading" className="text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
-                    <p className="text-gray-600 mb-6">
-                        Design intelligent AI workflows for any industry with OOUX and CMU design principles
-                    </p>
+                {/* Header Section */}
+                {!analysis && (
+                    <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                        <h1 id="input-heading" className="text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
+                        <p className="text-gray-600 mb-6">
+                            Design intelligent AI workflows for any industry with OOUX and CMU design principles
+                        </p>
 
-                    <div className="mb-6">
-                        <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-2">
-                            Industry
-                        </label>
-                        <select
-                            id="industry-select"
-                            value={industry}
-                            onChange={(e) => setIndustry(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            aria-label="Select industry for analysis"
-                        >
-                            <option value="generic">Generic (Domain Agnostic)</option>
-                            <option value="hcm">Human Capital Management</option>
-                            <option value="finance">Finance</option>
-                            <option value="healthcare">Healthcare (Coming Soon)</option>
-                            <option value="retail">Retail (Coming Soon)</option>
-                        </select>
-                    </div>
+                        <div className="mb-6">
+                            <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                Industry
+                            </label>
+                            <select
+                                id="industry-select"
+                                value={industry}
+                                onChange={(e) => setIndustry(e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                aria-label="Select industry for analysis"
+                            >
+                                <option value="generic">Generic (Domain Agnostic)</option>
+                                <option value="hcm">Human Capital Management</option>
+                                <option value="finance">Finance</option>
+                                <option value="healthcare">Healthcare (Coming Soon)</option>
+                                <option value="retail">Retail (Coming Soon)</option>
+                            </select>
+                        </div>
 
-                    <div className="mb-6">
-                        <label htmlFor="concept-input" className="block text-sm font-medium text-gray-700 mb-2">
-                            Project Concept
-                        </label>
-                        <textarea
-                            id="concept-input"
-                            value={concept}
-                            onChange={(e) => setConcept(e.target.value)}
-                            placeholder={getPlaceholder()}
-                            className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                            aria-describedby="concept-description"
-                            aria-label="Enter your AI project concept or idea"
-                        />
-                        <span id="concept-description" className="sr-only">
-                            Describe your AI project idea. You can also select a template below for quick start examples.
-                        </span>
-                    </div>
-
-                    <button
-                        onClick={handleAnalyze}
-                        disabled={!concept.trim() || isAnalyzing}
-                        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                        aria-label={isAnalyzing ? 'Analyzing project...' : 'Analyze project'}
-                        aria-disabled={!concept.trim() || isAnalyzing}
-                        aria-live="polite"
-                    >
-                        {isAnalyzing ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Analyzing...
-                            </>
-                        ) : 'Analyze Project'}
-                    </button>
-
-                    <div className="mt-3 text-center">
-                        <button
-                            onClick={() => setShowMethodology(true)}
-                            className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-1 mx-auto"
-                        >
-                            <Icon name="Lightbulb" />
-                            How does this analysis work?
-                        </button>
-                    </div>
-                </section>
+                        <div className="mt-3 text-center">
+                            <button
+                                onClick={() => setShowMethodology(true)}
+                                className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-1 mx-auto"
+                            >
+                                <Icon name="Lightbulb" />
+                                How does this analysis work?
+                            </button>
+                        </div>
+                    </section>
+                )}
 
                 {/* Templates Gallery */}
-                {!analysis && showTemplates && TEMPLATES[industry] && (
+                {!analysis && TEMPLATES[industry] && (
                     <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Quick Start Templates</h2>
-                                <p className="text-sm text-gray-600 mt-1">Click any template to analyze</p>
-                            </div>
-                            <button
-                                onClick={() => setShowTemplates(false)}
-                                className="text-sm text-gray-500 hover:text-gray-700"
-                                aria-label="Hide templates gallery"
-                            >
-                                Hide
-                            </button>
+                        <div className="mb-6">
+                            <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Select a workflow pattern</h2>
+                            <p className="text-sm text-gray-600 mt-1">Click any pattern to see detailed analysis</p>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
                             {TEMPLATES[industry].map((template, idx) => (
@@ -224,17 +180,6 @@ const AIProjectAdvisor = () => {
                             <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
                         ) : null}
                     </section>
-                )}
-
-                {!analysis && !showTemplates && (
-                    <div className="text-center mb-6">
-                        <button
-                            onClick={() => setShowTemplates(true)}
-                            className="text-sm text-indigo-600 hover:text-indigo-700 underline"
-                        >
-                            Show Templates
-                        </button>
-                    </div>
                 )}
 
                 {/* Results Section */}
