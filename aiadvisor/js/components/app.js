@@ -22,6 +22,7 @@ const AIProjectAdvisor = () => {
         risks: false,
         examples: false
     });
+    const [showMethodology, setShowMethodology] = useState(false);
 
     // Get placeholder based on selected industry
     const getPlaceholder = () => {
@@ -312,11 +313,51 @@ const AIProjectAdvisor = () => {
                                 {/* Objects */}
                                 <div className="mb-6">
                                     <h4 className="font-semibold text-gray-700 mb-3">Key Objects</h4>
-                                    <div className="grid md:grid-cols-3 gap-3">
+                                    <div className="grid md:grid-cols-2 gap-4">
                                         {analysis.oouxWorkflow.objects.slice(0, 6).map((obj, idx) => (
-                                            <div key={idx} className="border border-cyan-200 rounded p-3 bg-cyan-50">
-                                                <h5 className="font-bold text-gray-800 text-sm">{obj.name}</h5>
-                                                <p className="text-xs text-gray-600 mt-1">{obj.description}</p>
+                                            <div key={idx} className="border-2 border-cyan-200 rounded-lg p-4 bg-white">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <h5 className="font-bold text-gray-800">{obj.name}</h5>
+                                                    <Icon name="Box" />
+                                                </div>
+                                                <p className="text-xs text-gray-600 mb-3">{obj.description}</p>
+
+                                                {/* Core Content */}
+                                                <div className="mb-2">
+                                                    <span className="text-xs font-semibold text-cyan-700 uppercase">Core Content</span>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {obj.coreContent?.slice(0, 4).map((content, i) => (
+                                                            <span key={i} className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded">{content}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Metadata */}
+                                                <div className="mb-2">
+                                                    <span className="text-xs font-semibold text-gray-600 uppercase">Metadata</span>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {obj.metadata?.slice(0, 3).map((meta, i) => (
+                                                            <span key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{meta}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Relationships */}
+                                                {obj.relationships && obj.relationships.length > 0 && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                                        <span className="text-xs font-semibold text-indigo-700 uppercase">Relationships</span>
+                                                        <div className="space-y-1 mt-1">
+                                                            {obj.relationships.map((rel, i) => (
+                                                                <div key={i} className="text-xs text-gray-600 flex items-start">
+                                                                    <span className="text-indigo-500 mr-1">→</span>
+                                                                    <span className="font-medium">{rel.type}</span>
+                                                                    <span className="mx-1">:</span>
+                                                                    <span className="font-semibold text-gray-800">{rel.target}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
