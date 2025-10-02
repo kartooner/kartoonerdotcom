@@ -52,16 +52,34 @@ function generateWorkflow(concept, patternKey, objects) {
 
 // Auto-Approval Pattern
 function generateAutoApprovalWorkflow(concept, objects) {
+    // Extract context from concept
+    const lower = concept.toLowerCase();
+    const requestType = lower.includes('pto') || lower.includes('time off') ? 'time-off request' :
+                       lower.includes('loan') ? 'loan application' :
+                       lower.includes('expense') ? 'expense request' :
+                       lower.includes('review') ? 'performance review' :
+                       lower.includes('claim') ? 'claim submission' : 'request';
+
+    const criteria = lower.includes('coverage') ? 'team coverage and blackout dates' :
+                    lower.includes('credit') || lower.includes('risk') ? 'credit score and risk factors' :
+                    lower.includes('threshold') || lower.includes('amount') ? 'amount thresholds and business rules' :
+                    lower.includes('rating') ? 'rating levels and policy compliance' :
+                    'policy rules and risk assessment';
+
+    const notification = lower.includes('employee') ? 'employee' :
+                        lower.includes('customer') ? 'customer' :
+                        lower.includes('applicant') ? 'applicant' : 'requester';
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
-            { step: 1, actor: 'User', action: 'Submits request', object: 'request' },
-            { step: 2, actor: 'System', action: 'Validates basic requirements', object: 'request' },
-            { step: 3, actor: 'AI', action: 'Evaluates approval criteria', object: 'request', confidence: true },
-            { step: 4, actor: 'AI', action: 'Routes decision', object: 'approval', branches: true },
-            { step: '4a', actor: 'System', action: 'Auto-approves (high confidence)', object: 'approval', condition: 'confidence > threshold AND risk < limit' },
-            { step: '4b', actor: 'System', action: 'Routes to reviewer', object: 'approval', condition: 'confidence ≤ threshold OR risk ≥ limit' },
-            { step: 5, actor: 'System', action: 'Notifies user of decision', object: 'request' }
+            { step: 1, actor: 'User', action: `Submits ${requestType}`, object: 'request' },
+            { step: 2, actor: 'System', action: 'Validates completeness and eligibility', object: 'request' },
+            { step: 3, actor: 'AI', action: `Evaluates against ${criteria}`, object: 'request', confidence: true },
+            { step: 4, actor: 'AI', action: 'Calculates risk score and confidence level', object: 'approval', branches: true },
+            { step: '4a', actor: 'System', action: 'Auto-approves and updates systems', object: 'approval', condition: 'confidence > threshold AND risk < limit' },
+            { step: '4b', actor: 'System', action: 'Routes to manager/reviewer for decision', object: 'approval', condition: 'confidence ≤ threshold OR risk ≥ limit' },
+            { step: 5, actor: 'System', action: `Notifies ${notification} of decision with reasoning`, object: 'request' }
         ],
         aiTouchpoints: [
             'Validates against policy rules and business constraints',
@@ -85,18 +103,35 @@ function generateAutoApprovalWorkflow(concept, objects) {
 
 // Anomaly Detection Pattern
 function generateAnomalyDetectionWorkflow(concept, objects) {
+    const lower = concept.toLowerCase();
+    const dataType = lower.includes('timecard') || lower.includes('punch') || lower.includes('time') ? 'timecards' :
+                    lower.includes('transaction') || lower.includes('fraud') ? 'transactions' :
+                    lower.includes('enrollment') || lower.includes('benefit') ? 'enrollment data' :
+                    lower.includes('claim') ? 'claims' :
+                    lower.includes('inventory') ? 'inventory records' : 'data records';
+
+    const anomalyType = lower.includes('missing') || lower.includes('punch') ? 'missing entries and gaps' :
+                       lower.includes('fraud') ? 'fraudulent patterns' :
+                       lower.includes('error') ? 'data errors and inconsistencies' :
+                       lower.includes('discrepanc') ? 'discrepancies' : 'unusual patterns';
+
+    const correctionAction = lower.includes('punch') || lower.includes('time') ? 'Suggests fix based on schedule history' :
+                            lower.includes('enrollment') ? 'Recommends correction before deadline' :
+                            lower.includes('fraud') ? 'Flags for fraud investigation' :
+                            'Generates suggested correction based on context';
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
-            { step: 1, actor: 'System', action: 'Monitors data streams', object: 'transaction' },
-            { step: 2, actor: 'AI', action: 'Detects anomalies', object: 'transaction', confidence: true },
-            { step: 3, actor: 'AI', action: 'Analyzes patterns and suggests fixes', object: 'anomaly' },
-            { step: 4, actor: 'System', action: 'Creates anomaly record', object: 'anomaly' },
-            { step: 5, actor: 'System', action: 'Routes by severity', object: 'anomaly', branches: true },
-            { step: '5a', actor: 'System', action: 'Auto-corrects (high confidence)', object: 'transaction', condition: 'confidence > 95% AND low impact' },
-            { step: '5b', actor: 'System', action: 'Flags for review', object: 'anomaly', condition: 'medium severity' },
-            { step: '5c', actor: 'System', action: 'Alerts and blocks', object: 'anomaly', condition: 'high severity' },
-            { step: 6, actor: 'User', action: 'Reviews and resolves', object: 'anomaly' }
+            { step: 1, actor: 'System', action: `Continuously monitors ${dataType}`, object: 'transaction' },
+            { step: 2, actor: 'AI', action: `Detects ${anomalyType} using pattern analysis`, object: 'transaction', confidence: true },
+            { step: 3, actor: 'AI', action: correctionAction, object: 'anomaly' },
+            { step: 4, actor: 'System', action: 'Creates anomaly record with context and severity', object: 'anomaly' },
+            { step: 5, actor: 'System', action: 'Routes based on severity and confidence', object: 'anomaly', branches: true },
+            { step: '5a', actor: 'System', action: 'Auto-corrects and logs change', object: 'transaction', condition: 'confidence > 95% AND low impact' },
+            { step: '5b', actor: 'System', action: 'Flags for manager/admin review', object: 'anomaly', condition: 'medium severity' },
+            { step: '5c', actor: 'System', action: 'Alerts stakeholders and blocks processing', object: 'anomaly', condition: 'high severity' },
+            { step: 6, actor: 'User', action: 'Reviews details and resolves or overrides', object: 'anomaly' }
         ],
         aiTouchpoints: [
             'Compares current data to historical baselines and patterns',
@@ -120,17 +155,38 @@ function generateAnomalyDetectionWorkflow(concept, objects) {
 
 // Intelligent Scoring Pattern
 function generateIntelligentScoringWorkflow(concept, objects) {
+    const lower = concept.toLowerCase();
+    const itemType = lower.includes('timecard') ? 'timecards' :
+                    lower.includes('candidate') || lower.includes('applicant') ? 'job candidates' :
+                    lower.includes('credit') || lower.includes('loan') ? 'credit applications' :
+                    lower.includes('risk') || lower.includes('patient') ? 'risk profiles' :
+                    lower.includes('return') ? 'return requests' : 'items';
+
+    const scoreFactors = lower.includes('timecard') ? 'variance, patterns, anomalies, policy compliance' :
+                        lower.includes('candidate') ? 'skills match, experience, qualifications' :
+                        lower.includes('credit') ? 'credit history, income, debt ratio, collateral' :
+                        lower.includes('risk') ? 'historical data, behavioral patterns, external factors' :
+                        'configurable risk and quality factors';
+
+    const lowAction = lower.includes('credit') ? 'Auto-approves application' :
+                     lower.includes('candidate') ? 'Routes to hiring manager' :
+                     lower.includes('timecard') ? 'Auto-processes to payroll' : 'Auto-processes';
+
+    const highAction = lower.includes('fraud') || lower.includes('return') ? 'Blocks and flags for fraud review' :
+                      lower.includes('credit') ? 'Declines application with explanation' :
+                      lower.includes('timecard') ? 'Blocks and alerts manager' : 'Escalates for senior review';
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
-            { step: 1, actor: 'System', action: 'Receives item for scoring', object: 'transaction' },
-            { step: 2, actor: 'AI', action: 'Calculates multi-factor score', object: 'transaction', confidence: true },
-            { step: 3, actor: 'AI', action: 'Generates insight summary', object: 'insight' },
-            { step: 4, actor: 'System', action: 'Routes by score threshold', object: 'transaction', branches: true },
-            { step: '4a', actor: 'System', action: 'Auto-processes (low score)', object: 'transaction', condition: 'score < low threshold' },
-            { step: '4b', actor: 'System', action: 'Flags for review (medium)', object: 'insight', condition: 'low ≤ score < high' },
-            { step: '4c', actor: 'System', action: 'Blocks and escalates (high)', object: 'insight', condition: 'score ≥ high threshold' },
-            { step: 5, actor: 'System', action: 'Outputs insight dashboard', object: 'insight' }
+            { step: 1, actor: 'System', action: `Receives ${itemType} for risk scoring`, object: 'transaction' },
+            { step: 2, actor: 'AI', action: `Calculates weighted score across: ${scoreFactors}`, object: 'transaction', confidence: true },
+            { step: 3, actor: 'AI', action: 'Generates detailed breakdown and insight summary', object: 'insight' },
+            { step: 4, actor: 'System', action: 'Routes based on risk score and confidence', object: 'transaction', branches: true },
+            { step: '4a', actor: 'System', action: lowAction, object: 'transaction', condition: 'score < low threshold' },
+            { step: '4b', actor: 'System', action: 'Flags for manager/reviewer with score details', object: 'insight', condition: 'low ≤ score < high' },
+            { step: '4c', actor: 'System', action: highAction, object: 'insight', condition: 'score ≥ high threshold' },
+            { step: 5, actor: 'System', action: 'Updates dashboard with scoring trends and insights', object: 'insight' }
         ],
         aiTouchpoints: [
             'Calculates weighted scores across configurable factors',
@@ -153,19 +209,40 @@ function generateIntelligentScoringWorkflow(concept, objects) {
 
 // Predictive Intelligence Pattern
 function generatePredictiveIntelligenceWorkflow(concept, objects) {
+    const lower = concept.toLowerCase();
+    const predictionType = lower.includes('turnover') || lower.includes('attrition') ? 'employee turnover risk' :
+                          lower.includes('overtime') ? 'overtime trends and costs' :
+                          lower.includes('credit') || lower.includes('risk') ? 'credit risk and default probability' :
+                          lower.includes('readmission') || lower.includes('patient') ? 'patient readmission risk' :
+                          lower.includes('stockout') || lower.includes('inventory') ? 'inventory stockout probability' :
+                          'future outcomes and risks';
+
+    const recommendations = lower.includes('turnover') ? 'Suggests targeted retention actions (comp, development, engagement)' :
+                           lower.includes('overtime') ? 'Recommends staffing adjustments and scheduling changes' :
+                           lower.includes('credit') ? 'Proposes portfolio adjustments and hedging strategies' :
+                           lower.includes('patient') ? 'Plans preventive care interventions and follow-ups' :
+                           lower.includes('inventory') ? 'Optimizes reordering and allocation across locations' :
+                           'Generates actionable recommendations with expected impact';
+
+    const criticalTrigger = lower.includes('turnover') ? 'High-value employee at >70% flight risk' :
+                           lower.includes('overtime') ? 'Projected to exceed budget by >15%' :
+                           lower.includes('credit') ? 'Portfolio risk spike detected' :
+                           lower.includes('patient') ? '90-day readmission risk >50%' :
+                           'Critical threshold exceeded';
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
-            { step: 1, actor: 'System', action: 'Continuously monitors all data', object: 'intelligenceHub' },
-            { step: 2, actor: 'AI', action: 'Detects patterns and trends', object: 'insight', confidence: true },
-            { step: 3, actor: 'AI', action: 'Predicts future outcomes', object: 'insight' },
-            { step: 4, actor: 'AI', action: 'Generates recommendations', object: 'insight', confidence: true },
-            { step: 5, actor: 'System', action: 'Routes by severity', object: 'insight', branches: true },
-            { step: '5a', actor: 'System', action: 'Critical alert (immediate)', object: 'insight', condition: 'severity = critical' },
-            { step: '5b', actor: 'System', action: 'Dashboard notification', object: 'insight', condition: 'severity = warning' },
-            { step: '5c', actor: 'System', action: 'Background insight', object: 'insight', condition: 'severity = info' },
-            { step: 6, actor: 'User', action: 'Reviews and acts on insights', object: 'insight' },
-            { step: 7, actor: 'AI', action: 'Learns from user actions', object: 'intelligenceHub' }
+            { step: 1, actor: 'System', action: 'Continuously monitors employee, operational, and performance data', object: 'intelligenceHub' },
+            { step: 2, actor: 'AI', action: `Analyzes historical patterns to detect early warning signals`, object: 'insight', confidence: true },
+            { step: 3, actor: 'AI', action: `Predicts ${predictionType} with confidence scoring`, object: 'insight' },
+            { step: 4, actor: 'AI', action: recommendations, object: 'insight', confidence: true },
+            { step: 5, actor: 'System', action: 'Routes based on risk severity and urgency', object: 'insight', branches: true },
+            { step: '5a', actor: 'System', action: 'Sends critical alert to leadership with immediate action plan', object: 'insight', condition: criticalTrigger },
+            { step: '5b', actor: 'System', action: 'Dashboard notification to managers with recommended actions', object: 'insight', condition: 'severity = warning' },
+            { step: '5c', actor: 'System', action: 'Logs insight for reporting and trend analysis', object: 'insight', condition: 'severity = info' },
+            { step: 6, actor: 'User', action: 'Reviews predictions and takes preventive action', object: 'insight' },
+            { step: 7, actor: 'AI', action: 'Tracks outcome of actions to improve future predictions', object: 'intelligenceHub' }
         ],
         aiTouchpoints: [
             'Cross-domain pattern detection across all data sources',

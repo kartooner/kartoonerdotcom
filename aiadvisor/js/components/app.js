@@ -15,6 +15,7 @@ const AIProjectAdvisor = () => {
     const [industry, setIndustry] = useState('generic');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [showTemplates, setShowTemplates] = useState(true);
+    const [showAllTemplates, setShowAllTemplates] = useState(false);
     const [collapsed, setCollapsed] = useState({
         ooux: false,
         principles: false,
@@ -52,6 +53,7 @@ const AIProjectAdvisor = () => {
         setAnalysis(null);
         setIsAnalyzing(false);
         setShowTemplates(true);
+        setShowAllTemplates(false);
     };
 
     const handleTemplateClick = (template) => {
@@ -153,7 +155,7 @@ const AIProjectAdvisor = () => {
                             <p className="text-sm text-gray-600 mt-1">Click any pattern to see detailed analysis</p>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-                            {TEMPLATES[industry].map((template, idx) => (
+                            {TEMPLATES[industry].slice(0, showAllTemplates ? TEMPLATES[industry].length : 6).map((template, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => handleTemplateClick(template)}
@@ -176,6 +178,27 @@ const AIProjectAdvisor = () => {
                                 </button>
                             ))}
                         </div>
+                        {TEMPLATES[industry].length > 6 && !showAllTemplates && (
+                            <div className="text-center mt-6">
+                                <button
+                                    onClick={() => setShowAllTemplates(true)}
+                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                    aria-label={`Show ${TEMPLATES[industry].length - 6} more workflow patterns`}
+                                >
+                                    Show {TEMPLATES[industry].length - 6} more patterns
+                                </button>
+                            </div>
+                        )}
+                        {showAllTemplates && TEMPLATES[industry].length > 6 && (
+                            <div className="text-center mt-6">
+                                <button
+                                    onClick={() => setShowAllTemplates(false)}
+                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                >
+                                    Show less
+                                </button>
+                            </div>
+                        )}
                         {!TEMPLATES[industry] || TEMPLATES[industry].length === 0 ? (
                             <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
                         ) : null}
@@ -189,26 +212,31 @@ const AIProjectAdvisor = () => {
                             Analysis complete. Results are now displayed.
                         </div>
 
+                        {/* Try Another Pattern Section */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 text-center">
+                            <p className="text-gray-600 mb-3">Try another workflow pattern?</p>
+                            <button
+                                onClick={handleEditConcept}
+                                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium inline-flex items-center gap-2"
+                                aria-label="Go back to select a different workflow pattern"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to patterns
+                            </button>
+                        </div>
+
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
                             <h2 id="results-heading" className="sr-only">Analysis Results</h2>
 
-                            {/* Top Bar: Concept + Industry + New Button */}
+                            {/* Top Bar: Concept + Industry */}
                             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                     <span className="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded font-medium flex-shrink-0">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
                                     <span className="text-sm text-gray-700 italic truncate">"{concept}"</span>
                                 </div>
-                                <button
-                                    onClick={handleEditConcept}
-                                    className="px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors font-medium flex items-center gap-1.5 flex-shrink-0 ml-3"
-                                    aria-label="Start a new analysis with different concept"
-                                >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    New
-                                </button>
                             </div>
 
                             {/* Detected Pattern Banner */}

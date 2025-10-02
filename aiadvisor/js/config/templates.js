@@ -88,23 +88,23 @@ const TEMPLATES = {
     ],
     hcm: [
         {
-            title: 'PTO Auto-Approval',
-            description: 'Auto-approve time-off with coverage validation',
-            concept: 'Auto-approve PTO requests with team coverage validation',
+            title: 'Performance Review Auto-Routing',
+            description: 'Auto-approve or escalate performance reviews',
+            concept: 'Auto-approve performance reviews based on rating thresholds and escalate concerning ones',
             complexity: 'medium',
             icon: 'CheckCircle'
         },
         {
-            title: 'Missing Punch Detection',
-            description: 'Find and fix missing time entries',
-            concept: 'Detect missing time punches and suggest fixes based on schedule',
+            title: 'Benefits Enrollment Errors',
+            description: 'Detect enrollment issues and suggest corrections',
+            concept: 'Detect benefits enrollment errors and suggest corrections before deadline',
             complexity: 'medium',
             icon: 'AlertCircle'
         },
         {
-            title: 'Timecard Scoring',
-            description: 'Score timecards for anomalies and route by risk',
-            concept: 'Score timecards for anomalies and route by risk threshold',
+            title: 'Candidate Quality Scoring',
+            description: 'Score applicants and route by fit',
+            concept: 'Score job candidates based on resume and route by match quality',
             complexity: 'medium',
             icon: 'Brain'
         },
@@ -123,32 +123,81 @@ const TEMPLATES = {
             icon: 'Users'
         },
         {
-            title: 'Employee Promotion Workflow',
-            description: 'Process promotion across HR, payroll, IT, facilities',
-            concept: 'Process employee promotion across HR, payroll, IT, facilities',
+            title: 'New Hire Onboarding',
+            description: 'Orchestrate onboarding across HR, IT, facilities',
+            concept: 'Process new hire onboarding across HR, IT, payroll, facilities',
             complexity: 'high',
             icon: 'GitBranch'
         },
         {
             title: 'HR Chatbot',
-            description: 'Answer employee questions about pay, benefits, PTO',
+            description: 'Answer employee questions about pay, benefits, policies',
             concept: 'Answer employee questions about pay, benefits, PTO',
             complexity: 'high',
             icon: 'Brain'
         },
         {
-            title: 'Employee Search',
-            description: 'Search employees, time records, policies, documents',
+            title: 'People Search',
+            description: 'Search employees, org charts, skills, documents',
             concept: 'Search employees, time records, policies, documents',
             complexity: 'high',
             icon: 'Lightbulb'
         },
         {
-            title: 'Employee Departure Impact',
-            description: 'Analyze impact if key employee leaves',
-            concept: 'Analyze impact if key employee leaves',
+            title: 'Compensation Change Impact',
+            description: 'Analyze budget impact of salary adjustments',
+            concept: 'Analyze budget impact if we give department 3% raises',
             complexity: 'high',
             icon: 'AlertCircle'
+        },
+        {
+            title: 'AI Interview Scheduling',
+            description: 'Optimize interview schedules across panel',
+            concept: 'Generate interview schedules based on interviewer availability and candidate preferences',
+            complexity: 'medium',
+            icon: 'Wrench'
+        },
+        {
+            title: 'Open Enrollment Processing',
+            description: 'Process enrollment changes in real-time',
+            concept: 'Process benefits elections in real-time with eligibility validation',
+            complexity: 'high',
+            icon: 'AlertCircle'
+        },
+        {
+            title: 'Learning Path Recommendations',
+            description: 'Aggregate training based on role and skills gaps',
+            concept: 'Recommend personalized learning paths based on role and career goals',
+            complexity: 'medium',
+            icon: 'Box'
+        },
+        {
+            title: 'PTO Auto-Approval',
+            description: 'Auto-approve time-off with coverage validation',
+            concept: 'Auto-approve PTO requests with team coverage validation',
+            complexity: 'medium',
+            icon: 'CheckCircle'
+        },
+        {
+            title: 'Missing Punch Detection',
+            description: 'Find and fix missing time entries',
+            concept: 'Detect missing time punches and suggest fixes based on schedule',
+            complexity: 'medium',
+            icon: 'AlertCircle'
+        },
+        {
+            title: 'Timecard Anomaly Scoring',
+            description: 'Score timecards for unusual patterns',
+            concept: 'Score timecards for anomalies and route by risk threshold',
+            complexity: 'medium',
+            icon: 'Brain'
+        },
+        {
+            title: 'Overtime Prediction',
+            description: 'Forecast overtime costs and alert managers',
+            concept: 'Predict overtime trends and alert managers to take action',
+            complexity: 'high',
+            icon: 'Lightbulb'
         },
         {
             title: 'AI Schedule Generation',
@@ -158,18 +207,11 @@ const TEMPLATES = {
             icon: 'Wrench'
         },
         {
-            title: 'Payroll Lock & Process',
-            description: 'Lock timecards at cutoff and send to payroll',
+            title: 'Payroll Lock & Validation',
+            description: 'Lock timecards and validate before payroll',
             concept: 'Lock timecards at cutoff and send validated data to payroll',
             complexity: 'high',
             icon: 'AlertCircle'
-        },
-        {
-            title: 'Smart Paycheck Adjustments',
-            description: 'Append adjustments to active vs creating separate',
-            concept: 'Append adjustments to active paychecks vs creating separate',
-            complexity: 'medium',
-            icon: 'Box'
         }
     ],
     finance: [
