@@ -13,6 +13,14 @@ const AIProjectAdvisor = () => {
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [collapsed, setCollapsed] = useState({
+        ooux: false,
+        principles: false,
+        technical: false,
+        risks: false,
+        examples: false
+    });
 
     // Get placeholder based on selected industry
     const getPlaceholder = () => {
@@ -27,9 +35,32 @@ const AIProjectAdvisor = () => {
     };
 
     const handleAnalyze = () => {
-        const result = analyzeProject(concept, industry);
-        setAnalysis(result);
-        setSelectedPrinciples(result.recommended);
+        setIsAnalyzing(true);
+        // Simulate async analysis with a short delay for UX
+        setTimeout(() => {
+            const result = analyzeProject(concept, industry);
+            setAnalysis(result);
+            setSelectedPrinciples(result.recommended);
+            setIsAnalyzing(false);
+        }, 500);
+    };
+
+    const handleEditConcept = () => {
+        setAnalysis(null);
+        setIsAnalyzing(false);
+    };
+
+    const toggleSection = (section) => {
+        setCollapsed(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
+
+    const copyToClipboard = (text, label = 'Content') => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert(`${label} copied to clipboard!`);
+        });
     };
 
     const togglePrinciple = (key) => {
@@ -88,10 +119,18 @@ const AIProjectAdvisor = () => {
                     
                     <button
                         onClick={handleAnalyze}
-                        disabled={!concept.trim()}
-                        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        disabled={!concept.trim() || isAnalyzing}
+                        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                     >
-                        Analyze Project
+                        {isAnalyzing ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Analyzing...
+                            </>
+                        ) : 'Analyze Project'}
                     </button>
                 </div>
 
@@ -100,14 +139,17 @@ const AIProjectAdvisor = () => {
                     <>
                         {/* Jump Navigation */}
                         <div className="sticky top-0 z-10 bg-white shadow-md rounded-lg mb-6 p-4">
-                            <div className="flex flex-wrap gap-2 items-center justify-center">
-                                <span className="text-sm font-medium text-gray-600 mr-2">Jump to:</span>
-                                <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">Overview</button>
-                                <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors">OOUX Workflow</button>
-                                <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors">Design Principles</button>
-                                <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">Technical</button>
-                                <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">Risks</button>
-                                <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors">Examples</button>
+                            <div className="flex flex-wrap gap-2 items-center justify-between">
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <span className="text-sm font-medium text-gray-600 mr-2">Jump to:</span>
+                                    <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">Overview</button>
+                                    <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors">OOUX Workflow</button>
+                                    <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors">Design Principles</button>
+                                    <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">Technical</button>
+                                    <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">Risks</button>
+                                    <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors">Examples</button>
+                                </div>
+                                <button onClick={handleEditConcept} className="px-4 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors font-medium">Edit Concept</button>
                             </div>
                         </div>
 
@@ -146,10 +188,21 @@ const AIProjectAdvisor = () => {
                         {/* OOUX Workflow - Simplified for space */}
                         {analysis.oouxWorkflow && analysis.oouxWorkflow.objects.length > 0 && (
                             <div id="ooux" className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                    <Icon name="Box" />
-                                    <span className="ml-2">OOUX Workflow</span>
-                                </h3>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                        <Icon name="Box" />
+                                        <span className="ml-2">OOUX Workflow</span>
+                                    </h3>
+                                    <button
+                                        onClick={() => toggleSection('ooux')}
+                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                                    >
+                                        {collapsed.ooux ? 'Expand' : 'Collapse'}
+                                    </button>
+                                </div>
+
+                                {!collapsed.ooux && (
+                                    <>
 
                                 {/* Objects */}
                                 <div className="mb-6">
@@ -164,12 +217,52 @@ const AIProjectAdvisor = () => {
                                     </div>
                                 </div>
 
+                                {/* Visual Workflow Diagram */}
+                                <div className="mb-6">
+                                    <h4 className="font-semibold text-gray-700 mb-3">Visual Workflow</h4>
+                                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 overflow-x-auto">
+                                        <div className="flex items-center gap-2 min-w-max">
+                                            {analysis.oouxWorkflow.flow.slice(0, 8).map((step, idx) => (
+                                                <React.Fragment key={idx}>
+                                                    <div className={`flex flex-col items-center ${step.condition ? 'opacity-70' : ''}`}>
+                                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                            step.actor === 'AI' ? 'bg-indigo-500 text-white' :
+                                                            step.actor === 'User' ? 'bg-green-500 text-white' :
+                                                            'bg-gray-500 text-white'
+                                                        }`}>
+                                                            {step.step}
+                                                        </div>
+                                                        <div className="text-xs mt-1 text-center max-w-20 font-medium">{step.actor}</div>
+                                                    </div>
+                                                    {idx < analysis.oouxWorkflow.flow.slice(0, 8).length - 1 && (
+                                                        <div className="text-gray-400 text-xl">→</div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                            {analysis.oouxWorkflow.flow.length > 8 && (
+                                                <div className="text-gray-500 text-sm">+{analysis.oouxWorkflow.flow.length - 8} more</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Workflow Steps */}
                                 <div className="mb-6">
-                                    <h4 className="font-semibold text-gray-700 mb-3 flex items-center">
-                                        <Icon name="GitBranch" />
-                                        <span className="ml-2">Workflow Steps</span>
-                                    </h4>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="font-semibold text-gray-700 flex items-center">
+                                            <Icon name="GitBranch" />
+                                            <span className="ml-2">Workflow Steps</span>
+                                        </h4>
+                                        <button
+                                            onClick={() => copyToClipboard(
+                                                analysis.oouxWorkflow.flow.map(s => `${s.step}. ${s.actor}: ${s.action}${s.condition ? ` (if ${s.condition})` : ''}`).join('\n'),
+                                                'Workflow steps'
+                                            )}
+                                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                        >
+                                            Copy Steps
+                                        </button>
+                                    </div>
                                     <div className="space-y-2">
                                         {analysis.oouxWorkflow.flow.map((step, idx) => (
                                             <div key={idx} className={`flex items-start text-sm ${step.condition ? 'ml-8' : ''}`}>
@@ -221,6 +314,8 @@ const AIProjectAdvisor = () => {
                                             ))}
                                         </div>
                                     </div>
+                                )}
+                                    </>
                                 )}
                             </div>
                         )}
@@ -320,10 +415,30 @@ const AIProjectAdvisor = () => {
 
                         {/* Risks */}
                         <div id="risks" className="bg-white rounded-lg shadow-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                                <Icon name="AlertCircle" />
-                                <span className="ml-2">Risks & Mitigations</span>
-                            </h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                    <Icon name="AlertCircle" />
+                                    <span className="ml-2">Risks & Mitigations</span>
+                                </h3>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => copyToClipboard(
+                                            analysis.risks.map(r => `Risk: ${r.risk}\nMitigation: ${r.mitigation}`).join('\n\n'),
+                                            'Risks & Mitigations'
+                                        )}
+                                        className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                    >
+                                        Copy All
+                                    </button>
+                                    <button
+                                        onClick={() => toggleSection('risks')}
+                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                                    >
+                                        {collapsed.risks ? 'Expand' : 'Collapse'}
+                                    </button>
+                                </div>
+                            </div>
+                            {!collapsed.risks && (
                             <div className="space-y-3">
                                 {analysis.risks.map((item, idx) => (
                                     <div key={idx} className="border-l-4 border-red-400 pl-4 py-2 bg-red-50 rounded-r">
@@ -334,6 +449,7 @@ const AIProjectAdvisor = () => {
                                     </div>
                                 ))}
                             </div>
+                            )}
                         </div>
 
                         {/* Examples */}
