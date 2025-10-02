@@ -154,6 +154,16 @@ const AIProjectAdvisor = () => {
                             </>
                         ) : 'Analyze Project'}
                     </button>
+
+                    <div className="mt-3 text-center">
+                        <button
+                            onClick={() => setShowMethodology(true)}
+                            className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-1 mx-auto"
+                        >
+                            <Icon name="Lightbulb" />
+                            How does this analysis work?
+                        </button>
+                    </div>
                 </div>
 
                 {/* Templates Gallery */}
@@ -248,26 +258,32 @@ const AIProjectAdvisor = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            {/* Methodology Explanation */}
-                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg shadow-md p-4">
-                                <button
-                                    onClick={() => setShowMethodology(!showMethodology)}
-                                    className="w-full flex items-center justify-between text-left"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Icon name="Lightbulb" />
-                                        <span className="font-semibold text-gray-800">How does this analysis work?</span>
+                        {/* Methodology Explanation Modal */}
+                        {showMethodology && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowMethodology(false)}>
+                                <div className="bg-white rounded-lg shadow-2xl max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                    <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <Icon name="Lightbulb" />
+                                                <h2 className="text-2xl font-bold">How This Analysis Works</h2>
+                                            </div>
+                                            <button
+                                                onClick={() => setShowMethodology(false)}
+                                                className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                                            >
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <span className="text-sm text-gray-600">{showMethodology ? 'Hide' : 'Show'}</span>
-                                </button>
 
-                                {showMethodology && (
-                                    <div className="mt-4 space-y-4 text-sm text-gray-700">
+                                    <div className="p-6 space-y-6 text-sm text-gray-700">
                                         <div>
-                                            <h4 className="font-semibold text-indigo-700 mb-2">📊 Complexity Scoring</h4>
-                                            <p className="mb-2">The complexity score (0-100) is calculated based on 8 factors:</p>
-                                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">📊 Complexity Scoring</h4>
+                                            <p className="mb-3">The complexity score (0-100) is calculated based on 8 factors:</p>
+                                            <ul className="list-disc list-inside space-y-2 ml-2">
                                                 <li><strong>AI Type:</strong> LLM implementations are more complex than traditional ML</li>
                                                 <li><strong>User Interaction:</strong> Co-pilot UIs require more sophisticated design than backstage processing</li>
                                                 <li><strong>Cross-System Integration:</strong> Multi-system workflows increase complexity significantly</li>
@@ -279,10 +295,10 @@ const AIProjectAdvisor = () => {
                                             </ul>
                                         </div>
 
-                                        <div>
-                                            <h4 className="font-semibold text-indigo-700 mb-2">🎓 Carnegie Mellon Design Principles</h4>
-                                            <p className="mb-2">Based on research from Carnegie Mellon University's Human-Computer Interaction Institute, these 9 principles guide human-AI interaction design:</p>
-                                            <ul className="list-disc list-inside space-y-1 ml-2">
+                                        <div className="border-t pt-6">
+                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">🎓 Carnegie Mellon Design Principles</h4>
+                                            <p className="mb-3">Based on research from Carnegie Mellon University's Human-Computer Interaction Institute, these 9 principles guide human-AI interaction design:</p>
+                                            <ul className="list-disc list-inside space-y-2 ml-2">
                                                 <li><strong>Control & Choice:</strong> Users should maintain agency over AI actions</li>
                                                 <li><strong>Uncertainty:</strong> Systems should communicate AI confidence and limitations</li>
                                                 <li><strong>Clear Limits:</strong> Be transparent about what AI can and cannot do</li>
@@ -293,13 +309,13 @@ const AIProjectAdvisor = () => {
                                                 <li><strong>Errors:</strong> Design for graceful error handling and recovery</li>
                                                 <li><strong>Memory:</strong> Manage what AI remembers and let users control it</li>
                                             </ul>
-                                            <p className="mt-2 text-xs text-gray-600 italic">Principles are recommended based on your project's AI type, interaction model, and detected features.</p>
+                                            <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Principles are recommended based on your project's AI type, interaction model, and detected features.</p>
                                         </div>
 
-                                        <div>
-                                            <h4 className="font-semibold text-indigo-700 mb-2">🔄 Workflow Pattern Detection</h4>
-                                            <p className="mb-2">The system identifies 1 of 12 universal AI workflow patterns:</p>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div className="border-t pt-6">
+                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">🔄 Workflow Pattern Detection</h4>
+                                            <p className="mb-3">The system identifies 1 of 12 universal AI workflow patterns:</p>
+                                            <div className="grid grid-cols-2 gap-2">
                                                 <span>• Auto-Approval</span>
                                                 <span>• Anomaly Detection</span>
                                                 <span>• Intelligent Scoring</span>
@@ -313,16 +329,17 @@ const AIProjectAdvisor = () => {
                                                 <span>• Real-Time Processing</span>
                                                 <span>• Smart Aggregation</span>
                                             </div>
-                                            <p className="mt-2 text-xs text-gray-600 italic">Each pattern includes pre-built OOUX workflows, configuration needs, and domain-specific examples.</p>
+                                            <p className="mt-3 text-xs text-gray-600 italic bg-indigo-50 p-3 rounded">Each pattern includes pre-built OOUX workflows, configuration needs, and domain-specific examples.</p>
                                         </div>
 
-                                        <div>
-                                            <h4 className="font-semibold text-indigo-700 mb-2">📦 OOUX (Object-Oriented UX)</h4>
+                                        <div className="border-t pt-6">
+                                            <h4 className="font-semibold text-indigo-700 mb-3 text-lg">📦 OOUX (Object-Oriented UX)</h4>
                                             <p>Objects are defined with core content, metadata, actions, and relationships to create a complete system model following OOUX methodology.</p>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
+                        )}
 
                             {/* Detected Pattern - Moved Up */}
                             <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
