@@ -12,19 +12,39 @@ const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
+    const [industry, setIndustry] = useState('generic');
+
+    // Get placeholder based on selected industry
+    const getPlaceholder = () => {
+        const examples = {
+            generic: 'E.g., "Auto-approve requests based on policy rules" or "Detect anomalies in transaction data"',
+            hcm: 'E.g., "Auto-approve PTO requests with team coverage validation" or "Detect missing time punches and suggest fixes"',
+            finance: 'E.g., "Auto-approve loan applications under threshold" or "Detect fraudulent transactions and flag for review"',
+            healthcare: 'E.g., "Auto-approve prescription refills for stable patients" or "Predict patient readmission risk"',
+            retail: 'E.g., "Auto-approve returns under $50 with valid receipt" or "Predict inventory stockouts and optimize reordering"'
+        };
+        return examples[industry] || examples.generic;
+    };
 
     const handleAnalyze = () => {
-        const result = analyzeProject(concept);
+        const result = analyzeProject(concept, industry);
         setAnalysis(result);
         setSelectedPrinciples(result.recommended);
     };
 
     const togglePrinciple = (key) => {
-        setSelectedPrinciples(prev => 
-            prev.includes(key) 
+        setSelectedPrinciples(prev =>
+            prev.includes(key)
                 ? prev.filter(p => p !== key)
                 : [...prev, key]
         );
+    };
+
+    const scrollToSection = (sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     return (
@@ -36,7 +56,24 @@ const AIProjectAdvisor = () => {
                     <p className="text-gray-600 mb-6">
                         Design intelligent AI workflows for any industry with OOUX and CMU design principles
                     </p>
-                    
+
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Industry
+                        </label>
+                        <select
+                            value={industry}
+                            onChange={(e) => setIndustry(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                            <option value="generic">Generic (Domain Agnostic)</option>
+                            <option value="hcm">Human Capital Management</option>
+                            <option value="finance">Finance</option>
+                            <option value="healthcare">Healthcare (Coming Soon)</option>
+                            <option value="retail">Retail (Coming Soon)</option>
+                        </select>
+                    </div>
+
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Project Concept
@@ -44,7 +81,7 @@ const AIProjectAdvisor = () => {
                         <textarea
                             value={concept}
                             onChange={(e) => setConcept(e.target.value)}
-                            placeholder='E.g., "Auto-approve requests based on policy rules" or "Detect anomalies in transaction data"'
+                            placeholder={getPlaceholder()}
                             className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                         />
                     </div>
@@ -60,9 +97,23 @@ const AIProjectAdvisor = () => {
 
                 {/* Results Section */}
                 {analysis && (
-                    <div className="space-y-6">
-                        {/* AI Type & Interaction */}
-                        <div className="grid md:grid-cols-2 gap-6">
+                    <>
+                        {/* Jump Navigation */}
+                        <div className="sticky top-0 z-10 bg-white shadow-md rounded-lg mb-6 p-4">
+                            <div className="flex flex-wrap gap-2 items-center justify-center">
+                                <span className="text-sm font-medium text-gray-600 mr-2">Jump to:</span>
+                                <button onClick={() => scrollToSection('overview')} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">Overview</button>
+                                <button onClick={() => scrollToSection('ooux')} className="px-3 py-1 text-sm bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200 transition-colors">OOUX Workflow</button>
+                                <button onClick={() => scrollToSection('principles')} className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors">Design Principles</button>
+                                <button onClick={() => scrollToSection('technical')} className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors">Technical</button>
+                                <button onClick={() => scrollToSection('risks')} className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">Risks</button>
+                                <button onClick={() => scrollToSection('examples')} className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors">Examples</button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* AI Type & Interaction */}
+                            <div id="overview" className="grid md:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                                     <Icon name="Brain" />
@@ -94,7 +145,7 @@ const AIProjectAdvisor = () => {
 
                         {/* OOUX Workflow - Simplified for space */}
                         {analysis.oouxWorkflow && analysis.oouxWorkflow.objects.length > 0 && (
-                            <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div id="ooux" className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                     <Icon name="Box" />
                                     <span className="ml-2">OOUX Workflow</span>
@@ -175,7 +226,7 @@ const AIProjectAdvisor = () => {
                         )}
 
                         {/* Recommended Principles */}
-                        <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div id="principles" className="bg-white rounded-lg shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                 <Icon name="CheckCircle" />
                                 <span className="ml-2">Recommended Design Principles</span>
@@ -241,7 +292,7 @@ const AIProjectAdvisor = () => {
                         )}
 
                         {/* Technical, Risks, etc. - Condensed */}
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div id="technical" className="grid md:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Technical Considerations</h3>
                                 <ul className="space-y-2">
@@ -268,7 +319,7 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Risks */}
-                        <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div id="risks" className="bg-white rounded-lg shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                 <Icon name="AlertCircle" />
                                 <span className="ml-2">Risks & Mitigations</span>
@@ -287,7 +338,7 @@ const AIProjectAdvisor = () => {
 
                         {/* Examples */}
                         {analysis.examples.length > 0 && (
-                            <div className="bg-white rounded-lg shadow-lg p-6">
+                            <div id="examples" className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Examples Across Industries</h3>
                                 <div className="space-y-3">
                                     {analysis.examples.map((example, idx) => (
@@ -304,7 +355,8 @@ const AIProjectAdvisor = () => {
                                 </div>
                             </div>
                         )}
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

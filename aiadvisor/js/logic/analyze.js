@@ -1,7 +1,7 @@
 // Main Analysis Function
 // Determines AI type, interaction model, and generates complete analysis
 
-function analyzeProject(concept) {
+function analyzeProject(concept, industry = 'generic') {
     const lower = concept.toLowerCase();
     
     // Determine AI Type
@@ -130,31 +130,52 @@ function analyzeProject(concept) {
     if (WORKFLOW_PATTERNS[pattern]) {
         const patternExamples = WORKFLOW_PATTERNS[pattern].examples;
         if (patternExamples) {
-            examples.push({ 
-                area: 'Generic', 
-                use: patternExamples.generic, 
-                type: aiType 
+            // Show selected industry first if not generic
+            if (industry !== 'generic' && patternExamples[industry]) {
+                examples.push({
+                    area: industry.toUpperCase() + ' Example',
+                    use: patternExamples[industry],
+                    type: aiType
+                });
+            }
+
+            // Always show generic example
+            examples.push({
+                area: 'Generic Example',
+                use: patternExamples.generic,
+                type: aiType
             });
-            if (patternExamples.hcm) {
-                examples.push({ 
-                    area: 'HCM Example', 
-                    use: patternExamples.hcm, 
-                    type: aiType 
-                });
-            }
-            if (patternExamples.finance) {
-                examples.push({ 
-                    area: 'Finance Example', 
-                    use: patternExamples.finance, 
-                    type: aiType 
-                });
-            }
-            if (patternExamples.healthcare) {
-                examples.push({ 
-                    area: 'Healthcare Example', 
-                    use: patternExamples.healthcare, 
-                    type: aiType 
-                });
+
+            // Show other industries if generic is selected
+            if (industry === 'generic') {
+                if (patternExamples.hcm) {
+                    examples.push({
+                        area: 'HCM Example',
+                        use: patternExamples.hcm,
+                        type: aiType
+                    });
+                }
+                if (patternExamples.finance) {
+                    examples.push({
+                        area: 'Finance Example',
+                        use: patternExamples.finance,
+                        type: aiType
+                    });
+                }
+                if (patternExamples.healthcare) {
+                    examples.push({
+                        area: 'Healthcare Example',
+                        use: patternExamples.healthcare,
+                        type: aiType
+                    });
+                }
+                if (patternExamples.retail) {
+                    examples.push({
+                        area: 'Retail Example',
+                        use: patternExamples.retail,
+                        type: aiType
+                    });
+                }
             }
         }
     }
