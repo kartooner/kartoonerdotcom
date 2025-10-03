@@ -87,6 +87,7 @@ const GlossaryText = ({ text, onTermClick }) => {
 
 const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
+    const [workflowTitle, setWorkflowTitle] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
@@ -107,6 +108,9 @@ const AIProjectAdvisor = () => {
     const [showGlossary, setShowGlossary] = useState(false);
     const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
     const [pageTitle, setPageTitle] = useState('AI project advisor');
+    const [showJumpMenu, setShowJumpMenu] = useState(false);
+    const [activeSection, setActiveSection] = useState('overview');
+    const [complexityFilter, setComplexityFilter] = useState('all');
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -126,7 +130,7 @@ const AIProjectAdvisor = () => {
         return examples[industry] || examples.generic;
     };
 
-    // Load analysis from URL on mount
+    // Load analysis from URL (clean path or query params) on mount
     React.useEffect(() => {
         const path = window.location.pathname;
         // Match both /aiadvisor/industry/template AND /industry/template patterns
@@ -146,10 +150,13 @@ const AIProjectAdvisor = () => {
                 const template = templates.find(t => t.slug === templateSlug);
                 console.log('Found template:', template);
                 if (template) {
+                    // Update page title
+                    document.title = `${template.title} - AI Project Advisor`;
+
                     setIndustry(industrySlug);
                     setConcept(template.concept);
                     setPageTitle(template.title);
-                    document.title = template.title;
+                    setWorkflowTitle(template.title);
                     setShowTemplates(false);
                     const result = analyzeProject(template.concept, industrySlug);
                     setAnalysis(result);
@@ -202,9 +209,18 @@ const AIProjectAdvisor = () => {
         }
     }, []);
 
-    // Generate shareable URL - just use the current URL since it's already clean
+    // Generate shareable URL with clean path
     const generateShareUrl = () => {
-        return window.location.href;
+        const encodedConcept = encodeURIComponent(concept.trim());
+        // Get the base path (everything before any existing industry/concept)
+        let basePath = window.location.pathname;
+        // Remove any trailing slash
+        basePath = basePath.replace(/\/$/, '');
+        // Remove any existing industry/concept path segments
+        basePath = basePath.replace(/\/(generic|hcm|finance|healthcare|retail)\/[^\/]*$/, '');
+        // Ensure basePath ends without a trailing slash for clean concatenation
+        const cleanPath = `${basePath}/${industry}/${encodedConcept}`;
+        return `${window.location.origin}${cleanPath}`;
     };
 
     const handleShare = () => {
@@ -239,6 +255,7 @@ const AIProjectAdvisor = () => {
     const handleEditConcept = () => {
         window.history.pushState({}, '', '/aiadvisor');
         setAnalysis(null);
+        setWorkflowTitle('');
         setIsAnalyzing(false);
         setShowTemplates(true);
         setShowAllTemplates(false);
@@ -251,7 +268,11 @@ const AIProjectAdvisor = () => {
         const newUrl = `/aiadvisor/${industry}/${template.slug}`;
         window.history.pushState({}, '', newUrl);
 
+        // Update page title
+        document.title = `${template.title} - AI Project Advisor`;
+
         setConcept(template.concept);
+        setWorkflowTitle(template.title);
         setShowTemplates(false);
         setIsAnalyzing(true);
 
@@ -261,7 +282,6 @@ const AIProjectAdvisor = () => {
             setAnalysis(result);
             setSelectedPrinciples(result.recommended);
             setPageTitle(template.title);
-            document.title = template.title;
             setIsAnalyzing(false);
             // Scroll to results after analysis
             setTimeout(() => {
@@ -295,6 +315,8 @@ const AIProjectAdvisor = () => {
         const element = document.getElementById(sectionId);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection(sectionId);
+            setShowJumpMenu(false); // Close mobile menu after selection
         }
     };
 
@@ -373,17 +395,67 @@ const AIProjectAdvisor = () => {
                 {!analysis && TEMPLATES[industry] && (
                     <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="mb-6">
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                                 <div>
                                     <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 2</div>
                                     <h2 id="templates-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Start with a proven pattern</h2>
                                     <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
                                 </div>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">Recommended</span>
+
+                                {/* Complexity Filter */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Filter by complexity</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        <button
+                                            onClick={() => setComplexityFilter('all')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'all'
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            All
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('low')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'low'
+                                                    ? 'bg-green-600 text-white'
+                                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                            }`}
+                                        >
+                                            Low
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('medium')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'medium'
+                                                    ? 'bg-yellow-600 text-white'
+                                                    : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                            }`}
+                                        >
+                                            Medium
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('high')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'high'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                            }`}
+                                        >
+                                            High
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-                            {TEMPLATES[industry].slice(0, showAllTemplates ? TEMPLATES[industry].length : 6).map((template, idx) => (
+                            {(() => {
+                                const filtered = TEMPLATES[industry].filter(template =>
+                                    complexityFilter === 'all' || template.complexity === complexityFilter
+                                );
+                                return (showAllTemplates ? filtered : filtered.slice(0, 6)).map((template, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => handleTemplateClick(template)}
@@ -404,32 +476,52 @@ const AIProjectAdvisor = () => {
                                     <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-indigo-600">{template.title}</h3>
                                     <p className="text-xs text-gray-600">{template.description}</p>
                                 </button>
-                            ))}
+                                ));
+                            })()}
                         </div>
-                        {TEMPLATES[industry].length > 6 && !showAllTemplates && (
-                            <div className="text-center mt-6">
-                                <button
-                                    onClick={() => setShowAllTemplates(true)}
-                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                    aria-label={`Show ${TEMPLATES[industry].length - 6} more workflow patterns`}
-                                >
-                                    Show {TEMPLATES[industry].length - 6} more patterns
-                                </button>
-                            </div>
-                        )}
-                        {showAllTemplates && TEMPLATES[industry].length > 6 && (
-                            <div className="text-center mt-6">
-                                <button
-                                    onClick={() => setShowAllTemplates(false)}
-                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                >
-                                    Show less
-                                </button>
-                            </div>
-                        )}
-                        {!TEMPLATES[industry] || TEMPLATES[industry].length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
-                        ) : null}
+                        {(() => {
+                            const filteredTemplates = TEMPLATES[industry].filter(template =>
+                                complexityFilter === 'all' || template.complexity === complexityFilter
+                            );
+                            const hasMore = filteredTemplates.length > 6;
+
+                            if (filteredTemplates.length === 0) {
+                                return (
+                                    <p className="text-center text-gray-500 py-8">
+                                        No patterns match the selected complexity level.
+                                    </p>
+                                );
+                            }
+
+                            if (hasMore && !showAllTemplates) {
+                                return (
+                                    <div className="text-center mt-6">
+                                        <button
+                                            onClick={() => setShowAllTemplates(true)}
+                                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                            aria-label={`Show ${filteredTemplates.length - 6} more workflow patterns`}
+                                        >
+                                            Show {filteredTemplates.length - 6} more patterns
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            if (hasMore && showAllTemplates) {
+                                return (
+                                    <div className="text-center mt-6">
+                                        <button
+                                            onClick={() => setShowAllTemplates(false)}
+                                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                        >
+                                            Show less
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            return null;
+                        })()}
                     </section>
                 )}
 
@@ -465,7 +557,16 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Page Title for Analysis View */}
-                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-6">{pageTitle}</h1>
+                        <div className="mb-6 flex items-center justify-between">
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">{pageTitle}</h1>
+                            <button
+                                onClick={() => setShowMethodology(true)}
+                                className="text-gray-600 hover:text-gray-700 font-medium inline-flex items-center gap-2"
+                            >
+                                <Icon name="Lightbulb" />
+                                How does this work?
+                            </button>
+                        </div>
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
@@ -491,7 +592,78 @@ const AIProjectAdvisor = () => {
                             </nav>
                         </section>
 
-                        <div className="space-y-6">
+                        {/* Mobile Jump Navigation Dropdown */}
+                        <div className="lg:hidden mb-6">
+                            <button
+                                onClick={() => setShowJumpMenu(!showJumpMenu)}
+                                className="w-full bg-white rounded-lg shadow-lg px-4 py-3 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <span>Jump to section</span>
+                                <svg className={`w-5 h-5 transition-transform ${showJumpMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showJumpMenu && (
+                                <nav className="mt-2 bg-white rounded-lg shadow-lg overflow-hidden" aria-label="Mobile navigation to analysis sections">
+                                    <button onClick={() => scrollToSection('overview')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Overview</button>
+                                    <button onClick={() => scrollToSection('ooux')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-cyan-50 border-b border-gray-100">OOUX Workflow</button>
+                                    <button onClick={() => scrollToSection('principles')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">Design Principles</button>
+                                    <button onClick={() => scrollToSection('technical')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-orange-50 border-b border-gray-100">Technical</button>
+                                    <button onClick={() => scrollToSection('risks')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-red-50 border-b border-gray-100">Risks</button>
+                                    <button onClick={() => scrollToSection('examples')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-yellow-50">Examples</button>
+                                </nav>
+                            )}
+                        </div>
+
+                        {/* Desktop: Floating Sidebar + Main Content */}
+                        <div className="lg:flex lg:gap-6 lg:items-start">
+                            {/* Floating Jump Navigation - Desktop Only */}
+                            <nav aria-label="Desktop navigation to analysis sections" className="hidden lg:block lg:sticky lg:top-6 lg:w-48 flex-shrink-0">
+                                <div className="bg-white rounded-lg shadow-lg p-4">
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">On this page</h3>
+                                    <div className="space-y-1">
+                                        <button
+                                            onClick={() => scrollToSection('overview')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Overview
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('ooux')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            OOUX Workflow
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('principles')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Design Principles
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('technical')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'technical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Technical
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('risks')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'risks' ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Risks
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('examples')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'examples' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Examples
+                                        </button>
+                                    </div>
+                                </div>
+                            </nav>
+
+                            {/* Main Content Area */}
+                            <div className="flex-1 space-y-6 min-w-0">
 
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
@@ -574,18 +746,10 @@ const AIProjectAdvisor = () => {
                             <div id="ooux" className="bg-white rounded-lg shadow-lg p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                                <Icon name="Box" />
-                                                <span className="ml-2">OOUX workflow</span>
-                                            </h3>
-                                            <button
-                                                onClick={() => setShowMethodology(true)}
-                                                className="text-xs text-indigo-600 hover:text-indigo-700 underline"
-                                            >
-                                                How does this work?
-                                            </button>
-                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                                            <Icon name="Box" />
+                                            <span className="ml-2">OOUX workflow</span>
+                                        </h3>
                                         <p className="text-sm text-gray-600">Object-oriented breakdown showing data structures, user flows, and AI touchpoints throughout the system</p>
                                     </div>
                                     <button
@@ -793,22 +957,12 @@ const AIProjectAdvisor = () => {
 
                         {/* Recommended Principles */}
                         <div id="principles" className="bg-white rounded-lg shadow-lg p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                    <Icon name="CheckCircle" />
-                                    <span className="ml-2">Recommended design principles</span>
-                                </h3>
-                                <a
-                                    href="https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-indigo-600 hover:text-indigo-700 underline"
-                                >
-                                    Carnegie Mellon guidelines ↗
-                                </a>
-                            </div>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="CheckCircle" />
+                                <span className="ml-2">Recommended design principles</span>
+                            </h3>
                             <p className="text-sm text-gray-600 mb-4">
-                                Proven guidelines for human-AI interaction design. Click to add or remove from your focus.
+                                Carnegie Mellon's proven guidelines for human-AI interaction design. Click to add or remove from your focus.
                             </p>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {Object.entries(PRINCIPLES).map(([key, principle]) => {
@@ -869,18 +1023,10 @@ const AIProjectAdvisor = () => {
 
                         {/* Complexity Breakdown */}
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                    <Icon name="Wrench" />
-                                    <span className="ml-2">Complexity breakdown</span>
-                                </h3>
-                                <button
-                                    onClick={() => alert('Complexity scoring considers: data requirements, model sophistication, integration needs, user interaction patterns, and ongoing maintenance. Scores range from 0-100, with thresholds at 40 (Low), 60 (Medium), and 80+ (High).')}
-                                    className="text-xs text-indigo-600 hover:text-indigo-700 underline"
-                                >
-                                    How is this scored?
-                                </button>
-                            </div>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Wrench" />
+                                <span className="ml-2">Complexity breakdown</span>
+                            </h3>
                             <p className="text-sm text-gray-600 mb-4">Factors contributing to implementation complexity and development effort</p>
                             <div className="space-y-2">
                                 {analysis.complexity.factors.map((factor, idx) => (
@@ -1056,6 +1202,9 @@ const AIProjectAdvisor = () => {
                             </div>
                         )}
                         </div>
+                        {/* End Main Content Area */}
+                        </div>
+                        {/* End Desktop Flex Container */}
                     </>
                 )}
 

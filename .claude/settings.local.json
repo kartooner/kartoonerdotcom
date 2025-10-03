@@ -27,7 +27,8 @@
       "Bash(awk:*)",
       "Bash(grep:*)",
       "Bash(pkill:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
