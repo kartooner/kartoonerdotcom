@@ -337,8 +337,6 @@ const AIProjectAdvisor = () => {
                 {/* Main Input Section */}
                 {!analysis && (
                     <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                        <div className="mb-6">
-
                         <div className="mb-8 bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
                             <label htmlFor="industry-select" className="block text-xl font-bold text-gray-900 mb-3">
                                 Step 1: Choose your industry
