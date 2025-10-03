@@ -278,7 +278,7 @@ const AIProjectAdvisor = () => {
                         <div className="mb-6">
                             <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
                             <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
-                                Get instant AI implementation guidance tailored to your industry—including workflow patterns, technology recommendations, and design best practices.
+                                Start with your industry and a common workflow. This tool then maps out the AI behind it; explaining how it works, how hard it is to build, and what designers and engineers should plan for.
                             </p>
                             <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
                                 <p className="text-sm text-gray-700">
@@ -313,14 +313,6 @@ const AIProjectAdvisor = () => {
 
                         <div className="pt-6 border-t border-gray-200">
                             <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
-                                <button
-                                    onClick={() => setShowMethodology(true)}
-                                    className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-2"
-                                >
-                                    <Icon name="Lightbulb" />
-                                    How does this analysis work?
-                                </button>
-                                <span className="hidden sm:inline text-gray-400">•</span>
                                 <button
                                     onClick={() => setShowDecisionFramework(true)}
                                     className="text-sm text-purple-600 hover:text-purple-700 underline flex items-center gap-2"
@@ -417,7 +409,7 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Navigation */}
-                        <div className="mb-6 flex items-center gap-4">
+                        <div className="mb-6 flex flex-wrap items-center gap-4">
                             <button
                                 onClick={handleEditConcept}
                                 className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2"
@@ -437,6 +429,14 @@ const AIProjectAdvisor = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                 </svg>
                                 Share link
+                            </button>
+                            <span className="text-gray-400">•</span>
+                            <button
+                                onClick={() => setShowMethodology(true)}
+                                className="text-gray-600 hover:text-gray-700 font-medium inline-flex items-center gap-2"
+                            >
+                                <Icon name="Lightbulb" />
+                                How does this work?
                             </button>
                         </div>
 
