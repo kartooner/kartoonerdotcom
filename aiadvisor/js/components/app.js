@@ -109,6 +109,7 @@ const AIProjectAdvisor = () => {
     const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
     const [showJumpMenu, setShowJumpMenu] = useState(false);
     const [activeSection, setActiveSection] = useState('overview');
+    const [complexityFilter, setComplexityFilter] = useState('all');
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -374,17 +375,66 @@ const AIProjectAdvisor = () => {
                 {!analysis && TEMPLATES[industry] && (
                     <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="mb-6">
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                                 <div>
                                     <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 2</div>
                                     <h2 id="templates-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Start with a proven pattern</h2>
                                     <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
                                 </div>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">Recommended</span>
+
+                                {/* Complexity Filter */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Filter by complexity</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        <button
+                                            onClick={() => setComplexityFilter('all')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'all'
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            All
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('low')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'low'
+                                                    ? 'bg-green-600 text-white'
+                                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                            }`}
+                                        >
+                                            Low
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('medium')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'medium'
+                                                    ? 'bg-yellow-600 text-white'
+                                                    : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                            }`}
+                                        >
+                                            Medium
+                                        </button>
+                                        <button
+                                            onClick={() => setComplexityFilter('high')}
+                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                                                complexityFilter === 'high'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                            }`}
+                                        >
+                                            High
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-                            {TEMPLATES[industry].slice(0, showAllTemplates ? TEMPLATES[industry].length : 6).map((template, idx) => (
+                            {TEMPLATES[industry]
+                                .filter(template => complexityFilter === 'all' || template.complexity === complexityFilter)
+                                .slice(0, showAllTemplates ? TEMPLATES[industry].length : 6)
+                                .map((template, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => handleTemplateClick(template)}
@@ -407,30 +457,49 @@ const AIProjectAdvisor = () => {
                                 </button>
                             ))}
                         </div>
-                        {TEMPLATES[industry].length > 6 && !showAllTemplates && (
-                            <div className="text-center mt-6">
-                                <button
-                                    onClick={() => setShowAllTemplates(true)}
-                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                    aria-label={`Show ${TEMPLATES[industry].length - 6} more workflow patterns`}
-                                >
-                                    Show {TEMPLATES[industry].length - 6} more patterns
-                                </button>
-                            </div>
-                        )}
-                        {showAllTemplates && TEMPLATES[industry].length > 6 && (
-                            <div className="text-center mt-6">
-                                <button
-                                    onClick={() => setShowAllTemplates(false)}
-                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                >
-                                    Show less
-                                </button>
-                            </div>
-                        )}
-                        {!TEMPLATES[industry] || TEMPLATES[industry].length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">No templates available for this industry yet.</p>
-                        ) : null}
+                        {(() => {
+                            const filteredTemplates = TEMPLATES[industry].filter(template =>
+                                complexityFilter === 'all' || template.complexity === complexityFilter
+                            );
+                            const hasMore = filteredTemplates.length > 6;
+
+                            if (filteredTemplates.length === 0) {
+                                return (
+                                    <p className="text-center text-gray-500 py-8">
+                                        No patterns match the selected complexity level.
+                                    </p>
+                                );
+                            }
+
+                            if (hasMore && !showAllTemplates) {
+                                return (
+                                    <div className="text-center mt-6">
+                                        <button
+                                            onClick={() => setShowAllTemplates(true)}
+                                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                            aria-label={`Show ${filteredTemplates.length - 6} more workflow patterns`}
+                                        >
+                                            Show {filteredTemplates.length - 6} more patterns
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            if (hasMore && showAllTemplates) {
+                                return (
+                                    <div className="text-center mt-6">
+                                        <button
+                                            onClick={() => setShowAllTemplates(false)}
+                                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                        >
+                                            Show less
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            return null;
+                        })()}
                     </section>
                 )}
 
