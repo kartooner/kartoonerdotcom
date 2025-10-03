@@ -106,6 +106,7 @@ const AIProjectAdvisor = () => {
     const [showDecisionFramework, setShowDecisionFramework] = useState(false);
     const [showGlossary, setShowGlossary] = useState(false);
     const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
+    const [pageTitle, setPageTitle] = useState('AI project advisor');
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -128,18 +129,28 @@ const AIProjectAdvisor = () => {
     // Load analysis from URL on mount
     React.useEffect(() => {
         const path = window.location.pathname;
-        const match = path.match(/^\/([^\/]+)\/([^\/]+)\/?$/);
+        // Match both /aiadvisor/industry/template AND /industry/template patterns
+        const match = path.match(/^(?:\/aiadvisor)?\/([^\/]+)\/([^\/]+)\/?$/);
+
+        console.log('Path:', path, 'Match:', match);
 
         if (match) {
             const [, industrySlug, templateSlug] = match;
 
+            console.log('Industry:', industrySlug, 'Template:', templateSlug);
+
             // Find the template by slug
             const templates = TEMPLATES[industrySlug];
+            console.log('Templates for industry:', templates);
             if (templates) {
                 const template = templates.find(t => t.slug === templateSlug);
+                console.log('Found template:', template);
                 if (template) {
                     setIndustry(industrySlug);
                     setConcept(template.concept);
+                    setPageTitle(template.title);
+                    document.title = template.title;
+                    setShowTemplates(false);
                     const result = analyzeProject(template.concept, industrySlug);
                     setAnalysis(result);
                     setSelectedPrinciples(result.recommended);
@@ -226,16 +237,18 @@ const AIProjectAdvisor = () => {
     };
 
     const handleEditConcept = () => {
-        window.history.pushState({}, '', '/');
+        window.history.pushState({}, '', '/aiadvisor');
         setAnalysis(null);
         setIsAnalyzing(false);
         setShowTemplates(true);
         setShowAllTemplates(false);
+        setPageTitle('AI project advisor');
+        document.title = 'AI project advisor - Universal intelligence workflows';
     };
 
     const handleTemplateClick = (template) => {
         // Update URL to clean slug-based path
-        const newUrl = `/${industry}/${template.slug}`;
+        const newUrl = `/aiadvisor/${industry}/${template.slug}`;
         window.history.pushState({}, '', newUrl);
 
         setConcept(template.concept);
@@ -247,6 +260,8 @@ const AIProjectAdvisor = () => {
             const result = analyzeProject(template.concept, industry);
             setAnalysis(result);
             setSelectedPrinciples(result.recommended);
+            setPageTitle(template.title);
+            document.title = template.title;
             setIsAnalyzing(false);
             // Scroll to results after analysis
             setTimeout(() => {
@@ -293,7 +308,7 @@ const AIProjectAdvisor = () => {
                 {!analysis && (
                     <div className="mb-8">
                         <div className="mb-6">
-                            <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
+                            <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">{pageTitle}</h1>
                             <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
                                 Start with your industry and a common workflow. This tool then maps out the AI behind it; explaining how it works, how hard it is to build, and what designers and engineers should plan for.
                             </p>
@@ -426,7 +441,7 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Navigation */}
-                        <div className="mb-6 flex flex-wrap items-center gap-4">
+                        <div className="mb-6 flex items-center justify-between">
                             <button
                                 onClick={handleEditConcept}
                                 className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2"
@@ -449,17 +464,12 @@ const AIProjectAdvisor = () => {
                             </button>
                         </div>
 
+                        {/* Page Title for Analysis View */}
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-6">{pageTitle}</h1>
+
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
                             <h2 id="results-heading" className="sr-only">Analysis results</h2>
-
-                            {/* Top Bar: Concept + Industry */}
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <span className="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded font-medium flex-shrink-0">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
-                                    <span className="text-sm text-gray-700 italic truncate">"{concept}"</span>
-                                </div>
-                            </div>
 
                             {/* Detected Pattern Banner */}
                             <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-4">

@@ -5,6 +5,11 @@ const path = require('path');
 const server = http.createServer((req, res) => {
     let requestPath = req.url;
 
+    // Strip /aiadvisor prefix if present
+    if (requestPath.startsWith('/aiadvisor')) {
+        requestPath = requestPath.substring('/aiadvisor'.length) || '/';
+    }
+
     // Handle clean URLs - if path doesn't have an extension and isn't a file, serve index.html
     const hasExtension = path.extname(requestPath) !== '';
 

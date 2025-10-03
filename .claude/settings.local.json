@@ -25,7 +25,9 @@
       "Bash(curl -s http://localhost:3000/aiadvisor/index.html)",
       "Bash(curl:*)",
       "Bash(awk:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pkill:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
