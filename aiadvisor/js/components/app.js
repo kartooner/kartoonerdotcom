@@ -24,6 +24,8 @@ const AIProjectAdvisor = () => {
         examples: false
     });
     const [showMethodology, setShowMethodology] = useState(false);
+    const [selectedTouchpoint, setSelectedTouchpoint] = useState(null);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     // Get placeholder based on selected industry
     const getPlaceholder = () => {
@@ -35,6 +37,67 @@ const AIProjectAdvisor = () => {
             retail: 'E.g., "Auto-approve returns under $50 with valid receipt" or "Predict inventory stockouts and optimize reordering"'
         };
         return examples[industry] || examples.generic;
+    };
+
+    // Load analysis from URL (clean path or query params) on mount
+    React.useEffect(() => {
+        // Try clean URL first: /industry/concept
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        let sharedConcept = null;
+        let sharedIndustry = null;
+
+        // Check for clean URL format (last two segments)
+        if (pathParts.length >= 2) {
+            const potentialIndustry = pathParts[pathParts.length - 2];
+            const potentialConcept = decodeURIComponent(pathParts[pathParts.length - 1]);
+
+            // Validate industry is one we support
+            if (['generic', 'hcm', 'finance', 'healthcare', 'retail'].includes(potentialIndustry)) {
+                sharedIndustry = potentialIndustry;
+                sharedConcept = potentialConcept;
+            }
+        }
+
+        // Fallback to query params if clean URL not found
+        if (!sharedConcept) {
+            const params = new URLSearchParams(window.location.search);
+            sharedConcept = params.get('concept');
+            sharedIndustry = params.get('industry');
+        }
+
+        if (sharedConcept) {
+            setConcept(sharedConcept);
+            if (sharedIndustry) {
+                setIndustry(sharedIndustry);
+            }
+            // Auto-analyze after a short delay
+            setTimeout(() => {
+                setIsAnalyzing(true);
+                setShowTemplates(false);
+                setTimeout(() => {
+                    const result = analyzeProject(sharedConcept, sharedIndustry || 'generic');
+                    setAnalysis(result);
+                    setSelectedPrinciples(result.recommended);
+                    setIsAnalyzing(false);
+                }, 500);
+            }, 100);
+        }
+    }, []);
+
+    // Generate shareable URL with clean path
+    const generateShareUrl = () => {
+        // Base64 encode to make URL-safe, then create clean path
+        const encodedConcept = encodeURIComponent(concept.trim());
+        const cleanPath = `/${industry}/${encodedConcept}`;
+        return `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}${cleanPath}`;
+    };
+
+    const handleShare = () => {
+        const url = generateShareUrl();
+        navigator.clipboard.writeText(url).then(() => {
+            setShowShareModal(true);
+            setTimeout(() => setShowShareModal(false), 3000);
+        });
     };
 
     const handleAnalyze = () => {
@@ -213,18 +276,35 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Try Another Pattern Section */}
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 text-center">
-                            <p className="text-gray-600 mb-3">Try another workflow pattern?</p>
-                            <button
-                                onClick={handleEditConcept}
-                                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium inline-flex items-center gap-2"
-                                aria-label="Go back to select a different workflow pattern"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                Back to patterns
-                            </button>
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-600 mb-2">Try another workflow pattern?</p>
+                                    <button
+                                        onClick={handleEditConcept}
+                                        className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium inline-flex items-center gap-2"
+                                        aria-label="Go back to select a different workflow pattern"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                        </svg>
+                                        Back to patterns
+                                    </button>
+                                </div>
+                                <div>
+                                    <p className="text-gray-600 mb-2 text-right">Share this analysis</p>
+                                    <button
+                                        onClick={handleShare}
+                                        className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium inline-flex items-center gap-2"
+                                        aria-label="Copy shareable link to clipboard"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                        </svg>
+                                        Share Link
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
@@ -449,14 +529,37 @@ const AIProjectAdvisor = () => {
 
                                 {/* AI Touchpoints */}
                                 <div className="mb-6">
-                                    <h4 className="font-semibold text-gray-700 mb-3">AI Touchpoints</h4>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="font-semibold text-gray-700">AI Touchpoints</h4>
+                                        <span className="text-xs text-gray-500 italic">Click to learn more</span>
+                                    </div>
                                     <ul className="space-y-1">
-                                        {analysis.oouxWorkflow.aiTouchpoints.map((point, idx) => (
-                                            <li key={idx} className="flex items-start text-sm text-gray-700">
-                                                <span className="text-indigo-500 mr-2 mt-0.5">⚡</span>
-                                                {point}
-                                            </li>
-                                        ))}
+                                        {analysis.oouxWorkflow.aiTouchpoints.map((point, idx) => {
+                                            const details = findTouchpointDetails(point);
+                                            const hasDetails = details !== null;
+
+                                            return (
+                                                <li key={idx}>
+                                                    <button
+                                                        onClick={() => hasDetails && setSelectedTouchpoint({ text: point, details })}
+                                                        className={`w-full flex items-start text-sm text-left ${
+                                                            hasDetails
+                                                                ? 'text-gray-700 hover:bg-indigo-50 p-2 rounded transition-colors cursor-pointer'
+                                                                : 'text-gray-700 p-2'
+                                                        }`}
+                                                        disabled={!hasDetails}
+                                                    >
+                                                        <span className="text-indigo-500 mr-2 mt-0.5 flex-shrink-0">⚡</span>
+                                                        <span className="flex-1">{point}</span>
+                                                        {hasDetails && (
+                                                            <svg className="w-4 h-4 text-indigo-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 </div>
 
@@ -669,6 +772,118 @@ const AIProjectAdvisor = () => {
                         )}
                         </div>
                     </>
+                )}
+
+                {/* AI Touchpoint Deep Dive Modal */}
+                {selectedTouchpoint && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+                        onClick={() => setSelectedTouchpoint(null)}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="touchpoint-modal-title"
+                    >
+                        <div className="fixed inset-0 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-lg z-10">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">{selectedTouchpoint.details.category}</div>
+                                            <h2 id="touchpoint-modal-title" className="text-2xl font-bold">{selectedTouchpoint.details.title}</h2>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedTouchpoint(null)}
+                                            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
+                                            aria-label="Close touchpoint details"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 space-y-6">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 mb-2">Approach</h3>
+                                        <p className="text-sm text-gray-700">{selectedTouchpoint.details.approach}</p>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 mb-2">AI Techniques</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedTouchpoint.details.aiTechniques.map((tech, idx) => (
+                                                <span key={idx} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                                                    {tech}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 mb-2">Implementation</h3>
+                                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                                            <div>
+                                                <span className="font-medium text-green-700">Simple:</span>
+                                                <span className="ml-2 text-sm text-gray-700">{selectedTouchpoint.details.implementation.simple}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-orange-700">Advanced:</span>
+                                                <span className="ml-2 text-sm text-gray-700">{selectedTouchpoint.details.implementation.advanced}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 mb-2">Data Needed</h3>
+                                        <ul className="space-y-1">
+                                            {selectedTouchpoint.details.dataNeeded.map((item, idx) => (
+                                                <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                    <span className="text-indigo-500 mr-2">•</span>
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 mb-2">Recommended Services</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedTouchpoint.details.services.map((service, idx) => (
+                                                <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded text-sm border border-blue-200">
+                                                    {service}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {selectedTouchpoint.details.example && (
+                                        <div>
+                                            <h3 className="font-semibold text-gray-800 mb-2">Code Example</h3>
+                                            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs">
+                                                <code>{selectedTouchpoint.details.example}</code>
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Share Confirmation Toast */}
+                {showShareModal && (
+                    <div className="fixed bottom-8 right-8 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in">
+                        <div className="flex items-center gap-3">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <div>
+                                <div className="font-semibold">Link Copied!</div>
+                                <div className="text-sm opacity-90">Share this analysis with your team</div>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Methodology Explanation Modal - Available Always */}
