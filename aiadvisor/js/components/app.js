@@ -510,48 +510,44 @@ const AIProjectAdvisor = () => {
                             Analysis complete. Results are now displayed.
                         </div>
 
-                        {/* Navigation */}
-                        <div className="mb-6 flex flex-wrap items-center gap-4">
-                            <button
-                                onClick={handleEditConcept}
-                                className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2"
-                                aria-label="Go back to select a different workflow pattern"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                Back to patterns
-                            </button>
-                            <button
-                                onClick={handleShare}
-                                className="text-green-600 hover:text-green-700 font-medium inline-flex items-center gap-2"
-                                aria-label="Copy shareable link to clipboard"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                </svg>
-                                Share link
-                            </button>
+                        {/* Page Header - Outside Container */}
+                        <div className="mb-8">
+                            {workflowTitle && (
+                                <h1 id="results-heading" className="text-4xl font-bold text-gray-900 mb-3">
+                                    <span className="text-indigo-600">({industry === 'generic' ? 'Generic' : industry.toUpperCase()})</span> {workflowTitle}
+                                </h1>
+                            )}
+                            <p className="text-lg text-gray-600 mb-6">Analysis results for your selected workflow pattern</p>
+
+                            {/* Navigation */}
+                            <div className="flex flex-wrap items-center gap-4">
+                                <button
+                                    onClick={handleEditConcept}
+                                    className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2"
+                                    aria-label="Go back to select a different workflow pattern"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Back to patterns
+                                </button>
+                                <button
+                                    onClick={handleShare}
+                                    className="text-green-600 hover:text-green-700 font-medium inline-flex items-center gap-2"
+                                    aria-label="Copy shareable link to clipboard"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                    Share link
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Header Section */}
-                        <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
-                            <h2 id="results-heading" className="sr-only">Analysis results</h2>
-
-                            {/* Top Bar: Industry + Workflow Title */}
-                            <div className="px-6 py-5 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200">
-                                {workflowTitle && (
-                                    <h2 className="text-2xl font-bold text-gray-900">
-                                        <span className="text-indigo-600">({industry === 'generic' ? 'Generic' : industry.toUpperCase()})</span> {workflowTitle}
-                                    </h2>
-                                )}
-                            </div>
-
-                            {/* Detected Pattern Banner */}
-                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4">
-                                <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
-                                <div className="text-lg font-bold">{analysis.detectedPattern}</div>
-                            </div>
+                        {/* Detected Pattern Banner */}
+                        <section id="main-content" aria-label="Detected workflow pattern" className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg shadow-lg px-6 py-5 mb-6">
+                            <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
+                            <div className="text-xl font-bold">{analysis.detectedPattern}</div>
                         </section>
 
                         {/* Mobile Jump Navigation Dropdown */}
