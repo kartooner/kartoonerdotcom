@@ -87,6 +87,7 @@ const GlossaryText = ({ text, onTermClick }) => {
 
 const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
+    const [workflowTitle, setWorkflowTitle] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
@@ -128,7 +129,8 @@ const AIProjectAdvisor = () => {
     // Load analysis from URL on mount
     React.useEffect(() => {
         const path = window.location.pathname;
-        const match = path.match(/^\/([^\/]+)\/([^\/]+)\/?$/);
+        // Match /aiadvisor/industry/slug format
+        const match = path.match(/^\/aiadvisor\/([^\/]+)\/([^\/]+)\/?$/);
 
         if (match) {
             const [, industrySlug, templateSlug] = match;
@@ -138,8 +140,12 @@ const AIProjectAdvisor = () => {
             if (templates) {
                 const template = templates.find(t => t.slug === templateSlug);
                 if (template) {
+                    // Update page title
+                    document.title = `${template.title} - AI Project Advisor`;
+
                     setIndustry(industrySlug);
                     setConcept(template.concept);
+                    setWorkflowTitle(template.title);
                     const result = analyzeProject(template.concept, industrySlug);
                     setAnalysis(result);
                     setSelectedPrinciples(result.recommended);
@@ -226,8 +232,10 @@ const AIProjectAdvisor = () => {
     };
 
     const handleEditConcept = () => {
-        window.history.pushState({}, '', '/');
+        window.history.pushState({}, '', '/aiadvisor');
+        document.title = 'AI project advisor - Universal intelligence workflows';
         setAnalysis(null);
+        setWorkflowTitle('');
         setIsAnalyzing(false);
         setShowTemplates(true);
         setShowAllTemplates(false);
@@ -235,10 +243,14 @@ const AIProjectAdvisor = () => {
 
     const handleTemplateClick = (template) => {
         // Update URL to clean slug-based path
-        const newUrl = `/${industry}/${template.slug}`;
+        const newUrl = `/aiadvisor/${industry}/${template.slug}`;
         window.history.pushState({}, '', newUrl);
 
+        // Update page title
+        document.title = `${template.title} - AI Project Advisor`;
+
         setConcept(template.concept);
+        setWorkflowTitle(template.title);
         setShowTemplates(false);
         setIsAnalyzing(true);
 
@@ -453,22 +465,23 @@ const AIProjectAdvisor = () => {
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
                             <h2 id="results-heading" className="sr-only">Analysis results</h2>
 
-                            {/* Top Bar: Concept + Industry */}
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <span className="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded font-medium flex-shrink-0">{industry === 'generic' ? 'Generic' : industry.toUpperCase()}</span>
-                                    <span className="text-sm text-gray-700 italic truncate">"{concept}"</span>
-                                </div>
+                            {/* Top Bar: Industry + Workflow Title */}
+                            <div className="px-6 py-5 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200">
+                                {workflowTitle && (
+                                    <h2 className="text-2xl font-bold text-gray-900">
+                                        <span className="text-indigo-600">({industry === 'generic' ? 'Generic' : industry.toUpperCase()})</span> {workflowTitle}
+                                    </h2>
+                                )}
                             </div>
 
                             {/* Detected Pattern Banner */}
-                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-4">
+                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4 border-b-2 border-cyan-700">
                                 <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
                                 <div className="text-lg font-bold">{analysis.detectedPattern}</div>
                             </div>
 
                             {/* Jump Navigation */}
-                            <nav aria-label="Quick navigation to analysis sections" className="px-4 py-3 bg-white border-t border-gray-200">
+                            <nav aria-label="Quick navigation to analysis sections" className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                                 <div className="flex flex-wrap gap-2 items-center">
                                     <span className="text-xs text-gray-500 mr-1 flex-shrink-0" aria-hidden="true">Jump:</span>
                                     <button onClick={() => scrollToSection('overview')} className="px-2 py-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-100 transition-colors" aria-label="Jump to Overview section">Overview</button>
