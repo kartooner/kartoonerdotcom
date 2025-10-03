@@ -68,7 +68,7 @@ const GlossaryText = ({ text, onTermClick }) => {
                     return (
                         <span
                             key={idx}
-                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors inline-block mx-1"
+                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onTermClick) onTermClick(key);
