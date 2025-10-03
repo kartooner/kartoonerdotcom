@@ -125,9 +125,30 @@ const AIProjectAdvisor = () => {
         return examples[industry] || examples.generic;
     };
 
-    // Load analysis from URL (clean path or query params) on mount
+    // Load analysis from URL on mount
     React.useEffect(() => {
-        // Try clean URL first: /industry/concept
+        const path = window.location.pathname;
+        const match = path.match(/^\/([^\/]+)\/([^\/]+)\/?$/);
+
+        if (match) {
+            const [, industrySlug, templateSlug] = match;
+
+            // Find the template by slug
+            const templates = TEMPLATES[industrySlug];
+            if (templates) {
+                const template = templates.find(t => t.slug === templateSlug);
+                if (template) {
+                    setIndustry(industrySlug);
+                    setConcept(template.concept);
+                    const result = analyzeProject(template.concept, industrySlug);
+                    setAnalysis(result);
+                    setSelectedPrinciples(result.recommended);
+                    return;
+                }
+            }
+        }
+
+        // Fallback to old URL parsing for backwards compatibility
         const pathParts = window.location.pathname.split('/').filter(p => p);
         let sharedConcept = null;
         let sharedIndustry = null;
@@ -170,18 +191,9 @@ const AIProjectAdvisor = () => {
         }
     }, []);
 
-    // Generate shareable URL with clean path
+    // Generate shareable URL - just use the current URL since it's already clean
     const generateShareUrl = () => {
-        const encodedConcept = encodeURIComponent(concept.trim());
-        // Get the base path (everything before any existing industry/concept)
-        let basePath = window.location.pathname;
-        // Remove any trailing slash
-        basePath = basePath.replace(/\/$/, '');
-        // Remove any existing industry/concept path segments
-        basePath = basePath.replace(/\/(generic|hcm|finance|healthcare|retail)\/[^\/]*$/, '');
-        // Ensure basePath ends without a trailing slash for clean concatenation
-        const cleanPath = `${basePath}/${industry}/${encodedConcept}`;
-        return `${window.location.origin}${cleanPath}`;
+        return window.location.href;
     };
 
     const handleShare = () => {
@@ -214,6 +226,7 @@ const AIProjectAdvisor = () => {
     };
 
     const handleEditConcept = () => {
+        window.history.pushState({}, '', '/');
         setAnalysis(null);
         setIsAnalyzing(false);
         setShowTemplates(true);
@@ -221,6 +234,10 @@ const AIProjectAdvisor = () => {
     };
 
     const handleTemplateClick = (template) => {
+        // Update URL to clean slug-based path
+        const newUrl = `/${industry}/${template.slug}`;
+        window.history.pushState({}, '', newUrl);
+
         setConcept(template.concept);
         setShowTemplates(false);
         setIsAnalyzing(true);
@@ -430,14 +447,6 @@ const AIProjectAdvisor = () => {
                                 </svg>
                                 Share link
                             </button>
-                            <span className="text-gray-400">•</span>
-                            <button
-                                onClick={() => setShowMethodology(true)}
-                                className="text-gray-600 hover:text-gray-700 font-medium inline-flex items-center gap-2"
-                            >
-                                <Icon name="Lightbulb" />
-                                How does this work?
-                            </button>
                         </div>
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
@@ -555,10 +564,18 @@ const AIProjectAdvisor = () => {
                             <div id="ooux" className="bg-white rounded-lg shadow-lg p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                                            <Icon name="Box" />
-                                            <span className="ml-2">OOUX workflow</span>
-                                        </h3>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                                <Icon name="Box" />
+                                                <span className="ml-2">OOUX workflow</span>
+                                            </h3>
+                                            <button
+                                                onClick={() => setShowMethodology(true)}
+                                                className="text-xs text-indigo-600 hover:text-indigo-700 underline"
+                                            >
+                                                How does this work?
+                                            </button>
+                                        </div>
                                         <p className="text-sm text-gray-600">Object-oriented breakdown showing data structures, user flows, and AI touchpoints throughout the system</p>
                                     </div>
                                     <button
@@ -766,12 +783,22 @@ const AIProjectAdvisor = () => {
 
                         {/* Recommended Principles */}
                         <div id="principles" className="bg-white rounded-lg shadow-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
-                                <Icon name="CheckCircle" />
-                                <span className="ml-2">Recommended design principles</span>
-                            </h3>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                    <Icon name="CheckCircle" />
+                                    <span className="ml-2">Recommended design principles</span>
+                                </h3>
+                                <a
+                                    href="https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-indigo-600 hover:text-indigo-700 underline"
+                                >
+                                    Carnegie Mellon guidelines ↗
+                                </a>
+                            </div>
                             <p className="text-sm text-gray-600 mb-4">
-                                Carnegie Mellon's proven guidelines for human-AI interaction design. Click to add or remove from your focus.
+                                Proven guidelines for human-AI interaction design. Click to add or remove from your focus.
                             </p>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {Object.entries(PRINCIPLES).map(([key, principle]) => {
@@ -832,10 +859,18 @@ const AIProjectAdvisor = () => {
 
                         {/* Complexity Breakdown */}
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
-                                <Icon name="Wrench" />
-                                <span className="ml-2">Complexity breakdown</span>
-                            </h3>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                    <Icon name="Wrench" />
+                                    <span className="ml-2">Complexity breakdown</span>
+                                </h3>
+                                <button
+                                    onClick={() => alert('Complexity scoring considers: data requirements, model sophistication, integration needs, user interaction patterns, and ongoing maintenance. Scores range from 0-100, with thresholds at 40 (Low), 60 (Medium), and 80+ (High).')}
+                                    className="text-xs text-indigo-600 hover:text-indigo-700 underline"
+                                >
+                                    How is this scored?
+                                </button>
+                            </div>
                             <p className="text-sm text-gray-600 mb-4">Factors contributing to implementation complexity and development effort</p>
                             <div className="space-y-2">
                                 {analysis.complexity.factors.map((factor, idx) => (

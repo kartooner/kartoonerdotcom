@@ -3,6 +3,7 @@ const TEMPLATES = {
     generic: [
         {
             title: 'Auto-Approval Workflow',
+            slug: 'auto-approval',
             description: 'Automatically approve or route requests based on AI evaluation of policy rules and risk',
             concept: 'Auto-approve requests based on policy compliance and risk assessment',
             complexity: 'medium',
@@ -10,6 +11,7 @@ const TEMPLATES = {
         },
         {
             title: 'Anomaly Detection & Correction',
+            slug: 'anomaly-detection',
             description: 'Detect unusual patterns or data issues and suggest corrections',
             concept: 'Detect anomalies in transaction data and suggest corrections',
             complexity: 'medium',
@@ -17,6 +19,7 @@ const TEMPLATES = {
         },
         {
             title: 'Intelligent Scoring & Routing',
+            slug: 'intelligent-scoring',
             description: 'Score entities based on multiple factors and route by threshold',
             concept: 'Score and route items based on configurable risk factors',
             complexity: 'medium',
@@ -24,6 +27,7 @@ const TEMPLATES = {
         },
         {
             title: 'Predictive Intelligence Dashboard',
+            slug: 'predictive-dashboard',
             description: 'Continuously monitor data and generate proactive insights and alerts',
             concept: 'Generate predictive alerts across all business data',
             complexity: 'high',
@@ -31,6 +35,7 @@ const TEMPLATES = {
         },
         {
             title: 'Unified Entity Intelligence',
+            slug: 'unified-entity-view',
             description: 'Aggregate cross-system data into a single intelligent view with insights',
             concept: 'Show complete intelligent view of any entity across all systems',
             complexity: 'high',
@@ -38,6 +43,7 @@ const TEMPLATES = {
         },
         {
             title: 'Cross-System Orchestration',
+            slug: 'cross-system-workflow',
             description: 'Orchestrate complex workflows that span multiple systems with impact analysis',
             concept: 'Orchestrate multi-system workflows with impact analysis',
             complexity: 'high',
@@ -45,6 +51,7 @@ const TEMPLATES = {
         },
         {
             title: 'Natural Language Q&A',
+            slug: 'natural-language-qa',
             description: 'Answer user questions in natural language with confidence scoring',
             concept: 'Answer user questions about their data in natural language',
             complexity: 'high',
@@ -52,6 +59,7 @@ const TEMPLATES = {
         },
         {
             title: 'Intelligent Search & Discovery',
+            slug: 'intelligent-search',
             description: 'Search across all systems with semantic understanding and contextual ranking',
             concept: 'Search intelligently across all systems and data types',
             complexity: 'high',
@@ -59,6 +67,7 @@ const TEMPLATES = {
         },
         {
             title: 'What-If Impact Analysis',
+            slug: 'impact-analysis',
             description: 'Analyze cascading impacts of potential changes before they happen',
             concept: 'Analyze impact of changes before executing them',
             complexity: 'high',
@@ -66,6 +75,7 @@ const TEMPLATES = {
         },
         {
             title: 'Resource Optimization',
+            slug: 'resource-optimization',
             description: 'Generate optimal resource allocation based on historical patterns and constraints',
             concept: 'Optimize resource allocation using historical data',
             complexity: 'medium',
@@ -73,6 +83,7 @@ const TEMPLATES = {
         },
         {
             title: 'Real-Time Data Processing',
+            slug: 'realtime-processing',
             description: 'Process and validate data in real-time with automated actions',
             concept: 'Process and validate data streams in real-time',
             complexity: 'high',
@@ -80,6 +91,7 @@ const TEMPLATES = {
         },
         {
             title: 'Smart Data Aggregation',
+            slug: 'smart-aggregation',
             description: 'Intelligently aggregate and route data based on business rules',
             concept: 'Aggregate data intelligently based on business rules',
             complexity: 'medium',
@@ -89,6 +101,7 @@ const TEMPLATES = {
     hcm: [
         {
             title: 'Performance Review Auto-Routing',
+            slug: 'performance-review-routing',
             description: 'Auto-approve or escalate performance reviews',
             concept: 'Auto-approve performance reviews based on rating thresholds and escalate concerning ones',
             complexity: 'medium',
@@ -96,6 +109,7 @@ const TEMPLATES = {
         },
         {
             title: 'Benefits Enrollment Errors',
+            slug: 'benefits-enrollment-errors',
             description: 'Detect enrollment issues and suggest corrections',
             concept: 'Detect benefits enrollment errors and suggest corrections before deadline',
             complexity: 'medium',
@@ -103,6 +117,7 @@ const TEMPLATES = {
         },
         {
             title: 'Candidate Quality Scoring',
+            slug: 'candidate-quality-scoring',
             description: 'Score applicants and route by fit',
             concept: 'Score job candidates based on resume and route by match quality',
             complexity: 'medium',
@@ -110,6 +125,7 @@ const TEMPLATES = {
         },
         {
             title: 'Turnover Prediction',
+            slug: 'turnover-prediction',
             description: 'Predict and prevent employee attrition',
             concept: 'Predict employee turnover risk and suggest retention actions',
             complexity: 'high',
@@ -117,6 +133,7 @@ const TEMPLATES = {
         },
         {
             title: 'Employee 360 View',
+            slug: 'employee-360-view',
             description: 'Unified view across all HR systems',
             concept: 'View employee across time, payroll, benefits, performance',
             complexity: 'high',
@@ -124,6 +141,7 @@ const TEMPLATES = {
         },
         {
             title: 'New Hire Onboarding',
+            slug: 'new-hire-onboarding',
             description: 'Orchestrate onboarding across HR, IT, facilities',
             concept: 'Process new hire onboarding across HR, IT, payroll, facilities',
             complexity: 'high',
@@ -131,6 +149,7 @@ const TEMPLATES = {
         },
         {
             title: 'HR Chatbot',
+            slug: 'hr-chatbot',
             description: 'Answer employee questions about pay, benefits, policies',
             concept: 'Answer employee questions about pay, benefits, PTO',
             complexity: 'high',
@@ -138,6 +157,7 @@ const TEMPLATES = {
         },
         {
             title: 'People Search',
+            slug: 'people-search',
             description: 'Search employees, org charts, skills, documents',
             concept: 'Search employees, time records, policies, documents',
             complexity: 'high',
@@ -145,6 +165,7 @@ const TEMPLATES = {
         },
         {
             title: 'Compensation Change Impact',
+            slug: 'compensation-change-impact',
             description: 'Analyze budget impact of salary adjustments',
             concept: 'Analyze budget impact if we give department 3% raises',
             complexity: 'high',
@@ -152,6 +173,7 @@ const TEMPLATES = {
         },
         {
             title: 'AI Interview Scheduling',
+            slug: 'ai-interview-scheduling',
             description: 'Optimize interview schedules across panel',
             concept: 'Generate interview schedules based on interviewer availability and candidate preferences',
             complexity: 'medium',
@@ -159,6 +181,7 @@ const TEMPLATES = {
         },
         {
             title: 'Open Enrollment Processing',
+            slug: 'open-enrollment-processing',
             description: 'Process enrollment changes in real-time',
             concept: 'Process benefits elections in real-time with eligibility validation',
             complexity: 'high',
@@ -166,6 +189,7 @@ const TEMPLATES = {
         },
         {
             title: 'Learning Path Recommendations',
+            slug: 'learning-path-recommendations',
             description: 'Aggregate training based on role and skills gaps',
             concept: 'Recommend personalized learning paths based on role and career goals',
             complexity: 'medium',
@@ -173,6 +197,7 @@ const TEMPLATES = {
         },
         {
             title: 'PTO Auto-Approval',
+            slug: 'pto-auto-approval',
             description: 'Auto-approve time-off with coverage validation',
             concept: 'Auto-approve PTO requests with team coverage validation',
             complexity: 'medium',
@@ -180,6 +205,7 @@ const TEMPLATES = {
         },
         {
             title: 'Missing Punch Detection',
+            slug: 'missing-punch-detection',
             description: 'Find and fix missing time entries',
             concept: 'Detect missing time punches and suggest fixes based on schedule',
             complexity: 'medium',
@@ -187,6 +213,7 @@ const TEMPLATES = {
         },
         {
             title: 'Timecard Anomaly Scoring',
+            slug: 'timecard-anomaly-scoring',
             description: 'Score timecards for unusual patterns',
             concept: 'Score timecards for anomalies and route by risk threshold',
             complexity: 'medium',
@@ -194,6 +221,7 @@ const TEMPLATES = {
         },
         {
             title: 'Overtime Prediction',
+            slug: 'overtime-prediction',
             description: 'Forecast overtime costs and alert managers',
             concept: 'Predict overtime trends and alert managers to take action',
             complexity: 'high',
@@ -201,6 +229,7 @@ const TEMPLATES = {
         },
         {
             title: 'AI Schedule Generation',
+            slug: 'ai-schedule-generation',
             description: 'Generate schedules from past demand patterns',
             concept: 'Generate employee schedules from past demand patterns',
             complexity: 'medium',
@@ -208,6 +237,7 @@ const TEMPLATES = {
         },
         {
             title: 'Payroll Lock & Validation',
+            slug: 'payroll-lock-validation',
             description: 'Lock timecards and validate before payroll',
             concept: 'Lock timecards at cutoff and send validated data to payroll',
             complexity: 'high',
@@ -217,6 +247,7 @@ const TEMPLATES = {
     finance: [
         {
             title: 'Loan Auto-Approval',
+            slug: 'loan-auto-approval',
             description: 'Automated lending decisions',
             concept: 'Auto-approve loan applications under threshold with low risk score',
             complexity: 'medium',
@@ -224,6 +255,7 @@ const TEMPLATES = {
         },
         {
             title: 'Fraud Detection',
+            slug: 'fraud-detection',
             description: 'Real-time transaction monitoring',
             concept: 'Detect fraudulent transactions and flag for review',
             complexity: 'high',
@@ -231,6 +263,7 @@ const TEMPLATES = {
         },
         {
             title: 'Credit Risk Scoring',
+            slug: 'credit-risk-scoring',
             description: 'Multi-factor risk assessment',
             concept: 'Score credit applications and route by approval tier',
             complexity: 'medium',
@@ -238,6 +271,7 @@ const TEMPLATES = {
         },
         {
             title: 'Credit Risk Forecasting',
+            slug: 'credit-risk-forecasting',
             description: 'Predict and prevent portfolio risk',
             concept: 'Forecast credit risk and recommend portfolio adjustments',
             complexity: 'high',
@@ -245,6 +279,7 @@ const TEMPLATES = {
         },
         {
             title: 'Customer 360',
+            slug: 'customer-360',
             description: 'Complete customer financial view',
             concept: 'View customer across accounts, transactions, interactions',
             complexity: 'high',
@@ -252,6 +287,7 @@ const TEMPLATES = {
         },
         {
             title: 'Account Closure Workflow',
+            slug: 'account-closure-workflow',
             description: 'Process closure across all related systems',
             concept: 'Process account closure across all related systems',
             complexity: 'high',
@@ -259,6 +295,7 @@ const TEMPLATES = {
         },
         {
             title: 'Banking Chatbot',
+            slug: 'banking-chatbot',
             description: 'Answer questions about accounts, balances, transactions',
             concept: 'Answer customer questions about accounts, balances, transactions',
             complexity: 'high',
@@ -266,6 +303,7 @@ const TEMPLATES = {
         },
         {
             title: 'Financial Search',
+            slug: 'financial-search',
             description: 'Search transactions, accounts, customers, documents',
             concept: 'Search transactions, accounts, customers, documents',
             complexity: 'high',
@@ -273,6 +311,7 @@ const TEMPLATES = {
         },
         {
             title: 'Interest Rate Impact',
+            slug: 'interest-rate-impact',
             description: 'Analyze impact of rate change on portfolio',
             concept: 'Analyze impact of interest rate change on portfolio',
             complexity: 'high',
@@ -280,6 +319,7 @@ const TEMPLATES = {
         },
         {
             title: 'Portfolio Optimization',
+            slug: 'portfolio-optimization',
             description: 'Optimize allocation based on risk profiles',
             concept: 'Optimize portfolio allocation based on risk profiles',
             complexity: 'medium',
@@ -287,6 +327,7 @@ const TEMPLATES = {
         },
         {
             title: 'Real-Time Trading',
+            slug: 'realtime-trading',
             description: 'Process orders with real-time validation',
             concept: 'Process trading orders with real-time validation',
             complexity: 'high',
@@ -294,6 +335,7 @@ const TEMPLATES = {
         },
         {
             title: 'Statement Consolidation',
+            slug: 'statement-consolidation',
             description: 'Consolidate transactions into monthly statements',
             concept: 'Consolidate transactions into monthly statements',
             complexity: 'medium',
