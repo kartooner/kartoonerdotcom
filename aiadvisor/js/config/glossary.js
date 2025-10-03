@@ -5,7 +5,7 @@ const AI_GLOSSARY = {
     // Core AI Concepts
     'ai': {
         term: 'AI (Artificial Intelligence)',
-        shortDefinition: 'Computer systems that can perform tasks typically requiring human intelligence',
+        shortDefinition: 'Computer systems that perform tasks typically requiring human intelligence',
         fullDefinition: 'Artificial Intelligence refers to computer systems designed to perform tasks that typically require human intelligence, such as visual perception, speech recognition, decision-making, and language translation.',
         whenToUse: 'Use AI when you need systems to learn from data, recognize patterns, make predictions, or automate complex decision-making.',
         examples: ['Spam detection in email', 'Face recognition in photos', 'Product recommendations', 'Voice assistants'],
@@ -156,18 +156,22 @@ function findGlossaryTermsInText(text) {
         'ml': 'ml',
         'large language model': 'llm',
         'llm': 'llm',
+        'llms': 'llm',
         'natural language': 'nlp',
         'nlp': 'nlp',
         'supervised learning': 'supervised_learning',
         'unsupervised learning': 'unsupervised_learning',
         'training data': 'training_data',
         'ai model': 'model',
+        'model': 'model',
         'inference': 'inference',
         'accuracy': 'accuracy',
         'bias': 'bias',
         'prompt': 'prompt',
         'fine-tuning': 'fine_tuning',
-        'embedding': 'embedding'
+        'embedding': 'embedding',
+        'ai': 'ai',
+        'artificial intelligence': 'ai'
     };
 
     Object.entries(termMap).forEach(([searchTerm, key]) => {
@@ -194,13 +198,14 @@ function highlightGlossaryTerms(text, onTermClick) {
         { pattern: /\b(Supervised Learning)\b/gi, key: 'supervised_learning' },
         { pattern: /\b(Unsupervised Learning)\b/gi, key: 'unsupervised_learning' },
         { pattern: /\b(Training Data)\b/gi, key: 'training_data' },
-        { pattern: /\b(AI Model|Model)s?\b/gi, key: 'model' },
+        { pattern: /\b(AI Model)s?\b/gi, key: 'model' },
         { pattern: /\b(Inference)\b/gi, key: 'inference' },
         { pattern: /\b(Accuracy)\b/gi, key: 'accuracy' },
         { pattern: /\b(Bias|Biased)\b/gi, key: 'bias' },
         { pattern: /\b(Prompt|Prompts)\b/gi, key: 'prompt' },
         { pattern: /\b(Fine-tuning|Fine-tune)\b/gi, key: 'fine_tuning' },
-        { pattern: /\b(Embedding|Embeddings)\b/gi, key: 'embedding' }
+        { pattern: /\b(Embedding|Embeddings)\b/gi, key: 'embedding' },
+        { pattern: /\b(AI)\b/gi, key: 'ai' }
     ];
 
     let result = text;

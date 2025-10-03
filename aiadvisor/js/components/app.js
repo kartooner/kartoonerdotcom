@@ -179,8 +179,9 @@ const AIProjectAdvisor = () => {
         basePath = basePath.replace(/\/$/, '');
         // Remove any existing industry/concept path segments
         basePath = basePath.replace(/\/(generic|hcm|finance|healthcare|retail)\/[^\/]*$/, '');
-        const cleanPath = `/${industry}/${encodedConcept}`;
-        return `${window.location.origin}${basePath}${cleanPath}`;
+        // Ensure basePath ends without a trailing slash for clean concatenation
+        const cleanPath = `${basePath}/${industry}/${encodedConcept}`;
+        return `${window.location.origin}${cleanPath}`;
     };
 
     const handleShare = () => {
@@ -276,34 +277,34 @@ const AIProjectAdvisor = () => {
                     <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
                             <div className="flex-1">
-                                <h1 id="input-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
+                                <h1 id="input-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">AI project advisor</h1>
                                 <p className="text-sm sm:text-base text-gray-600 mb-3">
-                                    Get a complete AI implementation blueprint including workflows, architecture, risks, and recommendations
+                                    Not sure if <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> is right for your project? Start here. Get instant analysis including workflow patterns, <GlossaryText text="ML" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> vs <GlossaryText text="LLM" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> recommendations, technical considerations, and risk assessments—all tailored to your industry.
                                 </p>
                                 <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                                     <span className="flex items-center gap-1">
                                         <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
-                                        OOUX Workflows
+                                        OOUX workflows
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
-                                        AI Touchpoints
+                                        <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> touchpoints
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
-                                        Risk Analysis
+                                        Risk analysis
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
-                                        Implementation Guide
+                                        Implementation guide
                                     </span>
                                 </div>
                             </div>
@@ -363,8 +364,8 @@ const AIProjectAdvisor = () => {
                         <div className="mb-6">
                             <div className="flex items-start justify-between mb-2">
                                 <div>
-                                    <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Start with a Proven Pattern</h2>
-                                    <p className="text-sm text-gray-600 mt-1">Pre-built workflows based on common AI use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
+                                    <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Start with a proven pattern</h2>
+                                    <p className="text-sm text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
                                 </div>
                                 <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">Recommended</span>
                             </div>
@@ -461,7 +462,7 @@ const AIProjectAdvisor = () => {
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
-                            <h2 id="results-heading" className="sr-only">Analysis Results</h2>
+                            <h2 id="results-heading" className="sr-only">Analysis results</h2>
 
                             {/* Top Bar: Concept + Industry */}
                             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -498,22 +499,42 @@ const AIProjectAdvisor = () => {
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                                     <Icon name="Brain" />
-                                    <span className="ml-2">AI Type</span>
+                                    <span className="ml-2"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> type</span>
                                 </h3>
                                 <div className="bg-indigo-50 rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-indigo-600 mb-2">{analysis.aiType}</div>
-                                    <p className="text-sm text-gray-600">{analysis.aiTypeReason}</p>
+                                    <div className="text-2xl font-bold text-indigo-600 mb-2">
+                                        <GlossaryText
+                                            text={analysis.aiType}
+                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                        />
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        <GlossaryText
+                                            text={analysis.aiTypeReason}
+                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                        />
+                                    </p>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                                     <Icon name="Users" />
-                                    <span className="ml-2">User Interaction</span>
+                                    <span className="ml-2">User interaction</span>
                                 </h3>
                                 <div className="bg-purple-50 rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-purple-600 mb-2 capitalize">{analysis.visibility}</div>
-                                    <p className="text-sm text-gray-600">{analysis.visibilityReason}</p>
+                                    <div className="text-2xl font-bold text-purple-600 mb-2 capitalize">
+                                        <GlossaryText
+                                            text={analysis.visibility}
+                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                        />
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                        <GlossaryText
+                                            text={analysis.visibilityReason}
+                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                        />
+                                    </p>
                                 </div>
                             </div>
 
@@ -535,7 +556,12 @@ const AIProjectAdvisor = () => {
                                         }`}>{analysis.complexity.level}</div>
                                         <div className="text-sm text-gray-600">({analysis.complexity.score}/100)</div>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-1">{analysis.complexity.description}</p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <GlossaryText
+                                            text={analysis.complexity.description}
+                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                        />
+                                    </p>
                                     <p className="text-xs text-gray-500">Est. effort: {analysis.complexity.effort}</p>
                                 </div>
                             </div>
@@ -547,7 +573,7 @@ const AIProjectAdvisor = () => {
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                         <Icon name="Box" />
-                                        <span className="ml-2">OOUX Workflow</span>
+                                        <span className="ml-2">OOUX workflow</span>
                                     </h3>
                                     <button
                                         onClick={() => toggleSection('ooux')}
@@ -562,7 +588,7 @@ const AIProjectAdvisor = () => {
 
                                 {/* Objects */}
                                 <div className="mb-6">
-                                    <h4 className="font-semibold text-gray-700 mb-3">Key Objects</h4>
+                                    <h4 className="font-semibold text-gray-700 mb-3">Key objects</h4>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         {analysis.oouxWorkflow.objects.slice(0, 6).map((obj, idx) => (
                                             <div key={idx} className="border-2 border-cyan-200 rounded-lg p-4 bg-white">
@@ -570,7 +596,12 @@ const AIProjectAdvisor = () => {
                                                     <h5 className="font-bold text-gray-800">{obj.name}</h5>
                                                     <Icon name="Box" />
                                                 </div>
-                                                <p className="text-xs text-gray-600 mb-3">{obj.description}</p>
+                                                <p className="text-xs text-gray-600 mb-3">
+                                                    <GlossaryText
+                                                        text={obj.description}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
+                                                </p>
 
                                                 {/* Core Content */}
                                                 <div className="mb-2">
@@ -615,7 +646,7 @@ const AIProjectAdvisor = () => {
 
                                 {/* Visual Workflow Diagram */}
                                 <div className="mb-6">
-                                    <h4 className="font-semibold text-gray-700 mb-3">Visual Workflow</h4>
+                                    <h4 className="font-semibold text-gray-700 mb-3">Visual workflow</h4>
                                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 overflow-x-auto">
                                         <div className="flex items-center gap-2 min-w-max">
                                             {analysis.oouxWorkflow.flow.slice(0, 8).map((step, idx) => (
@@ -647,7 +678,7 @@ const AIProjectAdvisor = () => {
                                     <div className="flex items-center justify-between mb-3">
                                         <h4 className="font-semibold text-gray-700 flex items-center">
                                             <Icon name="GitBranch" />
-                                            <span className="ml-2">Workflow Steps</span>
+                                            <span className="ml-2">Workflow steps</span>
                                         </h4>
                                         <button
                                             onClick={() => copyToClipboard(
@@ -682,7 +713,7 @@ const AIProjectAdvisor = () => {
                                 {/* AI Touchpoints */}
                                 <div className="mb-6">
                                     <div className="flex items-center justify-between mb-3">
-                                        <h4 className="font-semibold text-gray-700">AI Touchpoints</h4>
+                                        <h4 className="font-semibold text-gray-700"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> touchpoints</h4>
                                         <span className="text-xs text-gray-500 italic">Click to learn more</span>
                                     </div>
                                     <ul className="space-y-1">
@@ -726,7 +757,7 @@ const AIProjectAdvisor = () => {
                                 {/* Configuration Needs */}
                                 {analysis.oouxWorkflow.configurationNeeds && (
                                     <div>
-                                        <h4 className="font-semibold text-gray-700 mb-3">Configuration Needs</h4>
+                                        <h4 className="font-semibold text-gray-700 mb-3">Configuration needs</h4>
                                         <div className="space-y-3">
                                             {analysis.oouxWorkflow.configurationNeeds.map((config, idx) => (
                                                 <div key={idx} className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded-r">
@@ -751,7 +782,7 @@ const AIProjectAdvisor = () => {
                         <div id="principles" className="bg-white rounded-lg shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                 <Icon name="CheckCircle" />
-                                <span className="ml-2">Recommended Design Principles</span>
+                                <span className="ml-2">Recommended design principles</span>
                             </h3>
                             <p className="text-sm text-gray-600 mb-4">
                                 Click to add or remove from your focus
@@ -789,7 +820,7 @@ const AIProjectAdvisor = () => {
                         {selectedPrinciples.length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                                    Your Focus Principles ({selectedPrinciples.length})
+                                    Your focus principles ({selectedPrinciples.length})
                                 </h3>
                                 <div className="space-y-4">
                                     {selectedPrinciples.map(key => {
@@ -817,7 +848,7 @@ const AIProjectAdvisor = () => {
                         <div className="bg-white rounded-lg shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                                 <Icon name="Wrench" />
-                                <span className="ml-2">Complexity Breakdown</span>
+                                <span className="ml-2">Complexity breakdown</span>
                             </h3>
                             <div className="space-y-2">
                                 {analysis.complexity.factors.map((factor, idx) => (
@@ -848,24 +879,30 @@ const AIProjectAdvisor = () => {
                         {/* Technical, Risks, etc. - Condensed */}
                         <div id="technical" className="grid md:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Technical Considerations</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Technical considerations</h3>
                                 <ul className="space-y-2">
                                     {analysis.technical.map((item, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
                                             <span className="text-orange-500 mr-2">▸</span>
-                                            {item}
+                                            <GlossaryText
+                                                text={item}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
                                         </li>
                                     ))}
                                 </ul>
                             </div>
 
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Trust Cues</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Trust cues</h3>
                                 <ul className="space-y-2">
                                     {analysis.trustCues.map((cue, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
                                             <span className="text-green-500 mr-2">✓</span>
-                                            {cue}
+                                            <GlossaryText
+                                                text={cue}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
                                         </li>
                                     ))}
                                 </ul>
@@ -877,7 +914,7 @@ const AIProjectAdvisor = () => {
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                                     <Icon name="AlertCircle" />
-                                    <span className="ml-2">Risks & Mitigations</span>
+                                    <span className="ml-2">Risks & mitigations</span>
                                 </h3>
                                 <div className="flex gap-2">
                                     <button
@@ -956,17 +993,25 @@ const AIProjectAdvisor = () => {
                         {/* Examples */}
                         {analysis.examples.length > 0 && (
                             <div id="examples" className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Examples Across Industries</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Examples across industries</h3>
                                 <div className="space-y-3">
                                     {analysis.examples.map((example, idx) => (
                                         <div key={idx} className="bg-yellow-50 rounded-lg p-4">
                                             <div className="flex items-center justify-between mb-2">
                                                 <h4 className="font-semibold text-gray-800">{example.area}</h4>
                                                 <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">
-                                                    {example.type}
+                                                    <GlossaryText
+                                                        text={example.type}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-gray-700">{example.use}</p>
+                                            <p className="text-sm text-gray-700">
+                                                <GlossaryText
+                                                    text={example.use}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
@@ -1012,7 +1057,12 @@ const AIProjectAdvisor = () => {
                                 <div className="p-6 space-y-6">
                                     <div>
                                         <h3 className="font-semibold text-gray-800 mb-2">Approach</h3>
-                                        <p className="text-sm text-gray-700">{selectedTouchpoint.details.approach}</p>
+                                        <p className="text-sm text-gray-700">
+                                            <GlossaryText
+                                                text={selectedTouchpoint.details.approach}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
+                                        </p>
                                     </div>
 
                                     <div>
@@ -1031,11 +1081,21 @@ const AIProjectAdvisor = () => {
                                         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                                             <div>
                                                 <span className="font-medium text-green-700">Simple:</span>
-                                                <span className="ml-2 text-sm text-gray-700">{selectedTouchpoint.details.implementation.simple}</span>
+                                                <span className="ml-2 text-sm text-gray-700">
+                                                    <GlossaryText
+                                                        text={selectedTouchpoint.details.implementation.simple}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
+                                                </span>
                                             </div>
                                             <div>
                                                 <span className="font-medium text-orange-700">Advanced:</span>
-                                                <span className="ml-2 text-sm text-gray-700">{selectedTouchpoint.details.implementation.advanced}</span>
+                                                <span className="ml-2 text-sm text-gray-700">
+                                                    <GlossaryText
+                                                        text={selectedTouchpoint.details.implementation.advanced}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1114,7 +1174,7 @@ const AIProjectAdvisor = () => {
                                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z" />
                                             </svg>
-                                            <h2 id="methodology-modal-title" className="text-2xl font-bold">How This Analysis Works</h2>
+                                            <h2 id="methodology-modal-title" className="text-2xl font-bold">How this analysis works</h2>
                                         </div>
                                         <button
                                             onClick={() => setShowMethodology(false)}
@@ -1209,7 +1269,7 @@ const AIProjectAdvisor = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
-                                <h2 id="glossary-title" className="text-2xl font-bold">AI & ML Glossary</h2>
+                                <h2 id="glossary-title" className="text-2xl font-bold"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> & <GlossaryText text="ML" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> glossary</h2>
                                 <button
                                     onClick={() => {
                                         setShowGlossary(false);
@@ -1321,7 +1381,7 @@ const AIProjectAdvisor = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="sticky top-0 bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
-                                <h2 id="framework-title" className="text-2xl font-bold">Should I Use AI?</h2>
+                                <h2 id="framework-title" className="text-2xl font-bold">Should I use <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} />?</h2>
                                 <button
                                     onClick={() => setShowDecisionFramework(false)}
                                     className="text-white hover:bg-purple-700 rounded px-3 py-1"
