@@ -416,30 +416,28 @@ const AIProjectAdvisor = () => {
                             Analysis complete. Results are now displayed.
                         </div>
 
-                        {/* Navigation Actions */}
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-gray-200">
-                            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                                <button
-                                    onClick={handleEditConcept}
-                                    className="px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium inline-flex items-center gap-2"
-                                    aria-label="Go back to select a different workflow pattern"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
-                                    Try another pattern
-                                </button>
-                                <button
-                                    onClick={handleShare}
-                                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium inline-flex items-center gap-2 shadow-sm"
-                                    aria-label="Copy shareable link to clipboard"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                    </svg>
-                                    Share this analysis
-                                </button>
-                            </div>
+                        {/* Navigation */}
+                        <div className="mb-6 flex items-center gap-4">
+                            <button
+                                onClick={handleEditConcept}
+                                className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-2"
+                                aria-label="Go back to select a different workflow pattern"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to patterns
+                            </button>
+                            <button
+                                onClick={handleShare}
+                                className="text-green-600 hover:text-green-700 font-medium inline-flex items-center gap-2"
+                                aria-label="Copy shareable link to clipboard"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                                Share link
+                            </button>
                         </div>
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
