@@ -143,6 +143,46 @@ const AI_GLOSSARY = {
         resources: [
             { title: 'Understanding Embeddings', url: 'https://platform.openai.com/docs/guides/embeddings', type: 'guide' }
         ]
+    },
+    'computer_vision': {
+        term: 'Computer Vision',
+        shortDefinition: 'AI that enables computers to understand and process visual information from images and videos',
+        fullDefinition: 'Computer Vision is a field of AI that trains computers to interpret and understand the visual world. Using digital images and deep learning models, machines can accurately identify and classify objects, and react to what they "see".',
+        whenToUse: 'Use for image recognition, object detection, facial recognition, OCR (text extraction from images), quality inspection, or any task requiring visual analysis.',
+        examples: ['Automated document scanning and data extraction', 'Quality control in manufacturing', 'Facial recognition for security', 'Medical image analysis'],
+        resources: [
+            { title: 'Computer Vision Basics', url: 'https://aws.amazon.com/what-is/computer-vision/', type: 'article' }
+        ]
+    },
+    'time_series': {
+        term: 'Time Series ML',
+        shortDefinition: 'Machine learning specialized in analyzing data points collected over time to predict future values',
+        fullDefinition: 'Time Series ML analyzes sequential data points indexed in time order to identify patterns, trends, and seasonality. It\'s used to forecast future values based on historical patterns.',
+        whenToUse: 'Use for forecasting sales, predicting demand, analyzing stock prices, monitoring system metrics, or any scenario with temporal data patterns.',
+        examples: ['Sales forecasting', 'Stock price prediction', 'Energy consumption forecasting', 'Website traffic prediction'],
+        resources: [
+            { title: 'Time Series Forecasting', url: 'https://www.tensorflow.org/tutorials/structured_data/time_series', type: 'tutorial' }
+        ]
+    },
+    'anomaly_detection': {
+        term: 'Anomaly Detection',
+        shortDefinition: 'AI technique that identifies unusual patterns or outliers that don\'t conform to expected behavior',
+        fullDefinition: 'Anomaly Detection uses machine learning to identify data points, events, or observations that deviate significantly from normal patterns. It\'s crucial for fraud detection, system monitoring, and quality control.',
+        whenToUse: 'Use for fraud detection, network security, equipment failure prediction, quality assurance, or identifying unusual user behavior.',
+        examples: ['Credit card fraud detection', 'Network intrusion detection', 'Manufacturing defect identification', 'Unusual transaction flagging'],
+        resources: [
+            { title: 'Anomaly Detection Guide', url: 'https://www.ibm.com/topics/anomaly-detection', type: 'article' }
+        ]
+    },
+    'recommendation_system': {
+        term: 'Recommendation System',
+        shortDefinition: 'AI that suggests items based on user preferences and behavior patterns',
+        fullDefinition: 'Recommendation Systems use ML algorithms to predict user preferences and suggest relevant items. They analyze past behavior, similar users\' choices, and item attributes to make personalized suggestions.',
+        whenToUse: 'Use for product recommendations, content suggestions, personalized marketing, or any scenario where you want to help users discover relevant items.',
+        examples: ['E-commerce product recommendations', 'Movie/music suggestions', 'Content feed personalization', 'Job matching'],
+        resources: [
+            { title: 'Recommendation Systems Overview', url: 'https://developers.google.com/machine-learning/recommendation', type: 'guide' }
+        ]
     }
 };
 
@@ -191,6 +231,7 @@ function highlightGlossaryTerms(text, onTermClick) {
     if (!text) return text;
 
     // Terms to highlight (order matters - longer phrases first to avoid partial matches)
+    // Using (?<=\s|^) for lookbehind and (?=\s|$|[.,;:!?]) for lookahead to preserve spaces
     const termPatterns = [
         { pattern: /\b(Large Language Model|LLM)s?\b/gi, key: 'llm' },
         { pattern: /\b(Machine Learning|ML)\b/gi, key: 'ml' },

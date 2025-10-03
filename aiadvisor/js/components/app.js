@@ -68,7 +68,7 @@ const GlossaryText = ({ text, onTermClick }) => {
                     return (
                         <span
                             key={idx}
-                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors"
+                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors inline-block mx-1"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onTermClick) onTermClick(key);
@@ -272,53 +272,32 @@ const AIProjectAdvisor = () => {
                 Skip to main content
             </a>
             <div className="max-w-5xl mx-auto">
-                {/* Header Section */}
+                {/* Hero Section - Above main content */}
                 {!analysis && (
-                    <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div className="mb-8">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
                             <div className="flex-1">
-                                <h1 id="input-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">AI project advisor</h1>
-                                <p className="text-sm sm:text-base text-gray-600 mb-3">
+                                <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
+                                <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
                                     Not sure if <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> is right for your project? Start here. Get instant analysis including workflow patterns, <GlossaryText text="ML" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> vs <GlossaryText text="LLM" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> recommendations, technical considerations, and risk assessments—all tailored to your industry.
                                 </p>
-                                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        OOUX workflows
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> touchpoints
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Risk analysis
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Implementation guide
-                                    </span>
+                                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
+                                    <p className="text-sm text-gray-700">
+                                        <span className="font-semibold text-indigo-900">For designers:</span> This tool helps you understand the technical implications of <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> features, anticipate UX challenges, and collaborate effectively with engineering teams. Each analysis includes proven design patterns and real-world examples.
+                                    </p>
                                 </div>
                             </div>
-                            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
                                 <button
                                     onClick={() => setShowDecisionFramework(true)}
-                                    className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+                                    className="px-4 sm:px-5 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium whitespace-nowrap shadow-lg"
                                     aria-label="Open decision framework"
                                 >
                                     Should I use AI?
                                 </button>
                                 <button
                                     onClick={() => setShowGlossary(true)}
-                                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+                                    className="px-4 sm:px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap shadow-lg"
                                     aria-label="Open AI glossary"
                                 >
                                     AI Terms
@@ -326,16 +305,50 @@ const AIProjectAdvisor = () => {
                             </div>
                         </div>
 
+                        <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                OOUX workflows
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> touchpoints
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Risk analysis
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Implementation guide
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Main Input Section */}
+                {!analysis && (
+                    <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="mb-6">
-                            <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-1">
-                                First, choose an industry type:
+
+                        <div className="mb-8 bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+                            <label htmlFor="industry-select" className="block text-xl font-bold text-gray-900 mb-3">
+                                Step 1: Choose your industry
                             </label>
-                            <p className="text-xs text-gray-500 mb-2">This tailors workflows, examples, and terminology to your domain</p>
+                            <p className="text-base text-gray-600 mb-4">This tailors workflows, examples, and terminology to your domain</p>
                             <select
                                 id="industry-select"
                                 value={industry}
                                 onChange={(e) => setIndustry(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                 aria-label="Select industry for analysis"
                             >
                                 <option value="generic">Generic (Domain Agnostic)</option>
@@ -346,14 +359,26 @@ const AIProjectAdvisor = () => {
                             </select>
                         </div>
 
-                        <div className="mt-3 text-center">
-                            <button
-                                onClick={() => setShowMethodology(true)}
-                                className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-1 mx-auto"
-                            >
-                                <Icon name="Lightbulb" />
-                                How does this analysis work?
-                            </button>
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+                                <button
+                                    onClick={() => setShowMethodology(true)}
+                                    className="text-sm text-indigo-600 hover:text-indigo-700 underline flex items-center gap-2"
+                                >
+                                    <Icon name="Lightbulb" />
+                                    How does this analysis work?
+                                </button>
+                                <span className="hidden sm:inline text-gray-400">•</span>
+                                <button
+                                    onClick={() => setShowDecisionFramework(true)}
+                                    className="text-sm text-purple-600 hover:text-purple-700 underline flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Should I use AI?
+                                </button>
+                            </div>
                         </div>
                     </section>
                 )}
@@ -362,10 +387,11 @@ const AIProjectAdvisor = () => {
                 {!analysis && TEMPLATES[industry] && (
                     <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="mb-6">
-                            <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-start justify-between mb-3">
                                 <div>
-                                    <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Start with a proven pattern</h2>
-                                    <p className="text-sm text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
+                                    <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 2</div>
+                                    <h2 id="templates-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Start with a proven pattern</h2>
+                                    <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
                                 </div>
                                 <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">Recommended</span>
                             </div>
@@ -429,33 +455,37 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Try Another Pattern Section */}
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-gray-600 mb-2">Try another workflow pattern?</p>
-                                    <button
-                                        onClick={handleEditConcept}
-                                        className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium inline-flex items-center gap-2"
-                                        aria-label="Go back to select a different workflow pattern"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                        </svg>
-                                        Back to patterns
-                                    </button>
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 mb-6 border border-indigo-100">
+                            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to collaborate?</h3>
+                                    <p className="text-sm text-gray-600 mb-3">Share this analysis with your team or explore another pattern</p>
+                                    <div className="flex flex-wrap gap-3">
+                                        <button
+                                            onClick={handleEditConcept}
+                                            className="px-5 py-2.5 bg-white border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium inline-flex items-center gap-2"
+                                            aria-label="Go back to select a different workflow pattern"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                            </svg>
+                                            Back to patterns
+                                        </button>
+                                        <button
+                                            onClick={handleShare}
+                                            className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium inline-flex items-center gap-2 shadow-sm"
+                                            aria-label="Copy shareable link to clipboard"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                            </svg>
+                                            Share link
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-gray-600 mb-2 text-right">Share this analysis</p>
-                                    <button
-                                        onClick={handleShare}
-                                        className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium inline-flex items-center gap-2"
-                                        aria-label="Copy shareable link to clipboard"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                        </svg>
-                                        Share Link
-                                    </button>
+                                <div className="text-sm text-gray-600 bg-white p-4 rounded-lg border border-gray-200">
+                                    <p className="font-semibold text-gray-900 mb-1">💡 Designer tip</p>
+                                    <p>Use the share link in design reviews, engineering handoffs, or stakeholder presentations to align on AI implementation approach.</p>
                                 </div>
                             </div>
                         </div>
@@ -1269,7 +1299,7 @@ const AIProjectAdvisor = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
-                                <h2 id="glossary-title" className="text-2xl font-bold"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> & <GlossaryText text="ML" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> glossary</h2>
+                                <h2 id="glossary-title" className="text-2xl font-bold">AI & ML glossary</h2>
                                 <button
                                     onClick={() => {
                                         setShowGlossary(false);
@@ -1381,7 +1411,7 @@ const AIProjectAdvisor = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="sticky top-0 bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
-                                <h2 id="framework-title" className="text-2xl font-bold">Should I use <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} />?</h2>
+                                <h2 id="framework-title" className="text-2xl font-bold">Should I use AI?</h2>
                                 <button
                                     onClick={() => setShowDecisionFramework(false)}
                                     className="text-white hover:bg-purple-700 rounded px-3 py-1"

@@ -3,16 +3,48 @@
 
 function analyzeProject(concept, industry = 'generic') {
     const lower = concept.toLowerCase();
-    
-    // Determine AI Type
-    let aiType = 'ML';
-    let aiTypeReason = 'Pattern recognition and classification';
-    
-    if (lower.includes('chat') || lower.includes('conversation') || lower.includes('question') || 
+
+    // Determine AI Type (expanded beyond just ML/LLM)
+    let aiType = 'Traditional ML';
+    let aiTypeReason = 'Pattern recognition and classification from structured data';
+
+    // LLM for natural language tasks
+    if (lower.includes('chat') || lower.includes('conversation') || lower.includes('question') ||
         lower.includes('answer') || lower.includes('natural language') || lower.includes('explain text') ||
         lower.includes('generate text') || lower.includes('write') || lower.includes('summariz')) {
-        aiType = 'LLM';
+        aiType = 'LLM (Large Language Model)';
         aiTypeReason = 'Natural language understanding and generation needed';
+    }
+    // Computer Vision
+    else if (lower.includes('image') || lower.includes('photo') || lower.includes('visual') ||
+        lower.includes('video') || lower.includes('recognize') || lower.includes('detect face') ||
+        lower.includes('ocr') || lower.includes('scan')) {
+        aiType = 'Computer Vision';
+        aiTypeReason = 'Visual pattern recognition and image analysis required';
+    }
+    // Time Series / Forecasting
+    else if (lower.includes('forecast') || lower.includes('predict') || lower.includes('trend') ||
+        lower.includes('time series') || lower.includes('seasonal')) {
+        aiType = 'Time Series ML';
+        aiTypeReason = 'Temporal pattern analysis and forecasting needed';
+    }
+    // Anomaly Detection specific
+    else if (lower.includes('anomal') || lower.includes('outlier') || lower.includes('unusual') ||
+        lower.includes('fraud')) {
+        aiType = 'Anomaly Detection ML';
+        aiTypeReason = 'Statistical deviation detection from normal patterns';
+    }
+    // Recommendation Systems
+    else if (lower.includes('recommend') || lower.includes('suggest') || lower.includes('personalize') ||
+        lower.includes('similar')) {
+        aiType = 'Recommendation ML';
+        aiTypeReason = 'Collaborative filtering and preference learning';
+    }
+    // Rule-based AI (simpler)
+    else if (lower.includes('rule') || lower.includes('policy') || lower.includes('threshold') ||
+        (lower.includes('auto') && lower.includes('approve'))) {
+        aiType = 'Rule-Based AI + ML';
+        aiTypeReason = 'Combines business rules with machine learning for decisions';
     }
 
     // Determine User Interaction Model
@@ -29,8 +61,8 @@ function analyzeProject(concept, industry = 'generic') {
 
     // Recommend Design Principles
     const recommended = ['control-choice', 'trust-clarity'];
-    
-    if (aiType === 'LLM' || visibility === 'co-pilot') {
+
+    if (aiType.includes('LLM') || visibility === 'co-pilot') {
         recommended.push('uncertainty', 'clear-limits');
     }
     if (lower.includes('history') || lower.includes('track') || lower.includes('version')) {
@@ -65,12 +97,32 @@ function analyzeProject(concept, industry = 'generic') {
 
     // Generate Technical Considerations
     const technical = [];
-    
-    if (aiType === 'LLM') {
+
+    if (aiType.includes('LLM')) {
         technical.push('Consider prompt engineering and context management');
         technical.push('Implement rate limiting and cost controls');
         technical.push('Plan for response streaming for better UX');
         technical.push('Design fallback responses for failures');
+    } else if (aiType.includes('Computer Vision')) {
+        technical.push('Define image quality requirements and preprocessing needs');
+        technical.push('Plan for model versioning and A/B testing visual models');
+        technical.push('Consider edge cases (lighting, angles, obstructions)');
+        technical.push('Implement confidence thresholds for human review');
+    } else if (aiType.includes('Time Series')) {
+        technical.push('Establish data collection frequency and granularity');
+        technical.push('Account for seasonality and external factors');
+        technical.push('Plan for model retraining as patterns evolve');
+        technical.push('Define forecast horizon and confidence intervals');
+    } else if (aiType.includes('Anomaly Detection')) {
+        technical.push('Tune sensitivity to balance false positives vs missed anomalies');
+        technical.push('Establish baseline "normal" behavior profiles');
+        technical.push('Plan for adapting to legitimate pattern changes');
+        technical.push('Design escalation paths for different anomaly severities');
+    } else if (aiType.includes('Recommendation')) {
+        technical.push('Handle cold start problem for new users/items');
+        technical.push('Balance personalization with diversity and serendipity');
+        technical.push('Implement feedback loops to improve recommendations');
+        technical.push('Consider privacy implications of user profiling');
     } else {
         technical.push('Define training data requirements and quality metrics');
         technical.push('Set confidence thresholds for auto-action vs flagging');
@@ -92,12 +144,23 @@ function analyzeProject(concept, industry = 'generic') {
 
     // Generate Risks & Mitigations
     const risks = [];
-    
-    if (aiType === 'LLM') {
+
+    if (aiType.includes('LLM')) {
         risks.push(
             { risk: 'Hallucinations or incorrect information', mitigation: 'Always require human review for critical decisions; show sources' },
             { risk: 'Unpredictable outputs and edge cases', mitigation: 'Extensive testing with diverse inputs; clear fallback messaging' },
             { risk: 'Cost and latency concerns', mitigation: 'Set usage limits; implement caching; optimize prompts' }
+        );
+    } else if (aiType.includes('Computer Vision')) {
+        risks.push(
+            { risk: 'Poor performance in varied conditions (lighting, angles)', mitigation: 'Train on diverse image sets; provide guidance for optimal capture' },
+            { risk: 'Privacy concerns with image/video processing', mitigation: 'Implement data retention policies; anonymize where possible; get consent' },
+            { risk: 'Bias in facial or object recognition', mitigation: 'Test across diverse populations; audit for fairness; allow manual override' }
+        );
+    } else if (aiType.includes('Time Series') || aiType.includes('Recommendation') || aiType.includes('Anomaly')) {
+        risks.push(
+            { risk: 'Model accuracy degrades over time', mitigation: 'Monitor performance metrics; establish retraining schedule' },
+            { risk: 'Bias in training data', mitigation: 'Audit training data; test across diverse scenarios; allow user feedback' }
         );
     } else {
         risks.push(
