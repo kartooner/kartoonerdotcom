@@ -107,6 +107,8 @@ const AIProjectAdvisor = () => {
     const [showDecisionFramework, setShowDecisionFramework] = useState(false);
     const [showGlossary, setShowGlossary] = useState(false);
     const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
+    const [showJumpMenu, setShowJumpMenu] = useState(false);
+    const [activeSection, setActiveSection] = useState('overview');
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -292,6 +294,8 @@ const AIProjectAdvisor = () => {
         const element = document.getElementById(sectionId);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection(sectionId);
+            setShowJumpMenu(false); // Close mobile menu after selection
         }
     };
 
@@ -461,7 +465,7 @@ const AIProjectAdvisor = () => {
                             </button>
                         </div>
 
-                        {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
+                        {/* Header Section */}
                         <section id="main-content" aria-labelledby="results-heading" className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
                             <h2 id="results-heading" className="sr-only">Analysis results</h2>
 
@@ -475,26 +479,84 @@ const AIProjectAdvisor = () => {
                             </div>
 
                             {/* Detected Pattern Banner */}
-                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4 border-b-2 border-cyan-700">
+                            <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4">
                                 <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
                                 <div className="text-lg font-bold">{analysis.detectedPattern}</div>
                             </div>
-
-                            {/* Jump Navigation */}
-                            <nav aria-label="Quick navigation to analysis sections" className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    <span className="text-xs text-gray-500 mr-1 flex-shrink-0" aria-hidden="true">Jump:</span>
-                                    <button onClick={() => scrollToSection('overview')} className="px-2 py-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-100 transition-colors" aria-label="Jump to Overview section">Overview</button>
-                                    <button onClick={() => scrollToSection('ooux')} className="px-2 py-1 text-xs bg-cyan-50 text-cyan-700 border border-cyan-200 rounded hover:bg-cyan-100 transition-colors" aria-label="Jump to OOUX Workflow section">OOUX</button>
-                                    <button onClick={() => scrollToSection('principles')} className="px-2 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition-colors" aria-label="Jump to Design Principles section">Principles</button>
-                                    <button onClick={() => scrollToSection('technical')} className="px-2 py-1 text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded hover:bg-orange-100 transition-colors" aria-label="Jump to Technical section">Technical</button>
-                                    <button onClick={() => scrollToSection('risks')} className="px-2 py-1 text-xs bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors" aria-label="Jump to Risks section">Risks</button>
-                                    <button onClick={() => scrollToSection('examples')} className="px-2 py-1 text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors" aria-label="Jump to Examples section">Examples</button>
-                                </div>
-                            </nav>
                         </section>
 
-                        <div className="space-y-6">
+                        {/* Mobile Jump Navigation Dropdown */}
+                        <div className="lg:hidden mb-6">
+                            <button
+                                onClick={() => setShowJumpMenu(!showJumpMenu)}
+                                className="w-full bg-white rounded-lg shadow-lg px-4 py-3 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <span>Jump to section</span>
+                                <svg className={`w-5 h-5 transition-transform ${showJumpMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showJumpMenu && (
+                                <nav className="mt-2 bg-white rounded-lg shadow-lg overflow-hidden" aria-label="Mobile navigation to analysis sections">
+                                    <button onClick={() => scrollToSection('overview')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Overview</button>
+                                    <button onClick={() => scrollToSection('ooux')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-cyan-50 border-b border-gray-100">OOUX Workflow</button>
+                                    <button onClick={() => scrollToSection('principles')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">Design Principles</button>
+                                    <button onClick={() => scrollToSection('technical')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-orange-50 border-b border-gray-100">Technical</button>
+                                    <button onClick={() => scrollToSection('risks')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-red-50 border-b border-gray-100">Risks</button>
+                                    <button onClick={() => scrollToSection('examples')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-yellow-50">Examples</button>
+                                </nav>
+                            )}
+                        </div>
+
+                        {/* Desktop: Floating Sidebar + Main Content */}
+                        <div className="lg:flex lg:gap-6 lg:items-start">
+                            {/* Floating Jump Navigation - Desktop Only */}
+                            <nav aria-label="Desktop navigation to analysis sections" className="hidden lg:block lg:sticky lg:top-6 lg:w-48 flex-shrink-0">
+                                <div className="bg-white rounded-lg shadow-lg p-4">
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">On this page</h3>
+                                    <div className="space-y-1">
+                                        <button
+                                            onClick={() => scrollToSection('overview')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Overview
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('ooux')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            OOUX Workflow
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('principles')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Design Principles
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('technical')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'technical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Technical
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('risks')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'risks' ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Risks
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('examples')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'examples' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Examples
+                                        </button>
+                                    </div>
+                                </div>
+                            </nav>
+
+                            {/* Main Content Area */}
+                            <div className="flex-1 space-y-6 min-w-0">
 
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
@@ -1058,6 +1120,10 @@ const AIProjectAdvisor = () => {
                                 </div>
                             </div>
                         )}
+                        </div>
+                        {/* End Main Content Area */}
+                        </div>
+                        {/* End Desktop Flex Container */}
                         </div>
                     </>
                 )}
