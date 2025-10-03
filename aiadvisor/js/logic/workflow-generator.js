@@ -512,31 +512,200 @@ function generateUnifiedEntityViewWorkflow(concept, objects, industry = 'generic
 
 // Cross-System Workflow Pattern
 function generateCrossSystemWorkflowWorkflow(concept, objects, industry = 'generic') {
+    const lower = concept.toLowerCase();
+    const domainContext = getDomainContext(industry, 'crossSystemWorkflow');
+
+    // Determine workflow type and affected systems
+    let workflowType, systems, specificFlow, specificTouchpoints;
+
+    if (industry === 'hcm') {
+        // Detect HCM-specific workflows
+        if (lower.includes('onboard') || lower.includes('new hire')) {
+            workflowType = 'New Hire Onboarding';
+            systems = 'HRIS, Payroll, Benefits, IT (provisioning), Facilities (badge/parking)';
+            specificFlow = [
+                { step: 1, actor: 'HR', action: 'Initiates new hire onboarding workflow', object: 'workflow' },
+                { step: 2, actor: 'AI', action: 'Analyzes role, location, start date to determine requirements', object: 'employee', confidence: true },
+                { step: 3, actor: 'AI', action: 'Identifies all required systems, accounts, and access levels', object: 'workflow' },
+                { step: 4, actor: 'AI', action: 'Calculates impact: IT provisioning, benefits eligibility, payroll setup', object: 'workflow', confidence: true },
+                { step: 5, actor: 'AI', action: 'Generates sequenced task list with dependencies and owners', object: 'workflow' },
+                { step: 6, actor: 'System', action: 'Routes approval requests to HR manager and IT manager', object: 'approval', branches: true },
+                { step: '6a', actor: 'System', action: 'Creates employee record in HRIS', object: 'employee', condition: 'approved' },
+                { step: '6b', actor: 'System', action: 'Enrolls in benefits with default elections', object: 'workflow', condition: 'approved' },
+                { step: '6c', actor: 'System', action: 'Creates IT accounts (email, apps, hardware requests)', object: 'workflow', condition: 'approved' },
+                { step: '6d', actor: 'System', action: 'Sets up payroll with tax forms and payment method', object: 'workflow', condition: 'approved' },
+                { step: '6e', actor: 'System', action: 'Requests facilities access (badge, parking, keys)', object: 'workflow', condition: 'approved' },
+                { step: 7, actor: 'AI', action: 'Monitors task completion and identifies blockers', object: 'workflow' },
+                { step: 8, actor: 'System', action: 'Sends progress updates to hiring manager and HR', object: 'workflow' },
+                { step: 9, actor: 'System', action: 'Generates Day 1 welcome packet with all credentials', object: 'workflow' }
+            ];
+            specificTouchpoints = [
+                'Analyzes job role to determine required systems and access levels',
+                'Identifies benefits eligibility based on employment type and location',
+                'Calculates payroll setup requirements (tax jurisdiction, pay frequency)',
+                'Determines IT provisioning needs (hardware, software, security groups)',
+                'Maps facilities requirements (office location, parking, badge access)',
+                'Sequences tasks based on dependencies (HRIS before Payroll, etc.)',
+                'Validates all prerequisites are met before advancing workflow',
+                'Tracks completion across all systems in real-time',
+                'Identifies blockers and auto-escalates delays',
+                'Learns from past onboarding to optimize task sequencing',
+                'Adapts to location-specific and role-specific requirements'
+            ];
+        } else if (lower.includes('promot') || lower.includes('job change') || lower.includes('transfer')) {
+            workflowType = 'Employee Promotion/Transfer';
+            systems = 'HRIS, Payroll, Benefits, Performance Management, Learning, IT (access changes)';
+            specificFlow = [
+                { step: 1, actor: 'Manager', action: 'Initiates promotion/transfer workflow', object: 'workflow' },
+                { step: 2, actor: 'AI', action: 'Analyzes current vs. new role (title, level, comp, location)', object: 'employee', confidence: true },
+                { step: 3, actor: 'AI', action: 'Calculates impact on compensation, benefits, and access rights', object: 'workflow', confidence: true },
+                { step: 4, actor: 'AI', action: 'Identifies affected systems and required updates', object: 'workflow' },
+                { step: 5, actor: 'System', action: 'Routes approvals based on comp change and level', object: 'approval', branches: true },
+                { step: '5a', actor: 'System', action: 'Requires HR approval for any promotion', object: 'approval', condition: 'level increase' },
+                { step: '5b', actor: 'System', action: 'Requires senior leader approval for >10% comp increase', object: 'approval', condition: 'significant raise' },
+                { step: 6, actor: 'AI', action: 'Generates task orchestration plan with effective date sequencing', object: 'workflow' },
+                { step: '6a', actor: 'System', action: 'Updates HRIS with new title, manager, department', object: 'employee', condition: 'approved' },
+                { step: '6b', actor: 'System', action: 'Processes compensation change in payroll system', object: 'workflow', condition: 'approved' },
+                { step: '6c', actor: 'System', action: 'Adjusts benefits if eligibility changes', object: 'workflow', condition: 'approved' },
+                { step: '6d', actor: 'System', action: 'Updates IT access (new security groups, tools)', object: 'workflow', condition: 'approved' },
+                { step: '6e', actor: 'System', action: 'Enrolls in role-specific training programs', object: 'workflow', condition: 'approved' },
+                { step: 7, actor: 'AI', action: 'Validates all changes are synchronized across systems', object: 'workflow', confidence: true },
+                { step: 8, actor: 'System', action: 'Sends congratulations notification with change summary', object: 'workflow' }
+            ];
+            specificTouchpoints = [
+                'Compares current vs. new role to identify all differences',
+                'Calculates compensation impact (salary, bonus, equity changes)',
+                'Determines benefits eligibility changes (if crossing thresholds)',
+                'Identifies IT access changes (new tools, security groups, revoked access)',
+                'Analyzes organizational impact (reporting changes, team composition)',
+                'Sequences updates to prevent access gaps or payroll errors',
+                'Validates approval chain based on comp increase and level change',
+                'Ensures effective date synchronization across all systems',
+                'Tracks completion and identifies any system update failures',
+                'Learns optimal sequencing from past promotion workflows',
+                'Adapts to company-specific approval policies and thresholds'
+            ];
+        } else if (lower.includes('terminat') || lower.includes('offboard') || lower.includes('exit')) {
+            workflowType = 'Employee Termination/Offboarding';
+            systems = 'HRIS, Payroll (final pay), Benefits (COBRA), IT (access revocation), Facilities';
+            specificFlow = [
+                { step: 1, actor: 'Manager/HR', action: 'Initiates termination workflow', object: 'workflow' },
+                { step: 2, actor: 'AI', action: 'Analyzes employee status, tenure, accruals, and access', object: 'employee', confidence: true },
+                { step: 3, actor: 'AI', action: 'Calculates final pay: salary, unused PTO, bonuses, deductions', object: 'workflow', confidence: true },
+                { step: 4, actor: 'AI', action: 'Identifies all active access and assets to revoke/return', object: 'workflow' },
+                { step: 5, actor: 'AI', action: 'Determines benefits continuation (COBRA) and retirement impacts', object: 'workflow' },
+                { step: 6, actor: 'System', action: 'Routes approval and compliance validation', object: 'approval', branches: true },
+                { step: '6a', actor: 'System', action: 'HR reviews termination reason and documentation', object: 'approval', condition: 'compliance check' },
+                { step: '6b', actor: 'System', action: 'Legal reviews if involuntary termination', object: 'approval', condition: 'involuntary' },
+                { step: 7, actor: 'AI', action: 'Generates sequenced offboarding checklist', object: 'workflow' },
+                { step: '7a', actor: 'System', action: 'Schedules IT access revocation for effective date/time', object: 'workflow', condition: 'approved' },
+                { step: '7b', actor: 'System', action: 'Processes final payroll with all accruals', object: 'workflow', condition: 'approved' },
+                { step: '7c', actor: 'System', action: 'Initiates COBRA and benefits termination process', object: 'workflow', condition: 'approved' },
+                { step: '7d', actor: 'System', action: 'Revokes badges, parking, physical access', object: 'workflow', condition: 'approved' },
+                { step: '7e', actor: 'System', action: 'Triggers asset return checklist (laptop, phone, keys)', object: 'workflow', condition: 'approved' },
+                { step: 8, actor: 'AI', action: 'Monitors completion and auto-escalates missing tasks', object: 'workflow' },
+                { step: 9, actor: 'System', action: 'Generates compliance documentation and audit trail', object: 'workflow' }
+            ];
+            specificTouchpoints = [
+                'Calculates final compensation (salary, PTO payout, bonuses, deductions)',
+                'Identifies all system access to revoke (email, apps, VPN, badges)',
+                'Determines benefits continuation requirements (COBRA notifications)',
+                'Tracks company assets for return (laptop, phone, access cards)',
+                'Validates compliance requirements (notice periods, documentation)',
+                'Sequences tasks to prevent data access after termination',
+                'Ensures final paycheck includes all accruals and deductions',
+                'Generates audit trail for legal and compliance',
+                'Coordinates timing across HR, IT, Payroll, Facilities',
+                'Learns from past terminations to improve checklist completeness',
+                'Adapts to voluntary vs. involuntary termination requirements'
+            ];
+        } else {
+            // Generic HCM cross-system workflow
+            workflowType = 'HR Workflow';
+            systems = 'HRIS, Payroll, Benefits, IT, Facilities';
+            specificFlow = null;
+            specificTouchpoints = null;
+        }
+    } else if (industry === 'finance') {
+        // Detect Finance-specific workflows
+        if (lower.includes('account closure') || lower.includes('close account')) {
+            workflowType = 'Account Closure';
+            systems = 'Core Banking, Lending, Cards, Investments, CRM';
+            specificFlow = [
+                { step: 1, actor: 'Customer/Agent', action: 'Initiates account closure request', object: 'workflow' },
+                { step: 2, actor: 'AI', action: 'Analyzes all customer relationships and linked accounts', object: 'account', confidence: true },
+                { step: 3, actor: 'AI', action: 'Identifies dependencies: active loans, auto-pay, direct deposits', object: 'workflow' },
+                { step: 4, actor: 'AI', action: 'Calculates final balances, interest, and fees across all accounts', object: 'workflow', confidence: true },
+                { step: 5, actor: 'AI', action: 'Assesses impact: credit cards, investment accounts, loan payments', object: 'workflow' },
+                { step: 6, actor: 'System', action: 'Routes for validation and retention offer', object: 'approval', branches: true },
+                { step: '6a', actor: 'System', action: 'Presents retention offer if high-value customer', object: 'workflow', condition: 'valuable relationship' },
+                { step: '6b', actor: 'System', action: 'Validates no active loans or obligations', object: 'workflow', condition: 'standard closure' },
+                { step: 7, actor: 'AI', action: 'Generates closure orchestration plan', object: 'workflow' },
+                { step: '7a', actor: 'System', action: 'Cancels recurring payments and direct deposits', object: 'workflow', condition: 'approved' },
+                { step: '7b', actor: 'System', action: 'Closes linked credit cards and investment accounts', object: 'workflow', condition: 'approved' },
+                { step: '7c', actor: 'System', action: 'Processes final interest calculation and fees', object: 'workflow', condition: 'approved' },
+                { step: '7d', actor: 'System', action: 'Issues final disbursement (check or transfer)', object: 'workflow', condition: 'approved' },
+                { step: '7e', actor: 'System', action: 'Updates CRM with closure reason and context', object: 'workflow', condition: 'approved' },
+                { step: 8, actor: 'AI', action: 'Monitors completion and identifies any blockers', object: 'workflow' },
+                { step: 9, actor: 'System', action: 'Sends closure confirmation with final statement', object: 'workflow' }
+            ];
+            specificTouchpoints = [
+                'Maps all customer relationships across all product lines',
+                'Identifies active loans, credit lines, and payment obligations',
+                'Detects recurring payments and direct deposits to be canceled',
+                'Calculates final balances including pending transactions and fees',
+                'Assesses customer value and triggers retention workflow if appropriate',
+                'Validates regulatory compliance for account closure',
+                'Sequences closure tasks to prevent disruption to active services',
+                'Ensures linked accounts (cards, investments) are handled properly',
+                'Tracks disbursement of remaining funds',
+                'Learns from closure reasons to improve retention strategies',
+                'Adapts to different account types and regulatory requirements'
+            ];
+        } else {
+            // Generic Finance cross-system workflow
+            workflowType = 'Financial Workflow';
+            systems = 'Banking, Lending, Investments, Risk Management';
+            specificFlow = null;
+            specificTouchpoints = null;
+        }
+    } else {
+        workflowType = 'Cross-System Workflow';
+        systems = 'Multiple Systems';
+        specificFlow = null;
+        specificTouchpoints = null;
+    }
+
+    // Use specific flow if available, otherwise use generic
+    const flow = specificFlow || [
+        { step: 1, actor: 'User', action: `Initiates ${workflowType.toLowerCase()}`, object: 'workflow' },
+        { step: 2, actor: 'AI', action: 'Analyzes current state across all systems', object: 'entity', confidence: true },
+        { step: 3, actor: 'AI', action: `Calculates impact across: ${systems}`, object: 'workflow', confidence: true },
+        { step: 4, actor: 'System', action: 'Routes for required approvals', object: 'approval', branches: true },
+        { step: '4a', actor: 'System', action: 'Updates primary system', object: 'workflow', condition: 'approved' },
+        { step: '4b', actor: 'System', action: 'Propagates changes to connected systems', object: 'workflow', condition: 'approved' },
+        { step: '4c', actor: 'System', action: 'Triggers downstream actions and notifications', object: 'workflow', condition: 'approved' },
+        { step: 5, actor: 'AI', action: 'Generates comprehensive task orchestration plan', object: 'workflow' },
+        { step: 6, actor: 'System', action: 'Orchestrates updates across all systems', object: 'workflow' },
+        { step: 7, actor: 'AI', action: 'Monitors completion status in real-time', object: 'workflow' },
+        { step: 8, actor: 'System', action: 'Notifies all stakeholders of completion', object: 'workflow' }
+    ];
+
+    const aiTouchpoints = specificTouchpoints || [
+        'Evaluates readiness and prerequisites across all systems',
+        'Validates against policies and business rules',
+        'Calculates impact across all connected systems',
+        'Identifies dependencies and sequencing requirements',
+        'Generates comprehensive task orchestration plan',
+        'Tracks completion status in real-time',
+        'Handles failures with rollback capabilities',
+        'Recommends optimal timing and execution strategy'
+    ];
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
-        flow: [
-            { step: 1, actor: 'User', action: 'Initiates workflow', object: 'workflow' },
-            { step: 2, actor: 'AI', action: 'Analyzes current state', object: 'entity', confidence: true },
-            { step: 3, actor: 'AI', action: 'Calculates multi-system impact', object: 'workflow' },
-            { step: 4, actor: 'System', action: 'Routes for approvals', object: 'approval', branches: true },
-            { step: '4a', actor: 'System', action: 'Updates System A', object: 'workflow', condition: 'approved' },
-            { step: '4b', actor: 'System', action: 'Updates System B', object: 'workflow', condition: 'approved' },
-            { step: '4c', actor: 'System', action: 'Triggers downstream actions', object: 'workflow', condition: 'approved' },
-            { step: 5, actor: 'AI', action: 'Generates task list', object: 'workflow' },
-            { step: 6, actor: 'System', action: 'Orchestrates updates', object: 'workflow' },
-            { step: 7, actor: 'AI', action: 'Monitors completion', object: 'workflow' },
-            { step: 8, actor: 'System', action: 'Notifies stakeholders', object: 'workflow' }
-        ],
-        aiTouchpoints: [
-            'Evaluates readiness and prerequisites across systems',
-            'Validates against policies and business rules',
-            'Calculates impact across all connected systems',
-            'Identifies dependencies and sequencing requirements',
-            'Generates comprehensive task orchestration plan',
-            'Tracks completion status in real-time',
-            'Handles failures with rollback capabilities',
-            'Recommends optimal timing and execution strategy'
-        ],
+        flow,
+        aiTouchpoints,
         configurationNeeds: [
             { setting: 'Approval Chain', description: 'Required approvers by complexity', default: 'Manager for simple, +Senior leader for complex' },
             { setting: 'Impact Threshold', description: 'When to flag high-impact workflows', default: 'Affects 3+ systems OR 10+ entities' },

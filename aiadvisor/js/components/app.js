@@ -1,11 +1,88 @@
 // React Component - Main App
 // NOTE: This uses React from global scope (loaded via CDN in index.html)
 
-const { useState } = React;
+const { useState, useEffect, useRef } = React;
 
 const Icon = ({ name }) => {
     const IconComponent = Icons[name];
     return IconComponent ? <IconComponent /> : null;
+};
+
+// Focus Trap Hook for modals
+const useFocusTrap = (isOpen) => {
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (!isOpen || !containerRef.current) return;
+
+        const container = containerRef.current;
+        const focusableElements = container.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        // Focus first element when modal opens
+        firstElement?.focus();
+
+        const handleTab = (e) => {
+            if (e.key !== 'Tab') return;
+
+            if (e.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    e.preventDefault();
+                    lastElement?.focus();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    e.preventDefault();
+                    firstElement?.focus();
+                }
+            }
+        };
+
+        container.addEventListener('keydown', handleTab);
+        return () => container.removeEventListener('keydown', handleTab);
+    }, [isOpen]);
+
+    return containerRef;
+};
+
+// Component to render text with glossary term highlights
+const GlossaryText = ({ text, onTermClick }) => {
+    if (!text || typeof highlightGlossaryTerms === 'undefined') {
+        return <>{text}</>;
+    }
+
+    const highlighted = highlightGlossaryTerms(text);
+    const parts = highlighted.split(/(<GLOSSARY:[^>]+>)/g);
+
+    return (
+        <>
+            {parts.map((part, idx) => {
+                const match = part.match(/<GLOSSARY:([^:]+):([^>]+)>/);
+                if (match) {
+                    const [, key, termText] = match;
+                    const glossaryTerm = typeof AI_GLOSSARY !== 'undefined' ? AI_GLOSSARY[key] : null;
+
+                    return (
+                        <span
+                            key={idx}
+                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onTermClick) onTermClick(key);
+                            }}
+                            title={glossaryTerm ? glossaryTerm.shortDefinition : ''}
+                        >
+                            {termText}
+                        </span>
+                    );
+                }
+                return <span key={idx}>{part}</span>;
+            })}
+        </>
+    );
 };
 
 const AIProjectAdvisor = () => {
@@ -26,6 +103,15 @@ const AIProjectAdvisor = () => {
     const [showMethodology, setShowMethodology] = useState(false);
     const [selectedTouchpoint, setSelectedTouchpoint] = useState(null);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showDecisionFramework, setShowDecisionFramework] = useState(false);
+    const [showGlossary, setShowGlossary] = useState(false);
+    const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
+
+    // Focus traps for modals
+    const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
+    const methodologyModalRef = useFocusTrap(showMethodology);
+    const glossaryModalRef = useFocusTrap(showGlossary);
+    const frameworkModalRef = useFocusTrap(showDecisionFramework);
 
     // Get placeholder based on selected industry
     const getPlaceholder = () => {
@@ -86,18 +172,32 @@ const AIProjectAdvisor = () => {
 
     // Generate shareable URL with clean path
     const generateShareUrl = () => {
-        // Base64 encode to make URL-safe, then create clean path
         const encodedConcept = encodeURIComponent(concept.trim());
+        // Get the base path (everything before any existing industry/concept)
+        let basePath = window.location.pathname;
+        // Remove any trailing slash
+        basePath = basePath.replace(/\/$/, '');
+        // Remove any existing industry/concept path segments
+        basePath = basePath.replace(/\/(generic|hcm|finance|healthcare|retail)\/[^\/]*$/, '');
         const cleanPath = `/${industry}/${encodedConcept}`;
-        return `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}${cleanPath}`;
+        return `${window.location.origin}${basePath}${cleanPath}`;
     };
 
     const handleShare = () => {
         const url = generateShareUrl();
-        navigator.clipboard.writeText(url).then(() => {
-            setShowShareModal(true);
-            setTimeout(() => setShowShareModal(false), 3000);
-        });
+        console.log('Sharing URL:', url); // Debug
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                setShowShareModal(true);
+                setTimeout(() => setShowShareModal(false), 3000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert(`Copy this URL: ${url}`);
+            });
+        } else {
+            // Fallback for browsers without clipboard API
+            alert(`Copy this URL: ${url}`);
+        }
     };
 
     const handleAnalyze = () => {
@@ -174,15 +274,62 @@ const AIProjectAdvisor = () => {
                 {/* Header Section */}
                 {!analysis && (
                     <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                        <h1 id="input-heading" className="text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
-                        <p className="text-gray-600 mb-6">
-                            Design intelligent AI workflows for any industry with OOUX and CMU design principles
-                        </p>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
+                            <div className="flex-1">
+                                <h1 id="input-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">AI Project Advisor</h1>
+                                <p className="text-sm sm:text-base text-gray-600 mb-3">
+                                    Get a complete AI implementation blueprint including workflows, architecture, risks, and recommendations
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        OOUX Workflows
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        AI Touchpoints
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Risk Analysis
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Implementation Guide
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                                <button
+                                    onClick={() => setShowDecisionFramework(true)}
+                                    className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+                                    aria-label="Open decision framework"
+                                >
+                                    Should I use AI?
+                                </button>
+                                <button
+                                    onClick={() => setShowGlossary(true)}
+                                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+                                    aria-label="Open AI glossary"
+                                >
+                                    AI Terms
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="mb-6">
-                            <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-2">
-                                Industry
+                            <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-1">
+                                First, choose an industry type:
                             </label>
+                            <p className="text-xs text-gray-500 mb-2">This tailors workflows, examples, and terminology to your domain</p>
                             <select
                                 id="industry-select"
                                 value={industry}
@@ -214,8 +361,13 @@ const AIProjectAdvisor = () => {
                 {!analysis && TEMPLATES[industry] && (
                     <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
                         <div className="mb-6">
-                            <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Select a workflow pattern</h2>
-                            <p className="text-sm text-gray-600 mt-1">Click any pattern to see detailed analysis</p>
+                            <div className="flex items-start justify-between mb-2">
+                                <div>
+                                    <h2 id="templates-heading" className="text-2xl font-bold text-gray-800">Start with a Proven Pattern</h2>
+                                    <p className="text-sm text-gray-600 mt-1">Pre-built workflows based on common AI use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
+                                </div>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">Recommended</span>
+                            </div>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
                             {TEMPLATES[industry].slice(0, showAllTemplates ? TEMPLATES[industry].length : 6).map((template, idx) => (
@@ -550,7 +702,15 @@ const AIProjectAdvisor = () => {
                                                         disabled={!hasDetails}
                                                     >
                                                         <span className="text-indigo-500 mr-2 mt-0.5 flex-shrink-0">⚡</span>
-                                                        <span className="flex-1">{point}</span>
+                                                        <span className="flex-1">
+                                                            <GlossaryText
+                                                                text={point}
+                                                                onTermClick={(key) => {
+                                                                    setSelectedGlossaryTerm(key);
+                                                                    setShowGlossary(true);
+                                                                }}
+                                                            />
+                                                        </span>
                                                         {hasDetails && (
                                                             <svg className="w-4 h-4 text-indigo-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -738,15 +898,57 @@ const AIProjectAdvisor = () => {
                                 </div>
                             </div>
                             {!collapsed.risks && (
-                            <div className="space-y-3">
-                                {analysis.risks.map((item, idx) => (
-                                    <div key={idx} className="border-l-4 border-red-400 pl-4 py-2 bg-red-50 rounded-r">
-                                        <h4 className="font-semibold text-gray-800 text-sm mb-1">{item.risk}</h4>
-                                        <p className="text-xs text-gray-700">
-                                            <span className="font-medium">Mitigation:</span> {item.mitigation}
-                                        </p>
-                                    </div>
-                                ))}
+                            <div className="space-y-4">
+                                {analysis.risks.map((item, idx) => {
+                                    const riskExplanation = typeof getRiskExplanation !== 'undefined' ? getRiskExplanation(item.risk) : null;
+                                    return (
+                                        <div key={idx} className="border-l-4 border-red-400 pl-4 py-3 bg-red-50 rounded-r">
+                                            <h4 className="font-semibold text-gray-800 text-sm mb-2">{item.risk}</h4>
+
+                                            {riskExplanation && (
+                                                <div className="mb-3 p-3 bg-white rounded border border-red-200">
+                                                    <p className="text-xs text-gray-700 mb-2">
+                                                        <span className="font-medium text-gray-900">What this means:</span>{' '}
+                                                        <GlossaryText
+                                                            text={riskExplanation.explanation}
+                                                            onTermClick={(key) => {
+                                                                setSelectedGlossaryTerm(key);
+                                                                setShowGlossary(true);
+                                                            }}
+                                                        />
+                                                    </p>
+                                                    <div className="flex items-center gap-4 text-xs mb-2">
+                                                        <span className={`font-medium px-2 py-1 rounded ${
+                                                            riskExplanation.impact === 'Critical' ? 'bg-red-100 text-red-800' :
+                                                            riskExplanation.impact === 'High' ? 'bg-orange-100 text-orange-800' :
+                                                            riskExplanation.impact === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-blue-100 text-blue-800'
+                                                        }`}>
+                                                            Impact: {riskExplanation.impact}
+                                                        </span>
+                                                        <span className="text-gray-600">Category: {riskExplanation.category}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-700">
+                                                        <span className="font-medium">How to address:</span>{' '}
+                                                        <GlossaryText
+                                                            text={riskExplanation.mitigation}
+                                                            onTermClick={(key) => {
+                                                                setSelectedGlossaryTerm(key);
+                                                                setShowGlossary(true);
+                                                            }}
+                                                        />
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {!riskExplanation && (
+                                                <p className="text-xs text-gray-700">
+                                                    <span className="font-medium">How to address:</span> {item.mitigation}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                             )}
                         </div>
@@ -783,8 +985,12 @@ const AIProjectAdvisor = () => {
                         aria-modal="true"
                         aria-labelledby="touchpoint-modal-title"
                     >
-                        <div className="fixed inset-0 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6">
+                            <div
+                                ref={touchpointModalRef}
+                                className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-lg z-10">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -896,8 +1102,12 @@ const AIProjectAdvisor = () => {
                         aria-modal="true"
                         aria-labelledby="methodology-modal-title"
                     >
-                        <div className="fixed inset-0 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6">
+                            <div
+                                ref={methodologyModalRef}
+                                className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg" style={{zIndex: 10}}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -976,6 +1186,222 @@ const AIProjectAdvisor = () => {
                                         <p>Objects are defined with core content, metadata, actions, and relationships to create a complete system model following OOUX methodology.</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Glossary Modal */}
+                {showGlossary && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50"
+                        style={{zIndex: 9999}}
+                        onClick={() => {
+                            setShowGlossary(false);
+                            setSelectedGlossaryTerm(null);
+                        }}
+                        role="dialog"
+                        aria-labelledby="glossary-title"
+                    >
+                        <div
+                            ref={glossaryModalRef}
+                            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
+                                <h2 id="glossary-title" className="text-2xl font-bold">AI & ML Glossary</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowGlossary(false);
+                                        setSelectedGlossaryTerm(null);
+                                    }}
+                                    className="text-white hover:bg-blue-700 rounded px-3 py-1"
+                                    aria-label="Close glossary"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                <p className="text-gray-600 mb-6">Essential AI and Machine Learning terms explained for product designers and non-technical users.</p>
+
+                                {!selectedGlossaryTerm ? (
+                                    <div className="grid gap-4">
+                                        {typeof AI_GLOSSARY !== 'undefined' && Object.entries(AI_GLOSSARY).map(([key, term]) => (
+                                            <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                                                <h3 className="text-lg font-semibold text-blue-700 mb-2">{term.term}</h3>
+                                                <p className="text-gray-700 mb-3">{term.shortDefinition}</p>
+                                                <button
+                                                    onClick={() => setSelectedGlossaryTerm(key)}
+                                                    className="text-blue-600 hover:underline text-sm font-medium"
+                                                >
+                                                    Learn more →
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div>
+                                        {typeof AI_GLOSSARY !== 'undefined' && AI_GLOSSARY[selectedGlossaryTerm] && (
+                                            <>
+                                                <button
+                                                    onClick={() => setSelectedGlossaryTerm(null)}
+                                                    className="text-blue-600 hover:underline mb-4 flex items-center gap-2"
+                                                >
+                                                    ← Back to all terms
+                                                </button>
+
+                                                <h3 className="text-2xl font-bold text-blue-700 mb-4">
+                                                    {AI_GLOSSARY[selectedGlossaryTerm].term}
+                                                </h3>
+
+                                                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-4">
+                                                    <p className="text-gray-800">{AI_GLOSSARY[selectedGlossaryTerm].fullDefinition}</p>
+                                                </div>
+
+                                                {AI_GLOSSARY[selectedGlossaryTerm].whenToUse && (
+                                                    <div className="mb-4">
+                                                        <h4 className="font-semibold text-gray-800 mb-2">When to use it:</h4>
+                                                        <p className="text-gray-700">{AI_GLOSSARY[selectedGlossaryTerm].whenToUse}</p>
+                                                    </div>
+                                                )}
+
+                                                {AI_GLOSSARY[selectedGlossaryTerm].examples && AI_GLOSSARY[selectedGlossaryTerm].examples.length > 0 && (
+                                                    <div className="mb-4">
+                                                        <h4 className="font-semibold text-gray-800 mb-2">Real-world examples:</h4>
+                                                        <ul className="list-disc list-inside space-y-1 text-gray-700">
+                                                            {AI_GLOSSARY[selectedGlossaryTerm].examples.map((example, idx) => (
+                                                                <li key={idx}>{example}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {AI_GLOSSARY[selectedGlossaryTerm].resources && AI_GLOSSARY[selectedGlossaryTerm].resources.length > 0 && (
+                                                    <div className="mb-4">
+                                                        <h4 className="font-semibold text-gray-800 mb-2">Learning resources:</h4>
+                                                        <div className="space-y-2">
+                                                            {AI_GLOSSARY[selectedGlossaryTerm].resources.map((resource, idx) => (
+                                                                <div key={idx} className="flex items-start gap-2">
+                                                                    <span className="text-xs bg-gray-200 px-2 py-1 rounded">{resource.type}</span>
+                                                                    <a
+                                                                        href={resource.url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-blue-600 hover:underline"
+                                                                    >
+                                                                        {resource.title}
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Decision Framework Modal */}
+                {showDecisionFramework && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50"
+                        style={{zIndex: 9999}}
+                        onClick={() => setShowDecisionFramework(false)}
+                        role="dialog"
+                        aria-labelledby="framework-title"
+                    >
+                        <div
+                            ref={frameworkModalRef}
+                            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="sticky top-0 bg-purple-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center z-10">
+                                <h2 id="framework-title" className="text-2xl font-bold">Should I Use AI?</h2>
+                                <button
+                                    onClick={() => setShowDecisionFramework(false)}
+                                    className="text-white hover:bg-purple-700 rounded px-3 py-1"
+                                    aria-label="Close decision framework"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                <p className="text-gray-600 mb-6">Use this framework to assess whether AI is the right solution for your problem. Consider each category carefully.</p>
+
+                                {typeof AI_DECISION_FRAMEWORK !== 'undefined' && AI_DECISION_FRAMEWORK.criteria && (
+                                    <div className="space-y-6">
+                                        {AI_DECISION_FRAMEWORK.criteria.map((criterion) => (
+                                            <div key={criterion.id} className="border border-gray-200 rounded-lg p-5">
+                                                <h3 className="text-lg font-bold text-purple-700 mb-2">{criterion.category}</h3>
+                                                <p className="text-gray-700 mb-4 font-medium">{criterion.question}</p>
+
+                                                <div className="space-y-3">
+                                                    {criterion.checklistItems.map((item, idx) => (
+                                                        <div key={idx} className={`p-3 rounded ${item.criticalRisk ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                                                            <p className="font-medium text-gray-800 mb-2">
+                                                                {item.criticalRisk && <span className="text-red-600 mr-2">⚠️</span>}
+                                                                {item.text}
+                                                            </p>
+                                                            <div className="grid md:grid-cols-2 gap-3 text-sm mt-2">
+                                                                <div className="flex gap-2">
+                                                                    <span className="text-green-600 font-semibold">✓ Good sign:</span>
+                                                                    <span className="text-gray-700">{item.goodSign}</span>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <span className="text-red-600 font-semibold">✗ Bad sign:</span>
+                                                                    <span className="text-gray-700">{item.badSign}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {typeof AI_DECISION_FRAMEWORK !== 'undefined' && AI_DECISION_FRAMEWORK.recommendations && (
+                                    <div className="mt-8 border-t pt-6">
+                                        <h3 className="text-xl font-bold mb-4">How to interpret your assessment:</h3>
+                                        <div className="space-y-4">
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                                <h4 className="font-bold text-green-800 mb-2">{AI_DECISION_FRAMEWORK.recommendations.green.title}</h4>
+                                                <p className="text-gray-700 mb-2">{AI_DECISION_FRAMEWORK.recommendations.green.description}</p>
+                                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                                    {AI_DECISION_FRAMEWORK.recommendations.green.nextSteps.map((step, idx) => (
+                                                        <li key={idx}>{step}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                <h4 className="font-bold text-yellow-800 mb-2">{AI_DECISION_FRAMEWORK.recommendations.yellow.title}</h4>
+                                                <p className="text-gray-700 mb-2">{AI_DECISION_FRAMEWORK.recommendations.yellow.description}</p>
+                                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                                    {AI_DECISION_FRAMEWORK.recommendations.yellow.nextSteps.map((step, idx) => (
+                                                        <li key={idx}>{step}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+
+                                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                                <h4 className="font-bold text-red-800 mb-2">{AI_DECISION_FRAMEWORK.recommendations.red.title}</h4>
+                                                <p className="text-gray-700 mb-2">{AI_DECISION_FRAMEWORK.recommendations.red.description}</p>
+                                                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                                    {AI_DECISION_FRAMEWORK.recommendations.red.nextSteps.map((step, idx) => (
+                                                        <li key={idx}>{step}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
