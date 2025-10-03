@@ -132,6 +132,7 @@ const AIProjectAdvisor = () => {
     // Load analysis from URL (clean path or query params) on mount
     React.useEffect(() => {
 <<<<<<< HEAD
+<<<<<<< HEAD
         const path = window.location.pathname;
         // Match /aiadvisor/industry/slug format
         const match = path.match(/^\/aiadvisor\/([^\/]+)\/([^\/]+)\/?$/);
@@ -159,6 +160,9 @@ const AIProjectAdvisor = () => {
         }
 
         // Fallback to old URL parsing for backwards compatibility
+=======
+        // Try clean URL first: /industry/concept
+>>>>>>> parent of b7e7588 (Clean slugs)
 =======
         // Try clean URL first: /industry/concept
 >>>>>>> parent of b7e7588 (Clean slugs)
@@ -249,8 +253,11 @@ const AIProjectAdvisor = () => {
 
     const handleEditConcept = () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
         window.history.pushState({}, '', '/aiadvisor');
         document.title = 'AI Project Advisor - Universal Intelligence Workflows';
+=======
+>>>>>>> parent of b7e7588 (Clean slugs)
 =======
 >>>>>>> parent of b7e7588 (Clean slugs)
         setAnalysis(null);
@@ -262,6 +269,7 @@ const AIProjectAdvisor = () => {
 
     const handleTemplateClick = (template) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Update URL to clean slug-based path
         const newUrl = `/aiadvisor/${industry}/${template.slug}`;
         window.history.pushState({}, '', newUrl);
@@ -269,6 +277,8 @@ const AIProjectAdvisor = () => {
         // Update page title
         document.title = `${template.title} - AI Project Advisor`;
 
+=======
+>>>>>>> parent of b7e7588 (Clean slugs)
 =======
 >>>>>>> parent of b7e7588 (Clean slugs)
         setConcept(template.concept);
@@ -595,6 +605,9 @@ const AIProjectAdvisor = () => {
                                 <Icon name="Lightbulb" />
                                 How does this work?
                             </button>
+<<<<<<< HEAD
+>>>>>>> parent of b7e7588 (Clean slugs)
+=======
 >>>>>>> parent of b7e7588 (Clean slugs)
                         </div>
 
