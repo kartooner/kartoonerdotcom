@@ -236,7 +236,7 @@ const AIProjectAdvisor = () => {
 
     const handleEditConcept = () => {
         window.history.pushState({}, '', '/aiadvisor');
-        document.title = 'AI project advisor - Universal intelligence workflows';
+        document.title = 'AI Project Advisor - Universal Intelligence Workflows';
         setAnalysis(null);
         setWorkflowTitle('');
         setIsAnalyzing(false);
@@ -310,9 +310,9 @@ const AIProjectAdvisor = () => {
                 {!analysis && (
                     <div className="mb-8">
                         <div className="mb-6">
-                            <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
-                            <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
-                                Start with your industry and a common workflow. This tool then maps out the AI behind it; explaining how it works, how hard it is to build, and what designers and engineers should plan for.
+                            <h1 id="input-heading" className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">AI Project Advisor</h1>
+                            <p className="text-lg sm:text-xl text-gray-600 mb-4 leading-relaxed max-w-3xl">
+                                Start with your industry and a common workflow. This tool maps out the AI behind it—explaining how it works, how hard it is to build, and what to plan for.
                             </p>
                             <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
                                 <p className="text-sm text-gray-700">
@@ -431,10 +431,11 @@ const AIProjectAdvisor = () => {
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-                            {TEMPLATES[industry]
-                                .filter(template => complexityFilter === 'all' || template.complexity === complexityFilter)
-                                .slice(0, showAllTemplates ? TEMPLATES[industry].length : 6)
-                                .map((template, idx) => (
+                            {(() => {
+                                const filtered = TEMPLATES[industry].filter(template =>
+                                    complexityFilter === 'all' || template.complexity === complexityFilter
+                                );
+                                return (showAllTemplates ? filtered : filtered.slice(0, 6)).map((template, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => handleTemplateClick(template)}
@@ -455,7 +456,8 @@ const AIProjectAdvisor = () => {
                                     <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-indigo-600">{template.title}</h3>
                                     <p className="text-xs text-gray-600">{template.description}</p>
                                 </button>
-                            ))}
+                                ));
+                            })()}
                         </div>
                         {(() => {
                             const filteredTemplates = TEMPLATES[industry].filter(template =>
