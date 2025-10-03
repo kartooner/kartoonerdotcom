@@ -275,61 +275,16 @@ const AIProjectAdvisor = () => {
                 {/* Hero Section - Above main content */}
                 {!analysis && (
                     <div className="mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
-                            <div className="flex-1">
-                                <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
-                                <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
-                                    Not sure if <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> is right for your project? Start here. Get instant analysis including workflow patterns, <GlossaryText text="ML" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> vs <GlossaryText text="LLM" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> recommendations, technical considerations, and risk assessments—all tailored to your industry.
+                        <div className="mb-6">
+                            <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">AI project advisor</h1>
+                            <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
+                                Get instant AI implementation guidance tailored to your industry—including workflow patterns, technology recommendations, and design best practices.
+                            </p>
+                            <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
+                                <p className="text-sm text-gray-700">
+                                    <span className="font-semibold text-indigo-900">For designers:</span> This tool helps you understand the technical implications of AI features, anticipate UX challenges, and collaborate effectively with engineering teams.
                                 </p>
-                                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
-                                    <p className="text-sm text-gray-700">
-                                        <span className="font-semibold text-indigo-900">For designers:</span> This tool helps you understand the technical implications of <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> features, anticipate UX challenges, and collaborate effectively with engineering teams. Each analysis includes proven design patterns and real-world examples.
-                                    </p>
-                                </div>
                             </div>
-                            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-                                <button
-                                    onClick={() => setShowDecisionFramework(true)}
-                                    className="px-4 sm:px-5 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium whitespace-nowrap shadow-lg"
-                                    aria-label="Open decision framework"
-                                >
-                                    Should I use AI?
-                                </button>
-                                <button
-                                    onClick={() => setShowGlossary(true)}
-                                    className="px-4 sm:px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap shadow-lg"
-                                    aria-label="Open AI glossary"
-                                >
-                                    AI Terms
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                            <span className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                OOUX workflows
-                            </span>
-                            <span className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> touchpoints
-                            </span>
-                            <span className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                Risk analysis
-                            </span>
-                            <span className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                Implementation guide
-                            </span>
                         </div>
                     </div>
                 )}
@@ -337,27 +292,26 @@ const AIProjectAdvisor = () => {
                 {/* Main Input Section */}
                 {!analysis && (
                     <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
-                        <div className="mb-8 bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
-                            <label htmlFor="industry-select" className="block text-xl font-bold text-gray-900 mb-3">
-                                Step 1: Choose your industry
-                            </label>
-                            <p className="text-base text-gray-600 mb-4">This tailors workflows, examples, and terminology to your domain</p>
-                            <select
-                                id="industry-select"
-                                value={industry}
-                                onChange={(e) => setIndustry(e.target.value)}
-                                className="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                aria-label="Select industry for analysis"
-                            >
-                                <option value="generic">Generic (Domain Agnostic)</option>
-                                <option value="hcm">Human Capital Management</option>
-                                <option value="finance">Finance</option>
-                                <option value="healthcare">Healthcare (Coming Soon)</option>
-                                <option value="retail">Retail (Coming Soon)</option>
-                            </select>
-                        </div>
+                        <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 1</div>
+                        <label htmlFor="industry-select" className="block text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                            Choose your industry
+                        </label>
+                        <p className="text-base text-gray-600 mb-6">This tailors workflows, examples, and terminology to your domain</p>
+                        <select
+                            id="industry-select"
+                            value={industry}
+                            onChange={(e) => setIndustry(e.target.value)}
+                            className="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white mb-6"
+                            aria-label="Select industry for analysis"
+                        >
+                            <option value="generic">Generic (Domain Agnostic)</option>
+                            <option value="hcm">Human Capital Management</option>
+                            <option value="finance">Finance</option>
+                            <option value="healthcare">Healthcare (Coming Soon)</option>
+                            <option value="retail">Retail (Coming Soon)</option>
+                        </select>
 
-                        <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="pt-6 border-t border-gray-200">
                             <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
                                 <button
                                     onClick={() => setShowMethodology(true)}
@@ -375,6 +329,16 @@ const AIProjectAdvisor = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     Should I use AI?
+                                </button>
+                                <span className="hidden sm:inline text-gray-400">•</span>
+                                <button
+                                    onClick={() => setShowGlossary(true)}
+                                    className="text-sm text-blue-600 hover:text-blue-700 underline flex items-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                    </svg>
+                                    AI terms glossary
                                 </button>
                             </div>
                         </div>
@@ -525,10 +489,11 @@ const AIProjectAdvisor = () => {
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                     <Icon name="Brain" />
                                     <span className="ml-2"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> type</span>
                                 </h3>
+                                <p className="text-xs text-gray-500 mb-3">The specific AI technology best suited for this use case</p>
                                 <div className="bg-indigo-50 rounded-lg p-4">
                                     <div className="text-2xl font-bold text-indigo-600 mb-2">
                                         <GlossaryText
@@ -546,10 +511,11 @@ const AIProjectAdvisor = () => {
                             </div>
 
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                     <Icon name="Users" />
                                     <span className="ml-2">User interaction</span>
                                 </h3>
+                                <p className="text-xs text-gray-500 mb-3">How users will experience and interact with the AI</p>
                                 <div className="bg-purple-50 rounded-lg p-4">
                                     <div className="text-2xl font-bold text-purple-600 mb-2 capitalize">
                                         <GlossaryText
@@ -567,10 +533,11 @@ const AIProjectAdvisor = () => {
                             </div>
 
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                     <Icon name="Wrench" />
                                     <span className="ml-2">Complexity</span>
                                 </h3>
+                                <p className="text-xs text-gray-500 mb-3">Implementation difficulty and resource requirements</p>
                                 <div className={`rounded-lg p-4 ${
                                     analysis.complexity.level === 'Low' ? 'bg-green-50' :
                                     analysis.complexity.level === 'Medium' ? 'bg-yellow-50' :
@@ -599,10 +566,13 @@ const AIProjectAdvisor = () => {
                         {analysis.oouxWorkflow && analysis.oouxWorkflow.objects.length > 0 && (
                             <div id="ooux" className="bg-white rounded-lg shadow-lg p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                        <Icon name="Box" />
-                                        <span className="ml-2">OOUX workflow</span>
-                                    </h3>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                                            <Icon name="Box" />
+                                            <span className="ml-2">OOUX workflow</span>
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Object-oriented breakdown showing data structures, user flows, and AI touchpoints throughout the system</p>
+                                    </div>
                                     <button
                                         onClick={() => toggleSection('ooux')}
                                         className="text-sm text-gray-600 hover:text-gray-800 font-medium"
@@ -808,12 +778,12 @@ const AIProjectAdvisor = () => {
 
                         {/* Recommended Principles */}
                         <div id="principles" className="bg-white rounded-lg shadow-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                 <Icon name="CheckCircle" />
                                 <span className="ml-2">Recommended design principles</span>
                             </h3>
                             <p className="text-sm text-gray-600 mb-4">
-                                Click to add or remove from your focus
+                                Carnegie Mellon's proven guidelines for human-AI interaction design. Click to add or remove from your focus.
                             </p>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {Object.entries(PRINCIPLES).map(([key, principle]) => {
@@ -874,10 +844,11 @@ const AIProjectAdvisor = () => {
 
                         {/* Complexity Breakdown */}
                         <div className="bg-white rounded-lg shadow-lg p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                 <Icon name="Wrench" />
                                 <span className="ml-2">Complexity breakdown</span>
                             </h3>
+                            <p className="text-sm text-gray-600 mb-4">Factors contributing to implementation complexity and development effort</p>
                             <div className="space-y-2">
                                 {analysis.complexity.factors.map((factor, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
@@ -907,7 +878,8 @@ const AIProjectAdvisor = () => {
                         {/* Technical, Risks, etc. - Condensed */}
                         <div id="technical" className="grid md:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Technical considerations</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Technical considerations</h3>
+                                <p className="text-xs text-gray-500 mb-3">Key engineering requirements to discuss with your development team</p>
                                 <ul className="space-y-2">
                                     {analysis.technical.map((item, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
@@ -922,7 +894,8 @@ const AIProjectAdvisor = () => {
                             </div>
 
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Trust cues</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Trust cues</h3>
+                                <p className="text-xs text-gray-500 mb-3">UI elements that build user confidence in AI-generated results</p>
                                 <ul className="space-y-2">
                                     {analysis.trustCues.map((cue, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
@@ -940,10 +913,13 @@ const AIProjectAdvisor = () => {
                         {/* Risks */}
                         <div id="risks" className="bg-white rounded-lg shadow-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                                    <Icon name="AlertCircle" />
-                                    <span className="ml-2">Risks & mitigations</span>
-                                </h3>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                                        <Icon name="AlertCircle" />
+                                        <span className="ml-2">Risks & mitigations</span>
+                                    </h3>
+                                    <p className="text-sm text-gray-600">Potential challenges and proven strategies to address them</p>
+                                </div>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => copyToClipboard(
@@ -1021,7 +997,8 @@ const AIProjectAdvisor = () => {
                         {/* Examples */}
                         {analysis.examples.length > 0 && (
                             <div id="examples" className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Examples across industries</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Examples across industries</h3>
+                                <p className="text-sm text-gray-600 mb-4">Real-world applications of this pattern in different domains</p>
                                 <div className="space-y-3">
                                     {analysis.examples.map((example, idx) => (
                                         <div key={idx} className="bg-yellow-50 rounded-lg p-4">
