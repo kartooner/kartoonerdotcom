@@ -1,7 +1,7 @@
 // Generic Workflow Generator
 // Generates OOUX workflows from detected patterns
 
-function generateWorkflow(concept, patternKey, objects) {
+function generateWorkflow(concept, patternKey, objects, industry = 'generic') {
     const workflow = {
         objects: [],
         flow: [],
@@ -22,53 +22,121 @@ function generateWorkflow(concept, patternKey, objects) {
     // Generate workflow based on pattern
     switch(patternKey) {
         case 'autoApproval':
-            return generateAutoApprovalWorkflow(concept, objects);
+            return generateAutoApprovalWorkflow(concept, objects, industry);
         case 'anomalyDetection':
-            return generateAnomalyDetectionWorkflow(concept, objects);
+            return generateAnomalyDetectionWorkflow(concept, objects, industry);
         case 'intelligentScoring':
-            return generateIntelligentScoringWorkflow(concept, objects);
+            return generateIntelligentScoringWorkflow(concept, objects, industry);
         case 'predictiveIntelligence':
-            return generatePredictiveIntelligenceWorkflow(concept, objects);
+            return generatePredictiveIntelligenceWorkflow(concept, objects, industry);
         case 'unifiedEntityView':
-            return generateUnifiedEntityViewWorkflow(concept, objects);
+            return generateUnifiedEntityViewWorkflow(concept, objects, industry);
         case 'crossSystemWorkflow':
-            return generateCrossSystemWorkflowWorkflow(concept, objects);
+            return generateCrossSystemWorkflowWorkflow(concept, objects, industry);
         case 'naturalLanguageQA':
-            return generateNaturalLanguageQAWorkflow(concept, objects);
+            return generateNaturalLanguageQAWorkflow(concept, objects, industry);
         case 'intelligentSearch':
-            return generateIntelligentSearchWorkflow(concept, objects);
+            return generateIntelligentSearchWorkflow(concept, objects, industry);
         case 'impactAnalysis':
-            return generateImpactAnalysisWorkflow(concept, objects);
+            return generateImpactAnalysisWorkflow(concept, objects, industry);
         case 'resourceOptimization':
-            return generateResourceOptimizationWorkflow(concept, objects);
+            return generateResourceOptimizationWorkflow(concept, objects, industry);
         case 'realTimeProcessing':
-            return generateRealTimeProcessingWorkflow(concept, objects);
+            return generateRealTimeProcessingWorkflow(concept, objects, industry);
         case 'smartAggregation':
-            return generateSmartAggregationWorkflow(concept, objects);
+            return generateSmartAggregationWorkflow(concept, objects, industry);
         default:
-            return generateGenericWorkflow(concept, objects);
+            return generateGenericWorkflow(concept, objects, industry);
     }
 }
 
+// Helper: Get domain-specific context
+function getDomainContext(industry, pattern) {
+    if (industry === 'hcm' && typeof HCM_DOMAIN !== 'undefined' && HCM_DOMAIN.workflowExamples[pattern]) {
+        return HCM_DOMAIN.workflowExamples[pattern];
+    }
+    if (industry === 'finance' && typeof FINANCE_DOMAIN !== 'undefined' && FINANCE_DOMAIN.workflowExamples[pattern]) {
+        return FINANCE_DOMAIN.workflowExamples[pattern];
+    }
+    return null;
+}
+
 // Auto-Approval Pattern
-function generateAutoApprovalWorkflow(concept, objects) {
+function generateAutoApprovalWorkflow(concept, objects, industry = 'generic') {
     // Extract context from concept
     const lower = concept.toLowerCase();
-    const requestType = lower.includes('pto') || lower.includes('time off') ? 'time-off request' :
+    const domainContext = getDomainContext(industry, 'autoApproval');
+
+    // Use domain-specific context if available
+    let requestType, criteria, notification;
+
+    if (industry === 'hcm') {
+        requestType = domainContext ? 'PTO request' :
+                     (lower.includes('pto') || lower.includes('time off') ? 'PTO request' : 'time-off request');
+        criteria = domainContext ? domainContext.criteria : 'balance check, blackout dates, team coverage';
+        notification = 'employee';
+    } else if (industry === 'finance') {
+        requestType = domainContext ? 'loan application' :
+                     (lower.includes('loan') ? 'loan application' : 'claim');
+        criteria = domainContext ? domainContext.criteria : 'credit score, debt-to-income ratio, loan amount';
+        notification = lower.includes('applicant') ? 'applicant' : 'customer';
+    } else {
+        // Generic fallback
+        requestType = lower.includes('pto') || lower.includes('time off') ? 'time-off request' :
                        lower.includes('loan') ? 'loan application' :
                        lower.includes('expense') ? 'expense request' :
                        lower.includes('review') ? 'performance review' :
                        lower.includes('claim') ? 'claim submission' : 'request';
 
-    const criteria = lower.includes('coverage') ? 'team coverage and blackout dates' :
+        criteria = lower.includes('coverage') ? 'team coverage and blackout dates' :
                     lower.includes('credit') || lower.includes('risk') ? 'credit score and risk factors' :
                     lower.includes('threshold') || lower.includes('amount') ? 'amount thresholds and business rules' :
                     lower.includes('rating') ? 'rating levels and policy compliance' :
                     'policy rules and risk assessment';
 
-    const notification = lower.includes('employee') ? 'employee' :
+        notification = lower.includes('employee') ? 'employee' :
                         lower.includes('customer') ? 'customer' :
                         lower.includes('applicant') ? 'applicant' : 'requester';
+    }
+
+    // Build domain-specific AI touchpoints
+    let aiTouchpoints;
+    if (industry === 'hcm') {
+        aiTouchpoints = [
+            'Validates PTO balance and accrual rules',
+            'Checks team coverage and staffing requirements',
+            'Analyzes blackout dates and business critical periods',
+            'Reviews historical approval patterns for similar requests',
+            'Assesses impact on department coverage and operations',
+            'Considers employee tenure, role criticality, and request history',
+            'Calculates auto-approval confidence based on policy compliance',
+            'Routes edge cases to manager with full context and recommendation',
+            'Learns from manager overrides to refine approval logic'
+        ];
+    } else if (industry === 'finance') {
+        aiTouchpoints = [
+            'Validates credit score and income documentation',
+            'Analyzes debt-to-income ratio and payment history',
+            'Assesses collateral value and loan-to-value ratio',
+            'Reviews employment stability and income sources',
+            'Evaluates market conditions and risk factors',
+            'Compares to approved/denied applications with similar profiles',
+            'Calculates default probability and risk score',
+            'Routes high-risk applications to senior underwriter',
+            'Learns from underwriter decisions to improve scoring accuracy'
+        ];
+    } else {
+        aiTouchpoints = [
+            'Validates against policy rules and business constraints',
+            'Analyzes historical approval patterns for similar requests',
+            'Assesses risk factors (amount, impact, compliance)',
+            'Calculates confidence score for auto-approval decision',
+            'Considers requester history and reliability',
+            'Evaluates business context (timing, capacity, budget)',
+            'Routes based on confidence threshold and risk profile',
+            'Learns from reviewer corrections to improve accuracy'
+        ];
+    }
 
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
@@ -81,16 +149,7 @@ function generateAutoApprovalWorkflow(concept, objects) {
             { step: '4b', actor: 'System', action: 'Routes to manager/reviewer for decision', object: 'approval', condition: 'confidence ≤ threshold OR risk ≥ limit' },
             { step: 5, actor: 'System', action: `Notifies ${notification} of decision with reasoning`, object: 'request' }
         ],
-        aiTouchpoints: [
-            'Validates against policy rules and business constraints',
-            'Analyzes historical approval patterns for similar requests',
-            'Assesses risk factors (amount, impact, compliance)',
-            'Calculates confidence score for auto-approval decision',
-            'Considers requester history and reliability',
-            'Evaluates business context (timing, capacity, budget)',
-            'Routes based on confidence threshold and risk profile',
-            'Learns from reviewer corrections to improve accuracy'
-        ],
+        aiTouchpoints,
         configurationNeeds: [
             { setting: 'Auto-Approval Confidence', description: 'Minimum confidence threshold to auto-approve', default: '90%' },
             { setting: 'Risk Limits', description: 'Maximum acceptable risk scores for auto-approval', default: 'Low for financial, medium for operational' },
@@ -102,23 +161,77 @@ function generateAutoApprovalWorkflow(concept, objects) {
 }
 
 // Anomaly Detection Pattern
-function generateAnomalyDetectionWorkflow(concept, objects) {
+function generateAnomalyDetectionWorkflow(concept, objects, industry = 'generic') {
     const lower = concept.toLowerCase();
-    const dataType = lower.includes('timecard') || lower.includes('punch') || lower.includes('time') ? 'timecards' :
-                    lower.includes('transaction') || lower.includes('fraud') ? 'transactions' :
-                    lower.includes('enrollment') || lower.includes('benefit') ? 'enrollment data' :
-                    lower.includes('claim') ? 'claims' :
-                    lower.includes('inventory') ? 'inventory records' : 'data records';
+    const domainContext = getDomainContext(industry, 'anomalyDetection');
 
-    const anomalyType = lower.includes('missing') || lower.includes('punch') ? 'missing entries and gaps' :
-                       lower.includes('fraud') ? 'fraudulent patterns' :
-                       lower.includes('error') ? 'data errors and inconsistencies' :
-                       lower.includes('discrepanc') ? 'discrepancies' : 'unusual patterns';
+    let dataType, anomalyType, correctionAction;
 
-    const correctionAction = lower.includes('punch') || lower.includes('time') ? 'Suggests fix based on schedule history' :
-                            lower.includes('enrollment') ? 'Recommends correction before deadline' :
-                            lower.includes('fraud') ? 'Flags for fraud investigation' :
-                            'Generates suggested correction based on context';
+    if (industry === 'hcm') {
+        dataType = domainContext ? 'time entries' : 'timecards';
+        anomalyType = domainContext ? domainContext.detection : 'missing punches and schedule deviations';
+        correctionAction = 'Suggests fix based on employee schedule history';
+    } else if (industry === 'finance') {
+        dataType = domainContext ? 'transactions' : 'transactions';
+        anomalyType = domainContext ? domainContext.detection : 'unusual spending patterns, location anomalies, velocity checks';
+        correctionAction = 'Flags for fraud investigation and review';
+    } else {
+        // Generic fallback
+        dataType = lower.includes('timecard') || lower.includes('punch') || lower.includes('time') ? 'timecards' :
+                        lower.includes('transaction') || lower.includes('fraud') ? 'transactions' :
+                        lower.includes('enrollment') || lower.includes('benefit') ? 'enrollment data' :
+                        lower.includes('claim') ? 'claims' :
+                        lower.includes('inventory') ? 'inventory records' : 'data records';
+
+        anomalyType = lower.includes('missing') || lower.includes('punch') ? 'missing entries and gaps' :
+                           lower.includes('fraud') ? 'fraudulent patterns' :
+                           lower.includes('error') ? 'data errors and inconsistencies' :
+                           lower.includes('discrepanc') ? 'discrepancies' : 'unusual patterns';
+
+        correctionAction = lower.includes('punch') || lower.includes('time') ? 'Suggests fix based on schedule history' :
+                                lower.includes('enrollment') ? 'Recommends correction before deadline' :
+                                lower.includes('fraud') ? 'Flags for fraud investigation' :
+                                'Generates suggested correction based on context';
+    }
+
+    // Build domain-specific AI touchpoints
+    let aiTouchpoints;
+    if (industry === 'hcm') {
+        aiTouchpoints = [
+            'Compares clock-in/out times to employee schedule and shift patterns',
+            'Identifies missing punches, late arrivals, early departures',
+            'Detects unusual overtime hours or consecutive shifts',
+            'Analyzes meal break compliance and rest period violations',
+            'Generates suggested corrections based on historical patterns',
+            'Assesses impact on payroll and labor compliance',
+            'Flags potential time theft or policy violations',
+            'Learns from manager corrections to reduce false positives',
+            'Adapts to seasonal patterns and schedule changes'
+        ];
+    } else if (industry === 'finance') {
+        aiTouchpoints = [
+            'Monitors transaction patterns for unusual spending behavior',
+            'Detects location anomalies and impossible transaction sequences',
+            'Analyzes velocity patterns (frequency, amount, timing)',
+            'Identifies merchant category deviations from normal behavior',
+            'Compares to known fraud patterns and risk indicators',
+            'Calculates fraud probability score with confidence level',
+            'Blocks high-risk transactions and alerts customer',
+            'Learns from confirmed fraud and false positive feedback',
+            'Adapts to customer life events and legitimate pattern changes'
+        ];
+    } else {
+        aiTouchpoints = [
+            'Compares current data to historical baselines and patterns',
+            'Identifies statistical outliers and unusual deviations',
+            'Analyzes context to distinguish anomalies from valid variations',
+            'Generates suggested corrections based on similar cases',
+            'Assesses severity and potential impact of anomaly',
+            'Provides explanation of what makes this anomalous',
+            'Learns from user corrections to reduce false positives',
+            'Adapts detection sensitivity based on feedback'
+        ];
+    }
 
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
@@ -133,16 +246,7 @@ function generateAnomalyDetectionWorkflow(concept, objects) {
             { step: '5c', actor: 'System', action: 'Alerts stakeholders and blocks processing', object: 'anomaly', condition: 'high severity' },
             { step: 6, actor: 'User', action: 'Reviews details and resolves or overrides', object: 'anomaly' }
         ],
-        aiTouchpoints: [
-            'Compares current data to historical baselines and patterns',
-            'Identifies statistical outliers and unusual deviations',
-            'Analyzes context to distinguish anomalies from valid variations',
-            'Generates suggested corrections based on similar cases',
-            'Assesses severity and potential impact of anomaly',
-            'Provides explanation of what makes this anomalous',
-            'Learns from user corrections to reduce false positives',
-            'Adapts detection sensitivity based on feedback'
-        ],
+        aiTouchpoints,
         configurationNeeds: [
             { setting: 'Detection Threshold', description: 'Sensitivity for flagging anomalies', default: 'Medium - balance false positives vs. misses' },
             { setting: 'Confidence Threshold', description: 'Minimum confidence to auto-correct', default: '95%' },
@@ -154,27 +258,82 @@ function generateAnomalyDetectionWorkflow(concept, objects) {
 }
 
 // Intelligent Scoring Pattern
-function generateIntelligentScoringWorkflow(concept, objects) {
+function generateIntelligentScoringWorkflow(concept, objects, industry = 'generic') {
     const lower = concept.toLowerCase();
-    const itemType = lower.includes('timecard') ? 'timecards' :
-                    lower.includes('candidate') || lower.includes('applicant') ? 'job candidates' :
-                    lower.includes('credit') || lower.includes('loan') ? 'credit applications' :
-                    lower.includes('risk') || lower.includes('patient') ? 'risk profiles' :
-                    lower.includes('return') ? 'return requests' : 'items';
+    const domainContext = getDomainContext(industry, 'intelligentScoring');
 
-    const scoreFactors = lower.includes('timecard') ? 'variance, patterns, anomalies, policy compliance' :
-                        lower.includes('candidate') ? 'skills match, experience, qualifications' :
-                        lower.includes('credit') ? 'credit history, income, debt ratio, collateral' :
-                        lower.includes('risk') ? 'historical data, behavioral patterns, external factors' :
-                        'configurable risk and quality factors';
+    let itemType, scoreFactors, lowAction, highAction;
 
-    const lowAction = lower.includes('credit') ? 'Auto-approves application' :
-                     lower.includes('candidate') ? 'Routes to hiring manager' :
-                     lower.includes('timecard') ? 'Auto-processes to payroll' : 'Auto-processes';
+    if (industry === 'hcm') {
+        itemType = domainContext ? domainContext.entity : 'timecards';
+        scoreFactors = domainContext ? domainContext.factors : 'time variance, overtime, policy violations, pattern breaks';
+        lowAction = 'Auto-processes to payroll';
+        highAction = 'Blocks and alerts manager for review';
+    } else if (industry === 'finance') {
+        itemType = domainContext ? domainContext.entity : 'credit applications';
+        scoreFactors = domainContext ? domainContext.factors : 'credit history, income stability, debt ratios, market conditions';
+        lowAction = 'Auto-approves application';
+        highAction = 'Declines or routes to senior underwriter';
+    } else {
+        // Generic fallback
+        itemType = lower.includes('timecard') ? 'timecards' :
+                        lower.includes('candidate') || lower.includes('applicant') ? 'job candidates' :
+                        lower.includes('credit') || lower.includes('loan') ? 'credit applications' :
+                        lower.includes('risk') || lower.includes('patient') ? 'risk profiles' :
+                        lower.includes('return') ? 'return requests' : 'items';
 
-    const highAction = lower.includes('fraud') || lower.includes('return') ? 'Blocks and flags for fraud review' :
-                      lower.includes('credit') ? 'Declines application with explanation' :
-                      lower.includes('timecard') ? 'Blocks and alerts manager' : 'Escalates for senior review';
+        scoreFactors = lower.includes('timecard') ? 'variance, patterns, anomalies, policy compliance' :
+                            lower.includes('candidate') ? 'skills match, experience, qualifications' :
+                            lower.includes('credit') ? 'credit history, income, debt ratio, collateral' :
+                            lower.includes('risk') ? 'historical data, behavioral patterns, external factors' :
+                            'configurable risk and quality factors';
+
+        lowAction = lower.includes('credit') ? 'Auto-approves application' :
+                         lower.includes('candidate') ? 'Routes to hiring manager' :
+                         lower.includes('timecard') ? 'Auto-processes to payroll' : 'Auto-processes';
+
+        highAction = lower.includes('fraud') || lower.includes('return') ? 'Blocks and flags for fraud review' :
+                          lower.includes('credit') ? 'Declines application with explanation' :
+                          lower.includes('timecard') ? 'Blocks and alerts manager' : 'Escalates for senior review';
+    }
+
+    // Build domain-specific AI touchpoints
+    let aiTouchpoints;
+    if (industry === 'hcm') {
+        aiTouchpoints = [
+            'Calculates timecard risk score across multiple dimensions',
+            'Analyzes time variance from scheduled hours',
+            'Detects excessive overtime and consecutive work days',
+            'Identifies pattern breaks from normal employee behavior',
+            'Checks policy compliance (breaks, shifts, pay codes)',
+            'Compares to department and peer group benchmarks',
+            'Generates insights by category (cost, compliance, fraud risk)',
+            'Routes high-risk items for manager review before payroll',
+            'Learns optimal scoring weights from manager feedback'
+        ];
+    } else if (industry === 'finance') {
+        aiTouchpoints = [
+            'Calculates credit risk score using multiple data sources',
+            'Analyzes credit history, payment patterns, and utilization',
+            'Evaluates income stability and debt-to-income ratios',
+            'Assesses collateral value and loan-to-value ratios',
+            'Incorporates market conditions and economic indicators',
+            'Compares to similar approved/denied applications',
+            'Generates default probability and expected loss estimates',
+            'Routes applications to appropriate approval tier',
+            'Learns from underwriter decisions to refine scoring model'
+        ];
+    } else {
+        aiTouchpoints = [
+            'Calculates weighted scores across configurable factors',
+            'Factors may include: variance, compliance, patterns, history',
+            'Generates categorized insights (cost risk, compliance, quality)',
+            'Provides drill-down details for each score component',
+            'Compares scores to peer benchmarks and thresholds',
+            'Learns optimal weights from historical outcomes',
+            'Adapts scoring based on changing business conditions'
+        ];
+    }
 
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
@@ -188,15 +347,7 @@ function generateIntelligentScoringWorkflow(concept, objects) {
             { step: '4c', actor: 'System', action: highAction, object: 'insight', condition: 'score ≥ high threshold' },
             { step: 5, actor: 'System', action: 'Updates dashboard with scoring trends and insights', object: 'insight' }
         ],
-        aiTouchpoints: [
-            'Calculates weighted scores across configurable factors',
-            'Factors may include: variance, compliance, patterns, history',
-            'Generates categorized insights (cost risk, compliance, quality)',
-            'Provides drill-down details for each score component',
-            'Compares scores to peer benchmarks and thresholds',
-            'Learns optimal weights from historical outcomes',
-            'Adapts scoring based on changing business conditions'
-        ],
+        aiTouchpoints,
         configurationNeeds: [
             { setting: 'Score Weights', description: 'Weight for each scoring factor', default: 'Balanced across all factors' },
             { setting: 'Low Threshold', description: 'Score below which to auto-process', default: '20 points' },
@@ -208,27 +359,83 @@ function generateIntelligentScoringWorkflow(concept, objects) {
 }
 
 // Predictive Intelligence Pattern
-function generatePredictiveIntelligenceWorkflow(concept, objects) {
+function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'generic') {
     const lower = concept.toLowerCase();
-    const predictionType = lower.includes('turnover') || lower.includes('attrition') ? 'employee turnover risk' :
-                          lower.includes('overtime') ? 'overtime trends and costs' :
-                          lower.includes('credit') || lower.includes('risk') ? 'credit risk and default probability' :
-                          lower.includes('readmission') || lower.includes('patient') ? 'patient readmission risk' :
-                          lower.includes('stockout') || lower.includes('inventory') ? 'inventory stockout probability' :
-                          'future outcomes and risks';
+    const domainContext = getDomainContext(industry, 'predictiveIntelligence');
 
-    const recommendations = lower.includes('turnover') ? 'Suggests targeted retention actions (comp, development, engagement)' :
-                           lower.includes('overtime') ? 'Recommends staffing adjustments and scheduling changes' :
-                           lower.includes('credit') ? 'Proposes portfolio adjustments and hedging strategies' :
-                           lower.includes('patient') ? 'Plans preventive care interventions and follow-ups' :
-                           lower.includes('inventory') ? 'Optimizes reordering and allocation across locations' :
-                           'Generates actionable recommendations with expected impact';
+    let predictionType, recommendations, criticalTrigger;
 
-    const criticalTrigger = lower.includes('turnover') ? 'High-value employee at >70% flight risk' :
-                           lower.includes('overtime') ? 'Projected to exceed budget by >15%' :
-                           lower.includes('credit') ? 'Portfolio risk spike detected' :
-                           lower.includes('patient') ? '90-day readmission risk >50%' :
-                           'Critical threshold exceeded';
+    if (industry === 'hcm') {
+        predictionType = domainContext ? 'employee turnover risk' : 'employee turnover risk';
+        recommendations = domainContext ? 'Suggests targeted retention actions (compensation, development, engagement)' :
+                         'Recommends staffing adjustments and scheduling changes';
+        criticalTrigger = 'High-value employee at >70% flight risk';
+    } else if (industry === 'finance') {
+        predictionType = domainContext ? 'credit risk and default probability' : 'credit risk and default probability';
+        recommendations = domainContext ? domainContext.insights :
+                         'Proposes portfolio adjustments and hedging strategies';
+        criticalTrigger = 'Portfolio risk spike or concentration risk detected';
+    } else {
+        // Generic fallback
+        predictionType = lower.includes('turnover') || lower.includes('attrition') ? 'employee turnover risk' :
+                              lower.includes('overtime') ? 'overtime trends and costs' :
+                              lower.includes('credit') || lower.includes('risk') ? 'credit risk and default probability' :
+                              lower.includes('readmission') || lower.includes('patient') ? 'patient readmission risk' :
+                              lower.includes('stockout') || lower.includes('inventory') ? 'inventory stockout probability' :
+                              'future outcomes and risks';
+
+        recommendations = lower.includes('turnover') ? 'Suggests targeted retention actions (comp, development, engagement)' :
+                               lower.includes('overtime') ? 'Recommends staffing adjustments and scheduling changes' :
+                               lower.includes('credit') ? 'Proposes portfolio adjustments and hedging strategies' :
+                               lower.includes('patient') ? 'Plans preventive care interventions and follow-ups' :
+                               lower.includes('inventory') ? 'Optimizes reordering and allocation across locations' :
+                               'Generates actionable recommendations with expected impact';
+
+        criticalTrigger = lower.includes('turnover') ? 'High-value employee at >70% flight risk' :
+                               lower.includes('overtime') ? 'Projected to exceed budget by >15%' :
+                               lower.includes('credit') ? 'Portfolio risk spike detected' :
+                               lower.includes('patient') ? '90-day readmission risk >50%' :
+                               'Critical threshold exceeded';
+    }
+
+    // Build domain-specific AI touchpoints
+    let aiTouchpoints;
+    if (industry === 'hcm') {
+        aiTouchpoints = [
+            'Analyzes employee engagement, performance, and tenure data',
+            'Detects behavioral changes and early warning signals',
+            'Predicts turnover risk by employee segment and role',
+            'Identifies key contributors and high-flight-risk employees',
+            'Generates targeted retention recommendations (compensation, development)',
+            'Calculates ROI of retention actions vs. replacement costs',
+            'Monitors overtime trends and predicts budget impact',
+            'Tracks effectiveness of interventions to refine predictions',
+            'Adapts to organizational changes and market conditions'
+        ];
+    } else if (industry === 'finance') {
+        aiTouchpoints = [
+            'Monitors portfolio composition and concentration risks',
+            'Analyzes macroeconomic indicators and market trends',
+            'Predicts default probability across loan segments',
+            'Identifies early warning signals in payment behavior',
+            'Calculates expected losses and capital requirements',
+            'Generates portfolio rebalancing recommendations',
+            'Evaluates impact of interest rate and market changes',
+            'Tracks prediction accuracy and model performance',
+            'Adapts to changing market conditions and regulations'
+        ];
+    } else {
+        aiTouchpoints = [
+            'Cross-domain pattern detection across all data sources',
+            'Time-series analysis to identify trends and trajectories',
+            'Predictive modeling for future states and outcomes',
+            'Anomaly identification with root cause analysis',
+            'Impact quantification (cost, risk, opportunity)',
+            'Recommendation generation with expected outcomes',
+            'Priority scoring based on urgency and impact',
+            'Continuous learning from user feedback and outcomes'
+        ];
+    }
 
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
@@ -244,16 +451,7 @@ function generatePredictiveIntelligenceWorkflow(concept, objects) {
             { step: 6, actor: 'User', action: 'Reviews predictions and takes preventive action', object: 'insight' },
             { step: 7, actor: 'AI', action: 'Tracks outcome of actions to improve future predictions', object: 'intelligenceHub' }
         ],
-        aiTouchpoints: [
-            'Cross-domain pattern detection across all data sources',
-            'Time-series analysis to identify trends and trajectories',
-            'Predictive modeling for future states and outcomes',
-            'Anomaly identification with root cause analysis',
-            'Impact quantification (cost, risk, opportunity)',
-            'Recommendation generation with expected outcomes',
-            'Priority scoring based on urgency and impact',
-            'Continuous learning from user feedback and outcomes'
-        ],
+        aiTouchpoints,
         configurationNeeds: [
             { setting: 'Alert Thresholds', description: 'Sensitivity for each severity level', default: 'Critical: immediate risk, Warning: potential issue' },
             { setting: 'Notification Channels', description: 'How to deliver alerts', default: 'Critical: all channels, Warning: dashboard + email' },
@@ -265,7 +463,21 @@ function generatePredictiveIntelligenceWorkflow(concept, objects) {
 }
 
 // Unified Entity View Pattern
-function generateUnifiedEntityViewWorkflow(concept, objects) {
+function generateUnifiedEntityViewWorkflow(concept, objects, industry = 'generic') {
+    const domainContext = getDomainContext(industry, 'unifiedView');
+
+    let entityType, systems;
+    if (industry === 'hcm') {
+        entityType = domainContext ? domainContext.entity : 'Employee';
+        systems = domainContext ? domainContext.systems : 'Time, Payroll, Benefits, Performance';
+    } else if (industry === 'finance') {
+        entityType = domainContext ? domainContext.entity : 'Customer';
+        systems = domainContext ? domainContext.systems : 'Banking, Lending, Investments, Cards';
+    } else {
+        entityType = 'Entity';
+        systems = 'All connected systems';
+    }
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -299,7 +511,7 @@ function generateUnifiedEntityViewWorkflow(concept, objects) {
 }
 
 // Cross-System Workflow Pattern
-function generateCrossSystemWorkflowWorkflow(concept, objects) {
+function generateCrossSystemWorkflowWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -336,7 +548,18 @@ function generateCrossSystemWorkflowWorkflow(concept, objects) {
 }
 
 // Natural Language Q&A Pattern
-function generateNaturalLanguageQAWorkflow(concept, objects) {
+function generateNaturalLanguageQAWorkflow(concept, objects, industry = 'generic') {
+    const domainContext = getDomainContext(industry, 'naturalLanguageQA');
+
+    let capabilities;
+    if (industry === 'hcm') {
+        capabilities = domainContext ? domainContext.capabilities : 'Pay inquiries, PTO balance, benefits, policies';
+    } else if (industry === 'finance') {
+        capabilities = domainContext ? domainContext.capabilities : 'Balance inquiries, transaction history, payment scheduling';
+    } else {
+        capabilities = 'General information retrieval';
+    }
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -372,7 +595,7 @@ function generateNaturalLanguageQAWorkflow(concept, objects) {
 }
 
 // Intelligent Search Pattern
-function generateIntelligentSearchWorkflow(concept, objects) {
+function generateIntelligentSearchWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -406,7 +629,21 @@ function generateIntelligentSearchWorkflow(concept, objects) {
 }
 
 // Impact Analysis Pattern
-function generateImpactAnalysisWorkflow(concept, objects) {
+function generateImpactAnalysisWorkflow(concept, objects, industry = 'generic') {
+    const domainContext = getDomainContext(industry, 'impactAnalysis');
+
+    let scenario, analysis;
+    if (industry === 'hcm') {
+        scenario = domainContext ? 'employee departure or organizational change' : 'organizational change';
+        analysis = 'Impact on projects, coverage, knowledge transfer, morale';
+    } else if (industry === 'finance') {
+        scenario = domainContext ? domainContext.analysis : 'market change or policy update';
+        analysis = domainContext ? domainContext.analysis : 'P&L impact, risk exposure, customer retention';
+    } else {
+        scenario = 'change or decision';
+        analysis = 'Financial and operational impacts';
+    }
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -440,7 +677,7 @@ function generateImpactAnalysisWorkflow(concept, objects) {
 }
 
 // Resource Optimization Pattern
-function generateResourceOptimizationWorkflow(concept, objects) {
+function generateResourceOptimizationWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -474,7 +711,7 @@ function generateResourceOptimizationWorkflow(concept, objects) {
 }
 
 // Real-Time Processing Pattern
-function generateRealTimeProcessingWorkflow(concept, objects) {
+function generateRealTimeProcessingWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -509,7 +746,7 @@ function generateRealTimeProcessingWorkflow(concept, objects) {
 }
 
 // Smart Aggregation Pattern
-function generateSmartAggregationWorkflow(concept, objects) {
+function generateSmartAggregationWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [
@@ -544,7 +781,7 @@ function generateSmartAggregationWorkflow(concept, objects) {
 }
 
 // Generic fallback
-function generateGenericWorkflow(concept, objects) {
+function generateGenericWorkflow(concept, objects, industry = 'generic') {
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
         flow: [

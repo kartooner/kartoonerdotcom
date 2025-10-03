@@ -185,7 +185,7 @@ function analyzeProject(concept, industry = 'generic') {
     const detectedPattern = detectWorkflowPattern(concept);
 
     // Generate OOUX Workflow
-    const oouxWorkflow = generateWorkflow(concept, detectedPattern, relevantObjects);
+    const oouxWorkflow = generateWorkflow(concept, detectedPattern, relevantObjects, industry);
 
     // Create initial result
     const result = {

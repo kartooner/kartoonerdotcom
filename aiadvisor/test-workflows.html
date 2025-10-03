@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workflow Test</title>
+    <script src="js/config/workflow-patterns.js"></script>
+    <script src="js/logic/detect.js"></script>
+    <script src="js/logic/workflow-generator.js"></script>
+    <script src="js/domains/hcm.js"></script>
+    <script src="js/domains/finance.js"></script>
+</head>
+<body>
+    <h1>Testing OOUX Workflows</h1>
+    <div id="results"></div>
+    <script>
+        const testCases = [
+            { pattern: 'autoApproval', industry: 'hcm', concept: 'Auto-approve PTO' },
+            { pattern: 'autoApproval', industry: 'finance', concept: 'Auto-approve loans' },
+            { pattern: 'anomalyDetection', industry: 'hcm', concept: 'Detect missing punches' },
+            { pattern: 'anomalyDetection', industry: 'finance', concept: 'Detect fraud' },
+            { pattern: 'intelligentScoring', industry: 'hcm', concept: 'Score timecards' },
+            { pattern: 'intelligentScoring', industry: 'finance', concept: 'Score credit' },
+            { pattern: 'predictiveIntelligence', industry: 'hcm', concept: 'Predict turnover' },
+            { pattern: 'predictiveIntelligence', industry: 'finance', concept: 'Predict risk' },
+            { pattern: 'unifiedEntityView', industry: 'hcm', concept: 'Employee 360' },
+            { pattern: 'unifiedEntityView', industry: 'finance', concept: 'Customer 360' },
+        ];
+
+        const results = document.getElementById('results');
+        let output = '<ul>';
+
+        testCases.forEach(test => {
+            const objects = detectRelevantObjects(test.concept);
+            const workflow = generateWorkflow(test.concept, test.pattern, objects, test.industry);
+            
+            const hasObjects = workflow.objects && workflow.objects.length > 0;
+            const hasFlow = workflow.flow && workflow.flow.length > 0;
+            const hasTouchpoints = workflow.aiTouchpoints && workflow.aiTouchpoints.length > 0;
+            const hasConfig = workflow.configurationNeeds && workflow.configurationNeeds.length > 0;
+            
+            const status = hasObjects && hasFlow && hasTouchpoints && hasConfig ? '✅' : '❌';
+            
+            output += `<li>${status} ${test.industry} / ${test.pattern}: Objects(${workflow.objects?.length || 0}), Flow(${workflow.flow?.length || 0}), Touchpoints(${workflow.aiTouchpoints?.length || 0}), Config(${workflow.configurationNeeds?.length || 0})</li>`;
+        });
+
+        output += '</ul>';
+        results.innerHTML = output;
+    </script>
+</body>
+</html>
