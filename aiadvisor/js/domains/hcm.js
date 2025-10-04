@@ -10,30 +10,84 @@ const HCM_DOMAIN = {
         employee: {
             name: 'Employee',
             extends: 'entity',
+            description: 'Employee record across all HR systems',
             coreContent: ['Name', 'Employee ID', 'Department', 'Job Title', 'Manager'],
             metadata: ['Hire Date', 'Status', 'Location', 'Employment Type'],
-            actions: ['View Profile', 'Edit Details', 'View History', 'Assign Manager']
+            actions: ['View Profile', 'Edit Details', 'View History', 'Assign Manager'],
+            relationships: [
+                { type: 'has-many', target: 'timeEntry', description: 'Employee has time entries' },
+                { type: 'has-many', target: 'ptoRequest', description: 'Employee has PTO requests' },
+                { type: 'belongs-to', target: 'department', description: 'Employee belongs to department' },
+                { type: 'reports-to', target: 'employee', description: 'Employee reports to manager' }
+            ]
         },
         timeEntry: {
             name: 'Time Entry',
             extends: 'transaction',
+            description: 'Employee time tracking record',
             coreContent: ['Employee', 'Date', 'Hours', 'Project/Task'],
             metadata: ['Status', 'Submission Time', 'Approver', 'Cost Center'],
-            actions: ['Submit', 'Edit', 'Approve', 'Reject', 'Flag Anomaly']
+            actions: ['Submit', 'Edit', 'Approve', 'Reject', 'Flag Anomaly'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Time entry belongs to employee' }
+            ]
         },
         ptoRequest: {
             name: 'PTO Request',
             extends: 'request',
+            description: 'Employee time-off request',
             coreContent: ['Requestor', 'Date Range', 'PTO Type', 'Hours/Days'],
             metadata: ['Status', 'Submission Date', 'Approver', 'Balance Impact'],
-            actions: ['Submit', 'Approve', 'Deny', 'Modify', 'Cancel']
+            actions: ['Submit', 'Approve', 'Deny', 'Modify', 'Cancel'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Request belongs to employee' }
+            ]
         },
         payrollRun: {
             name: 'Payroll Run',
             extends: 'transaction',
+            description: 'Payroll processing batch',
             coreContent: ['Pay Period', 'Employee Count', 'Total Amount', 'Status'],
             metadata: ['Run Date', 'Processor', 'Bank File Status'],
-            actions: ['Preview', 'Validate', 'Flag Issues', 'Approve', 'Process']
+            actions: ['Preview', 'Validate', 'Flag Issues', 'Approve', 'Process'],
+            relationships: [
+                { type: 'has-many', target: 'timeEntry', description: 'Payroll run includes time entries' }
+            ]
+        },
+        employeeProfile: {
+            name: 'Employee Profile',
+            extends: 'profile',
+            description: 'Unified employee view across Time, Payroll, Benefits, Performance, and Learning systems',
+            coreContent: ['Employee ID', 'Core Info', 'System Data', 'Activity Timeline', 'Health Score'],
+            metadata: ['Last Updated', 'Data Completeness', 'Turnover Risk', 'Performance Trend'],
+            actions: ['View Details', 'See Time History', 'Track Performance', 'Export Report', 'Analyze Trends'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Profile represents employee' },
+                { type: 'has-many', target: 'timeEntry', description: 'Profile shows time history' },
+                { type: 'has-many', target: 'hrInsight', description: 'Profile includes AI insights' }
+            ]
+        },
+        hrInsight: {
+            name: 'HR Insight',
+            extends: 'insight',
+            description: 'AI-generated insight about employee health, turnover risk, or workforce trends',
+            coreContent: ['Type', 'Severity', 'Employee/Team', 'Recommendation'],
+            metadata: ['Generated Date', 'AI Confidence', 'Category', 'Status'],
+            actions: ['Review', 'Take Action', 'Dismiss', 'Share with Manager', 'Track Outcome'],
+            relationships: [
+                { type: 'relates-to', target: 'employee', description: 'Insight about employee' },
+                { type: 'belongs-to', target: 'employeeProfile', description: 'Insight shown in profile' }
+            ]
+        },
+        department: {
+            name: 'Department',
+            description: 'Organizational unit or team',
+            coreContent: ['Name', 'Department Code', 'Manager', 'Cost Center'],
+            metadata: ['Created Date', 'Status', 'Location', 'Budget'],
+            actions: ['View Team', 'See Org Chart', 'View Metrics', 'Export'],
+            relationships: [
+                { type: 'has-many', target: 'employee', description: 'Department has employees' }
+            ]
         }
     },
     

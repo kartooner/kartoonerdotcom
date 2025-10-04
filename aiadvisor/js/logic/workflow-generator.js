@@ -466,21 +466,64 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
 function generateUnifiedEntityViewWorkflow(concept, objects, industry = 'generic') {
     const domainContext = getDomainContext(industry, 'unifiedView');
 
-    let entityType, systems;
+    let entityType, systems, flow, aiTouchpoints, workflowObjects;
     if (industry === 'hcm') {
         entityType = domainContext ? domainContext.entity : 'Employee';
         systems = domainContext ? domainContext.systems : 'Time, Payroll, Benefits, Performance';
+        workflowObjects = ['employee', 'employeeProfile', 'timeEntry', 'hrInsight', 'department'].map(key => GENERIC_OBJECTS[key]).filter(Boolean);
+        flow = [
+            { step: 1, actor: 'Manager', action: 'Searches for employee in system', object: 'intelligenceHub' },
+            { step: 2, actor: 'System', action: 'Queries Time, Payroll, Benefits, Performance, Learning systems', object: 'employeeProfile' },
+            { step: 3, actor: 'AI', action: 'Aggregates employee data across all HR systems', object: 'employeeProfile', confidence: true },
+            { step: 4, actor: 'AI', action: 'Analyzes attendance patterns, performance trends, benefit usage', object: 'employeeProfile' },
+            { step: 5, actor: 'AI', action: 'Generates employee health score and turnover risk', object: 'hrInsight', confidence: true },
+            { step: 6, actor: 'System', action: 'Renders unified employee profile with timeline', object: 'employeeProfile' },
+            { step: 7, actor: 'Manager', action: 'Explores time history, compensation, performance reviews', object: 'employeeProfile' },
+            { step: 8, actor: 'AI', action: 'Provides retention recommendations and development suggestions', object: 'hrInsight' }
+        ];
+        aiTouchpoints = [
+            'Aggregates employee data from Time, Payroll, Benefits, Performance, and Learning systems',
+            'Calculates employee health score based on attendance, performance, and engagement',
+            'Maps manager relationships and team structure',
+            'Identifies patterns in time-off requests and overtime',
+            'Detects anomalies in attendance or performance trends',
+            'Generates turnover risk prediction and retention insights',
+            'Surfaces compensation equity analysis across similar roles',
+            'Provides natural language summaries of employee career progression'
+        ];
     } else if (industry === 'finance') {
         entityType = domainContext ? domainContext.entity : 'Customer';
         systems = domainContext ? domainContext.systems : 'Banking, Lending, Investments, Cards';
+        workflowObjects = ['customer', 'customerProfile', 'account', 'financialInsight'].map(key => GENERIC_OBJECTS[key]).filter(Boolean);
+        if (workflowObjects.length === 0) {
+            // Fallback to generic objects if finance objects not defined
+            workflowObjects = ['entity', 'profile', 'insight'].map(key => GENERIC_OBJECTS[key]).filter(Boolean);
+        }
+        flow = [
+            { step: 1, actor: 'User', action: 'Searches for customer', object: 'intelligenceHub' },
+            { step: 2, actor: 'System', action: 'Queries Banking, Lending, Investments, Cards systems', object: 'customerProfile' },
+            { step: 3, actor: 'AI', action: 'Aggregates customer data across all financial systems', object: 'customerProfile', confidence: true },
+            { step: 4, actor: 'AI', action: 'Analyzes transaction patterns, account health, credit behavior', object: 'customerProfile' },
+            { step: 5, actor: 'AI', action: 'Generates customer health score and lifetime value', object: 'financialInsight', confidence: true },
+            { step: 6, actor: 'System', action: 'Renders unified customer profile', object: 'customerProfile' },
+            { step: 7, actor: 'User', action: 'Explores accounts, transactions, interactions', object: 'customerProfile' },
+            { step: 8, actor: 'AI', action: 'Provides product recommendations and risk indicators', object: 'financialInsight' }
+        ];
+        aiTouchpoints = [
+            'Aggregates customer data from all financial systems in real-time',
+            'Calculates customer lifetime value and relationship health',
+            'Maps product holdings and cross-sell opportunities',
+            'Identifies patterns in spending and saving behavior',
+            'Detects anomalies and fraud indicators',
+            'Generates churn risk and retention insights',
+            'Surfaces compliance and regulatory considerations',
+            'Provides natural language summaries of financial relationships'
+        ];
     } else {
         entityType = 'Entity';
         systems = 'All connected systems';
-    }
-
-    return {
-        objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
-        flow: [
+        workflowObjects = objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean);
+        flow = [
             { step: 1, actor: 'User', action: 'Searches for entity', object: 'intelligenceHub' },
             { step: 2, actor: 'System', action: 'Queries all connected systems', object: 'profile' },
             { step: 3, actor: 'AI', action: 'Aggregates cross-system data', object: 'profile', confidence: true },
@@ -489,8 +532,8 @@ function generateUnifiedEntityViewWorkflow(concept, objects, industry = 'generic
             { step: 6, actor: 'System', action: 'Renders unified profile view', object: 'profile' },
             { step: 7, actor: 'User', action: 'Explores connections and timeline', object: 'profile' },
             { step: 8, actor: 'AI', action: 'Provides contextual recommendations', object: 'insight' }
-        ],
-        aiTouchpoints: [
+        ];
+        aiTouchpoints = [
             'Aggregates data from all connected systems in real-time',
             'Calculates health scores across multiple dimensions',
             'Maps relationships and dependencies across entities',
@@ -499,12 +542,18 @@ function generateUnifiedEntityViewWorkflow(concept, objects, industry = 'generic
             'Generates predictive insights and risk indicators',
             'Surfaces impact analysis and recommendations',
             'Provides natural language summaries of complex relationships'
-        ],
+        ];
+    }
+
+    return {
+        objects: workflowObjects,
+        flow: flow,
+        aiTouchpoints: aiTouchpoints,
         configurationNeeds: [
             { setting: 'Data Refresh Rate', description: 'How often to update intelligence', default: 'Real-time for critical, hourly for analytics' },
             { setting: 'Insight Sensitivity', description: 'Threshold for generating alerts', default: 'Medium - balance noise with coverage' },
             { setting: 'Privacy Controls', description: 'Data visibility by role', default: 'Role-based with audit logging' },
-            { setting: 'System Integration', description: 'Which systems to include', default: 'All connected systems' },
+            { setting: 'System Integration', description: 'Which systems to include', default: systems },
             { setting: 'AI Confidence', description: 'Minimum confidence for predictions', default: '75% for insights, 90% for actions' }
         ]
     };

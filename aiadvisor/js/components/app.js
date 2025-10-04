@@ -68,7 +68,7 @@ const GlossaryText = ({ text, onTermClick }) => {
                     return (
                         <span
                             key={idx}
-                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors"
+                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors px-0.5"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onTermClick) onTermClick(key);
@@ -88,6 +88,7 @@ const GlossaryText = ({ text, onTermClick }) => {
 const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
     const [workflowTitle, setWorkflowTitle] = useState('');
+    const [currentSlug, setCurrentSlug] = useState('');
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
@@ -132,86 +133,119 @@ const AIProjectAdvisor = () => {
 
     // Load analysis from URL (clean path or query params) on mount
     React.useEffect(() => {
-        const path = window.location.pathname;
-        // Match both /aiadvisor/industry/template AND /industry/template patterns
-        const match = path.match(/^(?:\/aiadvisor)?\/([^\/]+)\/([^\/]+)\/?$/);
+        const loadFromUrl = () => {
+            const path = window.location.pathname;
 
-        console.log('Path:', path, 'Match:', match);
+            // Check if we're at the root /aiadvisor path
+            if (path === '/aiadvisor' || path === '/aiadvisor/') {
+                // Reset to clean state
+                setAnalysis(null);
+                setWorkflowTitle('');
+                setCurrentSlug('');
+                setIsAnalyzing(false);
+                setShowTemplates(true);
+                setShowAllTemplates(false);
+                setPageTitle('AI project advisor');
+                document.title = 'AI project advisor - Universal intelligence workflows';
+                return;
+            }
 
-        if (match) {
-            const [, industrySlug, templateSlug] = match;
+            // Match both /aiadvisor/industry/template AND /industry/template patterns
+            const match = path.match(/^(?:\/aiadvisor)?\/([^\/]+)\/([^\/]+)\/?$/);
 
-            console.log('Industry:', industrySlug, 'Template:', templateSlug);
+            console.log('Path:', path, 'Match:', match);
 
-            // Find the template by slug
-            const templates = TEMPLATES[industrySlug];
-            console.log('Templates for industry:', templates);
-            if (templates) {
-                const template = templates.find(t => t.slug === templateSlug);
-                console.log('Found template:', template);
-                if (template) {
-                    // Update page title
-                    document.title = `${template.title} - AI Project Advisor`;
+            if (match) {
+                const [, industrySlug, templateSlug] = match;
 
-                    setIndustry(industrySlug);
-                    setConcept(template.concept);
-                    setPageTitle(template.title);
-                    setWorkflowTitle(template.title);
-                    setShowTemplates(false);
-                    const result = analyzeProject(template.concept, industrySlug);
-                    setAnalysis(result);
-                    setSelectedPrinciples(result.recommended);
-                    return;
+                console.log('Industry:', industrySlug, 'Template:', templateSlug);
+
+                // Find the template by slug
+                const templates = TEMPLATES[industrySlug];
+                console.log('Templates for industry:', templates);
+                if (templates) {
+                    const template = templates.find(t => t.slug === templateSlug);
+                    console.log('Found template:', template);
+                    if (template) {
+                        // Update page title
+                        document.title = `${template.title} - AI Project Advisor`;
+
+                        setIndustry(industrySlug);
+                        setConcept(template.concept);
+                        setPageTitle(template.title);
+                        setWorkflowTitle(template.title);
+                        setCurrentSlug(template.slug);
+                        setShowTemplates(false);
+                        const result = analyzeProject(template.concept, industrySlug);
+                        setAnalysis(result);
+                        setSelectedPrinciples(result.recommended);
+                        return;
+                    }
                 }
             }
-        }
 
-        // Fallback to old URL parsing for backwards compatibility
-        const pathParts = window.location.pathname.split('/').filter(p => p);
-        let sharedConcept = null;
-        let sharedIndustry = null;
+            // Fallback to old URL parsing for backwards compatibility
+            const pathParts = window.location.pathname.split('/').filter(p => p);
+            let sharedConcept = null;
+            let sharedIndustry = null;
 
-        // Check for clean URL format (last two segments)
-        if (pathParts.length >= 2) {
-            const potentialIndustry = pathParts[pathParts.length - 2];
-            const potentialConcept = decodeURIComponent(pathParts[pathParts.length - 1]);
+            // Check for clean URL format (last two segments)
+            if (pathParts.length >= 2) {
+                const potentialIndustry = pathParts[pathParts.length - 2];
+                const potentialConcept = decodeURIComponent(pathParts[pathParts.length - 1]);
 
-            // Validate industry is one we support
-            if (['generic', 'hcm', 'finance', 'healthcare', 'retail'].includes(potentialIndustry)) {
-                sharedIndustry = potentialIndustry;
-                sharedConcept = potentialConcept;
+                // Validate industry is one we support
+                if (['generic', 'hcm', 'finance', 'healthcare', 'retail'].includes(potentialIndustry)) {
+                    sharedIndustry = potentialIndustry;
+                    sharedConcept = potentialConcept;
+                }
             }
-        }
 
-        // Fallback to query params if clean URL not found
-        if (!sharedConcept) {
-            const params = new URLSearchParams(window.location.search);
-            sharedConcept = params.get('concept');
-            sharedIndustry = params.get('industry');
-        }
-
-        if (sharedConcept) {
-            setConcept(sharedConcept);
-            if (sharedIndustry) {
-                setIndustry(sharedIndustry);
+            // Fallback to query params if clean URL not found
+            if (!sharedConcept) {
+                const params = new URLSearchParams(window.location.search);
+                sharedConcept = params.get('concept');
+                sharedIndustry = params.get('industry');
             }
-            // Auto-analyze after a short delay
-            setTimeout(() => {
-                setIsAnalyzing(true);
-                setShowTemplates(false);
+
+            if (sharedConcept) {
+                setConcept(sharedConcept);
+                if (sharedIndustry) {
+                    setIndustry(sharedIndustry);
+                }
+                // Auto-analyze after a short delay
                 setTimeout(() => {
-                    const result = analyzeProject(sharedConcept, sharedIndustry || 'generic');
-                    setAnalysis(result);
-                    setSelectedPrinciples(result.recommended);
-                    setIsAnalyzing(false);
-                }, 500);
-            }, 100);
-        }
+                    setIsAnalyzing(true);
+                    setShowTemplates(false);
+                    setTimeout(() => {
+                        const result = analyzeProject(sharedConcept, sharedIndustry || 'generic');
+                        setAnalysis(result);
+                        setSelectedPrinciples(result.recommended);
+                        setIsAnalyzing(false);
+                    }, 500);
+                }, 100);
+            }
+        };
+
+        // Load on mount
+        loadFromUrl();
+
+        // Handle browser back/forward buttons
+        const handlePopState = () => {
+            loadFromUrl();
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     // Generate shareable URL with clean path
     const generateShareUrl = () => {
-        const encodedConcept = encodeURIComponent(concept.trim());
+        // If we have a slug (from template), use it; otherwise encode the concept
+        const urlSegment = currentSlug || encodeURIComponent(concept.trim());
         // Get the base path (everything before any existing industry/concept)
         let basePath = window.location.pathname;
         // Remove any trailing slash
@@ -219,7 +253,7 @@ const AIProjectAdvisor = () => {
         // Remove any existing industry/concept path segments
         basePath = basePath.replace(/\/(generic|hcm|finance|healthcare|retail)\/[^\/]*$/, '');
         // Ensure basePath ends without a trailing slash for clean concatenation
-        const cleanPath = `${basePath}/${industry}/${encodedConcept}`;
+        const cleanPath = `${basePath}/${industry}/${urlSegment}`;
         return `${window.location.origin}${cleanPath}`;
     };
 
@@ -256,6 +290,7 @@ const AIProjectAdvisor = () => {
         window.history.pushState({}, '', '/aiadvisor');
         setAnalysis(null);
         setWorkflowTitle('');
+        setCurrentSlug('');
         setIsAnalyzing(false);
         setShowTemplates(true);
         setShowAllTemplates(false);
@@ -273,6 +308,7 @@ const AIProjectAdvisor = () => {
 
         setConcept(template.concept);
         setWorkflowTitle(template.title);
+        setCurrentSlug(template.slug);
         setShowTemplates(false);
         setIsAnalyzing(true);
 
@@ -542,7 +578,7 @@ const AIProjectAdvisor = () => {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
-                                Back to patterns
+                                Back
                             </button>
                             <button
                                 onClick={handleShare}
@@ -577,19 +613,6 @@ const AIProjectAdvisor = () => {
                                 <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
                                 <div className="text-lg font-bold">{analysis.detectedPattern}</div>
                             </div>
-
-                            {/* Jump Navigation */}
-                            <nav aria-label="Quick navigation to analysis sections" className="px-4 py-3 bg-white border-t border-gray-200">
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    <span className="text-xs text-gray-500 mr-1 flex-shrink-0" aria-hidden="true">Jump:</span>
-                                    <button onClick={() => scrollToSection('overview')} className="px-2 py-1 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-100 transition-colors" aria-label="Jump to Overview section">Overview</button>
-                                    <button onClick={() => scrollToSection('ooux')} className="px-2 py-1 text-xs bg-cyan-50 text-cyan-700 border border-cyan-200 rounded hover:bg-cyan-100 transition-colors" aria-label="Jump to OOUX Workflow section">OOUX</button>
-                                    <button onClick={() => scrollToSection('principles')} className="px-2 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition-colors" aria-label="Jump to Design Principles section">Principles</button>
-                                    <button onClick={() => scrollToSection('technical')} className="px-2 py-1 text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded hover:bg-orange-100 transition-colors" aria-label="Jump to Technical section">Technical</button>
-                                    <button onClick={() => scrollToSection('risks')} className="px-2 py-1 text-xs bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors" aria-label="Jump to Risks section">Risks</button>
-                                    <button onClick={() => scrollToSection('examples')} className="px-2 py-1 text-xs bg-yellow-50 text-yellow-700 border border-yellow-200 rounded hover:bg-yellow-100 transition-colors" aria-label="Jump to Examples section">Examples</button>
-                                </div>
-                            </nav>
                         </section>
 
                         {/* Mobile Jump Navigation Dropdown */}
@@ -641,6 +664,24 @@ const AIProjectAdvisor = () => {
                                             Design Principles
                                         </button>
                                         <button
+                                            onClick={() => scrollToSection('ai-type-detail')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'ai-type-detail' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            AI Type Details
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('user-interaction-detail')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'user-interaction-detail' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            User Interaction Details
+                                        </button>
+                                        <button
+                                            onClick={() => scrollToSection('complexity')}
+                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'complexity' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            Complexity Breakdown
+                                        </button>
+                                        <button
                                             onClick={() => scrollToSection('technical')}
                                             className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'technical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
                                         >
@@ -667,78 +708,68 @@ const AIProjectAdvisor = () => {
 
                             {/* AI Type, Interaction & Complexity */}
                             <div id="overview" className="grid md:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                            <button
+                                onClick={() => scrollToSection('ai-type-detail')}
+                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
+                            >
+                                <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Brain" />
                                     <span className="ml-2"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> type</span>
                                 </h3>
-                                <p className="text-xs text-gray-500 mb-3">The specific AI technology best suited for this use case</p>
-                                <div className="bg-indigo-50 rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-indigo-600 mb-2">
-                                        <GlossaryText
-                                            text={analysis.aiType}
-                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                        />
-                                    </div>
-                                    <p className="text-sm text-gray-600">
-                                        <GlossaryText
-                                            text={analysis.aiTypeReason}
-                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                        />
-                                    </p>
+                                <div className="text-2xl font-bold text-indigo-600 mb-3">
+                                    <GlossaryText
+                                        text={analysis.aiType}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
                                 </div>
-                            </div>
+                                <p className="text-xs text-indigo-600 underline">
+                                    View details
+                                </p>
+                            </button>
 
-                            <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                            <button
+                                onClick={() => scrollToSection('user-interaction-detail')}
+                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
+                            >
+                                <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Users" />
                                     <span className="ml-2">User interaction</span>
                                 </h3>
-                                <p className="text-xs text-gray-500 mb-3">How users will experience and interact with the AI</p>
-                                <div className="bg-purple-50 rounded-lg p-4">
-                                    <div className="text-2xl font-bold text-purple-600 mb-2 capitalize">
-                                        <GlossaryText
-                                            text={analysis.visibility}
-                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                        />
-                                    </div>
-                                    <p className="text-sm text-gray-600">
-                                        <GlossaryText
-                                            text={analysis.visibilityReason}
-                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                        />
-                                    </p>
+                                <div className="text-2xl font-bold text-purple-600 mb-3 capitalize">
+                                    <GlossaryText
+                                        text={analysis.visibility}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
                                 </div>
-                            </div>
+                                <p className="text-xs text-purple-600 underline">
+                                    View details
+                                </p>
+                            </button>
 
-                            <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                            <button
+                                onClick={() => scrollToSection('complexity')}
+                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
+                            >
+                                <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Wrench" />
                                     <span className="ml-2">Complexity</span>
                                 </h3>
-                                <p className="text-xs text-gray-500 mb-3">Implementation difficulty and resource requirements</p>
-                                <div className={`rounded-lg p-4 ${
-                                    analysis.complexity.level === 'Low' ? 'bg-green-50' :
-                                    analysis.complexity.level === 'Medium' ? 'bg-yellow-50' :
-                                    'bg-red-50'
-                                }`}>
-                                    <div className="flex items-baseline gap-2 mb-2">
-                                        <div className={`text-2xl font-bold ${
-                                            analysis.complexity.level === 'Low' ? 'text-green-600' :
-                                            analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
-                                            'text-red-600'
-                                        }`}>{analysis.complexity.level}</div>
-                                        <div className="text-sm text-gray-600">({analysis.complexity.score}/100)</div>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        <GlossaryText
-                                            text={analysis.complexity.description}
-                                            onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                        />
-                                    </p>
-                                    <p className="text-xs text-gray-500">Est. effort: {analysis.complexity.effort}</p>
+                                <div className="flex items-baseline gap-2 mb-3">
+                                    <div className={`text-2xl font-bold ${
+                                        analysis.complexity.level === 'Low' ? 'text-green-600' :
+                                        analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
+                                        'text-red-600'
+                                    }`}>{analysis.complexity.level}</div>
+                                    <div className="text-sm text-gray-500">({analysis.complexity.score}/100)</div>
                                 </div>
-                            </div>
+                                <p className={`text-xs underline ${
+                                    analysis.complexity.level === 'Low' ? 'text-green-600' :
+                                    analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
+                                    'text-red-600'
+                                }`}>
+                                    View breakdown
+                                </p>
+                            </button>
                         </div>
 
                         {/* OOUX Workflow - Simplified for space */}
@@ -996,9 +1027,10 @@ const AIProjectAdvisor = () => {
                         {/* Selected Principles Details */}
                         {selectedPrinciples.length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">
                                     Your focus principles ({selectedPrinciples.length})
                                 </h3>
+                                <p className="text-sm text-gray-600 mb-4">Detailed guidelines and actionable tips for implementing each selected principle in your design</p>
                                 <div className="space-y-4">
                                     {selectedPrinciples.map(key => {
                                         const principle = PRINCIPLES[key];
@@ -1021,13 +1053,134 @@ const AIProjectAdvisor = () => {
                             </div>
                         )}
 
+                        {/* AI Type Detail */}
+                        <div id="ai-type-detail" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Brain" />
+                                <span className="ml-2"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> type details</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">Deep dive into the AI technology and approach for this workflow</p>
+                            <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4">
+                                <div className="text-xl font-bold text-indigo-700 mb-2">
+                                    <GlossaryText
+                                        text={analysis.aiType}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
+                                </div>
+                                <p className="text-sm text-gray-700 mb-3">
+                                    <GlossaryText
+                                        text={analysis.aiTypeReason}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">What this means for your team:</h4>
+                                    <ul className="space-y-2 text-sm text-gray-700">
+                                        {analysis.aiType.includes('LLM') && (
+                                            <>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Requires access to LLM APIs (OpenAI, Anthropic, etc.) or self-hosted models</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Plan for prompt engineering and ongoing refinement of AI responses</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Higher token costs; budget for API usage at scale</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Consider data privacy and compliance when sending data to third-party APIs</li>
+                                            </>
+                                        )}
+                                        {analysis.aiType.includes('ML') && !analysis.aiType.includes('LLM') && (
+                                            <>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Requires labeled training data for model development</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Plan for model training, validation, and ongoing monitoring</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Lower ongoing costs than LLMs but higher upfront ML expertise needed</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Model performance degrades over time; plan for retraining pipeline</li>
+                                            </>
+                                        )}
+                                        {analysis.aiType.includes('Rule-Based') && (
+                                            <>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Faster to implement with clear business logic</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Combine fixed rules with ML to balance predictability and intelligence</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Easier to explain decisions to users and auditors</li>
+                                                <li className="flex items-start"><span className="text-indigo-500 mr-2">•</span>Rules need regular review and updates as business policies change</li>
+                                            </>
+                                        )}
+                                    </ul>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Key questions for engineering:</h4>
+                                    <ul className="space-y-1 text-xs text-gray-600">
+                                        <li>• What data do we need to collect and how will we label it?</li>
+                                        <li>• Where will the AI model run (cloud, on-premise, edge)?</li>
+                                        <li>• How will we monitor model performance and accuracy over time?</li>
+                                        <li>• What's our fallback plan if the AI service is unavailable?</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* User Interaction Detail */}
+                        <div id="user-interaction-detail" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Users" />
+                                <span className="ml-2">User interaction details</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">How users experience and interact with the AI throughout the workflow</p>
+                            <div className="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
+                                <div className="text-xl font-bold text-purple-700 mb-2 capitalize">
+                                    <GlossaryText
+                                        text={analysis.visibility}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
+                                </div>
+                                <p className="text-sm text-gray-700 mb-3">
+                                    <GlossaryText
+                                        text={analysis.visibilityReason}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">UX design implications:</h4>
+                                    <ul className="space-y-2 text-sm text-gray-700">
+                                        {analysis.visibility === 'co-pilot' && (
+                                            <>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Design for iterative collaboration between user and AI</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Show AI reasoning and confidence levels transparently</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Provide easy ways to refine, reject, or modify AI suggestions</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Save interaction history so users can revisit past decisions</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Requires more complex UI with richer affordances for interaction</li>
+                                            </>
+                                        )}
+                                        {analysis.visibility === 'backstage' && (
+                                            <>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Focus on clear presentation of AI-generated results</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Provide simple accept/reject or approve/deny actions</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Show confidence scores to help users trust (or question) results</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Allow users to see "why" behind AI decisions when needed</li>
+                                                <li className="flex items-start"><span className="text-purple-500 mr-2">•</span>Simpler UI; AI works in background and surfaces final output</li>
+                                            </>
+                                        )}
+                                    </ul>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Design considerations:</h4>
+                                    <ul className="space-y-1 text-xs text-gray-600">
+                                        <li>• How will users know when AI is working vs. when it's done?</li>
+                                        <li>• What happens when AI confidence is low or results are ambiguous?</li>
+                                        <li>• How do we handle errors or unexpected AI behavior gracefully?</li>
+                                        <li>• What level of AI explainability do users need for their role?</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Complexity Breakdown */}
-                        <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div id="complexity" className="bg-white rounded-lg shadow-lg p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
                                 <Icon name="Wrench" />
                                 <span className="ml-2">Complexity breakdown</span>
                             </h3>
-                            <p className="text-sm text-gray-600 mb-4">Factors contributing to implementation complexity and development effort</p>
+                            <p className="text-sm text-gray-600 mb-1">Factors contributing to implementation complexity and development effort</p>
+                            <p className="text-xs text-gray-500 mb-4 italic">Each factor adds points to the total complexity score (0-100). Higher scores indicate more complex implementations.</p>
                             <div className="space-y-2">
                                 {analysis.complexity.factors.map((factor, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
@@ -1047,10 +1200,18 @@ const AIProjectAdvisor = () => {
                                             }`}>
                                                 {factor.impact}
                                             </span>
-                                            <span className="text-sm font-bold text-gray-600">+{factor.points}</span>
+                                            <span className="text-sm font-bold text-gray-600" title="Points added to complexity score">+{factor.points}</span>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                                <p className="text-xs text-gray-700">
+                                    <span className="font-semibold">Total Complexity Score: {analysis.complexity.score}/100</span> —
+                                    {analysis.complexity.level === 'Low' && ' Simple implementation with standard tools and approaches'}
+                                    {analysis.complexity.level === 'Medium' && ' Moderate complexity requiring careful planning and skilled resources'}
+                                    {analysis.complexity.level === 'High' && ' Complex implementation requiring advanced expertise and significant resources'}
+                                </p>
                             </div>
                         </div>
 
