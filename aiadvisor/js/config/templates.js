@@ -2,6 +2,30 @@
 const TEMPLATES = {
     generic: [
         {
+            title: 'Smart Field Autofill',
+            slug: 'smart-field-autofill',
+            description: 'Automatically populate form fields based on previous entries',
+            concept: 'Predict and suggest form field values using historical data and patterns',
+            complexity: 'low',
+            icon: 'CheckCircle'
+        },
+        {
+            title: 'Data Validation Assistant',
+            slug: 'data-validation-assistant',
+            description: 'Flag potential data entry errors in real-time',
+            concept: 'Validate data entries and flag likely errors before submission',
+            complexity: 'low',
+            icon: 'AlertCircle'
+        },
+        {
+            title: 'Simple Text Classification',
+            slug: 'simple-text-classification',
+            description: 'Auto-categorize text into predefined buckets',
+            concept: 'Classify text entries into predefined categories',
+            complexity: 'low',
+            icon: 'Box'
+        },
+        {
             title: 'Auto-Approval Workflow',
             slug: 'auto-approval-workflow',
             description: 'Automatically approve or route requests based on AI evaluation of policy rules and risk',
@@ -108,12 +132,40 @@ const TEMPLATES = {
     ],
     hcm: [
         {
+            title: 'Employee Directory Search',
+            slug: 'employee-directory-search',
+            description: 'Smart search across employee profiles',
+            concept: 'Search employees by name, skills, department with intelligent matching',
+            complexity: 'low',
+            icon: 'Lightbulb',
+            portfolio: 'Core HR'
+        },
+        {
+            title: 'Time Entry Suggestions',
+            slug: 'time-entry-suggestions',
+            description: 'Auto-suggest time entries based on schedule',
+            concept: 'Predict and recommend time entries based on employee schedule and past patterns',
+            complexity: 'low',
+            icon: 'CheckCircle',
+            portfolio: 'Time & Attendance'
+        },
+        {
+            title: 'Job Requisition Routing',
+            slug: 'job-requisition-routing',
+            description: 'Auto-route job reqs to right approvers',
+            concept: 'Workflow routing of job requisitions to managers based on department and level',
+            complexity: 'low',
+            icon: 'GitBranch',
+            portfolio: 'Recruiting'
+        },
+        {
             title: 'Performance Review Auto-Routing',
             slug: 'performance-review-auto-routing',
             description: 'Auto-approve or escalate performance reviews',
             concept: 'Auto-approve performance reviews based on rating thresholds and escalate concerning ones',
             complexity: 'medium',
-            icon: 'CheckCircle'
+            icon: 'CheckCircle',
+            portfolio: 'Performance'
         },
         {
             title: 'Benefits Enrollment Errors',
@@ -121,7 +173,8 @@ const TEMPLATES = {
             description: 'Detect enrollment issues and suggest corrections',
             concept: 'Detect benefits enrollment errors and suggest corrections before deadline',
             complexity: 'medium',
-            icon: 'AlertCircle'
+            icon: 'AlertCircle',
+            portfolio: 'Benefits'
         },
         {
             title: 'Candidate Quality Scoring',
@@ -129,7 +182,8 @@ const TEMPLATES = {
             description: 'Score applicants and route by fit',
             concept: 'Score job candidates based on resume and route by match quality',
             complexity: 'medium',
-            icon: 'Brain'
+            icon: 'Brain',
+            portfolio: 'Recruiting'
         },
         {
             title: 'Turnover Prediction',
@@ -137,7 +191,8 @@ const TEMPLATES = {
             description: 'Predict and prevent employee attrition',
             concept: 'Predict employee turnover risk and suggest retention actions',
             complexity: 'high',
-            icon: 'Lightbulb'
+            icon: 'Lightbulb',
+            portfolio: 'HR Analytics'
         },
         {
             title: 'Employee 360 View',
@@ -145,7 +200,8 @@ const TEMPLATES = {
             description: 'Unified view across all HR systems',
             concept: 'Unified 360 view of employee across time, payroll, benefits, performance',
             complexity: 'high',
-            icon: 'Users'
+            icon: 'Users',
+            portfolio: 'Core HR'
         },
         {
             title: 'Department Intelligence Profile',
@@ -153,15 +209,17 @@ const TEMPLATES = {
             description: 'Unified view of department across workforce metrics and operations',
             concept: 'Unified 360 view of department across headcount, performance, costs, time-off, turnover risk',
             complexity: 'high',
-            icon: 'Building'
+            icon: 'Building',
+            portfolio: 'HR Analytics'
         },
         {
             title: 'New Hire Onboarding',
             slug: 'new-hire-onboarding',
             description: 'Orchestrate onboarding across HR, IT, facilities',
-            concept: 'Process new hire onboarding across HR, IT, payroll, facilities',
+            concept: 'Orchestrate new hire onboarding workflow across HR, IT, payroll, facilities',
             complexity: 'high',
-            icon: 'GitBranch'
+            icon: 'GitBranch',
+            portfolio: 'Core HR'
         },
         {
             title: 'HR Chatbot',
@@ -169,7 +227,8 @@ const TEMPLATES = {
             description: 'Answer employee questions about pay, benefits, policies',
             concept: 'Answer employee questions about pay, benefits, PTO',
             complexity: 'high',
-            icon: 'Brain'
+            icon: 'Brain',
+            portfolio: 'Core HR'
         },
         {
             title: 'People Search',
@@ -177,7 +236,8 @@ const TEMPLATES = {
             description: 'Search employees, org charts, skills, documents',
             concept: 'Search employees, time records, policies, documents',
             complexity: 'high',
-            icon: 'Lightbulb'
+            icon: 'Lightbulb',
+            portfolio: 'Core HR'
         },
         {
             title: 'Compensation Change Impact',
@@ -185,7 +245,8 @@ const TEMPLATES = {
             description: 'Analyze budget impact of salary adjustments',
             concept: 'Analyze budget impact if we give department 3% raises',
             complexity: 'high',
-            icon: 'AlertCircle'
+            icon: 'AlertCircle',
+            portfolio: 'Compensation'
         },
         {
             title: 'AI Interview Scheduling',
@@ -193,7 +254,8 @@ const TEMPLATES = {
             description: 'Optimize interview schedules across panel',
             concept: 'Generate interview schedules based on interviewer availability and candidate preferences',
             complexity: 'medium',
-            icon: 'Wrench'
+            icon: 'Wrench',
+            portfolio: 'Recruiting'
         },
         {
             title: 'Open Enrollment Processing',
@@ -201,15 +263,17 @@ const TEMPLATES = {
             description: 'Process enrollment changes in real-time',
             concept: 'Process benefits elections in real-time with eligibility validation',
             complexity: 'high',
-            icon: 'AlertCircle'
+            icon: 'AlertCircle',
+            portfolio: 'Benefits'
         },
         {
             title: 'Learning Path Recommendations',
             slug: 'learning-path-recommendations',
             description: 'Aggregate training based on role and skills gaps',
-            concept: 'Recommend personalized learning paths based on role and career goals',
+            concept: 'Predict and recommend personalized learning paths based on role and career goals',
             complexity: 'medium',
-            icon: 'Box'
+            icon: 'Box',
+            portfolio: 'Learning'
         },
         {
             title: 'PTO Auto-Approval',
@@ -217,7 +281,8 @@ const TEMPLATES = {
             description: 'Auto-approve time-off with coverage validation',
             concept: 'Auto-approve PTO requests with team coverage validation',
             complexity: 'medium',
-            icon: 'CheckCircle'
+            icon: 'CheckCircle',
+            portfolio: 'Time & Attendance'
         },
         {
             title: 'Missing Punch Detection',
@@ -225,15 +290,17 @@ const TEMPLATES = {
             description: 'Find and fix missing time entries',
             concept: 'Detect missing time punches and suggest fixes based on schedule',
             complexity: 'medium',
-            icon: 'AlertCircle'
+            icon: 'AlertCircle',
+            portfolio: 'Time & Attendance'
         },
         {
             title: 'Timecard Anomaly Scoring',
             slug: 'timecard-anomaly-scoring',
             description: 'Score timecards for unusual patterns',
-            concept: 'Score timecards for anomalies and route by risk threshold',
+            concept: 'Score timecards for unusual patterns and route by risk threshold',
             complexity: 'medium',
-            icon: 'Brain'
+            icon: 'Brain',
+            portfolio: 'Time & Attendance'
         },
         {
             title: 'Overtime Prediction',
@@ -241,7 +308,8 @@ const TEMPLATES = {
             description: 'Forecast overtime costs and alert managers',
             concept: 'Predict overtime trends and alert managers to take action',
             complexity: 'high',
-            icon: 'Lightbulb'
+            icon: 'Lightbulb',
+            portfolio: 'Time & Attendance'
         },
         {
             title: 'AI Schedule Generation',
@@ -249,7 +317,8 @@ const TEMPLATES = {
             description: 'Generate schedules from past demand patterns',
             concept: 'Generate employee schedules from past demand patterns',
             complexity: 'medium',
-            icon: 'Wrench'
+            icon: 'Wrench',
+            portfolio: 'Time & Attendance'
         },
         {
             title: 'Payroll Lock & Validation',
@@ -257,10 +326,35 @@ const TEMPLATES = {
             description: 'Lock timecards and validate before payroll',
             concept: 'Lock timecards at cutoff and send validated data to payroll',
             complexity: 'high',
-            icon: 'AlertCircle'
+            icon: 'AlertCircle',
+            portfolio: 'Payroll'
         }
     ],
     finance: [
+        {
+            title: 'Transaction Categorization',
+            slug: 'transaction-categorization',
+            description: 'Auto-categorize transactions by type',
+            concept: 'Classify and categorize transactions into merchant types and expense categories',
+            complexity: 'low',
+            icon: 'Box'
+        },
+        {
+            title: 'Receipt Data Extraction',
+            slug: 'receipt-data-extraction',
+            description: 'Extract key fields from receipt images',
+            concept: 'Extract and classify amount, date, merchant from receipt images',
+            complexity: 'low',
+            icon: 'CheckCircle'
+        },
+        {
+            title: 'Payment Amount Validation',
+            slug: 'payment-amount-validation',
+            description: 'Flag unusual payment amounts',
+            concept: 'Validate payment amounts and flag outliers before processing',
+            complexity: 'low',
+            icon: 'AlertCircle'
+        },
         {
             title: 'Loan Auto-Approval',
             slug: 'loan-auto-approval',
@@ -313,7 +407,7 @@ const TEMPLATES = {
             title: 'Account Closure Workflow',
             slug: 'account-closure-workflow',
             description: 'Process closure across all related systems',
-            concept: 'Process account closure across all related systems',
+            concept: 'Orchestrate account closure workflow across all related systems',
             complexity: 'high',
             icon: 'GitBranch'
         },

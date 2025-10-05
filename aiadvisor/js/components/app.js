@@ -112,6 +112,37 @@ const AIProjectAdvisor = () => {
     const [showJumpMenu, setShowJumpMenu] = useState(false);
     const [activeSection, setActiveSection] = useState('overview');
     const [complexityFilter, setComplexityFilter] = useState('all');
+    const [portfolioFilter, setPortfolioFilter] = useState('all');
+    const [navGroupsExpanded, setNavGroupsExpanded] = useState({
+        essentials: true,
+        implementation: true,
+        design: true
+    });
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState(false);
+
+    // Check for stored authentication on mount
+    React.useEffect(() => {
+        const auth = sessionStorage.getItem('aiadvisor_auth');
+        if (auth === 'greatscott') {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
+    const handlePasswordSubmit = (e) => {
+        e.preventDefault();
+        if (passwordInput.toLowerCase() === 'greatscott') {
+            setIsAuthenticated(true);
+            sessionStorage.setItem('aiadvisor_auth', 'greatscott');
+            setPasswordError(false);
+        } else {
+            setPasswordError(true);
+            setPasswordInput('');
+            // Shake animation
+            setTimeout(() => setPasswordError(false), 500);
+        }
+    };
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -176,7 +207,7 @@ const AIProjectAdvisor = () => {
                         setWorkflowTitle(template.title);
                         setCurrentSlug(template.slug);
                         setShowTemplates(false);
-                        const result = analyzeProject(template.concept, industrySlug);
+                        const result = analyzeProject(template.concept, industrySlug, template.slug);
                         setAnalysis(result);
                         setSelectedPrinciples(result.recommended);
                         return;
@@ -218,7 +249,7 @@ const AIProjectAdvisor = () => {
                     setIsAnalyzing(true);
                     setShowTemplates(false);
                     setTimeout(() => {
-                        const result = analyzeProject(sharedConcept, sharedIndustry || 'generic');
+                        const result = analyzeProject(sharedConcept, sharedIndustry || 'generic', sharedSlug);
                         setAnalysis(result);
                         setSelectedPrinciples(result.recommended);
                         setIsAnalyzing(false);
@@ -241,6 +272,61 @@ const AIProjectAdvisor = () => {
             window.removeEventListener('popstate', handlePopState);
         };
     }, []);
+
+    // Track active section based on scroll position
+    React.useEffect(() => {
+        if (!analysis) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setActiveSection(entry.target.id);
+                    }
+                });
+            },
+            {
+                rootMargin: '-20% 0px -60% 0px',
+                threshold: 0
+            }
+        );
+
+        // Observe all section elements (in DOM order for correct highlighting)
+        const sections = [
+            'overview',
+            'executive-summary',
+            'ooux',
+            'principles',
+            'ai-type-detail',
+            'user-interaction-detail',
+            'complexity',
+            'technical',
+            'risks',
+            'examples',
+            'user-research',
+            'ethical',
+            'error-handling',
+            'accessibility',
+            'confidence-scoring',
+            'action-plan'
+        ];
+
+        sections.forEach((id) => {
+            const element = document.getElementById(id);
+            if (element) {
+                observer.observe(element);
+            }
+        });
+
+        return () => {
+            sections.forEach((id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    observer.unobserve(element);
+                }
+            });
+        };
+    }, [analysis]);
 
     // Generate shareable URL with clean path
     const generateShareUrl = () => {
@@ -279,7 +365,7 @@ const AIProjectAdvisor = () => {
         setShowTemplates(false);
         // Simulate async analysis with a short delay for UX
         setTimeout(() => {
-            const result = analyzeProject(concept, industry);
+            const result = analyzeProject(concept, industry, null);
             setAnalysis(result);
             setSelectedPrinciples(result.recommended);
             setIsAnalyzing(false);
@@ -314,7 +400,7 @@ const AIProjectAdvisor = () => {
 
         // Auto-analyze after setting the concept
         setTimeout(() => {
-            const result = analyzeProject(template.concept, industry);
+            const result = analyzeProject(template.concept, industry, template.slug);
             setAnalysis(result);
             setSelectedPrinciples(result.recommended);
             setPageTitle(template.title);
@@ -330,6 +416,13 @@ const AIProjectAdvisor = () => {
         setCollapsed(prev => ({
             ...prev,
             [section]: !prev[section]
+        }));
+    };
+
+    const toggleNavGroup = (group) => {
+        setNavGroupsExpanded(prev => ({
+            ...prev,
+            [group]: !prev[group]
         }));
     };
 
@@ -355,6 +448,71 @@ const AIProjectAdvisor = () => {
             setShowJumpMenu(false); // Close mobile menu after selection
         }
     };
+
+    // Password screen
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex items-center justify-center p-6">
+                <div className="max-w-md w-full">
+                    <div className="bg-white rounded-lg shadow-2xl p-8 transform transition-all">
+                        <div className="text-center mb-8">
+                            <div className="text-6xl mb-4">⚡</div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Project Advisor</h1>
+                            <p className="text-gray-600">1.21 gigawatts of AI wisdom</p>
+                        </div>
+
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Enter password to access
+                                </label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    value={passwordInput}
+                                    onChange={(e) => setPasswordInput(e.target.value)}
+                                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                                        passwordError ? 'border-red-500 animate-shake' : 'border-gray-300'
+                                    }`}
+                                    placeholder="Enter password"
+                                    autoFocus
+                                />
+                                {passwordError && (
+                                    <p className="mt-2 text-sm text-red-600 font-medium">
+                                        ⚠️ Incorrect password. Try again!
+                                    </p>
+                                )}
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+                            >
+                                Access Advisor
+                            </button>
+                        </form>
+
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-gray-500 italic">
+                                "Where we're going, we don't need roads..."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <style>{`
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+                        20%, 40%, 60%, 80% { transform: translateX(10px); }
+                    }
+                    .animate-shake {
+                        animation: shake 0.5s;
+                    }
+                `}</style>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
@@ -438,59 +596,55 @@ const AIProjectAdvisor = () => {
                                     <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
                                 </div>
 
-                                {/* Complexity Filter */}
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Filter by complexity</label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        <button
-                                            onClick={() => setComplexityFilter('all')}
-                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
-                                                complexityFilter === 'all'
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}
+                                {/* Filters */}
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex-1">
+                                        <label htmlFor="complexity-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Complexity</label>
+                                        <select
+                                            id="complexity-filter"
+                                            value={complexityFilter}
+                                            onChange={(e) => setComplexityFilter(e.target.value)}
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                         >
-                                            All
-                                        </button>
-                                        <button
-                                            onClick={() => setComplexityFilter('low')}
-                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
-                                                complexityFilter === 'low'
-                                                    ? 'bg-green-600 text-white'
-                                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                            }`}
-                                        >
-                                            Low
-                                        </button>
-                                        <button
-                                            onClick={() => setComplexityFilter('medium')}
-                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
-                                                complexityFilter === 'medium'
-                                                    ? 'bg-yellow-600 text-white'
-                                                    : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                            }`}
-                                        >
-                                            Medium
-                                        </button>
-                                        <button
-                                            onClick={() => setComplexityFilter('high')}
-                                            className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
-                                                complexityFilter === 'high'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                            }`}
-                                        >
-                                            High
-                                        </button>
+                                            <option value="all">All complexities</option>
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
                                     </div>
+
+                                    {industry === 'hcm' && (
+                                        <div className="flex-1">
+                                            <label htmlFor="portfolio-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Portfolio</label>
+                                            <select
+                                                id="portfolio-filter"
+                                                value={portfolioFilter}
+                                                onChange={(e) => setPortfolioFilter(e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            >
+                                                <option value="all">All portfolios</option>
+                                                <option value="Core HR">Core HR</option>
+                                                <option value="Time & Attendance">Time & Attendance</option>
+                                                <option value="Payroll">Payroll</option>
+                                                <option value="Benefits">Benefits</option>
+                                                <option value="Recruiting">Recruiting</option>
+                                                <option value="Performance">Performance</option>
+                                                <option value="Compensation">Compensation</option>
+                                                <option value="Learning">Learning</option>
+                                                <option value="HR Analytics">HR Analytics</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
                             {(() => {
-                                const filtered = TEMPLATES[industry].filter(template =>
-                                    complexityFilter === 'all' || template.complexity === complexityFilter
-                                );
+                                const filtered = TEMPLATES[industry].filter(template => {
+                                    const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
+                                    const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
+                                    return matchesComplexity && matchesPortfolio;
+                                });
                                 return (showAllTemplates ? filtered : filtered.slice(0, 6)).map((template, idx) => (
                                 <button
                                     key={idx}
@@ -516,9 +670,11 @@ const AIProjectAdvisor = () => {
                             })()}
                         </div>
                         {(() => {
-                            const filteredTemplates = TEMPLATES[industry].filter(template =>
-                                complexityFilter === 'all' || template.complexity === complexityFilter
-                            );
+                            const filteredTemplates = TEMPLATES[industry].filter(template => {
+                                const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
+                                const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
+                                return matchesComplexity && matchesPortfolio;
+                            });
                             const hasMore = filteredTemplates.length > 6;
 
                             if (filteredTemplates.length === 0) {
@@ -644,61 +800,69 @@ const AIProjectAdvisor = () => {
                             <nav aria-label="Desktop navigation to analysis sections" className="hidden lg:block lg:sticky lg:top-6 lg:w-48 flex-shrink-0">
                                 <div className="bg-white rounded-lg shadow-lg p-4">
                                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">On this page</h3>
-                                    <div className="space-y-1">
-                                        <button
-                                            onClick={() => scrollToSection('overview')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Overview
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('ooux')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            OOUX Workflow
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('principles')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Design Principles
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('ai-type-detail')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'ai-type-detail' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            AI Type Details
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('user-interaction-detail')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'user-interaction-detail' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            User Interaction Details
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('complexity')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'complexity' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Complexity Breakdown
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('technical')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'technical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Technical
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('risks')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'risks' ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Risks
-                                        </button>
-                                        <button
-                                            onClick={() => scrollToSection('examples')}
-                                            className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${activeSection === 'examples' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            Examples
-                                        </button>
+                                    <div className="space-y-2">
+
+                                        {/* Essentials Group */}
+                                        <div>
+                                            <button
+                                                onClick={() => toggleNavGroup('essentials')}
+                                                className="w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded flex items-center justify-between"
+                                            >
+                                                <span>🎯 Essentials</span>
+                                                <span className="text-gray-400">{navGroupsExpanded.essentials ? '−' : '+'}</span>
+                                            </button>
+                                            {navGroupsExpanded.essentials && (
+                                                <div className="ml-2 mt-1 space-y-1">
+                                                    <button onClick={() => scrollToSection('overview')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Overview</button>
+                                                    <button onClick={() => scrollToSection('executive-summary')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'executive-summary' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Executive Summary</button>
+                                                    <button onClick={() => scrollToSection('principles')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Design Principles</button>
+                                                    <button onClick={() => scrollToSection('ooux')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>OOUX Workflow</button>
+                                                    <button onClick={() => scrollToSection('action-plan')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'action-plan' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Action Plan</button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Implementation Group */}
+                                        <div>
+                                            <button
+                                                onClick={() => toggleNavGroup('implementation')}
+                                                className="w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded flex items-center justify-between"
+                                            >
+                                                <span>⚙️ Implementation</span>
+                                                <span className="text-gray-400">{navGroupsExpanded.implementation ? '−' : '+'}</span>
+                                            </button>
+                                            {navGroupsExpanded.implementation && (
+                                                <div className="ml-2 mt-1 space-y-1">
+                                                    <button onClick={() => scrollToSection('ai-type-detail')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ai-type-detail' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>AI Type</button>
+                                                    <button onClick={() => scrollToSection('user-interaction-detail')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'user-interaction-detail' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>User Interaction</button>
+                                                    <button onClick={() => scrollToSection('complexity')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'complexity' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Complexity</button>
+                                                    <button onClick={() => scrollToSection('technical')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'technical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Technical</button>
+                                                    <button onClick={() => scrollToSection('risks')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'risks' ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Risks</button>
+                                                    <button onClick={() => scrollToSection('examples')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'examples' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Examples</button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Design & UX Group */}
+                                        <div>
+                                            <button
+                                                onClick={() => toggleNavGroup('design')}
+                                                className="w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded flex items-center justify-between"
+                                            >
+                                                <span>🎨 Design & UX</span>
+                                                <span className="text-gray-400">{navGroupsExpanded.design ? '−' : '+'}</span>
+                                            </button>
+                                            {navGroupsExpanded.design && (
+                                                <div className="ml-2 mt-1 space-y-1">
+                                                    <button onClick={() => scrollToSection('user-research')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'user-research' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>User Research</button>
+                                                    <button onClick={() => scrollToSection('ethical')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ethical' ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Ethical & Bias</button>
+                                                    <button onClick={() => scrollToSection('error-handling')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'error-handling' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Error Handling</button>
+                                                    <button onClick={() => scrollToSection('accessibility')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'accessibility' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Accessibility</button>
+                                                    <button onClick={() => scrollToSection('confidence-scoring')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'confidence-scoring' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Confidence Scoring</button>
+                                                </div>
+                                            )}
+                                        </div>
+
                                     </div>
                                 </div>
                             </nav>
@@ -771,6 +935,64 @@ const AIProjectAdvisor = () => {
                                 </p>
                             </button>
                         </div>
+
+                        {/* Executive Summary */}
+                        {analysis.executiveSummary && (
+                            <div id="executive-summary" className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border-l-4 border-indigo-500 mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                                        <Icon name="Lightbulb" />
+                                        <span className="ml-2">Executive summary</span>
+                                    </h3>
+                                    <button
+                                        onClick={() => toggleSection('executive-summary')}
+                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                                    >
+                                        {collapsed['executive-summary'] ? 'Expand' : 'Collapse'}
+                                    </button>
+                                </div>
+                                {!collapsed['executive-summary'] && (
+                                <div className="space-y-4">
+                                    <div className="bg-white bg-opacity-60 rounded p-4">
+                                        <span className="font-semibold text-gray-700 block mb-1">What it does:</span>
+                                        <span className="text-gray-800">
+                                            <GlossaryText
+                                                text={analysis.executiveSummary.whatItDoes}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
+                                        </span>
+                                    </div>
+                                    <div className="bg-white bg-opacity-60 rounded p-4">
+                                        <span className="font-semibold text-gray-700 block mb-1">Primary benefit:</span>
+                                        <span className="text-green-700 font-medium">
+                                            <GlossaryText
+                                                text={analysis.executiveSummary.primaryBenefit}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
+                                        </span>
+                                    </div>
+                                    <div className="bg-white bg-opacity-60 rounded p-4">
+                                        <span className="font-semibold text-gray-700 block mb-1">Biggest risk:</span>
+                                        <span className="text-red-700">
+                                            <GlossaryText
+                                                text={analysis.executiveSummary.biggestRisk}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
+                                        </span>
+                                    </div>
+                                    <div className="bg-white bg-opacity-60 rounded p-4">
+                                        <span className="font-semibold text-gray-700 block mb-1">Next step:</span>
+                                        <span className="text-indigo-700 font-medium">
+                                            <GlossaryText
+                                                text={analysis.executiveSummary.nextStep}
+                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                            />
+                                        </span>
+                                    </div>
+                                </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* OOUX Workflow - Simplified for space */}
                         {analysis.oouxWorkflow && analysis.oouxWorkflow.objects.length > 0 && (
@@ -1362,6 +1584,300 @@ const AIProjectAdvisor = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Design-Focused Sections */}
+
+                        {/* User Research & Validation */}
+                        <div id="user-research" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Users" />
+                                <span className="ml-2">User research & validation</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">How to test and validate that AI actually improves the user experience</p>
+
+                            <div className="space-y-4">
+                                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Testing Approach</h4>
+                                    <p className="text-sm text-gray-700">{analysis.userResearch.testingApproach}</p>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Validation Questions</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.userResearch.validationQuestions.map((question, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-purple-500 mr-2">•</span>
+                                                {question}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Success Metrics</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.userResearch.successMetrics.map((metric, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-purple-500 mr-2">▸</span>
+                                                {metric}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Ethical & Bias Considerations */}
+                        <div id="ethical" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="AlertCircle" />
+                                <span className="ml-2">Ethical & bias considerations</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">How to design responsibly and avoid perpetuating harm</p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Bias Risks</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.ethical.biasRisks.map((risk, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700 bg-red-50 p-3 rounded">
+                                                <span className="text-red-500 mr-2">⚠</span>
+                                                {risk}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Fairness Considerations</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.ethical.fairnessConsiderations.map((consideration, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-orange-500 mr-2">•</span>
+                                                {consideration}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Transparency Requirements</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.ethical.transparency.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-blue-500 mr-2">✓</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Error Handling & Edge Cases */}
+                        <div id="error-handling" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="AlertCircle" />
+                                <span className="ml-2">Error handling & edge cases</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">How to handle AI failures and uncertainty gracefully</p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Low Confidence Scenarios</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.errorHandling.lowConfidenceScenarios.map((scenario, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700 bg-yellow-50 p-3 rounded">
+                                                <span className="text-yellow-600 mr-2">⚡</span>
+                                                {scenario}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Edge Cases to Handle</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.errorHandling.edgeCases.map((edge, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-orange-500 mr-2">▸</span>
+                                                {edge}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Failure Recovery Strategies</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.errorHandling.failureRecovery.map((strategy, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-green-600 mr-2">✓</span>
+                                                {strategy}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Accessibility */}
+                        <div id="accessibility" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Users" />
+                                <span className="ml-2">Accessibility</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">Making AI features usable for everyone, regardless of ability</p>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Screen Reader Support</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.accessibility.screenReaders.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-indigo-500 mr-2">▸</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Alternative Interactions</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.accessibility.alternativeInteractions.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-purple-500 mr-2">▸</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Cognitive Accessibility</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.accessibility.cognitiveAccessibility.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-cyan-500 mr-2">▸</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Inclusive Design Principles</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.accessibility.inclusiveDesign.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-indigo-600 mr-2">✓</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* AI Confidence Scoring */}
+                        <div id="confidence-scoring" className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                <Icon name="Brain" />
+                                <span className="ml-2">AI confidence scoring</span>
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">How to communicate AI certainty and help users calibrate trust</p>
+
+                            <div className="space-y-4">
+                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">What is Confidence?</h4>
+                                    <p className="text-sm text-gray-700">{analysis.confidenceScoring.whatIsConfidence}</p>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">When to Show Confidence</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.confidenceScoring.whenToShow.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-blue-500 mr-2">▸</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">How to Display Confidence</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.confidenceScoring.howToDisplay.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                                                <span className="text-indigo-500 mr-2">📊</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Actionable Guidance</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.confidenceScoring.actionableGuidance.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-green-500 mr-2">✓</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r">
+                                    <h4 className="font-semibold text-gray-800 text-sm mb-2">Calibration & Monitoring</h4>
+                                    <ul className="space-y-2">
+                                        {analysis.confidenceScoring.calibration.map((item, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-gray-700">
+                                                <span className="text-purple-600 mr-2">📈</span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Plan */}
+                        {analysis.actionPlan && (
+                            <div id="action-plan" className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-lg p-6 border-l-4 border-green-500 mt-6">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                                    <Icon name="CheckCircle" />
+                                    <span className="ml-2">Your action plan</span>
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-6">Key steps to move from analysis to implementation</p>
+                                <ol className="space-y-4">
+                                    {analysis.actionPlan.map((item, idx) => (
+                                        <li key={idx} className="flex items-start bg-white bg-opacity-70 rounded-lg p-4">
+                                            <span className="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm mr-4">
+                                                {item.step}
+                                            </span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-gray-900 mb-1">
+                                                    <GlossaryText
+                                                        text={item.action}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
+                                                </p>
+                                                <p className="text-sm text-gray-600">
+                                                    <GlossaryText
+                                                        text={item.detail}
+                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                    />
+                                                </p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+                        )}
+
                         </div>
                         {/* End Main Content Area */}
                         </div>

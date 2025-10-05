@@ -1,7 +1,12 @@
 // Generic Workflow Generator
 // Generates OOUX workflows from detected patterns
 
-function generateWorkflow(concept, patternKey, objects, industry = 'generic') {
+function generateWorkflow(concept, patternKey, objects, industry = 'generic', templateSlug = null) {
+    // Check for template-specific workflow first
+    if (templateSlug && typeof TEMPLATE_WORKFLOWS !== 'undefined' && TEMPLATE_WORKFLOWS[templateSlug]) {
+        return TEMPLATE_WORKFLOWS[templateSlug];
+    }
+
     const workflow = {
         objects: [],
         flow: [],
