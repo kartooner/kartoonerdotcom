@@ -802,27 +802,26 @@ const AIProjectAdvisor = () => {
                                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">On this page</h3>
                                     <div className="space-y-2">
 
-                                        {/* Essentials Group */}
+                                        {/* Strategy & Planning */}
                                         <div>
                                             <button
                                                 onClick={() => toggleNavGroup('essentials')}
                                                 className="w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded flex items-center justify-between"
                                             >
-                                                <span>🎯 Essentials</span>
+                                                <span>🎯 Strategy</span>
                                                 <span className="text-gray-400">{navGroupsExpanded.essentials ? '−' : '+'}</span>
                                             </button>
                                             {navGroupsExpanded.essentials && (
                                                 <div className="ml-2 mt-1 space-y-1">
                                                     <button onClick={() => scrollToSection('overview')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Overview</button>
                                                     <button onClick={() => scrollToSection('executive-summary')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'executive-summary' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Executive Summary</button>
-                                                    <button onClick={() => scrollToSection('principles')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Design Principles</button>
                                                     <button onClick={() => scrollToSection('ooux')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>OOUX Workflow</button>
-                                                    <button onClick={() => scrollToSection('action-plan')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'action-plan' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Action Plan</button>
+                                                    <button onClick={() => scrollToSection('principles')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Design Principles</button>
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Implementation Group */}
+                                        {/* Implementation Details */}
                                         <div>
                                             <button
                                                 onClick={() => toggleNavGroup('implementation')}
@@ -843,13 +842,13 @@ const AIProjectAdvisor = () => {
                                             )}
                                         </div>
 
-                                        {/* Design & UX Group */}
+                                        {/* Design & Validation */}
                                         <div>
                                             <button
                                                 onClick={() => toggleNavGroup('design')}
                                                 className="w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 rounded flex items-center justify-between"
                                             >
-                                                <span>🎨 Design & UX</span>
+                                                <span>🎨 Design</span>
                                                 <span className="text-gray-400">{navGroupsExpanded.design ? '−' : '+'}</span>
                                             </button>
                                             {navGroupsExpanded.design && (
@@ -859,6 +858,7 @@ const AIProjectAdvisor = () => {
                                                     <button onClick={() => scrollToSection('error-handling')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'error-handling' ? 'bg-yellow-50 text-yellow-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Error Handling</button>
                                                     <button onClick={() => scrollToSection('accessibility')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'accessibility' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Accessibility</button>
                                                     <button onClick={() => scrollToSection('confidence-scoring')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'confidence-scoring' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Confidence Scoring</button>
+                                                    <button onClick={() => scrollToSection('action-plan')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'action-plan' ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Action Plan</button>
                                                 </div>
                                             )}
                                         </div>
