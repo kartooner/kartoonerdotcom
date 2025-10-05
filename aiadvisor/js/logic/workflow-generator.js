@@ -242,9 +242,38 @@ function generateAnomalyDetectionWorkflow(concept, objects, industry = 'generic'
                                 'Generates suggested correction based on context';
     }
 
-    // Build domain-specific AI touchpoints
-    let aiTouchpoints;
-    if (industry === 'hcm') {
+    // Build domain-specific AI touchpoints and flows
+    let aiTouchpoints, flow;
+
+    // Employee timecard acknowledgment workflow
+    if (lower.includes('timecard') && (lower.includes('acknowledge') || lower.includes('review') || lower.includes('unusual'))) {
+        aiTouchpoints = [
+            'Compares employee timecard to scheduled hours and patterns',
+            'Detects unusual variance (excessive hours, missing breaks)',
+            'Identifies pattern breaks from employee normal behavior',
+            'Flags potential policy violations or data entry errors',
+            'Generates suggested explanations based on context',
+            'Assesses severity and payroll impact of anomalies',
+            'Routes to employee for review before payroll lock',
+            'Learns from employee confirmations to reduce false flags'
+        ];
+        flow = [
+            { step: 1, actor: 'System', action: 'Monitors timecards approaching payroll cutoff', object: 'timeEntry' },
+            { step: 2, actor: 'AI', action: 'Analyzes each timecard for unusual patterns', object: 'timeEntry', confidence: true },
+            { step: 3, actor: 'AI', action: `Detects ${anomalyType} using pattern analysis`, object: 'anomaly', confidence: true },
+            { step: 4, actor: 'AI', action: 'Flags unusual timecards for employee review', object: 'anomaly' },
+            { step: 5, actor: 'System', action: 'Routes based on anomaly severity', object: 'anomaly', branches: true },
+            { step: '5a', actor: 'System', action: 'Sends mobile notification: "Review your timecard before payroll"', object: 'anomaly', condition: 'medium severity - needs review' },
+            { step: '5b', actor: 'System', action: 'Blocks timecard and alerts manager for approval', object: 'anomaly', condition: 'high severity - policy violation' },
+            { step: 6, actor: 'Employee', action: 'Views timecard with flagged anomalies highlighted', object: 'timeEntry' },
+            { step: 7, actor: 'Employee', action: 'Reviews flagged items and takes action', object: 'timeEntry', branches: true },
+            { step: '7a', actor: 'Employee', action: 'Confirms timecard is accurate, adds explanation if needed', object: 'timeEntry', condition: 'timecard correct' },
+            { step: '7b', actor: 'Employee', action: 'Corrects errors and resubmits timecard', object: 'timeEntry', condition: 'found errors' },
+            { step: 8, actor: 'System', action: 'Locks acknowledged timecard for payroll processing', object: 'timeEntry' },
+            { step: 9, actor: 'AI', action: 'Learns from employee responses to refine anomaly detection', object: 'anomaly' }
+        ];
+    } else if (industry === 'hcm') {
+        // Generic HCM anomaly detection (missing punches, etc.)
         aiTouchpoints = [
             'Compares clock-in/out times to employee schedule and shift patterns',
             'Identifies missing punches, late arrivals, early departures',
@@ -256,6 +285,7 @@ function generateAnomalyDetectionWorkflow(concept, objects, industry = 'generic'
             'Learns from manager corrections to reduce false positives',
             'Adapts to seasonal patterns and schedule changes'
         ];
+        flow = null; // Use default flow
     } else if (industry === 'finance') {
         aiTouchpoints = [
             'Monitors transaction patterns for unusual spending behavior',
@@ -281,19 +311,22 @@ function generateAnomalyDetectionWorkflow(concept, objects, industry = 'generic'
         ];
     }
 
+    // Use custom flow if generated, otherwise use default
+    const defaultFlow = [
+        { step: 1, actor: 'System', action: `Continuously monitors ${dataType}`, object: 'transaction' },
+        { step: 2, actor: 'AI', action: `Detects ${anomalyType} using pattern analysis`, object: 'transaction', confidence: true },
+        { step: 3, actor: 'AI', action: correctionAction, object: 'anomaly' },
+        { step: 4, actor: 'System', action: 'Creates anomaly record with context and severity', object: 'anomaly' },
+        { step: 5, actor: 'System', action: 'Routes based on severity and confidence', object: 'anomaly', branches: true },
+        { step: '5a', actor: 'System', action: 'Auto-corrects and logs change', object: 'transaction', condition: 'confidence > 95% AND low impact' },
+        { step: '5b', actor: 'System', action: 'Flags for manager/admin review', object: 'anomaly', condition: 'medium severity' },
+        { step: '5c', actor: 'System', action: 'Alerts stakeholders and blocks processing', object: 'anomaly', condition: 'high severity' },
+        { step: 6, actor: 'User', action: 'Reviews details and resolves or overrides', object: 'anomaly' }
+    ];
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
-        flow: [
-            { step: 1, actor: 'System', action: `Continuously monitors ${dataType}`, object: 'transaction' },
-            { step: 2, actor: 'AI', action: `Detects ${anomalyType} using pattern analysis`, object: 'transaction', confidence: true },
-            { step: 3, actor: 'AI', action: correctionAction, object: 'anomaly' },
-            { step: 4, actor: 'System', action: 'Creates anomaly record with context and severity', object: 'anomaly' },
-            { step: 5, actor: 'System', action: 'Routes based on severity and confidence', object: 'anomaly', branches: true },
-            { step: '5a', actor: 'System', action: 'Auto-corrects and logs change', object: 'transaction', condition: 'confidence > 95% AND low impact' },
-            { step: '5b', actor: 'System', action: 'Flags for manager/admin review', object: 'anomaly', condition: 'medium severity' },
-            { step: '5c', actor: 'System', action: 'Alerts stakeholders and blocks processing', object: 'anomaly', condition: 'high severity' },
-            { step: 6, actor: 'User', action: 'Reviews details and resolves or overrides', object: 'anomaly' }
-        ],
+        flow: flow || defaultFlow,
         aiTouchpoints,
         configurationNeeds: [
             { setting: 'Detection Threshold', description: 'Sensitivity for flagging anomalies', default: 'Medium - balance false positives vs. misses' },
@@ -324,30 +357,63 @@ function generateIntelligentScoringWorkflow(concept, objects, industry = 'generi
         highAction = 'Declines or routes to senior underwriter';
     } else {
         // Generic fallback
-        itemType = lower.includes('timecard') ? 'timecards' :
+        itemType = lower.includes('shift') && (lower.includes('swap') || lower.includes('match')) ? 'shift swap requests' :
+                        lower.includes('timecard') ? 'timecards' :
                         lower.includes('candidate') || lower.includes('applicant') ? 'job candidates' :
                         lower.includes('credit') || lower.includes('loan') ? 'credit applications' :
                         lower.includes('risk') || lower.includes('patient') ? 'risk profiles' :
                         lower.includes('return') ? 'return requests' : 'items';
 
-        scoreFactors = lower.includes('timecard') ? 'variance, patterns, anomalies, policy compliance' :
+        scoreFactors = lower.includes('shift') && (lower.includes('swap') || lower.includes('match')) ? 'skills match, availability overlap, certification requirements, location proximity, preference alignment' :
+                            lower.includes('timecard') ? 'variance, patterns, anomalies, policy compliance' :
                             lower.includes('candidate') ? 'skills match, experience, qualifications' :
                             lower.includes('credit') ? 'credit history, income, debt ratio, collateral' :
                             lower.includes('risk') ? 'historical data, behavioral patterns, external factors' :
                             'configurable risk and quality factors';
 
-        lowAction = lower.includes('credit') ? 'Auto-approves application' :
+        lowAction = lower.includes('shift') && (lower.includes('swap') || lower.includes('match')) ? 'Shows as poor match with explanation' :
+                         lower.includes('credit') ? 'Auto-approves application' :
                          lower.includes('candidate') ? 'Routes to hiring manager' :
                          lower.includes('timecard') ? 'Auto-processes to payroll' : 'Auto-processes';
 
-        highAction = lower.includes('fraud') || lower.includes('return') ? 'Blocks and flags for fraud review' :
+        highAction = lower.includes('shift') && (lower.includes('swap') || lower.includes('match')) ? 'Suggests as best match with manager notification if needed' :
+                          lower.includes('fraud') || lower.includes('return') ? 'Blocks and flags for fraud review' :
                           lower.includes('credit') ? 'Declines application with explanation' :
                           lower.includes('timecard') ? 'Blocks and alerts manager' : 'Escalates for senior review';
     }
 
-    // Build domain-specific AI touchpoints
-    let aiTouchpoints;
-    if (industry === 'hcm') {
+    // Build domain-specific AI touchpoints and flows
+    let aiTouchpoints, flow;
+
+    // Employee shift swap matching workflow
+    if (lower.includes('shift') && (lower.includes('swap') || lower.includes('match'))) {
+        aiTouchpoints = [
+            'Analyzes requesting employee skills, certifications, and role qualifications',
+            'Identifies all employees qualified for the shift being offered',
+            'Evaluates availability conflicts and schedule compatibility',
+            'Calculates commute distance and location proximity score',
+            'Assesses preference alignment based on past shift selections',
+            'Scores each potential match across all factors with weighting',
+            'Ranks matches from best to worst with explanations',
+            'Learns from accepted/rejected swaps to improve matching'
+        ];
+        flow = [
+            { step: 1, actor: 'Employee', action: 'Submits shift swap request via mobile app', object: 'shiftSwapRequest' },
+            { step: 2, actor: 'System', action: 'Validates shift details and employee eligibility', object: 'shift' },
+            { step: 3, actor: 'AI', action: 'Identifies all qualified employees for the swap', object: 'shift', confidence: true },
+            { step: 4, actor: 'AI', action: `Scores each match across: ${scoreFactors}`, object: 'shiftSwapRequest', confidence: true },
+            { step: 5, actor: 'AI', action: 'Ranks potential matches with score breakdown', object: 'shiftSwapRequest' },
+            { step: 6, actor: 'System', action: 'Routes based on match quality and availability', object: 'shiftSwapRequest', branches: true },
+            { step: '6a', actor: 'System', action: 'Shows top 5 matches to requesting employee with scores', object: 'shiftSwapRequest', condition: 'good matches found' },
+            { step: '6b', actor: 'System', action: 'Notifies manager: no good matches, may need coverage', object: 'shiftSwapRequest', condition: 'no qualified matches' },
+            { step: 7, actor: 'Employee', action: 'Reviews matches and sends swap request to preferred employee', object: 'shiftSwapRequest' },
+            { step: 8, actor: 'Employee', action: 'Target employee accepts or declines swap', object: 'shiftSwapRequest', branches: true },
+            { step: '8a', actor: 'System', action: 'Updates schedule for both employees', object: 'schedule', condition: 'swap accepted' },
+            { step: '8b', actor: 'Employee', action: 'Requesting employee tries next best match', object: 'shiftSwapRequest', condition: 'swap declined' },
+            { step: 9, actor: 'AI', action: 'Learns from swap outcome to improve future matching', object: 'shiftSwapRequest' }
+        ];
+    } else if (industry === 'hcm') {
+        // Generic HCM scoring (timecard scoring, etc.)
         aiTouchpoints = [
             'Calculates timecard risk score across multiple dimensions',
             'Analyzes time variance from scheduled hours',
@@ -359,6 +425,7 @@ function generateIntelligentScoringWorkflow(concept, objects, industry = 'generi
             'Routes high-risk items for manager review before payroll',
             'Learns optimal scoring weights from manager feedback'
         ];
+        flow = null; // Use default flow
     } else if (industry === 'finance') {
         aiTouchpoints = [
             'Calculates credit risk score using multiple data sources',
@@ -383,18 +450,21 @@ function generateIntelligentScoringWorkflow(concept, objects, industry = 'generi
         ];
     }
 
+    // Use custom flow if generated, otherwise use default
+    const defaultFlow = [
+        { step: 1, actor: 'System', action: `Receives ${itemType} for risk scoring`, object: 'transaction' },
+        { step: 2, actor: 'AI', action: `Calculates weighted score across: ${scoreFactors}`, object: 'transaction', confidence: true },
+        { step: 3, actor: 'AI', action: 'Generates detailed breakdown and insight summary', object: 'insight' },
+        { step: 4, actor: 'System', action: 'Routes based on risk score and confidence', object: 'transaction', branches: true },
+        { step: '4a', actor: 'System', action: lowAction, object: 'transaction', condition: 'score < low threshold' },
+        { step: '4b', actor: 'System', action: 'Flags for manager/reviewer with score details', object: 'insight', condition: 'low ≤ score < high' },
+        { step: '4c', actor: 'System', action: highAction, object: 'insight', condition: 'score ≥ high threshold' },
+        { step: 5, actor: 'System', action: 'Updates dashboard with scoring trends and insights', object: 'insight' }
+    ];
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
-        flow: [
-            { step: 1, actor: 'System', action: `Receives ${itemType} for risk scoring`, object: 'transaction' },
-            { step: 2, actor: 'AI', action: `Calculates weighted score across: ${scoreFactors}`, object: 'transaction', confidence: true },
-            { step: 3, actor: 'AI', action: 'Generates detailed breakdown and insight summary', object: 'insight' },
-            { step: 4, actor: 'System', action: 'Routes based on risk score and confidence', object: 'transaction', branches: true },
-            { step: '4a', actor: 'System', action: lowAction, object: 'transaction', condition: 'score < low threshold' },
-            { step: '4b', actor: 'System', action: 'Flags for manager/reviewer with score details', object: 'insight', condition: 'low ≤ score < high' },
-            { step: '4c', actor: 'System', action: highAction, object: 'insight', condition: 'score ≥ high threshold' },
-            { step: 5, actor: 'System', action: 'Updates dashboard with scoring trends and insights', object: 'insight' }
-        ],
+        flow: flow || defaultFlow,
         aiTouchpoints,
         configurationNeeds: [
             { setting: 'Score Weights', description: 'Weight for each scoring factor', default: 'Balanced across all factors' },
@@ -427,6 +497,9 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
         // Generic fallback
         predictionType = lower.includes('turnover') || lower.includes('attrition') ? 'employee turnover risk' :
                               lower.includes('overtime') ? 'overtime trends and costs' :
+                              lower.includes('clock') || lower.includes('reminder') ? 'missed clock-in/out events' :
+                              lower.includes('pto') && lower.includes('balance') ? 'future PTO accrual and availability' :
+                              lower.includes('schedule') && lower.includes('prefer') ? 'preferred shift availability' :
                               lower.includes('credit') || lower.includes('risk') ? 'credit risk and default probability' :
                               lower.includes('readmission') || lower.includes('patient') ? 'patient readmission risk' :
                               lower.includes('stockout') || lower.includes('inventory') ? 'inventory stockout probability' :
@@ -434,6 +507,9 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
 
         recommendations = lower.includes('turnover') ? 'Suggests targeted retention actions (comp, development, engagement)' :
                                lower.includes('overtime') ? 'Recommends staffing adjustments and scheduling changes' :
+                               lower.includes('clock') || lower.includes('reminder') ? 'Sends proactive reminders based on schedule and location patterns' :
+                               lower.includes('pto') && lower.includes('balance') ? 'Shows projected accrual dates and available balance forecasts' :
+                               lower.includes('schedule') && lower.includes('prefer') ? 'Suggests available shifts matching learned preferences' :
                                lower.includes('credit') ? 'Proposes portfolio adjustments and hedging strategies' :
                                lower.includes('patient') ? 'Plans preventive care interventions and follow-ups' :
                                lower.includes('inventory') ? 'Optimizes reordering and allocation across locations' :
@@ -441,14 +517,90 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
 
         criticalTrigger = lower.includes('turnover') ? 'High-value employee at >70% flight risk' :
                                lower.includes('overtime') ? 'Projected to exceed budget by >15%' :
+                               lower.includes('clock') || lower.includes('reminder') ? 'Employee approaching shift start without clock-in' :
+                               lower.includes('pto') ? 'Approaching PTO policy deadline or expiration' :
+                               lower.includes('schedule') ? 'Preferred shift becoming unavailable soon' :
                                lower.includes('credit') ? 'Portfolio risk spike detected' :
                                lower.includes('patient') ? '90-day readmission risk >50%' :
                                'Critical threshold exceeded';
     }
 
-    // Build domain-specific AI touchpoints
-    let aiTouchpoints;
-    if (industry === 'hcm') {
+    // Build domain-specific AI touchpoints and flows
+    let aiTouchpoints, flow;
+
+    // Employee-specific Time & Attendance workflows
+    if (lower.includes('clock') || lower.includes('reminder')) {
+        aiTouchpoints = [
+            'Learns employee clock-in/out patterns and typical schedules',
+            'Monitors employee location and proximity to work site',
+            'Detects when employee approaches scheduled shift time',
+            'Predicts likelihood of missed clock-in based on behavior patterns',
+            'Sends proactive reminders via mobile push, SMS, or email',
+            'Adapts reminder timing based on employee response patterns',
+            'Reduces missed punches and time entry corrections',
+            'Tracks reminder effectiveness to optimize delivery timing'
+        ];
+        flow = [
+            { step: 1, actor: 'System', action: 'Monitors employee schedule and location data continuously', object: 'schedule' },
+            { step: 2, actor: 'AI', action: 'Learns employee clock-in patterns and typical arrival times', object: 'clockEvent', confidence: true },
+            { step: 3, actor: 'AI', action: 'Detects employee approaching shift start time', object: 'schedule' },
+            { step: 4, actor: 'AI', action: 'Predicts missed clock-in risk based on location and patterns', object: 'clockEvent', confidence: true },
+            { step: 5, actor: 'System', action: 'Routes reminder based on urgency and risk', object: 'clockEvent', branches: true },
+            { step: '5a', actor: 'System', action: 'Sends mobile push notification reminder to clock in', object: 'clockEvent', condition: 'high risk, shift starting soon' },
+            { step: '5b', actor: 'System', action: 'Sends gentle SMS reminder 15 minutes before shift', object: 'clockEvent', condition: 'medium risk' },
+            { step: '5c', actor: 'System', action: 'No reminder needed - employee has consistent patterns', object: 'clockEvent', condition: 'low risk' },
+            { step: 6, actor: 'Employee', action: 'Receives reminder and clocks in via mobile or kiosk', object: 'clockEvent' },
+            { step: 7, actor: 'System', action: 'Records clock event and updates timecard', object: 'timeEntry' },
+            { step: 8, actor: 'AI', action: 'Learns from employee response to refine future reminder timing', object: 'clockEvent' }
+        ];
+    } else if (lower.includes('pto') && lower.includes('balance')) {
+        aiTouchpoints = [
+            'Analyzes employee work schedule and accrual rules',
+            'Predicts future PTO accrual based on scheduled hours',
+            'Calculates projected balance at future dates',
+            'Identifies approaching cap limits or expiration deadlines',
+            'Forecasts optimal time-off windows based on accrual',
+            'Factors in planned time-off requests and approvals',
+            'Alerts employees to use-it-or-lose-it situations',
+            'Learns from employee PTO usage patterns to improve forecasts'
+        ];
+        flow = [
+            { step: 1, actor: 'Employee', action: 'Views PTO balance in self-service portal or mobile app', object: 'ptoBalance' },
+            { step: 2, actor: 'System', action: 'Retrieves current balance and accrual rules from HR system', object: 'ptoBalance' },
+            { step: 3, actor: 'AI', action: 'Analyzes upcoming work schedule and accrual rate', object: 'schedule', confidence: true },
+            { step: 4, actor: 'AI', action: 'Predicts future PTO accrual dates and projected balance', object: 'ptoBalance', confidence: true },
+            { step: 5, actor: 'System', action: 'Displays forecast timeline with accrual milestones', object: 'ptoBalance' },
+            { step: 6, actor: 'AI', action: 'Checks for approaching cap limits or expiration dates', object: 'ptoBalance', branches: true },
+            { step: '6a', actor: 'System', action: 'Alerts employee: "Use 40 hours by Dec 31 or lose it"', object: 'ptoBalance', condition: 'approaching expiration' },
+            { step: '6b', actor: 'System', action: 'Shows optimal windows to request time off', object: 'ptoBalance', condition: 'planning mode' },
+            { step: 7, actor: 'Employee', action: 'Plans time-off requests based on forecast', object: 'ptoRequest' },
+            { step: 8, actor: 'AI', action: 'Learns from employee PTO patterns to improve future forecasts', object: 'ptoBalance' }
+        ];
+    } else if (lower.includes('schedule') && lower.includes('prefer')) {
+        aiTouchpoints = [
+            'Analyzes employee past shift selections and swap requests',
+            'Identifies preferred days, times, and shift patterns',
+            'Learns employee availability and work-life preferences',
+            'Detects shifts that match learned preference profile',
+            'Monitors open shift board for matching opportunities',
+            'Sends proactive notifications when preferred shifts open up',
+            'Prioritizes suggestions by preference strength and availability',
+            'Adapts to changing employee circumstances and preferences'
+        ];
+        flow = [
+            { step: 1, actor: 'System', action: 'Continuously monitors open shifts and schedule changes', object: 'schedule' },
+            { step: 2, actor: 'AI', action: 'Learns employee shift preferences from past picks and swaps', object: 'schedule', confidence: true },
+            { step: 3, actor: 'AI', action: 'Detects new open shift that matches employee preferences', object: 'shift' },
+            { step: 4, actor: 'AI', action: 'Validates employee qualifications and availability', object: 'shift', confidence: true },
+            { step: 5, actor: 'System', action: 'Sends mobile notification about preferred shift opportunity', object: 'shift' },
+            { step: 6, actor: 'Employee', action: 'Views shift details and match score in mobile app', object: 'shift' },
+            { step: 7, actor: 'Employee', action: 'Accepts shift or dismisses suggestion', object: 'shift', branches: true },
+            { step: '7a', actor: 'System', action: 'Assigns shift to employee and updates schedule', object: 'schedule', condition: 'employee accepts' },
+            { step: '7b', actor: 'AI', action: 'Learns from rejection to refine preference model', object: 'schedule', condition: 'employee dismisses' },
+            { step: 8, actor: 'AI', action: 'Tracks shift acceptance rate to improve suggestions', object: 'schedule' }
+        ];
+    } else if (industry === 'hcm') {
+        // Generic HCM predictive intelligence (turnover, overtime, etc.)
         aiTouchpoints = [
             'Analyzes employee engagement, performance, and tenure data',
             'Detects behavioral changes and early warning signals',
@@ -460,6 +612,7 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
             'Tracks effectiveness of interventions to refine predictions',
             'Adapts to organizational changes and market conditions'
         ];
+        flow = null; // Use default flow below
     } else if (industry === 'finance') {
         aiTouchpoints = [
             'Monitors portfolio composition and concentration risks',
@@ -485,20 +638,23 @@ function generatePredictiveIntelligenceWorkflow(concept, objects, industry = 'ge
         ];
     }
 
+    // Use custom flow if generated, otherwise use default
+    const defaultFlow = [
+        { step: 1, actor: 'System', action: 'Continuously monitors employee, operational, and performance data', object: 'intelligenceHub' },
+        { step: 2, actor: 'AI', action: `Analyzes historical patterns to detect early warning signals`, object: 'insight', confidence: true },
+        { step: 3, actor: 'AI', action: `Predicts ${predictionType} with confidence scoring`, object: 'insight' },
+        { step: 4, actor: 'AI', action: recommendations, object: 'insight', confidence: true },
+        { step: 5, actor: 'System', action: 'Routes based on risk severity and urgency', object: 'insight', branches: true },
+        { step: '5a', actor: 'System', action: 'Sends critical alert to leadership with immediate action plan', object: 'insight', condition: criticalTrigger },
+        { step: '5b', actor: 'System', action: 'Dashboard notification to managers with recommended actions', object: 'insight', condition: 'severity = warning' },
+        { step: '5c', actor: 'System', action: 'Logs insight for reporting and trend analysis', object: 'insight', condition: 'severity = info' },
+        { step: 6, actor: 'User', action: 'Reviews predictions and takes preventive action', object: 'insight' },
+        { step: 7, actor: 'AI', action: 'Tracks outcome of actions to improve future predictions', object: 'intelligenceHub' }
+    ];
+
     return {
         objects: objects.map(key => GENERIC_OBJECTS[key]).filter(Boolean),
-        flow: [
-            { step: 1, actor: 'System', action: 'Continuously monitors employee, operational, and performance data', object: 'intelligenceHub' },
-            { step: 2, actor: 'AI', action: `Analyzes historical patterns to detect early warning signals`, object: 'insight', confidence: true },
-            { step: 3, actor: 'AI', action: `Predicts ${predictionType} with confidence scoring`, object: 'insight' },
-            { step: 4, actor: 'AI', action: recommendations, object: 'insight', confidence: true },
-            { step: 5, actor: 'System', action: 'Routes based on risk severity and urgency', object: 'insight', branches: true },
-            { step: '5a', actor: 'System', action: 'Sends critical alert to leadership with immediate action plan', object: 'insight', condition: criticalTrigger },
-            { step: '5b', actor: 'System', action: 'Dashboard notification to managers with recommended actions', object: 'insight', condition: 'severity = warning' },
-            { step: '5c', actor: 'System', action: 'Logs insight for reporting and trend analysis', object: 'insight', condition: 'severity = info' },
-            { step: 6, actor: 'User', action: 'Reviews predictions and takes preventive action', object: 'insight' },
-            { step: 7, actor: 'AI', action: 'Tracks outcome of actions to improve future predictions', object: 'intelligenceHub' }
-        ],
+        flow: flow || defaultFlow,
         aiTouchpoints,
         configurationNeeds: [
             { setting: 'Alert Thresholds', description: 'Sensitivity for each severity level', default: 'Critical: immediate risk, Warning: potential issue' },

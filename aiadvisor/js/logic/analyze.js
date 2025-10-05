@@ -182,9 +182,95 @@ function analyzeProject(concept, industry = 'generic', templateSlug = null) {
     }
     
     risks.push({ risk: 'Privacy and data security concerns', mitigation: 'Document what data AI accesses; ensure compliance; provide transparency' });
-    
+
     if (lower.includes('approval') || lower.includes('decision') || lower.includes('financial')) {
         risks.push({ risk: 'High stakes: errors could have significant impact', mitigation: 'Require human approval for high-value actions; extensive logging' });
+    }
+
+    // Generate Business Metrics
+    const businessMetrics = [];
+    const patternKey = detectWorkflowPattern(concept);
+
+    // Pattern-specific metrics
+    if (patternKey === 'autoApproval') {
+        businessMetrics.push(
+            { metric: 'Approval time reduced', value: '80-90%', description: 'Time from submission to final decision' },
+            { metric: 'Manual reviews decreased', value: '60-70%', description: 'Percentage of requests auto-approved' },
+            { metric: 'Processing cost saved', value: '50-65%', description: 'Labor cost reduction from automation' }
+        );
+    } else if (patternKey === 'anomalyDetection') {
+        businessMetrics.push(
+            { metric: 'Error detection rate improved', value: '40-60%', description: 'Errors caught vs. manual review baseline' },
+            { metric: 'Time to detect issues reduced', value: '75-85%', description: 'Speed of anomaly identification' },
+            { metric: 'False positive rate', value: '<10%', description: 'Incorrectly flagged items (target)' }
+        );
+    } else if (patternKey === 'intelligentScoring') {
+        businessMetrics.push(
+            { metric: 'Decision quality improved', value: '25-40%', description: 'Accuracy of routing/scoring vs. manual' },
+            { metric: 'Review time saved', value: '50-70%', description: 'Time saved by automated prioritization' },
+            { metric: 'Consistency increased', value: '80-90%', description: 'Reduced variability in scoring' }
+        );
+    } else if (patternKey === 'predictiveIntelligence') {
+        businessMetrics.push(
+            { metric: 'Proactive interventions', value: '60-80%', description: 'Issues prevented vs. reactive baseline' },
+            { metric: 'Forecast accuracy', value: '75-85%', description: 'Prediction correctness rate' },
+            { metric: 'Cost avoidance', value: '30-50%', description: 'Savings from early detection' }
+        );
+    } else if (patternKey === 'unifiedEntityView') {
+        businessMetrics.push(
+            { metric: 'Time to insight reduced', value: '70-85%', description: 'Speed of cross-system data aggregation' },
+            { metric: 'Data accuracy improved', value: '40-60%', description: 'Reduction in outdated/conflicting data' },
+            { metric: 'User productivity increased', value: '50-70%', description: 'Time saved vs. manual lookups' }
+        );
+    } else if (patternKey === 'crossSystemWorkflow') {
+        businessMetrics.push(
+            { metric: 'Process completion time reduced', value: '60-80%', description: 'End-to-end workflow duration' },
+            { metric: 'Manual coordination eliminated', value: '70-90%', description: 'Automated cross-system updates' },
+            { metric: 'Error rate decreased', value: '50-70%', description: 'Reduction in human data entry errors' }
+        );
+    } else if (patternKey === 'naturalLanguageQA') {
+        businessMetrics.push(
+            { metric: 'Support ticket reduction', value: '30-50%', description: 'Decrease in human support requests' },
+            { metric: 'First-contact resolution', value: '60-75%', description: 'Questions answered without escalation' },
+            { metric: 'Time to answer reduced', value: '80-90%', description: 'Instant vs. ticket response time' }
+        );
+    } else if (patternKey === 'intelligentSearch') {
+        businessMetrics.push(
+            { metric: 'Search success rate improved', value: '40-60%', description: 'Users finding what they need' },
+            { metric: 'Time to find reduced', value: '50-70%', description: 'Speed of locating information' },
+            { metric: 'Search abandonment decreased', value: '30-50%', description: 'Fewer unsuccessful searches' }
+        );
+    } else if (patternKey === 'impactAnalysis') {
+        businessMetrics.push(
+            { metric: 'Planning accuracy improved', value: '40-60%', description: 'Predicted vs. actual impact' },
+            { metric: 'Risk mitigation', value: '50-70%', description: 'Issues identified before execution' },
+            { metric: 'Decision confidence increased', value: '60-80%', description: 'Stakeholder certainty in changes' }
+        );
+    } else if (patternKey === 'resourceOptimization') {
+        businessMetrics.push(
+            { metric: 'Resource utilization improved', value: '20-40%', description: 'Efficiency vs. manual scheduling' },
+            { metric: 'Planning time reduced', value: '70-85%', description: 'Speed of schedule generation' },
+            { metric: 'Coverage gaps decreased', value: '50-70%', description: 'Reduction in understaffing incidents' }
+        );
+    } else if (patternKey === 'realTimeProcessing') {
+        businessMetrics.push(
+            { metric: 'Processing speed increased', value: '80-95%', description: 'Real-time vs. batch processing' },
+            { metric: 'Data quality improved', value: '40-60%', description: 'Errors caught before downstream impact' },
+            { metric: 'System latency reduced', value: '60-80%', description: 'Faster data availability' }
+        );
+    } else if (patternKey === 'smartAggregation') {
+        businessMetrics.push(
+            { metric: 'Processing efficiency increased', value: '50-70%', description: 'Intelligent batching vs. individual' },
+            { metric: 'Duplicate detection', value: '90-95%', description: 'Accuracy of identifying duplicates' },
+            { metric: 'Manual reconciliation reduced', value: '60-80%', description: 'Automated aggregation decisions' }
+        );
+    } else {
+        // Generic metrics for unknown patterns
+        businessMetrics.push(
+            { metric: 'Process efficiency improved', value: '40-60%', description: 'Time or cost savings vs. manual baseline' },
+            { metric: 'Error rate reduced', value: '30-50%', description: 'Decrease in mistakes or exceptions' },
+            { metric: 'User satisfaction increased', value: '25-40%', description: 'Improved experience metrics' }
+        );
     }
 
     // Generate Examples
@@ -462,6 +548,7 @@ function analyzeProject(concept, industry = 'generic', templateSlug = null) {
         technical,
         trustCues,
         risks,
+        businessMetrics,
         examples,
         oouxWorkflow,
         detectedPattern: WORKFLOW_PATTERNS[detectedPattern]?.name || 'Generic Workflow',

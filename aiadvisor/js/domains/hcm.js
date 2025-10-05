@@ -88,6 +88,64 @@ const HCM_DOMAIN = {
             relationships: [
                 { type: 'has-many', target: 'employee', description: 'Department has employees' }
             ]
+        },
+        schedule: {
+            name: 'Work Schedule',
+            extends: 'schedule',
+            description: 'Employee work schedule with shifts and assignments',
+            coreContent: ['Employee', 'Shift Pattern', 'Start/End Times', 'Days of Week'],
+            metadata: ['Effective Date', 'Status', 'Modified By', 'Schedule Type'],
+            actions: ['View Schedule', 'Request Swap', 'Set Preferences', 'Clock In/Out'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Schedule belongs to employee' },
+                { type: 'has-many', target: 'shift', description: 'Schedule contains shifts' }
+            ]
+        },
+        shift: {
+            name: 'Shift',
+            description: 'Individual work shift assignment',
+            coreContent: ['Employee', 'Date', 'Start Time', 'End Time', 'Role'],
+            metadata: ['Status', 'Break Times', 'Location', 'Department'],
+            actions: ['View Details', 'Request Swap', 'Clock In', 'Clock Out'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Shift assigned to employee' },
+                { type: 'belongs-to', target: 'schedule', description: 'Shift part of schedule' }
+            ]
+        },
+        clockEvent: {
+            name: 'Clock Event',
+            extends: 'transaction',
+            description: 'Employee clock in/out/break punch',
+            coreContent: ['Employee', 'Event Type', 'Timestamp', 'Location'],
+            metadata: ['Device ID', 'GPS Coordinates', 'Status', 'Edited By'],
+            actions: ['View', 'Edit', 'Approve Correction', 'Flag Issue'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Clock event by employee' },
+                { type: 'relates-to', target: 'shift', description: 'Clock event for shift' }
+            ]
+        },
+        ptoBalance: {
+            name: 'PTO Balance',
+            description: 'Employee paid time off accrual and balance tracking',
+            coreContent: ['Employee', 'PTO Type', 'Current Balance', 'Accrual Rate'],
+            metadata: ['Last Accrual Date', 'Next Accrual Date', 'Cap Limit', 'Expiration Date'],
+            actions: ['View Balance', 'View Forecast', 'Request Time Off', 'View History'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Balance for employee' },
+                { type: 'has-many', target: 'ptoRequest', description: 'Balance affects requests' }
+            ]
+        },
+        shiftSwapRequest: {
+            name: 'Shift Swap Request',
+            extends: 'request',
+            description: 'Employee request to swap shifts with another employee',
+            coreContent: ['Requesting Employee', 'Target Employee', 'Original Shift', 'Swap Shift'],
+            metadata: ['Request Date', 'Status', 'Match Score', 'Manager Approval Required'],
+            actions: ['Submit Request', 'Accept', 'Decline', 'View Matches', 'Approve'],
+            relationships: [
+                { type: 'belongs-to', target: 'employee', description: 'Request by employee' },
+                { type: 'relates-to', target: 'shift', description: 'Swapping specific shifts' }
+            ]
         }
     },
     

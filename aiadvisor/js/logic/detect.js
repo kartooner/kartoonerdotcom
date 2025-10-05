@@ -24,9 +24,26 @@ function detectRelevantObjects(text) {
     }
     
     // Scheduling & Resources
-    if (lower.includes('schedul') || lower.includes('allocat') || lower.includes('resource') || 
-        lower.includes('assign') || lower.includes('plan')) {
+    if (lower.includes('schedul') || lower.includes('allocat') || lower.includes('resource') ||
+        lower.includes('assign') || lower.includes('plan') || lower.includes('shift')) {
         relevant.push('schedule', 'entity');
+    }
+
+    // Time & Attendance specific
+    if (lower.includes('clock') || lower.includes('punch') || lower.includes('reminder')) {
+        relevant.push('clockEvent', 'schedule', 'entity');
+    }
+
+    if (lower.includes('shift') && (lower.includes('swap') || lower.includes('match'))) {
+        relevant.push('shiftSwapRequest', 'shift', 'schedule', 'entity');
+    }
+
+    if (lower.includes('pto') && (lower.includes('balance') || lower.includes('accru') || lower.includes('forecast'))) {
+        relevant.push('ptoBalance', 'ptoRequest', 'entity');
+    }
+
+    if (lower.includes('timecard') && (lower.includes('acknowledge') || lower.includes('review') || lower.includes('unusual'))) {
+        relevant.push('timeEntry', 'entity', 'anomaly');
     }
     
     // Intelligence & Insights

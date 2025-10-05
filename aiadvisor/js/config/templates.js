@@ -138,7 +138,8 @@ const TEMPLATES = {
             concept: 'Search employees by name, skills, department with intelligent matching',
             complexity: 'low',
             icon: 'Lightbulb',
-            portfolio: 'Core HR'
+            portfolio: 'Core HR',
+            persona: 'Employee'
         },
         {
             title: 'Time Entry Suggestions',
@@ -147,7 +148,8 @@ const TEMPLATES = {
             concept: 'Predict and recommend time entries based on employee schedule and past patterns',
             complexity: 'low',
             icon: 'CheckCircle',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
         },
         {
             title: 'Job Requisition Routing',
@@ -183,7 +185,8 @@ const TEMPLATES = {
             concept: 'Score job candidates based on resume and route by match quality',
             complexity: 'medium',
             icon: 'Brain',
-            portfolio: 'Recruiting'
+            portfolio: 'Recruiting',
+            persona: 'Admin'
         },
         {
             title: 'Turnover Prediction',
@@ -228,7 +231,8 @@ const TEMPLATES = {
             concept: 'Answer employee questions about pay, benefits, PTO',
             complexity: 'high',
             icon: 'Brain',
-            portfolio: 'Core HR'
+            portfolio: 'Core HR',
+            persona: 'Employee'
         },
         {
             title: 'People Search',
@@ -273,7 +277,8 @@ const TEMPLATES = {
             concept: 'Predict and recommend personalized learning paths based on role and career goals',
             complexity: 'medium',
             icon: 'Box',
-            portfolio: 'Learning'
+            portfolio: 'Learning',
+            persona: 'Employee'
         },
         {
             title: 'PTO Auto-Approval',
@@ -282,7 +287,8 @@ const TEMPLATES = {
             concept: 'Auto-approve PTO requests with team coverage validation',
             complexity: 'medium',
             icon: 'CheckCircle',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Admin'
         },
         {
             title: 'Missing Punch Detection',
@@ -291,7 +297,8 @@ const TEMPLATES = {
             concept: 'Detect missing time punches and suggest fixes based on schedule',
             complexity: 'medium',
             icon: 'AlertCircle',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
         },
         {
             title: 'Timecard Anomaly Scoring',
@@ -300,7 +307,8 @@ const TEMPLATES = {
             concept: 'Score timecards for unusual patterns and route by risk threshold',
             complexity: 'medium',
             icon: 'Brain',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Admin'
         },
         {
             title: 'Overtime Prediction',
@@ -309,7 +317,8 @@ const TEMPLATES = {
             concept: 'Predict overtime trends and alert managers to take action',
             complexity: 'high',
             icon: 'Lightbulb',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Admin'
         },
         {
             title: 'AI Schedule Generation',
@@ -318,7 +327,8 @@ const TEMPLATES = {
             concept: 'Generate employee schedules from past demand patterns',
             complexity: 'medium',
             icon: 'Wrench',
-            portfolio: 'Time & Attendance'
+            portfolio: 'Time & Attendance',
+            persona: 'Admin'
         },
         {
             title: 'Payroll Lock & Validation',
@@ -328,6 +338,56 @@ const TEMPLATES = {
             complexity: 'high',
             icon: 'AlertCircle',
             portfolio: 'Payroll'
+        },
+        {
+            title: 'Smart Clock Reminders',
+            slug: 'smart-clock-reminders',
+            description: 'AI-powered reminders to clock in/out/break',
+            concept: 'Send intelligent clock in/out/break reminders based on schedule, location, and past patterns',
+            complexity: 'low',
+            icon: 'AlertCircle',
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
+        },
+        {
+            title: 'Shift Swap Matching',
+            slug: 'shift-swap-matching',
+            description: 'Find and suggest qualified shift swap matches',
+            concept: 'Match employees for shift swaps based on skills, availability, and preferences',
+            complexity: 'medium',
+            icon: 'GitBranch',
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
+        },
+        {
+            title: 'Timecard Acknowledgment',
+            slug: 'timecard-acknowledgment',
+            description: 'Review and approve your time before payroll',
+            concept: 'Flag unusual timecard patterns for employee review and acknowledgment before payroll processing',
+            complexity: 'low',
+            icon: 'CheckCircle',
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
+        },
+        {
+            title: 'PTO Balance Forecasting',
+            slug: 'pto-balance-forecasting',
+            description: 'Predict future PTO accrual based on schedule',
+            concept: 'Show employees when PTO will accrue based on upcoming work schedule and accrual rules',
+            complexity: 'medium',
+            icon: 'Lightbulb',
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
+        },
+        {
+            title: 'Schedule Preference Learning',
+            slug: 'schedule-preference-learning',
+            description: 'Learn and suggest preferred shifts',
+            concept: 'Predict and suggest preferred available shifts based on employee past schedule patterns and preferences',
+            complexity: 'medium',
+            icon: 'Brain',
+            portfolio: 'Time & Attendance',
+            persona: 'Employee'
         }
     ],
     finance: [

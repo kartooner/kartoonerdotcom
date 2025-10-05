@@ -68,7 +68,7 @@ const GlossaryText = ({ text, onTermClick }) => {
                     return (
                         <span
                             key={idx}
-                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors px-0.5"
+                            className="border-b-2 border-dotted border-blue-500 cursor-help hover:bg-blue-50 transition-colors inline whitespace-nowrap"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onTermClick) onTermClick(key);
@@ -85,10 +85,30 @@ const GlossaryText = ({ text, onTermClick }) => {
     );
 };
 
+// Helper function to convert text to sentence case while preserving acronyms
+const toSentenceCase = (text) => {
+    if (!text) return text;
+
+    // Common acronyms to preserve
+    const acronyms = ['AI', 'HR', 'IT', 'API', 'UI', 'UX', 'CEO', 'CTO', 'VP', 'ATS', 'HRIS', 'PTO', 'FMLA', 'ROI', 'KPI', 'Q&A'];
+
+    // Convert to lowercase first, then capitalize first letter
+    let result = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+
+    // Restore acronyms
+    acronyms.forEach(acronym => {
+        const regex = new RegExp(`\\b${acronym}\\b`, 'gi');
+        result = result.replace(regex, acronym);
+    });
+
+    return result;
+};
+
 const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
     const [workflowTitle, setWorkflowTitle] = useState('');
     const [currentSlug, setCurrentSlug] = useState('');
+    const [currentPersona, setCurrentPersona] = useState(null);
     const [analysis, setAnalysis] = useState(null);
     const [selectedPrinciples, setSelectedPrinciples] = useState([]);
     const [industry, setIndustry] = useState('generic');
@@ -113,6 +133,7 @@ const AIProjectAdvisor = () => {
     const [activeSection, setActiveSection] = useState('overview');
     const [complexityFilter, setComplexityFilter] = useState('all');
     const [portfolioFilter, setPortfolioFilter] = useState('all');
+    const [personaFilter, setPersonaFilter] = useState('all');
     const [navGroupsExpanded, setNavGroupsExpanded] = useState({
         essentials: true,
         implementation: true,
@@ -395,6 +416,7 @@ const AIProjectAdvisor = () => {
         setConcept(template.concept);
         setWorkflowTitle(template.title);
         setCurrentSlug(template.slug);
+        setCurrentPersona(template.persona || null);
         setShowTemplates(false);
         setIsAnalyzing(true);
 
@@ -515,31 +537,46 @@ const AIProjectAdvisor = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
             <a href="#main-content" className="skip-link">
                 Skip to main content
             </a>
-            <div className="max-w-5xl mx-auto">
-                {/* Hero Section - Above main content */}
-                {!analysis && (
-                    <div className="mb-8">
-                        <div className="mb-6">
-                            <h1 id="input-heading" className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3">{pageTitle}</h1>
-                            <p className="text-base sm:text-lg text-gray-700 mb-4 leading-relaxed">
-                                Start with your industry and a common workflow. This tool then maps out the AI behind it; explaining how it works, how hard it is to build, and what designers and engineers should plan for.
-                            </p>
-                            <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
-                                <p className="text-sm text-gray-700">
-                                    <span className="font-semibold text-indigo-900">For designers:</span> This tool helps you understand the technical implications of AI features, anticipate UX challenges, and collaborate effectively with engineering teams.
-                                </p>
+
+            {/* Full-width Header */}
+            {!analysis && (
+                <div className="bg-white shadow-md mb-4 sm:mb-6">
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                        <div className="text-center">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                                <div className="text-4xl sm:text-5xl">⚡</div>
+                                <div>
+                                    <h1 id="input-heading" className="text-3xl sm:text-5xl font-bold text-gray-800">{pageTitle}</h1>
+                                    <p className="text-xs sm:text-sm text-gray-600 italic mt-1">1.21 gigawatts of AI wisdom</p>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+                {/* Hero Description */}
+                {!analysis && (
+                    <div className="mb-4 sm:mb-6">
+                        <p className="text-sm sm:text-base md:text-lg text-gray-700 mb-4 sm:mb-6 leading-relaxed">
+                            Start with your industry and a common workflow. This tool then maps out the AI behind it; explaining how it works, how hard it is to build, and what designers and engineers should plan for.
+                        </p>
+                        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-3 sm:p-4">
+                            <p className="text-xs sm:text-sm text-gray-700">
+                                <span className="font-semibold text-indigo-900">For designers:</span> This tool helps you understand the technical implications of AI features, anticipate UX challenges, and collaborate effectively with engineering teams.
+                            </p>
                         </div>
                     </div>
                 )}
 
                 {/* Main Input Section */}
                 {!analysis && (
-                    <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                    <section aria-labelledby="input-heading" className="bg-white rounded-lg shadow-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
                         <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 1</div>
                         <label htmlFor="industry-select" className="block text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
                             Choose your industry
@@ -549,7 +586,7 @@ const AIProjectAdvisor = () => {
                             id="industry-select"
                             value={industry}
                             onChange={(e) => setIndustry(e.target.value)}
-                            className="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white mb-6"
+                            className="w-full pl-5 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white mb-6"
                             aria-label="Select industry for analysis"
                         >
                             <option value="generic">Generic (Domain Agnostic)</option>
@@ -587,24 +624,30 @@ const AIProjectAdvisor = () => {
 
                 {/* Templates Gallery */}
                 {!analysis && TEMPLATES[industry] && (
-                    <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-8 mb-6">
+                    <section aria-labelledby="templates-heading" className="bg-white rounded-lg shadow-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
                         <div className="mb-6">
-                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                                <div>
-                                    <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 2</div>
-                                    <h2 id="templates-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Start with a proven pattern</h2>
-                                    <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
-                                </div>
+                            <div className="mb-4">
+                                <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-2">Step 2</div>
+                                <h2 id="templates-heading" className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Start with a proven pattern</h2>
+                                <p className="text-base text-gray-600 mt-1">Pre-built workflows based on common <GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> use cases in {industry === 'generic' ? 'all industries' : industry === 'hcm' ? 'HR' : industry}</p>
+                            </div>
 
-                                {/* Filters */}
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <div className="flex-1">
+                            {/* Filters - Full width below header */}
+                            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Filter workflows</span>
+                                </div>
+                                <div className={`grid gap-3 ${industry === 'hcm' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
+                                    <div>
                                         <label htmlFor="complexity-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Complexity</label>
                                         <select
                                             id="complexity-filter"
                                             value={complexityFilter}
                                             onChange={(e) => setComplexityFilter(e.target.value)}
-                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                            className="w-full pl-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                         >
                                             <option value="all">All complexities</option>
                                             <option value="low">Low</option>
@@ -614,26 +657,41 @@ const AIProjectAdvisor = () => {
                                     </div>
 
                                     {industry === 'hcm' && (
-                                        <div className="flex-1">
-                                            <label htmlFor="portfolio-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Portfolio</label>
-                                            <select
-                                                id="portfolio-filter"
-                                                value={portfolioFilter}
-                                                onChange={(e) => setPortfolioFilter(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                            >
-                                                <option value="all">All portfolios</option>
-                                                <option value="Core HR">Core HR</option>
-                                                <option value="Time & Attendance">Time & Attendance</option>
-                                                <option value="Payroll">Payroll</option>
-                                                <option value="Benefits">Benefits</option>
-                                                <option value="Recruiting">Recruiting</option>
-                                                <option value="Performance">Performance</option>
-                                                <option value="Compensation">Compensation</option>
-                                                <option value="Learning">Learning</option>
-                                                <option value="HR Analytics">HR Analytics</option>
-                                            </select>
-                                        </div>
+                                        <>
+                                            <div>
+                                                <label htmlFor="portfolio-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Portfolio</label>
+                                                <select
+                                                    id="portfolio-filter"
+                                                    value={portfolioFilter}
+                                                    onChange={(e) => setPortfolioFilter(e.target.value)}
+                                                    className="w-full pl-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="all">All portfolios</option>
+                                                    <option value="Core HR">Core HR</option>
+                                                    <option value="Time & Attendance">Time & Attendance</option>
+                                                    <option value="Payroll">Payroll</option>
+                                                    <option value="Benefits">Benefits</option>
+                                                    <option value="Recruiting">Recruiting</option>
+                                                    <option value="Performance">Performance</option>
+                                                    <option value="Compensation">Compensation</option>
+                                                    <option value="Learning">Learning</option>
+                                                    <option value="HR Analytics">HR Analytics</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="persona-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">User perspective</label>
+                                                <select
+                                                    id="persona-filter"
+                                                    value={personaFilter}
+                                                    onChange={(e) => setPersonaFilter(e.target.value)}
+                                                    className="w-full pl-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                                >
+                                                    <option value="all">All users</option>
+                                                    <option value="Employee">Employee</option>
+                                                    <option value="Admin">Admin/Manager</option>
+                                                </select>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -643,7 +701,8 @@ const AIProjectAdvisor = () => {
                                 const filtered = TEMPLATES[industry].filter(template => {
                                     const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
                                     const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
-                                    return matchesComplexity && matchesPortfolio;
+                                    const matchesPersona = personaFilter === 'all' || template.persona === personaFilter;
+                                    return matchesComplexity && matchesPortfolio && matchesPersona;
                                 });
                                 return (showAllTemplates ? filtered : filtered.slice(0, 6)).map((template, idx) => (
                                 <button
@@ -663,7 +722,7 @@ const AIProjectAdvisor = () => {
                                             {template.complexity}
                                         </span>
                                     </div>
-                                    <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-indigo-600">{template.title}</h3>
+                                    <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-indigo-600">{toSentenceCase(template.title)}</h3>
                                     <p className="text-xs text-gray-600">{template.description}</p>
                                 </button>
                                 ));
@@ -673,7 +732,8 @@ const AIProjectAdvisor = () => {
                             const filteredTemplates = TEMPLATES[industry].filter(template => {
                                 const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
                                 const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
-                                return matchesComplexity && matchesPortfolio;
+                                const matchesPersona = personaFilter === 'all' || template.persona === personaFilter;
+                                return matchesComplexity && matchesPortfolio && matchesPersona;
                             });
                             const hasMore = filteredTemplates.length > 6;
 
@@ -749,15 +809,27 @@ const AIProjectAdvisor = () => {
                         </div>
 
                         {/* Page Title for Analysis View */}
-                        <div className="mb-6 flex items-center justify-between">
-                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">{pageTitle}</h1>
-                            <button
-                                onClick={() => setShowMethodology(true)}
-                                className="text-gray-600 hover:text-gray-700 font-medium inline-flex items-center gap-2"
-                            >
-                                <Icon name="Lightbulb" />
-                                How does this work?
-                            </button>
+                        <div className="mb-6">
+                            <div className="flex flex-wrap items-center gap-3 mb-3">
+                                <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">{toSentenceCase(pageTitle)}</h1>
+                                {currentPersona && (
+                                    <span className={`text-xs sm:text-sm px-3 py-1 rounded-full font-semibold ${
+                                        currentPersona === 'Employee' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' :
+                                        currentPersona === 'Admin' ? 'bg-purple-100 text-purple-700 border-2 border-purple-300' :
+                                        'bg-green-100 text-green-700 border-2 border-green-300'
+                                    }`}>
+                                        {currentPersona === 'Admin' ? 'Admin/Manager' : currentPersona}
+                                    </span>
+                                )}
+                            </div>
+                            {analysis.executiveSummary && analysis.executiveSummary.whatItDoes && (
+                                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+                                    <GlossaryText
+                                        text={analysis.executiveSummary.whatItDoes}
+                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                    />
+                                </p>
+                            )}
                         </div>
 
                         {/* Consolidated Header: Analysis Info + Pattern + Jump Nav */}
@@ -766,8 +838,21 @@ const AIProjectAdvisor = () => {
 
                             {/* Detected Pattern Banner */}
                             <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-4">
-                                <div className="text-xs opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
-                                <div className="text-lg font-bold">{analysis.detectedPattern}</div>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div className="flex-1">
+                                        <div className="text-xs sm:text-sm opacity-90 mb-1 uppercase tracking-wide">Detected Pattern</div>
+                                        <div className="text-base sm:text-lg font-bold">{analysis.detectedPattern}</div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowMethodology(true)}
+                                        className="text-white hover:text-cyan-100 font-medium inline-flex items-center gap-2 text-sm sm:text-base"
+                                        aria-label="Learn how the AI Project Advisor works"
+                                    >
+                                        <Icon name="Lightbulb" />
+                                        <span className="hidden sm:inline">How does this work?</span>
+                                        <span className="sm:hidden">How it works</span>
+                                    </button>
+                                </div>
                             </div>
                         </section>
 
@@ -814,8 +899,8 @@ const AIProjectAdvisor = () => {
                                             {navGroupsExpanded.essentials && (
                                                 <div className="ml-2 mt-1 space-y-1">
                                                     <button onClick={() => scrollToSection('overview')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Overview</button>
-                                                    <button onClick={() => scrollToSection('executive-summary')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'executive-summary' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Executive Summary</button>
-                                                    <button onClick={() => scrollToSection('ooux')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>OOUX Workflow</button>
+                                                    <button onClick={() => scrollToSection('executive-summary')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'executive-summary' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>At-a-glance</button>
+                                                    <button onClick={() => scrollToSection('ooux')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Data & user flows</button>
                                                     <button onClick={() => scrollToSection('principles')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Design Principles</button>
                                                 </div>
                                             )}
@@ -936,13 +1021,13 @@ const AIProjectAdvisor = () => {
                             </button>
                         </div>
 
-                        {/* Executive Summary */}
+                        {/* At-a-glance Summary */}
                         {analysis.executiveSummary && (
                             <div id="executive-summary" className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border-l-4 border-indigo-500 mb-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-bold text-gray-900 flex items-center">
                                         <Icon name="Lightbulb" />
-                                        <span className="ml-2">Executive summary</span>
+                                        <span className="ml-2">At-a-glance</span>
                                     </h3>
                                     <button
                                         onClick={() => toggleSection('executive-summary')}
@@ -954,16 +1039,10 @@ const AIProjectAdvisor = () => {
                                 {!collapsed['executive-summary'] && (
                                 <div className="space-y-4">
                                     <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <span className="font-semibold text-gray-700 block mb-1">What it does:</span>
-                                        <span className="text-gray-800">
-                                            <GlossaryText
-                                                text={analysis.executiveSummary.whatItDoes}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
-                                        </span>
-                                    </div>
-                                    <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <span className="font-semibold text-gray-700 block mb-1">Primary benefit:</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-green-600 text-lg">✓</span>
+                                            <span className="font-semibold text-gray-700">Why use this</span>
+                                        </div>
                                         <span className="text-green-700 font-medium">
                                             <GlossaryText
                                                 text={analysis.executiveSummary.primaryBenefit}
@@ -972,7 +1051,10 @@ const AIProjectAdvisor = () => {
                                         </span>
                                     </div>
                                     <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <span className="font-semibold text-gray-700 block mb-1">Biggest risk:</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-red-600 text-lg">⚠</span>
+                                            <span className="font-semibold text-gray-700">Watch out for</span>
+                                        </div>
                                         <span className="text-red-700">
                                             <GlossaryText
                                                 text={analysis.executiveSummary.biggestRisk}
@@ -981,7 +1063,10 @@ const AIProjectAdvisor = () => {
                                         </span>
                                     </div>
                                     <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <span className="font-semibold text-gray-700 block mb-1">Next step:</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-indigo-600 text-lg">→</span>
+                                            <span className="font-semibold text-gray-700">What to do next</span>
+                                        </div>
                                         <span className="text-indigo-700 font-medium">
                                             <GlossaryText
                                                 text={analysis.executiveSummary.nextStep}
@@ -1001,9 +1086,9 @@ const AIProjectAdvisor = () => {
                                     <div className="flex-1">
                                         <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
                                             <Icon name="Box" />
-                                            <span className="ml-2">OOUX workflow</span>
+                                            <span className="ml-2">Data & user flows</span>
                                         </h3>
-                                        <p className="text-sm text-gray-600">Object-oriented breakdown showing data structures, user flows, and AI touchpoints throughout the system</p>
+                                        <p className="text-sm text-gray-600">See what data structures you'll need and how users and AI interact with them</p>
                                     </div>
                                     <button
                                         onClick={() => toggleSection('ooux')}
@@ -1019,58 +1104,153 @@ const AIProjectAdvisor = () => {
                                 {/* Objects */}
                                 <div className="mb-6">
                                     <h4 className="font-semibold text-gray-700 mb-3">Key objects</h4>
+                                    <p className="text-xs text-gray-600 mb-4">The core data structures in your system, organized by their attributes</p>
                                     <div className="grid md:grid-cols-2 gap-4">
                                         {analysis.oouxWorkflow.objects.slice(0, 6).map((obj, idx) => (
-                                            <div key={idx} className="border-2 border-cyan-200 rounded-lg p-4 bg-white">
-                                                <div className="flex items-start justify-between mb-2">
-                                                    <h5 className="font-bold text-gray-800">{obj.name}</h5>
-                                                    <Icon name="Box" />
-                                                </div>
-                                                <p className="text-xs text-gray-600 mb-3">
-                                                    <GlossaryText
-                                                        text={obj.description}
-                                                        onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                                    />
-                                                </p>
-
-                                                {/* Core Content */}
-                                                <div className="mb-2">
-                                                    <span className="text-xs font-semibold text-cyan-700 uppercase">Core Content</span>
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {obj.coreContent?.slice(0, 4).map((content, i) => (
-                                                            <span key={i} className="text-xs bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded">{content}</span>
-                                                        ))}
-                                                    </div>
+                                            <div key={idx} className="bg-white border-2 border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                                                {/* Object Header */}
+                                                <div className="bg-blue-500 px-4 py-3">
+                                                    <h5 className="font-bold text-white text-base uppercase tracking-wide">{obj.name}</h5>
+                                                    <p className="text-xs text-blue-50 mt-1">
+                                                        {obj.description}
+                                                    </p>
                                                 </div>
 
-                                                {/* Metadata */}
-                                                <div className="mb-2">
-                                                    <span className="text-xs font-semibold text-gray-600 uppercase">Metadata</span>
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {obj.metadata?.slice(0, 3).map((meta, i) => (
-                                                            <span key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{meta}</span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Relationships */}
-                                                {obj.relationships && obj.relationships.length > 0 && (
-                                                    <div className="mt-3 pt-3 border-t border-gray-200">
-                                                        <span className="text-xs font-semibold text-indigo-700 uppercase">Relationships</span>
-                                                        <div className="space-y-1 mt-1">
-                                                            {obj.relationships.map((rel, i) => (
-                                                                <div key={i} className="text-xs text-gray-600 flex items-start">
-                                                                    <span className="text-indigo-500 mr-1">→</span>
-                                                                    <span className="font-medium">{rel.type}</span>
-                                                                    <span className="mx-1">:</span>
-                                                                    <span className="font-semibold text-gray-800">{rel.target}</span>
-                                                                </div>
-                                                            ))}
+                                                {/* Object Body */}
+                                                <div className="p-4 space-y-2">
+                                                    {/* Core Content */}
+                                                    {obj.coreContent && obj.coreContent.length > 0 && (
+                                                        <div className="bg-pink-50 border-l-4 border-pink-400 rounded p-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-xs font-bold text-pink-700 uppercase tracking-wide">Core Content</span>
+                                                            </div>
+                                                            <ul className="space-y-1">
+                                                                {obj.coreContent.slice(0, 6).map((content, i) => (
+                                                                    <li key={i} className="text-xs text-gray-800 flex items-start">
+                                                                        <span className="text-pink-500 mr-2 font-bold">•</span>
+                                                                        <span>{content}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
+
+                                                    {/* Metadata */}
+                                                    {obj.metadata && obj.metadata.length > 0 && (
+                                                        <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded p-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-xs font-bold text-yellow-800 uppercase tracking-wide">Metadata</span>
+                                                            </div>
+                                                            <ul className="space-y-1">
+                                                                {obj.metadata.slice(0, 4).map((meta, i) => (
+                                                                    <li key={i} className="text-xs text-gray-800 flex items-start">
+                                                                        <span className="text-yellow-500 mr-2 font-bold">•</span>
+                                                                        <span>{meta}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Actions */}
+                                                    {obj.actions && obj.actions.length > 0 && (
+                                                        <div className="bg-green-50 border-l-4 border-green-400 rounded p-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-xs font-bold text-green-700 uppercase tracking-wide">Actions</span>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {obj.actions.slice(0, 6).map((action, i) => (
+                                                                    <span key={i} className="text-xs bg-white text-green-800 px-2.5 py-1 rounded-full border-2 border-green-400 font-semibold shadow-sm">{action}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Relationships */}
+                                                    {obj.relationships && obj.relationships.length > 0 && (
+                                                        <div className="bg-purple-50 border-l-4 border-purple-400 rounded p-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-xs font-bold text-purple-700 uppercase tracking-wide">Relationships</span>
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                {obj.relationships.map((rel, i) => (
+                                                                    <div key={i} className="text-xs text-gray-800 flex items-center gap-1.5">
+                                                                        <span className="text-purple-600 font-bold">→</span>
+                                                                        <span className="font-medium text-purple-700 bg-white px-2 py-0.5 rounded border border-purple-300">{rel.type.replace(/-/g, ' ')}</span>
+                                                                        <span className="text-gray-400">→</span>
+                                                                        <span className="font-semibold text-gray-900">{rel.target}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Blended OOUX + Workflow Visualization */}
+                                <div className="mb-6">
+                                    <h4 className="font-semibold text-gray-700 mb-3">Object journey</h4>
+                                    <p className="text-xs text-gray-600 mb-4">See how objects flow through the workflow, from creation to final state</p>
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 overflow-x-auto">
+                                        <div className="flex items-start gap-3 min-w-max">
+                                            {analysis.oouxWorkflow.flow.map((step, idx) => {
+                                                // Find which object is being acted upon in this step
+                                                const relatedObject = analysis.oouxWorkflow.objects.find(obj =>
+                                                    step.action.toLowerCase().includes(obj.name.toLowerCase()) ||
+                                                    step.touchpoint?.toLowerCase().includes(obj.name.toLowerCase())
+                                                ) || analysis.oouxWorkflow.objects[idx % analysis.oouxWorkflow.objects.length];
+
+                                                return (
+                                                    <React.Fragment key={idx}>
+                                                        <div className="flex flex-col items-center w-48">
+                                                            {/* Step indicator */}
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold mb-2 ${
+                                                                step.actor === 'AI' ? 'bg-indigo-500 text-white' :
+                                                                step.actor === 'User' || step.actor === 'Employee' ? 'bg-green-500 text-white' :
+                                                                step.actor === 'Manager' ? 'bg-purple-500 text-white' :
+                                                                'bg-gray-500 text-white'
+                                                            }`}>
+                                                                {step.step}
+                                                            </div>
+
+                                                            {/* Object card */}
+                                                            <div className="bg-white border-2 border-blue-200 rounded-lg p-3 w-full shadow-sm">
+                                                                <div className="text-xs font-bold text-blue-700 mb-1 text-center">{relatedObject.name}</div>
+                                                                <div className="text-xs text-gray-600 mb-2 text-center line-clamp-2">{step.action}</div>
+                                                                {relatedObject.coreContent && relatedObject.coreContent.length > 0 && (
+                                                                    <div className="border-t border-blue-100 pt-2 mt-2">
+                                                                        <div className="flex items-center gap-1 mb-1">
+                                                                            <div className="w-1 h-3 bg-pink-400 rounded"></div>
+                                                                            <span className="text-xs font-semibold text-pink-700">Data</span>
+                                                                        </div>
+                                                                        <ul className="space-y-0.5">
+                                                                            {relatedObject.coreContent.slice(0, 2).map((content, i) => (
+                                                                                <li key={i} className="text-xs text-gray-700 flex items-start">
+                                                                                    <span className="text-pink-500 mr-1 text-xs">•</span>
+                                                                                    <span className="line-clamp-1">{content}</span>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Actor label */}
+                                                            <div className="text-xs mt-2 font-medium text-gray-700">{step.actor}</div>
+                                                        </div>
+
+                                                        {idx < analysis.oouxWorkflow.flow.length - 1 && (
+                                                            <div className="flex items-center pt-8">
+                                                                <div className="text-blue-400 text-2xl">→</div>
+                                                            </div>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1440,16 +1620,18 @@ const AIProjectAdvisor = () => {
                         {/* Technical, Risks, etc. - Condensed */}
                         <div id="technical" className="grid md:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow-lg p-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Technical considerations</h3>
+                                <h3 className="text-lg font-semibold text-gray-800 mb-2">What engineering needs</h3>
                                 <p className="text-xs text-gray-500 mb-3">Key engineering requirements to discuss with your development team</p>
                                 <ul className="space-y-2">
                                     {analysis.technical.map((item, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
-                                            <span className="text-orange-500 mr-2">▸</span>
-                                            <GlossaryText
-                                                text={item}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
+                                            <span className="text-orange-500 mr-2 flex-shrink-0">▸</span>
+                                            <span className="flex-1">
+                                                <GlossaryText
+                                                    text={item}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -1461,11 +1643,13 @@ const AIProjectAdvisor = () => {
                                 <ul className="space-y-2">
                                     {analysis.trustCues.map((cue, idx) => (
                                         <li key={idx} className="flex items-start text-sm text-gray-700">
-                                            <span className="text-green-500 mr-2">✓</span>
-                                            <GlossaryText
-                                                text={cue}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
+                                            <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                                            <span className="flex-1">
+                                                <GlossaryText
+                                                    text={cue}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
@@ -1555,6 +1739,46 @@ const AIProjectAdvisor = () => {
                             </div>
                             )}
                         </div>
+
+                        {/* Business Metrics */}
+                        {analysis.businessMetrics && analysis.businessMetrics.length > 0 && (
+                            <div id="business-metrics" className="bg-white rounded-lg shadow-lg p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                                            <Icon name="TrendingUp" />
+                                            <span className="ml-2">Business metrics</span>
+                                        </h3>
+                                        <p className="text-sm text-gray-600">Expected success metrics based on industry benchmarks</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => copyToClipboard(
+                                                analysis.businessMetrics.map(m => `${m.metric}: ${m.value} - ${m.description}`).join('\n'),
+                                                'Business Metrics'
+                                            )}
+                                            className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                        >
+                                            Copy All
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="grid md:grid-cols-3 gap-4">
+                                    {analysis.businessMetrics.map((metric, idx) => (
+                                        <div key={idx} className="border-l-4 border-green-400 pl-4 py-3 bg-green-50 rounded-r">
+                                            <div className="text-2xl font-bold text-green-700 mb-1">{metric.value}</div>
+                                            <h4 className="font-semibold text-gray-800 text-sm mb-1">{metric.metric}</h4>
+                                            <p className="text-xs text-gray-600">{metric.description}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    <p className="text-xs text-gray-700">
+                                        <span className="font-medium">Note:</span> These metrics are industry benchmarks based on successful AI implementations. Actual results will vary based on data quality, implementation approach, and organizational factors.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Examples */}
                         {analysis.examples.length > 0 && (

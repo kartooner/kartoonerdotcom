@@ -28,7 +28,9 @@
       "Bash(grep:*)",
       "Bash(pkill:*)",
       "Bash(taskkill:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:cdn.prod.website-files.com)",
+      "WebFetch(domain:www.ooux.com)"
     ],
     "deny": [],
     "ask": []
