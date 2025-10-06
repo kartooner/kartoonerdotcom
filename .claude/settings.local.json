@@ -33,7 +33,8 @@
       "WebFetch(domain:www.ooux.com)",
       "Bash(npm run minify:aiadvisor:*)",
       "Bash(npm run bundle:aiadvisor:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(sha256sum:*)"
     ],
     "deny": [],
     "ask": []
