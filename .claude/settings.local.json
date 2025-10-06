@@ -30,7 +30,10 @@
       "Bash(taskkill:*)",
       "Bash(timeout:*)",
       "WebFetch(domain:cdn.prod.website-files.com)",
-      "WebFetch(domain:www.ooux.com)"
+      "WebFetch(domain:www.ooux.com)",
+      "Bash(npm run minify:aiadvisor:*)",
+      "Bash(npm run bundle:aiadvisor:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

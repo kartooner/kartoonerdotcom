@@ -3,40 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Project Advisor - Universal Intelligence Workflows</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <title>AI Project Advisor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/aiadvisor/styles.css">
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex items-center justify-center p-6">
+        <div class="max-w-md w-full">
+            <div class="bg-white rounded-lg shadow-2xl p-8 transform transition-all">
+                <div class="text-center mb-8">
+                    <div class="text-6xl mb-4">⚡</div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">AI Project Advisor</h1>
+                    <p class="text-gray-600">1.21 gigawatts of AI wisdom</p>
+                </div>
 
-    <!-- Load core modules (domain-agnostic) -->
-    <script type="text/babel" src="/aiadvisor/js/config/icons.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/principles.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/workflow-patterns.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/templates.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/template-workflows.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/touchpoint-details.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/risk-explanations.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/glossary.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/config/decision-framework.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/logic/detect.js"></script>
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Enter password to access
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                            placeholder="Enter password"
+                            autofocus
+                        />
+                        <p id="error" class="mt-2 text-sm text-red-600 font-medium hidden">
+                            ⚠️ Incorrect password. Try again!
+                        </p>
+                    </div>
 
-    <!-- Optional: Load domain-specific templates -->
-    <script type="text/babel" src="/aiadvisor/js/domains/hcm.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/domains/finance.js"></script>
+                    <button
+                        type="submit"
+                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
+                    >
+                        Access Advisor
+                    </button>
+                </form>
 
-    <!-- Load remaining logic and components -->
-    <script type="text/babel" src="/aiadvisor/js/logic/workflow-generator.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/logic/complexity.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/logic/analyze.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/components/app.js"></script>
-    <script type="text/babel" src="/aiadvisor/js/main.js"></script>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-500 italic">
+                        "Where we're going, we don't need roads..."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SHA-256 hash of the correct password
+        const correctPasswordHash = 'bdf4c9623bb61efc240fdf160c32c89b290f729b054304c0146cf33856d754e4';
+
+        async function hashPassword(password) {
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        const form = document.getElementById('loginForm');
+        const passwordInput = document.getElementById('password');
+        const errorMsg = document.getElementById('error');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const password = passwordInput.value;
+            const passwordHash = await hashPassword(password);
+
+            if (passwordHash === correctPasswordHash) {
+                sessionStorage.setItem('aiadvisor_auth', 'true');
+                window.location.href = '/aiadvisor/app.html';
+            } else {
+                errorMsg.classList.remove('hidden');
+                passwordInput.classList.add('border-red-500', 'animate-shake');
+                passwordInput.value = '';
+                passwordInput.focus();
+
+                setTimeout(() => {
+                    passwordInput.classList.remove('animate-shake');
+                }, 500);
+            }
+        });
+
+        // Check if already authenticated
+        if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
+            window.location.href = '/aiadvisor/app.html';
+        }
+    </script>
 </body>
 </html>

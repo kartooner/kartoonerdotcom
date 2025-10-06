@@ -12,13 +12,29 @@
     "sync": "node scripts/blog.js sync",
     "add": "node scripts/journal-cms.js add",
     "list": "node scripts/journal-cms.js list",
-    "optimize-images": "bash convert-to-webp.sh"
+    "optimize-images": "bash convert-to-webp.sh",
+    "minify:aiadvisor": "node scripts/minify-aiadvisor.js",
+    "bundle:aiadvisor": "webpack --config webpack.config.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/eriksage/kartoonerdotcom"
   },
-  "keywords": ["blog", "journal", "cms", "static-site"],
+  "keywords": [
+    "blog",
+    "journal",
+    "cms",
+    "static-site"
+  ],
   "author": "Erik Sagen",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
+    "babel-loader": "^10.0.0",
+    "terser": "^5.44.0",
+    "webpack": "^5.102.0",
+    "webpack-cli": "^6.0.1"
+  }
 }
