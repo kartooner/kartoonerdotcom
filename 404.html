@@ -11,9 +11,10 @@
 
         // Check if this is an aiadvisor deep link
         if (path.match(/^\/aiadvisor\/[^\/]+\/[^\/]+/)) {
-            // Store the path in sessionStorage for the app to pick up
+            // Store the path and redirect to app.html
+            // The app will check auth and redirect to login if needed
             sessionStorage.setItem('aiadvisor_redirect', path);
-            window.location.replace('/aiadvisor/');
+            window.location.replace('/aiadvisor/app.html');
         } else {
             // For other 404s, redirect to home
             window.location.replace('/');
