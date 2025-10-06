@@ -132,38 +132,13 @@ const AIProjectAdvisor = () => {
     const [showJumpMenu, setShowJumpMenu] = useState(false);
     const [activeSection, setActiveSection] = useState('overview');
     const [complexityFilter, setComplexityFilter] = useState('all');
-    const [portfolioFilter, setPortfolioFilter] = useState('all');
+    const [productAreaFilter, setProductAreaFilter] = useState('all');
     const [personaFilter, setPersonaFilter] = useState('all');
     const [navGroupsExpanded, setNavGroupsExpanded] = useState({
         essentials: true,
         implementation: true,
         design: true
     });
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [passwordInput, setPasswordInput] = useState('');
-    const [passwordError, setPasswordError] = useState(false);
-
-    // Check for stored authentication on mount
-    React.useEffect(() => {
-        const auth = sessionStorage.getItem('aiadvisor_auth');
-        if (auth === 'greatscott') {
-            setIsAuthenticated(true);
-        }
-    }, []);
-
-    const handlePasswordSubmit = (e) => {
-        e.preventDefault();
-        if (passwordInput.toLowerCase() === 'greatscott') {
-            setIsAuthenticated(true);
-            sessionStorage.setItem('aiadvisor_auth', 'greatscott');
-            setPasswordError(false);
-        } else {
-            setPasswordError(true);
-            setPasswordInput('');
-            // Shake animation
-            setTimeout(() => setPasswordError(false), 500);
-        }
-    };
 
     // Focus traps for modals
     const touchpointModalRef = useFocusTrap(!!selectedTouchpoint);
@@ -465,70 +440,8 @@ const AIProjectAdvisor = () => {
         }
     };
 
-    // Password screen
-    if (!isAuthenticated) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex items-center justify-center p-6">
-                <div className="max-w-md w-full">
-                    <div className="bg-white rounded-lg shadow-2xl p-8 transform transition-all">
-                        <div className="text-center mb-8">
-                            <div className="text-6xl mb-4">⚡</div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Project Advisor</h1>
-                            <p className="text-gray-600">1.21 gigawatts of AI wisdom</p>
-                        </div>
-
-                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Enter password to access
-                                </label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    value={passwordInput}
-                                    onChange={(e) => setPasswordInput(e.target.value)}
-                                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
-                                        passwordError ? 'border-red-500 animate-shake' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Enter password"
-                                    autoFocus
-                                />
-                                {passwordError && (
-                                    <p className="mt-2 text-sm text-red-600 font-medium">
-                                        ⚠️ Incorrect password. Try again!
-                                    </p>
-                                )}
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
-                            >
-                                Access Advisor
-                            </button>
-                        </form>
-
-                        <div className="mt-6 text-center">
-                            <p className="text-sm text-gray-500 italic">
-                                "Where we're going, we don't need roads..."
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <style>{`
-                    @keyframes shake {
-                        0%, 100% { transform: translateX(0); }
-                        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-                        20%, 40%, 60%, 80% { transform: translateX(10px); }
-                    }
-                    .animate-shake {
-                        animation: shake 0.5s;
-                    }
-                `}</style>
-            </div>
-        );
-    }
+    // Auth is now handled by the dedicated login page at index.html
+    // This component assumes the user is already authenticated
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -653,14 +566,14 @@ const AIProjectAdvisor = () => {
                                     {industry === 'hcm' && (
                                         <>
                                             <div>
-                                                <label htmlFor="portfolio-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Portfolio</label>
+                                                <label htmlFor="product-area-filter" className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1.5">Product area</label>
                                                 <select
-                                                    id="portfolio-filter"
-                                                    value={portfolioFilter}
-                                                    onChange={(e) => setPortfolioFilter(e.target.value)}
+                                                    id="product-area-filter"
+                                                    value={productAreaFilter}
+                                                    onChange={(e) => setProductAreaFilter(e.target.value)}
                                                     className="w-full pl-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                                                 >
-                                                    <option value="all">All portfolios</option>
+                                                    <option value="all">All product areas</option>
                                                     <option value="Core HR">Core HR</option>
                                                     <option value="Time & Attendance">Time & Attendance</option>
                                                     <option value="Payroll">Payroll</option>
@@ -694,9 +607,9 @@ const AIProjectAdvisor = () => {
                             {(() => {
                                 const filtered = TEMPLATES[industry].filter(template => {
                                     const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
-                                    const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
+                                    const matchesProductArea = productAreaFilter === 'all' || template.portfolio === productAreaFilter;
                                     const matchesPersona = personaFilter === 'all' || template.persona === personaFilter;
-                                    return matchesComplexity && matchesPortfolio && matchesPersona;
+                                    return matchesComplexity && matchesProductArea && matchesPersona;
                                 });
                                 return (showAllTemplates ? filtered : filtered.slice(0, 6)).map((template, idx) => (
                                 <button
@@ -725,9 +638,9 @@ const AIProjectAdvisor = () => {
                         {(() => {
                             const filteredTemplates = TEMPLATES[industry].filter(template => {
                                 const matchesComplexity = complexityFilter === 'all' || template.complexity === complexityFilter;
-                                const matchesPortfolio = portfolioFilter === 'all' || template.portfolio === portfolioFilter;
+                                const matchesProductArea = productAreaFilter === 'all' || template.portfolio === productAreaFilter;
                                 const matchesPersona = personaFilter === 'all' || template.persona === personaFilter;
-                                return matchesComplexity && matchesPortfolio && matchesPersona;
+                                return matchesComplexity && matchesProductArea && matchesPersona;
                             });
                             const hasMore = filteredTemplates.length > 6;
 

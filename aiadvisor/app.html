@@ -17,24 +17,15 @@
     <div id="root"></div>
 
     <script>
-        // Check authentication and expiration
-        (function checkAuth() {
-            const auth = sessionStorage.getItem('aiadvisor_auth');
-            const authTime = sessionStorage.getItem('aiadvisor_auth_time');
-
-            if (auth !== 'true') {
-                window.location.replace('/aiadvisor/');
-                return;
+        // Check authentication
+        if (sessionStorage.getItem('aiadvisor_auth') !== 'true') {
+            // Store the current URL so we can redirect back after login
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/aiadvisor/app.html') {
+                sessionStorage.setItem('aiadvisor_redirect', currentPath);
             }
-
-            const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
-
-            if (isExpired) {
-                sessionStorage.removeItem('aiadvisor_auth');
-                sessionStorage.removeItem('aiadvisor_auth_time');
-                window.location.replace('/aiadvisor/');
-            }
-        })();
+            window.location.replace('/aiadvisor/');
+        }
     </script>
 
     <!-- Load core modules (domain-agnostic) -->

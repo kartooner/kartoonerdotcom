@@ -8,13 +8,6 @@ async function hashPassword(password) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function isSessionValid() {
-    const authTime = sessionStorage.getItem('aiadvisor_auth_time');
-    if (!authTime) return false;
-    const elapsed = Date.now() - parseInt(authTime);
-    return elapsed < 1800000; // 30 minutes
-}
-
 const form = document.getElementById('loginForm');
 const passwordInput = document.getElementById('password');
 const errorMsg = document.getElementById('error');
@@ -36,9 +29,16 @@ if (form) {
 
         if (passwordHash === correctPasswordHash) {
             sessionStorage.setItem('aiadvisor_auth', 'true');
-            sessionStorage.setItem('aiadvisor_auth_time', Date.now().toString());
             submitButton.textContent = 'Success!';
-            window.location.href = '/aiadvisor/app.html';
+
+            // Check if there's a stored redirect URL
+            const redirectUrl = sessionStorage.getItem('aiadvisor_redirect');
+            if (redirectUrl) {
+                sessionStorage.removeItem('aiadvisor_redirect');
+                window.location.href = redirectUrl;
+            } else {
+                window.location.href = '/aiadvisor/app.html';
+            }
         } else {
             // Re-enable button
             submitButton.disabled = false;
@@ -58,10 +58,12 @@ if (form) {
 }
 
 // Check if already authenticated and redirect
-if (sessionStorage.getItem('aiadvisor_auth') === 'true' && isSessionValid()) {
-    window.location.href = '/aiadvisor/app.html';
-} else if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
-    // Clear expired session
-    sessionStorage.removeItem('aiadvisor_auth');
-    sessionStorage.removeItem('aiadvisor_auth_time');
+if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
+    const redirectUrl = sessionStorage.getItem('aiadvisor_redirect');
+    if (redirectUrl) {
+        sessionStorage.removeItem('aiadvisor_redirect');
+        window.location.href = redirectUrl;
+    } else {
+        window.location.href = '/aiadvisor/app.html';
+    }
 }
