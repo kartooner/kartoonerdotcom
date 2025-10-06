@@ -8,7 +8,6 @@ Options -Indexes
 
     # Return 403 Forbidden for these directories
     RewriteRule ^admin(/.*)?$ - [F,L]
-    RewriteRule ^aiadvisor(/.*)?$ - [F,L]
     RewriteRule ^private(/.*)?$ - [F,L]
     RewriteRule ^temp(/.*)?$ - [F,L]
     RewriteRule ^uploads(/.*)?$ - [F,L]
