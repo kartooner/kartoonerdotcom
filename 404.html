@@ -5,16 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <script>
-        // GitHub Pages SPA redirect handler
-        // Store the path and redirect to app.html
+        // GitHub Pages SPA redirect handler for deep links
         const path = window.location.pathname;
 
         // Check if this is an aiadvisor deep link
         if (path.match(/^\/aiadvisor\/[^\/]+\/[^\/]+/)) {
-            // Store the path and redirect to app.html
-            // The app will check auth and redirect to login if needed
-            sessionStorage.setItem('aiadvisor_redirect', path);
-            window.location.replace('/aiadvisor/app.html');
+            // Check if already authenticated
+            const isAuthenticated = sessionStorage.getItem('aiadvisor_auth') === 'true';
+
+            if (isAuthenticated) {
+                // Already logged in - go directly to app.html
+                // Change URL to app.html but keep the path in history for React routing
+                window.history.replaceState({}, '', path);
+                window.location.replace('/aiadvisor/app.html');
+            } else {
+                // Not logged in - store path and redirect to app.html (which will redirect to login)
+                sessionStorage.setItem('aiadvisor_redirect', path);
+                window.location.replace('/aiadvisor/app.html');
+            }
         } else {
             // For other 404s, redirect to home
             window.location.replace('/');
