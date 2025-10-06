@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        // GitHub Pages SPA redirect handler
+        // Store the path and redirect to app.html
+        const path = window.location.pathname;
+
+        // Check if this is an aiadvisor deep link
+        if (path.match(/^\/aiadvisor\/[^\/]+\/[^\/]+/)) {
+            // Store the path in sessionStorage for the app to pick up
+            sessionStorage.setItem('aiadvisor_redirect', path);
+            window.location.replace('/aiadvisor/');
+        } else {
+            // For other 404s, redirect to home
+            window.location.replace('/');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
