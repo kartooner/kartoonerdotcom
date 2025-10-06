@@ -6,6 +6,11 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # AI Advisor deep link routing - serve app.html for industry/template URLs
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^aiadvisor/[^/]+/[^/]+/?$ aiadvisor/app.html [L]
+
     # Return 403 Forbidden for these directories
     RewriteRule ^admin(/.*)?$ - [F,L]
     RewriteRule ^private(/.*)?$ - [F,L]
