@@ -5,16 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Project Advisor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
-        }
-        .animate-shake {
-            animation: shake 0.5s;
-        }
-    </style>
+    <link rel="stylesheet" href="/aiadvisor/login.css">
 </head>
 <body>
     <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex items-center justify-center p-6">
@@ -60,46 +51,6 @@
         </div>
     </div>
 
-    <script>
-        // SHA-256 hash of the correct password
-        const correctPasswordHash = 'bdf4c9623bb61efc240fdf160c32c89b290f729b054304c0146cf33856d754e4';
-
-        async function hashPassword(password) {
-            const msgBuffer = new TextEncoder().encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        const form = document.getElementById('loginForm');
-        const passwordInput = document.getElementById('password');
-        const errorMsg = document.getElementById('error');
-
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const password = passwordInput.value;
-            const passwordHash = await hashPassword(password);
-
-            if (passwordHash === correctPasswordHash) {
-                sessionStorage.setItem('aiadvisor_auth', 'true');
-                window.location.href = '/aiadvisor/app.html';
-            } else {
-                errorMsg.classList.remove('hidden');
-                passwordInput.classList.add('border-red-500', 'animate-shake');
-                passwordInput.value = '';
-                passwordInput.focus();
-
-                setTimeout(() => {
-                    passwordInput.classList.remove('animate-shake');
-                }, 500);
-            }
-        });
-
-        // Check if already authenticated
-        if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
-            window.location.href = '/aiadvisor/app.html';
-        }
-    </script>
+    <script src="/aiadvisor/login.js"></script>
 </body>
 </html>
