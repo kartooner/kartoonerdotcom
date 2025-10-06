@@ -29,7 +29,10 @@ if (form) {
         if (passwordHash === correctPasswordHash) {
             sessionStorage.setItem('aiadvisor_auth', 'true');
             sessionStorage.setItem('aiadvisor_auth_time', Date.now().toString());
-            window.location.href = '/aiadvisor/app.html';
+            // Small delay to ensure session storage is committed before redirect
+            setTimeout(() => {
+                window.location.href = '/aiadvisor/app.html';
+            }, 100);
         } else {
             errorMsg.classList.remove('hidden');
             passwordInput.classList.add('border-red-500', 'animate-shake');
@@ -45,7 +48,9 @@ if (form) {
 
 // Check if already authenticated and redirect
 if (sessionStorage.getItem('aiadvisor_auth') === 'true' && isSessionValid()) {
-    window.location.href = '/aiadvisor/app.html';
+    setTimeout(() => {
+        window.location.href = '/aiadvisor/app.html';
+    }, 100);
 } else if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
     // Clear expired session
     sessionStorage.removeItem('aiadvisor_auth');

@@ -34,7 +34,8 @@
       "Bash(npm run minify:aiadvisor:*)",
       "Bash(npm run bundle:aiadvisor:*)",
       "Bash(git checkout:*)",
-      "Bash(sha256sum:*)"
+      "Bash(sha256sum:*)",
+      "WebFetch(domain:www.kartooner.com)"
     ],
     "deny": [],
     "ask": []
