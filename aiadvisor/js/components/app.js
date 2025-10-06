@@ -394,7 +394,7 @@ const AIProjectAdvisor = () => {
     };
 
     const handleEditConcept = () => {
-        window.history.pushState({}, '', '/aiadvisor');
+        window.history.pushState({}, '', '/aiadvisor/app.html');
         setAnalysis(null);
         setWorkflowTitle('');
         setCurrentSlug('');
