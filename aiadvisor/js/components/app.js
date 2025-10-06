@@ -128,7 +128,7 @@ const AIProjectAdvisor = () => {
     const [showDecisionFramework, setShowDecisionFramework] = useState(false);
     const [showGlossary, setShowGlossary] = useState(false);
     const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState(null);
-    const [pageTitle, setPageTitle] = useState('AI project advisor');
+    const [pageTitle, setPageTitle] = useState('AI Project Advisor');
     const [showJumpMenu, setShowJumpMenu] = useState(false);
     const [activeSection, setActiveSection] = useState('overview');
     const [complexityFilter, setComplexityFilter] = useState('all');
@@ -172,8 +172,8 @@ const AIProjectAdvisor = () => {
                 setIsAnalyzing(false);
                 setShowTemplates(true);
                 setShowAllTemplates(false);
-                setPageTitle('AI project advisor');
-                document.title = 'AI project advisor - Universal intelligence workflows';
+                setPageTitle('AI Project Advisor');
+                document.title = 'AI Project Advisor - Universal Intelligence Workflows';
                 return;
             }
 
@@ -369,8 +369,8 @@ const AIProjectAdvisor = () => {
         setIsAnalyzing(false);
         setShowTemplates(true);
         setShowAllTemplates(false);
-        setPageTitle('AI project advisor');
-        document.title = 'AI project advisor - Universal intelligence workflows';
+        setPageTitle('AI Project Advisor');
+        document.title = 'AI Project Advisor - Universal Intelligence Workflows';
     };
 
     const handleTemplateClick = (template) => {
@@ -456,7 +456,7 @@ const AIProjectAdvisor = () => {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                                 <div className="text-4xl sm:text-5xl">⚡</div>
                                 <div>
-                                    <h1 id="input-heading" className="text-3xl sm:text-5xl font-bold text-gray-800">{pageTitle}</h1>
+                                    <h1 id="input-heading" className="text-3xl sm:text-5xl font-bold text-gray-800" style={{fontFamily: pageTitle === 'AI Project Advisor' ? "'Happy Monkey', cursive" : 'inherit'}}>{pageTitle}</h1>
                                     <p className="text-xs sm:text-sm text-gray-600 italic mt-1">1.21 gigawatts of AI wisdom</p>
                                 </div>
                             </div>
@@ -717,7 +717,7 @@ const AIProjectAdvisor = () => {
                         {/* Page Title for Analysis View */}
                         <div className="mb-6">
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                                <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">{toSentenceCase(pageTitle)}</h1>
+                                <h1 className="text-3xl sm:text-4xl font-bold text-gray-800" style={{fontFamily: pageTitle === 'AI Project Advisor' ? "'Happy Monkey', cursive" : 'inherit'}}>{toSentenceCase(pageTitle)}</h1>
                                 {currentPersona && (
                                     <span className={`text-xs sm:text-sm px-3 py-1 rounded-full font-semibold ${
                                         currentPersona === 'Employee' ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' :
