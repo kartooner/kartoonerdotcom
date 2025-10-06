@@ -869,12 +869,27 @@ const AIProjectAdvisor = () => {
                             </button>
                             {showJumpMenu && (
                                 <nav className="mt-2 bg-white rounded-lg shadow-lg overflow-hidden" aria-label="Mobile navigation to analysis sections">
-                                    <button onClick={() => scrollToSection('overview')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Overview</button>
-                                    <button onClick={() => scrollToSection('ooux')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-cyan-50 border-b border-gray-100">OOUX Workflow</button>
-                                    <button onClick={() => scrollToSection('principles')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">Design Principles</button>
-                                    <button onClick={() => scrollToSection('technical')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-orange-50 border-b border-gray-100">Technical</button>
-                                    <button onClick={() => scrollToSection('risks')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-red-50 border-b border-gray-100">Risks</button>
-                                    <button onClick={() => scrollToSection('examples')} className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-yellow-50">Examples</button>
+                                    <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">🎯 Strategy</div>
+                                    <button onClick={() => { scrollToSection('overview'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Overview</button>
+                                    <button onClick={() => { scrollToSection('executive-summary'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">At-a-glance</button>
+                                    <button onClick={() => { scrollToSection('ooux'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-cyan-50 border-b border-gray-100">Data & user flows</button>
+                                    <button onClick={() => { scrollToSection('principles'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">Design Principles</button>
+
+                                    <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">⚙️ Implementation</div>
+                                    <button onClick={() => { scrollToSection('ai-type-detail'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">AI Type</button>
+                                    <button onClick={() => { scrollToSection('user-interaction-detail'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">User Interaction</button>
+                                    <button onClick={() => { scrollToSection('complexity'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-yellow-50 border-b border-gray-100">Complexity</button>
+                                    <button onClick={() => { scrollToSection('technical'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-orange-50 border-b border-gray-100">Technical</button>
+                                    <button onClick={() => { scrollToSection('risks'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-red-50 border-b border-gray-100">Risks</button>
+                                    <button onClick={() => { scrollToSection('examples'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-yellow-50 border-b border-gray-100">Examples</button>
+
+                                    <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">🎨 Design</div>
+                                    <button onClick={() => { scrollToSection('user-research'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">User Research</button>
+                                    <button onClick={() => { scrollToSection('ethical'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-orange-50 border-b border-gray-100">Ethical & Bias</button>
+                                    <button onClick={() => { scrollToSection('error-handling'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-yellow-50 border-b border-gray-100">Error Handling</button>
+                                    <button onClick={() => { scrollToSection('accessibility'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Accessibility</button>
+                                    <button onClick={() => { scrollToSection('confidence-scoring'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 border-b border-gray-100">Confidence Scoring</button>
+                                    <button onClick={() => { scrollToSection('action-plan'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-green-50">Action Plan</button>
                                 </nav>
                             )}
                         </div>

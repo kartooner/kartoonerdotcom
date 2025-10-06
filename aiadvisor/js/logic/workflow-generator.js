@@ -388,29 +388,30 @@ function generateIntelligentScoringWorkflow(concept, objects, industry = 'generi
     // Employee shift swap matching workflow
     if (lower.includes('shift') && (lower.includes('swap') || lower.includes('match'))) {
         aiTouchpoints = [
-            'Analyzes requesting employee skills, certifications, and role qualifications',
-            'Identifies all employees qualified for the shift being offered',
-            'Evaluates availability conflicts and schedule compatibility',
-            'Calculates commute distance and location proximity score',
-            'Assesses preference alignment based on past shift selections',
-            'Scores each potential match across all factors with weighting',
-            'Ranks matches from best to worst with explanations',
-            'Learns from accepted/rejected swaps to improve matching'
+            'Retrieves Employee object: role, skills, certifications, department, location',
+            'Retrieves Shift object: date, time range, location, role requirements, break rules',
+            'Queries all Employee objects matching role and certification requirements',
+            'For each candidate Employee: retrieves Schedule object to check availability conflicts',
+            'Calculates proximity score using Employee.location and Shift.location',
+            'Analyzes historical shiftSwapRequest objects to identify preference patterns',
+            'Creates Match Score metadata for each Employee-Shift pairing',
+            'Generates ranked list of shiftSwapRequest objects with Match Score and explanation',
+            'Learns from shiftSwapRequest.status outcomes to refine Match Score algorithm'
         ];
         flow = [
-            { step: 1, actor: 'Employee', action: 'Submits shift swap request via mobile app', object: 'shiftSwapRequest' },
-            { step: 2, actor: 'System', action: 'Validates shift details and employee eligibility', object: 'shift' },
-            { step: 3, actor: 'AI', action: 'Identifies all qualified employees for the swap', object: 'shift', confidence: true },
-            { step: 4, actor: 'AI', action: `Scores each match across: ${scoreFactors}`, object: 'shiftSwapRequest', confidence: true },
-            { step: 5, actor: 'AI', action: 'Ranks potential matches with score breakdown', object: 'shiftSwapRequest' },
-            { step: 6, actor: 'System', action: 'Routes based on match quality and availability', object: 'shiftSwapRequest', branches: true },
-            { step: '6a', actor: 'System', action: 'Shows top 5 matches to requesting employee with scores', object: 'shiftSwapRequest', condition: 'good matches found' },
-            { step: '6b', actor: 'System', action: 'Notifies manager: no good matches, may need coverage', object: 'shiftSwapRequest', condition: 'no qualified matches' },
-            { step: 7, actor: 'Employee', action: 'Reviews matches and sends swap request to preferred employee', object: 'shiftSwapRequest' },
-            { step: 8, actor: 'Employee', action: 'Target employee accepts or declines swap', object: 'shiftSwapRequest', branches: true },
-            { step: '8a', actor: 'System', action: 'Updates schedule for both employees', object: 'schedule', condition: 'swap accepted' },
-            { step: '8b', actor: 'Employee', action: 'Requesting employee tries next best match', object: 'shiftSwapRequest', condition: 'swap declined' },
-            { step: 9, actor: 'AI', action: 'Learns from swap outcome to improve future matching', object: 'shiftSwapRequest' }
+            { step: 1, actor: 'Employee', action: 'Creates shiftSwapRequest via mobile app', object: 'shiftSwapRequest', objectAction: 'create' },
+            { step: 2, actor: 'System', action: 'Validates Shift object and Employee eligibility', object: 'shift', objectAction: 'read' },
+            { step: 3, actor: 'AI', action: 'Queries Employee objects matching Shift.roleRequirements', object: 'employee', confidence: true, objectAction: 'read' },
+            { step: 4, actor: 'AI', action: `Calculates Match Score for each Employee: ${scoreFactors}`, object: 'shiftSwapRequest', confidence: true, objectAction: 'update' },
+            { step: 5, actor: 'AI', action: 'Ranks Employee objects by Match Score with explanation metadata', object: 'employee', objectAction: 'read' },
+            { step: 6, actor: 'System', action: 'Routes shiftSwapRequest based on Match Score threshold', object: 'shiftSwapRequest', branches: true, objectAction: 'update' },
+            { step: '6a', actor: 'System', action: 'Displays top 5 Employee matches with Match Score details', object: 'employee', condition: 'Match Score > threshold', objectAction: 'read' },
+            { step: '6b', actor: 'System', action: 'Notifies Manager: no qualified matches, coverage needed', object: 'shiftSwapRequest', condition: 'Match Score < threshold', objectAction: 'update' },
+            { step: 7, actor: 'Employee', action: 'Reviews Employee matches and sends shiftSwapRequest to preferred Employee', object: 'shiftSwapRequest', objectAction: 'update' },
+            { step: 8, actor: 'Employee', action: 'Target Employee updates shiftSwapRequest.status (accept/decline)', object: 'shiftSwapRequest', branches: true, objectAction: 'update' },
+            { step: '8a', actor: 'System', action: 'Updates Schedule objects for both Employee objects', object: 'schedule', condition: 'status = accepted', objectAction: 'update' },
+            { step: '8b', actor: 'Employee', action: 'Selects next ranked Employee from match list', object: 'shiftSwapRequest', condition: 'status = declined', objectAction: 'update' },
+            { step: 9, actor: 'AI', action: 'Updates Match Score algorithm using shiftSwapRequest outcome data', object: 'shiftSwapRequest', objectAction: 'read' }
         ];
     } else if (industry === 'hcm') {
         // Generic HCM scoring (timecard scoring, etc.)
