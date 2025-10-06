@@ -10,7 +10,7 @@ Start with your industry and a common workflow. This tool:
 - Shows OOUX (Object-Oriented UX) workflows
 - Provides implementation guidance for designers and engineers
 
-**Live Demo**: Password-protected at `/aiadvisor/` (password: `greatscott`)
+**Live Demo**: Password-protected at `/aiadvisor/`
 
 ---
 
@@ -57,7 +57,7 @@ aiadvisor/
 
 ### Password Protection
 - **Login Page**: `/aiadvisor/` or `/aiadvisor/index.html`
-- **Password**: `greatscott` (SHA-256 hashed)
+- **Password**: SHA-256 hashed (see login.js to set your own)
 - **Session Duration**: 30 minutes
 - **Storage**: sessionStorage (expires on browser close)
 
