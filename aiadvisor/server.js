@@ -19,8 +19,16 @@ const server = http.createServer((req, res) => {
     if (requestPath === '/') {
         filePath = './index.html';
     } else if (!hasExtension) {
-        // Clean URL - serve index.html and let React handle routing
-        filePath = './index.html';
+        // Clean URL routing
+        // For paths like /hcm/shift-swap, serve app.html so React can handle routing
+        // The app.html will check authentication and redirect to login if needed
+        if (requestPath.match(/^\/[^\/]+\/[^\/]+/)) {
+            // Looks like an industry/template pattern - serve app.html
+            filePath = './app.html';
+        } else {
+            // Other clean URLs - serve index.html (login page)
+            filePath = './index.html';
+        }
     } else {
         // Regular file request
         filePath = '.' + requestPath;

@@ -188,8 +188,8 @@ const AIProjectAdvisor = () => {
         const loadFromUrl = () => {
             const path = window.location.pathname;
 
-            // Check if we're at the root /aiadvisor path
-            if (path === '/aiadvisor' || path === '/aiadvisor/') {
+            // Check if we're at the root /aiadvisor path or /aiadvisor/app.html
+            if (path === '/aiadvisor' || path === '/aiadvisor/' || path === '/aiadvisor/app.html') {
                 // Reset to clean state
                 setAnalysis(null);
                 setWorkflowTitle('');
@@ -205,19 +205,13 @@ const AIProjectAdvisor = () => {
             // Match both /aiadvisor/industry/template AND /industry/template patterns
             const match = path.match(/^(?:\/aiadvisor)?\/([^\/]+)\/([^\/]+)\/?$/);
 
-            console.log('Path:', path, 'Match:', match);
-
             if (match) {
                 const [, industrySlug, templateSlug] = match;
 
-                console.log('Industry:', industrySlug, 'Template:', templateSlug);
-
                 // Find the template by slug
                 const templates = TEMPLATES[industrySlug];
-                console.log('Templates for industry:', templates);
                 if (templates) {
                     const template = templates.find(t => t.slug === templateSlug);
-                    console.log('Found template:', template);
                     if (template) {
                         // Update page title
                         document.title = `${template.title} - AI Project Advisor`;

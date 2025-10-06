@@ -18,14 +18,23 @@
 
     <script>
         // Check authentication and expiration
-        const authTime = sessionStorage.getItem('aiadvisor_auth_time');
-        const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
+        (function checkAuth() {
+            const auth = sessionStorage.getItem('aiadvisor_auth');
+            const authTime = sessionStorage.getItem('aiadvisor_auth_time');
 
-        if (sessionStorage.getItem('aiadvisor_auth') !== 'true' || isExpired) {
-            sessionStorage.removeItem('aiadvisor_auth');
-            sessionStorage.removeItem('aiadvisor_auth_time');
-            window.location.href = '/aiadvisor/';
-        }
+            if (auth !== 'true') {
+                window.location.replace('/aiadvisor/');
+                return;
+            }
+
+            const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
+
+            if (isExpired) {
+                sessionStorage.removeItem('aiadvisor_auth');
+                sessionStorage.removeItem('aiadvisor_auth_time');
+                window.location.replace('/aiadvisor/');
+            }
+        })();
     </script>
 
     <!-- Load core modules (domain-agnostic) -->

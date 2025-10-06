@@ -20,8 +20,16 @@ const passwordInput = document.getElementById('password');
 const errorMsg = document.getElementById('error');
 
 if (form) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    const buttonText = submitButton.textContent;
+
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
+
+        // Disable button and show loading state
+        submitButton.disabled = true;
+        submitButton.textContent = 'Checking...';
+        submitButton.classList.add('opacity-75', 'cursor-wait');
 
         const password = passwordInput.value;
         const passwordHash = await hashPassword(password);
@@ -29,8 +37,14 @@ if (form) {
         if (passwordHash === correctPasswordHash) {
             sessionStorage.setItem('aiadvisor_auth', 'true');
             sessionStorage.setItem('aiadvisor_auth_time', Date.now().toString());
+            submitButton.textContent = 'Success!';
             window.location.href = '/aiadvisor/app.html';
         } else {
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = buttonText;
+            submitButton.classList.remove('opacity-75', 'cursor-wait');
+
             errorMsg.classList.remove('hidden');
             passwordInput.classList.add('border-red-500', 'animate-shake');
             passwordInput.value = '';
