@@ -284,7 +284,6 @@ const AIProjectAdvisor = () => {
         // Observe all section elements (in DOM order for correct highlighting)
         const sections = [
             'overview',
-            'executive-summary',
             'ooux',
             'principles',
             'ai-type-detail',
@@ -778,7 +777,6 @@ const AIProjectAdvisor = () => {
                                 <nav className="mt-2 bg-white rounded-lg shadow-lg overflow-hidden" aria-label="Mobile navigation to analysis sections">
                                     <div className="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">🎯 Strategy</div>
                                     <button onClick={() => { scrollToSection('overview'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">Overview</button>
-                                    <button onClick={() => { scrollToSection('executive-summary'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-indigo-50 border-b border-gray-100">At-a-glance</button>
                                     <button onClick={() => { scrollToSection('ooux'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-cyan-50 border-b border-gray-100">Data & user flows</button>
                                     <button onClick={() => { scrollToSection('principles'); setShowJumpMenu(false); }} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 border-b border-gray-100">Design Principles</button>
 
@@ -821,7 +819,6 @@ const AIProjectAdvisor = () => {
                                             {navGroupsExpanded.essentials && (
                                                 <div className="ml-2 mt-1 space-y-1">
                                                     <button onClick={() => scrollToSection('overview')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'overview' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Overview</button>
-                                                    <button onClick={() => scrollToSection('executive-summary')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'executive-summary' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>At-a-glance</button>
                                                     <button onClick={() => scrollToSection('ooux')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'ooux' ? 'bg-cyan-50 text-cyan-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Data & user flows</button>
                                                     <button onClick={() => scrollToSection('principles')} className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors ${activeSection === 'principles' ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>Design Principles</button>
                                                 </div>
@@ -877,55 +874,43 @@ const AIProjectAdvisor = () => {
                             {/* Main Content Area */}
                             <div className="flex-1 space-y-6 min-w-0">
 
+                            {/* Overview Section */}
+                            <div id="overview" className="space-y-6">
+
                             {/* AI Type, Interaction & Complexity */}
-                            <div id="overview" className="grid md:grid-cols-3 gap-6">
-                            <button
-                                onClick={() => scrollToSection('ai-type-detail')}
-                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
-                            >
+                            <div className="grid md:grid-cols-3 gap-6">
+                            <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Brain" />
                                     <span className="ml-2"><GlossaryText text="AI" onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }} /> type</span>
                                 </h3>
-                                <div className="text-2xl font-bold text-indigo-600 mb-3">
+                                <div className="text-2xl font-bold text-indigo-600">
                                     <GlossaryText
                                         text={analysis.aiType}
                                         onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
                                     />
                                 </div>
-                                <p className="text-xs text-indigo-600 underline">
-                                    View details
-                                </p>
-                            </button>
+                            </div>
 
-                            <button
-                                onClick={() => scrollToSection('user-interaction-detail')}
-                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
-                            >
+                            <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Users" />
                                     <span className="ml-2">User interaction</span>
                                 </h3>
-                                <div className="text-2xl font-bold text-purple-600 mb-3 capitalize">
+                                <div className="text-2xl font-bold text-purple-600 capitalize">
                                     <GlossaryText
                                         text={analysis.visibility}
                                         onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
                                     />
                                 </div>
-                                <p className="text-xs text-purple-600 underline">
-                                    View details
-                                </p>
-                            </button>
+                            </div>
 
-                            <button
-                                onClick={() => scrollToSection('complexity')}
-                                className="bg-white rounded-lg shadow-lg p-6 text-left hover:shadow-xl transition-shadow cursor-pointer"
-                            >
+                            <div className="bg-white rounded-lg shadow-lg p-6">
                                 <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
                                     <Icon name="Wrench" />
                                     <span className="ml-2">Complexity</span>
                                 </h3>
-                                <div className="flex items-baseline gap-2 mb-3">
+                                <div className="flex items-baseline gap-2">
                                     <div className={`text-2xl font-bold ${
                                         analysis.complexity.level === 'Low' ? 'text-green-600' :
                                         analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
@@ -933,73 +918,56 @@ const AIProjectAdvisor = () => {
                                     }`}>{analysis.complexity.level}</div>
                                     <div className="text-sm text-gray-500">({analysis.complexity.score}/100)</div>
                                 </div>
-                                <p className={`text-xs underline ${
-                                    analysis.complexity.level === 'Low' ? 'text-green-600' :
-                                    analysis.complexity.level === 'Medium' ? 'text-yellow-600' :
-                                    'text-red-600'
-                                }`}>
-                                    View breakdown
-                                </p>
-                            </button>
-                        </div>
-
-                        {/* At-a-glance Summary */}
-                        {analysis.executiveSummary && (
-                            <div id="executive-summary" className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border-l-4 border-indigo-500 mb-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                                        <Icon name="Lightbulb" />
-                                        <span className="ml-2">At-a-glance</span>
-                                    </h3>
-                                    <button
-                                        onClick={() => toggleSection('executive-summary')}
-                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
-                                    >
-                                        {collapsed['executive-summary'] ? 'Expand' : 'Collapse'}
-                                    </button>
-                                </div>
-                                {!collapsed['executive-summary'] && (
-                                <div className="space-y-4">
-                                    <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-green-600 text-lg">✓</span>
-                                            <span className="font-semibold text-gray-700">Why use this</span>
-                                        </div>
-                                        <span className="text-green-700 font-medium">
-                                            <GlossaryText
-                                                text={analysis.executiveSummary.primaryBenefit}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
-                                        </span>
-                                    </div>
-                                    <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-red-600 text-lg">⚠</span>
-                                            <span className="font-semibold text-gray-700">Watch out for</span>
-                                        </div>
-                                        <span className="text-red-700">
-                                            <GlossaryText
-                                                text={analysis.executiveSummary.biggestRisk}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
-                                        </span>
-                                    </div>
-                                    <div className="bg-white bg-opacity-60 rounded p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-indigo-600 text-lg">→</span>
-                                            <span className="font-semibold text-gray-700">What to do next</span>
-                                        </div>
-                                        <span className="text-indigo-700 font-medium">
-                                            <GlossaryText
-                                                text={analysis.executiveSummary.nextStep}
-                                                onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
-                                            />
-                                        </span>
-                                    </div>
-                                </div>
-                                )}
                             </div>
-                        )}
+                            </div>
+
+                            {/* Executive Summary (merged into Overview) */}
+                            {analysis.executiveSummary && (
+                                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-lg p-6 border-l-4 border-indigo-500">
+                                    <div className="space-y-4">
+                                        <div className="bg-white bg-opacity-60 rounded p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-green-600 text-lg">✓</span>
+                                                <span className="font-semibold text-gray-700">Why use this</span>
+                                            </div>
+                                            <span className="text-green-700 font-medium">
+                                                <GlossaryText
+                                                    text={analysis.executiveSummary.primaryBenefit}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </span>
+                                        </div>
+                                        <div className="bg-white bg-opacity-60 rounded p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-red-600 text-lg">⚠</span>
+                                                <span className="font-semibold text-gray-700">Watch out for</span>
+                                            </div>
+                                            <span className="text-red-700">
+                                                <GlossaryText
+                                                    text={analysis.executiveSummary.biggestRisk}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </span>
+                                        </div>
+                                        <div className="bg-white bg-opacity-60 rounded p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-indigo-600 text-lg">→</span>
+                                                <span className="font-semibold text-gray-700">What to do next</span>
+                                            </div>
+                                            <span className="text-indigo-700 font-medium">
+                                                <GlossaryText
+                                                    text={analysis.executiveSummary.nextStep}
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            </div>
+                            {/* End Overview Section */}
+
 
                         {/* OOUX Workflow - Simplified for space */}
                         {analysis.oouxWorkflow && analysis.oouxWorkflow.objects.length > 0 && (
