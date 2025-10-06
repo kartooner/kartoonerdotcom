@@ -17,12 +17,38 @@
     <div id="root"></div>
 
     <script>
-        // Check authentication
-        if (sessionStorage.getItem('aiadvisor_auth') !== 'true') {
+        // Check authentication and expiration
+        const authTime = sessionStorage.getItem('aiadvisor_auth_time');
+        const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
+
+        if (sessionStorage.getItem('aiadvisor_auth') !== 'true' || isExpired) {
+            sessionStorage.removeItem('aiadvisor_auth');
+            sessionStorage.removeItem('aiadvisor_auth_time');
             window.location.href = '/aiadvisor/';
         }
     </script>
 
-    <script src="/aiadvisor/dist/bundle.js"></script>
+    <!-- Load core modules (domain-agnostic) -->
+    <script type="text/babel" src="/aiadvisor/js/config/icons.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/principles.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/workflow-patterns.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/templates.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/template-workflows.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/touchpoint-details.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/risk-explanations.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/glossary.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/config/decision-framework.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/logic/detect.js"></script>
+
+    <!-- Optional: Load domain-specific templates -->
+    <script type="text/babel" src="/aiadvisor/js/domains/hcm.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/domains/finance.js"></script>
+
+    <!-- Load remaining logic and components -->
+    <script type="text/babel" src="/aiadvisor/js/logic/workflow-generator.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/logic/complexity.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/logic/analyze.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/components/app.js"></script>
+    <script type="text/babel" src="/aiadvisor/js/main.js"></script>
 </body>
 </html>

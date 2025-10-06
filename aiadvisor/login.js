@@ -1,1 +1,53 @@
-(function(_0x4a8d){const _0x2f1c=function(_0x5b3e){while(--_0x5b3e){_0x4a8d['push'](_0x4a8d['shift']());}};_0x2f1c(0x1a3);}(Array(0x36,0x62,0x30,0x37,0x66,0x37,0x65,0x63,0x61,0x66,0x37,0x32,0x61,0x65,0x35,0x61,0x63,0x63,0x32,0x34,0x30,0x65,0x30,0x32,0x65,0x32,0x33,0x37,0x36,0x38,0x63,0x66,0x33,0x39,0x30,0x61,0x62,0x37,0x32,0x39,0x31,0x64,0x37,0x37,0x34,0x33,0x63,0x31,0x38,0x32,0x62,0x31,0x65,0x62,0x37,0x30,0x31,0x35,0x39,0x37,0x62,0x61,0x35,0x31)));const _0x3d8f=async _0x1b2e=>{const _0x4c9a=new TextEncoder().encode(_0x1b2e);const _0x5d7b=await crypto.subtle.digest('SHA-256',_0x4c9a);const _0x6e8c=Array.from(new Uint8Array(_0x5d7b));return _0x6e8c.map(_0x7f9d=>_0x7f9d.toString(16).padStart(2,'0')).join('');};const _0x8a0e=document.getElementById('loginForm');const _0x9b1f=document.getElementById('password');const _0xa2c0=document.getElementById('error');_0x8a0e.addEventListener('submit',async function(_0xb3d1){_0xb3d1.preventDefault();const _0xc4e2=_0x9b1f.value;const _0xd5f3=await _0x3d8f(_0xc4e2);if(_0xd5f3===Array(0x36,0x62,0x30,0x37,0x66,0x37,0x65,0x63,0x61,0x66,0x37,0x32,0x61,0x65,0x35,0x61,0x63,0x63,0x32,0x34,0x30,0x65,0x30,0x32,0x65,0x32,0x33,0x37,0x36,0x38,0x63,0x66,0x33,0x39,0x30,0x61,0x62,0x37,0x32,0x39,0x31,0x64,0x37,0x37,0x34,0x33,0x63,0x31,0x38,0x32,0x62,0x31,0x65,0x62,0x37,0x30,0x31,0x35,0x39,0x37,0x62,0x61,0x35,0x31).map(_0xe6=>String.fromCharCode(_0xe6)).join('')){sessionStorage.setItem('aiadvisor_auth','true');window.location.href='/aiadvisor/app.html';}else{_0xa2c0.classList.remove('hidden');_0x9b1f.classList.add('border-red-500','animate-shake');_0x9b1f.value='';_0x9b1f.focus();setTimeout(()=>{_0x9b1f.classList.remove('animate-shake');},500);}});if(sessionStorage.getItem('aiadvisor_auth')==='true'){window.location.href='/aiadvisor/app.html';}
+// SHA-256 hash of "greatscott"
+const correctPasswordHash = '6b07f7ecaf72ae5acc240e02e23768cf390ab7291d7743c182b1eb701597ba51';
+
+async function hashPassword(password) {
+    const msgBuffer = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function isSessionValid() {
+    const authTime = sessionStorage.getItem('aiadvisor_auth_time');
+    if (!authTime) return false;
+    const elapsed = Date.now() - parseInt(authTime);
+    return elapsed < 1800000; // 30 minutes
+}
+
+const form = document.getElementById('loginForm');
+const passwordInput = document.getElementById('password');
+const errorMsg = document.getElementById('error');
+
+if (form) {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const password = passwordInput.value;
+        const passwordHash = await hashPassword(password);
+
+        if (passwordHash === correctPasswordHash) {
+            sessionStorage.setItem('aiadvisor_auth', 'true');
+            sessionStorage.setItem('aiadvisor_auth_time', Date.now().toString());
+            window.location.href = '/aiadvisor/app.html';
+        } else {
+            errorMsg.classList.remove('hidden');
+            passwordInput.classList.add('border-red-500', 'animate-shake');
+            passwordInput.value = '';
+            passwordInput.focus();
+
+            setTimeout(() => {
+                passwordInput.classList.remove('animate-shake');
+            }, 500);
+        }
+    });
+}
+
+// Check if already authenticated and redirect
+if (sessionStorage.getItem('aiadvisor_auth') === 'true' && isSessionValid()) {
+    window.location.href = '/aiadvisor/app.html';
+} else if (sessionStorage.getItem('aiadvisor_auth') === 'true') {
+    // Clear expired session
+    sessionStorage.removeItem('aiadvisor_auth');
+    sessionStorage.removeItem('aiadvisor_auth_time');
+}
