@@ -18,14 +18,24 @@
 
     <script>
         // Check authentication and expiration
-        const authTime = sessionStorage.getItem('aiadvisor_auth_time');
-        const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
+        // Add a small delay to ensure sessionStorage is available
+        setTimeout(() => {
+            const authTime = sessionStorage.getItem('aiadvisor_auth_time');
+            const isExpired = !authTime || (Date.now() - parseInt(authTime)) >= 1800000; // 30 minutes
 
-        if (sessionStorage.getItem('aiadvisor_auth') !== 'true' || isExpired) {
-            sessionStorage.removeItem('aiadvisor_auth');
-            sessionStorage.removeItem('aiadvisor_auth_time');
-            window.location.href = '/aiadvisor/';
-        }
+            console.log('Auth check:', {
+                auth: sessionStorage.getItem('aiadvisor_auth'),
+                authTime: authTime,
+                isExpired: isExpired
+            });
+
+            if (sessionStorage.getItem('aiadvisor_auth') !== 'true' || isExpired) {
+                console.log('Redirecting to login - auth failed');
+                sessionStorage.removeItem('aiadvisor_auth');
+                sessionStorage.removeItem('aiadvisor_auth_time');
+                window.location.href = '/aiadvisor/';
+            }
+        }, 50);
     </script>
 
     <!-- Load core modules (domain-agnostic) -->
