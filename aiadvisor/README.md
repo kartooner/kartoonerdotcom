@@ -64,7 +64,7 @@ aiadvisor/
 ### How It Works
 1. User enters password at `/aiadvisor/`
 2. Password is hashed using SHA-256 via Web Crypto API
-3. Hash is compared to stored hash: `6b07f7ecaf72ae5acc240e02e23768cf390ab7291d7743c182b1eb701597ba51`
+3. Hash is compared to stored hash in login.js
 4. On success: Sets `aiadvisor_auth` and `aiadvisor_auth_time` in sessionStorage
 5. Redirects to `/aiadvisor/app.html`
 6. Every page load checks if session is valid (< 30 minutes old)
@@ -429,8 +429,8 @@ console.log('TEMPLATE_WORKFLOWS:', TEMPLATE_WORKFLOWS);
 
 **Debug**:
 ```javascript
-// In browser console after entering password:
-const password = 'greatscott';
+// In browser console to generate hash for a new password:
+const password = 'your-password-here';
 crypto.subtle.digest('SHA-256', new TextEncoder().encode(password))
   .then(hash => console.log(Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0')).join('')));
@@ -519,6 +519,10 @@ For questions or issues:
 
 ---
 
-Built with ⚡ by [Your Name]
+## 💡 Credits
+
+Built with ⚡ by **Erik Sagen**
+
+Developed in collaboration with **Claude** (Anthropic) as an AI thought partner for architecture, pattern design, and implementation.
 
 *"Where we're going, we don't need roads..."*
