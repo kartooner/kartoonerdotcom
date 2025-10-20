@@ -36,7 +36,15 @@
       "Bash(git checkout:*)",
       "Bash(sha256sum:*)",
       "WebFetch(domain:www.kartooner.com)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(for file in \"about/index.html\" \"journal/index.html\" \"voice-acting/index.html\" \"contact/index.html\" \"thanks/index.html\" \"archive/index.html\" \"entry/growing-up-in-the-80s.html\" \"entry/here-we-go-again.html\" \"entry/the-pole-on-the-corner.html\")",
+      "Bash(do)",
+      "Bash(if grep -q \"halloween-loader.js\" \"$file\")",
+      "Bash(! grep -q \"christmas-loader.js\" \"$file\")",
+      "Bash(then)",
+      "Bash(echo \"✅ Updated: $file\")",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

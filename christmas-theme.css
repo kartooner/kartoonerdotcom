@@ -1,0 +1,299 @@
+/* ==========================================
+   Christmas Theme - Nordic Hygge
+   Active: December 1 - December 31
+   Greeting: "God Jul!" (Merry Christmas in Norwegian)
+   ========================================== */
+
+/* Dark Christmas Theme (default) */
+:root,
+[data-theme="dark"] {
+    /* Base colors */
+    --bg-color: #2b2d31;
+    --text-color: #f5f0e8;
+
+    /* Theme colors */
+    --accent-color: #d85e5e;
+    --accent-rgb: 216, 94, 94;
+    --secondary-color: #e6b85c;
+    --tertiary-color: #3d4a42;
+
+    /* Specific use colors */
+    --skills-color: #ddd5c7;
+    --heading-color: #f5d6a8;
+    --experience-text-color: #d8cfc4;
+    --light-gray: #c9c4ba;
+}
+
+/* Light Christmas Theme */
+[data-theme="light"] {
+    /* Base colors */
+    --bg-color: #faf7f2;
+    --text-color: #2d2520;
+
+    /* Theme colors */
+    --accent-color: #b54d4d;
+    --accent-rgb: 181, 77, 77;
+    --secondary-color: #3d5a4c;
+    --tertiary-color: #e8dfd5;
+
+    /* Specific use colors */
+    --skills-color: #4a3832;
+    --heading-color: #8b5a3c;
+    --experience-text-color: #5a4a42;
+    --light-gray: #6b5f55;
+}
+
+/* Christmas-specific background texture - subtle snowflakes */
+:root,
+[data-theme="dark"] {
+    body {
+        background-image:
+            radial-gradient(circle at 20% 30%, rgba(230, 184, 92, 0.03) 2px, transparent 0),
+            radial-gradient(circle at 60% 70%, rgba(216, 94, 94, 0.02) 1.5px, transparent 0),
+            radial-gradient(circle at 80% 20%, rgba(230, 184, 92, 0.02) 1px, transparent 0);
+        background-size: 40px 40px, 60px 60px, 50px 50px;
+    }
+}
+
+/* Light theme texture adjustment */
+[data-theme="light"] body {
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(181, 77, 77, 0.04) 2px, transparent 0),
+        radial-gradient(circle at 60% 70%, rgba(61, 90, 76, 0.03) 1.5px, transparent 0),
+        radial-gradient(circle at 80% 20%, rgba(181, 77, 77, 0.02) 1px, transparent 0);
+    background-size: 40px 40px, 60px 60px, 50px 50px;
+}
+
+/* Hide original doodle lines during Christmas */
+.doodle-lines {
+    display: none;
+}
+
+/* Christmas Lights Styling */
+.christmas-lights {
+    position: relative;
+    width: 100%;
+    height: 84px;
+    margin: -3.5rem 0 1rem 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.christmas-lights svg {
+    width: 100%;
+    height: 100%;
+}
+
+.lightrope {
+    stroke: #000;
+    stroke-width: 2;
+    fill: none;
+}
+
+.light {
+    fill: #ffffff;
+}
+
+.light-fixture {
+    fill: #444;
+}
+
+/* Bulb Colors */
+.bulb-red { fill: #e74c3c; }
+.bulb-green { fill: #2ecc71; }
+.bulb-blue { fill: #3498db; }
+.bulb-white { fill: #ecf0f1; }
+.bulb-gold { fill: #f39c12; }
+
+/* Blinking Animation */
+@keyframes blink {
+    0%, 100% { fill-opacity: 1; }
+    50% { fill-opacity: 0.2; }
+}
+
+/* Apply different animation delays to create random blinking effect */
+.light:nth-child(10n+1) { animation: blink 1.5s infinite 0s; }
+.light:nth-child(10n+2) { animation: blink 1.5s infinite 0.3s; }
+.light:nth-child(10n+3) { animation: blink 1.5s infinite 0.6s; }
+.light:nth-child(10n+4) { animation: blink 1.5s infinite 0.9s; }
+.light:nth-child(10n+5) { animation: blink 1.5s infinite 1.2s; }
+.light:nth-child(10n+6) { animation: blink 1.5s infinite 0.15s; }
+.light:nth-child(10n+7) { animation: blink 1.5s infinite 0.45s; }
+.light:nth-child(10n+8) { animation: blink 1.5s infinite 0.75s; }
+.light:nth-child(10n+9) { animation: blink 1.5s infinite 1.05s; }
+.light:nth-child(10n+10) { animation: blink 1.5s infinite 1.35s; }
+
+/* Disable blinking for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+    .light {
+        animation: none !important;
+    }
+}
+
+/* Christmas Theme Toggle Icon - subtle warm glow */
+.theme-toggle-icon {
+    filter: brightness(1.05) saturate(0.9);
+}
+
+/* Add subtle warm glow on hover */
+.theme-toggle:hover {
+    box-shadow: 0 4px 20px rgba(216, 94, 94, 0.25);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+    box-shadow: 0 4px 20px rgba(181, 77, 77, 0.2);
+}
+
+/* Navigation hover effects - warm candlelight glow */
+.nav-links a:hover,
+.nav-links a:focus {
+    text-shadow: 0 0 8px rgba(230, 184, 92, 0.4);
+}
+
+[data-theme="light"] .nav-links a:hover,
+[data-theme="light"] .nav-links a:focus {
+    text-shadow: 0 0 8px rgba(139, 90, 60, 0.3);
+}
+
+/* Top skills box - Cozy Christmas gradient */
+.top-skills-box {
+    background-image: radial-gradient(circle, rgba(216, 94, 94, 0.12), rgba(230, 184, 92, 0.06));
+    border: 1px solid rgba(216, 94, 94, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .top-skills-box {
+    background-image: radial-gradient(circle, rgba(181, 77, 77, 0.08), rgba(61, 90, 76, 0.04));
+    border: 1px solid rgba(181, 77, 77, 0.18);
+    box-shadow: 0 4px 16px 0 rgba(139, 90, 60, 0.12);
+}
+
+/* Christmas sheen effect - warm candlelight */
+.top-skills-box::before {
+    background: radial-gradient(
+        circle at center,
+        rgba(230, 184, 92, 0.15) 0%,
+        rgba(230, 184, 92, 0.08) 30%,
+        rgba(230, 184, 92, 0) 70%
+    );
+}
+
+[data-theme="light"] .top-skills-box::before {
+    background: radial-gradient(
+        circle at center,
+        rgba(181, 77, 77, 0.12) 0%,
+        rgba(181, 77, 77, 0.06) 30%,
+        rgba(181, 77, 77, 0) 70%
+    );
+}
+
+/* Persistent nav - Christmas colors */
+.persistent-nav {
+    background: rgba(43, 45, 49, 0.5);
+}
+
+[data-theme="light"] .persistent-nav {
+    background: linear-gradient(135deg, #faf7f2 0%, #f5f0ea 100%);
+}
+
+/* Christmas greeting - Mobile responsive layout */
+/* Note: JavaScript updates the text content to "God Jul!" for accessibility */
+
+/* Mobile - ensure proper spacing and line break */
+@media (max-width: 768px) {
+    h1 span[lang="no"] {
+        display: block;
+        width: 100%;
+        margin-bottom: 0;
+    }
+}
+
+/* Info section - Christmas styling */
+.info-section {
+    background: rgba(216, 94, 94, 0.1);
+    border: 1px solid rgba(216, 94, 94, 0.22);
+}
+
+[data-theme="light"] .info-section {
+    background: rgba(181, 77, 77, 0.08);
+    border: 1px solid rgba(181, 77, 77, 0.18);
+}
+
+/* Link hover glow effect - warm glow */
+a:hover,
+a:focus {
+    text-shadow: 0 0 6px rgba(230, 184, 92, 0.3);
+}
+
+[data-theme="light"] a:hover,
+[data-theme="light"] a:focus {
+    text-shadow: 0 0 6px rgba(139, 90, 60, 0.25);
+}
+
+/* Current page indicator - Christmas colors */
+.nav-links a.current::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='%23d85e5e' stroke-width='3' fill='none' opacity='0.7' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] .nav-links a.current::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='%23b54d4d' stroke-width='3' fill='none' opacity='0.7' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Subtle glowing animation for accent elements */
+@keyframes christmas-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.88; }
+}
+
+.top-skills-list li:not(:last-child)::after {
+    animation: christmas-glow 4s ease-in-out infinite;
+}
+
+/* Doodle line animations matching original (vertical only) */
+@keyframes vertical-float-1 {
+    0%, 100% { transform: translateY(0px); }
+    25% { transform: translateY(-6px); }
+    50% { transform: translateY(3px); }
+    75% { transform: translateY(-2px); }
+}
+
+@keyframes vertical-float-2 {
+    0%, 100% { transform: translateY(2px); }
+    33% { transform: translateY(-4px); }
+    66% { transform: translateY(5px); }
+}
+
+@keyframes vertical-float-3 {
+    0%, 100% { transform: translateY(-1px); }
+    20% { transform: translateY(4px); }
+    40% { transform: translateY(-3px); }
+    60% { transform: translateY(2px); }
+    80% { transform: translateY(-4px); }
+}
+
+@media (min-width: 769px) {
+    .line-1 {
+        animation: vertical-float-1 8s ease-in-out infinite;
+    }
+
+    .line-2 {
+        animation: vertical-float-2 6s ease-in-out infinite;
+    }
+
+    .line-3 {
+        animation: vertical-float-3 10s ease-in-out infinite;
+    }
+}
+
+/* Disable animations for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+    .line-1,
+    .line-2,
+    .line-3 {
+        animation: none !important;
+    }
+
+    .top-skills-list li:not(:last-child)::after {
+        animation: none !important;
+    }
+}
