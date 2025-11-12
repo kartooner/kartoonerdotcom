@@ -1657,7 +1657,7 @@ ${js}
             URL.revokeObjectURL(url);
         }
 
-        // Share code via backend
+        // Share code via GitHub Gist
         async function shareCode() {
             const html = htmlEditor.value;
             const css = cssEditor.value;
@@ -1669,63 +1669,107 @@ ${js}
                 return;
             }
 
-            // Prompt for a name
-            const name = prompt('Give your share a name (e.g., "accessible-panel"):');
-            if (!name || !name.trim()) {
+            // Prompt for a description
+            const description = prompt('Give your share a name (e.g., "Accessible Panel Demo"):');
+            if (!description || !description.trim()) {
                 return;
             }
 
             try {
-                // Save to backend
-                const response = await fetch('/api/share', {
+                // Create gist payload
+                const gistData = {
+                    description: description.trim() + ' - Created with Coded',
+                    public: true,
+                    files: {}
+                };
+
+                // Add files that have content
+                if (html) {
+                    gistData.files['index.html'] = { content: html };
+                }
+                if (css) {
+                    gistData.files['styles.css'] = { content: css };
+                }
+                if (js) {
+                    gistData.files['script.js'] = { content: js };
+                }
+
+                // Add a README explaining how to load it back
+                gistData.files['README.md'] = {
+                    content: `# ${description.trim()}\n\nCreated with [Coded](${window.location.origin}${window.location.pathname})\n\nTo view this in Coded, visit:\n${window.location.origin}${window.location.pathname}?gist=GIST_ID`
+                };
+
+                // Show loading message
+                const originalMenuState = moreOptionsMenu.classList.contains('active');
+
+                // Create the gist
+                const response = await fetch('https://api.github.com/gists', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name.trim(), html, css, js })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify(gistData)
                 });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    // Create shareable URL with slug
-                    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${result.slug}`;
-
-                    // Copy to clipboard
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        alert(`Share link copied! 🎉\n\n${shareUrl}\n\nAnyone with this link can view and edit your code.`);
-                        moreOptionsMenu.classList.remove('active');
-                    }).catch(err => {
-                        prompt('Copy this link to share:', shareUrl);
-                        moreOptionsMenu.classList.remove('active');
-                    });
-                } else {
-                    alert('Failed to create share: ' + (result.error || 'Unknown error'));
+                if (!response.ok) {
+                    throw new Error('Failed to create gist');
                 }
+
+                const result = await response.json();
+                const gistId = result.id;
+                const gistUrl = result.html_url;
+
+                // Create Coded URL with gist ID
+                const codedUrl = `${window.location.origin}${window.location.pathname}?gist=${gistId}`;
+
+                // Copy to clipboard
+                navigator.clipboard.writeText(codedUrl).then(() => {
+                    alert(`Share link copied! 🎉\n\n${codedUrl}\n\nYour code is also available at:\n${gistUrl}`);
+                    if (originalMenuState) {
+                        moreOptionsMenu.classList.remove('active');
+                    }
+                }).catch(err => {
+                    prompt('Copy this link to share:', codedUrl);
+                    if (originalMenuState) {
+                        moreOptionsMenu.classList.remove('active');
+                    }
+                });
             } catch (e) {
                 console.error('Share error:', e);
-                alert('Failed to create share. Please try again.');
+                alert('Failed to create share. GitHub Gist API may be unavailable. Please try again.');
             }
         }
 
         // Load code from URL parameter
         async function loadFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            const shareId = urlParams.get('share');
+            const gistId = urlParams.get('gist');
 
-            if (shareId) {
+            if (gistId) {
                 try {
-                    // Fetch from backend
-                    const response = await fetch(`/api/share?id=${encodeURIComponent(shareId)}`);
+                    // Fetch from GitHub Gist API
+                    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
 
                     if (!response.ok) {
-                        throw new Error('Share not found');
+                        throw new Error('Gist not found');
                     }
 
-                    const data = await response.json();
+                    const gist = await response.json();
+                    const files = gist.files;
 
-                    // Load the code
-                    htmlEditor.value = data.html || '';
-                    cssEditor.value = data.css || '';
-                    jsEditor.value = data.js || '';
+                    // Load the code from gist files
+                    const htmlFile = files['index.html'];
+                    const cssFile = files['styles.css'];
+                    const jsFile = files['script.js'];
+
+                    htmlEditor.value = htmlFile ? htmlFile.content : '';
+                    cssEditor.value = cssFile ? cssFile.content : '';
+                    jsEditor.value = jsFile ? jsFile.content : '';
 
                     // Update highlights
                     highlightEditor(htmlEditor, htmlHighlight, 'markup');
@@ -1740,11 +1784,11 @@ ${js}
                     shareModeBanner.classList.add('active');
                     document.body.classList.add('share-mode');
 
-                    // Clean URL (remove share parameter) but keep share mode active
+                    // Clean URL (remove gist parameter) but keep share mode active
                     window.history.replaceState({}, document.title, window.location.pathname);
                 } catch (e) {
-                    console.error('Failed to load shared code:', e);
-                    alert('Failed to load shared code. The share may not exist or the server may be unavailable.');
+                    console.error('Failed to load gist:', e);
+                    alert('Failed to load shared code. The gist may not exist or GitHub API may be unavailable.');
                 }
             }
         }
