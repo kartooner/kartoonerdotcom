@@ -404,12 +404,30 @@
             transition: background 0.2s;
         }
 
+        /* Increase hit area for easier dragging */
+        .resizer::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 0;
+            right: 0;
+            bottom: -4px;
+            cursor: row-resize;
+        }
+
         .resizer:hover {
             background: var(--accent-color);
         }
 
         .resizer.resizing {
             background: var(--accent-color);
+        }
+
+        /* Prevent text selection during resize */
+        body.resizing {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
         }
 
         /* Editors section */
@@ -1799,14 +1817,15 @@ ${js}
         let isResizing = false;
         let startY = 0;
         let startEditorHeight = 0;
+        let currentEditorPercent = null;
 
         function startResize(clientY) {
             isResizing = true;
             startY = clientY;
             startEditorHeight = editorsSection.offsetHeight;
             resizer.classList.add('resizing');
+            document.body.classList.add('resizing');
             document.body.style.cursor = 'row-resize';
-            document.body.style.userSelect = 'none';
         }
 
         function handleResize(clientY) {
@@ -1815,11 +1834,12 @@ ${js}
             const deltaY = clientY - startY;
             const containerHeight = container.offsetHeight;
             const newEditorHeight = startEditorHeight + deltaY;
-            const minHeight = 200;
-            const maxHeight = containerHeight - 200;
+            const minHeight = 150;
+            const maxHeight = containerHeight - 150;
 
             if (newEditorHeight >= minHeight && newEditorHeight <= maxHeight) {
                 const editorPercent = (newEditorHeight / containerHeight) * 100;
+                currentEditorPercent = editorPercent;
                 editorsSection.style.height = `${editorPercent}%`;
                 previewSection.style.flex = 'unset';
                 previewSection.style.height = `calc(${100 - editorPercent}% - 4px)`;
@@ -1830,8 +1850,33 @@ ${js}
             if (isResizing) {
                 isResizing = false;
                 resizer.classList.remove('resizing');
+                document.body.classList.remove('resizing');
                 document.body.style.cursor = '';
-                document.body.style.userSelect = '';
+
+                // Save the resize state
+                if (currentEditorPercent !== null) {
+                    localStorage.setItem('coded-panel-height', currentEditorPercent);
+                }
+            }
+        }
+
+        function resetPanelSizes() {
+            // Clear inline styles to let CSS take over
+            editorsSection.style.height = '';
+            previewSection.style.flex = '';
+            previewSection.style.height = '';
+            currentEditorPercent = null;
+            localStorage.removeItem('coded-panel-height');
+        }
+
+        function applyStoredPanelSize() {
+            const stored = localStorage.getItem('coded-panel-height');
+            if (stored) {
+                const percent = parseFloat(stored);
+                editorsSection.style.height = `${percent}%`;
+                previewSection.style.flex = 'unset';
+                previewSection.style.height = `calc(${100 - percent}% - 4px)`;
+                currentEditorPercent = percent;
             }
         }
 
@@ -1839,6 +1884,11 @@ ${js}
         resizer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             startResize(e.clientY);
+        });
+
+        // Double-click to reset to default size
+        resizer.addEventListener('dblclick', () => {
+            resetPanelSizes();
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -1868,6 +1918,29 @@ ${js}
 
         document.addEventListener('touchcancel', () => {
             endResize();
+        });
+
+        // Reset panel sizes on window resize to prevent breakpoint issues
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Only reset if viewport width changed significantly (breakpoint change)
+                const viewportWidth = window.innerWidth;
+                const lastWidth = parseInt(localStorage.getItem('coded-viewport-width') || '0');
+
+                if (Math.abs(viewportWidth - lastWidth) > 100) {
+                    resetPanelSizes();
+                    localStorage.setItem('coded-viewport-width', viewportWidth);
+                } else if (currentEditorPercent !== null) {
+                    // Recalculate percentages if minor resize
+                    const containerHeight = container.offsetHeight;
+                    const currentHeight = editorsSection.offsetHeight;
+                    const newPercent = (currentHeight / containerHeight) * 100;
+                    editorsSection.style.height = `${newPercent}%`;
+                    previewSection.style.height = `calc(${100 - newPercent}% - 4px)`;
+                }
+            }, 250);
         });
 
         // Event listeners
@@ -1908,6 +1981,9 @@ ${js}
         // Initialize CSS reset status
         cssResetStatus.textContent = cssResetType === 'none' ? 'None' :
                                      cssResetType === 'normalize' ? 'Normalize' : 'Reset';
+
+        // Apply stored panel size
+        applyStoredPanelSize();
 
         // Check for shared code in URL first, then load from localStorage
         loadFromUrl();
