@@ -9,9 +9,9 @@
 
     // Check if we're in the Christmas date range
     function isChristmasSeason() {
-        // Preview mode: add ?preview=christmas to URL
+        // Theme preview mode: add ?theme=christmas to URL
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('preview') === 'christmas') {
+        if (urlParams.get('theme') === 'christmas') {
             return true;
         }
 
