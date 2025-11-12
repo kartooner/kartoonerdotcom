@@ -160,6 +160,52 @@
     background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
 }
 
+/* Mobile Navigation - Halloween themed */
+@media (max-width: 750px) {
+    .nav-links {
+        background: rgba(26, 10, 46, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    [data-theme="light"] .nav-links {
+        background: rgba(255, 245, 230, 0.95);
+    }
+
+    .mobile-close-button {
+        border-bottom: 1px solid rgba(255, 111, 60, 0.25);
+    }
+
+    [data-theme="light"] .mobile-close-button {
+        border-bottom: 1px solid rgba(217, 84, 30, 0.2);
+    }
+
+    .nav-links a {
+        border-bottom: 1px solid rgba(255, 111, 60, 0.2);
+    }
+
+    [data-theme="light"] .nav-links a {
+        border-bottom: 1px solid rgba(217, 84, 30, 0.15);
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus {
+        background: rgba(255, 111, 60, 0.18);
+    }
+
+    [data-theme="light"] .nav-links a:hover,
+    [data-theme="light"] .nav-links a:focus {
+        background: rgba(217, 84, 30, 0.1);
+    }
+
+    .nav-links a.current {
+        background: rgba(255, 111, 60, 0.22);
+    }
+
+    [data-theme="light"] .nav-links a.current {
+        background: rgba(217, 84, 30, 0.15);
+    }
+}
+
 /* Halloween greeting - Mobile responsive layout */
 /* Note: JavaScript updates the text content to "Boo!" for accessibility */
 

@@ -9,10 +9,15 @@
 
     // Check if we're in the fall theme date range
     function isFallSeason() {
-        // Don't activate if Christmas preview is active
+        // Don't activate if Christmas theme is active
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('preview') === 'christmas') {
+        if (urlParams.get('theme') === 'christmas') {
             return false;
+        }
+
+        // Theme preview mode: add ?theme=halloween to URL
+        if (urlParams.get('theme') === 'halloween') {
+            return true;
         }
 
         const now = new Date();

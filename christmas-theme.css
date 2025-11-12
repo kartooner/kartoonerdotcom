@@ -196,6 +196,52 @@
     background: linear-gradient(135deg, #faf7f2 0%, #f5f0ea 100%);
 }
 
+/* Mobile Navigation - Christmas themed */
+@media (max-width: 750px) {
+    .nav-links {
+        background: rgba(43, 45, 49, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    [data-theme="light"] .nav-links {
+        background: rgba(250, 247, 242, 0.95);
+    }
+
+    .mobile-close-button {
+        border-bottom: 1px solid rgba(216, 94, 94, 0.2);
+    }
+
+    [data-theme="light"] .mobile-close-button {
+        border-bottom: 1px solid rgba(181, 77, 77, 0.15);
+    }
+
+    .nav-links a {
+        border-bottom: 1px solid rgba(216, 94, 94, 0.15);
+    }
+
+    [data-theme="light"] .nav-links a {
+        border-bottom: 1px solid rgba(181, 77, 77, 0.12);
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus {
+        background: rgba(216, 94, 94, 0.15);
+    }
+
+    [data-theme="light"] .nav-links a:hover,
+    [data-theme="light"] .nav-links a:focus {
+        background: rgba(181, 77, 77, 0.08);
+    }
+
+    .nav-links a.current {
+        background: rgba(216, 94, 94, 0.2);
+    }
+
+    [data-theme="light"] .nav-links a.current {
+        background: rgba(181, 77, 77, 0.12);
+    }
+}
+
 /* Christmas greeting - Mobile responsive layout */
 /* Note: JavaScript updates the text content to "God Jul!" for accessibility */
 
