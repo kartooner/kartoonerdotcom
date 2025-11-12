@@ -44,7 +44,8 @@
       "Bash(then)",
       "Bash(echo \"✅ Updated: $file\")",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(cmd /c taskkill /F /PID 17712)"
     ],
     "deny": [],
     "ask": []

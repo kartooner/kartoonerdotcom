@@ -7,6 +7,13 @@
     <title>Coded - Code Playground</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
+
+    <!-- LZ-String for URL compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
     <style>
         /* Reset and base styles */
         *, *::before, *::after {
@@ -15,13 +22,33 @@
             padding: 0;
         }
 
+        /* Screen reader only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Local Cartridge font */
+        @font-face {
+            font-family: "Cartridge Regular";
+            src: url('../assets/Cartridge-Regular.woff2') format('woff2'),
+                 url('../assets/Cartridge-Regular.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
         :root {
             --font-main: "Manrope", sans-serif;
             --font-mono: "JetBrains Mono", monospace;
-        }
-
-        /* Dark theme (default) */
-        :root, [data-theme="dark"] {
+            --font-logo: "Cartridge Regular", sans-serif;
             --bg-color: #191970;
             --text-color: #ffffff;
             --accent-color: #64ffda;
@@ -32,20 +59,6 @@
             --button-bg: #64ffda;
             --button-text: #191970;
             --button-hover: #52e8c8;
-        }
-
-        /* Light theme */
-        [data-theme="light"] {
-            --bg-color: #F5FBFF;
-            --text-color: #2d3748;
-            --accent-color: #0052a3;
-            --secondary-color: #4a5568;
-            --editor-bg: #ffffff;
-            --editor-border: #e2e8f0;
-            --preview-bg: #ffffff;
-            --button-bg: #0052a3;
-            --button-text: #ffffff;
-            --button-hover: #003d7a;
         }
 
         body {
@@ -69,8 +82,10 @@
         }
 
         h1 {
-            font-size: 1.5rem;
-            font-weight: 500;
+            font-family: var(--font-logo);
+            font-size: 1.75rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
         }
 
         .header-actions {
@@ -79,10 +94,249 @@
             align-items: center;
         }
 
+        /* Auto-run toggle */
+        .auto-run-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .auto-run-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .auto-run-toggle label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Snippets dropdown */
+        .snippets-dropdown {
+            position: relative;
+        }
+
+        .snippets-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .snippets-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        /* More options menu */
+        .more-options-dropdown {
+            position: relative;
+        }
+
+        .more-options-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            height: 40px;
+            width: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .more-options-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        .more-options-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 4px;
+            min-width: 200px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .more-options-menu.active {
+            display: block;
+        }
+
+        .more-option-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--editor-border);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .more-option-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .more-option-item:last-child {
+            border-bottom: none;
+        }
+
+        .snippets-menu {
+            display: none;
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 8px;
+            min-width: 400px;
+            max-width: 500px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .snippets-menu-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .snippet-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--editor-border);
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .snippet-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .snippet-item:last-child {
+            border-bottom: none;
+        }
+
+        .snippet-name {
+            flex: 1;
+        }
+
+        .snippet-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .snippet-delete {
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .snippet-delete:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
+        .empty-state {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--secondary-color);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Library items */
+        .library-item {
+            padding: 0.75rem;
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .library-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
+        }
+
+        .library-item.added {
+            background: rgba(100, 255, 218, 0.1);
+            border-color: var(--accent-color);
+            cursor: default;
+        }
+
+        .library-name {
+            font-weight: 500;
+        }
+
+        .library-version {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-left: 0.5rem;
+        }
+
+        .library-remove {
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .library-remove:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
         /* All header buttons - consistent sizing */
-        .theme-toggle,
         .run-button,
-        .clear-button {
+        .clear-button,
+        .export-button {
             padding: 0.5rem 1rem;
             border-radius: 4px;
             cursor: pointer;
@@ -94,18 +348,6 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-        }
-
-        /* Theme toggle */
-        .theme-toggle {
-            background: none;
-            border: 2px solid var(--accent-color);
-            color: var(--accent-color);
-        }
-
-        .theme-toggle:hover {
-            background: var(--accent-color);
-            color: var(--bg-color);
         }
 
         /* Run button */
@@ -134,12 +376,43 @@
             color: var(--bg-color);
         }
 
+        /* Export button */
+        .export-button {
+            background: none;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .export-button:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
         /* Main container */
         .container {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* Resizer */
+        .resizer {
+            background: var(--editor-border);
+            cursor: row-resize;
+            height: 4px;
+            position: relative;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        .resizer:hover {
+            background: var(--accent-color);
+        }
+
+        .resizer.resizing {
+            background: var(--accent-color);
         }
 
         /* Editors section */
@@ -150,10 +423,25 @@
             background: var(--editor-border);
             border-bottom: 2px solid var(--editor-border);
             height: 50%;
+            transition: height 0.3s ease;
+        }
+
+        /* Share mode - show more preview */
+        body.share-mode .editors {
+            height: 30%;
         }
 
         .editor-panel {
             background: var(--editor-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
@@ -165,21 +453,139 @@
             font-weight: 500;
             font-size: 0.9rem;
             color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .panel-settings-button {
+            background: none;
+            border: 1px solid var(--editor-border);
+            color: var(--secondary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .panel-settings-button:hover {
+            opacity: 1;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .panel-settings-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 0.25rem);
+            right: 0;
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 4px;
+            min-width: 180px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-settings-menu.active {
+            display: block;
         }
 
         .editor {
             flex: 1;
+            width: 100%;
             padding: 1rem;
             font-family: var(--font-mono);
             font-size: 0.9rem;
             line-height: 1.5;
-            background: var(--editor-bg);
-            color: var(--text-color);
+            background: transparent;
+            color: transparent;
+            caret-color: var(--accent-color);
             border: none;
             resize: none;
             outline: none;
             overflow: auto;
             tab-size: 2;
+            z-index: 2;
+            -webkit-text-fill-color: transparent;
+            white-space: pre;
+            word-wrap: normal;
+            position: relative;
+        }
+
+        .editor.wrap-enabled {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .editor::placeholder {
+            color: var(--secondary-color);
+            opacity: 0.5;
+            -webkit-text-fill-color: var(--secondary-color);
+        }
+
+        /* Tab trap indicator */
+        .editor-container::after {
+            content: "Tab to indent • Esc to exit";
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            background: var(--editor-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 3;
+        }
+
+        .editor-container.tab-trapped::after {
+            opacity: 0.7;
+        }
+
+        .editor-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+            white-space: pre;
+            word-wrap: normal;
+        }
+
+        .editor-highlight.wrap-enabled {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .editor-highlight pre {
+            margin: 0;
+            padding: 0;
+            background: transparent !important;
+            white-space: inherit;
+            word-wrap: inherit;
+        }
+
+        .editor-highlight code {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background: transparent !important;
+            white-space: inherit;
+            word-wrap: inherit;
         }
 
         .editor::-webkit-scrollbar {
@@ -236,7 +642,7 @@
             }
 
             h1 {
-                font-size: 1.25rem;
+                font-size: 1.5rem;
             }
 
             .header-actions {
@@ -246,6 +652,64 @@
             .run-button {
                 padding: 0.5rem 1.5rem;
             }
+        }
+
+        /* Share mode banner */
+        .share-mode-banner {
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.75rem 2rem;
+            color: white;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .share-mode-banner.active {
+            display: flex;
+        }
+
+        .share-mode-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .share-mode-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .share-mode-button {
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .share-mode-button.primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+        }
+
+        .share-mode-button.primary:hover {
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .share-mode-button.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .share-mode-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         /* Mobile - hide for now */
@@ -272,30 +736,166 @@
 </head>
 <body>
     <header>
-        <h1>Coded</h1>
+        <h1>&lt;/Coded&gt;</h1>
         <div class="header-actions">
-            <button class="clear-button" id="clearBtn">Clear All</button>
-            <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+            <div class="auto-run-toggle">
+                <input type="checkbox" id="autoRunToggle" />
+                <label for="autoRunToggle">Auto-run</label>
+            </div>
             <button class="run-button" id="runBtn">Run Code</button>
+            <div class="more-options-dropdown">
+                <button class="more-options-button" id="moreOptionsBtn" aria-label="More options">
+                    ⋯
+                </button>
+                <div class="more-options-menu" id="moreOptionsMenu">
+                    <div class="more-option-item" id="saveSnippetMenuBtn">
+                        💾 Save Snippet
+                    </div>
+                    <div class="more-option-item" id="snippetsMenuBtn">
+                        📂 Load Snippet
+                    </div>
+                    <div class="more-option-item" id="shareBtn">
+                        🔗 Share Link
+                    </div>
+                    <div class="more-option-item" id="exportBtn">
+                        📥 Export HTML
+                    </div>
+                    <div class="more-option-item" id="clearBtn">
+                        🗑️ Clear All
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
+
+    <!-- Share Mode Banner -->
+    <div class="share-mode-banner" id="shareModeBanner">
+        <div class="share-mode-info">
+            <span style="font-size: 1.2rem;">🔗</span>
+            <span><strong>Viewing shared code</strong> — Make your own edits and share them!</span>
+        </div>
+        <div class="share-mode-actions">
+            <button class="share-mode-button primary" id="updateShareBtn">Update Share Link</button>
+            <button class="share-mode-button secondary" id="startFreshBtn">Start Fresh</button>
+        </div>
+    </div>
+
+    <!-- Snippets Modal -->
+    <div class="snippets-menu" id="snippetsMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
+        <div class="snippets-menu-header">
+            <span>Load Snippet</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSnippetsBtn">✕</span>
+        </div>
+        <div id="snippetsList"></div>
+    </div>
+
+    <!-- Libraries Modal -->
+    <div class="snippets-menu" id="librariesMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-height: 600px;">
+        <div class="snippets-menu-header">
+            <span>Add External Libraries</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeLibrariesBtn">✕</span>
+        </div>
+        <div style="padding: 1rem; border-bottom: 1px solid var(--editor-border);">
+            <div style="margin-bottom: 1rem;">
+                <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Popular Libraries</strong>
+                <div id="popularLibraries"></div>
+            </div>
+            <div>
+                <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Custom CDN</strong>
+                <input type="text" id="customCdnInput" placeholder="Paste CDN URL..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem; margin-bottom: 0.5rem;">
+                <button id="addCustomCdnBtn" style="width: 100%; padding: 0.5rem; background: var(--accent-color); color: var(--bg-color); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Add Custom CDN</button>
+            </div>
+        </div>
+        <div style="padding: 1rem;">
+            <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Added Libraries</strong>
+            <div id="addedLibrariesList" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <div id="snippetsOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1999;"></div>
 
     <div class="container">
         <!-- Editors Section -->
         <div class="editors">
             <div class="editor-panel">
-                <div class="editor-header">HTML</div>
-                <textarea class="editor" id="htmlEditor" placeholder="<!-- Enter your HTML here -->" spellcheck="false"></textarea>
+                <div class="editor-header">
+                    <span>HTML</span>
+                    <button class="panel-settings-button" id="htmlSettingsBtn" aria-label="HTML panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="htmlSettingsMenu">
+                        <div class="more-option-item" id="htmlLibrariesBtn">
+                            📚 Add Libraries
+                        </div>
+                        <div class="more-option-item" id="htmlWrapToggle">
+                            ↩️ Word Wrap: <span id="htmlWrapStatus">Off</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="editor-highlight" id="htmlHighlight"></div>
+                    <textarea
+                        class="editor"
+                        id="htmlEditor"
+                        placeholder="<!-- Enter your HTML here -->"
+                        spellcheck="false"
+                        aria-label="HTML code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                    ></textarea>
+                </div>
             </div>
             <div class="editor-panel">
-                <div class="editor-header">CSS</div>
-                <textarea class="editor" id="cssEditor" placeholder="/* Enter your CSS here */" spellcheck="false"></textarea>
+                <div class="editor-header">
+                    <span>CSS</span>
+                    <button class="panel-settings-button" id="cssSettingsBtn" aria-label="CSS panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="cssSettingsMenu">
+                        <div class="more-option-item" id="cssLibrariesBtn">
+                            📚 Add Libraries
+                        </div>
+                        <div class="more-option-item" id="cssWrapToggle">
+                            ↩️ Word Wrap: <span id="cssWrapStatus">Off</span>
+                        </div>
+                        <div class="more-option-item" id="cssResetBtn">
+                            🔄 CSS Reset: <span id="cssResetStatus">None</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="editor-highlight" id="cssHighlight"></div>
+                    <textarea
+                        class="editor"
+                        id="cssEditor"
+                        placeholder="/* Enter your CSS here */"
+                        spellcheck="false"
+                        aria-label="CSS code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                    ></textarea>
+                </div>
             </div>
             <div class="editor-panel">
-                <div class="editor-header">JavaScript</div>
-                <textarea class="editor" id="jsEditor" placeholder="// Enter your JavaScript here" spellcheck="false"></textarea>
+                <div class="editor-header">
+                    <span>JavaScript</span>
+                    <button class="panel-settings-button" id="jsSettingsBtn" aria-label="JavaScript panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="jsSettingsMenu">
+                        <div class="more-option-item" id="jsLibrariesBtn">
+                            📚 Add Libraries
+                        </div>
+                        <div class="more-option-item" id="jsWrapToggle">
+                            ↩️ Word Wrap: <span id="jsWrapStatus">Off</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="editor-highlight" id="jsHighlight"></div>
+                    <textarea
+                        class="editor"
+                        id="jsEditor"
+                        placeholder="// Enter your JavaScript here"
+                        spellcheck="false"
+                        aria-label="JavaScript code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                    ></textarea>
+                </div>
             </div>
         </div>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer"></div>
 
         <!-- Preview Section -->
         <div class="preview-section">
@@ -304,34 +904,483 @@
         </div>
     </div>
 
+    <!-- Prism.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
     <script>
         // Get DOM elements
         const htmlEditor = document.getElementById('htmlEditor');
         const cssEditor = document.getElementById('cssEditor');
         const jsEditor = document.getElementById('jsEditor');
+        const htmlHighlight = document.getElementById('htmlHighlight');
+        const cssHighlight = document.getElementById('cssHighlight');
+        const jsHighlight = document.getElementById('jsHighlight');
         const preview = document.getElementById('preview');
         const runBtn = document.getElementById('runBtn');
         const clearBtn = document.getElementById('clearBtn');
-        const themeToggle = document.getElementById('themeToggle');
+        const exportBtn = document.getElementById('exportBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const autoRunToggle = document.getElementById('autoRunToggle');
+        const moreOptionsBtn = document.getElementById('moreOptionsBtn');
+        const moreOptionsMenu = document.getElementById('moreOptionsMenu');
+        const saveSnippetMenuBtn = document.getElementById('saveSnippetMenuBtn');
+        const snippetsMenuBtn = document.getElementById('snippetsMenuBtn');
 
-        // Theme management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('coded-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeButton(savedTheme);
+        // Panel-specific settings
+        const htmlSettingsBtn = document.getElementById('htmlSettingsBtn');
+        const htmlSettingsMenu = document.getElementById('htmlSettingsMenu');
+        const htmlLibrariesBtn = document.getElementById('htmlLibrariesBtn');
+        const htmlWrapToggle = document.getElementById('htmlWrapToggle');
+        const htmlWrapStatus = document.getElementById('htmlWrapStatus');
+
+        const cssSettingsBtn = document.getElementById('cssSettingsBtn');
+        const cssSettingsMenu = document.getElementById('cssSettingsMenu');
+        const cssLibrariesBtn = document.getElementById('cssLibrariesBtn');
+        const cssWrapToggle = document.getElementById('cssWrapToggle');
+        const cssWrapStatus = document.getElementById('cssWrapStatus');
+        const cssResetBtn = document.getElementById('cssResetBtn');
+        const cssResetStatus = document.getElementById('cssResetStatus');
+
+        const jsSettingsBtn = document.getElementById('jsSettingsBtn');
+        const jsSettingsMenu = document.getElementById('jsSettingsMenu');
+        const jsLibrariesBtn = document.getElementById('jsLibrariesBtn');
+        const jsWrapToggle = document.getElementById('jsWrapToggle');
+        const jsWrapStatus = document.getElementById('jsWrapStatus');
+        const snippetsMenu = document.getElementById('snippetsMenu');
+        const librariesMenu = document.getElementById('librariesMenu');
+        const snippetsOverlay = document.getElementById('snippetsOverlay');
+        const closeSnippetsBtn = document.getElementById('closeSnippetsBtn');
+        const closeLibrariesBtn = document.getElementById('closeLibrariesBtn');
+        const snippetsList = document.getElementById('snippetsList');
+        const popularLibraries = document.getElementById('popularLibraries');
+        const addedLibrariesList = document.getElementById('addedLibrariesList');
+        const customCdnInput = document.getElementById('customCdnInput');
+        const addCustomCdnBtn = document.getElementById('addCustomCdnBtn');
+        const resizer = document.getElementById('resizer');
+        const editorsSection = document.querySelector('.editors');
+        const previewSection = document.querySelector('.preview-section');
+        const container = document.querySelector('.container');
+        const shareModeBanner = document.getElementById('shareModeBanner');
+        const updateShareBtn = document.getElementById('updateShareBtn');
+        const startFreshBtn = document.getElementById('startFreshBtn');
+
+        let autoRunEnabled = localStorage.getItem('coded-autorun') === 'true';
+        let autoRunTimeout = null;
+        let wordWrapEnabled = {
+            html: localStorage.getItem('coded-wordwrap-html') !== null ? localStorage.getItem('coded-wordwrap-html') === 'true' : true,
+            css: localStorage.getItem('coded-wordwrap-css') !== null ? localStorage.getItem('coded-wordwrap-css') === 'true' : true,
+            js: localStorage.getItem('coded-wordwrap-js') !== null ? localStorage.getItem('coded-wordwrap-js') === 'true' : true
+        };
+        let cssResetType = localStorage.getItem('coded-css-reset') || 'none'; // 'none', 'normalize', 'reset'
+        let isShareMode = false; // Track if we're in share mode
+
+        // Debounced auto-run (waits 800ms after last keystroke)
+        function debouncedAutoRun() {
+            if (!autoRunEnabled) return;
+
+            clearTimeout(autoRunTimeout);
+            autoRunTimeout = setTimeout(() => {
+                runCode();
+            }, 800); // Wait 800ms after user stops typing
         }
 
-        function updateThemeButton(theme) {
-            themeToggle.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        // Syntax highlighting with Prism
+        function highlightEditor(editor, highlight, language) {
+            const code = editor.value;
+            if (code) {
+                const highlighted = Prism.highlight(code, Prism.languages[language], language);
+                highlight.innerHTML = `<pre><code class="language-${language}">${highlighted}</code></pre>`;
+            } else {
+                highlight.innerHTML = '';
+            }
+            syncScroll(editor, highlight);
         }
 
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('coded-theme', newTheme);
-            updateThemeButton(newTheme);
+        // Sync scroll between editor and highlight
+        function syncScroll(editor, highlight) {
+            highlight.scrollTop = editor.scrollTop;
+            highlight.scrollLeft = editor.scrollLeft;
+        }
+
+        // Snippets management
+        function getSnippets() {
+            const snippets = localStorage.getItem('coded-snippets');
+            return snippets ? JSON.parse(snippets) : [];
+        }
+
+        function saveSnippets(snippets) {
+            localStorage.setItem('coded-snippets', JSON.stringify(snippets));
+        }
+
+        function saveCurrentSnippet() {
+            // Check if there's any code to save
+            const hasCode = htmlEditor.value.trim() || cssEditor.value.trim() || jsEditor.value.trim();
+            if (!hasCode) {
+                alert('Cannot save an empty snippet. Please add some code first!');
+                return;
+            }
+
+            const name = prompt('Enter a name for this snippet:');
+            if (!name || !name.trim()) {
+                return;
+            }
+
+            const snippet = {
+                id: Date.now(),
+                name: name.trim(),
+                html: htmlEditor.value,
+                css: cssEditor.value,
+                js: jsEditor.value,
+                timestamp: new Date().toISOString()
+            };
+
+            const snippets = getSnippets();
+            snippets.push(snippet);
+            saveSnippets(snippets);
+
+            // Show confirmation
+            alert(`Snippet "${name.trim()}" saved!`);
+            moreOptionsMenu.classList.remove('active');
+        }
+
+        function loadSnippet(id) {
+            const snippets = getSnippets();
+            const snippet = snippets.find(s => s.id === id);
+            if (snippet) {
+                htmlEditor.value = snippet.html;
+                cssEditor.value = snippet.css;
+                jsEditor.value = snippet.js;
+
+                highlightEditor(htmlEditor, htmlHighlight, 'markup');
+                highlightEditor(cssEditor, cssHighlight, 'css');
+                highlightEditor(jsEditor, jsHighlight, 'javascript');
+
+                saveCode();
+                runCode();
+                closeSnippetsModal();
+            }
+        }
+
+        function deleteSnippet(id) {
+            if (!confirm('Delete this snippet?')) return;
+            const snippets = getSnippets().filter(s => s.id !== id);
+            saveSnippets(snippets);
+            renderSnippets();
+        }
+
+        function renderSnippets() {
+            const snippets = getSnippets();
+            if (snippets.length === 0) {
+                snippetsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <div class="empty-state-text">
+                            No saved snippets yet.<br>
+                            Save your first snippet from the menu!
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            snippetsList.innerHTML = snippets.map(snippet => `
+                <div class="snippet-item">
+                    <div class="snippet-name" onclick="loadSnippet(${snippet.id})">${snippet.name}</div>
+                    <div class="snippet-actions">
+                        <span class="snippet-delete" onclick="deleteSnippet(${snippet.id})">Delete</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Make functions global for onclick handlers
+        window.loadSnippet = loadSnippet;
+        window.deleteSnippet = deleteSnippet;
+
+        // Libraries management - organized by category
+        const POPULAR_LIBS = {
+            html: [
+                { name: 'Marked (Markdown)', url: 'https://cdn.jsdelivr.net/npm/marked/marked.min.js', type: 'js' },
+                { name: 'DOMPurify', url: 'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js', type: 'js' },
+                { name: 'Showdown (Markdown)', url: 'https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js', type: 'js' }
+            ],
+            css: [
+                { name: 'Bootstrap CSS', url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css', type: 'css' },
+                { name: 'Tailwind CSS', url: 'https://cdn.tailwindcss.com', type: 'js' },
+                { name: 'Font Awesome', url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', type: 'css' },
+                { name: 'Animate.css', url: 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css', type: 'css' },
+                { name: 'Bulma CSS', url: 'https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css', type: 'css' },
+                { name: 'Material Icons', url: 'https://fonts.googleapis.com/icon?family=Material+Icons', type: 'css' }
+            ],
+            js: [
+                { name: 'jQuery', url: 'https://code.jquery.com/jquery-3.7.1.min.js', type: 'js' },
+                { name: 'React', url: 'https://unpkg.com/react@18/umd/react.production.min.js', type: 'js' },
+                { name: 'React DOM', url: 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', type: 'js' },
+                { name: 'Vue 3', url: 'https://unpkg.com/vue@3/dist/vue.global.js', type: 'js' },
+                { name: 'Bootstrap JS', url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js', type: 'js' },
+                { name: 'Lodash', url: 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', type: 'js' },
+                { name: 'Axios', url: 'https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js', type: 'js' },
+                { name: 'GSAP', url: 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js', type: 'js' },
+                { name: 'Three.js', url: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', type: 'js' },
+                { name: 'Chart.js', url: 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js', type: 'js' },
+                { name: 'Moment.js', url: 'https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js', type: 'js' }
+            ]
+        };
+
+        function getAddedLibraries() {
+            const libs = localStorage.getItem('coded-libraries');
+            return libs ? JSON.parse(libs) : [];
+        }
+
+        function saveAddedLibraries(libs) {
+            localStorage.setItem('coded-libraries', JSON.stringify(libs));
+        }
+
+        function addLibrary(name, url, type) {
+            const libs = getAddedLibraries();
+            if (libs.find(l => l.url === url)) {
+                alert('This library is already added!');
+                return;
+            }
+
+            libs.push({ name, url, type });
+            saveAddedLibraries(libs);
+            renderLibraries(currentLibraryCategory);
+            saveCode(); // Trigger save to update preview
+        }
+
+        let currentLibraryCategory = 'js'; // Default category for library modal
+
+        function removeLibrary(url) {
+            const libs = getAddedLibraries().filter(l => l.url !== url);
+            saveAddedLibraries(libs);
+            renderLibraries(currentLibraryCategory);
+            saveCode();
+        }
+
+        function renderLibraries(category) {
+            const added = getAddedLibraries();
+            const categoryLibs = POPULAR_LIBS[category] || [];
+
+            // Render popular libraries for this category
+            popularLibraries.innerHTML = categoryLibs.map(lib => {
+                const isAdded = added.find(l => l.url === lib.url);
+                return `
+                    <div class="library-item ${isAdded ? 'added' : ''}" onclick="${isAdded ? '' : `addLibrary('${lib.name}', '${lib.url}', '${lib.type}')`}">
+                        <div>
+                            <span class="library-name">${lib.name}</span>
+                            <span class="library-version">${lib.type.toUpperCase()}</span>
+                        </div>
+                        ${isAdded ? '<span style="color: var(--accent-color);">✓ Added</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Render added libraries (all, not filtered by category)
+            if (added.length === 0) {
+                addedLibrariesList.innerHTML = '<div class="empty-state-text" style="text-align: center; padding: 1rem; color: var(--secondary-color);">No libraries added yet</div>';
+            } else {
+                addedLibrariesList.innerHTML = added.map(lib => `
+                    <div class="library-item">
+                        <div>
+                            <span class="library-name">${lib.name}</span>
+                            <span class="library-version">${lib.type.toUpperCase()}</span>
+                        </div>
+                        <span class="library-remove" onclick="removeLibrary('${lib.url}')">Remove</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Make functions global
+        window.addLibrary = addLibrary;
+        window.removeLibrary = removeLibrary;
+
+        // Libraries modal
+        function openLibrariesModal(category) {
+            currentLibraryCategory = category; // Store current category
+
+            const categoryNames = {
+                html: 'HTML',
+                css: 'CSS',
+                js: 'JavaScript'
+            };
+
+            // Update modal title
+            librariesMenu.querySelector('.snippets-menu-header span').textContent = `Add ${categoryNames[category]} Libraries`;
+
+            librariesMenu.style.display = 'block';
+            snippetsOverlay.style.display = 'block';
+            renderLibraries(category);
+
+            // Close panel menus
+            htmlSettingsMenu.classList.remove('active');
+            cssSettingsMenu.classList.remove('active');
+            jsSettingsMenu.classList.remove('active');
+        }
+
+        function closeLibrariesModal() {
+            librariesMenu.style.display = 'none';
+            snippetsOverlay.style.display = 'none';
+        }
+
+        htmlLibrariesBtn.addEventListener('click', () => openLibrariesModal('html'));
+        cssLibrariesBtn.addEventListener('click', () => openLibrariesModal('css'));
+        jsLibrariesBtn.addEventListener('click', () => openLibrariesModal('js'));
+        closeLibrariesBtn.addEventListener('click', closeLibrariesModal);
+
+        // Add custom CDN
+        addCustomCdnBtn.addEventListener('click', () => {
+            const url = customCdnInput.value.trim();
+            if (!url) {
+                alert('Please enter a CDN URL');
+                return;
+            }
+
+            const type = url.endsWith('.css') ? 'css' : 'js';
+            const name = prompt('Enter a name for this library:');
+            if (!name) return;
+
+            addLibrary(name.trim(), url, type);
+            customCdnInput.value = '';
         });
+
+        // More options menu toggle
+        moreOptionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moreOptionsMenu.classList.toggle('active');
+        });
+
+        // Panel settings menu toggles
+        htmlSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            htmlSettingsMenu.classList.toggle('active');
+            cssSettingsMenu.classList.remove('active');
+            jsSettingsMenu.classList.remove('active');
+        });
+
+        cssSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cssSettingsMenu.classList.toggle('active');
+            htmlSettingsMenu.classList.remove('active');
+            jsSettingsMenu.classList.remove('active');
+        });
+
+        jsSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            jsSettingsMenu.classList.toggle('active');
+            htmlSettingsMenu.classList.remove('active');
+            cssSettingsMenu.classList.remove('active');
+        });
+
+        // Close menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!moreOptionsMenu.contains(e.target) && e.target !== moreOptionsBtn) {
+                moreOptionsMenu.classList.remove('active');
+            }
+            if (!htmlSettingsMenu.contains(e.target) && e.target !== htmlSettingsBtn) {
+                htmlSettingsMenu.classList.remove('active');
+            }
+            if (!cssSettingsMenu.contains(e.target) && e.target !== cssSettingsBtn) {
+                cssSettingsMenu.classList.remove('active');
+            }
+            if (!jsSettingsMenu.contains(e.target) && e.target !== jsSettingsBtn) {
+                jsSettingsMenu.classList.remove('active');
+            }
+        });
+
+        // Snippets modal toggle
+        function openSnippetsModal() {
+            snippetsMenu.style.display = 'block';
+            snippetsOverlay.style.display = 'block';
+            renderSnippets();
+            moreOptionsMenu.classList.remove('active');
+        }
+
+        function closeSnippetsModal() {
+            snippetsMenu.style.display = 'none';
+            snippetsOverlay.style.display = 'none';
+        }
+
+        // Word wrap toggle - panel-specific
+        function updateWordWrap(panel) {
+            const panelMap = {
+                html: { editor: htmlEditor, highlight: htmlHighlight, status: htmlWrapStatus },
+                css: { editor: cssEditor, highlight: cssHighlight, status: cssWrapStatus },
+                js: { editor: jsEditor, highlight: jsHighlight, status: jsWrapStatus }
+            };
+
+            const { editor, highlight, status } = panelMap[panel];
+
+            if (wordWrapEnabled[panel]) {
+                editor.classList.add('wrap-enabled');
+                highlight.classList.add('wrap-enabled');
+                status.textContent = 'On';
+            } else {
+                editor.classList.remove('wrap-enabled');
+                highlight.classList.remove('wrap-enabled');
+                status.textContent = 'Off';
+            }
+
+            localStorage.setItem(`coded-wordwrap-${panel}`, wordWrapEnabled[panel]);
+        }
+
+        htmlWrapToggle.addEventListener('click', () => {
+            wordWrapEnabled.html = !wordWrapEnabled.html;
+            updateWordWrap('html');
+        });
+
+        cssWrapToggle.addEventListener('click', () => {
+            wordWrapEnabled.css = !wordWrapEnabled.css;
+            updateWordWrap('css');
+        });
+
+        jsWrapToggle.addEventListener('click', () => {
+            wordWrapEnabled.js = !wordWrapEnabled.js;
+            updateWordWrap('js');
+        });
+
+        // CSS Reset/Normalize toggle
+        const CSS_NORMALIZE = `/*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */html{line-height:1.15;-webkit-text-size-adjust:100%}body{margin:0}main{display:block}h1{font-size:2em;margin:.67em 0}hr{box-sizing:content-box;height:0;overflow:visible}pre{font-family:monospace,monospace;font-size:1em}a{background-color:transparent}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:bolder}code,kbd,samp{font-family:monospace,monospace;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}img{border-style:none}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}button,input{overflow:visible}button,select{text-transform:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner,button::-moz-focus-inner{border-style:none;padding:0}[type=button]:-moz-focusring,[type=reset]:-moz-focusring,[type=submit]:-moz-focusring,button:-moz-focusring{outline:1px dotted ButtonText}fieldset{padding:.35em .75em .625em}legend{box-sizing:border-box;color:inherit;display:table;max-width:100%;padding:0;white-space:normal}progress{vertical-align:baseline}textarea{overflow:auto}[type=checkbox],[type=radio]{box-sizing:border-box;padding:0}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}details{display:block}summary{display:list-item}template{display:none}[hidden]{display:none}`;
+
+        const CSS_RESET = `/* CSS Reset */html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}table{border-collapse:collapse;border-spacing:0}`;
+
+        function getCssResetCode() {
+            if (cssResetType === 'normalize') return CSS_NORMALIZE;
+            if (cssResetType === 'reset') return CSS_RESET;
+            return '';
+        }
+
+        cssResetBtn.addEventListener('click', () => {
+            // Cycle through: none -> normalize -> reset -> none
+            if (cssResetType === 'none') {
+                cssResetType = 'normalize';
+            } else if (cssResetType === 'normalize') {
+                cssResetType = 'reset';
+            } else {
+                cssResetType = 'none';
+            }
+
+            cssResetStatus.textContent = cssResetType === 'none' ? 'None' :
+                                         cssResetType === 'normalize' ? 'Normalize' : 'Reset';
+            localStorage.setItem('coded-css-reset', cssResetType);
+
+            // Re-run code to apply the reset
+            if (htmlEditor.value || cssEditor.value || jsEditor.value) {
+                runCode();
+            }
+        });
+
+        saveSnippetMenuBtn.addEventListener('click', () => {
+            saveCurrentSnippet();
+        });
+
+        snippetsMenuBtn.addEventListener('click', openSnippetsModal);
+        closeSnippetsBtn.addEventListener('click', closeSnippetsModal);
+        snippetsOverlay.addEventListener('click', closeSnippetsModal);
 
         // Load saved code from localStorage
         function loadCode() {
@@ -342,6 +1391,11 @@
             htmlEditor.value = savedHTML;
             cssEditor.value = savedCSS;
             jsEditor.value = savedJS;
+
+            // Update highlights
+            highlightEditor(htmlEditor, htmlHighlight, 'markup');
+            highlightEditor(cssEditor, cssHighlight, 'css');
+            highlightEditor(jsEditor, jsHighlight, 'javascript');
 
             // Run on load if there's saved code
             if (savedHTML || savedCSS || savedJS) {
@@ -356,16 +1410,164 @@
             localStorage.setItem('coded-js', jsEditor.value);
         }
 
-        // Auto-save on input
-        htmlEditor.addEventListener('input', saveCode);
-        cssEditor.addEventListener('input', saveCode);
-        jsEditor.addEventListener('input', saveCode);
+        // Add event listeners for live highlighting and auto-save
+        htmlEditor.addEventListener('input', () => {
+            highlightEditor(htmlEditor, htmlHighlight, 'markup');
+            saveCode();
+            debouncedAutoRun();
+        });
+        htmlEditor.addEventListener('scroll', () => syncScroll(htmlEditor, htmlHighlight));
+
+        cssEditor.addEventListener('input', () => {
+            highlightEditor(cssEditor, cssHighlight, 'css');
+            saveCode();
+            debouncedAutoRun();
+        });
+        cssEditor.addEventListener('scroll', () => syncScroll(cssEditor, cssHighlight));
+
+        jsEditor.addEventListener('input', () => {
+            highlightEditor(jsEditor, jsHighlight, 'javascript');
+            saveCode();
+            debouncedAutoRun();
+        });
+        jsEditor.addEventListener('scroll', () => syncScroll(jsEditor, jsHighlight));
+
+        // Tab trapping state
+        let tabTrappingEnabled = {
+            html: false,
+            css: false,
+            js: false
+        };
+
+        // HTML tag auto-completion
+        function handleTagCompletion(e, editor) {
+            if (e.key === '>' && editor === htmlEditor) {
+                const cursorPos = editor.selectionStart;
+                const textBefore = editor.value.substring(0, cursorPos);
+                const tagMatch = textBefore.match(/<([a-zA-Z][a-zA-Z0-9]*)[^>]*$/);
+
+                if (tagMatch && tagMatch[1]) {
+                    const tagName = tagMatch[1];
+                    const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed', 'source', 'track', 'wbr'];
+
+                    if (!selfClosingTags.includes(tagName.toLowerCase())) {
+                        const closingTag = `</${tagName}>`;
+                        const textAfter = editor.value.substring(cursorPos);
+                        editor.value = textBefore + '>' + closingTag + textAfter;
+                        editor.selectionStart = editor.selectionEnd = cursorPos + 1;
+                        e.preventDefault();
+                        editor.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+        }
+
+        // Enhanced tab and escape key handling
+        function handleEditorKeys(e, editorName) {
+            const editor = e.target;
+            const container = editor.closest('.editor-container');
+
+            // HTML tag auto-completion
+            handleTagCompletion(e, editor);
+
+            // Enable tab trapping on first interaction
+            if (!tabTrappingEnabled[editorName] && e.key !== 'Tab') {
+                tabTrappingEnabled[editorName] = true;
+                container.classList.add('tab-trapped');
+            }
+
+            // Tab key - indent
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+
+                if (e.shiftKey) {
+                    // Shift+Tab - outdent
+                    const lineStart = editor.value.lastIndexOf('\n', start - 1) + 1;
+                    const beforeCursor = editor.value.substring(lineStart, start);
+                    if (beforeCursor.startsWith('  ')) {
+                        editor.value = editor.value.substring(0, lineStart) +
+                                      editor.value.substring(lineStart + 2);
+                        editor.selectionStart = editor.selectionEnd = start - 2;
+                    }
+                } else {
+                    // Tab - indent
+                    editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+                    editor.selectionStart = editor.selectionEnd = start + 2;
+                }
+
+                editor.dispatchEvent(new Event('input'));
+
+                // Enable tab trapping
+                if (!tabTrappingEnabled[editorName]) {
+                    tabTrappingEnabled[editorName] = true;
+                    container.classList.add('tab-trapped');
+                }
+            }
+
+            // Escape key - disable tab trapping and blur
+            if (e.key === 'Escape') {
+                tabTrappingEnabled[editorName] = false;
+                container.classList.remove('tab-trapped');
+                editor.blur();
+
+                // Announce to screen readers
+                const announcement = document.createElement('div');
+                announcement.setAttribute('role', 'status');
+                announcement.setAttribute('aria-live', 'polite');
+                announcement.className = 'sr-only';
+                announcement.textContent = 'Editor exited. Tab key will now navigate between elements.';
+                document.body.appendChild(announcement);
+                setTimeout(() => announcement.remove(), 1000);
+            }
+        }
+
+        // Focus handlers to show/hide tab trap indicator
+        function handleEditorFocus(editorName) {
+            return function(e) {
+                const container = e.target.closest('.editor-container');
+                if (tabTrappingEnabled[editorName]) {
+                    container.classList.add('tab-trapped');
+                }
+            };
+        }
+
+        function handleEditorBlur(editorName) {
+            return function(e) {
+                const container = e.target.closest('.editor-container');
+                // Only remove if not tab trapped, or after a delay to prevent flicker
+                setTimeout(() => {
+                    if (document.activeElement !== e.target) {
+                        container.classList.remove('tab-trapped');
+                    }
+                }, 100);
+            };
+        }
+
+        htmlEditor.addEventListener('keydown', (e) => handleEditorKeys(e, 'html'));
+        htmlEditor.addEventListener('focus', handleEditorFocus('html'));
+        htmlEditor.addEventListener('blur', handleEditorBlur('html'));
+
+        cssEditor.addEventListener('keydown', (e) => handleEditorKeys(e, 'css'));
+        cssEditor.addEventListener('focus', handleEditorFocus('css'));
+        cssEditor.addEventListener('blur', handleEditorBlur('css'));
+
+        jsEditor.addEventListener('keydown', (e) => handleEditorKeys(e, 'js'));
+        jsEditor.addEventListener('focus', handleEditorFocus('js'));
+        jsEditor.addEventListener('blur', handleEditorBlur('js'));
 
         // Run code in preview
         function runCode() {
             const html = htmlEditor.value;
             const css = cssEditor.value;
             const js = jsEditor.value;
+            const libraries = getAddedLibraries();
+            const cssReset = getCssResetCode();
+
+            // Build library tags
+            const cssLibs = libraries.filter(l => l.type === 'css').map(l => `<link rel="stylesheet" href="${l.url}">`).join('\n    ');
+            const jsLibs = libraries.filter(l => l.type === 'js').map(l => `<script src="${l.url}"><\/script>`).join('\n    ');
 
             const previewDoc = `
 <!DOCTYPE html>
@@ -373,12 +1575,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    ${cssLibs}
     <style>
+        ${cssReset}
         ${css}
     </style>
 </head>
 <body>
     ${html}
+    ${jsLibs}
     <script>
         try {
             ${js}
@@ -404,58 +1609,228 @@
                 htmlEditor.value = '';
                 cssEditor.value = '';
                 jsEditor.value = '';
+                htmlHighlight.innerHTML = '';
+                cssHighlight.innerHTML = '';
+                jsHighlight.innerHTML = '';
                 localStorage.removeItem('coded-html');
                 localStorage.removeItem('coded-css');
                 localStorage.removeItem('coded-js');
-                runCode();
+
+                // Clear preview
+                const previewFrame = preview.contentDocument || preview.contentWindow.document;
+                previewFrame.open();
+                previewFrame.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>');
+                previewFrame.close();
             }
         }
 
-        // Basic HTML tag completion
-        function handleTagCompletion(editor, e) {
-            if (e.key === '>') {
-                const cursorPos = editor.selectionStart;
-                const textBefore = editor.value.substring(0, cursorPos);
-                const tagMatch = textBefore.match(/<([a-zA-Z][a-zA-Z0-9]*)[^>]*>$/);
+        // Export code as HTML file
+        function exportCode() {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
 
-                if (tagMatch && tagMatch[1]) {
-                    const tagName = tagMatch[1];
-                    const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link'];
+            const exportDoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coded Export</title>
+    <style>
+${css}
+    </style>
+</head>
+<body>
+${html}
+    <script>
+${js}
+    <\/script>
+</body>
+</html>`;
 
-                    if (!selfClosingTags.includes(tagName.toLowerCase())) {
-                        const closingTag = `</${tagName}>`;
-                        const textAfter = editor.value.substring(cursorPos);
-                        editor.value = textBefore + closingTag + textAfter;
-                        editor.selectionStart = editor.selectionEnd = cursorPos;
-                        e.preventDefault();
-                        saveCode();
-                    }
+            // Create blob and download
+            const blob = new Blob([exportDoc], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'coded-export.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Share code via URL
+        function shareCode() {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+
+            // Check if there's any code to share
+            if (!html && !css && !js) {
+                alert('Add some code first before sharing!');
+                return;
+            }
+
+            // Create a data object
+            const data = {
+                html: html,
+                css: css,
+                js: js
+            };
+
+            // Compress and encode to Base64 with URL-safe encoding
+            const compressed = LZString.compressToBase64(JSON.stringify(data))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, ''); // Remove trailing =
+
+            // Create shareable URL
+            const shareUrl = `${window.location.origin}${window.location.pathname}?share=${compressed}`;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Share link copied to clipboard! 🎉\n\nAnyone with this link can view and edit your code.');
+                moreOptionsMenu.classList.remove('active');
+            }).catch(err => {
+                // Fallback if clipboard API fails
+                prompt('Copy this link to share:', shareUrl);
+                moreOptionsMenu.classList.remove('active');
+            });
+        }
+
+        // Load code from URL parameter
+        function loadFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareParam = urlParams.get('share');
+
+            if (shareParam) {
+                try {
+                    // Reverse URL-safe encoding back to standard Base64
+                    const base64 = shareParam
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/');
+
+                    // Add padding if needed
+                    const padding = '='.repeat((4 - base64.length % 4) % 4);
+                    const standardBase64 = base64 + padding;
+
+                    // Decompress from Base64 and parse
+                    const decompressed = LZString.decompressFromBase64(standardBase64);
+                    const data = JSON.parse(decompressed);
+
+                    // Load the code
+                    htmlEditor.value = data.html || '';
+                    cssEditor.value = data.css || '';
+                    jsEditor.value = data.js || '';
+
+                    // Update highlights
+                    highlightEditor(htmlEditor, htmlHighlight, 'markup');
+                    highlightEditor(cssEditor, cssHighlight, 'css');
+                    highlightEditor(jsEditor, jsHighlight, 'javascript');
+
+                    // Run the code
+                    runCode();
+
+                    // Enter share mode
+                    isShareMode = true;
+                    shareModeBanner.classList.add('active');
+                    document.body.classList.add('share-mode');
+
+                    // Clean URL (remove share parameter) but keep share mode active
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (e) {
+                    console.error('Failed to load shared code:', e);
+                    alert('Failed to load shared code. The link may be invalid or corrupted.');
                 }
             }
         }
 
-        // Add tag completion to HTML editor
-        htmlEditor.addEventListener('keydown', (e) => handleTagCompletion(htmlEditor, e));
+        // Update share link (creates new share URL with current code)
+        function updateShareLink() {
+            shareCode(); // Reuse the share function
+        }
 
-        // Tab key handling for indentation
-        function handleTab(editor, e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = editor.selectionStart;
-                const end = editor.selectionEnd;
-                editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + 2;
-                saveCode();
+        // Exit share mode and start fresh
+        function startFresh() {
+            if (confirm('Start fresh? This will clear all code and exit share mode.')) {
+                // Clear all code
+                htmlEditor.value = '';
+                cssEditor.value = '';
+                jsEditor.value = '';
+                htmlHighlight.innerHTML = '';
+                cssHighlight.innerHTML = '';
+                jsHighlight.innerHTML = '';
+
+                // Clear preview
+                const previewFrame = preview.contentDocument || preview.contentWindow.document;
+                previewFrame.open();
+                previewFrame.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>');
+                previewFrame.close();
+
+                // Exit share mode
+                isShareMode = false;
+                shareModeBanner.classList.remove('active');
+                document.body.classList.remove('share-mode');
+
+                // Don't save to localStorage - truly fresh start
             }
         }
 
-        htmlEditor.addEventListener('keydown', (e) => handleTab(htmlEditor, e));
-        cssEditor.addEventListener('keydown', (e) => handleTab(cssEditor, e));
-        jsEditor.addEventListener('keydown', (e) => handleTab(jsEditor, e));
+        // Auto-run toggle
+        autoRunToggle.checked = autoRunEnabled;
+        autoRunToggle.addEventListener('change', (e) => {
+            autoRunEnabled = e.target.checked;
+            localStorage.setItem('coded-autorun', autoRunEnabled);
+        });
+
+        // Panel resizing
+        let isResizing = false;
+        let startY = 0;
+        let startEditorHeight = 0;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startY = e.clientY;
+            startEditorHeight = editorsSection.offsetHeight;
+            resizer.classList.add('resizing');
+            document.body.style.cursor = 'row-resize';
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const deltaY = e.clientY - startY;
+            const containerHeight = container.offsetHeight;
+            const newEditorHeight = startEditorHeight + deltaY;
+            const minHeight = 200;
+            const maxHeight = containerHeight - 200;
+
+            if (newEditorHeight >= minHeight && newEditorHeight <= maxHeight) {
+                const editorPercent = (newEditorHeight / containerHeight) * 100;
+                editorsSection.style.height = `${editorPercent}%`;
+                previewSection.style.flex = 'unset';
+                previewSection.style.height = `calc(${100 - editorPercent}% - 4px)`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizer.classList.remove('resizing');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
 
         // Event listeners
         runBtn.addEventListener('click', runCode);
         clearBtn.addEventListener('click', clearAll);
+        exportBtn.addEventListener('click', exportCode);
+        shareBtn.addEventListener('click', shareCode);
+        updateShareBtn.addEventListener('click', updateShareLink);
+        startFreshBtn.addEventListener('click', startFresh);
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -469,11 +1844,33 @@
                 e.preventDefault();
                 saveCode();
             }
+            // Cmd/Ctrl + E to export
+            if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+                e.preventDefault();
+                exportCode();
+            }
         });
 
-        // Initialize
-        initTheme();
-        loadCode();
+        // Auto-run toggle initialization
+        autoRunToggle.checked = autoRunEnabled;
+
+        // Initialize word wrap for each panel
+        updateWordWrap('html');
+        updateWordWrap('css');
+        updateWordWrap('js');
+
+        // Initialize CSS reset status
+        cssResetStatus.textContent = cssResetType === 'none' ? 'None' :
+                                     cssResetType === 'normalize' ? 'Normalize' : 'Reset';
+
+        // Check for shared code in URL first, then load from localStorage
+        loadFromUrl();
+
+        // Only load from localStorage if there was no share parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('share')) {
+            loadCode();
+        }
     </script>
 </body>
 </html>
