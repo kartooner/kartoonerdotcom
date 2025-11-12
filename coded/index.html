@@ -1672,12 +1672,8 @@ ${js}
                 return;
             }
 
-            // Create a data object
-            const data = {
-                html: html,
-                css: css,
-                js: js
-            };
+            // Create ultra-compact object with single-char keys to save bytes
+            const data = {h:html, c:css, j:js};
 
             // Compress and encode to Base64 with URL-safe encoding
             const compressed = LZString.compressToBase64(JSON.stringify(data))
@@ -1719,10 +1715,10 @@ ${js}
                     const decompressed = LZString.decompressFromBase64(standardBase64);
                     const data = JSON.parse(decompressed);
 
-                    // Load the code
-                    htmlEditor.value = data.html || '';
-                    cssEditor.value = data.css || '';
-                    jsEditor.value = data.js || '';
+                    // Load the code from compact object {h, c, j}
+                    htmlEditor.value = data.h || '';
+                    cssEditor.value = data.c || '';
+                    jsEditor.value = data.j || '';
 
                     // Update highlights
                     highlightEditor(htmlEditor, htmlHighlight, 'markup');
