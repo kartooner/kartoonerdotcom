@@ -430,6 +430,11 @@
             -moz-user-select: none;
         }
 
+        /* Prevent iframe from intercepting mouse events during resize */
+        body.resizing #preview {
+            pointer-events: none;
+        }
+
         /* Editors section */
         .editors {
             display: grid;
@@ -1892,10 +1897,24 @@ ${js}
         });
 
         document.addEventListener('mousemove', (e) => {
-            handleResize(e.clientY);
+            if (isResizing) {
+                e.preventDefault();
+                handleResize(e.clientY);
+            }
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            endResize();
+        });
+
+        // Stop resizing if mouse leaves the window
+        document.addEventListener('mouseleave', () => {
+            endResize();
+        });
+
+        // Also stop if focus is lost
+        window.addEventListener('blur', () => {
             endResize();
         });
 
