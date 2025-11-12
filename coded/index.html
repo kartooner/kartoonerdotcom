@@ -1657,8 +1657,8 @@ ${js}
             URL.revokeObjectURL(url);
         }
 
-        // Share code via backend API
-        async function shareCode() {
+        // Share code as .coded file
+        function shareCode() {
             const html = htmlEditor.value;
             const css = cssEditor.value;
             const js = jsEditor.value;
@@ -1669,51 +1669,46 @@ ${js}
                 return;
             }
 
-            // Prompt for a name
+            // Prompt for a filename
             const name = prompt('Give your share a name (e.g., "Accessible Panel Demo"):');
             if (!name || !name.trim()) {
                 return;
             }
 
             try {
-                const originalMenuState = moreOptionsMenu.classList.contains('active');
+                // Create share data
+                const shareData = {
+                    name: name.trim(),
+                    html: html,
+                    css: css,
+                    js: js,
+                    created: new Date().toISOString(),
+                    version: '1.0'
+                };
 
-                // Save to backend
-                const response = await fetch('/api/share', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: name.trim(),
-                        html: html,
-                        css: css,
-                        js: js
-                    })
-                });
+                // Convert to JSON and create a Blob
+                const jsonString = JSON.stringify(shareData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
 
-                const result = await response.json();
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
 
-                if (result.success) {
-                    // Create shareable URL with slug
-                    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${result.slug}`;
+                // Sanitize filename
+                const filename = name.trim().replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                a.download = `${filename}.coded`;
 
-                    // Copy to clipboard
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        alert(`Share link copied! 🎉\n\n${shareUrl}\n\nAnyone can access this link to view and edit your code.`);
-                        if (originalMenuState) {
-                            moreOptionsMenu.classList.remove('active');
-                        }
-                    }).catch(err => {
-                        prompt('Copy this link to share:', shareUrl);
-                        if (originalMenuState) {
-                            moreOptionsMenu.classList.remove('active');
-                        }
-                    });
-                } else {
-                    alert('Failed to create share: ' + (result.error || 'Unknown error'));
-                }
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                alert(`Share file "${filename}.coded" downloaded!\n\nYou can share this file with anyone. They can drag & drop it into Coded to load your code.`);
+                moreOptionsMenu.classList.remove('active');
             } catch (e) {
                 console.error('Share error:', e);
-                alert('Failed to create share. Please make sure the server is running.');
+                alert('Failed to create share file. Please try again.');
             }
         }
 
@@ -1885,6 +1880,93 @@ ${js}
         if (!urlParams.get('share')) {
             loadCode();
         }
+
+        // Load .coded file function
+        function loadCodedFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const shareData = JSON.parse(e.target.result);
+
+                    // Validate the file structure
+                    if (!shareData.version || (!shareData.html && !shareData.css && !shareData.js)) {
+                        alert('Invalid .coded file format.');
+                        return;
+                    }
+
+                    // Load the code
+                    htmlEditor.value = shareData.html || '';
+                    cssEditor.value = shareData.css || '';
+                    jsEditor.value = shareData.js || '';
+
+                    // Update highlights
+                    highlightEditor(htmlEditor, htmlHighlight, 'markup');
+                    highlightEditor(cssEditor, cssHighlight, 'css');
+                    highlightEditor(jsEditor, jsHighlight, 'javascript');
+
+                    // Run the code
+                    runCode();
+
+                    alert(`Loaded: ${shareData.name || 'Untitled'}`);
+                } catch (err) {
+                    console.error('Error loading .coded file:', err);
+                    alert('Failed to load .coded file. The file may be corrupted.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Drag and drop support for .coded files
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.body.style.opacity = '0.7';
+        });
+
+        document.body.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.body.style.opacity = '1';
+        });
+
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.body.style.opacity = '1';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.endsWith('.coded')) {
+                    loadCodedFile(file);
+                } else {
+                    alert('Please drop a .coded file.');
+                }
+            }
+        });
+
+        // Add "Load .coded File" menu option
+        const loadCodedFileBtn = document.createElement('div');
+        loadCodedFileBtn.className = 'more-option-item';
+        loadCodedFileBtn.id = 'loadCodedFileBtn';
+        loadCodedFileBtn.innerHTML = '📂 Load .coded File';
+        loadCodedFileBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.coded';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    loadCodedFile(file);
+                }
+            };
+            input.click();
+            moreOptionsMenu.classList.remove('active');
+        });
+
+        // Insert after "Share Link" button in menu
+        const shareBtn = document.getElementById('shareBtn');
+        shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
     </script>
 </body>
 </html>
