@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Coded - A lightweight code playground for quick prototyping">
+    <title>Coded - Code Playground</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --font-main: "Manrope", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+        }
+
+        /* Dark theme (default) */
+        :root, [data-theme="dark"] {
+            --bg-color: #191970;
+            --text-color: #ffffff;
+            --accent-color: #64ffda;
+            --secondary-color: #b8c4f5;
+            --editor-bg: #1a1a3e;
+            --editor-border: #2d2d5f;
+            --preview-bg: #ffffff;
+            --button-bg: #64ffda;
+            --button-text: #191970;
+            --button-hover: #52e8c8;
+        }
+
+        /* Light theme */
+        [data-theme="light"] {
+            --bg-color: #F5FBFF;
+            --text-color: #2d3748;
+            --accent-color: #0052a3;
+            --secondary-color: #4a5568;
+            --editor-bg: #ffffff;
+            --editor-border: #e2e8f0;
+            --preview-bg: #ffffff;
+            --button-bg: #0052a3;
+            --button-text: #ffffff;
+            --button-hover: #003d7a;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 2rem;
+            background: var(--editor-bg);
+            border-bottom: 2px solid var(--editor-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            background: none;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        /* Run button */
+        .run-button {
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .run-button:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Clear button */
+        .clear-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .clear-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        /* Main container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Editors section */
+        .editors {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--editor-border);
+            border-bottom: 2px solid var(--editor-border);
+            height: 50%;
+        }
+
+        .editor-panel {
+            background: var(--editor-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            padding: 0.75rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+        }
+
+        .editor {
+            flex: 1;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background: var(--editor-bg);
+            color: var(--text-color);
+            border: none;
+            resize: none;
+            outline: none;
+            overflow: auto;
+            tab-size: 2;
+        }
+
+        .editor::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .editor::-webkit-scrollbar-track {
+            background: var(--editor-bg);
+        }
+
+        .editor::-webkit-scrollbar-thumb {
+            background: var(--editor-border);
+            border-radius: 4px;
+        }
+
+        .editor::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Preview section */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--editor-bg);
+        }
+
+        .preview-header {
+            padding: 0.75rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+        }
+
+        #preview {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: var(--preview-bg);
+        }
+
+        /* Tablet responsive */
+        @media (max-width: 1024px) {
+            .editors {
+                grid-template-columns: 1fr;
+                height: 60%;
+            }
+
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+
+            .header-actions {
+                gap: 0.5rem;
+            }
+
+            .run-button {
+                padding: 0.5rem 1.5rem;
+            }
+        }
+
+        /* Mobile - hide for now */
+        @media (max-width: 768px) {
+            body::before {
+                content: "Coded is only available on desktop and tablet devices.";
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                padding: 2rem;
+                background: var(--editor-bg);
+                border: 2px solid var(--editor-border);
+                border-radius: 8px;
+                z-index: 9999;
+            }
+
+            .container, header {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Coded</h1>
+        <div class="header-actions">
+            <button class="clear-button" id="clearBtn">Clear All</button>
+            <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+            <button class="run-button" id="runBtn">Run Code</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Editors Section -->
+        <div class="editors">
+            <div class="editor-panel">
+                <div class="editor-header">HTML</div>
+                <textarea class="editor" id="htmlEditor" placeholder="<!-- Enter your HTML here -->" spellcheck="false"></textarea>
+            </div>
+            <div class="editor-panel">
+                <div class="editor-header">CSS</div>
+                <textarea class="editor" id="cssEditor" placeholder="/* Enter your CSS here */" spellcheck="false"></textarea>
+            </div>
+            <div class="editor-panel">
+                <div class="editor-header">JavaScript</div>
+                <textarea class="editor" id="jsEditor" placeholder="// Enter your JavaScript here" spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <div class="preview-header">Preview</div>
+            <iframe id="preview" sandbox="allow-scripts allow-modals"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const htmlEditor = document.getElementById('htmlEditor');
+        const cssEditor = document.getElementById('cssEditor');
+        const jsEditor = document.getElementById('jsEditor');
+        const preview = document.getElementById('preview');
+        const runBtn = document.getElementById('runBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Theme management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('coded-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeButton(savedTheme);
+        }
+
+        function updateThemeButton(theme) {
+            themeToggle.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('coded-theme', newTheme);
+            updateThemeButton(newTheme);
+        });
+
+        // Load saved code from localStorage
+        function loadCode() {
+            const savedHTML = localStorage.getItem('coded-html') || '';
+            const savedCSS = localStorage.getItem('coded-css') || '';
+            const savedJS = localStorage.getItem('coded-js') || '';
+
+            htmlEditor.value = savedHTML;
+            cssEditor.value = savedCSS;
+            jsEditor.value = savedJS;
+
+            // Run on load if there's saved code
+            if (savedHTML || savedCSS || savedJS) {
+                runCode();
+            }
+        }
+
+        // Save code to localStorage
+        function saveCode() {
+            localStorage.setItem('coded-html', htmlEditor.value);
+            localStorage.setItem('coded-css', cssEditor.value);
+            localStorage.setItem('coded-js', jsEditor.value);
+        }
+
+        // Auto-save on input
+        htmlEditor.addEventListener('input', saveCode);
+        cssEditor.addEventListener('input', saveCode);
+        jsEditor.addEventListener('input', saveCode);
+
+        // Run code in preview
+        function runCode() {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+
+            const previewDoc = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        ${css}
+    </style>
+</head>
+<body>
+    ${html}
+    <script>
+        try {
+            ${js}
+        } catch (error) {
+            console.error('JavaScript Error:', error);
+            document.body.innerHTML += '<div style="color: red; padding: 20px; font-family: monospace;">Error: ' + error.message + '</div>';
+        }
+    <\/script>
+</body>
+</html>
+            `;
+
+            // Write to iframe
+            const previewFrame = preview.contentDocument || preview.contentWindow.document;
+            previewFrame.open();
+            previewFrame.write(previewDoc);
+            previewFrame.close();
+        }
+
+        // Clear all code
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all code?')) {
+                htmlEditor.value = '';
+                cssEditor.value = '';
+                jsEditor.value = '';
+                localStorage.removeItem('coded-html');
+                localStorage.removeItem('coded-css');
+                localStorage.removeItem('coded-js');
+                runCode();
+            }
+        }
+
+        // Basic HTML tag completion
+        function handleTagCompletion(editor, e) {
+            if (e.key === '>') {
+                const cursorPos = editor.selectionStart;
+                const textBefore = editor.value.substring(0, cursorPos);
+                const tagMatch = textBefore.match(/<([a-zA-Z][a-zA-Z0-9]*)[^>]*>$/);
+
+                if (tagMatch && tagMatch[1]) {
+                    const tagName = tagMatch[1];
+                    const selfClosingTags = ['img', 'br', 'hr', 'input', 'meta', 'link'];
+
+                    if (!selfClosingTags.includes(tagName.toLowerCase())) {
+                        const closingTag = `</${tagName}>`;
+                        const textAfter = editor.value.substring(cursorPos);
+                        editor.value = textBefore + closingTag + textAfter;
+                        editor.selectionStart = editor.selectionEnd = cursorPos;
+                        e.preventDefault();
+                        saveCode();
+                    }
+                }
+            }
+        }
+
+        // Add tag completion to HTML editor
+        htmlEditor.addEventListener('keydown', (e) => handleTagCompletion(htmlEditor, e));
+
+        // Tab key handling for indentation
+        function handleTab(editor, e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 2;
+                saveCode();
+            }
+        }
+
+        htmlEditor.addEventListener('keydown', (e) => handleTab(htmlEditor, e));
+        cssEditor.addEventListener('keydown', (e) => handleTab(cssEditor, e));
+        jsEditor.addEventListener('keydown', (e) => handleTab(jsEditor, e));
+
+        // Event listeners
+        runBtn.addEventListener('click', runCode);
+        clearBtn.addEventListener('click', clearAll);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + Enter to run
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+            // Cmd/Ctrl + S to save (already auto-saving, but prevent browser save dialog)
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                saveCode();
+            }
+        });
+
+        // Initialize
+        initTheme();
+        loadCode();
+    </script>
+</body>
+</html>
