@@ -24,9 +24,110 @@ const mimeTypes = {
   '.xml': 'application/xml'
 };
 
+// Shares storage file
+const sharesFilePath = path.join(__dirname, 'coded', 'shares.json');
+
+// Helper to read shares
+function getShares() {
+  try {
+    if (fs.existsSync(sharesFilePath)) {
+      const data = fs.readFileSync(sharesFilePath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('Error reading shares:', e);
+  }
+  return {};
+}
+
+// Helper to save shares
+function saveShares(shares) {
+  try {
+    fs.writeFileSync(sharesFilePath, JSON.stringify(shares, null, 2));
+  } catch (e) {
+    console.error('Error saving shares:', e);
+  }
+}
+
+// Helper to slugify name
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 const server = http.createServer((req, res) => {
   let pathname = url.parse(req.url).pathname;
-  
+  const parsedUrl = url.parse(req.url, true);
+
+  // API: Save a share
+  if (req.method === 'POST' && pathname === '/api/share') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const { name, html, css, js } = JSON.parse(body);
+        if (!name || !name.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Name is required' }));
+          return;
+        }
+
+        let slug = slugify(name.trim());
+        const shares = getShares();
+
+        // Auto-increment if slug already exists
+        if (shares[slug]) {
+          let counter = 2;
+          while (shares[`${slug}-${counter}`]) {
+            counter++;
+          }
+          slug = `${slug}-${counter}`;
+        }
+
+        shares[slug] = {
+          name: name.trim(),
+          html: html || '',
+          css: css || '',
+          js: js || '',
+          created: new Date().toISOString()
+        };
+
+        saveShares(shares);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, slug }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Server error' }));
+      }
+    });
+    return;
+  }
+
+  // API: Get a share
+  if (req.method === 'GET' && pathname === '/api/share') {
+    const slug = parsedUrl.query.id;
+    if (!slug) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Share ID required' }));
+      return;
+    }
+
+    const shares = getShares();
+    const share = shares[slug];
+
+    if (share) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(share));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Share not found' }));
+    }
+    return;
+  }
+
   // Serve index.html for root
   if (pathname === '/') {
     pathname = '/index.html';

@@ -735,6 +735,18 @@
     </style>
 </head>
 <body>
+    <!-- Share Mode Banner -->
+    <div class="share-mode-banner" id="shareModeBanner" role="status" aria-live="polite">
+        <div class="share-mode-info">
+            <span style="font-size: 1.2rem;">🔗</span>
+            <span><strong>Viewing shared code</strong> — Make your own edits and share them!</span>
+        </div>
+        <div class="share-mode-actions">
+            <button class="share-mode-button primary" id="updateShareBtn">Update Share Link</button>
+            <button class="share-mode-button secondary" id="startFreshBtn">Start Fresh</button>
+        </div>
+    </div>
+
     <header>
         <h1>&lt;/Coded&gt;</h1>
         <div class="header-actions">
@@ -767,18 +779,6 @@
             </div>
         </div>
     </header>
-
-    <!-- Share Mode Banner -->
-    <div class="share-mode-banner" id="shareModeBanner">
-        <div class="share-mode-info">
-            <span style="font-size: 1.2rem;">🔗</span>
-            <span><strong>Viewing shared code</strong> — Make your own edits and share them!</span>
-        </div>
-        <div class="share-mode-actions">
-            <button class="share-mode-button primary" id="updateShareBtn">Update Share Link</button>
-            <button class="share-mode-button secondary" id="startFreshBtn">Start Fresh</button>
-        </div>
-    </div>
 
     <!-- Snippets Modal -->
     <div class="snippets-menu" id="snippetsMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
@@ -1660,8 +1660,8 @@ ${js}
             URL.revokeObjectURL(url);
         }
 
-        // Share code via URL
-        function shareCode() {
+        // Share code via backend
+        async function shareCode() {
             const html = htmlEditor.value;
             const css = cssEditor.value;
             const js = jsEditor.value;
@@ -1672,53 +1672,63 @@ ${js}
                 return;
             }
 
-            // Create ultra-compact object with single-char keys to save bytes
-            const data = {h:html, c:css, j:js};
+            // Prompt for a name
+            const name = prompt('Give your share a name (e.g., "accessible-panel"):');
+            if (!name || !name.trim()) {
+                return;
+            }
 
-            // Compress and encode to Base64 with URL-safe encoding
-            const compressed = LZString.compressToBase64(JSON.stringify(data))
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/, ''); // Remove trailing =
+            try {
+                // Save to backend
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name.trim(), html, css, js })
+                });
 
-            // Create shareable URL
-            const shareUrl = `${window.location.origin}${window.location.pathname}?share=${compressed}`;
+                const result = await response.json();
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                alert('Share link copied to clipboard! 🎉\n\nAnyone with this link can view and edit your code.');
-                moreOptionsMenu.classList.remove('active');
-            }).catch(err => {
-                // Fallback if clipboard API fails
-                prompt('Copy this link to share:', shareUrl);
-                moreOptionsMenu.classList.remove('active');
-            });
+                if (result.success) {
+                    // Create shareable URL with slug
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${result.slug}`;
+
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert(`Share link copied! 🎉\n\n${shareUrl}\n\nAnyone with this link can view and edit your code.`);
+                        moreOptionsMenu.classList.remove('active');
+                    }).catch(err => {
+                        prompt('Copy this link to share:', shareUrl);
+                        moreOptionsMenu.classList.remove('active');
+                    });
+                } else {
+                    alert('Failed to create share: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Share error:', e);
+                alert('Failed to create share. Please try again.');
+            }
         }
 
         // Load code from URL parameter
-        function loadFromUrl() {
+        async function loadFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
-            const shareParam = urlParams.get('share');
+            const shareId = urlParams.get('share');
 
-            if (shareParam) {
+            if (shareId) {
                 try {
-                    // Reverse URL-safe encoding back to standard Base64
-                    const base64 = shareParam
-                        .replace(/-/g, '+')
-                        .replace(/_/g, '/');
+                    // Fetch from backend
+                    const response = await fetch(`/api/share?id=${encodeURIComponent(shareId)}`);
 
-                    // Add padding if needed
-                    const padding = '='.repeat((4 - base64.length % 4) % 4);
-                    const standardBase64 = base64 + padding;
+                    if (!response.ok) {
+                        throw new Error('Share not found');
+                    }
 
-                    // Decompress from Base64 and parse
-                    const decompressed = LZString.decompressFromBase64(standardBase64);
-                    const data = JSON.parse(decompressed);
+                    const data = await response.json();
 
-                    // Load the code from compact object {h, c, j}
-                    htmlEditor.value = data.h || '';
-                    cssEditor.value = data.c || '';
-                    jsEditor.value = data.j || '';
+                    // Load the code
+                    htmlEditor.value = data.html || '';
+                    cssEditor.value = data.css || '';
+                    jsEditor.value = data.js || '';
 
                     // Update highlights
                     highlightEditor(htmlEditor, htmlHighlight, 'markup');
@@ -1737,7 +1747,7 @@ ${js}
                     window.history.replaceState({}, document.title, window.location.pathname);
                 } catch (e) {
                     console.error('Failed to load shared code:', e);
-                    alert('Failed to load shared code. The link may be invalid or corrupted.');
+                    alert('Failed to load shared code. The share may not exist or the server may be unavailable.');
                 }
             }
         }
