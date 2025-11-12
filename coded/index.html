@@ -1915,35 +1915,6 @@ ${js}
             reader.readAsText(file);
         }
 
-        // Drag and drop support for .coded files
-        document.body.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.body.style.opacity = '0.7';
-        });
-
-        document.body.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.body.style.opacity = '1';
-        });
-
-        document.body.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            document.body.style.opacity = '1';
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.name.endsWith('.coded')) {
-                    loadCodedFile(file);
-                } else {
-                    alert('Please drop a .coded file.');
-                }
-            }
-        });
-
         // Add "Load .coded File" menu option
         const loadCodedFileBtn = document.createElement('div');
         loadCodedFileBtn.className = 'more-option-item';
