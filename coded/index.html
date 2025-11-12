@@ -1800,19 +1800,19 @@ ${js}
         let startY = 0;
         let startEditorHeight = 0;
 
-        resizer.addEventListener('mousedown', (e) => {
+        function startResize(clientY) {
             isResizing = true;
-            startY = e.clientY;
+            startY = clientY;
             startEditorHeight = editorsSection.offsetHeight;
             resizer.classList.add('resizing');
             document.body.style.cursor = 'row-resize';
             document.body.style.userSelect = 'none';
-        });
+        }
 
-        document.addEventListener('mousemove', (e) => {
+        function handleResize(clientY) {
             if (!isResizing) return;
 
-            const deltaY = e.clientY - startY;
+            const deltaY = clientY - startY;
             const containerHeight = container.offsetHeight;
             const newEditorHeight = startEditorHeight + deltaY;
             const minHeight = 200;
@@ -1824,15 +1824,50 @@ ${js}
                 previewSection.style.flex = 'unset';
                 previewSection.style.height = `calc(${100 - editorPercent}% - 4px)`;
             }
-        });
+        }
 
-        document.addEventListener('mouseup', () => {
+        function endResize() {
             if (isResizing) {
                 isResizing = false;
                 resizer.classList.remove('resizing');
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
             }
+        }
+
+        // Mouse events
+        resizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            startResize(e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            handleResize(e.clientY);
+        });
+
+        document.addEventListener('mouseup', () => {
+            endResize();
+        });
+
+        // Touch events for mobile/tablet
+        resizer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startResize(e.touches[0].clientY);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isResizing) {
+                e.preventDefault();
+                handleResize(e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            endResize();
+        });
+
+        document.addEventListener('touchcancel', () => {
+            endResize();
         });
 
         // Event listeners
