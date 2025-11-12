@@ -443,7 +443,13 @@
             background: var(--editor-border);
             border-bottom: 2px solid var(--editor-border);
             height: 50%;
-            transition: height 0.3s ease;
+            transition: height 0.3s ease, grid-template-columns 0.3s ease;
+        }
+
+        /* Vertical layout */
+        .editors.vertical-layout {
+            grid-template-columns: 1fr;
+            height: 60%;
         }
 
         /* Share mode - show more preview */
@@ -459,6 +465,30 @@
         }
 
         .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .line-numbers {
+            background: var(--editor-bg);
+            color: var(--secondary-color);
+            padding: 1rem 0.5rem 1rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-align: right;
+            user-select: none;
+            opacity: 0.5;
+            border-right: 1px solid var(--editor-border);
+            overflow: hidden;
+            min-width: 3rem;
+            white-space: pre;
+        }
+
+        .editor-content {
             flex: 1;
             position: relative;
             overflow: hidden;
@@ -549,7 +579,7 @@
         }
 
         /* Tab trap indicator */
-        .editor-container::after {
+        .editor-content::after {
             content: "Tab to indent • Esc to exit";
             position: absolute;
             bottom: 0.5rem;
@@ -565,7 +595,7 @@
             z-index: 3;
         }
 
-        .editor-container.tab-trapped::after {
+        .editor-content.tab-trapped::after {
             opacity: 0.7;
         }
 
@@ -641,6 +671,22 @@
             font-weight: 500;
             font-size: 0.9rem;
             color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
         }
 
         #preview {
@@ -648,6 +694,105 @@
             width: 100%;
             border: none;
             background: var(--preview-bg);
+            transition: height 0.3s ease;
+        }
+
+        /* Console panel */
+        .console-panel {
+            display: none;
+            flex-direction: column;
+            height: 200px;
+            background: var(--editor-bg);
+            border-top: 2px solid var(--editor-border);
+        }
+
+        .console-panel.active {
+            display: flex;
+        }
+
+        .console-header {
+            padding: 0.5rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-clear {
+            background: none;
+            border: 1px solid var(--editor-border);
+            color: var(--secondary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .console-clear:hover {
+            opacity: 1;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .console-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-output::-webkit-scrollbar-track {
+            background: var(--editor-bg);
+        }
+
+        .console-output::-webkit-scrollbar-thumb {
+            background: var(--editor-border);
+            border-radius: 4px;
+        }
+
+        .console-output::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        .console-message {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 2px;
+            border-left: 3px solid transparent;
+            word-wrap: break-word;
+        }
+
+        .console-message.log {
+            color: var(--text-color);
+            border-left-color: var(--secondary-color);
+        }
+
+        .console-message.warn {
+            color: #ffa500;
+            border-left-color: #ffa500;
+            background: rgba(255, 165, 0, 0.1);
+        }
+
+        .console-message.error {
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .console-message.info {
+            color: #64ffda;
+            border-left-color: #64ffda;
         }
 
         /* Tablet responsive */
@@ -780,6 +925,9 @@
                     ⋯
                 </button>
                 <div class="more-options-menu" id="moreOptionsMenu">
+                    <div class="more-option-item" id="settingsBtn">
+                        ⚙️ Settings
+                    </div>
                     <div class="more-option-item" id="saveSnippetMenuBtn">
                         💾 Save Snippet
                     </div>
@@ -832,7 +980,78 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div class="snippets-menu" id="settingsMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-width: 500px;">
+        <div class="snippets-menu-header">
+            <span>Settings</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn">✕</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <!-- Font Size -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Editor Font Size</label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <input type="range" id="fontSizeSlider" min="12" max="20" value="14" step="1" style="flex: 1; accent-color: var(--accent-color);">
+                    <span id="fontSizeValue" style="color: var(--secondary-color); min-width: 3rem; text-align: right;">14px</span>
+                </div>
+            </div>
+
+            <!-- Layout Toggle -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Editor Layout</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="layout-toggle-btn active" id="layoutHorizontalBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                        Horizontal
+                    </button>
+                    <button class="layout-toggle-btn" id="layoutVerticalBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                        Vertical
+                    </button>
+                </div>
+            </div>
+
+            <!-- Theme (future) -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Theme</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="theme-toggle-btn active" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500;">
+                        Dark
+                    </button>
+                    <button class="theme-toggle-btn" disabled style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; opacity: 0.5; font-weight: 500;">
+                        Light (Soon)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="snippetsOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1999;"></div>
+
+    <!-- Find/Replace Panel -->
+    <div id="findReplacePanel" style="display: none; position: fixed; top: 80px; right: 20px; background: var(--editor-bg); border: 2px solid var(--editor-border); border-radius: 8px; padding: 1rem; z-index: 3000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); min-width: 350px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span style="font-weight: 500; color: var(--accent-color);">Find & Replace</span>
+            <span id="closeFindReplaceBtn" style="cursor: pointer; opacity: 0.7; font-size: 1.2rem; color: var(--secondary-color);">✕</span>
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <input type="text" id="findInput" placeholder="Find..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <input type="text" id="replaceInput" placeholder="Replace with..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="findPrevBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">← Prev</button>
+            <button id="findNextBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: var(--accent-color); border: 1px solid var(--accent-color); color: var(--bg-color); border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">Next →</button>
+            <button id="replaceBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Replace</button>
+            <button id="replaceAllBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">All</button>
+        </div>
+
+        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--secondary-color); opacity: 0.7;">
+            <span id="findResultsText">Press Enter or click Next</span>
+        </div>
+    </div>
 
     <div class="container">
         <!-- Editors Section -->
@@ -851,14 +1070,17 @@
                     </div>
                 </div>
                 <div class="editor-container">
-                    <div class="editor-highlight" id="htmlHighlight"></div>
-                    <textarea
-                        class="editor"
-                        id="htmlEditor"
-                        placeholder="<!-- Enter your HTML here -->"
-                        spellcheck="false"
-                        aria-label="HTML code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
-                    ></textarea>
+                    <div class="line-numbers" id="htmlLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="htmlHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="htmlEditor"
+                            placeholder="<!-- Enter your HTML here -->"
+                            spellcheck="false"
+                            aria-label="HTML code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
                 </div>
             </div>
             <div class="editor-panel">
@@ -878,14 +1100,17 @@
                     </div>
                 </div>
                 <div class="editor-container">
-                    <div class="editor-highlight" id="cssHighlight"></div>
-                    <textarea
-                        class="editor"
-                        id="cssEditor"
-                        placeholder="/* Enter your CSS here */"
-                        spellcheck="false"
-                        aria-label="CSS code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
-                    ></textarea>
+                    <div class="line-numbers" id="cssLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="cssHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="cssEditor"
+                            placeholder="/* Enter your CSS here */"
+                            spellcheck="false"
+                            aria-label="CSS code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
                 </div>
             </div>
             <div class="editor-panel">
@@ -902,14 +1127,17 @@
                     </div>
                 </div>
                 <div class="editor-container">
-                    <div class="editor-highlight" id="jsHighlight"></div>
-                    <textarea
-                        class="editor"
-                        id="jsEditor"
-                        placeholder="// Enter your JavaScript here"
-                        spellcheck="false"
-                        aria-label="JavaScript code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
-                    ></textarea>
+                    <div class="line-numbers" id="jsLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="jsHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="jsEditor"
+                            placeholder="// Enter your JavaScript here"
+                            spellcheck="false"
+                            aria-label="JavaScript code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
                 </div>
             </div>
         </div>
@@ -919,8 +1147,24 @@
 
         <!-- Preview Section -->
         <div class="preview-section">
-            <div class="preview-header">Preview</div>
-            <iframe id="preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+            <div class="preview-header">
+                <span>Preview</span>
+                <div class="preview-actions">
+                    <button class="panel-settings-button" id="toggleConsoleBtn" title="Toggle Console">
+                        Console
+                    </button>
+                </div>
+            </div>
+            <div class="preview-container">
+                <iframe id="preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                <div class="console-panel" id="consolePanel">
+                    <div class="console-header">
+                        <span>Console</span>
+                        <button class="console-clear" id="clearConsoleBtn" title="Clear console">Clear</button>
+                    </div>
+                    <div class="console-output" id="consoleOutput"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -938,6 +1182,9 @@
         const htmlHighlight = document.getElementById('htmlHighlight');
         const cssHighlight = document.getElementById('cssHighlight');
         const jsHighlight = document.getElementById('jsHighlight');
+        const htmlLineNumbers = document.getElementById('htmlLineNumbers');
+        const cssLineNumbers = document.getElementById('cssLineNumbers');
+        const jsLineNumbers = document.getElementById('jsLineNumbers');
         const preview = document.getElementById('preview');
         const runBtn = document.getElementById('runBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -986,6 +1233,26 @@
         const shareModeBanner = document.getElementById('shareModeBanner');
         const updateShareBtn = document.getElementById('updateShareBtn');
         const startFreshBtn = document.getElementById('startFreshBtn');
+        const toggleConsoleBtn = document.getElementById('toggleConsoleBtn');
+        const consolePanel = document.getElementById('consolePanel');
+        const consoleOutput = document.getElementById('consoleOutput');
+        const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const layoutHorizontalBtn = document.getElementById('layoutHorizontalBtn');
+        const layoutVerticalBtn = document.getElementById('layoutVerticalBtn');
+        const findReplacePanel = document.getElementById('findReplacePanel');
+        const closeFindReplaceBtn = document.getElementById('closeFindReplaceBtn');
+        const findInput = document.getElementById('findInput');
+        const replaceInput = document.getElementById('replaceInput');
+        const findPrevBtn = document.getElementById('findPrevBtn');
+        const findNextBtn = document.getElementById('findNextBtn');
+        const replaceBtn = document.getElementById('replaceBtn');
+        const replaceAllBtn = document.getElementById('replaceAllBtn');
+        const findResultsText = document.getElementById('findResultsText');
 
         let autoRunEnabled = localStorage.getItem('coded-autorun') === 'true';
         let autoRunTimeout = null;
@@ -1023,6 +1290,24 @@
         function syncScroll(editor, highlight) {
             highlight.scrollTop = editor.scrollTop;
             highlight.scrollLeft = editor.scrollLeft;
+        }
+
+        // Update line numbers
+        function updateLineNumbers(editor, lineNumbersElement) {
+            const lines = editor.value.split('\n').length;
+            const numbers = [];
+            for (let i = 1; i <= lines; i++) {
+                numbers.push(i);
+            }
+            lineNumbersElement.textContent = numbers.join('\n');
+
+            // Sync scroll
+            lineNumbersElement.scrollTop = editor.scrollTop;
+        }
+
+        // Sync line numbers scroll with editor
+        function syncLineNumbersScroll(editor, lineNumbersElement) {
+            lineNumbersElement.scrollTop = editor.scrollTop;
         }
 
         // Snippets management
@@ -1412,10 +1697,14 @@
             cssEditor.value = savedCSS;
             jsEditor.value = savedJS;
 
-            // Update highlights
+            // Update highlights and line numbers
             highlightEditor(htmlEditor, htmlHighlight, 'markup');
             highlightEditor(cssEditor, cssHighlight, 'css');
             highlightEditor(jsEditor, jsHighlight, 'javascript');
+
+            updateLineNumbers(htmlEditor, htmlLineNumbers);
+            updateLineNumbers(cssEditor, cssLineNumbers);
+            updateLineNumbers(jsEditor, jsLineNumbers);
 
             // Run on load if there's saved code
             if (savedHTML || savedCSS || savedJS) {
@@ -1433,24 +1722,36 @@
         // Add event listeners for live highlighting and auto-save
         htmlEditor.addEventListener('input', () => {
             highlightEditor(htmlEditor, htmlHighlight, 'markup');
+            updateLineNumbers(htmlEditor, htmlLineNumbers);
             saveCode();
             debouncedAutoRun();
         });
-        htmlEditor.addEventListener('scroll', () => syncScroll(htmlEditor, htmlHighlight));
+        htmlEditor.addEventListener('scroll', () => {
+            syncScroll(htmlEditor, htmlHighlight);
+            syncLineNumbersScroll(htmlEditor, htmlLineNumbers);
+        });
 
         cssEditor.addEventListener('input', () => {
             highlightEditor(cssEditor, cssHighlight, 'css');
+            updateLineNumbers(cssEditor, cssLineNumbers);
             saveCode();
             debouncedAutoRun();
         });
-        cssEditor.addEventListener('scroll', () => syncScroll(cssEditor, cssHighlight));
+        cssEditor.addEventListener('scroll', () => {
+            syncScroll(cssEditor, cssHighlight);
+            syncLineNumbersScroll(cssEditor, cssLineNumbers);
+        });
 
         jsEditor.addEventListener('input', () => {
             highlightEditor(jsEditor, jsHighlight, 'javascript');
+            updateLineNumbers(jsEditor, jsLineNumbers);
             saveCode();
             debouncedAutoRun();
         });
-        jsEditor.addEventListener('scroll', () => syncScroll(jsEditor, jsHighlight));
+        jsEditor.addEventListener('scroll', () => {
+            syncScroll(jsEditor, jsHighlight);
+            syncLineNumbersScroll(jsEditor, jsLineNumbers);
+        });
 
         // Tab trapping state
         let tabTrappingEnabled = {
@@ -1485,7 +1786,7 @@
         // Enhanced tab and escape key handling
         function handleEditorKeys(e, editorName) {
             const editor = e.target;
-            const container = editor.closest('.editor-container');
+            const editorContent = editor.closest('.editor-content');
 
             // HTML tag auto-completion
             handleTagCompletion(e, editor);
@@ -1493,7 +1794,7 @@
             // Enable tab trapping on first interaction
             if (!tabTrappingEnabled[editorName] && e.key !== 'Tab') {
                 tabTrappingEnabled[editorName] = true;
-                container.classList.add('tab-trapped');
+                editorContent.classList.add('tab-trapped');
             }
 
             // Tab key - indent
@@ -1522,14 +1823,14 @@
                 // Enable tab trapping
                 if (!tabTrappingEnabled[editorName]) {
                     tabTrappingEnabled[editorName] = true;
-                    container.classList.add('tab-trapped');
+                    editorContent.classList.add('tab-trapped');
                 }
             }
 
             // Escape key - disable tab trapping and blur
             if (e.key === 'Escape') {
                 tabTrappingEnabled[editorName] = false;
-                container.classList.remove('tab-trapped');
+                editorContent.classList.remove('tab-trapped');
                 editor.blur();
 
                 // Announce to screen readers
@@ -1546,20 +1847,20 @@
         // Focus handlers to show/hide tab trap indicator
         function handleEditorFocus(editorName) {
             return function(e) {
-                const container = e.target.closest('.editor-container');
+                const editorContent = e.target.closest('.editor-content');
                 if (tabTrappingEnabled[editorName]) {
-                    container.classList.add('tab-trapped');
+                    editorContent.classList.add('tab-trapped');
                 }
             };
         }
 
         function handleEditorBlur(editorName) {
             return function(e) {
-                const container = e.target.closest('.editor-container');
+                const editorContent = e.target.closest('.editor-content');
                 // Only remove if not tab trapped, or after a delay to prevent flicker
                 setTimeout(() => {
                     if (document.activeElement !== e.target) {
-                        container.classList.remove('tab-trapped');
+                        editorContent.classList.remove('tab-trapped');
                     }
                 }, 100);
             };
@@ -1576,6 +1877,47 @@
         jsEditor.addEventListener('keydown', (e) => handleEditorKeys(e, 'js'));
         jsEditor.addEventListener('focus', handleEditorFocus('js'));
         jsEditor.addEventListener('blur', handleEditorBlur('js'));
+
+        // Console functionality
+        let consoleVisible = localStorage.getItem('coded-console-visible') === 'true';
+
+        function toggleConsole() {
+            consoleVisible = !consoleVisible;
+            if (consoleVisible) {
+                consolePanel.classList.add('active');
+                toggleConsoleBtn.style.background = 'var(--accent-color)';
+                toggleConsoleBtn.style.color = 'var(--bg-color)';
+            } else {
+                consolePanel.classList.remove('active');
+                toggleConsoleBtn.style.background = '';
+                toggleConsoleBtn.style.color = '';
+            }
+            localStorage.setItem('coded-console-visible', consoleVisible);
+        }
+
+        function addConsoleMessage(type, args) {
+            const message = document.createElement('div');
+            message.className = `console-message ${type}`;
+
+            const formatted = args.map(arg => {
+                if (typeof arg === 'object') {
+                    try {
+                        return JSON.stringify(arg, null, 2);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+
+            message.textContent = formatted;
+            consoleOutput.appendChild(message);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
 
         // Run code in preview
         function runCode() {
@@ -1605,11 +1947,48 @@
     ${html}
     ${jsLibs}
     <script>
+        // Intercept console methods
+        (function() {
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            const originalInfo = console.info;
+
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                window.parent.postMessage({ type: 'console', method: 'log', args: args }, '*');
+            };
+
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                window.parent.postMessage({ type: 'console', method: 'error', args: args }, '*');
+            };
+
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                window.parent.postMessage({ type: 'console', method: 'warn', args: args }, '*');
+            };
+
+            console.info = function(...args) {
+                originalInfo.apply(console, args);
+                window.parent.postMessage({ type: 'console', method: 'info', args: args }, '*');
+            };
+
+            // Catch errors
+            window.onerror = function(msg, url, lineNo, columnNo, error) {
+                console.error('Error:', msg, 'at line', lineNo);
+                return false;
+            };
+
+            window.addEventListener('unhandledrejection', function(event) {
+                console.error('Unhandled Promise Rejection:', event.reason);
+            });
+        })();
+
         try {
             ${js}
         } catch (error) {
-            console.error('JavaScript Error:', error);
-            document.body.innerHTML += '<div style="color: red; padding: 20px; font-family: monospace;">Error: ' + error.message + '</div>';
+            console.error('JavaScript Error:', error.message);
         }
     <\/script>
 </body>
@@ -1622,6 +2001,274 @@
             previewFrame.write(previewDoc);
             previewFrame.close();
         }
+
+        // Listen for console messages from iframe
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'console') {
+                addConsoleMessage(event.data.method, event.data.args);
+            }
+        });
+
+        // Console button event listeners
+        toggleConsoleBtn.addEventListener('click', toggleConsole);
+        clearConsoleBtn.addEventListener('click', clearConsole);
+
+        // Initialize console visibility
+        if (consoleVisible) {
+            consolePanel.classList.add('active');
+            toggleConsoleBtn.style.background = 'var(--accent-color)';
+            toggleConsoleBtn.style.color = 'var(--bg-color)';
+        }
+
+        // Settings functionality
+        let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
+        let currentLayout = localStorage.getItem('coded-layout') || 'horizontal';
+
+        function openSettingsModal() {
+            settingsMenu.style.display = 'block';
+            snippetsOverlay.style.display = 'block';
+            moreOptionsMenu.classList.remove('active');
+        }
+
+        function closeSettingsModal() {
+            settingsMenu.style.display = 'none';
+            snippetsOverlay.style.display = 'none';
+        }
+
+        function updateFontSize(size) {
+            currentFontSize = size;
+            document.querySelectorAll('.editor, .editor-highlight code, .line-numbers').forEach(el => {
+                el.style.fontSize = `${size}px`;
+            });
+            fontSizeValue.textContent = `${size}px`;
+            fontSizeSlider.value = size;
+            localStorage.setItem('coded-font-size', size);
+        }
+
+        function setLayout(layout) {
+            currentLayout = layout;
+            if (layout === 'vertical') {
+                editorsSection.classList.add('vertical-layout');
+                layoutVerticalBtn.classList.add('active');
+                layoutVerticalBtn.style.background = 'var(--accent-color)';
+                layoutVerticalBtn.style.color = 'var(--bg-color)';
+                layoutVerticalBtn.style.borderColor = 'var(--accent-color)';
+                layoutHorizontalBtn.classList.remove('active');
+                layoutHorizontalBtn.style.background = 'none';
+                layoutHorizontalBtn.style.color = 'var(--secondary-color)';
+                layoutHorizontalBtn.style.borderColor = 'var(--editor-border)';
+            } else {
+                editorsSection.classList.remove('vertical-layout');
+                layoutHorizontalBtn.classList.add('active');
+                layoutHorizontalBtn.style.background = 'var(--accent-color)';
+                layoutHorizontalBtn.style.color = 'var(--bg-color)';
+                layoutHorizontalBtn.style.borderColor = 'var(--accent-color)';
+                layoutVerticalBtn.classList.remove('active');
+                layoutVerticalBtn.style.background = 'none';
+                layoutVerticalBtn.style.color = 'var(--secondary-color)';
+                layoutVerticalBtn.style.borderColor = 'var(--editor-border)';
+            }
+            localStorage.setItem('coded-layout', layout);
+        }
+
+        // Settings event listeners
+        settingsBtn.addEventListener('click', openSettingsModal);
+        closeSettingsBtn.addEventListener('click', closeSettingsModal);
+
+        fontSizeSlider.addEventListener('input', (e) => {
+            updateFontSize(parseInt(e.target.value));
+        });
+
+        layoutHorizontalBtn.addEventListener('click', () => {
+            setLayout('horizontal');
+        });
+
+        layoutVerticalBtn.addEventListener('click', () => {
+            setLayout('vertical');
+        });
+
+        // Initialize settings
+        updateFontSize(currentFontSize);
+        setLayout(currentLayout);
+
+        // Find/Replace functionality
+        let currentFindEditor = null;
+        let lastSearchTerm = '';
+        let lastSearchIndex = -1;
+
+        function getActiveEditor() {
+            // Return the last focused editor, defaulting to HTML editor
+            if (document.activeElement === htmlEditor) return htmlEditor;
+            if (document.activeElement === cssEditor) return cssEditor;
+            if (document.activeElement === jsEditor) return jsEditor;
+            return currentFindEditor || htmlEditor;
+        }
+
+        function openFindReplace() {
+            findReplacePanel.style.display = 'block';
+            currentFindEditor = getActiveEditor();
+            findInput.focus();
+            findInput.select();
+        }
+
+        function closeFindReplace() {
+            findReplacePanel.style.display = 'none';
+            if (currentFindEditor) {
+                currentFindEditor.focus();
+            }
+        }
+
+        function findNext() {
+            const searchTerm = findInput.value;
+            if (!searchTerm) {
+                findResultsText.textContent = 'Enter search term';
+                return;
+            }
+
+            const editor = getActiveEditor();
+            const content = editor.value;
+            const startPos = (lastSearchTerm === searchTerm && lastSearchIndex !== -1)
+                ? lastSearchIndex + searchTerm.length
+                : 0;
+
+            const index = content.indexOf(searchTerm, startPos);
+
+            if (index !== -1) {
+                editor.focus();
+                editor.setSelectionRange(index, index + searchTerm.length);
+                editor.scrollTop = editor.scrollHeight * (index / content.length) - editor.clientHeight / 2;
+
+                lastSearchTerm = searchTerm;
+                lastSearchIndex = index;
+
+                const occurrences = (content.match(new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+                const currentOccurrence = (content.substring(0, index).match(new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length + 1;
+                findResultsText.textContent = `${currentOccurrence} of ${occurrences}`;
+            } else if (startPos > 0) {
+                // Wrap around
+                lastSearchIndex = -1;
+                findNext();
+            } else {
+                findResultsText.textContent = 'Not found';
+                lastSearchIndex = -1;
+            }
+        }
+
+        function findPrev() {
+            const searchTerm = findInput.value;
+            if (!searchTerm) {
+                findResultsText.textContent = 'Enter search term';
+                return;
+            }
+
+            const editor = getActiveEditor();
+            const content = editor.value;
+            const startPos = lastSearchIndex !== -1 ? lastSearchIndex - 1 : content.length;
+
+            const index = content.lastIndexOf(searchTerm, startPos);
+
+            if (index !== -1) {
+                editor.focus();
+                editor.setSelectionRange(index, index + searchTerm.length);
+                editor.scrollTop = editor.scrollHeight * (index / content.length) - editor.clientHeight / 2;
+
+                lastSearchTerm = searchTerm;
+                lastSearchIndex = index;
+
+                const occurrences = (content.match(new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+                const currentOccurrence = (content.substring(0, index).match(new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length + 1;
+                findResultsText.textContent = `${currentOccurrence} of ${occurrences}`;
+            } else if (startPos < content.length) {
+                // Wrap around
+                lastSearchIndex = content.length + 1;
+                findPrev();
+            } else {
+                findResultsText.textContent = 'Not found';
+                lastSearchIndex = -1;
+            }
+        }
+
+        function replaceOne() {
+            const searchTerm = findInput.value;
+            const replacement = replaceInput.value;
+            if (!searchTerm) return;
+
+            const editor = getActiveEditor();
+            const selStart = editor.selectionStart;
+            const selEnd = editor.selectionEnd;
+            const selectedText = editor.value.substring(selStart, selEnd);
+
+            if (selectedText === searchTerm) {
+                editor.value = editor.value.substring(0, selStart) + replacement + editor.value.substring(selEnd);
+                editor.setSelectionRange(selStart, selStart + replacement.length);
+
+                // Trigger updates
+                editor.dispatchEvent(new Event('input'));
+
+                // Find next occurrence
+                setTimeout(() => findNext(), 50);
+            } else {
+                findNext();
+            }
+        }
+
+        function replaceAll() {
+            const searchTerm = findInput.value;
+            const replacement = replaceInput.value;
+            if (!searchTerm) return;
+
+            const editor = getActiveEditor();
+            const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escapedSearch, 'g');
+            const count = (editor.value.match(regex) || []).length;
+
+            if (count > 0) {
+                editor.value = editor.value.replace(regex, replacement);
+
+                // Trigger updates
+                editor.dispatchEvent(new Event('input'));
+
+                findResultsText.textContent = `Replaced ${count} occurrence${count > 1 ? 's' : ''}`;
+                lastSearchIndex = -1;
+            } else {
+                findResultsText.textContent = 'Not found';
+            }
+        }
+
+        // Find/Replace event listeners
+        closeFindReplaceBtn.addEventListener('click', closeFindReplace);
+        findNextBtn.addEventListener('click', findNext);
+        findPrevBtn.addEventListener('click', findPrev);
+        replaceBtn.addEventListener('click', replaceOne);
+        replaceAllBtn.addEventListener('click', replaceAll);
+
+        findInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    findPrev();
+                } else {
+                    findNext();
+                }
+            } else if (e.key === 'Escape') {
+                closeFindReplace();
+            }
+        });
+
+        replaceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                replaceOne();
+            } else if (e.key === 'Escape') {
+                closeFindReplace();
+            }
+        });
+
+        // Reset search when input changes
+        findInput.addEventListener('input', () => {
+            lastSearchIndex = -1;
+            lastSearchTerm = '';
+        });
 
         // Clear all code
         function clearAll() {
@@ -1972,6 +2619,11 @@ ${js}
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + F to open find/replace
+            if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+                e.preventDefault();
+                openFindReplace();
+            }
             // Cmd/Ctrl + Enter to run
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                 e.preventDefault();
