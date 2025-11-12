@@ -1712,21 +1712,23 @@ ${js}
         }
 
         // Load code from URL parameter
-        async function loadFromUrl() {
+        function loadFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const shareId = urlParams.get('share');
 
-            if (shareId) {
-                try {
-                    // Fetch from backend
-                    const response = await fetch(`/api/share?id=${encodeURIComponent(shareId)}`);
+            if (!shareId) {
+                return; // No share parameter, skip
+            }
 
+            // Fetch from backend
+            fetch(`/api/share?id=${encodeURIComponent(shareId)}`)
+                .then(response => {
                     if (!response.ok) {
                         throw new Error('Share not found');
                     }
-
-                    const data = await response.json();
-
+                    return response.json();
+                })
+                .then(data => {
                     // Load the code
                     htmlEditor.value = data.html || '';
                     cssEditor.value = data.css || '';
@@ -1747,11 +1749,11 @@ ${js}
 
                     // Clean URL (remove share parameter) but keep share mode active
                     window.history.replaceState({}, document.title, window.location.pathname);
-                } catch (e) {
+                })
+                .catch(e => {
                     console.error('Failed to load shared code:', e);
                     alert('Failed to load shared code. The share may not exist or the server may be unavailable.');
-                }
-            }
+                });
         }
 
         // Update share link (creates new share URL with current code)
@@ -1935,8 +1937,9 @@ ${js}
         });
 
         // Insert after "Share Link" button in menu
-        const shareBtn = document.getElementById('shareBtn');
-        shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
+        if (shareBtn && shareBtn.parentNode) {
+            shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
+        }
     </script>
 </body>
 </html>
