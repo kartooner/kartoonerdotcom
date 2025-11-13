@@ -883,6 +883,89 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        /* Template Selector */
+        .template-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: var(--bg-color);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .template-selector.hidden {
+            display: none;
+        }
+
+        .template-selector-content {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .template-selector-title {
+            font-family: var(--font-logo);
+            font-size: 3rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        .template-selector-subtitle {
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+            margin-bottom: 3rem;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .template-card {
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 8px;
+            padding: 2rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-family: var(--font-main);
+        }
+
+        .template-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(100, 255, 218, 0.15);
+        }
+
+        .template-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .template-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .template-description {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            line-height: 1.4;
+        }
+
         /* Mobile - hide for now */
         @media (max-width: 768px) {
             body::before {
@@ -906,6 +989,46 @@
     </style>
 </head>
 <body>
+    <!-- Template Selector Screen -->
+    <div class="template-selector" id="templateSelector">
+        <div class="template-selector-content">
+            <h1 class="template-selector-title">&lt;/Coded&gt;</h1>
+            <p class="template-selector-subtitle">Choose a starter template or create from scratch</p>
+
+            <div class="template-grid">
+                <button class="template-card" data-template="blank">
+                    <div class="template-icon">📝</div>
+                    <h3 class="template-name">Blank canvas</h3>
+                    <p class="template-description">Start from scratch with empty editors</p>
+                </button>
+
+                <button class="template-card" data-template="html-shell">
+                    <div class="template-icon">🏗️</div>
+                    <h3 class="template-name">HTML shell</h3>
+                    <p class="template-description">Basic HTML structure with CSS starter</p>
+                </button>
+
+                <button class="template-card" data-template="simple-table">
+                    <div class="template-icon">📊</div>
+                    <h3 class="template-name">Simple table</h3>
+                    <p class="template-description">Styled data table layout</p>
+                </button>
+
+                <button class="template-card" data-template="item-list">
+                    <div class="template-icon">📋</div>
+                    <h3 class="template-name">Item list</h3>
+                    <p class="template-description">Collection of items with cards</p>
+                </button>
+
+                <button class="template-card" data-template="editable-grid">
+                    <div class="template-icon">⚡</div>
+                    <h3 class="template-name">Editable grid</h3>
+                    <p class="template-description">Interactive grid with edit functionality</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Share Mode Banner -->
     <div class="share-mode-banner" id="shareModeBanner" role="status" aria-live="polite">
         <div class="share-mode-info">
