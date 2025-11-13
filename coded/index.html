@@ -803,6 +803,12 @@
 
         /* Tablet responsive */
         @media (max-width: 1024px) {
+            body {
+                /* Fix for mobile/tablet browsers where 100vh includes browser chrome */
+                height: 100dvh; /* Dynamic viewport height */
+                min-height: -webkit-fill-available;
+            }
+
             .editors {
                 grid-template-columns: 1fr;
                 height: 60%;
