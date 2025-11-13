@@ -2037,5 +2037,176 @@ if (shareBtn && shareBtn.parentNode) {
     shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
 }
 
+// Learning Panel functionality
+const learnBtn = document.getElementById('learnBtn');
+const learnPanel = document.getElementById('learnPanel');
+const learnPanelClose = document.getElementById('learnPanelClose');
+const learnPanelContent = document.getElementById('learnPanelContent');
+let learnModeActive = localStorage.getItem('coded-learn-mode') === 'true';
+let currentTemplate = null;
+
+// Educational content for each template
+const TEMPLATE_LESSONS = {
+    'html-shell': {
+        title: 'Understanding the HTML Shell',
+        sections: [
+            {
+                title: 'Why DOCTYPE?',
+                content: 'The <code>&lt;!DOCTYPE html&gt;</code> declaration tells the browser this is an HTML5 document. Without it, browsers may use "quirks mode" which can cause unexpected rendering issues.',
+                why: 'Modern browsers need to know which HTML standard you\'re using. HTML5\'s DOCTYPE is simple and ensures consistent rendering across all browsers.'
+            },
+            {
+                title: 'Meta Charset',
+                content: 'The <code>&lt;meta charset="UTF-8"&gt;</code> tag specifies the character encoding for your page. UTF-8 supports all languages and special characters.',
+                why: 'Without this, special characters like émojis, accents (café), or international text might display as gibberish (ÃÂ©).'
+            },
+            {
+                title: 'Viewport Meta Tag',
+                content: 'The <code>&lt;meta name="viewport"&gt;</code> tag makes your site responsive on mobile devices. It tells mobile browsers not to zoom out by default.',
+                why: 'Mobile browsers default to desktop-width pages (980px). This tag ensures your page scales properly on phones and tablets.'
+            },
+            {
+                title: 'Semantic HTML',
+                content: 'Tags like <code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, and <code>&lt;footer&gt;</code> describe the structure of your page, not just how it looks.',
+                why: 'Screen readers use these tags to help visually impaired users navigate. Search engines also use them to understand your content better.'
+            }
+        ]
+    },
+    'simple-table': {
+        title: 'Building Data Tables',
+        sections: [
+            {
+                title: 'Table Structure',
+                content: 'Tables use <code>&lt;table&gt;</code>, <code>&lt;thead&gt;</code>, <code>&lt;tbody&gt;</code>, and <code>&lt;tr&gt;</code>/<code>&lt;td&gt;</code> tags to organize data into rows and columns.',
+                why: 'This structure helps screen readers announce "3 columns, 4 rows" so users know what to expect. It also makes styling easier.'
+            },
+            {
+                title: 'Border Collapse',
+                content: 'The CSS property <code>border-collapse: collapse</code> merges adjacent cell borders into single lines.',
+                why: 'Without this, each cell has its own border, creating a double-line effect that looks messy.'
+            },
+            {
+                title: 'Hover Effects',
+                content: 'The <code>tr:hover</code> selector adds a background color when you hover over a row.',
+                why: 'This visual feedback helps users track which row they\'re reading, especially in large tables with lots of data.'
+            }
+        ]
+    },
+    'item-list': {
+        title: 'Creating Card Layouts',
+        sections: [
+            {
+                title: 'CSS Grid',
+                content: 'The <code>display: grid</code> property with <code>grid-template-columns</code> creates a responsive grid that adapts to screen size.',
+                why: '<code>repeat(auto-fit, minmax(250px, 1fr))</code> means "fit as many columns as possible, minimum 250px each." This makes your layout responsive without media queries!'
+            },
+            {
+                title: 'Card Hover Effects',
+                content: 'The <code>transform: translateY(-8px)</code> on hover lifts cards up, while <code>box-shadow</code> adds depth.',
+                why: 'These micro-interactions give users immediate feedback that the card is interactive, improving the overall UX.'
+            },
+            {
+                title: 'Gradient Backgrounds',
+                content: 'The <code>linear-gradient()</code> function creates smooth color transitions.',
+                why: 'Gradients add visual interest and depth. The example uses <code>135deg</code> for a diagonal flow that draws the eye.'
+            }
+        ]
+    },
+    'editable-grid': {
+        title: 'Interactive Grids with JavaScript',
+        sections: [
+            {
+                title: 'Dynamic Content',
+                content: 'JavaScript\'s <code>createElement()</code> and <code>appendChild()</code> let you add content without page reloads.',
+                why: 'This creates smooth, app-like experiences. Users can add tasks instantly without waiting for a server response.'
+            },
+            {
+                title: 'Template Literals',
+                content: 'The backticks (<code>`</code>) and <code>${}</code> syntax let you embed variables directly in HTML strings.',
+                why: 'This is cleaner than string concatenation like <code>"<div>" + variable + "</div>"</code>. It\'s easier to read and less error-prone.'
+            },
+            {
+                title: 'Event Delegation',
+                content: 'The <code>onclick</code> attributes call functions when buttons are clicked.',
+                why: 'Even though we\'re adding elements dynamically, the onclick handlers work because they\'re embedded in the HTML string.'
+            }
+        ]
+    }
+};
+
+function toggleLearnMode() {
+    learnModeActive = !learnModeActive;
+    localStorage.setItem('coded-learn-mode', learnModeActive);
+
+    if (learnModeActive) {
+        learnBtn.classList.add('active');
+        learnPanel.classList.add('active');
+
+        // Show content for current template if available
+        if (currentTemplate && TEMPLATE_LESSONS[currentTemplate]) {
+            displayLessonContent(currentTemplate);
+        }
+    } else {
+        learnBtn.classList.remove('active');
+        learnPanel.classList.remove('active');
+    }
+}
+
+function displayLessonContent(templateKey) {
+    const lesson = TEMPLATE_LESSONS[templateKey];
+    if (!lesson) {
+        learnPanelContent.innerHTML = `
+            <div class="learn-welcome">
+                <p>Select a template with learning content to see explanations!</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `<h2 style="color: var(--accent-color); margin-bottom: 1.5rem;">${lesson.title}</h2>`;
+
+    lesson.sections.forEach(section => {
+        html += `
+            <div class="learn-section">
+                <h4>${section.title}</h4>
+                <p>${section.content}</p>
+                <div class="learn-why">
+                    <strong>💡 Why it matters:</strong>
+                    <p style="margin: 0;">${section.why}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    learnPanelContent.innerHTML = html;
+}
+
+// Event listeners
+learnBtn.addEventListener('click', toggleLearnMode);
+learnPanelClose.addEventListener('click', () => {
+    learnModeActive = false;
+    localStorage.setItem('coded-learn-mode', 'false');
+    learnBtn.classList.remove('active');
+    learnPanel.classList.remove('active');
+});
+
+// Initialize learn mode state
+if (learnModeActive) {
+    learnBtn.classList.add('active');
+    learnPanel.classList.add('active');
+}
+
+// Modify loadTemplate to track current template and show lessons
+const originalLoadTemplate = loadTemplate;
+function loadTemplate(templateKey) {
+    currentTemplate = templateKey;
+    originalLoadTemplate(templateKey);
+
+    // Show lesson content if learn mode is active
+    if (learnModeActive && TEMPLATE_LESSONS[templateKey]) {
+        displayLessonContent(templateKey);
+    }
+}
+
 // Initialize template selector
 initializeTemplateSelector();
