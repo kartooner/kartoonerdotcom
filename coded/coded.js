@@ -1601,6 +1601,15 @@ function clearAll() {
         previewFrame.open();
         previewFrame.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>');
         previewFrame.close();
+
+        // Show template selector again
+        const templateSelector = document.getElementById('templateSelector');
+        if (templateSelector) {
+            templateSelector.classList.remove('hidden');
+        }
+
+        // Close more options menu
+        moreOptionsMenu.classList.remove('active');
     }
 }
 
@@ -1766,6 +1775,12 @@ function startFresh() {
         isShareMode = false;
         shareModeBanner.classList.remove('active');
         document.body.classList.remove('share-mode');
+
+        // Show template selector again
+        const templateSelector = document.getElementById('templateSelector');
+        if (templateSelector) {
+            templateSelector.classList.remove('hidden');
+        }
 
         // Don't save to localStorage - truly fresh start
     }
