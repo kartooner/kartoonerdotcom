@@ -2037,132 +2037,112 @@ if (shareBtn && shareBtn.parentNode) {
     shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
 }
 
-// Learning Panel functionality
-const learnBtn = document.getElementById('learnBtn');
+initializeTemplateSelector();
+// Learning Panel functionality - Panel-specific
+const htmlLearnBtn = document.getElementById('htmlLearnBtn');
+const cssLearnBtn = document.getElementById('cssLearnBtn');
+const jsLearnBtn = document.getElementById('jsLearnBtn');
 const learnPanel = document.getElementById('learnPanel');
 const learnPanelClose = document.getElementById('learnPanelClose');
 const learnPanelContent = document.getElementById('learnPanelContent');
-let learnModeActive = localStorage.getItem('coded-learn-mode') === 'true';
-let currentTemplate = null;
+let currentLearnPanel = null;
 
-// Educational content for each template
-const TEMPLATE_LESSONS = {
-    'html-shell': {
-        title: 'Understanding the HTML Shell',
+// Educational content organized by panel
+const PANEL_LESSONS = {
+    'html': {
+        title: 'HTML Fundamentals',
         sections: [
             {
-                title: 'Why DOCTYPE?',
-                content: 'The <code>&lt;!DOCTYPE html&gt;</code> declaration tells the browser this is an HTML5 document. Without it, browsers may use "quirks mode" which can cause unexpected rendering issues.',
-                why: 'Modern browsers need to know which HTML standard you\'re using. HTML5\'s DOCTYPE is simple and ensures consistent rendering across all browsers.'
+                title: 'Document Structure',
+                content: 'Every HTML page needs a <!DOCTYPE html> declaration, <html>, <head>, and <body> tags. This creates the foundation.',
+                why: 'Browsers use DOCTYPE to determine rendering mode. Without it, you get "quirks mode" which causes layout inconsistencies.'
             },
             {
-                title: 'Meta Charset',
-                content: 'The <code>&lt;meta charset="UTF-8"&gt;</code> tag specifies the character encoding for your page. UTF-8 supports all languages and special characters.',
-                why: 'Without this, special characters like émojis, accents (café), or international text might display as gibberish (ÃÂ©).'
-            },
-            {
-                title: 'Viewport Meta Tag',
-                content: 'The <code>&lt;meta name="viewport"&gt;</code> tag makes your site responsive on mobile devices. It tells mobile browsers not to zoom out by default.',
-                why: 'Mobile browsers default to desktop-width pages (980px). This tag ensures your page scales properly on phones and tablets.'
+                title: 'Meta Tags',
+                content: '<code>&lt;meta charset="UTF-8"&gt;</code> handles character encoding. <code>&lt;meta name="viewport"&gt;</code> makes sites responsive on mobile.',
+                why: 'UTF-8 supports all languages. The viewport tag prevents mobile browsers from zooming out to desktop width by default.'
             },
             {
                 title: 'Semantic HTML',
-                content: 'Tags like <code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, and <code>&lt;footer&gt;</code> describe the structure of your page, not just how it looks.',
-                why: 'Screen readers use these tags to help visually impaired users navigate. Search engines also use them to understand your content better.'
+                content: 'Use tags like <code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;nav&gt;</code>, and <code>&lt;footer&gt;</code> instead of generic <code>&lt;div&gt;</code> tags.',
+                why: 'Screen readers use semantic tags to help users navigate. Search engines also use them to understand your content structure better.'
+            },
+            {
+                title: 'Accessibility',
+                content: 'Always include <code>alt</code> attributes on images, use <code>label</code> elements for form inputs, and structure headings hierarchically (h1→h2→h3).',
+                why: '15% of the global population has some form of disability. Accessible HTML ensures everyone can use your site.'
             }
         ]
     },
-    'simple-table': {
-        title: 'Building Data Tables',
+    'css': {
+        title: 'CSS Techniques',
         sections: [
             {
-                title: 'Table Structure',
-                content: 'Tables use <code>&lt;table&gt;</code>, <code>&lt;thead&gt;</code>, <code>&lt;tbody&gt;</code>, and <code>&lt;tr&gt;</code>/<code>&lt;td&gt;</code> tags to organize data into rows and columns.',
-                why: 'This structure helps screen readers announce "3 columns, 4 rows" so users know what to expect. It also makes styling easier.'
+                title: 'Box Model',
+                content: 'Every element has content, padding, border, and margin. Use <code>box-sizing: border-box</code> to include padding/border in width calculations.',
+                why: 'Without border-box, a 200px wide div with 20px padding becomes 240px wide, breaking layouts.'
             },
             {
-                title: 'Border Collapse',
-                content: 'The CSS property <code>border-collapse: collapse</code> merges adjacent cell borders into single lines.',
-                why: 'Without this, each cell has its own border, creating a double-line effect that looks messy.'
+                title: 'Flexbox & Grid',
+                content: '<code>display: flex</code> arranges items in one dimension (row or column). <code>display: grid</code> handles two-dimensional layouts.',
+                why: 'These replace old float-based layouts. Grid is perfect for page structure, flex is ideal for component alignment.'
             },
             {
-                title: 'Hover Effects',
-                content: 'The <code>tr:hover</code> selector adds a background color when you hover over a row.',
-                why: 'This visual feedback helps users track which row they\'re reading, especially in large tables with lots of data.'
+                title: 'CSS Variables',
+                content: 'Define reusable values with <code>--variable-name: value</code> in <code>:root</code>, then use with <code>var(--variable-name)</code>.',
+                why: 'Change your entire color scheme by updating one variable instead of searching/replacing hundreds of values.'
+            },
+            {
+                title: 'Responsive Design',
+                content: 'Use <code>@media</code> queries to apply different styles at different screen sizes. Mobile-first approach starts small and scales up.',
+                why: 'Over 60% of web traffic is mobile. Responsive design ensures your site works everywhere.'
+            },
+            {
+                title: 'CSS Transitions',
+                content: '<code>transition: property duration easing</code> smoothly animates changes. Great for hover effects.',
+                why: 'Sudden changes feel jarring. Transitions create smooth, professional-feeling interfaces that guide user attention.'
             }
         ]
     },
-    'item-list': {
-        title: 'Creating Card Layouts',
+    'js': {
+        title: 'JavaScript Essentials',
         sections: [
             {
-                title: 'CSS Grid',
-                content: 'The <code>display: grid</code> property with <code>grid-template-columns</code> creates a responsive grid that adapts to screen size.',
-                why: '<code>repeat(auto-fit, minmax(250px, 1fr))</code> means "fit as many columns as possible, minimum 250px each." This makes your layout responsive without media queries!'
+                title: 'DOM Manipulation',
+                content: 'Use <code>document.querySelector()</code> to find elements, <code>createElement()</code> to make new ones, <code>appendChild()</code> to add them.',
+                why: 'This lets you update pages dynamically without reloading. Creates modern, app-like experiences.'
             },
             {
-                title: 'Card Hover Effects',
-                content: 'The <code>transform: translateY(-8px)</code> on hover lifts cards up, while <code>box-shadow</code> adds depth.',
-                why: 'These micro-interactions give users immediate feedback that the card is interactive, improving the overall UX.'
-            },
-            {
-                title: 'Gradient Backgrounds',
-                content: 'The <code>linear-gradient()</code> function creates smooth color transitions.',
-                why: 'Gradients add visual interest and depth. The example uses <code>135deg</code> for a diagonal flow that draws the eye.'
-            }
-        ]
-    },
-    'editable-grid': {
-        title: 'Interactive Grids with JavaScript',
-        sections: [
-            {
-                title: 'Dynamic Content',
-                content: 'JavaScript\'s <code>createElement()</code> and <code>appendChild()</code> let you add content without page reloads.',
-                why: 'This creates smooth, app-like experiences. Users can add tasks instantly without waiting for a server response.'
+                title: 'Event Listeners',
+                content: '<code>element.addEventListener("click", function)</code> runs code when users interact. Remove with <code>removeEventListener()</code>.',
+                why: 'This is how you make pages interactive. Click buttons, submit forms, respond to keyboard input - all through events.'
             },
             {
                 title: 'Template Literals',
-                content: 'The backticks (<code>`</code>) and <code>${}</code> syntax let you embed variables directly in HTML strings.',
-                why: 'This is cleaner than string concatenation like <code>"<div>" + variable + "</div>"</code>. It\'s easier to read and less error-prone.'
+                content: 'Backticks <code>`</code> create strings with embedded expressions: <code>`Hello ${name}`</code>. Multi-line support built-in.',
+                why: 'Cleaner than string concatenation. Compare <code>`<div>${x}</div>`</code> to <code>"<div>" + x + "</div>"</code>.'
             },
             {
-                title: 'Event Delegation',
-                content: 'The <code>onclick</code> attributes call functions when buttons are clicked.',
-                why: 'Even though we\'re adding elements dynamically, the onclick handlers work because they\'re embedded in the HTML string.'
+                title: 'Array Methods',
+                content: '<code>.map()</code> transforms arrays, <code>.filter()</code> selects items, <code>.reduce()</code> combines values. Pure functions, no mutation.',
+                why: 'These replace manual loops and make code more readable. Functional programming reduces bugs.'
+            },
+            {
+                title: 'Async/Await',
+                content: '<code>async function</code> lets you use <code>await</code> to pause for Promises. Makes asynchronous code look synchronous.',
+                why: 'Callback hell is unreadable. Async/await makes API calls and database queries easy to follow.'
             }
         ]
     }
 };
 
-function toggleLearnMode() {
-    learnModeActive = !learnModeActive;
-    localStorage.setItem('coded-learn-mode', learnModeActive);
+function showLearnPanel(panelType) {
+    currentLearnPanel = panelType;
+    const lesson = PANEL_LESSONS[panelType];
 
-    if (learnModeActive) {
-        learnBtn.classList.add('active');
-        learnPanel.classList.add('active');
+    if (!lesson) return;
 
-        // Show content for current template if available
-        if (currentTemplate && TEMPLATE_LESSONS[currentTemplate]) {
-            displayLessonContent(currentTemplate);
-        }
-    } else {
-        learnBtn.classList.remove('active');
-        learnPanel.classList.remove('active');
-    }
-}
-
-function displayLessonContent(templateKey) {
-    const lesson = TEMPLATE_LESSONS[templateKey];
-    if (!lesson) {
-        learnPanelContent.innerHTML = `
-            <div class="learn-welcome">
-                <p>Select a template with learning content to see explanations!</p>
-            </div>
-        `;
-        return;
-    }
-
+    // Update panel content
     let html = `<h2 style="color: var(--accent-color); margin-bottom: 1.5rem;">${lesson.title}</h2>`;
 
     lesson.sections.forEach(section => {
@@ -2179,33 +2159,31 @@ function displayLessonContent(templateKey) {
     });
 
     learnPanelContent.innerHTML = html;
-}
-
-// Event listeners
-learnBtn.addEventListener('click', toggleLearnMode);
-learnPanelClose.addEventListener('click', () => {
-    learnModeActive = false;
-    localStorage.setItem('coded-learn-mode', 'false');
-    learnBtn.classList.remove('active');
-    learnPanel.classList.remove('active');
-});
-
-// Initialize learn mode state
-if (learnModeActive) {
-    learnBtn.classList.add('active');
     learnPanel.classList.add('active');
+
+    // Close panel settings menus
+    document.getElementById('htmlSettingsMenu').classList.remove('active');
+    document.getElementById('cssSettingsMenu').classList.remove('active');
+    document.getElementById('jsSettingsMenu').classList.remove('active');
 }
 
-// Modify loadTemplate to track current template and show lessons
-const originalLoadTemplate = loadTemplate;
-function loadTemplate(templateKey) {
-    currentTemplate = templateKey;
-    originalLoadTemplate(templateKey);
+function closeLearnPanel() {
+    learnPanel.classList.remove('active');
+    currentLearnPanel = null;
+}
 
-    // Show lesson content if learn mode is active
-    if (learnModeActive && TEMPLATE_LESSONS[templateKey]) {
-        displayLessonContent(templateKey);
-    }
+// Event listeners for each panel's learn button
+if (htmlLearnBtn) {
+    htmlLearnBtn.addEventListener('click', () => showLearnPanel('html'));
+}
+if (cssLearnBtn) {
+    cssLearnBtn.addEventListener('click', () => showLearnPanel('css'));
+}
+if (jsLearnBtn) {
+    jsLearnBtn.addEventListener('click', () => showLearnPanel('js'));
+}
+if (learnPanelClose) {
+    learnPanelClose.addEventListener('click', closeLearnPanel);
 }
 
 // Initialize template selector
