@@ -440,6 +440,19 @@
             });
         }
 
+        // Table of Contents mobile toggle
+        const tocMobileToggle = document.querySelector('.toc-mobile-toggle');
+        const tocMobile = document.querySelector('.toc-mobile');
+        if (tocMobileToggle && tocMobile) {
+            // Start collapsed on mobile
+            tocMobile.classList.add('collapsed');
+
+            tocMobileToggle.addEventListener('click', function() {
+                const isCollapsed = tocMobile.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
         // Table of Contents dropdown navigation (mobile)
         const tocSelect = document.getElementById('toc-select');
         if (tocSelect) {

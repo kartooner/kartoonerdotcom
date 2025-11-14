@@ -387,7 +387,7 @@
             width: 100%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             font-family: var(--font-secondary);
             font-size: 1rem;
             font-weight: 700;
@@ -402,6 +402,7 @@
         .toc-toggle-icon {
             transition: transform 0.3s ease;
             font-size: 0.8rem;
+            margin-right: 0.5rem;
         }
 
         .table-of-contents.collapsed .toc-toggle-icon {
@@ -462,19 +463,51 @@
             transform: translateX(4px);
         }
 
-        /* Mobile TOC (dropdown) */
+        /* Mobile TOC (collapsible dropdown) */
         .toc-mobile {
             display: none;
-            padding: 1.5rem;
         }
 
-        .toc-label {
-            display: block;
+        .toc-mobile-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 1rem 1.25rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
             font-family: var(--font-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            color: var(--heading-color);
+            font-size: 1rem;
             font-weight: 700;
+            color: var(--heading-color);
+            transition: all 0.2s ease;
+        }
+
+        .toc-mobile-toggle:hover {
+            color: var(--accent-color);
+        }
+
+        .toc-mobile-toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .toc-mobile.collapsed .toc-mobile-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .toc-mobile-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .toc-mobile:not(.collapsed) .toc-mobile-content {
+            max-height: 300px;
+            padding: 0 1.25rem 1.25rem;
         }
 
         .toc-select {
@@ -488,6 +521,13 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23FF6B6B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
         }
 
         .toc-select:focus {
@@ -573,8 +613,8 @@
             <!-- Desktop version: collapsible jump list -->
             <div class="toc-desktop">
                 <button class="toc-toggle" aria-expanded="false" aria-controls="toc-content">
-                    <span class="toc-toggle-text">Jump to section</span>
                     <span class="toc-toggle-icon">▼</span>
+                    <span class="toc-toggle-text">Jump to section</span>
                 </button>
                 <div class="toc-content" id="toc-content">
                     <ul class="toc-list">
@@ -588,18 +628,23 @@
                 </div>
             </div>
 
-            <!-- Mobile version: dropdown -->
+            <!-- Mobile version: collapsible dropdown -->
             <div class="toc-mobile">
-                <label for="toc-select" class="toc-label">Jump to section</label>
-                <select id="toc-select" class="toc-select">
-                    <option value="">Choose a section...</option>
-                    <option value="the-myth-of-the-creative-class">The Myth of the Creative Class</option>
+                <button class="toc-mobile-toggle" aria-expanded="false" aria-controls="toc-mobile-content">
+                    <span class="toc-mobile-toggle-icon">▼</span>
+                    <span class="toc-mobile-toggle-text">Jump to section</span>
+                </button>
+                <div class="toc-mobile-content" id="toc-mobile-content">
+                    <select id="toc-select" class="toc-select">
+                        <option value="">Choose a section...</option>
+                        <option value="the-myth-of-the-creative-class">The Myth of the Creative Class</option>
                     <option value="the-ladder-and-the-carrot">The Ladder and the Carrot</option>
                     <option value="the-arbiters-among-us">The Arbiters Among Us</option>
                     <option value="what-shines-through-anyway">What Shines Through Anyway</option>
                     <option value="permission-you-dont-need-to-ask-for">Permission You Don’t Need to Ask For</option>
                     <option value="the-real-creative-act">The Real Creative Act</option>
-                </select>
+                    </select>
+                </div>
             </div>
         </nav>
     
@@ -821,6 +866,19 @@
         if (tocToggle && toc) {
             tocToggle.addEventListener('click', function() {
                 const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents mobile toggle
+        const tocMobileToggle = document.querySelector('.toc-mobile-toggle');
+        const tocMobile = document.querySelector('.toc-mobile');
+        if (tocMobileToggle && tocMobile) {
+            // Start collapsed on mobile
+            tocMobile.classList.add('collapsed');
+
+            tocMobileToggle.addEventListener('click', function() {
+                const isCollapsed = tocMobile.classList.toggle('collapsed');
                 this.setAttribute('aria-expanded', !isCollapsed);
             });
         }
