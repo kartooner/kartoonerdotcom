@@ -625,7 +625,16 @@ function generateEntryPages(journal) {
             background: none;
             padding: 0;
         }
-        
+
+        /* Book recommendation at end */
+        .entry-content > hr:last-of-type {
+            margin: 3rem 0 2rem 0;
+        }
+
+        .entry-content > hr:last-of-type ~ p {
+            margin-top: 0;
+        }
+
         /* Table styling */
         .entry-content table {
             width: 100%;
