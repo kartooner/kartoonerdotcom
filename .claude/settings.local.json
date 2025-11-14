@@ -45,7 +45,8 @@
       "Bash(echo \"✅ Updated: $file\")",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(cmd /c taskkill /F /PID 17712)"
+      "Bash(cmd /c taskkill /F /PID 17712)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

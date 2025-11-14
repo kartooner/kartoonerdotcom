@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
     <style>
         .archive-container {
             max-width: 800px;
@@ -95,6 +93,7 @@
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -114,6 +113,11 @@
         <div class="year-section">
             <h2>2025</h2>
             
+            <div class="archive-entry">
+                <div class="entry-date">Nov 14, 2025</div>
+                <h3><a href="/entry/everyone-creates.html">Everyone Creates</a></h3>
+                <p class="entry-excerpt">You were always creative; you just forgot you didn't need permission to remember</p>
+            </div>
             <div class="archive-entry">
                 <div class="entry-date">Sep 5, 2025</div>
                 <h3><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h3>
@@ -135,10 +139,6 @@
         </main>
 
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="/img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -153,5 +153,36 @@
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

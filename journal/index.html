@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
     <style>
 
         .journal-container {
@@ -75,7 +73,7 @@
             font-size: var(--text-lg);
             line-height: var(--leading-normal);
         }
-        
+
         /* Code styling */
         .post-content pre {
             background: rgba(0, 0, 0, 0.1);
@@ -178,41 +176,63 @@
             margin-bottom: 30px;
         }
 
-        .post-list {
+        .recent-posts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
             margin: 0;
-            padding: 0;
-        }
-        
-        .post-list dt {
-            margin-bottom: 8px;
-            margin-top: 25px;
-        }
-        
-        .post-list dt:first-child {
-            margin-top: 0;
-        }
-        
-        .post-list dt a {
-            font-size: 1.4rem;
-            color: var(--text-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-block;
-            font-weight: 500;
         }
 
-        .post-list dt a:hover,
-        .post-list dt a:focus {
+        .recent-post-item {
+            background: rgba(var(--accent-rgb), 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .recent-post-item:hover {
+            background: rgba(var(--accent-rgb), 0.08);
+            transform: translateX(4px);
+        }
+
+        .recent-post-title {
+            font-size: 1.5rem;
+            margin: 0 0 0.75rem 0;
+            color: var(--heading-color);
+        }
+
+        .recent-post-title a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .recent-post-title a:hover,
+        .recent-post-title a:focus {
+            color: var(--accent-color);
+        }
+
+        .recent-post-snippet {
+            color: var(--text-color);
+            font-family: var(--font-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0 0 1rem 0;
+        }
+
+        .recent-post-link {
             color: var(--accent-color);
             text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
         }
-        
-        .post-list dd {
-            color: var(--text-color);
-            margin-left: 0;
-            margin-bottom: 0;
-            font-size: 1rem;
-            line-height: 1.4;
+
+        .recent-post-link:hover,
+        .recent-post-link:focus {
+            text-decoration: underline;
+            transform: translateX(2px);
         }
 
         footer {
@@ -285,6 +305,27 @@
             vertical-align: text-bottom;
         }
 
+        /* Read more link styling */
+        .read-more {
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .read-more a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .read-more a:hover,
+        .read-more a:focus {
+            transform: translateX(4px);
+            text-decoration: underline;
+        }
 
     </style>
 </head>
@@ -321,26 +362,14 @@
 
         
     <div class="post">
-        <div class="post-date"><a href="/entry/growing-up-in-the-80s.html">#</a> &bull; Sep 5, 2025 &bull; Erik Sagen</div>
-        <h2 class="post-title"><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h2>
-        <div class="post-subtitle">When movies, music, and games came together perfectly.</div>
+        <div class="post-date"><a href="/entry/everyone-creates.html">#</a> &bull; Nov 14, 2025 &bull; Erik Sagen</div>
+        <h2 class="post-title"><a href="/entry/everyone-creates.html">Everyone Creates</a></h2>
+        <div class="post-subtitle">Even when the system says you don't</div>
         <div class="post-content">
-            <img src="/img/land-before-time-cover.jpg" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />
-            <p>Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us. Probably Skittles and a medium Coke, if I had to guess.</p>
+            <p>Don Hahn remembers dancing corndogs. </p>
 
-<p>On the big screen is The Land Before Time, this amazing animated movie by Don Bluth about dinosaurs. I can&#39;t look away.</p>
-
-<p>I&#39;m probably wearing some late &#39;80s t-shirt, maybe Mr. T, with regular jeans. My hair is that white-blonde color some kids get in the summer. I&#39;m about seven or eight years old.</p>
-
-<p>That moment right there? That&#39;s everything I loved about being a kid in the late &#39;80s.</p>
-
-<p>This was when Madonna and Micheal Jackson ruled the radio. When everyone had snap bracelets. When we&#39;d all gather around the TV on Saturday nights to watch Dana Carvey make fun of President Bush on Saturday Night Live.</p>
-
-<p>But the video games, now those were really something back then. The Nintendo Entertainment System (NES), Sega Master System, and especially The Legend of Zelda. I still remember walking into Toys R Us with my brother and seeing that gold game cartridge sitting there, shining like treasure among all those plain grey ones. We begged our Dad for what felt like hours until he finally said yes.</p>
-
-<p>Everyone has that one time in their life they think back to. For me, this is it.</p>
-
-<p>Looking back now, I think everything just came together perfectly. Movies, games, music; it all felt more magical than anything before or since. Those experiences made me who I am. And now, as a dad myself, I get to share them with my own kids. Just a few months ago, they wanted to watch Back to the Future, and I realized something: the best parts of the &#39;80s aren&#39;t stuck in the past. They&#39;re still here, still working their magic on a whole new generation.</p>
+<p>Not the food itself, but the image: a cartoon advertisement projected onto a drive-in movie screen, animated hot dogs in their little breaded jackets, twirling under the stars. He was a kid in pajamas, sitting in the back of his family’s Rambler station wagon, and something about those dancing corndogs mesmerized him.</p>
+            <p class="read-more"><a href="/entry/everyone-creates.html">Read full post →</a></p>
         </div>
     </div>
 
@@ -348,16 +377,28 @@
 
         <div class="recent-posts animate-fade-in animate-footer">
             <h3>Recent posts</h3>
-            
-            <dl class="post-list">
+
+            <div class="recent-posts-grid">
                 
-                <dt><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></dt>
-                <dd>Sometimes you think you know every corner of your neighborhood—until one day you don't.</dd>
+                <div class="recent-post-item">
+                    <h3 class="recent-post-title"><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h3>
+                    <p class="recent-post-snippet">Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us.</p>
+                    <a href="/entry/growing-up-in-the-80s.html" class="recent-post-link">Read more →</a>
+                </div>
                 
-                <dt><a href="/entry/here-we-go-again.html">Here we go again</a></dt>
-                <dd>It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.</dd>
-            </dl>
-            
+                <div class="recent-post-item">
+                    <h3 class="recent-post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h3>
+                    <p class="recent-post-snippet">I was driving near my house when I turned past a corner and asked my wife, &quot;Has that pole always been there?&quot; She didn&#39;t even hesitate.</p>
+                    <a href="/entry/the-pole-on-the-corner.html" class="recent-post-link">Read more →</a>
+                </div>
+                
+                <div class="recent-post-item">
+                    <h3 class="recent-post-title"><a href="/entry/here-we-go-again.html">Here we go again</a></h3>
+                    <p class="recent-post-snippet">It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
+                    <a href="/entry/here-we-go-again.html" class="recent-post-link">Read more →</a>
+                </div>
+            </div>
+
             <footer>
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
@@ -372,10 +413,6 @@
         </div>
         
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -390,5 +427,36 @@
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

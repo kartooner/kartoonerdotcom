@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
     <style>
         .entry-container {
             max-width: 800px;
@@ -80,7 +78,28 @@
             font-size: var(--text-lg);
             line-height: var(--leading-normal);
         }
-        
+
+        /* Image styling */
+        .entry-content img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            object-position: center;
+            margin: 0 0 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="dark"] .entry-content img {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .entry-content img {
+                height: 250px;
+            }
+        }
+
         /* Code styling */
         .entry-content pre {
             background: rgba(0, 0, 0, 0.1);
@@ -241,14 +260,261 @@
             vertical-align: text-bottom;
         }
 
-        
+        /* Tags Section */
+        .tags-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(var(--accent-rgb), 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .tags-section h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.2rem;
+            color: var(--heading-color);
+            margin: 0 0 1rem 0;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.3);
+        }
+
+        /* Related Posts Section */
+        .related-posts-section {
+            margin: 2rem 0;
+        }
+
+        .related-posts-section h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.5rem;
+            color: var(--heading-color);
+            margin: 0 0 1.5rem 0;
+        }
+
+        .related-posts-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        .related-post-item {
+            padding: 1.25rem;
+            background: rgba(var(--accent-rgb), 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .related-post-item:hover {
+            background: rgba(var(--accent-rgb), 0.08);
+            transform: translateX(4px);
+        }
+
+        .related-post-item h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-family: var(--font-secondary);
+        }
+
+        .related-post-item h4 a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .related-post-item h4 a:hover {
+            color: var(--accent-color);
+        }
+
+        .related-post-excerpt {
+            color: var(--text-color);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        @media (min-width: 768px) {
+            .related-posts-list {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        /* Table of Contents - Floating on right */
+        .table-of-contents {
+            position: fixed;
+            top: 6rem;
+            right: 2rem;
+            background: rgba(var(--accent-rgb), 0.08);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            z-index: 100;
+            max-width: 280px;
+        }
+
+        .toc-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 1rem 1.25rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--font-secondary);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--heading-color);
+            transition: all 0.2s ease;
+        }
+
+        .toc-toggle:hover {
+            color: var(--accent-color);
+        }
+
+        .toc-toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .table-of-contents.collapsed .toc-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .toc-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .table-of-contents:not(.collapsed) .toc-content {
+            max-height: 500px;
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list li {
+            margin-bottom: 0.625rem;
+        }
+
+        .toc-list a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            transition: all 0.2s ease;
+            display: inline-block;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .toc-list a:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            transition: transform 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .toc-list a:hover,
+        .toc-list a:focus {
+            color: var(--accent-color);
+            transform: translateX(4px);
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        .toc-list a:hover:before {
+            transform: translateX(4px);
+        }
+
+        /* Mobile TOC (dropdown) */
+        .toc-mobile {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .toc-label {
+            display: block;
+            font-family: var(--font-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--heading-color);
+            font-weight: 700;
+        }
+
+        .toc-select {
+            width: 100%;
+            padding: 1rem 2.5rem 1rem 1.25rem;
+            font-size: 1rem;
+            font-family: var(--font-primary);
+            color: var(--text-color);
+            background: var(--bg-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toc-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+        }
+
+        .toc-select option {
+            padding: 0.75rem;
+        }
+
+        /* Responsive: Show dropdown on mobile/tablet at top of content */
+        @media (max-width: 1024px) {
+            .table-of-contents {
+                position: static;
+                max-width: 100%;
+                margin: 0 0 2rem 0;
+                right: auto;
+            }
+
+            .toc-desktop {
+                display: none;
+            }
+
+            .toc-mobile {
+                display: block;
+            }
+        }
+
         /* Responsive scaling for entry title */
         @media (max-width: 768px) {
             .entry-title {
                 font-size: 3.5rem;
             }
         }
-        
+
         @media (max-width: 500px) {
             .entry-title {
                 font-size: 2.8rem;
@@ -293,10 +559,10 @@
             
         </div>
 
+
         <div class="entry">
             <div class="entry-content">
-                <img src="/img/sketch-of-kcd2.JPG" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />
-                <p>It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
+                <img src="/img/sketch-of-kcd2.JPG" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" /><p>It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
 
 <p>Life filled up. Work, kids, projects, distractions-a-plenty; stacking until writing slides further down the list. I&#39;d open a blank page, stare at it, then close it again.</p>
 
@@ -311,6 +577,37 @@
 <p>Comments aren&#39;t working here yet, so if you feel like responding, we&#39;ll end up doing the ironic thing and take that back to the social platform.</p>
 
 <p>P.S. If you&#39;re reading this, thanks for showing up. Feels good to show up again, too.</p>
+            </div>
+        </div>
+
+
+        <div class="tags-section">
+            <h3>Tagged with</h3>
+            <div class="tags-list">
+                <span class="tag">writing</span>
+                <span class="tag">personal</span>
+            </div>
+        </div>
+
+
+        <div class="related-posts-section">
+            <h3>Related posts</h3>
+            <div class="related-posts-list">
+                
+                <div class="related-post-item">
+                    <h4><a href="/entry/everyone-creates.html">Everyone Creates</a></h4>
+                    <p class="related-post-excerpt">You were always creative; you just forgot you didn't need permission to remember</p>
+                </div>
+                
+                <div class="related-post-item">
+                    <h4><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h4>
+                    <p class="related-post-excerpt">When movies, music, and games came together perfectly.</p>
+                </div>
+                
+                <div class="related-post-item">
+                    <h4><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h4>
+                    <p class="related-post-excerpt">Sometimes you think you know every corner of your neighborhood—until one day you don't.</p>
+                </div>
             </div>
         </div>
 
@@ -329,10 +626,6 @@
         </div>
         
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="/img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -347,5 +640,36 @@
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

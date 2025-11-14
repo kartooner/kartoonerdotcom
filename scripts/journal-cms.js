@@ -166,12 +166,104 @@ function formatDate(date) {
     }
 }
 
-function convertMarkdownToHtml(markdown) {
+// Helper function to create URL-safe IDs from heading text
+function createHeadingId(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-')      // Replace spaces with hyphens
+        .replace(/-+/g, '-')       // Replace multiple hyphens with single
+        .trim();
+}
+
+// Generate table of contents HTML
+function generateTableOfContents(h2Headings) {
+    if (!h2Headings || h2Headings.length < 3) {
+        return '';
+    }
+
+    const tocItems = h2Headings.map(heading =>
+        `<li><a href="#${heading.id}">${heading.text}</a></li>`
+    ).join('\n                    ');
+
+    const tocOptions = h2Headings.map(heading =>
+        `<option value="${heading.id}">${heading.text}</option>`
+    ).join('\n                    ');
+
+    return `
+        <nav class="table-of-contents collapsed" aria-label="Table of Contents" id="toc">
+            <!-- Desktop version: collapsible jump list -->
+            <div class="toc-desktop">
+                <button class="toc-toggle" aria-expanded="false" aria-controls="toc-content">
+                    <span class="toc-toggle-text">Jump to section</span>
+                    <span class="toc-toggle-icon">▼</span>
+                </button>
+                <div class="toc-content" id="toc-content">
+                    <ul class="toc-list">
+                        ${tocItems}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Mobile version: dropdown -->
+            <div class="toc-mobile">
+                <label for="toc-select" class="toc-label">Jump to section</label>
+                <select id="toc-select" class="toc-select">
+                    <option value="">Choose a section...</option>
+                    ${tocOptions}
+                </select>
+            </div>
+        </nav>
+    `;
+}
+
+// Extract preview from content (first 2 paragraphs)
+function getContentPreview(htmlContent) {
+    // Match paragraphs
+    const paragraphRegex = /<p>.*?<\/p>/gs;
+    const paragraphs = htmlContent.match(paragraphRegex) || [];
+
+    // If 3 or fewer paragraphs, it's short - return full content
+    if (paragraphs.length <= 3) {
+        return { preview: htmlContent, isLong: false };
+    }
+
+    // Return first 2 paragraphs as preview
+    const preview = paragraphs.slice(0, 2).join('\n\n');
+    return { preview, isLong: true };
+}
+
+// Extract a short snippet for recent posts (first 1-2 sentences)
+function getSnippet(htmlContent) {
+    // Remove HTML tags to get plain text
+    const plainText = htmlContent.replace(/<[^>]+>/g, '');
+
+    // Split by sentence endings
+    const sentences = plainText.split(/[.!?]+\s+/);
+
+    // Get first 1-2 sentences, max ~150 chars
+    let snippet = sentences[0];
+    if (snippet.length < 100 && sentences[1]) {
+        snippet += '. ' + sentences[1];
+    }
+
+    // Truncate if still too long and add ellipsis
+    if (snippet.length > 150) {
+        snippet = snippet.substring(0, 150).trim() + '...';
+    } else {
+        snippet += '.';
+    }
+
+    return snippet;
+}
+
+function convertMarkdownToHtml(markdown, trackH2s = false) {
     let html = markdown.replace(/\r\n/g, '\n'); // Normalize line endings
-    
+
     // Split into blocks by double newlines
     const blocks = html.split('\n\n').filter(block => block.trim() !== '');
     const convertedBlocks = [];
+    const h2Headings = []; // Track H2 headings for table of contents
     
     for (let block of blocks) {
         const lines = block.split('\n');
@@ -285,7 +377,12 @@ function convertMarkdownToHtml(markdown) {
                 convertedBlocks.push(`<h3>${processInlineMarkdown(h3Match[1])}</h3>`);
                 continue;
             } else if (h2Match) {
-                convertedBlocks.push(`<h2>${processInlineMarkdown(h2Match[1])}</h2>`);
+                const headingText = h2Match[1];
+                const headingId = createHeadingId(headingText);
+                convertedBlocks.push(`<h2 id="${headingId}">${processInlineMarkdown(headingText)}</h2>`);
+                if (trackH2s) {
+                    h2Headings.push({ text: headingText, id: headingId });
+                }
                 continue;
             } else if (h1Match) {
                 convertedBlocks.push(`<h1>${processInlineMarkdown(h1Match[1])}</h1>`);
@@ -303,8 +400,13 @@ function convertMarkdownToHtml(markdown) {
         const paragraphContent = block.replace(/\n/g, ' ');
         convertedBlocks.push(`<p>${processInlineMarkdown(paragraphContent)}</p>`);
     }
-    
-    return convertedBlocks.join('\n\n');
+
+    const outputHtml = convertedBlocks.join('\n\n');
+
+    if (trackH2s) {
+        return { html: outputHtml, h2Headings };
+    }
+    return outputHtml;
 }
 
 // Helper function to process inline markdown (bold, italic, links, code, etc.)
@@ -351,10 +453,46 @@ function generateEntryPages(journal) {
     }
 
     journal.entries.forEach(entry => {
-        const contentHtml = convertMarkdownToHtml(entry.content);
+        // Check if this is a longform post
+        const isLongform = entry.tags && entry.tags.includes('longform');
+
+        const { html: contentHtml, h2Headings } = convertMarkdownToHtml(entry.content, true);
+        const tocHtml = isLongform ? generateTableOfContents(h2Headings) : '';
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
-        const imagesHtml = entry.images ? entry.images.map(img => 
+        const imagesHtml = entry.images ? entry.images.map(img =>
             `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
+
+        // Generate "Tagged with" section
+        const tagsHtml = entry.tags && entry.tags.length > 0 ? `
+        <div class="tags-section">
+            <h3>Tagged with</h3>
+            <div class="tags-list">
+                ${entry.tags.map(tag => `<span class="tag">${tag}</span>`).join('\n                ')}
+            </div>
+        </div>` : '';
+
+        // Find related posts based on shared tags
+        const relatedPosts = journal.entries
+            .filter(e => e.id !== entry.id && e.tags && e.tags.length > 0) // Exclude current entry
+            .map(e => {
+                const sharedTags = e.tags.filter(tag => entry.tags && entry.tags.includes(tag));
+                return { entry: e, sharedCount: sharedTags.length };
+            })
+            .filter(item => item.sharedCount > 0) // Only entries with at least 1 shared tag
+            .sort((a, b) => b.sharedCount - a.sharedCount) // Sort by most shared tags
+            .slice(0, 3); // Get top 3
+
+        const relatedPostsHtml = relatedPosts.length > 0 ? `
+        <div class="related-posts-section">
+            <h3>Related posts</h3>
+            <div class="related-posts-list">
+                ${relatedPosts.map(item => `
+                <div class="related-post-item">
+                    <h4><a href="/entry/${item.entry.id}.html">${item.entry.title}</a></h4>
+                    <p class="related-post-excerpt">${item.entry.excerpt}</p>
+                </div>`).join('\n                ')}
+            </div>
+        </div>` : '';
 
         const template = `<!DOCTYPE html>
 <html lang="en">
@@ -436,7 +574,28 @@ function generateEntryPages(journal) {
             font-size: var(--text-lg);
             line-height: var(--leading-normal);
         }
-        
+
+        /* Image styling */
+        .entry-content img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            object-position: center;
+            margin: 0 0 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="dark"] .entry-content img {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .entry-content img {
+                height: 250px;
+            }
+        }
+
         /* Code styling */
         .entry-content pre {
             background: rgba(0, 0, 0, 0.1);
@@ -597,14 +756,261 @@ function generateEntryPages(journal) {
             vertical-align: text-bottom;
         }
 
-        
+        /* Tags Section */
+        .tags-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(var(--accent-rgb), 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .tags-section h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.2rem;
+            color: var(--heading-color);
+            margin: 0 0 1rem 0;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.3);
+        }
+
+        /* Related Posts Section */
+        .related-posts-section {
+            margin: 2rem 0;
+        }
+
+        .related-posts-section h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.5rem;
+            color: var(--heading-color);
+            margin: 0 0 1.5rem 0;
+        }
+
+        .related-posts-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+
+        .related-post-item {
+            padding: 1.25rem;
+            background: rgba(var(--accent-rgb), 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .related-post-item:hover {
+            background: rgba(var(--accent-rgb), 0.08);
+            transform: translateX(4px);
+        }
+
+        .related-post-item h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-family: var(--font-secondary);
+        }
+
+        .related-post-item h4 a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .related-post-item h4 a:hover {
+            color: var(--accent-color);
+        }
+
+        .related-post-excerpt {
+            color: var(--text-color);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        @media (min-width: 768px) {
+            .related-posts-list {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        /* Table of Contents - Floating on right */
+        .table-of-contents {
+            position: fixed;
+            top: 6rem;
+            right: 2rem;
+            background: rgba(var(--accent-rgb), 0.08);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            z-index: 100;
+            max-width: 280px;
+        }
+
+        .toc-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 1rem 1.25rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--font-secondary);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--heading-color);
+            transition: all 0.2s ease;
+        }
+
+        .toc-toggle:hover {
+            color: var(--accent-color);
+        }
+
+        .toc-toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .table-of-contents.collapsed .toc-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .toc-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.25rem;
+        }
+
+        .table-of-contents:not(.collapsed) .toc-content {
+            max-height: 500px;
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list li {
+            margin-bottom: 0.625rem;
+        }
+
+        .toc-list a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            transition: all 0.2s ease;
+            display: inline-block;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .toc-list a:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            transition: transform 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .toc-list a:hover,
+        .toc-list a:focus {
+            color: var(--accent-color);
+            transform: translateX(4px);
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        .toc-list a:hover:before {
+            transform: translateX(4px);
+        }
+
+        /* Mobile TOC (dropdown) */
+        .toc-mobile {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .toc-label {
+            display: block;
+            font-family: var(--font-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--heading-color);
+            font-weight: 700;
+        }
+
+        .toc-select {
+            width: 100%;
+            padding: 1rem 2.5rem 1rem 1.25rem;
+            font-size: 1rem;
+            font-family: var(--font-primary);
+            color: var(--text-color);
+            background: var(--bg-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toc-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+        }
+
+        .toc-select option {
+            padding: 0.75rem;
+        }
+
+        /* Responsive: Show dropdown on mobile/tablet at top of content */
+        @media (max-width: 1024px) {
+            .table-of-contents {
+                position: static;
+                max-width: 100%;
+                margin: 0 0 2rem 0;
+                right: auto;
+            }
+
+            .toc-desktop {
+                display: none;
+            }
+
+            .toc-mobile {
+                display: block;
+            }
+        }
+
         /* Responsive scaling for entry title */
         @media (max-width: 768px) {
             .entry-title {
                 font-size: 3.5rem;
             }
         }
-        
+
         @media (max-width: 500px) {
             .entry-title {
                 font-size: 2.8rem;
@@ -631,6 +1037,7 @@ function generateEntryPages(journal) {
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -648,12 +1055,16 @@ function generateEntryPages(journal) {
             ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
         </div>
 
+${tocHtml}
         <div class="entry">
             <div class="entry-content">
-                ${imagesHtml}
-                ${contentHtml}
+                ${imagesHtml}${contentHtml}
             </div>
         </div>
+
+${tagsHtml}
+
+${relatedPostsHtml}
 
         <hr class="divider" />
         
@@ -670,10 +1081,6 @@ function generateEntryPages(journal) {
         </div>
         
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -688,6 +1095,37 @@ function generateEntryPages(journal) {
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>`;
 
@@ -715,15 +1153,23 @@ function generateJournalHtml(journal) {
     const recentEntries = journal.entries
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(1, 4) // Next 3 posts for compact list
-        .map(entry => `
-                <dt><a href="/entry/${entry.id}.html">${entry.title}</a></dt>
-                <dd>${entry.subtitle || entry.excerpt}</dd>`).join('\n                ');
+        .map(entry => {
+            const contentHtml = convertMarkdownToHtml(entry.content);
+            const snippet = getSnippet(contentHtml);
+            return `
+                <div class="recent-post-item">
+                    <h3 class="recent-post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
+                    <p class="recent-post-snippet">${snippet}</p>
+                    <a href="/entry/${entry.id}.html" class="recent-post-link">Read more →</a>
+                </div>`;
+        }).join('\n                ');
 
     const postsHtml = entries.map(entry => {
         const contentHtml = convertMarkdownToHtml(entry.content);
+        const { preview, isLong } = getContentPreview(contentHtml);
         const subtitleHtml = entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : '';
-        const imagesHtml = entry.images ? entry.images.map(img => 
-            `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
+
+        const readMoreLink = isLong ? `<p class="read-more"><a href="/entry/${entry.id}.html">Read full post →</a></p>` : '';
 
         return `
     <div class="post">
@@ -731,8 +1177,8 @@ function generateJournalHtml(journal) {
         <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
         ${subtitleHtml}
         <div class="post-content">
-            ${imagesHtml}
-            ${contentHtml}
+            ${preview}
+            ${readMoreLink}
         </div>
     </div>`;
     }).join('\n\n    <hr class="divider" />\n');
@@ -812,7 +1258,7 @@ function generateJournalHtml(journal) {
             font-size: var(--text-lg);
             line-height: var(--leading-normal);
         }
-        
+
         /* Code styling */
         .post-content pre {
             background: rgba(0, 0, 0, 0.1);
@@ -915,41 +1361,63 @@ function generateJournalHtml(journal) {
             margin-bottom: 30px;
         }
 
-        .post-list {
+        .recent-posts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
             margin: 0;
-            padding: 0;
-        }
-        
-        .post-list dt {
-            margin-bottom: 8px;
-            margin-top: 25px;
-        }
-        
-        .post-list dt:first-child {
-            margin-top: 0;
-        }
-        
-        .post-list dt a {
-            font-size: 1.4rem;
-            color: var(--text-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-block;
-            font-weight: 500;
         }
 
-        .post-list dt a:hover,
-        .post-list dt a:focus {
+        .recent-post-item {
+            background: rgba(var(--accent-rgb), 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .recent-post-item:hover {
+            background: rgba(var(--accent-rgb), 0.08);
+            transform: translateX(4px);
+        }
+
+        .recent-post-title {
+            font-size: 1.5rem;
+            margin: 0 0 0.75rem 0;
+            color: var(--heading-color);
+        }
+
+        .recent-post-title a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .recent-post-title a:hover,
+        .recent-post-title a:focus {
+            color: var(--accent-color);
+        }
+
+        .recent-post-snippet {
+            color: var(--text-color);
+            font-family: var(--font-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0 0 1rem 0;
+        }
+
+        .recent-post-link {
             color: var(--accent-color);
             text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
         }
-        
-        .post-list dd {
-            color: var(--text-color);
-            margin-left: 0;
-            margin-bottom: 0;
-            font-size: 1rem;
-            line-height: 1.4;
+
+        .recent-post-link:hover,
+        .recent-post-link:focus {
+            text-decoration: underline;
+            transform: translateX(2px);
         }
 
         footer {
@@ -1022,6 +1490,27 @@ function generateJournalHtml(journal) {
             vertical-align: text-bottom;
         }
 
+        /* Read more link styling */
+        .read-more {
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .read-more a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .read-more a:hover,
+        .read-more a:focus {
+            transform: translateX(4px);
+            text-decoration: underline;
+        }
 
     </style>
 </head>
@@ -1041,6 +1530,7 @@ function generateJournalHtml(journal) {
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -1061,11 +1551,11 @@ function generateJournalHtml(journal) {
 
         <div class="recent-posts animate-fade-in animate-footer">
             <h3>Recent posts</h3>
-            
-            <dl class="post-list">
+
+            <div class="recent-posts-grid">
                 ${recentEntries}
-            </dl>
-            
+            </div>
+
             <footer>
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
@@ -1080,10 +1570,6 @@ function generateJournalHtml(journal) {
         </div>
         
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -1098,6 +1584,37 @@ function generateJournalHtml(journal) {
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>`;
 
@@ -1237,6 +1754,7 @@ function generateArchiveHtml(journal) {
             <a href="/">Home</a>
             <a href="/about">About</a>
             <a href="/journal" class="current" aria-current="page">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
             <a href="/contact">Contact</a>
         </div>
     </nav>
@@ -1258,10 +1776,6 @@ function generateArchiveHtml(journal) {
         </main>
 
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="arcade-gif">
-                <img src="img/erik-arcade.gif" loading="lazy" alt="Retro pixel art arcade cabinet with character playing" data-progressive />
-            </div>
-
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
@@ -1276,6 +1790,37 @@ function generateArchiveHtml(journal) {
     </div>
     
     <script src="/app.min.js"></script>
+    <script src="/halloween-loader.js"></script>
+    <script src="/christmas-loader.js"></script>
+    <script>
+        // Table of Contents toggle (desktop)
+        const tocToggle = document.querySelector('.toc-toggle');
+        const toc = document.getElementById('toc');
+        if (tocToggle && toc) {
+            tocToggle.addEventListener('click', function() {
+                const isCollapsed = toc.classList.toggle('collapsed');
+                this.setAttribute('aria-expanded', !isCollapsed);
+            });
+        }
+
+        // Table of Contents dropdown navigation (mobile)
+        const tocSelect = document.getElementById('toc-select');
+        if (tocSelect) {
+            tocSelect.addEventListener('change', function() {
+                const targetId = this.value;
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Reset the select after navigation
+                        setTimeout(() => {
+                            this.selectedIndex = 0;
+                        }, 300);
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>`;
 
