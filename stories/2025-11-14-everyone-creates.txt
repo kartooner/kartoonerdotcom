@@ -57,7 +57,9 @@ The ladder isn’t measuring creativity. It’s measuring performance of certain
 
 ## The Arbiters Among Us
 
-The hardest part isn’t the system itself. Systems are abstract, faceless. The hardest part is when the system speaks through people you thought were on your side.
+The hardest part isn’t the system itself. Systems are abstract, faceless.
+
+The hardest part is when the system speaks through people you thought were on your side.
 
 A colleague tells you that you don’t meet certain standards. That you need to develop your communication skills, your technical depth, your leadership presence. They frame it as helpful. Constructive feedback. They’re invested in your growth.
 
@@ -101,7 +103,7 @@ Your essential truth. The way you think about problems. The connections you see 
 That’s yours. It doesn’t need permission. It doesn’t wait for a promotion to exist.
 Sometimes someone sees it. Not always the person with the title or the authority. Sometimes it’s a peer who gets what you were trying to do. Sometimes it’s someone junior who asks you questions that reveal they’re paying attention. 
 
-Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself.The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.
+Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself. The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.
 
 These moments don’t show up on performance reviews. They don’t accelerate your promotion timeline. But they’re real. They’re evidence that the thing that makes you who you are is getting through despite the system’s best efforts to standardize you.
 

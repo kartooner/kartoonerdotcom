@@ -4,3 +4,4 @@
 /aiadvisor/dist
 node_modules
 nul
+.claude/settings.local.json

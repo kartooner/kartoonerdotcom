@@ -166,6 +166,33 @@ function formatDate(date) {
     }
 }
 
+// Calculate reading time from content
+function calculateReadingTime(content) {
+    // Remove HTML tags and markdown syntax for accurate word count
+    const plainText = content
+        .replace(/<[^>]+>/g, ' ')           // Remove HTML tags
+        .replace(/```[\s\S]*?```/g, ' ')    // Remove code blocks
+        .replace(/`[^`]+`/g, ' ')           // Remove inline code
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Convert [text](url) to text
+        .replace(/[#*_~`]/g, ' ')           // Remove markdown symbols
+        .replace(/\s+/g, ' ')               // Normalize whitespace
+        .trim();
+
+    // Count words
+    const wordCount = plainText.split(/\s+/).filter(word => word.length > 0).length;
+
+    // Average reading speed: 200-250 words per minute
+    // Using 225 as middle ground
+    const wordsPerMinute = 225;
+    const minutes = Math.ceil(wordCount / wordsPerMinute);
+
+    // Return formatted string
+    if (minutes === 1) {
+        return '1 min read';
+    }
+    return `${minutes} min read`;
+}
+
 // Helper function to create URL-safe IDs from heading text
 function createHeadingId(text) {
     return text
@@ -464,15 +491,16 @@ function generateEntryPages(journal) {
         const { html: contentHtml, h2Headings } = convertMarkdownToHtml(entry.content, true);
         const tocHtml = isLongform ? generateTableOfContents(h2Headings) : '';
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
+        const readingTime = calculateReadingTime(entry.content);
         const imagesHtml = entry.images ? entry.images.map(img =>
             `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
 
-        // Generate "Tagged with" section
+        // Generate "Tagged with" section with clickable tags
         const tagsHtml = entry.tags && entry.tags.length > 0 ? `
         <div class="tags-section">
             <h3>Tagged with</h3>
             <div class="tags-list">
-                ${entry.tags.map(tag => `<span class="tag">${tag}</span>`).join('\n                ')}
+                ${entry.tags.map(tag => `<a href="/journal?tag=${encodeURIComponent(tag)}" class="tag">#${tag}</a>`).join('\n                ')}
             </div>
         </div>` : '';
 
@@ -1104,7 +1132,7 @@ function generateEntryPages(journal) {
 
     <div class="entry-container">
         <div class="entry-header" id="main-content">
-            <div class="entry-date"># &bull; ${formatDate(entry.date)} &bull; Erik Sagen</div>
+            <div class="entry-date"># &bull; ${formatDate(entry.date)} &bull; ${readingTime} &bull; Erik Sagen</div>
             <h1 class="entry-title">${entry.title}</h1>
             ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
         </div>
@@ -1121,11 +1149,11 @@ ${tagsHtml}
 ${relatedPostsHtml}
 
         <hr class="divider" />
-        
+
         <div class="navigation">
             <a href="/archive" class="view-all">View all posts</a>
         </div>
-        
+
         <div class="info-section">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
             <div class="info-section-row">
@@ -1133,24 +1161,23 @@ ${relatedPostsHtml}
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
         </div>
-        
+
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
+                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
+                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
     <script src="/app.min.js"></script>
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
@@ -1235,12 +1262,13 @@ function generateJournalHtml(journal) {
         const contentHtml = convertMarkdownToHtml(entry.content);
         const { preview, isLong } = getContentPreview(contentHtml);
         const subtitleHtml = entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : '';
+        const readingTime = calculateReadingTime(entry.content);
 
         const readMoreLink = isLong ? `<p class="read-more"><a href="/entry/${entry.id}.html">Read full post →</a></p>` : '';
 
         return `
     <div class="post">
-        <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${formatDate(entry.date)} &bull; Erik Sagen</div>
+        <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${formatDate(entry.date)} &bull; ${readingTime} &bull; Erik Sagen</div>
         <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
         ${subtitleHtml}
         <div class="post-content">
@@ -1627,7 +1655,7 @@ function generateJournalHtml(journal) {
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
         </div>
-        
+
         <div class="feed-links animate-fade-in animate-footer">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
             <div class="info-section-row">
@@ -1635,24 +1663,24 @@ function generateJournalHtml(journal) {
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
         </div>
-        
+
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
+                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
+                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
-    
+
     <script src="/app.min.js"></script>
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
+    <script src="/tag-filter.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
@@ -1859,19 +1887,18 @@ function generateArchiveHtml(journal) {
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
+                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
+                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
     <script src="/app.min.js"></script>
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
@@ -1935,8 +1962,8 @@ function generateRSSFeed(journal) {
         return `
     <item>
       <title><![CDATA[${entry.title}]]></title>
-      <link>https://kartooner.com/entry/${entry.id}.html</link>
-      <guid>https://kartooner.com/entry/${entry.id}.html</guid>
+      <link>https://sagen.com/entry/${entry.id}.html</link>
+      <guid>https://sagen.com/entry/${entry.id}.html</guid>
       <pubDate>${new Date(entry.date).getTime() ? new Date(entry.date).toUTCString() : new Date().toUTCString()}</pubDate>
       <description><![CDATA[${entry.excerpt}]]></description>
       <content:encoded><![CDATA[${contentHtml}]]></content:encoded>
@@ -1947,7 +1974,7 @@ function generateRSSFeed(journal) {
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Erik's Journal</title>
-    <link>https://kartooner.com</link>
+    <link>https://sagen.com</link>
     <description>Personal journal entries from Erik Sagen</description>
     <language>en-us</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
@@ -1976,8 +2003,8 @@ function generateAtomFeed(journal) {
     <title><![CDATA[${entry.title}]]></title>
     <published>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</published>
     <updated>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</updated>
-    <link href="https://kartooner.com/entry/${entry.id}.html" type="text/html" />
-    <id>https://kartooner.com/entry/${entry.id}.html</id>
+    <link href="https://sagen.com/entry/${entry.id}.html" type="text/html" />
+    <id>https://sagen.com/entry/${entry.id}.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -1990,11 +2017,11 @@ function generateAtomFeed(journal) {
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title><![CDATA[Erik's Journal]]></title>
   <subtitle><![CDATA[Personal journal entries from Erik Sagen]]></subtitle>
-  <link href="https://kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
-  <link href="https://kartooner.com/journal" />
-  <generator uri="https://kartooner.com">Journal CMS</generator>
+  <link href="https://sagen.com/journal-atom.xml" rel="self" type="application/atom+xml" />
+  <link href="https://sagen.com/journal" />
+  <generator uri="https://sagen.com">Journal CMS</generator>
   <updated>${new Date().toISOString()}</updated>
-  <id>https://kartooner.com/journal-atom.xml</id>
+  <id>https://sagen.com/journal-atom.xml</id>
   ${atomEntries}
 </feed>`;
 

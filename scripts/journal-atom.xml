@@ -2,18 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title><![CDATA[Erik's Journal]]></title>
   <subtitle><![CDATA[Personal journal entries from Erik Sagen]]></subtitle>
-  <link href="https://kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
-  <link href="https://kartooner.com/journal" />
-  <generator uri="https://kartooner.com">Journal CMS</generator>
-  <updated>2025-11-14T20:08:05.705Z</updated>
-  <id>https://kartooner.com/journal-atom.xml</id>
+  <link href="https://sagen.com/journal-atom.xml" rel="self" type="application/atom+xml" />
+  <link href="https://sagen.com/journal" />
+  <generator uri="https://sagen.com">Journal CMS</generator>
+  <updated>2025-11-17T22:30:20.601Z</updated>
+  <id>https://sagen.com/journal-atom.xml</id>
   
   <entry xml:lang="en">
     <title><![CDATA[Everyone Creates]]></title>
     <published>2025-11-14T18:00:00.000Z</published>
     <updated>2025-11-14T18:00:00.000Z</updated>
-    <link href="https://kartooner.com/entry/everyone-creates.html" type="text/html" />
-    <id>https://kartooner.com/entry/everyone-creates.html</id>
+    <link href="https://sagen.com/entry/everyone-creates.html" type="text/html" />
+    <id>https://sagen.com/entry/everyone-creates.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -66,7 +66,9 @@
 
 <h2 id="the-arbiters-among-us">The Arbiters Among Us</h2>
 
-<p>The hardest part isn’t the system itself. Systems are abstract, faceless. The hardest part is when the system speaks through people you thought were on your side.</p>
+<p>The hardest part isn’t the system itself. Systems are abstract, faceless.</p>
+
+<p>The hardest part is when the system speaks through people you thought were on your side.</p>
 
 <p>A colleague tells you that you don’t meet certain standards. That you need to develop your communication skills, your technical depth, your leadership presence. They frame it as helpful. Constructive feedback. They’re invested in your growth.</p>
 
@@ -108,7 +110,7 @@
 
 <p>That’s yours. It doesn’t need permission. It doesn’t wait for a promotion to exist. Sometimes someone sees it. Not always the person with the title or the authority. Sometimes it’s a peer who gets what you were trying to do. Sometimes it’s someone junior who asks you questions that reveal they’re paying attention. </p>
 
-<p>Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself.The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.</p>
+<p>Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself. The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.</p>
 
 <p>These moments don’t show up on performance reviews. They don’t accelerate your promotion timeline. But they’re real. They’re evidence that the thing that makes you who you are is getting through despite the system’s best efforts to standardize you.</p>
 
@@ -164,8 +166,8 @@
     <title><![CDATA[Growing up in the 80s]]></title>
     <published>2025-09-05T11:35:00.000Z</published>
     <updated>2025-09-05T11:35:00.000Z</updated>
-    <link href="https://kartooner.com/entry/growing-up-in-the-80s.html" type="text/html" />
-    <id>https://kartooner.com/entry/growing-up-in-the-80s.html</id>
+    <link href="https://sagen.com/entry/growing-up-in-the-80s.html" type="text/html" />
+    <id>https://sagen.com/entry/growing-up-in-the-80s.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -190,8 +192,8 @@
     <title><![CDATA[The Pole on the Corner]]></title>
     <published>2025-08-29T05:33:01.000Z</published>
     <updated>2025-08-29T05:33:01.000Z</updated>
-    <link href="https://kartooner.com/entry/the-pole-on-the-corner.html" type="text/html" />
-    <id>https://kartooner.com/entry/the-pole-on-the-corner.html</id>
+    <link href="https://sagen.com/entry/the-pole-on-the-corner.html" type="text/html" />
+    <id>https://sagen.com/entry/the-pole-on-the-corner.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -226,8 +228,8 @@
     <title><![CDATA[Here we go again]]></title>
     <published>2025-08-28T10:00:00.000Z</published>
     <updated>2025-08-28T10:00:00.000Z</updated>
-    <link href="https://kartooner.com/entry/here-we-go-again.html" type="text/html" />
-    <id>https://kartooner.com/entry/here-we-go-again.html</id>
+    <link href="https://sagen.com/entry/here-we-go-again.html" type="text/html" />
+    <id>https://sagen.com/entry/here-we-go-again.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>

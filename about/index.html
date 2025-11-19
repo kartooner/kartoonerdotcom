@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - Erik Sagen</title>
     <meta name="description" content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
-    
+    <!-- Resource hints for external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://letterboxd.com">
+    <link rel="dns-prefetch" href="https://api.web3forms.com">
+    <!-- Preload custom fonts -->
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&family=Material+Symbols+Outlined&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
 
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="About - Erik Sagen">
@@ -155,7 +158,7 @@
 
         <!-- File > Open Recent Section -->
         <!-- Commented out for now - will bring back later
-        <aside id="link-share" class="link-share-section animate-fade-in" role="complementary">
+        <aside id="link-share" class="link-share-section animate-fade-in">
             <h2 aria-label="Recent links">File &gt; Open Recent</h2>
 
             <div class="link-grid">
@@ -197,7 +200,7 @@
         -->
 
         <!-- Currently Reading Section -->
-        <aside id="reading" class="reading-section currently-reading animate-fade-in" role="complementary">
+        <aside id="reading" class="reading-section currently-reading animate-fade-in">
             <h2>Currently reading</h2>
             <div class="book-entry">
                 <img

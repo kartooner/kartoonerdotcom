@@ -2,16 +2,16 @@
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Erik's Journal</title>
-    <link>https://kartooner.com</link>
+    <link>https://sagen.com</link>
     <description>Personal journal entries from Erik Sagen</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 14 Nov 2025 20:08:05 GMT</lastBuildDate>
+    <lastBuildDate>Mon, 17 Nov 2025 22:30:20 GMT</lastBuildDate>
     <generator>Journal CMS</generator>
     
     <item>
       <title><![CDATA[Everyone Creates]]></title>
-      <link>https://kartooner.com/entry/everyone-creates.html</link>
-      <guid>https://kartooner.com/entry/everyone-creates.html</guid>
+      <link>https://sagen.com/entry/everyone-creates.html</link>
+      <guid>https://sagen.com/entry/everyone-creates.html</guid>
       <pubDate>Fri, 14 Nov 2025 18:00:00 GMT</pubDate>
       <description><![CDATA[You were always creative; you just forgot you didn't need permission to remember]]></description>
       <content:encoded><![CDATA[<p>Don Hahn remembers dancing corndogs. </p>
@@ -62,7 +62,9 @@
 
 <h2 id="the-arbiters-among-us">The Arbiters Among Us</h2>
 
-<p>The hardest part isn’t the system itself. Systems are abstract, faceless. The hardest part is when the system speaks through people you thought were on your side.</p>
+<p>The hardest part isn’t the system itself. Systems are abstract, faceless.</p>
+
+<p>The hardest part is when the system speaks through people you thought were on your side.</p>
 
 <p>A colleague tells you that you don’t meet certain standards. That you need to develop your communication skills, your technical depth, your leadership presence. They frame it as helpful. Constructive feedback. They’re invested in your growth.</p>
 
@@ -104,7 +106,7 @@
 
 <p>That’s yours. It doesn’t need permission. It doesn’t wait for a promotion to exist. Sometimes someone sees it. Not always the person with the title or the authority. Sometimes it’s a peer who gets what you were trying to do. Sometimes it’s someone junior who asks you questions that reveal they’re paying attention. </p>
 
-<p>Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself.The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.</p>
+<p>Sometimes it’s a moment in a meeting where your “dumb question” changes the entire direction because you were willing to voice what everyone was thinking but no one wanted to say. Sometimes it’s you, finally, recognizing yourself. The code review where someone actually understands what you were trying to do, not just what you did. The meeting where your perspective shifts how people think about the problem. The moment someone messages you days later: “I’ve been thinking about what you said.” The junior developer who tells you that you helped them see they could do this work, not because you taught them syntax but because you treated their ideas like they mattered.</p>
 
 <p>These moments don’t show up on performance reviews. They don’t accelerate your promotion timeline. But they’re real. They’re evidence that the thing that makes you who you are is getting through despite the system’s best efforts to standardize you.</p>
 
@@ -158,8 +160,8 @@
     </item>
     <item>
       <title><![CDATA[Growing up in the 80s]]></title>
-      <link>https://kartooner.com/entry/growing-up-in-the-80s.html</link>
-      <guid>https://kartooner.com/entry/growing-up-in-the-80s.html</guid>
+      <link>https://sagen.com/entry/growing-up-in-the-80s.html</link>
+      <guid>https://sagen.com/entry/growing-up-in-the-80s.html</guid>
       <pubDate>Fri, 05 Sep 2025 11:35:00 GMT</pubDate>
       <description><![CDATA[When movies, music, and games came together perfectly.]]></description>
       <content:encoded><![CDATA[<p>Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us. Probably Skittles and a medium Coke, if I had to guess.</p>
@@ -180,8 +182,8 @@
     </item>
     <item>
       <title><![CDATA[The Pole on the Corner]]></title>
-      <link>https://kartooner.com/entry/the-pole-on-the-corner.html</link>
-      <guid>https://kartooner.com/entry/the-pole-on-the-corner.html</guid>
+      <link>https://sagen.com/entry/the-pole-on-the-corner.html</link>
+      <guid>https://sagen.com/entry/the-pole-on-the-corner.html</guid>
       <pubDate>Fri, 29 Aug 2025 05:33:01 GMT</pubDate>
       <description><![CDATA[Sometimes you think you know every corner of your neighborhood—until one day you don't.]]></description>
       <content:encoded><![CDATA[<p>I was driving near my house when I turned past a corner and asked my wife, &quot;Has that pole always been there?&quot; She didn&#39;t even hesitate. &quot;Always. Well, since we moved here.&quot;</p>
@@ -212,8 +214,8 @@
     </item>
     <item>
       <title><![CDATA[Here we go again]]></title>
-      <link>https://kartooner.com/entry/here-we-go-again.html</link>
-      <guid>https://kartooner.com/entry/here-we-go-again.html</guid>
+      <link>https://sagen.com/entry/here-we-go-again.html</link>
+      <guid>https://sagen.com/entry/here-we-go-again.html</guid>
       <pubDate>Thu, 28 Aug 2025 10:00:00 GMT</pubDate>
       <description><![CDATA[It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.]]></description>
       <content:encoded><![CDATA[<p>It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>

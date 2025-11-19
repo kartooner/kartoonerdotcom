@@ -46,7 +46,11 @@
       "Bash(fi)",
       "Bash(done)",
       "Bash(cmd /c taskkill /F /PID 17712)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(nul)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c taskkill /F /PID 11340)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")"
     ],
     "deny": [],
     "ask": []

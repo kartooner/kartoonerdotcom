@@ -12,8 +12,14 @@
     <meta name="author" content="Erik Sagen">
     <meta name="theme-color" content="#191970">
     <title>Erik Sagen - Lead Product UX Designer</title>
+    <!-- Resource hints for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.web3forms.com">
+    <!-- Preload custom fonts -->
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&family=Material+Symbols+Outlined&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
@@ -105,8 +111,7 @@
         .skip-link:focus { top: 6px; }
     </style>
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <script type="application/ld+json">
         {
             "@context": "http://schema.org",
@@ -128,22 +133,22 @@
 <a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- Persistent Navigation -->
-<nav class="persistent-nav" aria-label="Main site navigation" role="navigation">
+<nav class="persistent-nav" aria-label="Main site navigation">
     <!-- Mobile menu button -->
     <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu" aria-haspopup="true">
         <span class="menu-text">Menu</span>
     </button>
     
     <!-- Navigation links -->
-    <div class="nav-links" id="nav-menu" role="menu" aria-labelledby="mobile-menu-toggle">
-        <button class="mobile-close-button" aria-label="Close navigation menu" role="menuitem">
+    <div class="nav-links" id="nav-menu">
+        <button class="mobile-close-button" aria-label="Close navigation menu">
             <span class="close-text">×</span>
         </button>
-        <a href="/" class="current" aria-current="page" role="menuitem">Home</a>
-        <a href="/about" role="menuitem">About</a>
-        <a href="/journal" role="menuitem">Journal</a>
-        <a href="/voice-acting" role="menuitem">Voice Acting</a>
-        <a href="/contact" role="menuitem">Contact</a>
+        <a href="/" class="current" aria-current="page">Home</a>
+        <a href="/about">About</a>
+        <a href="/journal">Journal</a>
+        <a href="/voice-acting">Voice Acting</a>
+        <a href="/contact">Contact</a>
     </div>
 </nav>
 
@@ -153,7 +158,7 @@
     <span class="theme-toggle-text">Dark mode</span>
 </button>
 
-<div class="doodle-lines" role="img" aria-label="Decorative hand-drawn lines">
+<div class="doodle-lines" aria-hidden="true">
   <svg class="doodle-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
     <path class="doodle-line line-1" 
           d="M0,60 Q150,30 300,50 Q450,70 600,45 Q750,20 900,55 Q1050,80 1200,40" 
@@ -168,7 +173,7 @@
 </div>
 
 <div class="container">
-    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1" role="main" aria-label="Main content">
+    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
 
         <div class="main-content-grid">
             <div class="left-column">
@@ -242,7 +247,7 @@
 
 
 
-        <section class="contact-section" role="region" aria-labelledby="contact-heading">
+        <section class="contact-section" aria-labelledby="contact-heading">
             <div class="info-section">
                 <p><span class="material-symbols-outlined">communities</span> <strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
                 <div class="info-section-row">

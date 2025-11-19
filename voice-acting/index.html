@@ -12,12 +12,18 @@
     <meta name="author" content="Erik Sagen">
     <meta name="theme-color" content="#191970">
     <title>Voice Acting - Erik Sagen</title>
+    <!-- Resource hints for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://w.soundcloud.com">
+    <link rel="dns-prefetch" href="https://player.vimeo.com">
+    <link rel="dns-prefetch" href="https://api.web3forms.com">
+    <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <style>
         /* Voice Acting page specific container width override */
         .container {
@@ -136,13 +142,80 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+
+        /* Facade pattern for lazy-loading embeds */
+        .embed-facade {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .soundcloud-embed .embed-facade {
+            position: relative;
+        }
+
+        .embed-facade::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(100, 255, 218, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            z-index: 1;
+        }
+
+        .embed-facade .play-button {
+            position: absolute;
+            z-index: 2;
+            width: 80px;
+            height: 80px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .embed-facade:hover .play-button {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .embed-facade .play-button::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 15px 0 15px 26px;
+            border-color: transparent transparent transparent var(--bg-color);
+            margin-left: 5px;
+        }
+
+        .embed-facade .embed-title {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
-<!-- Skip Navigation Link -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<!-- Persistent Navigation -->
+    <!-- Persistent Navigation -->
 <nav class="persistent-nav" aria-label="Site navigation">
     <!-- Mobile menu button -->
     <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
@@ -182,19 +255,33 @@
                 <h3>Voice demo</h3>
                 <p>A sample of my voice work across different styles</p>
                 <div class="soundcloud-embed">
-                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
-                            src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kartooner/erik-sagen-voice-demo&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
-                            title="Erik Sagen Voice Demo"></iframe>
+                    <div class="embed-facade"
+                         data-embed-type="soundcloud"
+                         data-embed-url="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kartooner/erik-sagen-voice-demo&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+                         style="height: 166px; background: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);"
+                         role="button"
+                         aria-label="Load SoundCloud player for Voice Demo"
+                         tabindex="0">
+                        <button class="play-button" aria-label="Play audio"></button>
+                        <div class="embed-title">Erik Sagen Voice Demo</div>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="voice-sample">
                 <h3>United Way campaign</h3>
                 <p>Narrating a delightfully chaotic campaign that actually worked</p>
                 <div class="vimeo-embed">
-                    <iframe src="https://player.vimeo.com/video/250322458?referrer=https%3A%2F%2Fbigpicturefilm.com%2F" 
-                            width="100%" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" 
-                            allowfullscreen title="United Way Campaign"></iframe>
+                    <div class="embed-facade"
+                         data-embed-type="vimeo"
+                         data-embed-url="https://player.vimeo.com/video/250322458?referrer=https%3A%2F%2Fbigpicturefilm.com%2F"
+                         style="padding-bottom: 56.25%; height: 0; background: linear-gradient(135deg, #1ab7ea 0%, #0088cc 100%);"
+                         role="button"
+                         aria-label="Load Vimeo player for United Way Campaign"
+                         tabindex="0">
+                        <button class="play-button" aria-label="Play video"></button>
+                        <div class="embed-title">United Way Campaign</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -211,5 +298,54 @@
     </footer>
 </div>
 <script src="/app.min.js"></script>
+<script>
+// Facade pattern for lazy-loading third-party embeds
+document.addEventListener('DOMContentLoaded', function() {
+    const embedFacades = document.querySelectorAll('.embed-facade');
+
+    embedFacades.forEach(facade => {
+        // Handle click and keyboard activation
+        function activateEmbed(e) {
+            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+
+            e.preventDefault();
+
+            const embedType = facade.dataset.embedType;
+            const embedUrl = facade.dataset.embedUrl;
+
+            // Create iframe
+            const iframe = document.createElement('iframe');
+            iframe.width = '100%';
+            iframe.style.border = 'none';
+            iframe.style.display = 'block';
+            iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+            iframe.title = facade.getAttribute('aria-label');
+
+            if (embedType === 'soundcloud') {
+                iframe.height = '166';
+                iframe.scrolling = 'no';
+                iframe.frameBorder = 'no';
+            } else if (embedType === 'vimeo') {
+                iframe.style.position = 'absolute';
+                iframe.style.top = '0';
+                iframe.style.left = '0';
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.allowFullscreen = true;
+            }
+
+            iframe.src = embedUrl;
+
+            // Replace facade with iframe
+            facade.replaceWith(iframe);
+        }
+
+        facade.addEventListener('click', activateEmbed);
+        facade.addEventListener('keydown', activateEmbed);
+    });
+});
+</script>
 </body>
 </html>

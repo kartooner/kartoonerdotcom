@@ -5,13 +5,13 @@
   <link href="https://kartooner.com/atom.xml" rel="self" type="application/atom+xml" />
   <link href="https://kartooner.com" />
   <generator uri="https://kartooner.com">Erik's Site</generator>
-  <updated>2025-11-14T15:46:48.612Z</updated>
+  <updated>2025-11-17T22:30:20.695Z</updated>
   <id>https://kartooner.com/atom.xml</id>
   
   <entry xml:lang="en">
     <title><![CDATA[American advertisements of the 1930s – in pictures]]></title>
-    <published>2025-11-14T15:46:48.612Z</published>
-    <updated>2025-11-14T15:46:48.612Z</updated>
+    <published>2025-11-17T22:30:20.695Z</published>
+    <updated>2025-11-17T22:30:20.695Z</updated>
     <link href="https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures" type="text/html" />
     <id>https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures</id>
     <author>
@@ -22,8 +22,8 @@
   </entry>
   <entry xml:lang="en">
     <title><![CDATA[The Management Skill Nobody Talks About]]></title>
-    <published>2025-11-14T15:46:48.612Z</published>
-    <updated>2025-11-14T15:46:48.612Z</updated>
+    <published>2025-11-17T22:30:20.695Z</published>
+    <updated>2025-11-17T22:30:20.695Z</updated>
     <link href="https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/" type="text/html" />
     <id>https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/</id>
     <author>
@@ -33,15 +33,15 @@
     <content type="html"><![CDATA[Managing people and expectations is hard.]]></content>
   </entry>
   <entry xml:lang="en">
-    <title><![CDATA[Currently Reading: Creative Intelligence: Don't Ask AI, Think With It]]></title>
-    <published>2025-11-14T15:46:48.612Z</published>
-    <updated>2025-11-14T15:46:48.612Z</updated>
-    <link href="https://books.apple.com/us/book/creative-intelligence/id6749276436" type="text/html" />
-    <id>currently-reading-creative-intelligence:-don&#039;t-ask-ai,-think-with-it</id>
+    <title><![CDATA[Currently Reading: Dancing Corndogs in the Night]]></title>
+    <published>2025-11-17T22:30:20.695Z</published>
+    <updated>2025-11-17T22:30:20.695Z</updated>
+    <link href="https://www.amazon.com/Dancing-Corndogs-Night-Reawakening-Creative/dp/0786863749" type="text/html" />
+    <id>currently-reading-dancing-corndogs-in-the-night</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
     <category term="Currently Reading" />
-    <content type="html"><![CDATA[Erik is currently reading "Creative Intelligence: Don't Ask AI, Think With It" by Greg Storey. Garbage in, garbage out. This book is a great reminder that AI is a tool to augment human creativity, not replace it.]]></content>
+    <content type="html"><![CDATA[Erik is currently reading "Dancing Corndogs in the Night" by Don Hahn. A wonderful read that'll likely re-ignite your relationship with creativity. Hoping for a re-print someday.]]></content>
   </entry>
 </feed>

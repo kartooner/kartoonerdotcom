@@ -569,6 +569,110 @@
                 font-size: 2.8rem;
             }
         }
+
+        /* Newsletter signup styling */
+        .newsletter-signup {
+            background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.08) 0%, rgba(var(--accent-rgb), 0.04) 100%);
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            margin: 3rem 0 2rem 0;
+            border: 1px solid rgba(var(--accent-rgb), 0.15);
+        }
+
+        .newsletter-signup h3 {
+            font-family: var(--font-secondary);
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .newsletter-signup h3 .material-symbols-outlined {
+            font-size: 1.6rem;
+        }
+
+        .newsletter-signup > p {
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .newsletter-form {
+            margin: 0;
+        }
+
+        .newsletter-input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .newsletter-input-group input[type="email"] {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border: 2px solid rgba(var(--accent-rgb), 0.2);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: var(--font-main);
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-input-group input[type="email"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+        }
+
+        .newsletter-input-group button {
+            padding: 0.875rem 2rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .newsletter-input-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
+        }
+
+        .newsletter-input-group button:active {
+            transform: translateY(0);
+        }
+
+        .newsletter-note {
+            font-size: 0.85rem;
+            color: var(--skills-color);
+            margin: 0;
+        }
+
+        .newsletter-note a {
+            color: var(--skills-color);
+            text-decoration: underline;
+        }
+
+        .newsletter-note a:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 600px) {
+            .newsletter-input-group {
+                flex-direction: column;
+            }
+
+            .newsletter-input-group button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -603,7 +707,7 @@
 
     <div class="entry-container">
         <div class="entry-header" id="main-content">
-            <div class="entry-date"># &bull; Sep 5, 2025 &bull; Erik Sagen</div>
+            <div class="entry-date"># &bull; Sep 5, 2025 &bull; 2 min read &bull; Erik Sagen</div>
             <h1 class="entry-title">Growing up in the 80s</h1>
             <div class="entry-subtitle">When movies, music, and games came together perfectly.</div>
         </div>
@@ -633,8 +737,8 @@
         <div class="tags-section">
             <h3>Tagged with</h3>
             <div class="tags-list">
-                <span class="tag">writing</span>
-                <span class="tag">personal</span>
+                <a href="/journal?tag=writing" class="tag">#writing</a>
+                <a href="/journal?tag=personal" class="tag">#personal</a>
             </div>
         </div>
 
@@ -661,11 +765,36 @@
         </div>
 
         <hr class="divider" />
-        
+
+        <div class="newsletter-signup animate-fade-in animate-footer">
+            <h3><span class="material-symbols-outlined">mail</span> Get new posts in your inbox</h3>
+            <p>Subscribe to get notified when I publish something new. No spam, unsubscribe anytime.</p>
+            <form
+                action="https://buttondown.email/api/emails/embed-subscribe/sagen"
+                method="post"
+                target="popupwindow"
+                onsubmit="window.open('https://buttondown.email/sagen', 'popupwindow')"
+                class="newsletter-form"
+            >
+                <div class="newsletter-input-group">
+                    <input
+                        type="email"
+                        name="email"
+                        id="bd-email"
+                        placeholder="your@email.com"
+                        required
+                        aria-label="Email address"
+                    />
+                    <button type="submit">Subscribe</button>
+                </div>
+                <p class="newsletter-note">Powered by <a href="https://buttondown.email" target="_blank" rel="noopener">Buttondown</a></p>
+            </form>
+        </div>
+
         <div class="navigation">
             <a href="/archive" class="view-all">View all posts</a>
         </div>
-        
+
         <div class="info-section">
             <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
             <div class="info-section-row">
@@ -673,24 +802,23 @@
                 <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
             </div>
         </div>
-        
+
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
                 <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
+                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
+                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
+                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
     <script src="/app.min.js"></script>
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
