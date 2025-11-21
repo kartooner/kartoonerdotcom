@@ -253,7 +253,7 @@
         <div class="soundcloud-grid">
             <div class="voice-sample">
                 <h3>Voice demo</h3>
-                <p>A sample of my voice work across different styles</p>
+                <p>A sample of my voice work across different styles.</p>
                 <div class="soundcloud-embed">
                     <div class="embed-facade"
                          data-embed-type="soundcloud"
@@ -270,12 +270,12 @@
 
             <div class="voice-sample">
                 <h3>United Way campaign</h3>
-                <p>Narrating a delightfully chaotic campaign that actually worked</p>
+                <p>Narrating a delightfully chaotic campaign that actually worked.</p>
                 <div class="vimeo-embed">
                     <div class="embed-facade"
                          data-embed-type="vimeo"
                          data-embed-url="https://player.vimeo.com/video/250322458?referrer=https%3A%2F%2Fbigpicturefilm.com%2F"
-                         style="padding-bottom: 56.25%; height: 0; background: linear-gradient(135deg, #1ab7ea 0%, #0088cc 100%);"
+                         style="background: linear-gradient(135deg, #1ab7ea 0%, #0088cc 100%);"
                          role="button"
                          aria-label="Load Vimeo player for United Way Campaign"
                          tabindex="0">
@@ -294,7 +294,7 @@
     </main>
 
     <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
 <script src="/app.min.js"></script>
@@ -323,10 +323,14 @@ document.addEventListener('DOMContentLoaded', function() {
             iframe.allow = 'autoplay; fullscreen; picture-in-picture';
             iframe.title = facade.getAttribute('aria-label');
 
+            let finalUrl = embedUrl;
+
             if (embedType === 'soundcloud') {
                 iframe.height = '166';
                 iframe.scrolling = 'no';
                 iframe.frameBorder = 'no';
+                // Enable autoplay for SoundCloud
+                finalUrl = embedUrl.replace('auto_play=false', 'auto_play=true');
             } else if (embedType === 'vimeo') {
                 iframe.style.position = 'absolute';
                 iframe.style.top = '0';
@@ -334,9 +338,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
                 iframe.allowFullscreen = true;
+                // Enable autoplay for Vimeo
+                finalUrl = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1';
             }
 
-            iframe.src = embedUrl;
+            iframe.src = finalUrl;
 
             // Replace facade with iframe
             facade.replaceWith(iframe);

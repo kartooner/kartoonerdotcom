@@ -48,43 +48,25 @@
         `;
         title.after(clearFilter);
 
-        // Build filtered posts HTML
+        // Build filtered posts HTML using recent-post-item style
         const postsHtml = entries.map(entry => {
-            const date = new Date(entry.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-
-            // Calculate reading time (simple approximation from word count)
-            const wordCount = entry.content.split(/\s+/).length;
-            const readingTime = Math.ceil(wordCount / 225);
-            const readingTimeText = readingTime === 1 ? '1 min read' : `${readingTime} min read`;
+            const snippet = entry.excerpt || entry.subtitle || '';
 
             return `
-                <div class="post" style="margin-bottom: 3rem;">
-                    <div class="post-date">
-                        <a href="/entry/${entry.id}.html">#</a> • ${date} • ${readingTimeText} • Erik Sagen
-                    </div>
-                    <h2 class="post-title">
-                        <a href="/entry/${entry.id}.html">${entry.title}</a>
-                    </h2>
-                    ${entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : ''}
-                    <div class="post-content">
-                        <p>${entry.excerpt}</p>
-                        <p class="read-more">
-                            <a href="/entry/${entry.id}.html">Read more →</a>
-                        </p>
-                    </div>
+                <div class="recent-post-item">
+                    <h3 class="recent-post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
+                    <p class="recent-post-snippet">${snippet}</p>
+                    <a href="/entry/${entry.id}.html" class="recent-post-link">Read more →</a>
                 </div>
             `;
-        }).join('<hr class="divider" />');
+        }).join('');
 
         // Replace existing content
         const existingPosts = container.querySelectorAll('.post, .recent-posts');
         existingPosts.forEach(el => el.remove());
 
         const postsContainer = document.createElement('div');
+        postsContainer.className = 'recent-posts-grid';
         postsContainer.innerHTML = postsHtml;
 
         const divider = container.querySelector('hr.divider');

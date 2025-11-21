@@ -1099,6 +1099,28 @@ function generateEntryPages(journal) {
             }
         }
     </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": "${entry.title.replace(/"/g, '\\"')}",
+            "datePublished": "${entry.date}",
+            "author": {
+                "@type": "Person",
+                "name": "Erik Sagen",
+                "url": "https://www.kartooner.com"
+            },
+            "publisher": {
+                "@type": "Person",
+                "name": "Erik Sagen"
+            },
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": "https://www.kartooner.com/entry/${entry.id}.html"
+            },
+            "description": "${(entry.excerpt || '').replace(/"/g, '\\"')}"
+        }
+    </script>
 </head>
 <body>
     <!-- Skip Navigation Link -->
@@ -1154,14 +1176,6 @@ ${relatedPostsHtml}
             <a href="/archive" class="view-all">View all posts</a>
         </div>
 
-        <div class="info-section">
-            <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
-            <div class="info-section-row">
-                <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
-                <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
-            </div>
-        </div>
-
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
@@ -1172,7 +1186,7 @@ ${relatedPostsHtml}
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     
@@ -1656,14 +1670,6 @@ function generateJournalHtml(journal) {
             </footer>
         </div>
 
-        <div class="feed-links animate-fade-in animate-footer">
-            <p><span class="material-symbols-outlined">family_star</span> <strong>Have an RSS reader?</strong> Try grabbing a feed of your choice and you'll get the latest blog post from me when it's published:</p>
-            <div class="info-section-row">
-                <a href="/journal-atom.xml"><span class="material-symbols-outlined">rss_feed</span>Atom Feed</a>
-                <a href="/journal-feed.xml"><span class="material-symbols-outlined">rss_feed</span>RSS Feed</a>
-            </div>
-        </div>
-
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
             <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
                 <strong>CSS Joy Webring</strong>
@@ -1674,7 +1680,7 @@ function generateJournalHtml(journal) {
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
 
@@ -1893,7 +1899,7 @@ function generateArchiveHtml(journal) {
                 </div>
             </div>
 
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
     

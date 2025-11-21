@@ -11,6 +11,10 @@
     padding: 0;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 /* ==========================================
    Accessibility - Reduced Motion
    ========================================== */
@@ -369,10 +373,12 @@ blockquote .source {
    Links & Navigation
    ========================================== */
 
-a {
+a,
+a:link,
+a:visited {
     color: var(--text-color);
     text-decoration: underline;
-    transition: all 0.3s ease;
+    transition: color 0.2s ease;
     position: relative;
 }
 
@@ -393,6 +399,10 @@ a:focus {
     color: var(--accent-color);
     text-decoration: underline;
     outline: none;
+}
+
+a:active {
+    color: var(--accent-color);
 }
 
 a[target="_blank"] svg {
@@ -417,6 +427,15 @@ button:focus-visible {
     text-decoration: underline;
     color: var(--accent-color);
     box-shadow: 0 0 0 1px var(--bg-color);
+}
+
+/* Tag links - override global link hover */
+.tag,
+.tag:hover,
+.tag:focus,
+.tag:active {
+    color: white !important;
+    text-decoration: none !important;
 }
 
 /* ==========================================
@@ -535,13 +554,17 @@ button:focus-visible {
     }
 }
 
-.nav-links a {
+.nav-links a,
+.nav-links a:link,
+.nav-links a:visited,
+.nav-links a:hover,
+.nav-links a:focus,
+.nav-links a:active {
     margin: 0;
     font-size: var(--text-lg);
     font-weight: 500;
-    text-decoration: none;
-    color: var(--text-color);
-    transition: all 0.3s ease;
+    text-decoration: none !important;
+    color: var(--text-color) !important;
     position: relative;
     padding: var(--space-xs) var(--space-sm);
     border-radius: 4px;
@@ -549,16 +572,24 @@ button:focus-visible {
     align-items: center;
     justify-content: center;
     min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+    background: transparent;
+    transition: none !important;
 }
 
 .nav-links a:hover,
-.nav-links a:focus {
-    color: var(--accent-color);
-    transform: translateY(-2px);
+.nav-links a:focus,
+.nav-links a:active {
+    color: var(--accent-color) !important;
 }
 
-.nav-links a.current {
-    color: var(--accent-color);
+.nav-links a.current,
+.nav-links a.current:link,
+.nav-links a.current:visited,
+.nav-links a.current:hover,
+.nav-links a.current:active {
+    color: var(--accent-color) !important;
     font-weight: 600;
     position: relative;
 }
@@ -691,12 +722,12 @@ button:focus-visible {
     }
     
     .nav-links a:hover,
-    .nav-links a:focus {
+    .nav-links a:focus,
+    .nav-links a:active {
         background: rgba(255, 255, 255, 0.1);
         color: var(--accent-color);
-        transform: none;
     }
-    
+
     .nav-links a.current {
         background: rgba(var(--accent-rgb), 0.15);
         color: var(--accent-color);
@@ -708,11 +739,12 @@ button:focus-visible {
     }
     
     [data-theme="light"] .nav-links a:hover,
-    [data-theme="light"] .nav-links a:focus {
+    [data-theme="light"] .nav-links a:focus,
+    [data-theme="light"] .nav-links a:active {
         background: rgba(0, 0, 0, 0.05);
         color: var(--accent-color);
     }
-    
+
     [data-theme="light"] .nav-links a.current {
         background: rgba(var(--accent-rgb), 0.1);
         color: var(--accent-color);
@@ -852,7 +884,7 @@ button:focus-visible {
 
 /* Skip Link Styling */
 .skip-link {
-    position: absolute;
+    position: absolute !important;
     left: -9999px;
     top: 0;
     width: 1px;
@@ -1107,8 +1139,7 @@ header {
 .philosophy-column p {
     font-size: 1.05rem;
     line-height: 1.6;
-    font-style: italic;
-    color: var(--skills-color);
+    color: var(--text-color);
 }
 
 /* Column Headers with Icons */

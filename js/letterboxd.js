@@ -12,7 +12,7 @@ class ReviewsUI {
         this.showLoading();
         try {
             const text = await this.fetchWithTimeout(this.proxyUrl, { timeout: this.fetchTimeoutMs });
-            const reviews = this.parseRss(text).slice(0, 3).filter(r => r.imageUrl);
+            const reviews = this.parseRss(text).slice(0, 4).filter(r => r.imageUrl);
             if (reviews.length > 0) {
                 this.render(reviews);
                 return;
@@ -64,7 +64,7 @@ class ReviewsUI {
         const data = await response.json();
         const items = Array.isArray(data) ? data : (Array.isArray(data.reviews) ? data.reviews : []);
         if (!items.length) throw new Error('Fallback JSON empty');
-        const reviews = items.slice(0, 3).map(item => ({
+        const reviews = items.slice(0, 4).map(item => ({
             title: item.title || 'Letterboxd',
             link: item.link || this.profileUrl,
             imageUrl: item.imageUrl || '',
@@ -95,7 +95,7 @@ class ReviewsUI {
             .map(review => `
                 <article class="review-card">
                     <a href="${review.link}" target="_blank" rel="noopener">
-                        ${review.imageUrl ? `<img src="${review.imageUrl}" alt="${this.escapeHtml(review.title)}">` : ''}
+                        ${review.imageUrl ? `<img src="${review.imageUrl}" alt="${this.escapeHtml(review.title)}" loading="lazy">` : ''}
                         <div class="review-info">
                             <h3>${this.escapeHtml(review.title)}</h3>
                             <time>${review.date instanceof Date ? review.date.toLocaleDateString() : new Date(review.date).toLocaleDateString()}</time>

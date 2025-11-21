@@ -108,7 +108,132 @@
             font-size: 5rem;
             color: var(--accent-color);
         }
+
+        /* Career Timeline */
+        .career-timeline {
+            margin: 3rem 0;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+        }
+
+        .career-timeline h2,
+        .reading-section h2,
+        .recently-watched h2 {
+            font-family: var(--font-secondary);
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-intro,
+        .section-intro {
+            color: var(--skills-color);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-intro a {
+            color: var(--skills-color);
+        }
+
+        .section-intro a:hover {
+            color: var(--accent-color);
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(var(--accent-rgb), 0.3);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 0 0.75rem 1rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.55rem;
+            top: 1rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .timeline-item.current::before {
+            background: var(--accent-color);
+        }
+
+        .timeline-item.personal::before {
+            border-style: dashed;
+        }
+
+        .timeline-item.personal .timeline-role {
+            font-style: italic;
+        }
+
+        .timeline-year {
+            font-family: var(--font-secondary);
+            font-size: 1rem;
+            color: var(--accent-color);
+            min-width: 80px;
+            font-weight: 600;
+        }
+
+        .timeline-role {
+            color: var(--text-color);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .timeline-company,
+        a.timeline-company {
+            color: var(--skills-color);
+            text-decoration: underline;
+        }
+
+        a.timeline-company:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 500px) {
+            .timeline-item {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            .timeline-year {
+                min-width: auto;
+            }
+        }
     </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            "mainEntity": {
+                "@type": "Person",
+                "name": "Erik Sagen",
+                "jobTitle": "Lead Product UX Designer",
+                "url": "https://www.kartooner.com",
+                "image": "https://www.kartooner.com/img/erik-avatar.jpg",
+                "description": "Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development.",
+                "sameAs": [
+                    "https://linkedin.com/in/eriksagen",
+                    "https://medium.com/@kartooner",
+                    "https://www.threads.net/@kartooner",
+                    "https://bsky.app/profile/kartooner.bsky.social"
+                ]
+            }
+        }
+    </script>
 </head>
 <body>
     <!-- Skip Navigation Link for accessibility -->
@@ -156,6 +281,46 @@
             <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around" width="100px" height="100px" data-progressive class="darkwing-sprite" tabindex="0" role="button" aria-label="Darkwing Duck easter egg - click to animate" />
         </div>
 
+        <!-- Career Timeline -->
+        <section class="career-timeline animate-fade-in">
+            <h2>The journey so far</h2>
+            <p class="timeline-intro">I worked at a few retailers early on, but here's where I've been for the past 20+ years.</p>
+            <div class="timeline">
+                <div class="timeline-item current">
+                    <span class="timeline-year">Present</span>
+                    <span class="timeline-role">Lead UX Product Designer — <a href="https://www.paychex.com" target="_blank" rel="noopener" class="timeline-company">Paychex</a></span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-year">2022</span>
+                    <span class="timeline-role">Senior UX Designer — <a href="https://www.elixirsolutions.com" target="_blank" rel="noopener" class="timeline-company">Elixir</a></span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-year">2017</span>
+                    <span class="timeline-role">Senior UX Product Designer — <a href="https://www.paychex.com" target="_blank" rel="noopener" class="timeline-company">Paychex</a></span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-year">2007–2017</span>
+                    <span class="timeline-role">Senior Designer — <a href="https://www.aol.com" target="_blank" rel="noopener" class="timeline-company">AOL</a></span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-year">2007</span>
+                    <span class="timeline-role">Designer — <a href="https://www.magnatag.com" target="_blank" rel="noopener" class="timeline-company">Magnatag</a></span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-year">2002</span>
+                    <span class="timeline-role">Assistant Social Worker — <a href="https://rivcodpss.org/" target="_blank" rel="noopener" class="timeline-company">DPSS/Riverside County</a></span>
+                </div>
+                <div class="timeline-item personal">
+                    <span class="timeline-year">1998</span>
+                    <span class="timeline-role">Graduated high school, attended college</span>
+                </div>
+                <div class="timeline-item personal">
+                    <span class="timeline-year">1980</span>
+                    <span class="timeline-role">Born outside of Chicago</span>
+                </div>
+            </div>
+        </section>
+
         <!-- File > Open Recent Section -->
         <!-- Commented out for now - will bring back later
         <aside id="link-share" class="link-share-section animate-fade-in">
@@ -202,6 +367,7 @@
         <!-- Currently Reading Section -->
         <aside id="reading" class="reading-section currently-reading animate-fade-in">
             <h2>Currently reading</h2>
+            <p class="section-intro">I read a lot of books, often several at a time, but here's one I'm currently engaged with.</p>
             <div class="book-entry">
                 <img
                         src="/img/big-dumb-eyes-cover.jpg"
@@ -218,7 +384,8 @@
 
         <!-- Movies Section -->
         <section class="recently-watched animate-fade-in">
-            <h2>Movies I've recently watched <span aria-hidden="true">🍿</span></h2>
+            <h2>Movies I've recently watched</h2>
+            <p class="section-intro">Using <a href="https://letterboxd.com/kartooner/" target="_blank" rel="noopener">Letterboxd</a>, here are the last 4 films I've enjoyed and my thoughts on them.</p>
             <div id="reviews-container" class="reviews-grid">
                 <!-- Reviews will be injected here -->
                 <div class="reviews-loading">Loading latest watches...</div>
@@ -240,7 +407,7 @@
     </main>
 
     <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/atom.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
 
