@@ -645,11 +645,16 @@
         }
 
         .editor-highlight pre {
-            margin: 0;
-            padding: 0;
+            margin: 0 !important;
+            padding: 0 !important;
             background: transparent !important;
             white-space: inherit;
             word-wrap: inherit;
+            display: block;
+            line-height: inherit;
+            font-size: inherit;
+            font-family: inherit;
+            border: none;
         }
 
         .editor-highlight code {
@@ -660,8 +665,28 @@
             white-space: inherit;
             word-wrap: inherit;
             letter-spacing: 0;
-            margin: 0;
-            padding: 0;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block;
+            border: none;
+            vertical-align: baseline;
+        }
+
+        /* Override any Prism theme styles that might add spacing */
+        .editor-highlight pre[class*="language-"],
+        .editor-highlight code[class*="language-"],
+        .editor-highlight .highlight-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            border-radius: 0 !important;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            letter-spacing: 0;
         }
 
         .editor::-webkit-scrollbar {
@@ -1317,7 +1342,8 @@
             const code = editor.value;
             if (code) {
                 const highlighted = Prism.highlight(code, Prism.languages[language], language);
-                highlight.innerHTML = `<pre><code class="language-${language}">${highlighted}</code></pre>`;
+                // Use a simple div wrapper instead of pre/code to avoid spacing issues
+                highlight.innerHTML = `<div class="highlight-content">${highlighted}</div>`;
             } else {
                 highlight.innerHTML = '';
             }
