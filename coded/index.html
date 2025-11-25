@@ -443,7 +443,12 @@
             background: var(--editor-border);
             border-bottom: 2px solid var(--editor-border);
             height: 50%;
-            transition: height 0.3s ease, grid-template-columns 0.3s ease;
+            transition: grid-template-columns 0.3s ease;
+        }
+
+        /* Disable height transition during manual resize for smooth dragging */
+        body.resizing .editors {
+            transition: none;
         }
 
         /* Vertical layout */
@@ -571,6 +576,12 @@
             -webkit-text-fill-color: transparent;
             white-space: pre;
             word-wrap: normal;
+            box-sizing: border-box;
+            margin: 0;
+            letter-spacing: 0;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: subpixel-antialiased;
+            -moz-osx-font-smoothing: auto;
         }
 
         .editor.wrap-enabled {
@@ -620,6 +631,12 @@
             z-index: 1;
             white-space: pre;
             word-wrap: normal;
+            box-sizing: border-box;
+            margin: 0;
+            letter-spacing: 0;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: subpixel-antialiased;
+            -moz-osx-font-smoothing: auto;
         }
 
         .editor-highlight.wrap-enabled {
@@ -642,6 +659,9 @@
             background: transparent !important;
             white-space: inherit;
             word-wrap: inherit;
+            letter-spacing: 0;
+            margin: 0;
+            padding: 0;
         }
 
         .editor::-webkit-scrollbar {
@@ -668,6 +688,12 @@
             display: flex;
             flex-direction: column;
             background: var(--editor-bg);
+        }
+
+        /* Optimize resize performance */
+        body.resizing .editors,
+        body.resizing .preview-section {
+            will-change: height;
         }
 
         .preview-header {
@@ -1743,6 +1769,14 @@
             syncLineNumbersScroll(htmlEditor, htmlLineNumbers);
         });
 
+        // Sync on click/mousedown to ensure cursor positioning is accurate
+        htmlEditor.addEventListener('click', () => {
+            syncScroll(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('mousedown', () => {
+            syncScroll(htmlEditor, htmlHighlight);
+        });
+
         cssEditor.addEventListener('input', () => {
             highlightEditor(cssEditor, cssHighlight, 'css');
             updateLineNumbers(cssEditor, cssLineNumbers);
@@ -1754,6 +1788,14 @@
             syncLineNumbersScroll(cssEditor, cssLineNumbers);
         });
 
+        // Sync on click/mousedown to ensure cursor positioning is accurate
+        cssEditor.addEventListener('click', () => {
+            syncScroll(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('mousedown', () => {
+            syncScroll(cssEditor, cssHighlight);
+        });
+
         jsEditor.addEventListener('input', () => {
             highlightEditor(jsEditor, jsHighlight, 'javascript');
             updateLineNumbers(jsEditor, jsLineNumbers);
@@ -1763,6 +1805,14 @@
         jsEditor.addEventListener('scroll', () => {
             syncScroll(jsEditor, jsHighlight);
             syncLineNumbersScroll(jsEditor, jsLineNumbers);
+        });
+
+        // Sync on click/mousedown to ensure cursor positioning is accurate
+        jsEditor.addEventListener('click', () => {
+            syncScroll(jsEditor, jsHighlight);
+        });
+        jsEditor.addEventListener('mousedown', () => {
+            syncScroll(jsEditor, jsHighlight);
         });
 
         // Tab trapping state
@@ -2490,6 +2540,10 @@ ${js}
             resizer.classList.add('resizing');
             document.body.classList.add('resizing');
             document.body.style.cursor = 'row-resize';
+
+            // Force a layout calculation before starting to ensure smooth resize
+            editorsSection.offsetHeight;
+            previewSection.offsetHeight;
         }
 
         function handleResize(clientY) {
@@ -2521,6 +2575,11 @@ ${js}
                 if (currentEditorPercent !== null) {
                     localStorage.setItem('coded-panel-height', currentEditorPercent);
                 }
+
+                // Sync all editors after resize to ensure cursor positioning is accurate
+                syncScroll(htmlEditor, htmlHighlight);
+                syncScroll(cssEditor, cssHighlight);
+                syncScroll(jsEditor, jsHighlight);
             }
         }
 
@@ -2531,6 +2590,13 @@ ${js}
             previewSection.style.height = '';
             currentEditorPercent = null;
             localStorage.removeItem('coded-panel-height');
+
+            // Sync all editors after reset to ensure cursor positioning is accurate
+            setTimeout(() => {
+                syncScroll(htmlEditor, htmlHighlight);
+                syncScroll(cssEditor, cssHighlight);
+                syncScroll(jsEditor, jsHighlight);
+            }, 10);
         }
 
         function applyStoredPanelSize() {
@@ -2618,6 +2684,11 @@ ${js}
                     editorsSection.style.height = `${newPercent}%`;
                     previewSection.style.height = `calc(${100 - newPercent}% - 4px)`;
                 }
+
+                // Sync all editors after window resize to ensure cursor positioning is accurate
+                syncScroll(htmlEditor, htmlHighlight);
+                syncScroll(cssEditor, cssHighlight);
+                syncScroll(jsEditor, jsHighlight);
             }, 250);
         });
 
