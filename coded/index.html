@@ -565,7 +565,7 @@
             font-size: 0.9rem;
             line-height: 1.5;
             background: transparent;
-            color: rgba(255, 255, 255, 0.01);
+            color: rgba(255, 255, 255, 0.03);
             caret-color: var(--accent-color);
             border: none;
             resize: none;
@@ -573,15 +573,25 @@
             overflow: auto;
             tab-size: 2;
             z-index: 2;
-            -webkit-text-fill-color: rgba(255, 255, 255, 0.01);
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.03);
             white-space: pre;
             word-wrap: normal;
             box-sizing: border-box;
             margin: 0;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
             letter-spacing: 0;
-            text-rendering: optimizeLegibility;
+            word-spacing: 0;
+            text-indent: 0;
+            text-rendering: geometricPrecision;
             -webkit-font-smoothing: subpixel-antialiased;
             -moz-osx-font-smoothing: auto;
+            font-variant: normal;
+            font-feature-settings: normal;
+            font-kerning: none;
+            transform: translateZ(0);
         }
 
         .editor.wrap-enabled {
@@ -633,10 +643,20 @@
             word-wrap: normal;
             box-sizing: border-box;
             margin: 0;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
             letter-spacing: 0;
-            text-rendering: optimizeLegibility;
+            word-spacing: 0;
+            text-indent: 0;
+            text-rendering: geometricPrecision;
             -webkit-font-smoothing: subpixel-antialiased;
             -moz-osx-font-smoothing: auto;
+            font-variant: normal;
+            font-feature-settings: normal;
+            font-kerning: none;
+            transform: translateZ(0);
         }
 
         .editor-highlight.wrap-enabled {
@@ -683,10 +703,16 @@
             box-shadow: none !important;
             text-shadow: none !important;
             border-radius: 0 !important;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            line-height: 1.5;
-            letter-spacing: 0;
+            font-family: var(--font-mono) !important;
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            letter-spacing: 0 !important;
+            word-spacing: 0 !important;
+            text-indent: 0 !important;
+            font-variant: normal !important;
+            font-feature-settings: normal !important;
+            font-kerning: none !important;
+            display: block;
         }
 
         .editor::-webkit-scrollbar {
