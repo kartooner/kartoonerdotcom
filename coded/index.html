@@ -565,7 +565,7 @@
             font-size: 0.9rem;
             line-height: 1.5;
             background: transparent;
-            color: transparent;
+            color: rgba(255, 255, 255, 0.01);
             caret-color: var(--accent-color);
             border: none;
             resize: none;
@@ -573,7 +573,7 @@
             overflow: auto;
             tab-size: 2;
             z-index: 2;
-            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.01);
             white-space: pre;
             word-wrap: normal;
             box-sizing: border-box;
@@ -1330,6 +1330,14 @@
             highlight.scrollLeft = editor.scrollLeft;
         }
 
+        // Enhanced sync with requestAnimationFrame for better cursor positioning
+        function syncScrollRaf(editor, highlight) {
+            requestAnimationFrame(() => {
+                highlight.scrollTop = editor.scrollTop;
+                highlight.scrollLeft = editor.scrollLeft;
+            });
+        }
+
         // Update line numbers
         function updateLineNumbers(editor, lineNumbersElement) {
             const lines = editor.value.split('\n').length;
@@ -1770,11 +1778,24 @@
         });
 
         // Sync on click/mousedown to ensure cursor positioning is accurate
-        htmlEditor.addEventListener('click', () => {
-            syncScroll(htmlEditor, htmlHighlight);
-        });
         htmlEditor.addEventListener('mousedown', () => {
             syncScroll(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('click', () => {
+            syncScroll(htmlEditor, htmlHighlight);
+            syncScrollRaf(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('focus', () => {
+            syncScrollRaf(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('keyup', () => {
+            syncScrollRaf(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('select', () => {
+            syncScrollRaf(htmlEditor, htmlHighlight);
+        });
+        htmlEditor.addEventListener('selectionchange', () => {
+            syncScrollRaf(htmlEditor, htmlHighlight);
         });
 
         cssEditor.addEventListener('input', () => {
@@ -1789,11 +1810,24 @@
         });
 
         // Sync on click/mousedown to ensure cursor positioning is accurate
-        cssEditor.addEventListener('click', () => {
-            syncScroll(cssEditor, cssHighlight);
-        });
         cssEditor.addEventListener('mousedown', () => {
             syncScroll(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('click', () => {
+            syncScroll(cssEditor, cssHighlight);
+            syncScrollRaf(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('focus', () => {
+            syncScrollRaf(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('keyup', () => {
+            syncScrollRaf(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('select', () => {
+            syncScrollRaf(cssEditor, cssHighlight);
+        });
+        cssEditor.addEventListener('selectionchange', () => {
+            syncScrollRaf(cssEditor, cssHighlight);
         });
 
         jsEditor.addEventListener('input', () => {
@@ -1808,12 +1842,36 @@
         });
 
         // Sync on click/mousedown to ensure cursor positioning is accurate
-        jsEditor.addEventListener('click', () => {
-            syncScroll(jsEditor, jsHighlight);
-        });
         jsEditor.addEventListener('mousedown', () => {
             syncScroll(jsEditor, jsHighlight);
         });
+        jsEditor.addEventListener('click', () => {
+            syncScroll(jsEditor, jsHighlight);
+            syncScrollRaf(jsEditor, jsHighlight);
+        });
+        jsEditor.addEventListener('focus', () => {
+            syncScrollRaf(jsEditor, jsHighlight);
+        });
+        jsEditor.addEventListener('keyup', () => {
+            syncScrollRaf(jsEditor, jsHighlight);
+        });
+        jsEditor.addEventListener('select', () => {
+            syncScrollRaf(jsEditor, jsHighlight);
+        });
+        jsEditor.addEventListener('selectionchange', () => {
+            syncScrollRaf(jsEditor, jsHighlight);
+        });
+
+        // Wait for fonts to load, then sync everything
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                setTimeout(() => {
+                    syncScroll(htmlEditor, htmlHighlight);
+                    syncScroll(cssEditor, cssHighlight);
+                    syncScroll(jsEditor, jsHighlight);
+                }, 100);
+            });
+        }
 
         // Tab trapping state
         let tabTrappingEnabled = {
