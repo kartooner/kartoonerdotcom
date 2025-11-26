@@ -46,16 +46,108 @@
             --font-main: "Manrope", sans-serif;
             --font-mono: "JetBrains Mono", monospace;
             --font-logo: "Cartridge Regular", sans-serif;
+
+            /* Dark theme colors (default) */
             --bg-color: #191970;
             --text-color: #ffffff;
             --accent-color: #64ffda;
-            --secondary-color: #b8c4f5;
+            --accent-rgb: 100, 255, 218;
+            --secondary-color: #c5d2ff;
             --editor-bg: #1a1a3e;
             --editor-border: #2d2d5f;
             --preview-bg: #ffffff;
             --button-bg: #64ffda;
             --button-text: #191970;
             --button-hover: #52e8c8;
+        }
+
+        /* Light theme */
+        body.light-theme {
+            --bg-color: #f8f9fa;
+            --text-color: #1a1a1a;
+            --accent-color: #0066cc;
+            --accent-rgb: 0, 102, 204;
+            --secondary-color: #495057;
+            --editor-bg: #ffffff;
+            --editor-border: #dee2e6;
+            --preview-bg: #ffffff;
+            --button-bg: #0066cc;
+            --button-text: #ffffff;
+            --button-hover: #0052a3;
+        }
+
+        /* Light theme specific overrides */
+        body.light-theme .preview-container {
+            background: #e8edf2;
+        }
+
+        body.light-theme .preview-viewport.constrained {
+            background: repeating-conic-gradient(#e8edf2 0% 25%, #dfe4e9 0% 50%) 50% / 20px 20px;
+        }
+
+        body.light-theme .editor,
+        body.light-theme .line-numbers {
+            color: var(--text-color);
+        }
+
+        body.light-theme .editor::placeholder {
+            color: #a0aec0;
+        }
+
+        /* Light theme Prism syntax highlighting */
+        body.light-theme .token.comment,
+        body.light-theme .token.prolog,
+        body.light-theme .token.doctype,
+        body.light-theme .token.cdata {
+            color: #6a737d;
+        }
+
+        body.light-theme .token.punctuation {
+            color: #24292e;
+        }
+
+        body.light-theme .token.property,
+        body.light-theme .token.tag,
+        body.light-theme .token.boolean,
+        body.light-theme .token.number,
+        body.light-theme .token.constant,
+        body.light-theme .token.symbol,
+        body.light-theme .token.deleted {
+            color: #005cc5;
+        }
+
+        body.light-theme .token.selector,
+        body.light-theme .token.attr-name,
+        body.light-theme .token.string,
+        body.light-theme .token.char,
+        body.light-theme .token.builtin,
+        body.light-theme .token.inserted {
+            color: #22863a;
+        }
+
+        body.light-theme .token.operator,
+        body.light-theme .token.entity,
+        body.light-theme .token.url,
+        body.light-theme .language-css .token.string,
+        body.light-theme .style .token.string {
+            color: #d73a49;
+        }
+
+        body.light-theme .token.atrule,
+        body.light-theme .token.attr-value,
+        body.light-theme .token.keyword {
+            color: #d73a49;
+        }
+
+        body.light-theme .token.function,
+        body.light-theme .token.class-name {
+            color: #6f42c1;
+        }
+
+        body.light-theme .token.regex,
+        body.light-theme .token.important,
+        body.light-theme .token.variable {
+            color: #e36209;
         }
 
         body {
@@ -258,18 +350,19 @@
             display: none;
             background: var(--editor-bg);
             border: 2px solid var(--editor-border);
-            border-radius: 8px;
-            min-width: 400px;
-            max-width: 500px;
-            max-height: 500px;
+            border-radius: 12px;
+            min-width: 450px;
+            max-width: 600px;
+            max-height: 600px;
             overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
         }
 
         .snippets-menu-header {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--editor-border);
-            font-weight: 500;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 2px solid var(--editor-border);
+            font-weight: 600;
+            font-size: 1.1rem;
             color: var(--accent-color);
             display: flex;
             justify-content: space-between;
@@ -277,10 +370,11 @@
         }
 
         .snippet-item {
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.5rem;
             cursor: pointer;
             border-bottom: 1px solid var(--editor-border);
-            transition: background 0.2s;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -288,6 +382,8 @@
 
         .snippet-item:hover {
             background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--accent-color);
+            padding-left: 1.75rem;
         }
 
         .snippet-item:last-child {
@@ -335,12 +431,12 @@
 
         /* Library items */
         .library-item {
-            padding: 0.75rem;
-            border: 1px solid var(--editor-border);
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--editor-border);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -349,6 +445,8 @@
         .library-item:hover {
             background: rgba(255, 255, 255, 0.05);
             border-color: var(--accent-color);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .library-item.added {
@@ -358,7 +456,8 @@
         }
 
         .library-name {
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 1rem;
         }
 
         .library-version {
@@ -558,7 +657,7 @@
             padding: 0.75rem 1rem;
             background: var(--editor-bg);
             border-bottom: 1px solid var(--editor-border);
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.9rem;
             color: var(--accent-color);
             display: flex;
@@ -865,6 +964,55 @@
             line-height: 1;
         }
 
+        /* Accessibility: Focus indicators for all interactive elements */
+        button:focus-visible,
+        .device-btn:focus-visible,
+        .more-option-item:focus-visible,
+        .snippet-item:focus-visible,
+        .library-item:focus-visible,
+        .panel-settings-button:focus-visible,
+        .console-clear:focus-visible,
+        .share-mode-button:focus-visible,
+        .layout-toggle-btn:focus-visible,
+        .theme-toggle-btn:focus-visible,
+        input[type="checkbox"]:focus-visible,
+        input[type="text"]:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Keyboard navigation highlight for menu items */
+        .more-option-item.keyboard-focused {
+            background: rgba(var(--accent-rgb), 0.15);
+            outline: 2px solid var(--accent-color);
+            outline-offset: -2px;
+        }
+
+        /* Focus for toggle switches */
+        .toggle-switch input:focus-visible + .toggle-slider {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Skip link - visible on focus */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 0.5rem 1rem;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
         .preview-container {
             flex: 1;
             display: flex;
@@ -1146,6 +1294,9 @@
     </style>
 </head>
 <body>
+    <!-- Skip link for keyboard accessibility -->
+    <a href="#htmlEditor" class="skip-link">Skip to code editor</a>
+
     <!-- Share Mode Banner -->
     <div class="share-mode-banner" id="shareModeBanner" role="status" aria-live="polite">
         <div class="share-mode-info">
@@ -1195,19 +1346,19 @@
     </header>
 
     <!-- Snippets Modal -->
-    <div class="snippets-menu" id="snippetsMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
+    <div class="snippets-menu" id="snippetsMenu" role="dialog" aria-modal="true" aria-labelledby="snippetsMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
         <div class="snippets-menu-header">
-            <span>Load Snippet</span>
-            <span style="cursor: pointer; opacity: 0.7;" id="closeSnippetsBtn">✕</span>
+            <span id="snippetsMenuTitle">Load Snippet</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSnippetsBtn" role="button" tabindex="0" aria-label="Close snippets menu">✕</span>
         </div>
         <div id="snippetsList"></div>
     </div>
 
     <!-- Libraries Modal -->
-    <div class="snippets-menu" id="librariesMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-height: 600px;">
+    <div class="snippets-menu" id="librariesMenu" role="dialog" aria-modal="true" aria-labelledby="librariesMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-height: 600px;">
         <div class="snippets-menu-header">
-            <span>Add External Libraries</span>
-            <span style="cursor: pointer; opacity: 0.7;" id="closeLibrariesBtn">✕</span>
+            <span id="librariesMenuTitle">Add External Libraries</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeLibrariesBtn" role="button" tabindex="0" aria-label="Close libraries menu">✕</span>
         </div>
         <div style="padding: 1rem; border-bottom: 1px solid var(--editor-border);">
             <div style="margin-bottom: 1rem;">
@@ -1227,10 +1378,10 @@
     </div>
 
     <!-- Settings Modal -->
-    <div class="snippets-menu" id="settingsMenu" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-width: 500px;">
+    <div class="snippets-menu" id="settingsMenu" role="dialog" aria-modal="true" aria-labelledby="settingsMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-width: 500px;">
         <div class="snippets-menu-header">
-            <span>Settings</span>
-            <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn">✕</span>
+            <span id="settingsMenuTitle">Settings</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn" role="button" tabindex="0" aria-label="Close settings">✕</span>
         </div>
         <div style="padding: 1.5rem;">
             <!-- Layout Toggle -->
@@ -1246,15 +1397,15 @@
                 </div>
             </div>
 
-            <!-- Theme (future) -->
+            <!-- Theme -->
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Theme</label>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button class="theme-toggle-btn active" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500;">
+                    <button class="theme-toggle-btn active" id="themeDarkBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
                         Dark
                     </button>
-                    <button class="theme-toggle-btn" disabled style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; opacity: 0.5; font-weight: 500;">
-                        Light (Soon)
+                    <button class="theme-toggle-btn" id="themeLightBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                        Light
                     </button>
                 </div>
             </div>
@@ -1264,18 +1415,20 @@
     <div id="snippetsOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1999;"></div>
 
     <!-- Find/Replace Panel -->
-    <div id="findReplacePanel" style="display: none; position: fixed; top: 80px; right: 20px; background: var(--editor-bg); border: 2px solid var(--editor-border); border-radius: 8px; padding: 1rem; z-index: 3000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); min-width: 350px;">
+    <div id="findReplacePanel" role="dialog" aria-labelledby="findReplaceTitle" style="display: none; position: fixed; top: 80px; right: 20px; background: var(--editor-bg); border: 2px solid var(--editor-border); border-radius: 8px; padding: 1rem; z-index: 3000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); min-width: 350px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <span style="font-weight: 500; color: var(--accent-color);">Find & Replace</span>
-            <span id="closeFindReplaceBtn" style="cursor: pointer; opacity: 0.7; font-size: 1.2rem; color: var(--secondary-color);">✕</span>
+            <span id="findReplaceTitle" style="font-weight: 500; color: var(--accent-color);">Find & Replace</span>
+            <span id="closeFindReplaceBtn" role="button" tabindex="0" aria-label="Close find and replace" style="cursor: pointer; opacity: 0.7; font-size: 1.2rem; color: var(--secondary-color);">✕</span>
         </div>
 
         <div style="margin-bottom: 0.5rem;">
-            <input type="text" id="findInput" placeholder="Find..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+            <label for="findInput" class="sr-only">Find text</label>
+            <input type="text" id="findInput" placeholder="Find..." aria-label="Find text" style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
         </div>
 
         <div style="margin-bottom: 0.75rem;">
-            <input type="text" id="replaceInput" placeholder="Replace with..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+            <label for="replaceInput" class="sr-only">Replace with</label>
+            <input type="text" id="replaceInput" placeholder="Replace with..." aria-label="Replace with" style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
         </div>
 
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -1409,25 +1562,25 @@
                 <span>Preview</span>
                 <div class="preview-actions">
                     <div class="device-buttons">
-                        <button class="device-btn active" data-width="100%" title="Desktop view">
+                        <button class="device-btn active" data-width="100%" title="Desktop view" aria-label="Desktop view" aria-pressed="true">
                             Desktop
                         </button>
-                        <button class="device-btn" data-width="768" title="Tablet (768px)">
+                        <button class="device-btn" data-width="768" title="Tablet (768px)" aria-label="Tablet view, 768 pixels wide" aria-pressed="false">
                             Tablet
                         </button>
-                        <button class="device-btn" data-width="375" title="Mobile (375px)">
+                        <button class="device-btn" data-width="375" title="Mobile (375px)" aria-label="Mobile view, 375 pixels wide" aria-pressed="false">
                             Mobile
                         </button>
                     </div>
                     <span class="viewport-size" id="viewportSize">Desktop</span>
-                    <button class="panel-settings-button" id="toggleConsoleBtn" title="Toggle Console">
+                    <button class="panel-settings-button" id="toggleConsoleBtn" title="Toggle Console" aria-label="Toggle console" aria-expanded="false" aria-controls="consolePanel">
                         Console
                     </button>
                 </div>
             </div>
             <div class="preview-container">
                 <div class="preview-viewport" id="previewViewport">
-                    <iframe id="preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                    <iframe id="preview" title="Code preview output" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
                     <div class="viewport-resize-handle" id="viewportResizeHandle"></div>
                 </div>
                 <div class="console-panel" id="consolePanel">
@@ -1517,6 +1670,8 @@
         const fontSizeValue = document.getElementById('fontSizeValue');
         const layoutHorizontalBtn = document.getElementById('layoutHorizontalBtn');
         const layoutVerticalBtn = document.getElementById('layoutVerticalBtn');
+        const themeDarkBtn = document.getElementById('themeDarkBtn');
+        const themeLightBtn = document.getElementById('themeLightBtn');
         const findReplacePanel = document.getElementById('findReplacePanel');
         const closeFindReplaceBtn = document.getElementById('closeFindReplaceBtn');
         const findInput = document.getElementById('findInput');
@@ -1527,7 +1682,7 @@
         const replaceAllBtn = document.getElementById('replaceAllBtn');
         const findResultsText = document.getElementById('findResultsText');
 
-        let autoRunEnabled = localStorage.getItem('coded-autorun') === 'true';
+        let autoRunEnabled = localStorage.getItem('coded-autorun') !== 'false'; // Default to true
         let autoRunTimeout = null;
         let wordWrapEnabled = {
             html: localStorage.getItem('coded-wordwrap-html') !== null ? localStorage.getItem('coded-wordwrap-html') === 'true' : true,
@@ -1537,14 +1692,14 @@
         let cssResetType = localStorage.getItem('coded-css-reset') || 'none'; // 'none', 'normalize', 'reset'
         let isShareMode = false; // Track if we're in share mode
 
-        // Debounced auto-run (waits 800ms after last keystroke)
+        // Debounced auto-run (waits 500ms after last keystroke)
         function debouncedAutoRun() {
             if (!autoRunEnabled) return;
 
             clearTimeout(autoRunTimeout);
             autoRunTimeout = setTimeout(() => {
                 runCode();
-            }, 800); // Wait 800ms after user stops typing
+            }, 500); // Wait 500ms after user stops typing - faster feedback
         }
 
         // Syntax highlighting with Prism
@@ -1558,6 +1713,15 @@
                 highlight.innerHTML = '';
             }
             syncScroll(editor, highlight);
+        }
+
+        // Performance: Debounced syntax highlighting
+        let highlightTimeouts = { html: null, css: null, js: null };
+        function debouncedHighlight(editor, highlight, language, editorType) {
+            clearTimeout(highlightTimeouts[editorType]);
+            highlightTimeouts[editorType] = setTimeout(() => {
+                highlightEditor(editor, highlight, language);
+            }, 150); // Highlight after 150ms of inactivity
         }
 
         // Sync scroll between editor and highlight
@@ -2111,11 +2275,15 @@
             }
         }
 
-        // Save code to localStorage
+        // Performance: Debounced localStorage writes
+        let saveTimeout = null;
         function saveCode() {
-            localStorage.setItem('coded-html', htmlEditor.value);
-            localStorage.setItem('coded-css', cssEditor.value);
-            localStorage.setItem('coded-js', jsEditor.value);
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem('coded-html', htmlEditor.value);
+                localStorage.setItem('coded-css', cssEditor.value);
+                localStorage.setItem('coded-js', jsEditor.value);
+            }, 1000); // Save after 1 second of inactivity
         }
 
         // Add event listeners for live highlighting and auto-save
@@ -2128,12 +2296,9 @@
         htmlEditor.addEventListener('scroll', () => {
             syncScroll(htmlEditor, htmlHighlight);
             syncLineNumbersScroll(htmlEditor, htmlLineNumbers);
-        });
+        }, { passive: true });
 
-        // Sync on click/mousedown to ensure cursor positioning is accurate
-        htmlEditor.addEventListener('mousedown', () => {
-            syncScroll(htmlEditor, htmlHighlight);
-        });
+        // Sync on click to ensure cursor positioning is accurate
         htmlEditor.addEventListener('click', () => {
             syncScroll(htmlEditor, htmlHighlight);
             syncScrollRaf(htmlEditor, htmlHighlight);
@@ -2147,9 +2312,6 @@
         htmlEditor.addEventListener('select', () => {
             syncScrollRaf(htmlEditor, htmlHighlight);
         });
-        htmlEditor.addEventListener('selectionchange', () => {
-            syncScrollRaf(htmlEditor, htmlHighlight);
-        });
 
         cssEditor.addEventListener('input', () => {
             highlightEditor(cssEditor, cssHighlight, 'css');
@@ -2160,12 +2322,9 @@
         cssEditor.addEventListener('scroll', () => {
             syncScroll(cssEditor, cssHighlight);
             syncLineNumbersScroll(cssEditor, cssLineNumbers);
-        });
+        }, { passive: true });
 
-        // Sync on click/mousedown to ensure cursor positioning is accurate
-        cssEditor.addEventListener('mousedown', () => {
-            syncScroll(cssEditor, cssHighlight);
-        });
+        // Sync on click to ensure cursor positioning is accurate
         cssEditor.addEventListener('click', () => {
             syncScroll(cssEditor, cssHighlight);
             syncScrollRaf(cssEditor, cssHighlight);
@@ -2179,9 +2338,6 @@
         cssEditor.addEventListener('select', () => {
             syncScrollRaf(cssEditor, cssHighlight);
         });
-        cssEditor.addEventListener('selectionchange', () => {
-            syncScrollRaf(cssEditor, cssHighlight);
-        });
 
         jsEditor.addEventListener('input', () => {
             highlightEditor(jsEditor, jsHighlight, 'javascript');
@@ -2192,12 +2348,9 @@
         jsEditor.addEventListener('scroll', () => {
             syncScroll(jsEditor, jsHighlight);
             syncLineNumbersScroll(jsEditor, jsLineNumbers);
-        });
+        }, { passive: true });
 
-        // Sync on click/mousedown to ensure cursor positioning is accurate
-        jsEditor.addEventListener('mousedown', () => {
-            syncScroll(jsEditor, jsHighlight);
-        });
+        // Sync on click to ensure cursor positioning is accurate
         jsEditor.addEventListener('click', () => {
             syncScroll(jsEditor, jsHighlight);
             syncScrollRaf(jsEditor, jsHighlight);
@@ -2209,9 +2362,6 @@
             syncScrollRaf(jsEditor, jsHighlight);
         });
         jsEditor.addEventListener('select', () => {
-            syncScrollRaf(jsEditor, jsHighlight);
-        });
-        jsEditor.addEventListener('selectionchange', () => {
             syncScrollRaf(jsEditor, jsHighlight);
         });
 
@@ -2360,10 +2510,12 @@
                 consolePanel.classList.add('active');
                 toggleConsoleBtn.style.background = 'var(--accent-color)';
                 toggleConsoleBtn.style.color = 'var(--bg-color)';
+                toggleConsoleBtn.setAttribute('aria-expanded', 'true');
             } else {
                 consolePanel.classList.remove('active');
                 toggleConsoleBtn.style.background = '';
                 toggleConsoleBtn.style.color = '';
+                toggleConsoleBtn.setAttribute('aria-expanded', 'false');
             }
             localStorage.setItem('coded-console-visible', consoleVisible);
         }
@@ -2491,11 +2643,13 @@
             consolePanel.classList.add('active');
             toggleConsoleBtn.style.background = 'var(--accent-color)';
             toggleConsoleBtn.style.color = 'var(--bg-color)';
+            toggleConsoleBtn.setAttribute('aria-expanded', 'true');
         }
 
         // Settings functionality
         let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
         let currentLayout = localStorage.getItem('coded-layout') || 'horizontal';
+        let currentTheme = localStorage.getItem('coded-theme') || 'dark';
 
         function openSettingsModal() {
             settingsMenu.style.display = 'block';
@@ -2544,6 +2698,32 @@
             localStorage.setItem('coded-layout', layout);
         }
 
+        function setTheme(theme) {
+            currentTheme = theme;
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+                themeLightBtn.classList.add('active');
+                themeLightBtn.style.background = 'var(--accent-color)';
+                themeLightBtn.style.color = 'var(--bg-color)';
+                themeLightBtn.style.borderColor = 'var(--accent-color)';
+                themeDarkBtn.classList.remove('active');
+                themeDarkBtn.style.background = 'none';
+                themeDarkBtn.style.color = 'var(--secondary-color)';
+                themeDarkBtn.style.borderColor = 'var(--editor-border)';
+            } else {
+                document.body.classList.remove('light-theme');
+                themeDarkBtn.classList.add('active');
+                themeDarkBtn.style.background = 'var(--accent-color)';
+                themeDarkBtn.style.color = 'var(--bg-color)';
+                themeDarkBtn.style.borderColor = 'var(--accent-color)';
+                themeLightBtn.classList.remove('active');
+                themeLightBtn.style.background = 'none';
+                themeLightBtn.style.color = 'var(--secondary-color)';
+                themeLightBtn.style.borderColor = 'var(--editor-border)';
+            }
+            localStorage.setItem('coded-theme', theme);
+        }
+
         // Settings event listeners
         settingsBtn.addEventListener('click', openSettingsModal);
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
@@ -2562,9 +2742,18 @@
             setLayout('vertical');
         });
 
+        themeDarkBtn.addEventListener('click', () => {
+            setTheme('dark');
+        });
+
+        themeLightBtn.addEventListener('click', () => {
+            setTheme('light');
+        });
+
         // Initialize settings
         updateFontSize(currentFontSize);
         setLayout(currentLayout);
+        setTheme(currentTheme);
 
         // Find/Replace functionality
         let currentFindEditor = null;
@@ -3139,10 +3328,14 @@ ${js}
         // Device button click handlers
         deviceButtons.forEach(btn => {
             btn.addEventListener('click', function() {
-                // Remove active class from all buttons
-                deviceButtons.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
+                // Remove active class and update aria-pressed for all buttons
+                deviceButtons.forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                });
+                // Add active class and update aria-pressed for clicked button
                 this.classList.add('active');
+                this.setAttribute('aria-pressed', 'true');
                 // Get width and apply
                 const width = this.getAttribute('data-width');
                 setViewportWidth(width);
@@ -3317,6 +3510,164 @@ ${js}
         if (shareBtn && shareBtn.parentNode) {
             shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
         }
+
+        // Accessibility: Keyboard navigation for dropdown menus
+        function addMenuKeyboardNavigation(menuElement) {
+            const menuItems = Array.from(menuElement.querySelectorAll('.more-option-item'));
+            let currentIndex = -1;
+
+            function focusItem(index) {
+                if (index >= 0 && index < menuItems.length) {
+                    menuItems[currentIndex]?.classList.remove('keyboard-focused');
+                    currentIndex = index;
+                    menuItems[currentIndex].classList.add('keyboard-focused');
+                    menuItems[currentIndex].focus();
+                }
+            }
+
+            menuElement.addEventListener('keydown', (e) => {
+                if (!menuElement.classList.contains('active') && menuElement.style.display !== 'block') {
+                    return;
+                }
+
+                switch(e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (currentIndex < menuItems.length - 1) {
+                            focusItem(currentIndex + 1);
+                        } else {
+                            focusItem(0); // Wrap to first
+                        }
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (currentIndex > 0) {
+                            focusItem(currentIndex - 1);
+                        } else {
+                            focusItem(menuItems.length - 1); // Wrap to last
+                        }
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        focusItem(0);
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        focusItem(menuItems.length - 1);
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        menuElement.classList.remove('active');
+                        if (menuElement === moreOptionsMenu) {
+                            moreOptionsBtn.focus();
+                        }
+                        break;
+                }
+            });
+
+            // Focus first item when menu opens
+            const observer = new MutationObserver(() => {
+                if (menuElement.classList.contains('active')) {
+                    setTimeout(() => focusItem(0), 50);
+                } else {
+                    currentIndex = -1;
+                    menuItems.forEach(item => item.classList.remove('keyboard-focused'));
+                }
+            });
+            observer.observe(menuElement, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        // Make menu items focusable and add keyboard support
+        document.querySelectorAll('.more-option-item').forEach(item => {
+            item.setAttribute('tabindex', '0');
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+
+                    // Check if this menu item contains a checkbox (toggle switch)
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        // Toggle the checkbox
+                        checkbox.checked = !checkbox.checked;
+                        // Trigger change event so the app responds
+                        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        // Regular menu item - click it
+                        item.click();
+                    }
+                }
+            });
+        });
+
+        // Add keyboard navigation to menus
+        addMenuKeyboardNavigation(moreOptionsMenu);
+        addMenuKeyboardNavigation(htmlSettingsMenu);
+        addMenuKeyboardNavigation(cssSettingsMenu);
+        addMenuKeyboardNavigation(jsSettingsMenu);
+
+        // Keyboard navigation for modal items (snippets and libraries)
+        function makeModalItemsKeyboardAccessible(containerElement) {
+            const items = containerElement.querySelectorAll('.snippet-item, .library-item:not(.added)');
+            items.forEach((item, index) => {
+                item.setAttribute('tabindex', '0');
+                item.setAttribute('role', 'button');
+
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        item.click();
+                    }
+                    // Arrow key navigation
+                    else if (e.key === 'ArrowDown' && index < items.length - 1) {
+                        e.preventDefault();
+                        items[index + 1].focus();
+                    }
+                    else if (e.key === 'ArrowUp' && index > 0) {
+                        e.preventDefault();
+                        items[index - 1].focus();
+                    }
+                    else if (e.key === 'Home') {
+                        e.preventDefault();
+                        items[0].focus();
+                    }
+                    else if (e.key === 'End') {
+                        e.preventDefault();
+                        items[items.length - 1].focus();
+                    }
+                });
+            });
+        }
+
+        // Observe when modals open and make their items keyboard accessible
+        const modalObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                    const modal = mutation.target;
+                    if (modal.style.display === 'block') {
+                        setTimeout(() => {
+                            makeModalItemsKeyboardAccessible(modal);
+                            // Focus first item
+                            const firstItem = modal.querySelector('.snippet-item, .library-item:not(.added)');
+                            if (firstItem) firstItem.focus();
+                        }, 100);
+                    }
+                }
+            });
+        });
+
+        // Watch modals for changes
+        if (snippetsMenu) modalObserver.observe(snippetsMenu, { attributes: true });
+        if (librariesMenu) modalObserver.observe(librariesMenu, { attributes: true });
+
+        // Accessibility: Add keyboard support (Enter/Space) for elements with role="button"
+        document.querySelectorAll('[role="button"]').forEach(element => {
+            element.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    element.click();
+                }
+            });
+        });
     </script>
 </body>
 </html>
