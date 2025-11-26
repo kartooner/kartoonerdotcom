@@ -1825,22 +1825,56 @@
                 return;
             }
 
-            const snippet = {
-                id: Date.now(),
-                name: name.trim(),
-                html: htmlEditor.value,
-                css: cssEditor.value,
-                js: jsEditor.value,
-                timestamp: new Date().toISOString()
-            };
-
             const snippets = getSnippets();
-            snippets.push(snippet);
-            saveSnippets(snippets);
+            const trimmedName = name.trim();
 
-            // Show confirmation
-            alert(`Snippet "${name.trim()}" saved!`);
-            moreOptionsMenu.classList.remove('active');
+            // Check if snippet with this name already exists
+            const existingSnippet = snippets.find(s => s.name === trimmedName);
+
+            if (existingSnippet) {
+                // Name exists - check if content is identical
+                const isIdentical =
+                    existingSnippet.html === htmlEditor.value &&
+                    existingSnippet.css === cssEditor.value &&
+                    existingSnippet.js === jsEditor.value;
+
+                if (isIdentical) {
+                    // Same name, same content - nothing to save
+                    alert(`No changes detected. The snippet "${trimmedName}" already contains this code.`);
+                    return;
+                } else {
+                    // Same name, different content - ask to overwrite
+                    const overwrite = confirm(`A snippet named "${trimmedName}" already exists. Overwrite it?`);
+                    if (!overwrite) {
+                        return; // User cancelled
+                    }
+
+                    // Update existing snippet
+                    existingSnippet.html = htmlEditor.value;
+                    existingSnippet.css = cssEditor.value;
+                    existingSnippet.js = jsEditor.value;
+                    existingSnippet.timestamp = new Date().toISOString();
+
+                    saveSnippets(snippets);
+                    alert(`Snippet "${trimmedName}" updated!`);
+                    moreOptionsMenu.classList.remove('active');
+                }
+            } else {
+                // New snippet name - save as new
+                const snippet = {
+                    id: Date.now(),
+                    name: trimmedName,
+                    html: htmlEditor.value,
+                    css: cssEditor.value,
+                    js: jsEditor.value,
+                    timestamp: new Date().toISOString()
+                };
+
+                snippets.push(snippet);
+                saveSnippets(snippets);
+                alert(`Snippet "${trimmedName}" saved!`);
+                moreOptionsMenu.classList.remove('active');
+            }
         }
 
         function loadSnippet(id) {
