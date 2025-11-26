@@ -154,6 +154,7 @@
             font-family: var(--font-main);
             font-size: 1.2rem;
             font-weight: 500;
+            line-height: 1;
             transition: all 0.3s ease;
             height: 40px;
             width: 40px;
@@ -193,7 +194,8 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
         }
 
         .more-option-item:hover {
@@ -202,6 +204,54 @@
 
         .more-option-item:last-child {
             border-bottom: none;
+        }
+
+        /* Toggle switch for word wrap */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            margin-left: auto;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--editor-border);
+            transition: 0.3s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--secondary-color);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent-color);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+            background-color: var(--bg-color);
         }
 
         .snippets-menu {
@@ -338,8 +388,9 @@
             border-radius: 4px;
             cursor: pointer;
             font-family: var(--font-main);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
+            line-height: 1;
             transition: all 0.3s ease;
             height: 40px;
             display: inline-flex;
@@ -520,10 +571,11 @@
             background: none;
             border: 1px solid var(--editor-border);
             color: var(--secondary-color);
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 0.85rem;
+            line-height: 1;
             transition: all 0.2s;
             opacity: 0.7;
             position: relative;
@@ -767,6 +819,50 @@
         .preview-actions {
             display: flex;
             gap: 0.5rem;
+            align-items: center;
+        }
+
+        .device-buttons {
+            display: flex;
+            gap: 0.25rem;
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .device-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: all 0.2s;
+            border-right: 1px solid var(--editor-border);
+        }
+
+        .device-btn:last-child {
+            border-right: none;
+        }
+
+        .device-btn:hover {
+            background: rgba(var(--accent-rgb), 0.1);
+            color: var(--accent-color);
+        }
+
+        .device-btn.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .viewport-size {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            padding: 0 0.75rem;
+            min-width: 80px;
+            text-align: center;
+            line-height: 1;
         }
 
         .preview-container {
@@ -775,14 +871,70 @@
             flex-direction: column;
             position: relative;
             overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        .preview-viewport {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow: auto;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .preview-viewport.constrained {
+            background: repeating-conic-gradient(#1a1a2e 0% 25%, #16162a 0% 50%) 50% / 20px 20px;
+        }
+
+        .preview-viewport.constrained #preview {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+            max-width: 100%;
+            height: 100%;
+            flex: none;
         }
 
         #preview {
-            flex: 1;
             width: 100%;
+            height: 100%;
             border: none;
             background: var(--preview-bg);
-            transition: height 0.3s ease;
+            transition: width 0.3s ease;
+        }
+
+        .viewport-resize-handle {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: ew-resize;
+            background: transparent;
+            transition: background 0.2s;
+        }
+
+        .preview-viewport.constrained .viewport-resize-handle {
+            display: block;
+        }
+
+        .viewport-resize-handle:hover {
+            background: var(--accent-color);
+        }
+
+        .viewport-resize-handle::before {
+            content: '';
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 40px;
+            background: var(--editor-border);
+            border-radius: 2px;
         }
 
         /* Console panel */
@@ -1020,22 +1172,22 @@
                 </button>
                 <div class="more-options-menu" id="moreOptionsMenu">
                     <div class="more-option-item" id="settingsBtn">
-                        ⚙️ Settings
+                        Settings
                     </div>
                     <div class="more-option-item" id="saveSnippetMenuBtn">
-                        💾 Save Snippet
+                        Save Snippet
                     </div>
                     <div class="more-option-item" id="snippetsMenuBtn">
-                        📂 Load Snippet
+                        Load Snippet
                     </div>
                     <div class="more-option-item" id="shareBtn">
-                        🔗 Share Link
+                        Save .coded File
                     </div>
                     <div class="more-option-item" id="exportBtn">
-                        📥 Export HTML
+                        Export HTML
                     </div>
                     <div class="more-option-item" id="clearBtn">
-                        🗑️ Clear All
+                        Clear All
                     </div>
                 </div>
             </div>
@@ -1081,15 +1233,6 @@
             <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn">✕</span>
         </div>
         <div style="padding: 1.5rem;">
-            <!-- Font Size -->
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Editor Font Size</label>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <input type="range" id="fontSizeSlider" min="12" max="20" value="14" step="1" style="flex: 1; accent-color: var(--accent-color);">
-                    <span id="fontSizeValue" style="color: var(--secondary-color); min-width: 3rem; text-align: right;">14px</span>
-                </div>
-            </div>
-
             <!-- Layout Toggle -->
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Editor Layout</label>
@@ -1156,10 +1299,17 @@
                     <button class="panel-settings-button" id="htmlSettingsBtn" aria-label="HTML panel settings">⚙</button>
                     <div class="panel-settings-menu" id="htmlSettingsMenu">
                         <div class="more-option-item" id="htmlLibrariesBtn">
-                            📚 Add Libraries
+                            Add Libraries
+                        </div>
+                        <div class="more-option-item" id="htmlFormatBtn">
+                            Format Code
                         </div>
                         <div class="more-option-item" id="htmlWrapToggle">
-                            ↩️ Word Wrap: <span id="htmlWrapStatus">Off</span>
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="htmlWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1183,13 +1333,20 @@
                     <button class="panel-settings-button" id="cssSettingsBtn" aria-label="CSS panel settings">⚙</button>
                     <div class="panel-settings-menu" id="cssSettingsMenu">
                         <div class="more-option-item" id="cssLibrariesBtn">
-                            📚 Add Libraries
+                            Add Libraries
+                        </div>
+                        <div class="more-option-item" id="cssFormatBtn">
+                            Format Code
                         </div>
                         <div class="more-option-item" id="cssWrapToggle">
-                            ↩️ Word Wrap: <span id="cssWrapStatus">Off</span>
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="cssWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                         <div class="more-option-item" id="cssResetBtn">
-                            🔄 CSS Reset: <span id="cssResetStatus">None</span>
+                            CSS Reset: <span id="cssResetStatus">None</span>
                         </div>
                     </div>
                 </div>
@@ -1213,10 +1370,17 @@
                     <button class="panel-settings-button" id="jsSettingsBtn" aria-label="JavaScript panel settings">⚙</button>
                     <div class="panel-settings-menu" id="jsSettingsMenu">
                         <div class="more-option-item" id="jsLibrariesBtn">
-                            📚 Add Libraries
+                            Add Libraries
+                        </div>
+                        <div class="more-option-item" id="jsFormatBtn">
+                            Format Code
                         </div>
                         <div class="more-option-item" id="jsWrapToggle">
-                            ↩️ Word Wrap: <span id="jsWrapStatus">Off</span>
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="jsWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1244,13 +1408,28 @@
             <div class="preview-header">
                 <span>Preview</span>
                 <div class="preview-actions">
+                    <div class="device-buttons">
+                        <button class="device-btn active" data-width="100%" title="Desktop view">
+                            Desktop
+                        </button>
+                        <button class="device-btn" data-width="768" title="Tablet (768px)">
+                            Tablet
+                        </button>
+                        <button class="device-btn" data-width="375" title="Mobile (375px)">
+                            Mobile
+                        </button>
+                    </div>
+                    <span class="viewport-size" id="viewportSize">Desktop</span>
                     <button class="panel-settings-button" id="toggleConsoleBtn" title="Toggle Console">
                         Console
                     </button>
                 </div>
             </div>
             <div class="preview-container">
-                <iframe id="preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                <div class="preview-viewport" id="previewViewport">
+                    <iframe id="preview" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                    <div class="viewport-resize-handle" id="viewportResizeHandle"></div>
+                </div>
                 <div class="console-panel" id="consolePanel">
                     <div class="console-header">
                         <span>Console</span>
@@ -1295,13 +1474,13 @@
         const htmlSettingsMenu = document.getElementById('htmlSettingsMenu');
         const htmlLibrariesBtn = document.getElementById('htmlLibrariesBtn');
         const htmlWrapToggle = document.getElementById('htmlWrapToggle');
-        const htmlWrapStatus = document.getElementById('htmlWrapStatus');
+        const htmlWrapCheckbox = document.getElementById('htmlWrapCheckbox');
 
         const cssSettingsBtn = document.getElementById('cssSettingsBtn');
         const cssSettingsMenu = document.getElementById('cssSettingsMenu');
         const cssLibrariesBtn = document.getElementById('cssLibrariesBtn');
         const cssWrapToggle = document.getElementById('cssWrapToggle');
-        const cssWrapStatus = document.getElementById('cssWrapStatus');
+        const cssWrapCheckbox = document.getElementById('cssWrapCheckbox');
         const cssResetBtn = document.getElementById('cssResetBtn');
         const cssResetStatus = document.getElementById('cssResetStatus');
 
@@ -1309,7 +1488,7 @@
         const jsSettingsMenu = document.getElementById('jsSettingsMenu');
         const jsLibrariesBtn = document.getElementById('jsLibrariesBtn');
         const jsWrapToggle = document.getElementById('jsWrapToggle');
-        const jsWrapStatus = document.getElementById('jsWrapStatus');
+        const jsWrapCheckbox = document.getElementById('jsWrapCheckbox');
         const snippetsMenu = document.getElementById('snippetsMenu');
         const librariesMenu = document.getElementById('librariesMenu');
         const snippetsOverlay = document.getElementById('snippetsOverlay');
@@ -1716,39 +1895,156 @@
         // Word wrap toggle - panel-specific
         function updateWordWrap(panel) {
             const panelMap = {
-                html: { editor: htmlEditor, highlight: htmlHighlight, status: htmlWrapStatus },
-                css: { editor: cssEditor, highlight: cssHighlight, status: cssWrapStatus },
-                js: { editor: jsEditor, highlight: jsHighlight, status: jsWrapStatus }
+                html: { editor: htmlEditor, highlight: htmlHighlight, checkbox: htmlWrapCheckbox },
+                css: { editor: cssEditor, highlight: cssHighlight, checkbox: cssWrapCheckbox },
+                js: { editor: jsEditor, highlight: jsHighlight, checkbox: jsWrapCheckbox }
             };
 
-            const { editor, highlight, status } = panelMap[panel];
+            const { editor, highlight, checkbox } = panelMap[panel];
 
             if (wordWrapEnabled[panel]) {
                 editor.classList.add('wrap-enabled');
                 highlight.classList.add('wrap-enabled');
-                status.textContent = 'On';
+                checkbox.checked = true;
             } else {
                 editor.classList.remove('wrap-enabled');
                 highlight.classList.remove('wrap-enabled');
-                status.textContent = 'Off';
+                checkbox.checked = false;
             }
 
             localStorage.setItem(`coded-wordwrap-${panel}`, wordWrapEnabled[panel]);
         }
 
-        htmlWrapToggle.addEventListener('click', () => {
-            wordWrapEnabled.html = !wordWrapEnabled.html;
+        // Word wrap checkbox change handlers
+        htmlWrapCheckbox.addEventListener('change', () => {
+            wordWrapEnabled.html = htmlWrapCheckbox.checked;
             updateWordWrap('html');
         });
 
-        cssWrapToggle.addEventListener('click', () => {
-            wordWrapEnabled.css = !wordWrapEnabled.css;
+        cssWrapCheckbox.addEventListener('change', () => {
+            wordWrapEnabled.css = cssWrapCheckbox.checked;
             updateWordWrap('css');
         });
 
-        jsWrapToggle.addEventListener('click', () => {
-            wordWrapEnabled.js = !wordWrapEnabled.js;
+        jsWrapCheckbox.addEventListener('change', () => {
+            wordWrapEnabled.js = jsWrapCheckbox.checked;
             updateWordWrap('js');
+        });
+
+        // Code formatting functions
+        function formatHTML(code) {
+            let formatted = '';
+            let indent = 0;
+            const tab = '  ';
+
+            // Remove extra whitespace
+            code = code.replace(/>\s+</g, '><').trim();
+
+            // Split by tags
+            const tokens = code.split(/(<[^>]+>)/g).filter(token => token.length > 0);
+
+            tokens.forEach(token => {
+                if (token.match(/^<\//)) {
+                    // Closing tag - decrease indent before adding
+                    indent = Math.max(0, indent - 1);
+                    formatted += tab.repeat(indent) + token + '\n';
+                } else if (token.match(/^<[^/][^>]*[^/]>$/)) {
+                    // Opening tag (not self-closing)
+                    formatted += tab.repeat(indent) + token + '\n';
+                    indent++;
+                } else if (token.match(/^<[^>]+\/>$/)) {
+                    // Self-closing tag
+                    formatted += tab.repeat(indent) + token + '\n';
+                } else if (token.trim().length > 0) {
+                    // Text content
+                    formatted += tab.repeat(indent) + token.trim() + '\n';
+                }
+            });
+
+            return formatted.trim();
+        }
+
+        function formatCSS(code) {
+            let formatted = '';
+            let indent = 0;
+            const tab = '  ';
+
+            // Remove all existing formatting
+            code = code.replace(/\s+/g, ' ').trim();
+
+            // Split into tokens
+            const tokens = code.split(/([\{\};])/g);
+
+            tokens.forEach(token => {
+                token = token.trim();
+                if (!token) return;
+
+                if (token === '{') {
+                    formatted += ' {\n';
+                    indent++;
+                } else if (token === '}') {
+                    indent = Math.max(0, indent - 1);
+                    formatted += '\n' + tab.repeat(indent) + '}\n\n';
+                } else if (token === ';') {
+                    formatted += ';\n';
+                } else {
+                    // Selector or property
+                    if (indent === 0) {
+                        // Selector
+                        formatted += tab.repeat(indent) + token;
+                    } else {
+                        // Property
+                        formatted += tab.repeat(indent) + token;
+                    }
+                }
+            });
+
+            return formatted.trim();
+        }
+
+        function formatJS(code) {
+            let formatted = '';
+            let indent = 0;
+            const tab = '  ';
+            const lines = code.split('\n');
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.endsWith('}') || trimmed.startsWith('}')) indent = Math.max(0, indent - 1);
+                formatted += tab.repeat(indent) + trimmed + '\n';
+                if (trimmed.endsWith('{')) indent++;
+            });
+
+            return formatted.trim();
+        }
+
+        // Format button handlers
+        const htmlFormatBtn = document.getElementById('htmlFormatBtn');
+        const cssFormatBtn = document.getElementById('cssFormatBtn');
+        const jsFormatBtn = document.getElementById('jsFormatBtn');
+
+        htmlFormatBtn.addEventListener('click', () => {
+            htmlEditor.value = formatHTML(htmlEditor.value);
+            highlightEditor(htmlEditor, htmlHighlight, 'markup');
+            updateLineNumbers(htmlEditor, htmlLineNumbers);
+            saveCode();
+            htmlSettingsMenu.classList.remove('active');
+        });
+
+        cssFormatBtn.addEventListener('click', () => {
+            cssEditor.value = formatCSS(cssEditor.value);
+            highlightEditor(cssEditor, cssHighlight, 'css');
+            updateLineNumbers(cssEditor, cssLineNumbers);
+            saveCode();
+            cssSettingsMenu.classList.remove('active');
+        });
+
+        jsFormatBtn.addEventListener('click', () => {
+            jsEditor.value = formatJS(jsEditor.value);
+            highlightEditor(jsEditor, jsHighlight, 'javascript');
+            updateLineNumbers(jsEditor, jsLineNumbers);
+            saveCode();
+            jsSettingsMenu.classList.remove('active');
         });
 
         // CSS Reset/Normalize toggle
@@ -2217,8 +2513,8 @@
             document.querySelectorAll('.editor, .editor-highlight code, .line-numbers').forEach(el => {
                 el.style.fontSize = `${size}px`;
             });
-            fontSizeValue.textContent = `${size}px`;
-            fontSizeSlider.value = size;
+            if (fontSizeValue) fontSizeValue.textContent = `${size}px`;
+            if (fontSizeSlider) fontSizeSlider.value = size;
             localStorage.setItem('coded-font-size', size);
         }
 
@@ -2252,9 +2548,11 @@
         settingsBtn.addEventListener('click', openSettingsModal);
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
 
-        fontSizeSlider.addEventListener('input', (e) => {
-            updateFontSize(parseInt(e.target.value));
-        });
+        if (fontSizeSlider) {
+            fontSizeSlider.addEventListener('input', (e) => {
+                updateFontSize(parseInt(e.target.value));
+            });
+        }
 
         layoutHorizontalBtn.addEventListener('click', () => {
             setLayout('horizontal');
@@ -2807,6 +3105,104 @@ ${js}
             }, 250);
         });
 
+        // Responsive preview functionality
+        const deviceButtons = document.querySelectorAll('.device-btn');
+        const previewViewport = document.getElementById('previewViewport');
+        const viewportSize = document.getElementById('viewportSize');
+        const viewportResizeHandle = document.getElementById('viewportResizeHandle');
+        const previewFrame = document.getElementById('preview');
+
+        let currentViewportWidth = '100%';
+        let isResizingViewport = false;
+        let viewportStartX = 0;
+        let viewportStartWidth = 0;
+
+        function setViewportWidth(width) {
+            currentViewportWidth = String(width);
+
+            if (width === '100%' || width === 100) {
+                previewViewport.classList.remove('constrained');
+                previewFrame.style.width = '100%';
+                previewFrame.style.maxWidth = 'none';
+                viewportSize.textContent = 'Desktop';
+            } else {
+                previewViewport.classList.add('constrained');
+                const widthPx = typeof width === 'number' ? width : parseInt(width);
+                previewFrame.style.width = widthPx + 'px';
+                previewFrame.style.maxWidth = widthPx + 'px';
+                viewportSize.textContent = widthPx + 'px';
+            }
+
+            localStorage.setItem('coded-viewport-width', currentViewportWidth);
+        }
+
+        // Device button click handlers
+        deviceButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                deviceButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Get width and apply
+                const width = this.getAttribute('data-width');
+                setViewportWidth(width);
+            });
+        });
+
+        // Viewport resize handle
+        if (viewportResizeHandle) {
+            viewportResizeHandle.addEventListener('mousedown', (e) => {
+                isResizingViewport = true;
+                viewportStartX = e.clientX;
+                viewportStartWidth = parseInt(previewFrame.style.width) || 375;
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+            });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizingViewport) return;
+
+            const deltaX = e.clientX - viewportStartX;
+            const newWidth = Math.max(320, Math.min(viewportStartWidth + deltaX, previewViewport.offsetWidth - 32));
+
+            previewFrame.style.width = newWidth + 'px';
+            previewFrame.style.maxWidth = newWidth + 'px';
+            viewportSize.textContent = newWidth + 'px';
+            currentViewportWidth = newWidth;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizingViewport) {
+                isResizingViewport = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                localStorage.setItem('coded-viewport-width', currentViewportWidth);
+
+                // Update active button state
+                deviceButtons.forEach(b => b.classList.remove('active'));
+            }
+        });
+
+        // Load saved viewport width
+        const savedViewportWidth = localStorage.getItem('coded-viewport-width');
+        if (savedViewportWidth && savedViewportWidth !== '100%') {
+            setViewportWidth(savedViewportWidth);
+            let matchFound = false;
+            deviceButtons.forEach(b => {
+                if (b.getAttribute('data-width') === savedViewportWidth) {
+                    b.classList.add('active');
+                    matchFound = true;
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+            // If no match found, activate Desktop button as default
+            if (!matchFound && deviceButtons[0]) {
+                deviceButtons[0].classList.add('active');
+            }
+        }
+
         // Event listeners
         runBtn.addEventListener('click', runCode);
         clearBtn.addEventListener('click', clearAll);
@@ -2902,7 +3298,7 @@ ${js}
         const loadCodedFileBtn = document.createElement('div');
         loadCodedFileBtn.className = 'more-option-item';
         loadCodedFileBtn.id = 'loadCodedFileBtn';
-        loadCodedFileBtn.innerHTML = '📂 Load .coded File';
+        loadCodedFileBtn.innerHTML = 'Load .coded File';
         loadCodedFileBtn.addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -2917,7 +3313,7 @@ ${js}
             moreOptionsMenu.classList.remove('active');
         });
 
-        // Insert after "Share Link" button in menu
+        // Insert after "Save .coded File" button in menu
         if (shareBtn && shareBtn.parentNode) {
             shareBtn.parentNode.insertBefore(loadCodedFileBtn, shareBtn.nextSibling);
         }
