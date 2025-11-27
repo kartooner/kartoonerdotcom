@@ -731,10 +731,6 @@ const POPULAR_LIBS = {
         { name: 'Font Awesome', url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', type: 'css' },
         { name: 'Animate.css', url: 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css', type: 'css' },
         { name: 'Bulma CSS', url: 'https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css', type: 'css' },
-        { name: 'Foundation CSS', url: 'https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css', type: 'css' },
-        { name: 'Picnic CSS', url: 'https://cdn.jsdelivr.net/npm/picnic@7.1.0/picnic.min.css', type: 'css' },
-        { name: 'Water.css', url: 'https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css', type: 'css' },
-        { name: 'Destyled', url: 'https://cdn.jsdelivr.net/npm/destyled@1.0.0/css/destyled.min.css', type: 'css' },
         { name: 'Material Icons', url: 'https://fonts.googleapis.com/icon?family=Material+Icons', type: 'css' }
     ],
     js: [
@@ -743,7 +739,6 @@ const POPULAR_LIBS = {
         { name: 'React DOM', url: 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', type: 'js' },
         { name: 'Vue 3', url: 'https://unpkg.com/vue@3/dist/vue.global.js', type: 'js' },
         { name: 'Bootstrap JS', url: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js', type: 'js' },
-        { name: 'Foundation JS', url: 'https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/js/foundation.min.js', type: 'js' },
         { name: 'Lodash', url: 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', type: 'js' },
         { name: 'Axios', url: 'https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js', type: 'js' },
         { name: 'GSAP', url: 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js', type: 'js' },
