@@ -3,8 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="description" content="Coded - A lightweight code playground for quick prototyping">
     <title>Coded - Code Playground</title>
+
+    <!-- Simple password protection with hashing -->
+    <script>
+        (function() {
+            // SHA-256 hash of your password (not the actual password)
+            // To generate a new hash: node -e "console.log(require('crypto').createHash('sha256').update('YOUR_PASSWORD').digest('hex'))"
+            const PASSWORD_HASH = 'b072a58dc6d41ac57067e5cf04f38ca5e575d56af2af78680fd7d2e071626d4e';
+
+            const hasAccess = sessionStorage.getItem('codedAccess') === PASSWORD_HASH;
+
+            if (!hasAccess) {
+                const userPassword = prompt('This page is password protected. Please enter the password:');
+                if (!userPassword) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                // Hash the user's input
+                crypto.subtle.digest('SHA-256', new TextEncoder().encode(userPassword))
+                    .then(hashBuffer => {
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                        if (hashHex === PASSWORD_HASH) {
+                            sessionStorage.setItem('codedAccess', PASSWORD_HASH);
+                            location.reload();
+                        } else {
+                            alert('Incorrect password. Access denied.');
+                            window.location.href = '/';
+                        }
+                    });
+
+                // Prevent page load while checking
+                document.documentElement.style.display = 'none';
+            }
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 

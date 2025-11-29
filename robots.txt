@@ -6,6 +6,7 @@ Disallow: /temp/
 Disallow: /uploads/
 Disallow: /backup/
 Disallow: /aiadvisor/
+Disallow: /coded/
 
 # Allow all other pages
 Allow: /
