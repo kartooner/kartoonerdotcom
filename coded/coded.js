@@ -1694,14 +1694,14 @@ function shareCode() {
 
         // Sanitize filename
         const filename = name.trim().replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        a.download = \`\${filename}.coded\`;
+        a.download = `${filename}.coded`;
 
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        alert(\`Share file "\${filename}.coded" downloaded!\\n\\nYou can share this file with anyone. They can drag & drop it into Coded to load your code.\`);
+        alert(`Share file "${filename}.coded" downloaded!\n\nYou can share this file with anyone. They can drag & drop it into Coded to load your code.`);
         moreOptionsMenu.classList.remove('active');
     } catch (e) {
         console.error('Share error:', e);
