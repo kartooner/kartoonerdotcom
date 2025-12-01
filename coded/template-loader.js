@@ -19,7 +19,7 @@
 
         // Update modal title
         templatesMenu.querySelector('.snippets-menu-header span').textContent =
-            panelNames[panel] + ' ' + typeNames[currentTemplateType] + ' Templates';
+            panelNames[panel] + ' ' + typeNames[currentTemplateType] + ' templates';
 
         templatesMenu.style.display = 'block';
         snippetsOverlay.style.display = 'block';
