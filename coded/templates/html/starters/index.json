@@ -2,7 +2,7 @@
   "templates": [
     {
       "id": "basic-page",
-      "name": "Basic Page",
+      "name": "Basic page",
       "description": "Clean starting point with semantic structure",
       "file": "basic-page.html"
     },

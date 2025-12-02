@@ -6,7 +6,7 @@
     <!-- Video/Audio display area -->
     <div class="player-screen">
       <img
-        src="https://via.placeholder.com/800x450"
+        src="https://placehold.co/800x450"
         alt="Video thumbnail: Introduction to Web Development"
         class="player-thumbnail">
       <!-- Replace with actual video element: <video src="path/to/video.mp4" aria-label="Video player"></video> -->
@@ -16,20 +16,30 @@
     <div class="player-controls" role="group" aria-label="Media player controls">
       <!-- Playback controls -->
       <div class="controls-main">
-        <button class="btn-icon" aria-label="Play" aria-pressed="false">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play" aria-label="Play" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Previous track">
-          <span aria-hidden="true">⏮️</span>
+        <button class="btn-icon btn-prev" aria-label="Previous track">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 2H4V14H2V2Z M12 8L5 3V13L12 8Z" fill="currentColor"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Next track">
-          <span aria-hidden="true">⏭️</span>
+        <button class="btn-icon btn-next" aria-label="Next track">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M12 2H14V14H12V2Z M4 8L11 13V3L4 8Z" fill="currentColor"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Skip back 10 seconds">
-          <span aria-hidden="true">⏪</span>
+        <button class="btn-icon btn-rewind" aria-label="Skip back 10 seconds">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8L5 5V7H9C10.66 7 12 8.34 12 10C12 11.66 10.66 13 9 13H7V11H9C9.55 11 10 10.55 10 10C10 9.45 9.55 9 9 9H5V11L2 8Z" fill="currentColor"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Skip forward 10 seconds">
-          <span aria-hidden="true">⏩</span>
+        <button class="btn-icon btn-forward" aria-label="Skip forward 10 seconds">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M14 8L11 11V9H7C5.34 9 4 7.66 4 6C4 4.34 5.34 3 7 3H9V5H7C6.45 5 6 5.45 6 6C6 6.55 6.45 7 7 7H11V5L14 8Z" fill="currentColor"/>
+          </svg>
         </button>
       </div>
 
@@ -45,21 +55,30 @@
 
       <!-- Volume and additional controls -->
       <div class="controls-secondary">
-        <button class="btn-icon" aria-label="Mute" aria-pressed="false">
-          <span aria-hidden="true">🔊</span>
+        <button class="btn-icon btn-volume" aria-label="Mute" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3L5 6H2V10H5L8 13V3Z M10 8C10 7 9.5 6 9 5.5V10.5C9.5 10 10 9 10 8Z M9 2.5V4C10.5 4.5 12 6 12 8C12 10 10.5 11.5 9 12V13.5C11.5 13 14 11 14 8C14 5 11.5 3 9 2.5Z" fill="currentColor"/>
+          </svg>
         </button>
         <div class="volume-slider" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" tabindex="0">
           <div class="volume-fill" style="width: 70%;"></div>
           <button class="volume-thumb" aria-label="Volume slider thumb"></button>
         </div>
-        <button class="btn-icon" aria-label="Closed captions" aria-pressed="false">
-          <span aria-hidden="true">CC</span>
+        <button class="btn-icon btn-cc" aria-label="Closed captions" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <path d="M4.5 7.5C4.5 7 5 6.5 5.5 6.5C6 6.5 6.5 7 6.5 7.5M4.5 8.5C4.5 9 5 9.5 5.5 9.5C6 9.5 6.5 9 6.5 8.5M9.5 7.5C9.5 7 10 6.5 10.5 6.5C11 6.5 11.5 7 11.5 7.5M9.5 8.5C9.5 9 10 9.5 10.5 9.5C11 9.5 11.5 9 11.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Settings">
-          <span aria-hidden="true">⚙️</span>
+        <button class="btn-icon btn-settings" aria-label="Settings">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 10C9.1 10 10 9.1 10 8C10 6.9 9.1 6 8 6C6.9 6 6 6.9 6 8C6 9.1 6.9 10 8 10Z M13.5 9C13.5 9.2 13.5 9.4 13.5 9.5L14.5 10.3C14.6 10.4 14.6 10.5 14.5 10.6L13.5 12.4C13.5 12.5 13.4 12.5 13.3 12.5L12.1 12C11.9 12.2 11.7 12.3 11.4 12.4L11.2 13.7C11.2 13.8 11.1 13.9 11 13.9H9C8.9 13.9 8.8 13.8 8.8 13.7L8.6 12.4C8.3 12.3 8.1 12.2 7.9 12L6.7 12.5C6.6 12.5 6.5 12.5 6.5 12.4L5.5 10.6C5.4 10.5 5.4 10.4 5.5 10.3L6.5 9.5C6.5 9.4 6.5 9.2 6.5 9C6.5 8.8 6.5 8.6 6.5 8.5L5.5 7.7C5.4 7.6 5.4 7.5 5.5 7.4L6.5 5.6C6.5 5.5 6.6 5.5 6.7 5.5L7.9 6C8.1 5.8 8.3 5.7 8.6 5.6L8.8 4.3C8.8 4.2 8.9 4.1 9 4.1H11C11.1 4.1 11.2 4.2 11.2 4.3L11.4 5.6C11.7 5.7 11.9 5.8 12.1 6L13.3 5.5C13.4 5.5 13.5 5.5 13.5 5.6L14.5 7.4C14.6 7.5 14.6 7.6 14.5 7.7L13.5 8.5C13.5 8.6 13.5 8.8 13.5 9Z M3 8C3 8.2 3 8.4 3 8.5L2 9.3C1.9 9.4 1.9 9.5 2 9.6L3 11.4C3 11.5 3.1 11.5 3.2 11.5L4.4 11C4.6 11.2 4.8 11.3 5.1 11.4L5.3 12.7C5.3 12.8 5.4 12.9 5.5 12.9H7.5C7.6 12.9 7.7 12.8 7.7 12.7L7.9 11.4C8.2 11.3 8.4 11.2 8.6 11L9.8 11.5C9.9 11.5 10 11.5 10 11.4L11 9.6C11.1 9.5 11.1 9.4 11 9.3L10 8.5C10 8.4 10 8.2 10 8C10 7.8 10 7.6 10 7.5L11 6.7C11.1 6.6 11.1 6.5 11 6.4L10 4.6C10 4.5 9.9 4.5 9.8 4.5L8.6 5C8.4 4.8 8.2 4.7 7.9 4.6L7.7 3.3C7.7 3.2 7.6 3.1 7.5 3.1H5.5C5.4 3.1 5.3 3.2 5.3 3.3L5.1 4.6C4.8 4.7 4.6 4.8 4.4 5L3.2 4.5C3.1 4.5 3 4.5 3 4.6L2 6.4C1.9 6.5 1.9 6.6 2 6.7L3 7.5C3 7.6 3 7.8 3 8Z" fill="currentColor"/>
+          </svg>
         </button>
-        <button class="btn-icon" aria-label="Fullscreen">
-          <span aria-hidden="true">⛶</span>
+        <button class="btn-icon btn-fullscreen" aria-label="Fullscreen">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 6V2H6M14 6V2H10M2 10V14H6M14 10V14H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -78,75 +97,85 @@
       <!-- Playlist item 1 (currently playing) -->
       <li class="playlist-item active" role="listitem">
         <img
-          src="https://via.placeholder.com/60"
+          src="https://placehold.co/60x60"
           alt="Thumbnail for Introduction to Web Development"
           class="playlist-thumb">
         <div class="playlist-info">
           <h3 class="playlist-title">Introduction to Web Development</h3>
           <p class="playlist-duration">5:42</p>
         </div>
-        <button class="btn-icon" aria-label="Play Introduction to Web Development" aria-pressed="true">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play-small" aria-label="Play Introduction to Web Development" aria-pressed="true">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
       </li>
 
       <!-- Playlist item 2 -->
       <li class="playlist-item" role="listitem">
         <img
-          src="https://via.placeholder.com/60"
+          src="https://placehold.co/60x60"
           alt="Thumbnail for HTML Basics"
           class="playlist-thumb">
         <div class="playlist-info">
           <h3 class="playlist-title">HTML Basics</h3>
           <p class="playlist-duration">8:15</p>
         </div>
-        <button class="btn-icon" aria-label="Play HTML Basics" aria-pressed="false">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play-small" aria-label="Play HTML Basics" aria-pressed="false">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
       </li>
 
       <!-- Playlist item 3 -->
       <li class="playlist-item" role="listitem">
         <img
-          src="https://via.placeholder.com/60"
+          src="https://placehold.co/60x60"
           alt="Thumbnail for CSS Fundamentals"
           class="playlist-thumb">
         <div class="playlist-info">
           <h3 class="playlist-title">CSS Fundamentals</h3>
           <p class="playlist-duration">12:30</p>
         </div>
-        <button class="btn-icon" aria-label="Play CSS Fundamentals" aria-pressed="false">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play-small" aria-label="Play CSS Fundamentals" aria-pressed="false">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
       </li>
 
       <!-- Playlist item 4 -->
       <li class="playlist-item" role="listitem">
         <img
-          src="https://via.placeholder.com/60"
+          src="https://placehold.co/60x60"
           alt="Thumbnail for JavaScript Essentials"
           class="playlist-thumb">
         <div class="playlist-info">
           <h3 class="playlist-title">JavaScript Essentials</h3>
           <p class="playlist-duration">15:45</p>
         </div>
-        <button class="btn-icon" aria-label="Play JavaScript Essentials" aria-pressed="false">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play-small" aria-label="Play JavaScript Essentials" aria-pressed="false">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
       </li>
 
       <!-- Playlist item 5 -->
       <li class="playlist-item" role="listitem">
         <img
-          src="https://via.placeholder.com/60"
+          src="https://placehold.co/60x60"
           alt="Thumbnail for Responsive Design"
           class="playlist-thumb">
         <div class="playlist-info">
           <h3 class="playlist-title">Responsive Design</h3>
           <p class="playlist-duration">10:20</p>
         </div>
-        <button class="btn-icon" aria-label="Play Responsive Design" aria-pressed="false">
-          <span aria-hidden="true">▶️</span>
+        <button class="btn-icon btn-play-small" aria-label="Play Responsive Design" aria-pressed="false">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M3 2L13 8L3 14V2Z" fill="currentColor"/>
+          </svg>
         </button>
       </li>
     </ol>
@@ -262,6 +291,10 @@ body {
   color: #ffffff;
 }
 
+.btn-icon svg {
+  flex-shrink: 0;
+}
+
 .btn-icon:hover {
   background: #d97706;
   transform: translateY(-2px);
@@ -315,9 +348,9 @@ body {
 
 .progress-bar-thumb {
   position: absolute;
-  right: 0;
+  left: calc(45% - 8px);
   top: 50%;
-  transform: translate(50%, -50%);
+  transform: translateY(-50%);
   width: 16px;
   height: 16px;
   background: #ffffff;
@@ -329,7 +362,7 @@ body {
 }
 
 .progress-bar-thumb:hover {
-  transform: translate(50%, -50%) scale(1.2);
+  transform: translateY(-50%) scale(1.2);
 }
 
 .progress-bar-thumb:active {
@@ -368,9 +401,9 @@ body {
 
 .volume-thumb {
   position: absolute;
-  right: 30%;
+  left: calc(70% - 7px);
   top: 50%;
-  transform: translate(50%, -50%);
+  transform: translateY(-50%);
   width: 14px;
   height: 14px;
   background: #ffffff;
@@ -381,7 +414,7 @@ body {
 }
 
 .volume-thumb:hover {
-  transform: translate(50%, -50%) scale(1.2);
+  transform: translateY(-50%) scale(1.2);
 }
 
 /* ===== NOW PLAYING ===== */
@@ -521,18 +554,24 @@ body {
     display: none;
   }
 
-  .progress-bar-container {
-    flex-direction: column;
+  .time-current,
+  .time-total {
+    font-size: 0.75rem;
+    min-width: 35px;
+  }
+
+  .volume-slider {
+    width: 60px;
+  }
+
+  .controls-secondary {
     gap: 0.5rem;
   }
 
-  .time-current,
-  .time-total {
-    display: none;
-  }
-
-  .progress-bar {
-    width: 100%;
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
   }
 }
 
