@@ -1191,6 +1191,10 @@
                 syntaxOffBtn.style.background = 'none';
                 syntaxOffBtn.style.color = 'var(--secondary-color)';
                 syntaxOffBtn.style.borderColor = 'var(--editor-border)';
+                // Remove plain-text class to make text transparent again
+                htmlEditor.classList.remove('plain-text');
+                cssEditor.classList.remove('plain-text');
+                jsEditor.classList.remove('plain-text');
                 // Re-highlight all editors
                 highlightEditor(htmlEditor, htmlHighlight, 'markup');
                 highlightEditor(cssEditor, cssHighlight, 'css');
@@ -1204,6 +1208,10 @@
                 syntaxOnBtn.style.background = 'none';
                 syntaxOnBtn.style.color = 'var(--secondary-color)';
                 syntaxOnBtn.style.borderColor = 'var(--editor-border)';
+                // Add plain-text class to make text visible
+                htmlEditor.classList.add('plain-text');
+                cssEditor.classList.add('plain-text');
+                jsEditor.classList.add('plain-text');
                 // Clear all highlighting
                 htmlHighlight.innerHTML = '';
                 cssHighlight.innerHTML = '';
