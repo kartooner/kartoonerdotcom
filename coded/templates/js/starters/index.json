@@ -53,12 +53,6 @@
       "name": "Tabs Navigation",
       "description": "Complete accessible tabs with keyboard navigation",
       "file": "tabs-navigation.js"
-    },
-    {
-      "id": "drawer-panel",
-      "name": "Drawer Panel",
-      "description": "Accessible drawer/modal with focus trap",
-      "file": "drawer-panel.js"
     }
   ]
 }

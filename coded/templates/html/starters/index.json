@@ -61,12 +61,6 @@
       "file": "newsmedia-feature.html"
     },
     {
-      "id": "footer",
-      "name": "Footer",
-      "description": "Multi-column footer with links and social",
-      "file": "footer.html"
-    },
-    {
       "id": "faq-accordion",
       "name": "FAQ Accordion",
       "description": "Expandable FAQ using <details> elements",
