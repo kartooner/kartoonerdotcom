@@ -782,6 +782,12 @@ body.share-mode .editors {
     -webkit-text-fill-color: var(--secondary-color);
 }
 
+/* Plain text mode - when syntax highlighting is disabled */
+.editor.plain-text {
+    color: var(--text-color);
+    -webkit-text-fill-color: var(--text-color);
+}
+
 /* Tab trap indicator */
 .editor-content::after {
     content: "Tab to indent • Esc to exit";
