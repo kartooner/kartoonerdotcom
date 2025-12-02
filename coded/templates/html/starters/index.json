@@ -1,0 +1,136 @@
+{
+  "templates": [
+    {
+      "id": "basic-page",
+      "name": "Basic Page",
+      "description": "Clean starting point with semantic structure",
+      "file": "basic-page.html"
+    },
+    {
+      "id": "card-grid",
+      "name": "Card Grid",
+      "description": "Responsive card layout",
+      "file": "card-grid.html"
+    },
+    {
+      "id": "contact-form",
+      "name": "Contact Form",
+      "description": "Styled form with validation",
+      "file": "contact-form.html"
+    },
+    {
+      "id": "two-column",
+      "name": "Two Column",
+      "description": "Sidebar layout with main content",
+      "file": "two-column.html"
+    },
+    {
+      "id": "hero-section",
+      "name": "Hero Section",
+      "description": "Landing page hero with headline and CTAs",
+      "file": "hero-section.html"
+    },
+    {
+      "id": "navigation-bar",
+      "name": "Navigation Bar",
+      "description": "Responsive header with logo and menu",
+      "file": "navigation-bar.html"
+    },
+    {
+      "id": "blog-post",
+      "name": "Blog Post",
+      "description": "Article layout with metadata and content",
+      "file": "blog-post.html"
+    },
+    {
+      "id": "stats-dashboard",
+      "name": "Stats Dashboard",
+      "description": "Operational dashboard with stats and Masonry modules",
+      "file": "stats-dashboard.html"
+    },
+    {
+      "id": "timeline",
+      "name": "Timeline",
+      "description": "Vertical timeline for process or history",
+      "file": "timeline.html"
+    },
+    {
+      "id": "newsmedia-feature",
+      "name": "News/Media Feature",
+      "description": "Magazine-style Masonry layout like Engadget",
+      "file": "newsmedia-feature.html"
+    },
+    {
+      "id": "footer",
+      "name": "Footer",
+      "description": "Multi-column footer with links and social",
+      "file": "footer.html"
+    },
+    {
+      "id": "faq-accordion",
+      "name": "FAQ Accordion",
+      "description": "Expandable FAQ using <details> elements",
+      "file": "faq-accordion.html"
+    },
+    {
+      "id": "filtercategories",
+      "name": "Filter/Categories",
+      "description": "Category buttons with filterable content",
+      "file": "filtercategories.html"
+    },
+    {
+      "id": "complete-site-layout",
+      "name": "Complete Site Layout",
+      "description": "Full site structure with nav, content, and footer - REQUIRES Complete Starter CSS",
+      "file": "complete-site-layout.html"
+    },
+    {
+      "id": "user-profile",
+      "name": "User Profile",
+      "description": "CRM-style user profile with avatar, contact info, and activity timeline",
+      "file": "user-profile.html"
+    },
+    {
+      "id": "company-profile",
+      "name": "Company Profile",
+      "description": "Organization page with logo, about section, and team members",
+      "file": "company-profile.html"
+    },
+    {
+      "id": "editable-grid",
+      "name": "Editable Grid",
+      "description": "Data table with inline editing for inventory management",
+      "file": "editable-grid.html"
+    },
+    {
+      "id": "social-timeline",
+      "name": "Social Timeline",
+      "description": "Social media feed with post creation and interaction buttons",
+      "file": "social-timeline.html"
+    },
+    {
+      "id": "media-player",
+      "name": "Media Player",
+      "description": "Audio/video player with controls, progress bar, and playlist",
+      "file": "media-player.html"
+    },
+    {
+      "id": "progress-stepper",
+      "name": "Progress Stepper",
+      "description": "Multi-step form with visual progress indicators",
+      "file": "progress-stepper.html"
+    },
+    {
+      "id": "login-form",
+      "name": "Login Form",
+      "description": "Authentication form with social login options",
+      "file": "login-form.html"
+    },
+    {
+      "id": "settings-page",
+      "name": "Settings Page",
+      "description": "Configuration interface with multiple form sections",
+      "file": "settings-page.html"
+    }
+  ]
+}

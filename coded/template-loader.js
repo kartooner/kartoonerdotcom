@@ -15,17 +15,35 @@
     const templatesList = document.getElementById('templatesList');
     const snippetsOverlay = document.getElementById('snippetsOverlay');
 
-    // Dynamically load templates for a specific panel
+    // Dynamically load templates for a specific panel from file-based system
     async function loadTemplatesForPanel(panel) {
         if (templateCache[panel]) {
             return templateCache[panel];
         }
 
         try {
-            const module = await import(`/coded/templates/${panel}-templates.js`);
-            const templateKey = panel.toUpperCase() + '_TEMPLATES';
-            templateCache[panel] = module[templateKey];
-            return templateCache[panel];
+            // Load all categories for this panel
+            const categories = ['starters', 'components', 'testing'];
+            const panelTemplates = {};
+
+            for (const category of categories) {
+                try {
+                    // Fetch the index.json for this category
+                    const response = await fetch(`/coded/templates/${panel}/${category}/index.json`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        panelTemplates[category] = data.templates || [];
+                    } else {
+                        panelTemplates[category] = [];
+                    }
+                } catch (err) {
+                    // Category doesn't exist or failed to load, skip it
+                    panelTemplates[category] = [];
+                }
+            }
+
+            templateCache[panel] = panelTemplates;
+            return panelTemplates;
         } catch (error) {
             console.error(`Failed to load ${panel} templates:`, error);
             return null;
@@ -129,12 +147,24 @@
             }
         }
 
-        // Load template content
-        editor.value = template.content;
-        editor.dispatchEvent(new Event('input'));
+        // Fetch the actual template content from the file
+        try {
+            const response = await fetch(`/coded/templates/${panel}/${type}/${template.file}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch template: ${response.status}`);
+            }
+            const content = await response.text();
 
-        // Close modal
-        window.closeTemplatesModal();
+            // Load template content
+            editor.value = content;
+            editor.dispatchEvent(new Event('input'));
+
+            // Close modal
+            window.closeTemplatesModal();
+        } catch (error) {
+            console.error('Error loading template file:', error);
+            alert('Failed to load template. Please try again.');
+        }
     };
 
     // Event listeners

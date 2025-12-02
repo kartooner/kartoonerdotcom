@@ -1,0 +1,10 @@
+{
+  "templates": [
+    {
+      "id": "all-html-tags",
+      "name": "All HTML Tags",
+      "description": "Every HTML element for thorough CSS testing",
+      "file": "all-html-tags.html"
+    }
+  ]
+}

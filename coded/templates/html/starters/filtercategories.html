@@ -1,0 +1,232 @@
+<!-- Filter/categories section -->
+<section class="filter-section" aria-labelledby="filter-heading">
+  <div class="container">
+    <h1 id="filter-heading">Our projects</h1>
+    
+    <!-- Category filter buttons -->
+    <div class="filter-controls" role="group" aria-label="Filter projects by category">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter-btn" data-filter="web" aria-pressed="false">Web</button>
+      <button class="filter-btn" data-filter="mobile" aria-pressed="false">Mobile</button>
+      <button class="filter-btn" data-filter="design" aria-pressed="false">Design</button>
+    </div>
+    
+    <!-- Filterable items grid -->
+    <div class="filter-grid" role="list">
+      <!-- Each item has data-category attribute for filtering -->
+      <article class="filter-item" data-category="web" role="listitem">
+        <div class="item-image gradient-1" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Web</span>
+          <h3>E-commerce Platform</h3>
+          <p>A modern online shopping experience with seamless checkout.</p>
+        </div>
+      </article>
+      
+      <article class="filter-item" data-category="mobile" role="listitem">
+        <div class="item-image gradient-2" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Mobile</span>
+          <h3>Fitness Tracker App</h3>
+          <p>Track your workouts and health metrics on the go.</p>
+        </div>
+      </article>
+      
+      <article class="filter-item" data-category="design" role="listitem">
+        <div class="item-image gradient-3" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Design</span>
+          <h3>Brand Identity</h3>
+          <p>Complete visual identity system for a tech startup.</p>
+        </div>
+      </article>
+      
+      <article class="filter-item" data-category="web" role="listitem">
+        <div class="item-image gradient-4" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Web</span>
+          <h3>Portfolio Website</h3>
+          <p>Clean, minimal portfolio showcasing creative work.</p>
+        </div>
+      </article>
+      
+      <article class="filter-item" data-category="mobile" role="listitem">
+        <div class="item-image gradient-5" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Mobile</span>
+          <h3>Recipe Finder</h3>
+          <p>Discover and save your favorite recipes in one place.</p>
+        </div>
+      </article>
+      
+      <article class="filter-item" data-category="design" role="listitem">
+        <div class="item-image gradient-6" role="img" aria-label="Project image"></div>
+        <div class="item-content">
+          <span class="item-tag">Design</span>
+          <h3>UI Component Library</h3>
+          <p>Reusable design system for consistent user experiences.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+.filter-section {
+  padding: 3rem 0;
+}
+
+.filter-section h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Filter buttons container */
+.filter-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+/* Filter button styling */
+.filter-btn {
+  padding: 0.625rem 1.5rem;
+  background: white;
+  color: #2c3e50;
+  border: 2px solid #ddd;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-btn:hover {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+/* Active filter button */
+.filter-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+/* Grid layout for filterable items */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+/* Individual filter item */
+.filter-item {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s;
+}
+
+.filter-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* Hidden state for filtered items (controlled by JS) */
+.filter-item.hidden {
+  display: none;
+}
+
+/* Item image with gradient */
+.item-image {
+  width: 100%;
+  height: 200px;
+}
+
+/* Gradient backgrounds */
+.gradient-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.gradient-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.gradient-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.gradient-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.gradient-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.gradient-6 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+
+/* Item content */
+.item-content {
+  padding: 1.25rem;
+}
+
+.item-tag {
+  display: inline-block;
+  background: #ecf0f1;
+  color: #2c3e50;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.item-content h3 {
+  margin: 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.item-content p {
+  margin: 0;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+
+<script>
+// Category filter functionality
+(function() {
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const filterItems = document.querySelectorAll('.filter-item');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const filter = this.getAttribute('data-filter');
+      
+      // Update active button
+      filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      });
+      this.classList.add('active');
+      this.setAttribute('aria-pressed', 'true');
+      
+      // Filter items
+      filterItems.forEach(item => {
+        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    });
+  });
+})();
+</script>
+
+<!--
+RECOMMENDED PAIRINGS:
+CSS: Use "Complete Starter" for consistent styling and utilities
+NOTE: JavaScript filtering is now included! Filter buttons are fully functional.
+-->

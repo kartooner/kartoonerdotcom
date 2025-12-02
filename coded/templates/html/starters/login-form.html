@@ -1,0 +1,98 @@
+<!-- Login form container -->
+<div class="container" role="main">
+  <div class="login-wrapper">
+    <!-- Login form card -->
+    <section class="login-card" aria-labelledby="login-heading">
+      <header class="login-header">
+        <h1 id="login-heading">Welcome back</h1>
+        <p>Sign in to your account to continue</p>
+      </header>
+
+      <!-- Main login form -->
+      <form class="login-form" aria-label="Login form">
+        <!-- Email field -->
+        <div class="form-group">
+          <label for="login-email">Email address</label>
+          <input 
+            type="email" 
+            id="login-email" 
+            name="email" 
+            required 
+            aria-required="true"
+            autocomplete="email"
+            placeholder="you@example.com">
+        </div>
+
+        <!-- Password field -->
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input 
+            type="password" 
+            id="login-password" 
+            name="password" 
+            required 
+            aria-required="true"
+            autocomplete="current-password"
+            placeholder="Enter your password">
+        </div>
+
+        <!-- Remember me and forgot password row -->
+        <div class="form-row">
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember" id="remember-me">
+            <span>Remember me</span>
+          </label>
+          <a href="#forgot-password" class="link">Forgot password?</a>
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" class="btn btn-primary btn-block" aria-label="Sign in to your account">Sign in</button>
+      </form>
+
+      <!-- Divider -->
+      <div class="divider" role="separator" aria-label="Or sign in with">
+        <span>Or continue with</span>
+      </div>
+
+      <!-- Social login buttons -->
+      <div class="social-login" role="group" aria-label="Social login options">
+        <button class="btn btn-social" aria-label="Sign in with Google">
+          <span aria-hidden="true">G</span>
+          <span>Google</span>
+        </button>
+        <button class="btn btn-social" aria-label="Sign in with GitHub">
+          <span aria-hidden="true">⚙</span>
+          <span>GitHub</span>
+        </button>
+        <button class="btn btn-social" aria-label="Sign in with Microsoft">
+          <span aria-hidden="true">⊞</span>
+          <span>Microsoft</span>
+        </button>
+      </div>
+
+      <!-- Sign up link -->
+      <footer class="login-footer">
+        <p>Don't have an account? <a href="#signup" class="link">Sign up</a></p>
+      </footer>
+    </section>
+
+    <!-- Optional: Side panel with benefits/features -->
+    <aside class="login-aside" aria-label="Benefits of signing in">
+      <h2>Why sign in?</h2>
+      <ul>
+        <li>
+          <strong>Save your progress</strong>
+          <p>Keep track of your work across devices</p>
+        </li>
+        <li>
+          <strong>Personalized experience</strong>
+          <p>Get recommendations tailored to you</p>
+        </li>
+        <li>
+          <strong>Access premium features</strong>
+          <p>Unlock advanced tools and capabilities</p>
+        </li>
+      </ul>
+    </aside>
+  </div>
+</div>

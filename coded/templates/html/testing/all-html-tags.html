@@ -1,0 +1,392 @@
+<div class="container">
+  <h1>HTML elements testing template</h1>
+  <p>Complete collection of HTML elements for testing CSS frameworks</p>
+
+  <!-- Headings -->
+  <section>
+    <h2>Headings</h2>
+    <h1>Heading Level 1</h1>
+    <h2>Heading Level 2</h2>
+    <h3>Heading Level 3</h3>
+    <h4>Heading Level 4</h4>
+    <h5>Heading Level 5</h5>
+    <h6>Heading Level 6</h6>
+  </section>
+
+  <!-- Text Elements -->
+  <section>
+    <h2>Text formatting</h2>
+    <p>This is a <strong>bold/strong</strong> text and <b>bold</b> text.</p>
+    <p>This is <em>emphasized/italic</em> text and <i>italic</i> text.</p>
+    <p>This is <u>underlined</u> text and <mark>highlighted</mark> text.</p>
+    <p>This is <small>small text</small> and normal text.</p>
+    <p>This is <del>deleted text</del> and <s>strikethrough</s> text.</p>
+    <p>This is <ins>inserted text</ins> (underlined by default).</p>
+    <p>This is <sub>subscript</sub> and <sup>superscript</sup> text.</p>
+    <p>This is <abbr title="Abbreviation">abbr</abbr> with a title.</p>
+    <p>This is a <cite>citation</cite> element.</p>
+    <p>This is <dfn>definition</dfn> text.</p>
+    <p>This is a <a href="#">link element</a>.</p>
+    <p>This is <code>inline code</code> and <kbd>Ctrl+C</kbd> keyboard input.</p>
+    <p>This is <samp>sample output</samp> and <var>variable</var> text.</p>
+    <p>This is <q>a short inline quotation</q>.</p>
+  </section>
+
+  <!-- Blockquote -->
+  <section>
+    <h2>Blockquote</h2>
+    <blockquote cite="https://example.com">
+      <p>This is a blockquote with a citation. It should be styled distinctively from regular paragraphs.</p>
+      <footer>— <cite>Source Name</cite></footer>
+    </blockquote>
+  </section>
+
+  <!-- Lists -->
+  <section>
+    <h2>Lists</h2>
+    
+    <h3>Unordered list</h3>
+    <ul>
+      <li>First item</li>
+      <li>Second item</li>
+      <li>Third item with nested list:
+        <ul>
+          <li>Nested item 1</li>
+          <li>Nested item 2</li>
+        </ul>
+      </li>
+      <li>Fourth item</li>
+    </ul>
+
+    <h3>Ordered list</h3>
+    <ol>
+      <li>First item</li>
+      <li>Second item</li>
+      <li>Third item with nested list:
+        <ol>
+          <li>Nested item 1</li>
+          <li>Nested item 2</li>
+        </ol>
+      </li>
+      <li>Fourth item</li>
+    </ol>
+
+    <h3>Definition list</h3>
+    <dl>
+      <dt>Term 1</dt>
+      <dd>Definition for term 1. This explains what term 1 means.</dd>
+      
+      <dt>Term 2</dt>
+      <dd>Definition for term 2. Can have multiple definitions.</dd>
+      <dd>Second definition for term 2.</dd>
+      
+      <dt>Term 3</dt>
+      <dd>Definition for term 3.</dd>
+    </dl>
+  </section>
+
+  <!-- Tables -->
+  <section>
+    <h2>Tables</h2>
+    
+    <h3>Basic table</h3>
+    <table>
+      <caption>Table Caption: Monthly Sales Data</caption>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Sales</th>
+          <th>Growth</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>January</td>
+          <td>$5,000</td>
+          <td>+12%</td>
+        </tr>
+        <tr>
+          <td>February</td>
+          <td>$6,200</td>
+          <td>+24%</td>
+        </tr>
+        <tr>
+          <td>March</td>
+          <td>$7,100</td>
+          <td>+15%</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>Total</th>
+          <td>$18,300</td>
+          <td>+17%</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <h3>Complex table</h3>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Name</th>
+          <th colspan="2">Details</th>
+        </tr>
+        <tr>
+          <th>Email</th>
+          <th>Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>John Doe</td>
+          <td>john@example.com</td>
+          <td>555-1234</td>
+        </tr>
+        <tr>
+          <td>Jane Smith</td>
+          <td>jane@example.com</td>
+          <td>555-5678</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Forms -->
+  <section>
+    <h2>Form elements</h2>
+    
+    <form>
+      <fieldset>
+        <legend>Personal information</legend>
+        
+        <div class="form-group">
+          <label for="name">Name (required)</label>
+          <input type="text" id="name" name="name" required placeholder="Enter your name">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="email@example.com">
+        </div>
+
+        <div class="form-group">
+          <label for="tel">Phone</label>
+          <input type="tel" id="tel" name="tel" placeholder="(555) 555-5555">
+        </div>
+
+        <div class="form-group">
+          <label for="url">Website</label>
+          <input type="url" id="url" name="url" placeholder="https://example.com">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Additional details</legend>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password">
+        </div>
+
+        <div class="form-group">
+          <label for="number">Number</label>
+          <input type="number" id="number" name="number" min="0" max="100" step="5">
+        </div>
+
+        <div class="form-group">
+          <label for="range">Range</label>
+          <input type="range" id="range" name="range" min="0" max="100">
+        </div>
+
+        <div class="form-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date">
+        </div>
+
+        <div class="form-group">
+          <label for="time">Time</label>
+          <input type="time" id="time" name="time">
+        </div>
+
+        <div class="form-group">
+          <label for="datetime">Date & Time</label>
+          <input type="datetime-local" id="datetime" name="datetime">
+        </div>
+
+        <div class="form-group">
+          <label for="month">Month</label>
+          <input type="month" id="month" name="month">
+        </div>
+
+        <div class="form-group">
+          <label for="week">Week</label>
+          <input type="week" id="week" name="week">
+        </div>
+
+        <div class="form-group">
+          <label for="color">Color</label>
+          <input type="color" id="color" name="color">
+        </div>
+
+        <div class="form-group">
+          <label for="search">Search</label>
+          <input type="search" id="search" name="search" placeholder="Search...">
+        </div>
+
+        <div class="form-group">
+          <label for="file">File Upload</label>
+          <input type="file" id="file" name="file">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Selections</legend>
+        
+        <div class="form-group">
+          <label for="select">Select Dropdown</label>
+          <select id="select" name="select">
+            <option value="">Choose an option</option>
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+            <option value="3">Option 3</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-multiple">Multiple Select</label>
+          <select id="select-multiple" name="select-multiple" multiple size="4">
+            <option value="1">Option 1</option>
+            <option value="2">Option 2</option>
+            <option value="3">Option 3</option>
+            <option value="4">Option 4</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="datalist-input">Datalist</label>
+          <input list="browsers" id="datalist-input" name="browser">
+          <datalist id="browsers">
+            <option value="Chrome">
+            <option value="Firefox">
+            <option value="Safari">
+            <option value="Edge">
+          </datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="textarea">Textarea</label>
+          <textarea id="textarea" name="textarea" rows="4" placeholder="Enter your message..."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checkboxes and Radios</legend>
+        
+        <div class="form-group">
+          <label><input type="checkbox" name="checkbox1"> Checkbox option 1</label>
+          <label><input type="checkbox" name="checkbox2" checked> Checkbox option 2 (checked)</label>
+          <label><input type="checkbox" name="checkbox3" disabled> Checkbox option 3 (disabled)</label>
+        </div>
+
+        <div class="form-group">
+          <label><input type="radio" name="radio" value="1"> Radio option 1</label>
+          <label><input type="radio" name="radio" value="2" checked> Radio option 2 (checked)</label>
+          <label><input type="radio" name="radio" value="3"> Radio option 3</label>
+          <label><input type="radio" name="radio" value="4" disabled> Radio option 4 (disabled)</label>
+        </div>
+      </fieldset>
+
+      <div class="form-group">
+        <button type="submit" class="btn">Submit button</button>
+        <button type="reset" class="btn btn-secondary">Reset button</button>
+        <button type="button" class="btn btn-secondary">Regular button</button>
+        <button type="button" class="btn" disabled>Disabled button</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Code -->
+  <section>
+    <h2>Code</h2>
+    <p>Inline code: <code>const x = 10;</code></p>
+    
+    <h3>Code block</h3>
+    <pre><code>function greeting(name) {
+  console.log("Hello, " + name + "!");
+  return true;
+}
+
+greeting("World");</code></pre>
+  </section>
+
+  <!-- Media -->
+  <section>
+    <h2>Media elements</h2>
+    
+    <h3>Figure with caption</h3>
+    <figure>
+      <img src="https://via.placeholder.com/600x300" alt="Placeholder image">
+      <figcaption>This is a figure caption describing the image above</figcaption>
+    </figure>
+  </section>
+
+  <!-- Progress & Meter -->
+  <section>
+    <h2>Progress and meter</h2>
+    <p>Progress bar: <progress value="70" max="100">70%</progress></p>
+    <p>Meter (gauge): <meter value="0.7" min="0" max="1">70%</meter></p>
+  </section>
+
+  <!-- Semantic Elements -->
+  <section>
+    <h2>Semantic HTML5 elements</h2>
+    
+    <article>
+      <header>
+        <h3>Article title</h3>
+        <p><time datetime="2025-01-15">January 15, 2025</time></p>
+      </header>
+      <p>This is an article element with header and content.</p>
+      <footer>
+        <p>Article footer with metadata</p>
+      </footer>
+    </article>
+
+    <aside>
+      <h3>Aside element</h3>
+      <p>Content tangentially related to main content.</p>
+    </aside>
+
+    <address>
+      <strong>Contact information:</strong><br>
+      Company Name<br>
+      123 Main Street<br>
+      City, State 12345<br>
+      Email: <a href="mailto:info@example.com">info@example.com</a>
+    </address>
+  </section>
+
+  <!-- Interactive -->
+  <section>
+    <h2>Interactive elements</h2>
+    
+    <details>
+      <summary>Click to expand/collapse</summary>
+      <p>Hidden content that can be toggled. Great for FAQs and accordion patterns.</p>
+    </details>
+
+    <details open>
+      <summary>This one starts expanded</summary>
+      <p>The "open" attribute makes it expanded by default.</p>
+    </details>
+  </section>
+
+  <!-- Horizontal Rule -->
+  <hr>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 HTML elements testing template</p>
+  </footer>
+</div>

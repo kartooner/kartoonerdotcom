@@ -1,0 +1,172 @@
+<!-- Social timeline container -->
+<div class="container" role="main">
+  <h1 id="timeline-heading">Social feed</h1>
+
+  <!-- Post creation form -->
+  <section class="post-composer" aria-labelledby="composer-heading">
+    <h2 id="composer-heading" class="sr-only">Create new post</h2>
+    <form class="composer-form" aria-label="Create a new post">
+      <img 
+        src="https://via.placeholder.com/48" 
+        alt="Your profile picture" 
+        class="composer-avatar">
+      <div class="composer-content">
+        <label for="post-text" class="sr-only">What's on your mind?</label>
+        <textarea 
+          id="post-text" 
+          name="post-text" 
+          rows="3" 
+          placeholder="What's on your mind?"
+          aria-label="Post content"></textarea>
+        <div class="composer-actions">
+          <button type="button" class="btn-icon" aria-label="Add photo">
+            <span aria-hidden="true">📷</span> Photo
+          </button>
+          <button type="button" class="btn-icon" aria-label="Add video">
+            <span aria-hidden="true">🎥</span> Video
+          </button>
+          <button type="button" class="btn-icon" aria-label="Add emoji">
+            <span aria-hidden="true">😊</span> Emoji
+          </button>
+          <button type="submit" class="btn" aria-label="Publish post">Post</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Social posts timeline -->
+  <div class="timeline" role="feed" aria-labelledby="timeline-heading">
+    <!-- Post 1 -->
+    <article class="post" role="article" aria-labelledby="post-1-author">
+      <header class="post-header">
+        <img 
+          src="https://via.placeholder.com/48" 
+          alt="Profile picture of Sarah Johnson" 
+          class="post-avatar">
+        <div class="post-meta">
+          <h3 id="post-1-author" class="post-author">Sarah Johnson</h3>
+          <time datetime="2025-11-28T14:30:00" class="post-time">2 hours ago</time>
+        </div>
+        <button class="btn-icon post-menu" aria-label="Post options">
+          <span aria-hidden="true">⋮</span>
+        </button>
+      </header>
+      <div class="post-content">
+        <p>Just launched our new product dashboard! Really excited about the features we've built. Check it out and let me know what you think! 🚀</p>
+        <img 
+          src="https://via.placeholder.com/600x400" 
+          alt="Screenshot of new product dashboard" 
+          class="post-image">
+      </div>
+      <footer class="post-footer">
+        <div class="post-stats" aria-label="Post engagement statistics">
+          <span>24 likes</span>
+          <span>8 comments</span>
+          <span>3 shares</span>
+        </div>
+        <div class="post-actions">
+          <button class="post-action" aria-label="Like this post" aria-pressed="false">
+            <span aria-hidden="true">👍</span> Like
+          </button>
+          <button class="post-action" aria-label="Comment on this post">
+            <span aria-hidden="true">💬</span> Comment
+          </button>
+          <button class="post-action" aria-label="Share this post">
+            <span aria-hidden="true">↗️</span> Share
+          </button>
+        </div>
+      </footer>
+    </article>
+
+    <!-- Post 2 -->
+    <article class="post" role="article" aria-labelledby="post-2-author">
+      <header class="post-header">
+        <img 
+          src="https://via.placeholder.com/48" 
+          alt="Profile picture of Michael Chen" 
+          class="post-avatar">
+        <div class="post-meta">
+          <h3 id="post-2-author" class="post-author">Michael Chen</h3>
+          <time datetime="2025-11-28T11:15:00" class="post-time">5 hours ago</time>
+        </div>
+        <button class="btn-icon post-menu" aria-label="Post options">
+          <span aria-hidden="true">⋮</span>
+        </button>
+      </header>
+      <div class="post-content">
+        <p>Great team meeting today! Proud of what we accomplished this quarter. Here's to an even better next quarter! 💪</p>
+      </div>
+      <footer class="post-footer">
+        <div class="post-stats" aria-label="Post engagement statistics">
+          <span>42 likes</span>
+          <span>12 comments</span>
+          <span>5 shares</span>
+        </div>
+        <div class="post-actions">
+          <button class="post-action" aria-label="Like this post" aria-pressed="false">
+            <span aria-hidden="true">👍</span> Like
+          </button>
+          <button class="post-action" aria-label="Comment on this post">
+            <span aria-hidden="true">💬</span> Comment
+          </button>
+          <button class="post-action" aria-label="Share this post">
+            <span aria-hidden="true">↗️</span> Share
+          </button>
+        </div>
+      </footer>
+    </article>
+
+    <!-- Post 3 -->
+    <article class="post" role="article" aria-labelledby="post-3-author">
+      <header class="post-header">
+        <img 
+          src="https://via.placeholder.com/48" 
+          alt="Profile picture of Emily Rodriguez" 
+          class="post-avatar">
+        <div class="post-meta">
+          <h3 id="post-3-author" class="post-author">Emily Rodriguez</h3>
+          <time datetime="2025-11-27T16:45:00" class="post-time">Yesterday at 4:45 PM</time>
+        </div>
+        <button class="btn-icon post-menu" aria-label="Post options">
+          <span aria-hidden="true">⋮</span>
+        </button>
+      </header>
+      <div class="post-content">
+        <p>Anyone else working on interesting projects this week? Would love to hear what you're building! Drop a comment below 👇</p>
+      </div>
+      <footer class="post-footer">
+        <div class="post-stats" aria-label="Post engagement statistics">
+          <span>18 likes</span>
+          <span>23 comments</span>
+          <span>2 shares</span>
+        </div>
+        <div class="post-actions">
+          <button class="post-action" aria-label="Like this post" aria-pressed="true">
+            <span aria-hidden="true">👍</span> Like
+          </button>
+          <button class="post-action" aria-label="Comment on this post">
+            <span aria-hidden="true">💬</span> Comment
+          </button>
+          <button class="post-action" aria-label="Share this post">
+            <span aria-hidden="true">↗️</span> Share
+          </button>
+        </div>
+      </footer>
+    </article>
+  </div>
+</div>
+
+<!-- Visually hidden class for screen readers -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+</style>

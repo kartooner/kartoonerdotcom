@@ -1,0 +1,446 @@
+<!-- Editable data grid container -->
+<div class="container" role="main">
+  <header class="grid-header">
+    <h1 id="grid-title">Inventory management</h1>
+    <div class="grid-actions">
+      <button class="btn" aria-label="Add new item">Add item</button>
+      <button class="btn btn-secondary" aria-label="Export data">Export</button>
+    </div>
+  </header>
+
+  <!-- Editable data table -->
+  <div class="table-wrapper" role="region" aria-labelledby="grid-title" tabindex="0">
+    <table class="editable-grid" role="grid" aria-label="Inventory items with inline editing">
+      <caption class="sr-only">Inventory items table - editable cells</caption>
+      <thead>
+        <tr role="row">
+          <th role="columnheader" scope="col">SKU</th>
+          <th role="columnheader" scope="col">Product name</th>
+          <th role="columnheader" scope="col">Category</th>
+          <th role="columnheader" scope="col">Quantity</th>
+          <th role="columnheader" scope="col">Price</th>
+          <th role="columnheader" scope="col">Status</th>
+          <th role="columnheader" scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row 1 with editable cells -->
+        <tr role="row">
+          <td role="gridcell">
+            <input type="text" value="SKU-001" aria-label="SKU for row 1" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="Wireless Mouse" aria-label="Product name for row 1" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Category for row 1" class="cell-select">
+              <option value="electronics" selected>Electronics</option>
+              <option value="office">Office Supplies</option>
+              <option value="furniture">Furniture</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <input type="number" value="45" min="0" aria-label="Quantity for row 1" class="cell-input cell-number">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="$29.99" aria-label="Price for row 1" class="cell-input cell-price">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Status for row 1" class="cell-select">
+              <option value="in-stock" selected>In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <button class="btn-icon" aria-label="Save changes for row 1">Save</button>
+            <button class="btn-icon" aria-label="Delete row 1">Delete</button>
+          </td>
+        </tr>
+
+        <!-- Row 2 -->
+        <tr role="row">
+          <td role="gridcell">
+            <input type="text" value="SKU-002" aria-label="SKU for row 2" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="Ergonomic Keyboard" aria-label="Product name for row 2" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Category for row 2" class="cell-select">
+              <option value="electronics" selected>Electronics</option>
+              <option value="office">Office Supplies</option>
+              <option value="furniture">Furniture</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <input type="number" value="12" min="0" aria-label="Quantity for row 2" class="cell-input cell-number">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="$79.99" aria-label="Price for row 2" class="cell-input cell-price">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Status for row 2" class="cell-select">
+              <option value="in-stock">In Stock</option>
+              <option value="low-stock" selected>Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <button class="btn-icon" aria-label="Save changes for row 2">Save</button>
+            <button class="btn-icon" aria-label="Delete row 2">Delete</button>
+          </td>
+        </tr>
+
+        <!-- Row 3 -->
+        <tr role="row">
+          <td role="gridcell">
+            <input type="text" value="SKU-003" aria-label="SKU for row 3" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="Standing Desk" aria-label="Product name for row 3" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Category for row 3" class="cell-select">
+              <option value="electronics">Electronics</option>
+              <option value="office">Office Supplies</option>
+              <option value="furniture" selected>Furniture</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <input type="number" value="8" min="0" aria-label="Quantity for row 3" class="cell-input cell-number">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="$399.99" aria-label="Price for row 3" class="cell-input cell-price">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Status for row 3" class="cell-select">
+              <option value="in-stock" selected>In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <button class="btn-icon" aria-label="Save changes for row 3">Save</button>
+            <button class="btn-icon" aria-label="Delete row 3">Delete</button>
+          </td>
+        </tr>
+
+        <!-- Row 4 -->
+        <tr role="row">
+          <td role="gridcell">
+            <input type="text" value="SKU-004" aria-label="SKU for row 4" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="Notebook Pack" aria-label="Product name for row 4" class="cell-input">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Category for row 4" class="cell-select">
+              <option value="electronics">Electronics</option>
+              <option value="office" selected>Office Supplies</option>
+              <option value="furniture">Furniture</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <input type="number" value="150" min="0" aria-label="Quantity for row 4" class="cell-input cell-number">
+          </td>
+          <td role="gridcell">
+            <input type="text" value="$12.99" aria-label="Price for row 4" class="cell-input cell-price">
+          </td>
+          <td role="gridcell">
+            <select aria-label="Status for row 4" class="cell-select">
+              <option value="in-stock" selected>In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </td>
+          <td role="gridcell">
+            <button class="btn-icon" aria-label="Save changes for row 4">Save</button>
+            <button class="btn-icon" aria-label="Delete row 4">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Grid footer with summary -->
+  <footer class="grid-footer">
+    <p>Total items: <strong>4</strong> | Total value: <strong>$1,938.92</strong></p>
+  </footer>
+</div>
+
+<!-- Visually hidden class for screen readers -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Container */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #f8fafc;
+}
+
+/* Grid Header */
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem 2rem;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 3px solid #10b981;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.grid-header h1 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.grid-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #10b981;
+  color: white;
+}
+
+.btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-secondary {
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-icon {
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  color: #64748b;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-icon:hover {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.btn-icon:last-child {
+  margin-left: 0.25rem;
+}
+
+.btn-icon:last-child:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Table Wrapper */
+.table-wrapper {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  overflow: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+/* Editable Grid Table */
+.editable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.editable-grid thead {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.editable-grid th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.editable-grid tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.15s;
+}
+
+.editable-grid tbody tr:hover {
+  background: #f8fafc;
+}
+
+.editable-grid tbody tr:last-child {
+  border-bottom: none;
+}
+
+.editable-grid td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+/* Cell Inputs */
+.cell-input,
+.cell-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s;
+}
+
+.cell-input:focus,
+.cell-select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.cell-input:hover,
+.cell-select:hover {
+  border-color: #cbd5e1;
+}
+
+.cell-number {
+  max-width: 100px;
+}
+
+.cell-price {
+  max-width: 120px;
+  font-weight: 500;
+}
+
+.cell-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* Grid Footer */
+.grid-footer {
+  background: white;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.grid-footer p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.grid-footer strong {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Status-specific styling */
+.cell-select option[value="in-stock"] {
+  color: #10b981;
+}
+
+.cell-select option[value="low-stock"] {
+  color: #f59e0b;
+}
+
+.cell-select option[value="out-of-stock"] {
+  color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .grid-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .grid-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+  }
+  
+  .editable-grid {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .grid-actions {
+    width: 100%;
+  }
+  
+  .btn {
+    flex: 1;
+  }
+}
+</style>

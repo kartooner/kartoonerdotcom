@@ -1,0 +1,22 @@
+{
+  "templates": [
+    {
+      "id": "complete-starter",
+      "name": "Complete Starter",
+      "description": "Everything you need - works with HTML starters",
+      "file": "complete-starter.css"
+    },
+    {
+      "id": "dark-theme",
+      "name": "Dark Theme",
+      "description": "Dark mode color scheme",
+      "file": "dark-theme.css"
+    },
+    {
+      "id": "animations",
+      "name": "Animations",
+      "description": "Smooth transitions and effects",
+      "file": "animations.css"
+    }
+  ]
+}

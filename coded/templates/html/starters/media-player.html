@@ -1,0 +1,154 @@
+<!-- Media player container -->
+<div class="container" role="main">
+  <section class="media-player" aria-labelledby="player-heading">
+    <h1 id="player-heading">Media player</h1>
+
+    <!-- Video/Audio display area -->
+    <div class="player-screen">
+      <img 
+        src="https://via.placeholder.com/800x450" 
+        alt="Video thumbnail: Introduction to Web Development" 
+        class="player-thumbnail">
+      <!-- Replace with actual video element: <video src="path/to/video.mp4" aria-label="Video player"></video> -->
+    </div>
+
+    <!-- Player controls -->
+    <div class="player-controls" role="group" aria-label="Media player controls">
+      <!-- Playback controls -->
+      <div class="controls-main">
+        <button class="btn-icon" aria-label="Play" aria-pressed="false">
+          <span aria-hidden="true">▶️</span>
+        </button>
+        <button class="btn-icon" aria-label="Previous track">
+          <span aria-hidden="true">⏮️</span>
+        </button>
+        <button class="btn-icon" aria-label="Next track">
+          <span aria-hidden="true">⏭️</span>
+        </button>
+        <button class="btn-icon" aria-label="Skip back 10 seconds">
+          <span aria-hidden="true">⏪</span>
+        </button>
+        <button class="btn-icon" aria-label="Skip forward 10 seconds">
+          <span aria-hidden="true">⏩</span>
+        </button>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-container">
+        <span class="time-current" aria-label="Current time">2:34</span>
+        <div class="progress-bar" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" tabindex="0">
+          <div class="progress-bar-fill" style="width: 45%;"></div>
+          <button class="progress-bar-thumb" aria-label="Seek slider thumb"></button>
+        </div>
+        <span class="time-total" aria-label="Total duration">5:42</span>
+      </div>
+
+      <!-- Volume and additional controls -->
+      <div class="controls-secondary">
+        <button class="btn-icon" aria-label="Mute" aria-pressed="false">
+          <span aria-hidden="true">🔊</span>
+        </button>
+        <div class="volume-slider" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" tabindex="0">
+          <div class="volume-fill" style="width: 70%;"></div>
+          <button class="volume-thumb" aria-label="Volume slider thumb"></button>
+        </div>
+        <button class="btn-icon" aria-label="Closed captions" aria-pressed="false">
+          <span aria-hidden="true">CC</span>
+        </button>
+        <button class="btn-icon" aria-label="Settings">
+          <span aria-hidden="true">⚙️</span>
+        </button>
+        <button class="btn-icon" aria-label="Fullscreen">
+          <span aria-hidden="true">⛶</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Current track info -->
+    <div class="now-playing" aria-live="polite" aria-atomic="true">
+      <h2 class="track-title">Introduction to Web Development</h2>
+      <p class="track-artist">Tech Learning Academy</p>
+    </div>
+  </section>
+
+  <!-- Playlist section -->
+  <section class="playlist" aria-labelledby="playlist-heading">
+    <h2 id="playlist-heading">Playlist</h2>
+    <ol class="playlist-items" role="list">
+      <!-- Playlist item 1 (currently playing) -->
+      <li class="playlist-item active" role="listitem">
+        <img 
+          src="https://via.placeholder.com/60" 
+          alt="Thumbnail for Introduction to Web Development" 
+          class="playlist-thumb">
+        <div class="playlist-info">
+          <h3 class="playlist-title">Introduction to Web Development</h3>
+          <p class="playlist-duration">5:42</p>
+        </div>
+        <button class="btn-icon" aria-label="Play Introduction to Web Development" aria-pressed="true">
+          <span aria-hidden="true">▶️</span>
+        </button>
+      </li>
+
+      <!-- Playlist item 2 -->
+      <li class="playlist-item" role="listitem">
+        <img 
+          src="https://via.placeholder.com/60" 
+          alt="Thumbnail for HTML Basics" 
+          class="playlist-thumb">
+        <div class="playlist-info">
+          <h3 class="playlist-title">HTML Basics</h3>
+          <p class="playlist-duration">8:15</p>
+        </div>
+        <button class="btn-icon" aria-label="Play HTML Basics" aria-pressed="false">
+          <span aria-hidden="true">▶️</span>
+        </button>
+      </li>
+
+      <!-- Playlist item 3 -->
+      <li class="playlist-item" role="listitem">
+        <img 
+          src="https://via.placeholder.com/60" 
+          alt="Thumbnail for CSS Fundamentals" 
+          class="playlist-thumb">
+        <div class="playlist-info">
+          <h3 class="playlist-title">CSS Fundamentals</h3>
+          <p class="playlist-duration">12:30</p>
+        </div>
+        <button class="btn-icon" aria-label="Play CSS Fundamentals" aria-pressed="false">
+          <span aria-hidden="true">▶️</span>
+        </button>
+      </li>
+
+      <!-- Playlist item 4 -->
+      <li class="playlist-item" role="listitem">
+        <img 
+          src="https://via.placeholder.com/60" 
+          alt="Thumbnail for JavaScript Essentials" 
+          class="playlist-thumb">
+        <div class="playlist-info">
+          <h3 class="playlist-title">JavaScript Essentials</h3>
+          <p class="playlist-duration">15:45</p>
+        </div>
+        <button class="btn-icon" aria-label="Play JavaScript Essentials" aria-pressed="false">
+          <span aria-hidden="true">▶️</span>
+        </button>
+      </li>
+
+      <!-- Playlist item 5 -->
+      <li class="playlist-item" role="listitem">
+        <img 
+          src="https://via.placeholder.com/60" 
+          alt="Thumbnail for Responsive Design" 
+          class="playlist-thumb">
+        <div class="playlist-info">
+          <h3 class="playlist-title">Responsive Design</h3>
+          <p class="playlist-duration">10:20</p>
+        </div>
+        <button class="btn-icon" aria-label="Play Responsive Design" aria-pressed="false">
+          <span aria-hidden="true">▶️</span>
+        </button>
+      </li>
+    </ol>
+  </section>
+</div>

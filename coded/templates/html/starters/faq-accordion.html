@@ -1,0 +1,169 @@
+<!-- FAQ section with accordion functionality -->
+<section class="faq-section" aria-labelledby="faq-heading">
+  <div class="container">
+    <h1 id="faq-heading">Frequently asked questions</h1>
+    <p class="faq-intro">Find answers to common questions below. Click any question to expand.</p>
+    
+    <!-- FAQ accordion using native <details> elements -->
+    <div class="faq-list">
+      <!-- Each FAQ item (no JavaScript needed!) -->
+      <details class="faq-item" open>
+        <summary>What is this starter template for?<span class="faq-icon" aria-hidden="true">+</span></summary>
+        <div class="faq-content">
+          <p>This template demonstrates how to create accessible, interactive accordions using the native HTML <code>&lt;details&gt;</code> and <code>&lt;summary&gt;</code> elements. No JavaScript required!</p>
+        </div>
+      </details>
+      
+      <details class="faq-item">
+        <summary>How do I customize the styling?<span class="faq-icon" aria-hidden="true">+</span></summary>
+        <div class="faq-content">
+          <p>You can modify the CSS variables at the top of the stylesheet to change colors, spacing, and animations. The accordion uses flexbox and transitions for smooth opening and closing effects.</p>
+        </div>
+      </details>
+      
+      <details class="faq-item">
+        <summary>Is this accessible?<span class="faq-icon" aria-hidden="true">+</span></summary>
+        <div class="faq-content">
+          <p>Yes! The <code>&lt;details&gt;</code> element is fully accessible by default. Screen readers announce it as an expandable/collapsible region, and it works with keyboard navigation (Space/Enter to toggle).</p>
+        </div>
+      </details>
+      
+      <details class="faq-item">
+        <summary>Can I add more questions?<span class="faq-icon" aria-hidden="true">+</span></summary>
+        <div class="faq-content">
+          <p>Absolutely! Just copy and paste the <code>&lt;details&gt;</code> block to add more FAQ items. Each one works independently.</p>
+        </div>
+      </details>
+      
+      <details class="faq-item">
+        <summary>What about browser support?<span class="faq-icon" aria-hidden="true">+</span></summary>
+        <div class="faq-content">
+          <p>The <code>&lt;details&gt;</code> element is supported in all modern browsers including Chrome, Firefox, Safari, and Edge. It has excellent browser support since 2020.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<style>
+.faq-section {
+  padding: 3rem 0;
+}
+
+.faq-section h1 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.faq-intro {
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 3rem;
+  font-size: 1.125rem;
+}
+
+/* FAQ list container */
+.faq-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Individual FAQ item */
+.faq-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.faq-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Question/summary styling */
+summary {
+  padding: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  list-style: none; /* Remove default arrow */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  color: #2c3e50;
+}
+
+/* Remove default disclosure triangle */
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary:hover {
+  background: #f8f9fa;
+}
+
+/* Plus/minus icon */
+.faq-icon {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #3498db;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+/* Rotate icon when open */
+details[open] .faq-icon {
+  transform: rotate(45deg);
+}
+
+/* Answer content */
+.faq-content {
+  padding: 0 1.25rem 1.25rem;
+  color: #555;
+  line-height: 1.7;
+}
+
+.faq-content p {
+  margin: 0;
+}
+
+.faq-content code {
+  background: #ecf0f1;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+/* Highlight open item */
+details[open] {
+  border-color: #3498db;
+}
+
+details[open] summary {
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  summary {
+    font-size: 1rem;
+    padding: 1rem;
+  }
+  
+  .faq-content {
+    padding: 0 1rem 1rem;
+  }
+}
+</style>
+
+<!--
+RECOMMENDED PAIRINGS:
+CSS: Use "Complete Starter" or "Element Styles" for consistent styling
+JS: Add "Accordion Control" to programmatically open/close all items at once
+-->

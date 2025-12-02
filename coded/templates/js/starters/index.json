@@ -1,0 +1,64 @@
+{
+  "templates": [
+    {
+      "id": "dom-basics",
+      "name": "DOM Basics",
+      "description": "Select and manipulate elements",
+      "file": "dom-basics.js"
+    },
+    {
+      "id": "event-handling",
+      "name": "Event Handling",
+      "description": "Handle clicks, forms, and inputs",
+      "file": "event-handling.js"
+    },
+    {
+      "id": "fetch-api",
+      "name": "Fetch API",
+      "description": "Make HTTP requests",
+      "file": "fetch-api.js"
+    },
+    {
+      "id": "local-storage",
+      "name": "Local Storage",
+      "description": "Save data in browser",
+      "file": "local-storage.js"
+    },
+    {
+      "id": "tab-switching",
+      "name": "Tab Switching",
+      "description": "Switch between tabs/filter categories",
+      "file": "tab-switching.js"
+    },
+    {
+      "id": "showhide-toggle",
+      "name": "Show/Hide Toggle",
+      "description": "Toggle element visibility",
+      "file": "showhide-toggle.js"
+    },
+    {
+      "id": "filtersearch",
+      "name": "Filter/Search",
+      "description": "Filter items by search input",
+      "file": "filtersearch.js"
+    },
+    {
+      "id": "accordion-control",
+      "name": "Accordion Control",
+      "description": "Programmatic accordion/details control",
+      "file": "accordion-control.js"
+    },
+    {
+      "id": "tabs-navigation",
+      "name": "Tabs Navigation",
+      "description": "Complete accessible tabs with keyboard navigation",
+      "file": "tabs-navigation.js"
+    },
+    {
+      "id": "drawer-panel",
+      "name": "Drawer Panel",
+      "description": "Accessible drawer/modal with focus trap",
+      "file": "drawer-panel.js"
+    }
+  ]
+}

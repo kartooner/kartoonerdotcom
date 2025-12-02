@@ -1,0 +1,10 @@
+{
+  "templates": [
+    {
+      "id": "element-styles",
+      "name": "Element Styles",
+      "description": "Styles all HTML elements - same as Complete Starter + testing elements",
+      "file": "element-styles.css"
+    }
+  ]
+}
