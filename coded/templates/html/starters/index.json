@@ -8,43 +8,43 @@
     },
     {
       "id": "card-grid",
-      "name": "Card Grid",
+      "name": "Card grid",
       "description": "Responsive card layout",
       "file": "card-grid.html"
     },
     {
       "id": "contact-form",
-      "name": "Contact Form",
+      "name": "Contact form",
       "description": "Styled form with validation",
       "file": "contact-form.html"
     },
     {
       "id": "two-column",
-      "name": "Two Column",
+      "name": "Two column",
       "description": "Sidebar layout with main content",
       "file": "two-column.html"
     },
     {
       "id": "hero-section",
-      "name": "Hero Section",
+      "name": "Hero section",
       "description": "Landing page hero with headline and CTAs",
       "file": "hero-section.html"
     },
     {
       "id": "navigation-bar",
-      "name": "Navigation Bar",
+      "name": "Navigation bar",
       "description": "Responsive header with logo and menu",
       "file": "navigation-bar.html"
     },
     {
       "id": "blog-post",
-      "name": "Blog Post",
+      "name": "Blog post",
       "description": "Article layout with metadata and content",
       "file": "blog-post.html"
     },
     {
       "id": "stats-dashboard",
-      "name": "Stats Dashboard",
+      "name": "Stats dashboard",
       "description": "Operational dashboard with stats and Masonry modules",
       "file": "stats-dashboard.html"
     },
@@ -56,73 +56,73 @@
     },
     {
       "id": "newsmedia-feature",
-      "name": "News/Media Feature",
+      "name": "News/media feature",
       "description": "Magazine-style Masonry layout like Engadget",
       "file": "newsmedia-feature.html"
     },
     {
       "id": "faq-accordion",
-      "name": "FAQ Accordion",
+      "name": "FAQ accordion",
       "description": "Expandable FAQ using <details> elements",
       "file": "faq-accordion.html"
     },
     {
       "id": "filtercategories",
-      "name": "Filter/Categories",
+      "name": "Filter/categories",
       "description": "Category buttons with filterable content",
       "file": "filtercategories.html"
     },
     {
       "id": "complete-site-layout",
-      "name": "Complete Site Layout",
+      "name": "Complete site layout",
       "description": "Full site structure with nav, content, and footer - REQUIRES Complete Starter CSS",
       "file": "complete-site-layout.html"
     },
     {
       "id": "user-profile",
-      "name": "User Profile",
+      "name": "User profile",
       "description": "CRM-style user profile with avatar, contact info, and activity timeline",
       "file": "user-profile.html"
     },
     {
       "id": "company-profile",
-      "name": "Company Profile",
+      "name": "Company profile",
       "description": "Organization page with logo, about section, and team members",
       "file": "company-profile.html"
     },
     {
       "id": "editable-grid",
-      "name": "Editable Grid",
+      "name": "Editable grid",
       "description": "Data table with inline editing for inventory management",
       "file": "editable-grid.html"
     },
     {
       "id": "social-timeline",
-      "name": "Social Timeline",
+      "name": "Social timeline",
       "description": "Social media feed with post creation and interaction buttons",
       "file": "social-timeline.html"
     },
     {
       "id": "media-player",
-      "name": "Media Player",
+      "name": "Media player",
       "description": "Audio/video player with controls, progress bar, and playlist",
       "file": "media-player.html"
     },
     {
       "id": "progress-stepper",
-      "name": "Progress Stepper",
+      "name": "Progress stepper",
       "description": "Multi-step form with visual progress indicators",
       "file": "progress-stepper.html"
     },
     {
       "id": "login-form",
-      "name": "Login Form",
+      "name": "Login form",
       "description": "Authentication form with social login options",
       "file": "login-form.html"
     },
     {
       "id": "settings-page",
-      "name": "Settings Page",
+      "name": "Settings page",
       "description": "Configuration interface with multiple form sections",
       "file": "settings-page.html"
     }
