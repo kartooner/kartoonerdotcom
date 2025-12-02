@@ -2,13 +2,13 @@
   "templates": [
     {
       "id": "complete-starter",
-      "name": "Complete Starter",
+      "name": "Complete starter",
       "description": "Everything you need - works with HTML starters",
       "file": "complete-starter.css"
     },
     {
       "id": "dark-theme",
-      "name": "Dark Theme",
+      "name": "Dark theme",
       "description": "Dark mode color scheme",
       "file": "dark-theme.css"
     },
