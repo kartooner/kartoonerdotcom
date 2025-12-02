@@ -161,7 +161,7 @@
             <span id="settingsMenuTitle">Settings</span>
             <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn" role="button" tabindex="0" aria-label="Close settings">✕</span>
         </div>
-        <div class="modal-helper-text">Customize your editor experience with layout and theme options.</div>
+        <div class="modal-helper-text">Customize your editor experience with layout, theme, and syntax highlighting options.</div>
         <div class="modal-content">
             <div style="padding: 1.5rem;">
                 <!-- Layout Toggle -->
@@ -178,7 +178,7 @@
                 </div>
 
                 <!-- Theme -->
-                <div style="margin-bottom: 1rem;">
+                <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Theme</label>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="theme-toggle-btn active" id="themeDarkBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
@@ -186,6 +186,19 @@
                         </button>
                         <button class="theme-toggle-btn" id="themeLightBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
                             Light
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Syntax Highlighting -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Syntax highlighting</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="syntax-toggle-btn active" id="syntaxOnBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            On
+                        </button>
+                        <button class="syntax-toggle-btn" id="syntaxOffBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            Off
                         </button>
                     </div>
                 </div>
