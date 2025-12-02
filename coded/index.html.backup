@@ -1,3 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Coded - A lightweight code playground for quick prototyping">
+    <title>Coded - Code Playground</title>
+
+    <!-- Simple password protection with hashing -->
+    <script>
+        (function() {
+            // SHA-256 hash of your password (not the actual password)
+            // To generate a new hash: node -e "console.log(require('crypto').createHash('sha256').update('YOUR_PASSWORD').digest('hex'))"
+            const PASSWORD_HASH = 'b072a58dc6d41ac57067e5cf04f38ca5e575d56af2af78680fd7d2e071626d4e';
+
+            const hasAccess = sessionStorage.getItem('codedAccess') === PASSWORD_HASH;
+
+            if (!hasAccess) {
+                const userPassword = prompt('This page is password protected. Please enter the password:');
+                if (!userPassword) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                // Hash the user's input
+                crypto.subtle.digest('SHA-256', new TextEncoder().encode(userPassword))
+                    .then(hashBuffer => {
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                        if (hashHex === PASSWORD_HASH) {
+                            sessionStorage.setItem('codedAccess', PASSWORD_HASH);
+                            location.reload();
+                        } else {
+                            alert('Incorrect password. Access denied.');
+                            window.location.href = '/';
+                        }
+                    });
+
+                // Prevent page load while checking
+                document.documentElement.style.display = 'none';
+            }
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
+
+    <style>
+        /* Reset and base styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Screen reader only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Local Cartridge font */
+        @font-face {
+            font-family: "Cartridge Regular";
+            src: url('../assets/Cartridge-Regular.woff2') format('woff2'),
+                 url('../assets/Cartridge-Regular.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        :root {
+            --font-main: "Manrope", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+            --font-logo: "Cartridge Regular", sans-serif;
+
+            /* Dark theme colors (default) */
+            --bg-color: #191970;
+            --text-color: #ffffff;
+            --accent-color: #64ffda;
+            --accent-rgb: 100, 255, 218;
+            --secondary-color: #c5d2ff;
+            --editor-bg: #1a1a3e;
+            --editor-border: #2d2d5f;
+            --preview-bg: #ffffff;
+            --button-bg: #64ffda;
+            --button-text: #191970;
+            --button-hover: #52e8c8;
+        }
+
+        /* Light theme */
+        body.light-theme {
+            --bg-color: #f8f9fa;
+            --text-color: #1a1a1a;
+            --accent-color: #0066cc;
+            --accent-rgb: 0, 102, 204;
+            --secondary-color: #495057;
+            --editor-bg: #ffffff;
+            --editor-border: #dee2e6;
+            --preview-bg: #ffffff;
+            --button-bg: #0066cc;
+            --button-text: #ffffff;
+            --button-hover: #0052a3;
+        }
+
+        /* Light theme specific overrides */
+        body.light-theme .preview-container {
+            background: #e8edf2;
+        }
+
+        body.light-theme .preview-viewport.constrained {
+            background: repeating-conic-gradient(#e8edf2 0% 25%, #dfe4e9 0% 50%) 50% / 20px 20px;
+        }
+
+        body.light-theme .editor,
+        body.light-theme .line-numbers {
+            color: var(--text-color);
+        }
+
+        body.light-theme .editor::placeholder {
+            color: #a0aec0;
+        }
+
+        /* Light theme Prism syntax highlighting */
+        body.light-theme .token.comment,
+        body.light-theme .token.prolog,
+        body.light-theme .token.doctype,
+        body.light-theme .token.cdata {
+            color: #6a737d;
+        }
+
+        body.light-theme .token.punctuation {
+            color: #24292e;
+        }
+
+        body.light-theme .token.property,
+        body.light-theme .token.tag,
+        body.light-theme .token.boolean,
+        body.light-theme .token.number,
+        body.light-theme .token.constant,
+        body.light-theme .token.symbol,
+        body.light-theme .token.deleted {
+            color: #005cc5;
+        }
+
+        body.light-theme .token.selector,
+        body.light-theme .token.attr-name,
+        body.light-theme .token.string,
+        body.light-theme .token.char,
+        body.light-theme .token.builtin,
+        body.light-theme .token.inserted {
+            color: #22863a;
+        }
+
+        body.light-theme .token.operator,
+        body.light-theme .token.entity,
+        body.light-theme .token.url,
+        body.light-theme .language-css .token.string,
+        body.light-theme .style .token.string {
+            color: #d73a49;
+        }
+
+        body.light-theme .token.atrule,
+        body.light-theme .token.attr-value,
+        body.light-theme .token.keyword {
+            color: #d73a49;
+        }
+
+        body.light-theme .token.function,
+        body.light-theme .token.class-name {
+            color: #6f42c1;
+        }
+
+        body.light-theme .token.regex,
+        body.light-theme .token.important,
+        body.light-theme .token.variable {
+            color: #e36209;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem;
+            background: var(--editor-bg);
+            border-bottom: 2px solid var(--editor-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: var(--font-logo);
+            font-size: 1.75rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Auto-run toggle */
+        .auto-run-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .auto-run-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .auto-run-toggle label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Snippets dropdown */
+        .snippets-dropdown {
+            position: relative;
+        }
+
+        .snippets-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .snippets-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        /* More options menu */
+        .more-options-dropdown {
+            position: relative;
+        }
+
+        .more-options-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            font-weight: 500;
+            line-height: 1;
+            transition: all 0.3s ease;
+            height: 40px;
+            width: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .more-options-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        .more-options-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 4px;
+            min-width: 200px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .more-options-menu.active {
+            display: block;
+        }
+
+        .more-option-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--editor-border);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .more-option-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .more-option-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Toggle switch for word wrap */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            margin-left: auto;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--editor-border);
+            transition: 0.3s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--secondary-color);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent-color);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+            background-color: var(--bg-color);
+        }
+
+        .snippets-menu {
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 12px;
+            min-width: 450px;
+            max-width: 600px;
+            max-height: 80vh;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .snippets-menu[style*="display: block"] {
+            display: flex !important;
+        }
+
+        .snippets-menu-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 2px solid var(--editor-border);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-helper-text {
+            padding: 1rem 1.5rem;
+            padding-bottom: 0.5rem;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .modal-content {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Custom scrollbar for modal content */
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--editor-border);
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        .snippet-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--editor-border);
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .snippet-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--accent-color);
+            padding-left: 1.75rem;
+        }
+
+        .snippet-item:last-child {
+            border-bottom: none;
+        }
+
+        .snippet-name {
+            flex: 1;
+        }
+
+        .snippet-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .snippet-delete {
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .snippet-delete:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
+        .empty-state {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--secondary-color);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Library items */
+        .library-item {
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--editor-border);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .library-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .library-item.added {
+            background: rgba(100, 255, 218, 0.1);
+            border-color: var(--accent-color);
+            cursor: default;
+        }
+
+        .library-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .library-version {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-left: 0.5rem;
+        }
+
+        .library-remove {
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .library-remove:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+
+        /* All header buttons - consistent sizing */
+        .run-button,
+        .clear-button,
+        .export-button {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1;
+            transition: all 0.3s ease;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Run button */
+        .run-button {
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: 2px solid var(--button-bg);
+            padding: 0.5rem 1.5rem;
+        }
+
+        .run-button:hover {
+            background: var(--button-hover);
+            border-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Clear button */
+        .clear-button {
+            background: none;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .clear-button:hover {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+        }
+
+        /* Export button */
+        .export-button {
+            background: none;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .export-button:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        /* Main container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Resizer */
+        .resizer {
+            background: var(--editor-border);
+            cursor: row-resize;
+            height: 4px;
+            position: relative;
+            z-index: 10;
+            transition: background 0.2s;
+        }
+
+        /* Increase hit area for easier dragging */
+        .resizer::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 0;
+            right: 0;
+            bottom: -4px;
+            cursor: row-resize;
+        }
+
+        .resizer:hover {
+            background: var(--accent-color);
+        }
+
+        .resizer.resizing {
+            background: var(--accent-color);
+        }
+
+        /* Prevent text selection during resize */
+        body.resizing {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
+
+        /* Prevent iframe from intercepting mouse events during resize */
+        body.resizing #preview {
+            pointer-events: none;
+        }
+
+        /* Editors section */
+        .editors {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--editor-border);
+            border-bottom: 2px solid var(--editor-border);
+            height: 50%;
+            transition: grid-template-columns 0.3s ease;
+        }
+
+        /* Disable height transition during manual resize for smooth dragging */
+        body.resizing .editors {
+            transition: none;
+        }
+
+        /* Vertical layout */
+        .editors.vertical-layout {
+            grid-template-columns: 1fr;
+            height: 60%;
+        }
+
+        /* Share mode - show more preview */
+        body.share-mode .editors {
+            height: 30%;
+        }
+
+        .editor-panel {
+            background: var(--editor-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+            min-height: 0;
+        }
+
+        .line-numbers {
+            background: var(--editor-bg);
+            color: var(--secondary-color);
+            padding: 16px 8px 16px 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 21px;
+            text-align: right;
+            user-select: none;
+            opacity: 0.5;
+            border-right: 1px solid var(--editor-border);
+            overflow: hidden;
+            min-width: 3rem;
+            white-space: pre;
+        }
+
+        .editor-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .editor-header {
+            padding: 0.75rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .panel-settings-button {
+            background: none;
+            border: 1px solid var(--editor-border);
+            color: var(--secondary-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: all 0.2s;
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .panel-settings-button:hover {
+            opacity: 1;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .panel-settings-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 0.25rem);
+            right: 0;
+            background: var(--editor-bg);
+            border: 2px solid var(--editor-border);
+            border-radius: 4px;
+            min-width: 180px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-settings-menu.active {
+            display: block;
+        }
+
+        .editor {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 21px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.015);
+            caret-color: var(--accent-color);
+            border: none;
+            resize: none;
+            outline: none;
+            overflow: auto;
+            overflow-x: auto;
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+            tab-size: 2;
+            z-index: 2;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.015);
+            white-space: pre;
+            word-wrap: normal;
+            box-sizing: border-box;
+            margin: 0;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+            padding-right: 16px;
+            letter-spacing: 0;
+            word-spacing: 0;
+            text-indent: 0;
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: subpixel-antialiased;
+            -moz-osx-font-smoothing: auto;
+            font-variant: normal;
+            font-feature-settings: normal;
+            font-kerning: none;
+            transform: translateZ(0);
+        }
+
+        .editor.wrap-enabled {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .editor::placeholder {
+            color: var(--secondary-color);
+            opacity: 0.5;
+            -webkit-text-fill-color: var(--secondary-color);
+        }
+
+        /* Tab trap indicator */
+        .editor-content::after {
+            content: "Tab to indent • Esc to exit";
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            background: var(--editor-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 3;
+        }
+
+        .editor-content.tab-trapped::after {
+            opacity: 0.7;
+        }
+
+        .editor-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 21px;
+            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            pointer-events: none;
+            z-index: 1;
+            white-space: pre;
+            word-wrap: normal;
+            box-sizing: border-box;
+            margin: 0;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+            padding-right: 24px;
+            letter-spacing: 0;
+            word-spacing: 0;
+            text-indent: 0;
+            text-rendering: geometricPrecision;
+            -webkit-font-smoothing: subpixel-antialiased;
+            -moz-osx-font-smoothing: auto;
+            font-variant: normal;
+            font-feature-settings: normal;
+            font-kerning: none;
+            transform: translateZ(0);
+        }
+
+        .editor-highlight.wrap-enabled {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .editor-highlight pre {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            white-space: inherit;
+            word-wrap: inherit;
+            display: block;
+            line-height: inherit;
+            font-size: inherit;
+            font-family: inherit;
+            border: none;
+        }
+
+        .editor-highlight code {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 21px;
+            background: transparent !important;
+            white-space: inherit;
+            word-wrap: inherit;
+            letter-spacing: 0;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block;
+            border: none;
+            vertical-align: baseline;
+        }
+
+        /* Override any Prism theme styles that might add spacing */
+        .editor-highlight pre[class*="language-"],
+        .editor-highlight code[class*="language-"],
+        .editor-highlight .highlight-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            border-radius: 0 !important;
+            font-family: var(--font-mono) !important;
+            font-size: 14px !important;
+            line-height: 21px !important;
+            letter-spacing: 0 !important;
+            word-spacing: 0 !important;
+            text-indent: 0 !important;
+            font-variant: normal !important;
+            font-feature-settings: normal !important;
+            font-kerning: none !important;
+            display: block;
+        }
+
+        .editor::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .editor::-webkit-scrollbar-track {
+            background: var(--editor-bg);
+        }
+
+        .editor::-webkit-scrollbar-thumb {
+            background: var(--editor-border);
+            border-radius: 4px;
+        }
+
+        .editor::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Preview section */
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--editor-bg);
+        }
+
+        /* Optimize resize performance */
+        body.resizing .editors,
+        body.resizing .preview-section {
+            will-change: height;
+        }
+
+        .preview-header {
+            padding: 0.75rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .device-buttons {
+            display: flex;
+            gap: 0.25rem;
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .device-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: all 0.2s;
+            border-right: 1px solid var(--editor-border);
+        }
+
+        .device-btn:last-child {
+            border-right: none;
+        }
+
+        .device-btn:hover {
+            background: rgba(var(--accent-rgb), 0.1);
+            color: var(--accent-color);
+        }
+
+        .device-btn.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+
+        .viewport-size {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            padding: 0 0.75rem;
+            min-width: 80px;
+            text-align: center;
+            line-height: 1;
+        }
+
+        /* Accessibility: Focus indicators for all interactive elements */
+        button:focus-visible,
+        .device-btn:focus-visible,
+        .more-option-item:focus-visible,
+        .snippet-item:focus-visible,
+        .library-item:focus-visible,
+        .panel-settings-button:focus-visible,
+        .console-clear:focus-visible,
+        .share-mode-button:focus-visible,
+        .layout-toggle-btn:focus-visible,
+        .theme-toggle-btn:focus-visible,
+        input[type="checkbox"]:focus-visible,
+        input[type="text"]:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Keyboard navigation highlight for menu items */
+        .more-option-item.keyboard-focused {
+            background: rgba(var(--accent-rgb), 0.15);
+            outline: 2px solid var(--accent-color);
+            outline-offset: -2px;
+        }
+
+        /* Focus for toggle switches */
+        .toggle-switch input:focus-visible + .toggle-slider {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        /* Skip link - visible on focus */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 0.5rem 1rem;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        .preview-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+
+        .preview-viewport {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow: auto;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .preview-viewport.constrained {
+            background: repeating-conic-gradient(#1a1a2e 0% 25%, #16162a 0% 50%) 50% / 20px 20px;
+        }
+
+        .preview-viewport.constrained #preview {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+            max-width: 100%;
+            height: 100%;
+            flex: none;
+        }
+
+        #preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--preview-bg);
+            transition: width 0.3s ease;
+        }
+
+        .viewport-resize-handle {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: ew-resize;
+            background: transparent;
+            transition: background 0.2s;
+        }
+
+        .preview-viewport.constrained .viewport-resize-handle {
+            display: block;
+        }
+
+        .viewport-resize-handle:hover {
+            background: var(--accent-color);
+        }
+
+        .viewport-resize-handle::before {
+            content: '';
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 40px;
+            background: var(--editor-border);
+            border-radius: 2px;
+        }
+
+        /* Console panel */
+        .console-panel {
+            display: none;
+            flex-direction: column;
+            height: 200px;
+            background: var(--editor-bg);
+            border-top: 2px solid var(--editor-border);
+        }
+
+        .console-panel.active {
+            display: flex;
+        }
+
+        .console-header {
+            padding: 0.5rem 1rem;
+            background: var(--editor-bg);
+            border-bottom: 1px solid var(--editor-border);
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-clear {
+            background: none;
+            border: 1px solid var(--editor-border);
+            color: var(--secondary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+
+        .console-clear:hover {
+            opacity: 1;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .console-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-output::-webkit-scrollbar-track {
+            background: var(--editor-bg);
+        }
+
+        .console-output::-webkit-scrollbar-thumb {
+            background: var(--editor-border);
+            border-radius: 4px;
+        }
+
+        .console-output::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        .console-message {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 2px;
+            border-left: 3px solid transparent;
+            word-wrap: break-word;
+        }
+
+        .console-message.log {
+            color: var(--text-color);
+            border-left-color: var(--secondary-color);
+        }
+
+        .console-message.warn {
+            color: #ffa500;
+            border-left-color: #ffa500;
+            background: rgba(255, 165, 0, 0.1);
+        }
+
+        .console-message.error {
+            color: #ff6b6b;
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .console-message.info {
+            color: #64ffda;
+            border-left-color: #64ffda;
+        }
+
+        /* Tablet responsive */
+        @media (max-width: 1024px) {
+            body {
+                /* Fix for mobile/tablet browsers where 100vh includes browser chrome */
+                height: 100dvh; /* Dynamic viewport height */
+                min-height: -webkit-fill-available;
+            }
+
+            .editors {
+                grid-template-columns: 1fr;
+                height: 60%;
+            }
+
+            header {
+                padding: 0.5rem 1rem; /* Reduced vertical padding to prevent header cutoff on tablets */
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .header-actions {
+                gap: 0.5rem;
+            }
+
+            .run-button {
+                padding: 0.5rem 1.5rem;
+            }
+        }
+
+        /* Share mode banner */
+        .share-mode-banner {
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.75rem 2rem;
+            color: white;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .share-mode-banner.active {
+            display: flex;
+        }
+
+        .share-mode-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .share-mode-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .share-mode-button {
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .share-mode-button.primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+        }
+
+        .share-mode-button.primary:hover {
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .share-mode-button.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .share-mode-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Mobile - hide for now */
+        @media (max-width: 768px) {
+            body::before {
+                content: "Coded is only available on desktop and tablet devices.";
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                padding: 2rem;
+                background: var(--editor-bg);
+                border: 2px solid var(--editor-border);
+                border-radius: 8px;
+                z-index: 9999;
+            }
+
+            .container, header {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip link for keyboard accessibility -->
+    <a href="#htmlEditor" class="skip-link">Skip to code editor</a>
+
+    <!-- Share Mode Banner -->
+    <div class="share-mode-banner" id="shareModeBanner" role="status" aria-live="polite">
+        <div class="share-mode-info">
+            <span style="font-size: 1.2rem;">🔗</span>
+            <span><strong>Viewing shared code</strong> — Make your own edits and share them!</span>
+        </div>
+        <div class="share-mode-actions">
+            <button class="share-mode-button primary" id="updateShareBtn">Update Share Link</button>
+            <button class="share-mode-button secondary" id="startFreshBtn">Start fresh</button>
+        </div>
+    </div>
+
+    <header>
+        <h1>&lt;/Coded&gt;</h1>
+        <div class="header-actions">
+            <div class="auto-run-toggle">
+                <input type="checkbox" id="autoRunToggle" />
+                <label for="autoRunToggle">Auto-run</label>
+            </div>
+            <button class="run-button" id="runBtn">Run Code</button>
+            <div class="more-options-dropdown">
+                <button class="more-options-button" id="moreOptionsBtn" aria-label="More options">
+                    ⋯
+                </button>
+                <div class="more-options-menu" id="moreOptionsMenu">
+                    <div class="more-option-item" id="settingsBtn">
+                        Settings
+                    </div>
+                    <div class="more-option-item" id="saveSnippetMenuBtn">
+                        Save snippet
+                    </div>
+                    <div class="more-option-item" id="snippetsMenuBtn">
+                        Load snippet
+                    </div>
+                    <div class="more-option-item" id="shareBtn">
+                        Save .coded file
+                    </div>
+                    <div class="more-option-item" id="exportBtn">
+                        Export HTML
+                    </div>
+                    <div class="more-option-item" id="clearBtn">
+                        Clear all
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Snippets Modal -->
+    <div class="snippets-menu" id="snippetsMenu" role="dialog" aria-modal="true" aria-labelledby="snippetsMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
+        <div class="snippets-menu-header">
+            <span id="snippetsMenuTitle">Load snippet</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSnippetsBtn" role="button" tabindex="0" aria-label="Close snippets menu">✕</span>
+        </div>
+        <div class="modal-helper-text">Load previously saved code snippets to quickly start new projects.</div>
+        <div class="modal-content">
+            <div id="snippetsList"></div>
+        </div>
+    </div>
+
+    <!-- Libraries Modal -->
+    <div class="snippets-menu" id="librariesMenu" role="dialog" aria-modal="true" aria-labelledby="librariesMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
+        <div class="snippets-menu-header">
+            <span id="librariesMenuTitle">Add external libraries</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeLibrariesBtn" role="button" tabindex="0" aria-label="Close libraries menu">✕</span>
+        </div>
+        <div class="modal-helper-text">Include popular libraries or add your own via CDN URL.</div>
+        <div class="modal-content">
+            <div style="padding: 1rem; border-bottom: 1px solid var(--editor-border);">
+                <div style="margin-bottom: 1rem;">
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Popular libraries</strong>
+                    <div id="popularLibraries"></div>
+                </div>
+                <div>
+                    <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Custom CDN</strong>
+                    <input type="text" id="customCdnInput" placeholder="Paste CDN URL..." style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    <button id="addCustomCdnBtn" style="width: 100%; padding: 0.5rem; background: var(--accent-color); color: var(--bg-color); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Add custom CDN</button>
+                </div>
+            </div>
+            <div style="padding: 1rem;">
+                <strong style="display: block; margin-bottom: 0.5rem; color: var(--accent-color);">Added libraries</strong>
+                <div id="addedLibrariesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div class="snippets-menu" id="templatesMenu" role="dialog" aria-modal="true" aria-labelledby="templatesMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none;">
+        <div class="snippets-menu-header">
+            <span id="templatesMenuTitle">Select template</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeTemplatesBtn" role="button" tabindex="0" aria-label="Close templates menu">✕</span>
+        </div>
+        <div class="modal-helper-text">Select a template to load into the editor. This will replace current content.</div>
+        <div class="modal-content">
+            <div style="padding: 1.5rem;">
+                <div id="templatesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="snippets-menu" id="settingsMenu" role="dialog" aria-modal="true" aria-labelledby="settingsMenuTitle" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; display: none; max-width: 500px;">
+        <div class="snippets-menu-header">
+            <span id="settingsMenuTitle">Settings</span>
+            <span style="cursor: pointer; opacity: 0.7;" id="closeSettingsBtn" role="button" tabindex="0" aria-label="Close settings">✕</span>
+        </div>
+        <div class="modal-helper-text">Customize your editor experience with layout and theme options.</div>
+        <div class="modal-content">
+            <div style="padding: 1.5rem;">
+                <!-- Layout Toggle -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Editor layout</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="layout-toggle-btn active" id="layoutHorizontalBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            Horizontal
+                        </button>
+                        <button class="layout-toggle-btn" id="layoutVerticalBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            Vertical
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theme -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--accent-color); font-weight: 500;">Theme</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="theme-toggle-btn active" id="themeDarkBtn" style="flex: 1; padding: 0.75rem; background: var(--accent-color); color: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            Dark
+                        </button>
+                        <button class="theme-toggle-btn" id="themeLightBtn" style="flex: 1; padding: 0.75rem; background: none; color: var(--secondary-color); border: 2px solid var(--editor-border); border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                            Light
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="snippetsOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1999;"></div>
+
+    <!-- Find/Replace Panel -->
+    <div id="findReplacePanel" role="dialog" aria-labelledby="findReplaceTitle" style="display: none; position: fixed; top: 80px; right: 20px; background: var(--editor-bg); border: 2px solid var(--editor-border); border-radius: 8px; padding: 1rem; z-index: 3000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); min-width: 350px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span id="findReplaceTitle" style="font-weight: 500; color: var(--accent-color);">Find & replace</span>
+            <span id="closeFindReplaceBtn" role="button" tabindex="0" aria-label="Close find and replace" style="cursor: pointer; opacity: 0.7; font-size: 1.2rem; color: var(--secondary-color);">✕</span>
+        </div>
+
+        <div style="margin-bottom: 0.5rem;">
+            <label for="findInput" class="sr-only">Find text</label>
+            <input type="text" id="findInput" placeholder="Find..." aria-label="Find text" style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <label for="replaceInput" class="sr-only">Replace with</label>
+            <input type="text" id="replaceInput" placeholder="Replace with..." aria-label="Replace with" style="width: 100%; padding: 0.5rem; background: var(--bg-color); border: 1px solid var(--editor-border); border-radius: 4px; color: var(--text-color); font-family: var(--font-main); font-size: 0.9rem;">
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="findPrevBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">← Prev</button>
+            <button id="findNextBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: var(--accent-color); border: 1px solid var(--accent-color); color: var(--bg-color); border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">Next →</button>
+            <button id="replaceBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Replace</button>
+            <button id="replaceAllBtn" style="flex: 1; min-width: 70px; padding: 0.5rem; background: none; border: 1px solid var(--editor-border); color: var(--secondary-color); border-radius: 4px; cursor: pointer; font-size: 0.85rem;">All</button>
+        </div>
+
+        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--secondary-color); opacity: 0.7;">
+            <span id="findResultsText">Press Enter or click Next</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Editors Section -->
+        <div class="editors">
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <span>HTML</span>
+                    <button class="panel-settings-button" id="htmlSettingsBtn" aria-label="HTML panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="htmlSettingsMenu">
+                        <div class="more-option-item" id="htmlLibrariesBtn">
+                            Add libraries
+                        </div>
+                        <div class="more-option-item" id="htmlTemplatesBtn">
+                            Load starter template
+                        </div>
+                        <div class="more-option-item" id="htmlTestTemplatesBtn">
+                            Load testing template
+                        </div>
+                        <div class="more-option-item" id="htmlFormatBtn">
+                            Format code
+                        </div>
+                        <div class="more-option-item" id="htmlWrapToggle">
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="htmlWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="line-numbers" id="htmlLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="htmlHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="htmlEditor"
+                            placeholder="<!-- Enter your HTML here -->"
+                            spellcheck="false"
+                            aria-label="HTML code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <span>CSS</span>
+                    <button class="panel-settings-button" id="cssSettingsBtn" aria-label="CSS panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="cssSettingsMenu">
+                        <div class="more-option-item" id="cssLibrariesBtn">
+                            Add libraries
+                        </div>
+                        <div class="more-option-item" id="cssTemplatesBtn">
+                            Load starter template
+                        </div>
+                        <div class="more-option-item" id="cssTestTemplatesBtn">
+                            Load testing template
+                        </div>
+                        <div class="more-option-item" id="cssFormatBtn">
+                            Format code
+                        </div>
+                        <div class="more-option-item" id="cssWrapToggle">
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="cssWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="more-option-item" id="cssResetBtn">
+                            CSS Reset: <span id="cssResetStatus">None</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="line-numbers" id="cssLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="cssHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="cssEditor"
+                            placeholder="/* Enter your CSS here */"
+                            spellcheck="false"
+                            aria-label="CSS code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <span>JavaScript</span>
+                    <button class="panel-settings-button" id="jsSettingsBtn" aria-label="JavaScript panel settings">⚙</button>
+                    <div class="panel-settings-menu" id="jsSettingsMenu">
+                        <div class="more-option-item" id="jsLibrariesBtn">
+                            Add libraries
+                        </div>
+                        <div class="more-option-item" id="jsTemplatesBtn">
+                            Load starter template
+                        </div>
+                        <div class="more-option-item" id="jsFormatBtn">
+                            Format code
+                        </div>
+                        <div class="more-option-item" id="jsWrapToggle">
+                            <span>Word wrap</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="jsWrapCheckbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <div class="line-numbers" id="jsLineNumbers">1</div>
+                    <div class="editor-content">
+                        <div class="editor-highlight" id="jsHighlight"></div>
+                        <textarea
+                            class="editor"
+                            id="jsEditor"
+                            placeholder="// Enter your JavaScript here"
+                            spellcheck="false"
+                            aria-label="JavaScript code editor. Press Tab to indent, Shift+Tab to outdent, Escape to exit and restore normal tab navigation."
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer"></div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <div class="preview-header">
+                <span>Preview</span>
+                <div class="preview-actions">
+                    <div class="device-buttons">
+                        <button class="device-btn active" data-width="100%" title="Desktop view" aria-label="Desktop view" aria-pressed="true">
+                            Desktop
+                        </button>
+                        <button class="device-btn" data-width="768" title="Tablet (768px)" aria-label="Tablet view, 768 pixels wide" aria-pressed="false">
+                            Tablet
+                        </button>
+                        <button class="device-btn" data-width="375" title="Mobile (375px)" aria-label="Mobile view, 375 pixels wide" aria-pressed="false">
+                            Mobile
+                        </button>
+                    </div>
+                    <span class="viewport-size" id="viewportSize">100%</span>
+                    <button class="panel-settings-button" id="toggleConsoleBtn" title="Toggle Console" aria-label="Toggle console" aria-expanded="false" aria-controls="consolePanel">
+                        Console
+                    </button>
+                </div>
+            </div>
+            <div class="preview-container">
+                <div class="preview-viewport" id="previewViewport">
+                    <iframe id="preview" title="Code preview output" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                    <div class="viewport-resize-handle" id="viewportResizeHandle"></div>
+                </div>
+                <div class="console-panel" id="consolePanel">
+                    <div class="console-header">
+                        <span>Console</span>
+                        <button class="console-clear" id="clearConsoleBtn" title="Clear console">Clear</button>
+                    </div>
+                    <div class="console-output" id="consoleOutput"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prism.js (locally hosted) -->
+    <script src="/coded/vendor/prism.min.js"></script>
+    <script src="/coded/vendor/prism-markup.min.js"></script>
+    <script src="/coded/vendor/prism-css.min.js"></script>
+    <script src="/coded/vendor/prism-javascript.min.js"></script>
+
+    <!-- Template functionality (templates are loaded dynamically) -->
+    <script src="/coded/template-loader.js"></script>
+
+    <script>
         // Get DOM elements
         const htmlEditor = document.getElementById('htmlEditor');
         const cssEditor = document.getElementById('cssEditor');
@@ -2114,3 +3833,6 @@ ${js}
                 }
             });
         });
+    </script>
+</body>
+</html>
