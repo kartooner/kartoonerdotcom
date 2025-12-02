@@ -1,0 +1,119 @@
+<!-- Main navigation bar (sticky at top) -->
+<nav class="navbar" aria-label="Main navigation">
+  <div class="container">
+    <div class="nav-content">
+      <!-- Logo/brand link -->
+      <a href="#" class="logo" aria-label="Home">Brand</a>
+      
+      <!-- Navigation menu list -->
+      <ul class="nav-menu" role="list">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#team">Team</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      
+      <!-- Call-to-action button -->
+      <button class="btn nav-cta" aria-label="Sign up for an account">Sign up</button>
+    </div>
+  </div>
+</nav>
+
+<style>
+/* Sticky navigation bar with shadow */
+.navbar {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Flexbox layout for nav items */
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Horizontal menu layout */
+.nav-menu {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.nav-menu a {
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-menu a:hover {
+  color: #3498db;
+}
+
+/* Tablet responsive adjustments */
+@media (max-width: 900px) {
+  .nav-menu {
+    gap: 1.25rem;
+    font-size: 0.9375rem;
+  }
+  
+  .nav-cta {
+    font-size: 0.9375rem;
+    padding: 0.4rem 1rem;
+  }
+}
+
+/* Mobile responsive - stack vertically */
+@media (max-width: 768px) {
+  .nav-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .logo {
+    align-self: center;
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* Vertical menu on mobile */
+  .nav-menu {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  
+  .nav-menu li {
+    width: 100%;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .nav-menu li:last-child {
+    border-bottom: none;
+  }
+  
+  .nav-cta {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+</style>

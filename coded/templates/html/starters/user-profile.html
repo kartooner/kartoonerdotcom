@@ -1,0 +1,342 @@
+<!-- User profile container -->
+<div class="container" role="main">
+  <!-- Profile header section -->
+  <header class="profile-header" aria-labelledby="profile-name">
+    <!-- Avatar and basic info -->
+    <div class="profile-info">
+      <img 
+        src="https://via.placeholder.com/150" 
+        alt="Profile picture of John Doe" 
+        class="profile-avatar">
+      <div class="profile-details">
+        <h1 id="profile-name">John Doe</h1>
+        <p class="profile-title">Senior Product Manager</p>
+        <p class="profile-status" aria-label="Status">Active</p>
+      </div>
+    </div>
+    
+    <!-- Action buttons -->
+    <div class="profile-actions">
+      <button class="btn" aria-label="Edit profile">Edit profile</button>
+      <button class="btn btn-secondary" aria-label="Send message">Message</button>
+    </div>
+  </header>
+
+  <!-- Contact information grid -->
+  <section class="contact-grid" aria-labelledby="contact-heading">
+    <h2 id="contact-heading">Contact information</h2>
+    <dl class="info-grid">
+      <div class="info-item">
+        <dt>Email</dt>
+        <dd><a href="mailto:john.doe@example.com">john.doe@example.com</a></dd>
+      </div>
+      <div class="info-item">
+        <dt>Phone</dt>
+        <dd><a href="tel:+15551234567">+1 (555) 123-4567</a></dd>
+      </div>
+      <div class="info-item">
+        <dt>Location</dt>
+        <dd>San Francisco, CA</dd>
+      </div>
+      <div class="info-item">
+        <dt>Department</dt>
+        <dd>Product</dd>
+      </div>
+      <div class="info-item">
+        <dt>Employee ID</dt>
+        <dd>EMP-2024-001</dd>
+      </div>
+      <div class="info-item">
+        <dt>Join date</dt>
+        <dd><time datetime="2024-01-15">January 15, 2024</time></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Activity timeline -->
+  <section class="activity-timeline" aria-labelledby="activity-heading">
+    <h2 id="activity-heading">Recent activity</h2>
+    <ol class="timeline" role="list">
+      <!-- Timeline item 1 -->
+      <li class="timeline-item">
+        <time datetime="2025-11-28T10:30:00" class="timeline-date">Nov 28, 2025 at 10:30 AM</time>
+        <h3 class="timeline-title">Updated project documentation</h3>
+        <p class="timeline-description">Added new API endpoint specifications to the developer guide</p>
+      </li>
+      <!-- Timeline item 2 -->
+      <li class="timeline-item">
+        <time datetime="2025-11-27T14:15:00" class="timeline-date">Nov 27, 2025 at 2:15 PM</time>
+        <h3 class="timeline-title">Completed code review</h3>
+        <p class="timeline-description">Reviewed and approved PR #342 for user authentication module</p>
+      </li>
+      <!-- Timeline item 3 -->
+      <li class="timeline-item">
+        <time datetime="2025-11-26T09:00:00" class="timeline-date">Nov 26, 2025 at 9:00 AM</time>
+        <h3 class="timeline-title">Meeting: Product roadmap Q1</h3>
+        <p class="timeline-description">Discussed priorities and timeline for upcoming features</p>
+      </li>
+      <!-- Timeline item 4 -->
+      <li class="timeline-item">
+        <time datetime="2025-11-25T16:45:00" class="timeline-date">Nov 25, 2025 at 4:45 PM</time>
+        <h3 class="timeline-title">Created new feature proposal</h3>
+        <p class="timeline-description">Draft proposal for advanced analytics dashboard</p>
+      </li>
+    </ol>
+  </section>
+</div>
+
+<style>
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #2c3e50;
+  line-height: 1.6;
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.profile-info {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex: 1;
+  min-width: 300px;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  object-fit: cover;
+}
+
+.profile-details h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.profile-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  opacity: 0.95;
+}
+
+.profile-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  color: #667eea;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Contact Grid Section */
+.contact-grid {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e7ff;
+}
+
+.contact-grid h2 {
+  margin: 0 0 1.5rem 0;
+  color: #667eea;
+  font-size: 1.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.info-item {
+  padding: 1rem;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.info-item dt {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.info-item dd {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.info-item a {
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.info-item a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e7ff;
+}
+
+.activity-timeline h2 {
+  margin: 0 0 2rem 0;
+  color: #667eea;
+  font-size: 1.5rem;
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #667eea, #764ba2);
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 2rem;
+  padding-bottom: 2rem;
+  margin-bottom: 0;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0.25rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #667eea;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px #667eea;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-date {
+  display: block;
+  color: #764ba2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-title {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.timeline-description {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+  }
+  
+  .profile-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

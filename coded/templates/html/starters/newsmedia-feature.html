@@ -1,0 +1,350 @@
+<!-- Magazine-style news layout section -->
+<section class="news-layout" aria-labelledby="news-heading">
+  <div class="container">
+    <h1 id="news-heading">Latest news</h1>
+    
+    <!-- Category filter buttons (optional - works with Tab Switching or Filter/Search JS) -->
+    <div class="news-filter-controls" role="group" aria-label="Filter news by category">
+      <button class="filter-btn active" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter-btn" data-filter="technology" aria-pressed="false">Technology</button>
+      <button class="filter-btn" data-filter="design" aria-pressed="false">Design</button>
+      <button class="filter-btn" data-filter="tutorials" aria-pressed="false">Tutorials</button>
+      <button class="filter-btn" data-filter="news" aria-pressed="false">News</button>
+      <button class="filter-btn" data-filter="reviews" aria-pressed="false">Reviews</button>
+      <button class="filter-btn" data-filter="opinion" aria-pressed="false">Opinion</button>
+    </div>
+    
+    <!-- Masonry grid with varying card heights -->
+    <div class="masonry-grid" role="list">
+      <!-- Featured story (spans 2 columns, larger) -->
+      <article class="story-card filter-item featured" data-category="technology" role="listitem">
+        <div class="story-image gradient-1" role="img" aria-label="Featured article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">Technology</span>
+          <h2>The future of web development is here</h2>
+          <p class="excerpt">Discover how new technologies are reshaping the way we build for the web, making it faster and more accessible than ever before.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">Sarah Chen</span>
+            <span class="date"><time datetime="PT2H">2h ago</time></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Regular story cards with varying heights (add .tall class for taller cards) -->
+      <article class="story-card filter-item" data-category="design" role="listitem">
+        <div class="story-image gradient-2" role="img" aria-label="Article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">Design</span>
+          <h3>New design trends for 2025</h3>
+          <p class="excerpt">What's hot in web design this year.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">Mike Johnson</span>
+            <span class="date"><time datetime="PT4H">4h ago</time></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="story-card filter-item tall" data-category="tutorials" role="listitem">
+        <div class="story-image gradient-3" role="img" aria-label="Article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">Tutorials</span>
+          <h3>Getting started with CSS Grid</h3>
+          <p class="excerpt">A beginner-friendly comprehensive guide to modern layouts and responsive design patterns.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">Lisa Park</span>
+            <span class="date"><time datetime="PT6H">6h ago</time></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="story-card filter-item" data-category="news" role="listitem">
+        <div class="story-image gradient-4" role="img" aria-label="Article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">News</span>
+          <h3>Browser updates</h3>
+          <p class="excerpt">Latest features in modern browsers.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">David Kim</span>
+            <span class="date"><time datetime="PT8H">8h ago</time></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="story-card filter-item tall" data-category="reviews" role="listitem">
+        <div class="story-image gradient-5" role="img" aria-label="Article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">Reviews</span>
+          <h3>Top frameworks reviewed</h3>
+          <p class="excerpt">We tested the most popular frameworks to see which ones deliver the best developer experience and performance.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">Alex Rivera</span>
+            <span class="date"><time datetime="PT10H">10h ago</time></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="story-card filter-item" data-category="opinion" role="listitem">
+        <div class="story-image gradient-6" role="img" aria-label="Article image"></div>
+        <div class="story-content">
+          <span class="category" aria-label="Category">Opinion</span>
+          <h3>The state of web dev</h3>
+          <p class="excerpt">Where we are and where we're going.</p>
+          <div class="article-meta" aria-label="Article information">
+            <span class="author">Jamie Lee</span>
+            <span class="date"><time datetime="PT12H">12h ago</time></span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+/* News layout container with light background */
+.news-layout {
+  background: #f5f5f5;
+  padding: 2rem 0;
+}
+
+.news-layout h1 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Filter buttons */
+.news-filter-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.news-filter-controls .filter-btn {
+  padding: 0.5rem 1.25rem;
+  background: white;
+  color: #2c3e50;
+  border: 2px solid #ddd;
+  border-radius: 25px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+
+.news-filter-controls .filter-btn:hover {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.news-filter-controls .filter-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+/* Hidden state for filtered items */
+.filter-item.hidden {
+  display: none;
+}
+
+/* Masonry Grid - uses grid-auto-rows for varying heights */
+.masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: 20px; /* Small row height for fine-grained control */
+  gap: 1.5rem;
+}
+
+/* Story card styling */
+.story-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.story-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* Featured card spans 2 columns and 20 rows */
+.story-card.featured {
+  grid-column: span 2;
+  grid-row: span 20;
+}
+
+/* Tall cards span 16 rows */
+.story-card.tall {
+  grid-row: span 16;
+}
+
+/* Regular cards span 14 rows */
+.story-card:not(.featured):not(.tall) {
+  grid-row: span 14;
+}
+
+/* Image placeholders with colorful gradients */
+.story-image {
+  width: 100%;
+  height: 200px;
+  display: block;
+}
+
+.story-card.featured .story-image {
+  height: 300px;
+}
+
+.story-card.tall .story-image {
+  height: 240px;
+}
+
+/* Six unique gradient backgrounds */
+.gradient-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.gradient-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.gradient-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.gradient-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.gradient-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.gradient-6 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+
+.story-content {
+  padding: 1.25rem;
+}
+
+/* Featured story gets larger text */
+.story-card.featured h2 {
+  font-size: 1.75rem;
+  margin: 0.5rem 0 1rem;
+  color: #2c3e50;
+}
+
+.story-card.featured .excerpt {
+  font-size: 1.0625rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* Regular story text sizing */
+.story-content h3 {
+  font-size: 1.25rem;
+  margin: 0.5rem 0;
+  color: #2c3e50;
+}
+
+.story-content .excerpt {
+  color: #666;
+  font-size: 0.9375rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* Category pills/badges */
+.category {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Article metadata with bullet separators */
+.article-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+  flex-wrap: wrap;
+}
+
+.article-meta span::before {
+  content: "• ";
+  margin-right: 0.5rem;
+}
+
+.article-meta span:first-child::before {
+  content: "";
+  margin-right: 0;
+}
+
+/* Tablet responsive - featured card becomes single column */
+@media (max-width: 900px) {
+  .masonry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  
+  .story-card.featured {
+    grid-column: span 1;
+    grid-row: span 22;
+  }
+  
+  .story-card.featured .story-image {
+    height: 280px;
+  }
+}
+
+/* Mobile responsive - single column, auto heights */
+@media (max-width: 600px) {
+  .masonry-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+  
+  .story-card,
+  .story-card.featured,
+  .story-card.tall {
+    grid-column: span 1;
+    grid-row: auto;
+  }
+  
+  .story-image,
+  .story-card.featured .story-image,
+  .story-card.tall .story-image {
+    height: 200px;
+  }
+}
+</style>
+
+
+<script>
+// Category filter functionality for news/media layout
+(function() {
+  const filterButtons = document.querySelectorAll('.news-filter-controls .filter-btn');
+  const filterItems = document.querySelectorAll('.filter-item');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const filter = this.getAttribute('data-filter');
+      
+      // Update active button
+      filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      });
+      this.classList.add('active');
+      this.setAttribute('aria-pressed', 'true');
+      
+      // Filter items
+      filterItems.forEach(item => {
+        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    });
+  });
+})();
+</script>
+
+<!--
+RECOMMENDED PAIRINGS:
+CSS: Works great with "Complete Starter" or "Element Styles" for consistent typography and spacing
+NOTE: JavaScript filtering is now included! Filter buttons are fully functional.
+-->

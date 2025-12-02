@@ -1,0 +1,49 @@
+<!-- Hero section with gradient background -->
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="container">
+    <!-- Main headline -->
+    <h1 id="hero-heading">Build amazing things</h1>
+    <p class="hero-subtitle">Start creating beautiful websites with our simple, powerful tools. No experience needed.</p>
+    
+    <!-- Call-to-action buttons -->
+    <div class="hero-actions">
+      <button class="btn" aria-label="Get started with our platform">Get started</button>
+      <button class="btn btn-secondary" aria-label="Learn more about our features">Learn more</button>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Hero section with gradient background */
+.hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+}
+
+/* Flexbox layout for action buttons */
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2rem; }
+  .hero-subtitle { font-size: 1rem; }
+}
+</style>

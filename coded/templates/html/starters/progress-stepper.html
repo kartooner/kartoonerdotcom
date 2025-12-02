@@ -1,0 +1,146 @@
+<!-- Progress stepper container -->
+<div class="container" role="main">
+  <h1 id="stepper-heading">Account setup wizard</h1>
+
+  <!-- Step progress indicator -->
+  <nav aria-label="Progress" class="stepper">
+    <ol class="stepper-list" role="list">
+      <!-- Step 1 - Completed -->
+      <li class="stepper-item completed" aria-current="false">
+        <div class="stepper-marker" aria-label="Step 1 completed">
+          <span class="stepper-number" aria-hidden="true">✓</span>
+        </div>
+        <div class="stepper-content">
+          <h2 class="stepper-title">Personal info</h2>
+          <p class="stepper-description">Basic information</p>
+        </div>
+      </li>
+
+      <!-- Step 2 - Current -->
+      <li class="stepper-item current" aria-current="step">
+        <div class="stepper-marker" aria-label="Step 2 in progress">
+          <span class="stepper-number" aria-hidden="true">2</span>
+        </div>
+        <div class="stepper-content">
+          <h2 class="stepper-title">Contact details</h2>
+          <p class="stepper-description">Email and phone</p>
+        </div>
+      </li>
+
+      <!-- Step 3 - Upcoming -->
+      <li class="stepper-item" aria-current="false">
+        <div class="stepper-marker" aria-label="Step 3 upcoming">
+          <span class="stepper-number" aria-hidden="true">3</span>
+        </div>
+        <div class="stepper-content">
+          <h2 class="stepper-title">Preferences</h2>
+          <p class="stepper-description">Customize your experience</p>
+        </div>
+      </li>
+
+      <!-- Step 4 - Upcoming -->
+      <li class="stepper-item" aria-current="false">
+        <div class="stepper-marker" aria-label="Step 4 upcoming">
+          <span class="stepper-number" aria-hidden="true">4</span>
+        </div>
+        <div class="stepper-content">
+          <h2 class="stepper-title">Review</h2>
+          <p class="stepper-description">Confirm and submit</p>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Form for current step -->
+  <section class="step-content" aria-labelledby="step-2-heading">
+    <h2 id="step-2-heading">Step 2: Contact details</h2>
+    <p>Please provide your contact information so we can reach you.</p>
+
+    <form aria-label="Contact details form">
+      <!-- Email field -->
+      <div class="form-group">
+        <label for="email">Email address <span aria-label="required">*</span></label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          required 
+          aria-required="true"
+          aria-describedby="email-help"
+          placeholder="you@example.com">
+        <p id="email-help" class="form-help">We'll never share your email with anyone else.</p>
+      </div>
+
+      <!-- Phone field -->
+      <div class="form-group">
+        <label for="phone">Phone number <span aria-label="required">*</span></label>
+        <input 
+          type="tel" 
+          id="phone" 
+          name="phone" 
+          required 
+          aria-required="true"
+          placeholder="(555) 555-5555">
+      </div>
+
+      <!-- Preferred contact method -->
+      <fieldset class="form-group">
+        <legend>Preferred contact method <span aria-label="required">*</span></legend>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="contact-method" value="email" checked required aria-required="true">
+            <span>Email</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="contact-method" value="phone" required aria-required="true">
+            <span>Phone</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="contact-method" value="both" required aria-required="true">
+            <span>Both</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- Notifications opt-in -->
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="notifications" value="yes">
+          <span>Send me notifications about updates and new features</span>
+        </label>
+      </div>
+    </form>
+  </section>
+
+  <!-- Navigation buttons -->
+  <footer class="stepper-actions">
+    <button class="btn btn-secondary" aria-label="Go back to previous step">Back</button>
+    <button class="btn" aria-label="Continue to next step">Continue</button>
+  </footer>
+
+  <!-- Progress indicator for assistive technologies -->
+  <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+    Step 2 of 4: Contact details
+  </div>
+</div>
+
+<!-- Visually hidden class for screen readers -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.form-help {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+</style>

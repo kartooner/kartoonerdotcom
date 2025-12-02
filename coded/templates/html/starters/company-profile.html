@@ -1,0 +1,364 @@
+<!-- Company profile container -->
+<div class="container" role="main">
+  <!-- Company header with logo and basic info -->
+  <header class="company-header" aria-labelledby="company-name">
+    <img 
+      src="https://via.placeholder.com/200x80" 
+      alt="TechCorp Inc. logo" 
+      class="company-logo">
+    <div class="company-info">
+      <h1 id="company-name">TechCorp Inc.</h1>
+      <p class="company-tagline">Building the future of technology</p>
+    </div>
+  </header>
+
+  <!-- About section -->
+  <section class="company-about" aria-labelledby="about-heading">
+    <h2 id="about-heading">About us</h2>
+    <p>TechCorp Inc. is a leading technology company specializing in innovative software solutions. Founded in 2010, we've grown from a small startup to a global enterprise serving millions of users worldwide.</p>
+    <p>Our mission is to empower businesses through cutting-edge technology and exceptional service. We believe in creating products that make a real difference in people's lives.</p>
+  </section>
+
+  <!-- Company information grid -->
+  <section class="company-details" aria-labelledby="details-heading">
+    <h2 id="details-heading">Company information</h2>
+    <dl class="info-grid">
+      <div class="info-item">
+        <dt>Industry</dt>
+        <dd>Technology / Software</dd>
+      </div>
+      <div class="info-item">
+        <dt>Founded</dt>
+        <dd><time datetime="2010">2010</time></dd>
+      </div>
+      <div class="info-item">
+        <dt>Headquarters</dt>
+        <dd>San Francisco, California</dd>
+      </div>
+      <div class="info-item">
+        <dt>Company size</dt>
+        <dd>500-1000 employees</dd>
+      </div>
+      <div class="info-item">
+        <dt>Website</dt>
+        <dd><a href="https://techcorp.example.com" rel="noopener noreferrer">techcorp.example.com</a></dd>
+      </div>
+      <div class="info-item">
+        <dt>Contact</dt>
+        <dd><a href="mailto:info@techcorp.example.com">info@techcorp.example.com</a></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Team members section -->
+  <section class="team-section" aria-labelledby="team-heading">
+    <h2 id="team-heading">Leadership team</h2>
+    <div class="team-grid">
+      <!-- Team member card 1 -->
+      <article class="team-card">
+        <img 
+          src="https://via.placeholder.com/120" 
+          alt="Portrait of Sarah Johnson" 
+          class="team-photo">
+        <h3 class="team-name">Sarah Johnson</h3>
+        <p class="team-role">CEO & Founder</p>
+        <p class="team-bio">15+ years of experience leading tech companies and building innovative products.</p>
+        <a href="#contact-sarah" class="team-link" aria-label="Contact Sarah Johnson">Contact</a>
+      </article>
+
+      <!-- Team member card 2 -->
+      <article class="team-card">
+        <img 
+          src="https://via.placeholder.com/120" 
+          alt="Portrait of Michael Chen" 
+          class="team-photo">
+        <h3 class="team-name">Michael Chen</h3>
+        <p class="team-role">CTO</p>
+        <p class="team-bio">Former Google engineer with expertise in scalable architecture and AI systems.</p>
+        <a href="#contact-michael" class="team-link" aria-label="Contact Michael Chen">Contact</a>
+      </article>
+
+      <!-- Team member card 3 -->
+      <article class="team-card">
+        <img 
+          src="https://via.placeholder.com/120" 
+          alt="Portrait of Emily Rodriguez" 
+          class="team-photo">
+        <h3 class="team-name">Emily Rodriguez</h3>
+        <p class="team-role">VP of Product</p>
+        <p class="team-bio">Product strategy expert with a track record of launching successful B2B platforms.</p>
+        <a href="#contact-emily" class="team-link" aria-label="Contact Emily Rodriguez">Contact</a>
+      </article>
+
+      <!-- Team member card 4 -->
+      <article class="team-card">
+        <img 
+          src="https://via.placeholder.com/120" 
+          alt="Portrait of David Kim" 
+          class="team-photo">
+        <h3 class="team-name">David Kim</h3>
+        <p class="team-role">CFO</p>
+        <p class="team-bio">20 years of financial leadership in high-growth technology companies.</p>
+        <a href="#contact-david" class="team-link" aria-label="Contact David Kim">Contact</a>
+      </article>
+    </div>
+  </section>
+</div>
+
+<style>
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #2c3e50;
+  line-height: 1.6;
+}
+
+/* Company Header */
+.company-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 3rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 16px;
+  margin-bottom: 3rem;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  color: white;
+  flex-wrap: wrap;
+}
+
+.company-logo {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 220px;
+  height: auto;
+}
+
+.company-info h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.company-tagline {
+  margin: 0;
+  font-size: 1.25rem;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+/* About Section */
+.company-about {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.company-about h2 {
+  margin: 0 0 1.5rem 0;
+  color: #3b82f6;
+  font-size: 1.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #3b82f6;
+}
+
+.company-about p {
+  margin: 0 0 1rem 0;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #475569;
+}
+
+.company-about p:last-child {
+  margin-bottom: 0;
+}
+
+/* Company Details Section */
+.company-details {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.company-details h2 {
+  margin: 0 0 2rem 0;
+  color: #3b82f6;
+  font-size: 1.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #3b82f6;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.info-item {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 10px;
+  border-left: 4px solid #3b82f6;
+  transition: all 0.3s ease;
+}
+
+.info-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.info-item dt {
+  font-weight: 700;
+  color: #1e40af;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.info-item dd {
+  margin: 0;
+  color: #334155;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.info-item a {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.2s;
+  font-weight: 500;
+}
+
+.info-item a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Team Section */
+.team-section {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.team-section h2 {
+  margin: 0 0 2.5rem 0;
+  color: #3b82f6;
+  font-size: 1.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #3b82f6;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.team-card {
+  background: linear-gradient(to bottom, #f8fafc, white);
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+}
+
+.team-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto 1.25rem;
+  border: 4px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  object-fit: cover;
+  display: block;
+}
+
+.team-name {
+  margin: 0 0 0.5rem 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.team-role {
+  margin: 0 0 1rem 0;
+  color: #3b82f6;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.team-bio {
+  margin: 0 0 1.5rem 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.team-link {
+  display: inline-block;
+  padding: 0.625rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.team-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .company-header {
+    flex-direction: column;
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  .company-logo {
+    max-width: 180px;
+  }
+  
+  .company-info h1 {
+    font-size: 2rem;
+  }
+  
+  .info-grid,
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,0 +1,399 @@
+<!-- Complete site layout combining navigation, content, and footer -->
+<!-- IMPORTANT: Load "Complete Starter" CSS for this to work properly! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Site Layout</title>
+</head>
+<body>
+  
+  <!-- Sticky navigation bar at top -->
+  <nav class="navbar" aria-label="Main navigation">
+    <div class="container">
+      <div class="nav-content">
+        <!-- Logo -->
+        <a href="#" class="logo" aria-label="Home">Brand</a>
+        
+        <!-- Mobile menu toggle button (hidden on desktop) -->
+        <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <!-- Navigation menu (hidden on mobile until toggle clicked) -->
+        <ul class="nav-menu" role="list">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#signup">Sign up</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Main content area -->
+  <main>
+    <!-- Hero section -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="container">
+        <h1 id="hero-heading">Welcome to our platform</h1>
+        <p class="hero-subtitle">Build amazing things with our simple, powerful tools. Get started in minutes.</p>
+        <div class="hero-actions">
+          <button class="btn" aria-label="Get started with our platform">Get started</button>
+          <button class="btn btn-secondary" aria-label="Learn more about our features">Learn more</button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Features section -->
+    <section id="features" class="features" aria-labelledby="features-heading">
+      <div class="container">
+        <h2 id="features-heading">Why choose us</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Fast & Reliable</h3>
+            <p>Lightning-fast performance with 99.9% uptime guarantee.</p>
+          </article>
+          <article class="card">
+            <h3>Easy to Use</h3>
+            <p>Intuitive interface designed for beginners and experts alike.</p>
+          </article>
+          <article class="card">
+            <h3>24/7 Support</h3>
+            <p>Our team is always here to help you succeed.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+    
+    <!-- CTA section -->
+    <section class="cta-section" aria-labelledby="cta-heading">
+      <div class="container">
+        <h2 id="cta-heading">Ready to get started?</h2>
+        <p>Join thousands of satisfied customers today.</p>
+        <button class="btn btn-large" aria-label="Start your free trial">Start free trial</button>
+      </div>
+    </section>
+  </main>
+  
+  <!-- Site footer -->
+  <footer class="site-footer" role="contentinfo" aria-label="Site footer">
+    <div class="container">
+      <div class="footer-columns">
+        <div class="footer-column">
+          <h3>Company</h3>
+          <p>Building amazing web experiences since 2020.</p>
+        </div>
+        <div class="footer-column">
+          <h3>Quick links</h3>
+          <nav aria-label="Footer navigation">
+            <ul role="list">
+              <li><a href="#about">About</a></li>
+              <li><a href="#services">Services</a></li>
+              <li><a href="#team">Team</a></li>
+            </ul>
+          </nav>
+        </div>
+        <div class="footer-column">
+          <h3>Connect</h3>
+          <nav aria-label="Social media links">
+            <ul role="list">
+              <li><a href="#twitter" aria-label="Follow us on Twitter">Twitter</a></li>
+              <li><a href="#github" aria-label="Visit our GitHub">GitHub</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Your Company. All rights reserved.</p>
+        <nav aria-label="Legal links">
+          <a href="#privacy">Privacy</a>
+          <a href="#terms">Terms</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+  
+</body>
+</html>
+
+<style>
+/* Minimal layout-specific styles - Complete Starter CSS handles most styling */
+
+/* Navigation bar sticky positioning */
+.navbar {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 1rem 0;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  text-decoration: none;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-menu a:hover {
+  color: #3498db;
+}
+
+/* Mobile menu toggle button */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+/* Transform hamburger to X when active */
+.nav-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Dark background for toggle button with better contrast */
+.nav-toggle {
+  background: #3498db;
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+/* Hero section */
+.hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Features section */
+.features {
+  padding: 4rem 0;
+}
+
+.features h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+/* CTA section */
+.cta-section {
+  background: #f8f9fa;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.btn-large {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+}
+
+/* Footer */
+.site-footer {
+  background: #2c3e50;
+  color: #ecf0f1;
+  padding: 3rem 0 1.5rem;
+}
+
+.footer-columns {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.footer-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-column h3 {
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-column a {
+  color: #bdc3c7;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-column a:hover {
+  color: white;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #34495e;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.footer-bottom p {
+  margin: 0;
+}
+
+.footer-bottom nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-bottom a {
+  color: #95a5a6;
+  text-decoration: none;
+}
+
+.footer-bottom a:hover {
+  color: white;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  /* Show hamburger menu toggle */
+  .nav-toggle {
+    display: flex;
+  }
+  
+  /* Hide menu by default on mobile */
+  .nav-menu {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    text-align: center;
+    order: 3;
+  }
+  
+  /* Show menu when active */
+  .nav-menu.active {
+    display: flex;
+  }
+  
+  .nav-menu li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .nav-content {
+    flex-wrap: wrap;
+  }
+  
+  .nav-cta {
+    order: 2;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .footer-columns {
+    flex-direction: column;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+</style>
+
+<script>
+// Mobile menu toggle functionality
+document.querySelector('.nav-toggle')?.addEventListener('click', function() {
+  const menu = document.querySelector('.nav-menu');
+  const isActive = menu.classList.toggle('active');
+  this.classList.toggle('active'); // Toggle X icon
+  this.setAttribute('aria-expanded', isActive);
+  this.setAttribute('aria-label', isActive ? 'Close navigation menu' : 'Toggle navigation menu');
+});
+</script>
+
+<!--
+RECOMMENDED PAIRINGS:
+CSS: REQUIRED - Load "Complete Starter" CSS (this template relies on it for base styles)
+JS: Add "Event Handling" to make buttons and navigation interactive
+NOTE: This is a complete HTML document - use it as a starting point for a full website
+-->

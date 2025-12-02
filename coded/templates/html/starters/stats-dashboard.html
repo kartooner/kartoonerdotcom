@@ -1,0 +1,478 @@
+<!-- Operational dashboard with stats and activity modules -->
+<section class="dashboard" aria-labelledby="dashboard-heading">
+  <div class="container">
+    <h1 id="dashboard-heading">Dashboard</h1>
+    
+    <!-- Large stat numbers at top -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number" aria-label="10,452">10,452</div>
+        <div class="stat-label">Active Users</div>
+        <div class="stat-trend positive">↑ 12%</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">$84,293</div>
+        <div class="stat-label">Revenue</div>
+        <div class="stat-trend positive">↑ 8%</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">99.8%</div>
+        <div class="stat-label">Uptime</div>
+        <div class="stat-trend negative">↓ 0.2%</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">1,247</div>
+        <div class="stat-label">New Signups</div>
+        <div class="stat-trend positive">↑ 23%</div>
+      </div>
+    </div>
+    
+    <!-- Masonry grid with dashboard modules below -->
+    <div class="dashboard-grid">
+      <!-- Recent Activity Module -->
+      <div class="dashboard-module">
+        <h3>Recent Activity</h3>
+        <ul class="activity-list">
+          <li>
+            <span class="activity-icon" aria-hidden="true">✓</span>
+            <div class="activity-content">
+              <strong>Order #3847 completed</strong>
+              <span class="activity-time">2 minutes ago</span>
+            </div>
+          </li>
+          <li>
+            <span class="activity-icon user" aria-hidden="true">👤</span>
+            <div class="activity-content">
+              <strong>New user registered</strong>
+              <span class="activity-time">5 minutes ago</span>
+            </div>
+          </li>
+          <li>
+            <span class="activity-icon" aria-hidden="true">💰</span>
+            <div class="activity-content">
+              <strong>Payment received: $249</strong>
+              <span class="activity-time">12 minutes ago</span>
+            </div>
+          </li>
+          <li>
+            <span class="activity-icon" aria-hidden="true">⚠️</span>
+            <div class="activity-content">
+              <strong>Server alert resolved</strong>
+              <span class="activity-time">1 hour ago</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- System Status Module -->
+      <div class="dashboard-module tall">
+        <h3>System Status</h3>
+        <div class="status-item">
+          <span>API Server</span>
+          <span class="status-badge online">Online</span>
+        </div>
+        <div class="status-item">
+          <span>Database</span>
+          <span class="status-badge online">Online</span>
+        </div>
+        <div class="status-item">
+          <span>Cache Server</span>
+          <span class="status-badge online">Online</span>
+        </div>
+        <div class="status-item">
+          <span>Email Service</span>
+          <span class="status-badge warning">Degraded</span>
+        </div>
+        <div class="status-item">
+          <span>CDN</span>
+          <span class="status-badge online">Online</span>
+        </div>
+        <div class="status-item">
+          <span>Payment Gateway</span>
+          <span class="status-badge online">Online</span>
+        </div>
+      </div>
+      
+      <!-- Quick Stats Module -->
+      <div class="dashboard-module">
+        <h3>Performance Metrics</h3>
+        <div class="metric-row">
+          <span>Avg Response Time</span>
+          <strong>127ms</strong>
+        </div>
+        <div class="metric-row">
+          <span>Error Rate</span>
+          <strong>0.03%</strong>
+        </div>
+        <div class="metric-row">
+          <span>CPU Usage</span>
+          <strong>34%</strong>
+        </div>
+        <div class="metric-row">
+          <span>Memory Usage</span>
+          <strong>62%</strong>
+        </div>
+      </div>
+      
+      <!-- Recent Transactions Module -->
+      <div class="dashboard-module tall">
+        <h3>Recent Transactions</h3>
+        <div class="transaction-item">
+          <div class="transaction-details">
+            <strong>Premium Plan</strong>
+            <span class="transaction-user">john@example.com</span>
+          </div>
+          <span class="transaction-amount">$49.00</span>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-details">
+            <strong>Enterprise Plan</strong>
+            <span class="transaction-user">sarah@company.com</span>
+          </div>
+          <span class="transaction-amount">$299.00</span>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-details">
+            <strong>Basic Plan</strong>
+            <span class="transaction-user">mike@startup.io</span>
+          </div>
+          <span class="transaction-amount">$19.00</span>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-details">
+            <strong>Premium Plan</strong>
+            <span class="transaction-user">alex@design.co</span>
+          </div>
+          <span class="transaction-amount">$49.00</span>
+        </div>
+      </div>
+      
+      <!-- Notifications Module -->
+      <div class="dashboard-module">
+        <h3>Alerts & Notifications</h3>
+        <div class="notification-item warning">
+          <strong>Storage Limit</strong>
+          <p>You're using 87% of your storage quota</p>
+        </div>
+        <div class="notification-item info">
+          <strong>Maintenance Scheduled</strong>
+          <p>System update on Saturday at 2 AM UTC</p>
+        </div>
+      </div>
+      
+      <!-- Top Pages Module -->
+      <div class="dashboard-module">
+        <h3>Top Pages</h3>
+        <div class="metric-row">
+          <span>/dashboard</span>
+          <strong>2,847 views</strong>
+        </div>
+        <div class="metric-row">
+          <span>/products</span>
+          <strong>1,934 views</strong>
+        </div>
+        <div class="metric-row">
+          <span>/pricing</span>
+          <strong>1,502 views</strong>
+        </div>
+        <div class="metric-row">
+          <span>/docs</span>
+          <strong>1,238 views</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Dashboard container */
+.dashboard {
+  padding: 2rem 0;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.dashboard h1 {
+  margin-bottom: 2rem;
+  color: #2c3e50;
+}
+
+/* Large stats row at top */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 2px solid #e0e0e0;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.stat-trend {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stat-trend.positive {
+  color: #27ae60;
+}
+
+.stat-trend.negative {
+  color: #e74c3c;
+}
+
+/* Masonry grid for dashboard modules */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: 10px;
+  gap: 1.5rem;
+}
+
+.dashboard-module {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  grid-row: span 18;
+}
+
+.dashboard-module.tall {
+  grid-row: span 26;
+}
+
+.dashboard-module h3 {
+  margin: 0 0 1.25rem 0;
+  color: #2c3e50;
+  font-size: 1.125rem;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 0.75rem;
+}
+
+/* Activity list */
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activity-list li {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.activity-list li:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activity-content strong {
+  color: #2c3e50;
+  font-size: 0.9375rem;
+}
+
+.activity-time {
+  font-size: 0.8125rem;
+  color: #95a5a6;
+}
+
+/* System status */
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ecf0f1;
+  color: #2c3e50;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.online {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.offline {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Metric rows */
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ecf0f1;
+  color: #2c3e50;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-row span {
+  color: #6c757d;
+}
+
+.metric-row strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Transactions */
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.transaction-details strong {
+  color: #2c3e50;
+  font-size: 0.9375rem;
+}
+
+.transaction-user {
+  font-size: 0.8125rem;
+  color: #95a5a6;
+}
+
+.transaction-amount {
+  font-weight: 600;
+  color: #27ae60;
+  font-size: 1.0625rem;
+}
+
+/* Notifications */
+.notification-item {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid;
+}
+
+.notification-item:last-child {
+  margin-bottom: 0;
+}
+
+.notification-item.warning {
+  background: #fff3cd;
+  border-left-color: #ffc107;
+}
+
+.notification-item.info {
+  background: #d1ecf1;
+  border-left-color: #17a2b8;
+}
+
+.notification-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #2c3e50;
+  font-size: 0.9375rem;
+}
+
+.notification-item p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* Tablet responsive */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+  
+  .dashboard-module,
+  .dashboard-module.tall {
+    grid-row: auto;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+}
+</style>
+
+<!--
+RECOMMENDED PAIRINGS:
+CSS: Works great with "Complete Starter" or "Element Styles" for consistent styling
+JS: Add "Event Handling" for interactive dashboard features like refreshing data
+-->

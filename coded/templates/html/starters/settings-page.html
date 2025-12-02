@@ -1,0 +1,234 @@
+<!-- Settings page container -->
+<div class="container" role="main">
+  <header class="settings-header">
+    <h1 id="settings-heading">Settings</h1>
+    <p>Manage your account preferences and configuration</p>
+  </header>
+
+  <div class="settings-layout">
+    <!-- Settings navigation sidebar -->
+    <nav class="settings-nav" aria-label="Settings navigation">
+      <ul role="list">
+        <li><a href="#profile" class="active" aria-current="page">Profile</a></li>
+        <li><a href="#notifications">Notifications</a></li>
+        <li><a href="#privacy">Privacy & Security</a></li>
+        <li><a href="#appearance">Appearance</a></li>
+        <li><a href="#billing">Billing</a></li>
+      </ul>
+    </nav>
+
+    <!-- Settings content area -->
+    <main class="settings-content">
+      <!-- Profile section -->
+      <section id="profile" class="settings-section" aria-labelledby="profile-heading">
+        <h2 id="profile-heading">Profile settings</h2>
+        <p class="section-description">Update your personal information and profile details</p>
+
+        <form aria-label="Profile settings form">
+          <!-- Avatar upload -->
+          <div class="form-group">
+            <label for="avatar">Profile picture</label>
+            <div class="avatar-upload">
+              <img 
+                src="https://via.placeholder.com/80" 
+                alt="Current profile picture" 
+                class="avatar-preview">
+              <div class="avatar-actions">
+                <label for="avatar" class="btn btn-secondary">Change picture</label>
+                <input type="file" id="avatar" name="avatar" accept="image/*" class="sr-only">
+                <button type="button" class="btn-text">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full name -->
+          <div class="form-group">
+            <label for="full-name">Full name</label>
+            <input 
+              type="text" 
+              id="full-name" 
+              name="full-name" 
+              value="John Doe"
+              required 
+              aria-required="true">
+          </div>
+
+          <!-- Username -->
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              value="johndoe"
+              required 
+              aria-required="true"
+              aria-describedby="username-help">
+            <p id="username-help" class="form-help">Your unique identifier across the platform</p>
+          </div>
+
+          <!-- Bio -->
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea 
+              id="bio" 
+              name="bio" 
+              rows="4"
+              placeholder="Tell us about yourself...">Product designer and developer passionate about creating accessible web experiences.</textarea>
+          </div>
+
+          <!-- Save button -->
+          <button type="submit" class="btn">Save changes</button>
+        </form>
+      </section>
+
+      <!-- Notifications section -->
+      <section id="notifications" class="settings-section" aria-labelledby="notifications-heading">
+        <h2 id="notifications-heading">Notification preferences</h2>
+        <p class="section-description">Choose how you want to be notified about updates and activity</p>
+
+        <form aria-label="Notification preferences form">
+          <!-- Email notifications -->
+          <fieldset class="form-group">
+            <legend>Email notifications</legend>
+            <div class="checkbox-list">
+              <label class="checkbox-label">
+                <input type="checkbox" name="email-updates" checked>
+                <div>
+                  <span class="checkbox-title">Product updates</span>
+                  <span class="checkbox-description">News about product features and updates</span>
+                </div>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="email-comments" checked>
+                <div>
+                  <span class="checkbox-title">Comments</span>
+                  <span class="checkbox-description">Notifications when someone comments on your posts</span>
+                </div>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="email-mentions">
+                <div>
+                  <span class="checkbox-title">Mentions</span>
+                  <span class="checkbox-description">When someone mentions you in a discussion</span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Push notifications -->
+          <fieldset class="form-group">
+            <legend>Push notifications</legend>
+            <div class="checkbox-list">
+              <label class="checkbox-label">
+                <input type="checkbox" name="push-messages" checked>
+                <div>
+                  <span class="checkbox-title">Direct messages</span>
+                  <span class="checkbox-description">Get notified of new direct messages</span>
+                </div>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="push-activity">
+                <div>
+                  <span class="checkbox-title">Activity updates</span>
+                  <span class="checkbox-description">Updates on your account activity</span>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="btn">Save preferences</button>
+        </form>
+      </section>
+
+      <!-- Privacy section -->
+      <section id="privacy" class="settings-section" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">Privacy & Security</h2>
+        <p class="section-description">Control your privacy settings and account security</p>
+
+        <form aria-label="Privacy and security settings form">
+          <!-- Profile visibility -->
+          <div class="form-group">
+            <label for="profile-visibility">Profile visibility</label>
+            <select id="profile-visibility" name="profile-visibility">
+              <option value="public" selected>Public - Anyone can see your profile</option>
+              <option value="private">Private - Only you can see your profile</option>
+              <option value="connections">Connections only</option>
+            </select>
+          </div>
+
+          <!-- Two-factor authentication -->
+          <div class="form-group">
+            <div class="setting-item">
+              <div>
+                <h3>Two-factor authentication</h3>
+                <p>Add an extra layer of security to your account</p>
+              </div>
+              <button type="button" class="btn btn-secondary">Enable</button>
+            </div>
+          </div>
+
+          <!-- Change password -->
+          <div class="form-group">
+            <div class="setting-item">
+              <div>
+                <h3>Password</h3>
+                <p>Last changed 3 months ago</p>
+              </div>
+              <button type="button" class="btn btn-secondary">Change password</button>
+            </div>
+          </div>
+
+          <!-- Download data -->
+          <div class="form-group">
+            <div class="setting-item">
+              <div>
+                <h3>Download your data</h3>
+                <p>Get a copy of all your account data</p>
+              </div>
+              <button type="button" class="btn btn-secondary">Request download</button>
+            </div>
+          </div>
+
+          <!-- Delete account -->
+          <div class="form-group danger-zone">
+            <h3>Danger zone</h3>
+            <div class="setting-item">
+              <div>
+                <h4>Delete account</h4>
+                <p>Permanently delete your account and all data</p>
+              </div>
+              <button type="button" class="btn btn-danger">Delete account</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Visually hidden class for screen readers -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.form-help {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.section-description {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+</style>
