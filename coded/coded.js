@@ -69,6 +69,8 @@
         const layoutVerticalBtn = document.getElementById('layoutVerticalBtn');
         const themeDarkBtn = document.getElementById('themeDarkBtn');
         const themeLightBtn = document.getElementById('themeLightBtn');
+        const syntaxOnBtn = document.getElementById('syntaxOnBtn');
+        const syntaxOffBtn = document.getElementById('syntaxOffBtn');
         const findReplacePanel = document.getElementById('findReplacePanel');
         const closeFindReplaceBtn = document.getElementById('closeFindReplaceBtn');
         const findInput = document.getElementById('findInput');
@@ -101,6 +103,13 @@
 
         // Syntax highlighting with Prism
         function highlightEditor(editor, highlight, language) {
+            // Check if syntax highlighting is disabled
+            if (!syntaxHighlightingEnabled) {
+                highlight.innerHTML = '';
+                syncScroll(editor, highlight);
+                return;
+            }
+
             const code = editor.value;
             if (code) {
                 const highlighted = Prism.highlight(code, Prism.languages[language], language);
@@ -1096,6 +1105,7 @@
         let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
         let currentLayout = localStorage.getItem('coded-layout') || 'horizontal';
         let currentTheme = localStorage.getItem('coded-theme') || 'dark';
+        let syntaxHighlightingEnabled = localStorage.getItem('coded-syntax-highlighting') !== 'false';
 
         function openSettingsModal() {
             settingsMenu.style.display = 'block';
@@ -1170,6 +1180,38 @@
             localStorage.setItem('coded-theme', theme);
         }
 
+        function setSyntaxHighlighting(enabled) {
+            syntaxHighlightingEnabled = enabled;
+            if (enabled) {
+                syntaxOnBtn.classList.add('active');
+                syntaxOnBtn.style.background = 'var(--accent-color)';
+                syntaxOnBtn.style.color = 'var(--bg-color)';
+                syntaxOnBtn.style.borderColor = 'var(--accent-color)';
+                syntaxOffBtn.classList.remove('active');
+                syntaxOffBtn.style.background = 'none';
+                syntaxOffBtn.style.color = 'var(--secondary-color)';
+                syntaxOffBtn.style.borderColor = 'var(--editor-border)';
+                // Re-highlight all editors
+                highlightEditor(htmlEditor, htmlHighlight, 'markup');
+                highlightEditor(cssEditor, cssHighlight, 'css');
+                highlightEditor(jsEditor, jsHighlight, 'javascript');
+            } else {
+                syntaxOffBtn.classList.add('active');
+                syntaxOffBtn.style.background = 'var(--accent-color)';
+                syntaxOffBtn.style.color = 'var(--bg-color)';
+                syntaxOffBtn.style.borderColor = 'var(--accent-color)';
+                syntaxOnBtn.classList.remove('active');
+                syntaxOnBtn.style.background = 'none';
+                syntaxOnBtn.style.color = 'var(--secondary-color)';
+                syntaxOnBtn.style.borderColor = 'var(--editor-border)';
+                // Clear all highlighting
+                htmlHighlight.innerHTML = '';
+                cssHighlight.innerHTML = '';
+                jsHighlight.innerHTML = '';
+            }
+            localStorage.setItem('coded-syntax-highlighting', enabled);
+        }
+
         // Settings event listeners
         settingsBtn.addEventListener('click', openSettingsModal);
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
@@ -1196,10 +1238,19 @@
             setTheme('light');
         });
 
+        syntaxOnBtn.addEventListener('click', () => {
+            setSyntaxHighlighting(true);
+        });
+
+        syntaxOffBtn.addEventListener('click', () => {
+            setSyntaxHighlighting(false);
+        });
+
         // Initialize settings
         updateFontSize(currentFontSize);
         setLayout(currentLayout);
         setTheme(currentTheme);
+        setSyntaxHighlighting(syntaxHighlightingEnabled);
 
         // Find/Replace functionality
         let currentFindEditor = null;
