@@ -91,6 +91,74 @@
         let cssResetType = localStorage.getItem('coded-css-reset') || 'none'; // 'none', 'normalize', 'reset'
         let isShareMode = false; // Track if we're in share mode
 
+        // Focus trap utility for modals
+        const activeFocusTraps = new Map();
+
+        window.enableFocusTrap = function enableFocusTrap(modalElement, firstFocusElement = null) {
+            // Get all focusable elements within the modal
+            const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+            const focusableElements = modalElement.querySelectorAll(focusableSelector);
+
+            if (focusableElements.length === 0) return null;
+
+            const firstElement = firstFocusElement || focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            // Store the element that had focus before the modal opened
+            const previouslyFocusedElement = document.activeElement;
+
+            // Focus the first element
+            setTimeout(() => firstElement.focus(), 50);
+
+            // Create the trap handler
+            function trapFocus(e) {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        // Shift + Tab: moving backwards
+                        if (document.activeElement === firstElement) {
+                            e.preventDefault();
+                            lastElement.focus();
+                        }
+                    } else {
+                        // Tab: moving forwards
+                        if (document.activeElement === lastElement) {
+                            e.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+                }
+            }
+
+            // Add event listener
+            modalElement.addEventListener('keydown', trapFocus);
+
+            // Store trap info for cleanup
+            const trapInfo = {
+                element: modalElement,
+                handler: trapFocus,
+                previouslyFocusedElement: previouslyFocusedElement
+            };
+            activeFocusTraps.set(modalElement, trapInfo);
+
+            return trapInfo;
+        };
+
+        window.disableFocusTrap = function disableFocusTrap(modalElement) {
+            const trapInfo = activeFocusTraps.get(modalElement);
+            if (trapInfo) {
+                // Remove event listener
+                trapInfo.element.removeEventListener('keydown', trapInfo.handler);
+
+                // Restore focus to previously focused element
+                if (trapInfo.previouslyFocusedElement && trapInfo.previouslyFocusedElement.focus) {
+                    setTimeout(() => trapInfo.previouslyFocusedElement.focus(), 50);
+                }
+
+                // Remove from active traps
+                activeFocusTraps.delete(modalElement);
+            }
+        }
+
         // Debounced auto-run (waits 500ms after last keystroke)
         function debouncedAutoRun() {
             if (!autoRunEnabled) return;
@@ -416,9 +484,12 @@
             htmlSettingsMenu.classList.remove('active');
             cssSettingsMenu.classList.remove('active');
             jsSettingsMenu.classList.remove('active');
+
+            enableFocusTrap(librariesMenu);
         }
 
         function closeLibrariesModal() {
+            disableFocusTrap(librariesMenu);
             librariesMenu.style.display = 'none';
             snippetsOverlay.style.display = 'none';
         }
@@ -494,9 +565,11 @@
             snippetsOverlay.style.display = 'block';
             renderSnippets();
             moreOptionsMenu.classList.remove('active');
+            enableFocusTrap(snippetsMenu);
         }
 
         function closeSnippetsModal() {
+            disableFocusTrap(snippetsMenu);
             snippetsMenu.style.display = 'none';
             snippetsOverlay.style.display = 'none';
         }
@@ -1111,9 +1184,11 @@
             settingsMenu.style.display = 'block';
             snippetsOverlay.style.display = 'block';
             moreOptionsMenu.classList.remove('active');
+            enableFocusTrap(settingsMenu);
         }
 
         function closeSettingsModal() {
+            disableFocusTrap(settingsMenu);
             settingsMenu.style.display = 'none';
             snippetsOverlay.style.display = 'none';
         }
@@ -1276,11 +1351,13 @@
         function openFindReplace() {
             findReplacePanel.style.display = 'block';
             currentFindEditor = getActiveEditor();
+            enableFocusTrap(findReplacePanel, findInput);
             findInput.focus();
             findInput.select();
         }
 
         function closeFindReplace() {
+            disableFocusTrap(findReplacePanel);
             findReplacePanel.style.display = 'none';
             if (currentFindEditor) {
                 currentFindEditor.focus();

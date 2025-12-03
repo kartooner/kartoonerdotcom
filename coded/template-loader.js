@@ -76,9 +76,18 @@
         document.getElementById('htmlSettingsMenu').classList.remove('active');
         document.getElementById('cssSettingsMenu').classList.remove('active');
         document.getElementById('jsSettingsMenu').classList.remove('active');
+
+        // Enable focus trap
+        if (window.enableFocusTrap) {
+            window.enableFocusTrap(templatesMenu);
+        }
     };
 
     window.closeTemplatesModal = function() {
+        // Disable focus trap
+        if (window.disableFocusTrap) {
+            window.disableFocusTrap(templatesMenu);
+        }
         templatesMenu.style.display = 'none';
         snippetsOverlay.style.display = 'none';
     };
