@@ -333,6 +333,10 @@
                 highlightEditor(cssEditor, cssHighlight, 'css');
                 highlightEditor(jsEditor, jsHighlight, 'javascript');
 
+                // Clear all added libraries when loading a snippet
+                saveAddedLibraries([]);
+                renderLibraries(currentLibraryCategory);
+
                 // Announce to screen readers
                 window.announceToScreenReader(`Loaded snippet: ${snippet.name}`);
 
