@@ -7,7 +7,7 @@
     <meta name="description" content="Coded - A lightweight code playground for quick prototyping">
     <title>Coded - Code Playground</title>
 
-    <!-- Password protection with accessible modal -->
+    <!-- Simple password protection with hashing -->
     <script>
         (function() {
             // SHA-256 hash of your password (not the actual password)
@@ -17,94 +17,29 @@
             const hasAccess = sessionStorage.getItem('codedAccess') === PASSWORD_HASH;
 
             if (!hasAccess) {
-                // Prevent page load while checking
-                document.documentElement.style.display = 'none';
+                const userPassword = prompt('This page is password protected. Please enter the password:');
+                if (!userPassword) {
+                    window.location.href = '/';
+                    return;
+                }
 
-                // Show password modal after DOM loads
-                document.addEventListener('DOMContentLoaded', function() {
-                    const modal = document.getElementById('passwordModal');
-                    const input = document.getElementById('passwordInput');
-                    const submitBtn = document.getElementById('passwordSubmit');
-                    const cancelBtn = document.getElementById('passwordCancel');
-                    const errorDiv = document.getElementById('passwordError');
-                    const form = document.getElementById('passwordForm');
+                // Hash the user's input
+                crypto.subtle.digest('SHA-256', new TextEncoder().encode(userPassword))
+                    .then(hashBuffer => {
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-                    // Show modal and focus input
-                    modal.style.display = 'flex';
-                    setTimeout(() => input.focus(), 100);
-
-                    // Focus trap elements
-                    const focusableElements = modal.querySelectorAll(
-                        'input, button, [tabindex]:not([tabindex="-1"])'
-                    );
-                    const firstElement = focusableElements[0];
-                    const lastElement = focusableElements[focusableElements.length - 1];
-
-                    // Trap focus within modal
-                    modal.addEventListener('keydown', function(e) {
-                        if (e.key === 'Tab') {
-                            if (e.shiftKey && document.activeElement === firstElement) {
-                                e.preventDefault();
-                                lastElement.focus();
-                            } else if (!e.shiftKey && document.activeElement === lastElement) {
-                                e.preventDefault();
-                                firstElement.focus();
-                            }
-                        }
-                    });
-
-                    async function verifyPassword() {
-                        const userPassword = input.value;
-                        if (!userPassword) {
-                            errorDiv.textContent = 'Please enter a password.';
-                            return;
-                        }
-
-                        // Hash the user's input
-                        try {
-                            const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(userPassword));
-                            const hashArray = Array.from(new Uint8Array(hashBuffer));
-                            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-                            if (hashHex === PASSWORD_HASH) {
-                                sessionStorage.setItem('codedAccess', PASSWORD_HASH);
-                                errorDiv.textContent = '';
-                                modal.style.display = 'none';
-                                document.documentElement.style.display = '';
-                            } else {
-                                errorDiv.textContent = 'Incorrect password. Please try again.';
-                                input.value = '';
-                                input.focus();
-                            }
-                        } catch (error) {
-                            errorDiv.textContent = 'An error occurred. Please try again.';
-                        }
-                    }
-
-                    // Submit on button click
-                    submitBtn.addEventListener('click', verifyPassword);
-
-                    // Submit on Enter key
-                    form.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        verifyPassword();
-                    });
-
-                    // Cancel redirects to home
-                    cancelBtn.addEventListener('click', function() {
-                        window.location.href = '/';
-                    });
-
-                    // Escape key also cancels
-                    modal.addEventListener('keydown', function(e) {
-                        if (e.key === 'Escape') {
+                        if (hashHex === PASSWORD_HASH) {
+                            sessionStorage.setItem('codedAccess', PASSWORD_HASH);
+                            location.reload();
+                        } else {
+                            alert('Incorrect password. Access denied.');
                             window.location.href = '/';
                         }
                     });
-                });
-            } else {
-                // User has access, show page immediately
-                document.documentElement.style.display = '';
+
+                // Prevent page load while checking
+                document.documentElement.style.display = 'none';
             }
         })();
     </script>
@@ -115,46 +50,21 @@
     <link rel="stylesheet" href="/coded/styles.css">
 </head>
 <body>
-    <!-- Password Modal -->
-    <div id="passwordModal" class="password-modal" role="dialog" aria-modal="true" aria-labelledby="passwordTitle" style="display: none;">
-        <div class="password-modal-content">
-            <h2 id="passwordTitle">Password Required</h2>
-            <p>This page is password protected. Please enter the password to continue.</p>
-            <form id="passwordForm" onsubmit="return false;">
-                <label for="passwordInput" class="sr-only">Password</label>
-                <input
-                    type="password"
-                    id="passwordInput"
-                    aria-label="Enter password"
-                    placeholder="Enter password"
-                    aria-describedby="passwordError"
-                    autocomplete="off"
-                />
-                <div id="passwordError" class="password-error" role="alert" aria-live="polite"></div>
-                <div class="password-modal-actions">
-                    <button type="submit" id="passwordSubmit" class="password-submit-btn">Submit</button>
-                    <button type="button" id="passwordCancel" class="password-cancel-btn">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Skip link for keyboard accessibility -->
     <a href="#htmlEditor" class="skip-link">Skip to code editor</a>
 
     <!-- Share Mode Banner -->
     <div class="share-mode-banner" id="shareModeBanner" role="status" aria-live="polite">
         <div class="share-mode-info">
-            <span style="font-size: 1.2rem;">🔗</span>
-            <span><strong>Viewing shared code</strong> — Make your own edits and share them!</span>
+            <span style="font-size: 1.2rem;">📁</span>
+            <span><strong>Loaded file</strong> — Make edits and save as needed</span>
         </div>
         <div class="share-mode-actions">
-            <button class="share-mode-button primary" id="updateShareBtn">Update Share Link</button>
-            <button class="share-mode-button secondary" id="startFreshBtn">Start fresh</button>
+            <button class="share-mode-button primary" id="startFreshBtn">Start fresh</button>
         </div>
     </div>
 
-    <header>
+    <header role="banner">
         <h1>&lt;/Coded&gt;</h1>
         <div class="header-actions">
             <div class="auto-run-toggle">
@@ -324,9 +234,9 @@
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" role="main">
         <!-- Editors Section -->
-        <div class="editors">
+        <div class="editors" role="region" aria-label="Code editors">
             <div class="editor-panel">
                 <div class="editor-header">
                     <span>HTML</span>
@@ -453,7 +363,7 @@
         <div class="resizer" id="resizer"></div>
 
         <!-- Preview Section -->
-        <div class="preview-section">
+        <div class="preview-section" role="region" aria-label="Code preview output">
             <div class="preview-header">
                 <span>Preview</span>
                 <div class="preview-actions">
@@ -484,7 +394,7 @@
                         <span>Console</span>
                         <button class="console-clear" id="clearConsoleBtn" title="Clear console">Clear</button>
                     </div>
-                    <div class="console-output" id="consoleOutput"></div>
+                    <div class="console-output" id="consoleOutput" role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions"></div>
                 </div>
             </div>
         </div>

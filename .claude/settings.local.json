@@ -52,7 +52,10 @@
       "Bash(cmd /c taskkill /F /PID 11340)",
       "Bash(cmd /c \"taskkill /F /IM node.exe\")",
       "Bash(cmd /c taskkill /F /PID 13556)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(cmd /c \"taskkill /F /PID 13556\")",
+      "Bash(powershell -Command \"Stop-Process -Id 13556 -Force\")",
+      "WebFetch(domain:v6.robweychert.com)"
     ],
     "deny": [],
     "ask": []

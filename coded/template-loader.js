@@ -69,15 +69,15 @@
         // Show loading state
         templatesList.innerHTML = '<div class="empty-state"><div class="empty-state-text">Loading templates...</div></div>';
 
-        // Load and render templates
-        await renderTemplates(panel, currentTemplateType);
-
         // Close panel settings menus
         document.getElementById('htmlSettingsMenu').classList.remove('active');
         document.getElementById('cssSettingsMenu').classList.remove('active');
         document.getElementById('jsSettingsMenu').classList.remove('active');
 
-        // Enable focus trap
+        // Load and render templates
+        await renderTemplates(panel, currentTemplateType);
+
+        // Enable focus trap AFTER templates are rendered
         if (window.enableFocusTrap) {
             window.enableFocusTrap(templatesMenu);
         }
@@ -108,7 +108,9 @@
         }
 
         templatesList.innerHTML = templates.map(function(template, index) {
-            return '<div class="library-item" onclick="loadPanelTemplate(\'' + panel + '\', \'' + type + '\', ' + index + ')" style="cursor: pointer;">' +
+            return '<div class="library-item" onclick="loadPanelTemplate(\'' + panel + '\', \'' + type + '\', ' + index + ')" ' +
+                'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();loadPanelTemplate(\'' + panel + '\', \'' + type + '\', ' + index + ')}" ' +
+                'tabindex="0" role="button" aria-label="Load ' + template.name + ' template" style="cursor: pointer;">' +
                 '<div>' +
                 '<span class="library-name">' + template.name + '</span>' +
                 '<div style="font-size: 0.85rem; color: var(--secondary-color); margin-top: 0.25rem;">' +
@@ -167,6 +169,11 @@
             // Load template content
             editor.value = content;
             editor.dispatchEvent(new Event('input'));
+
+            // Announce to screen readers
+            if (window.announceToScreenReader) {
+                window.announceToScreenReader(`Loaded template: ${template.name}`);
+            }
 
             // Close modal
             window.closeTemplatesModal();

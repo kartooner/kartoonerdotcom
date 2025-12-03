@@ -19,8 +19,18 @@
   --radius: 8px;
   --shadow: 0 2px 8px rgba(0,0,0,0.1);
   --transition: 0.2s ease;
-  
-  /* Vertical rhythm - 8px base unit (matches Element Styles) */
+
+  /* Modern typographic scale (1.5 ratio) */
+  --int: 1.5;
+  --scale-2: calc(var(--scale-1) / var(--int));  /* ~0.44rem */
+  --scale-1: calc(var(--scale0) / var(--int));   /* ~0.67rem */
+  --scale0: 1rem;                                  /* Body text */
+  --scale1: calc(var(--scale0) * var(--int));    /* 1.5rem */
+  --scale2: calc(var(--scale1) * var(--int));    /* 2.25rem */
+  --scale3: calc(var(--scale2) * var(--int));    /* 3.375rem */
+  --scale4: calc(var(--scale3) * var(--int));    /* 5.063rem */
+
+  /* Vertical rhythm - 8px base unit */
   --space-xs: 0.5rem;   /* 8px */
   --space-sm: 1rem;     /* 16px */
   --space-md: 1.5rem;   /* 24px */
@@ -46,23 +56,25 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-h1 { 
-  font-size: 2.5rem; 
+h1 {
+  font-size: var(--scale3);
   margin-bottom: var(--space-md);
 }
 
-h2 { 
-  font-size: 2rem; 
+h2 {
+  font-size: var(--scale2);
   margin-bottom: var(--space-md);
 }
 
-h3 { 
-  font-size: 1.5rem; 
+h3 {
+  font-size: var(--scale1);
 }
 
-h4 { font-size: 1.25rem; }
-h5 { font-size: 1.125rem; }
-h6 { font-size: 1rem; }
+h4 { font-size: var(--scale0); }
+h5 { font-size: var(--scale-1); }
+h6 { font-size: var(--scale-1); }
+
+small { font-size: var(--scale-1); }
 
 p {
   margin-bottom: var(--space-sm);

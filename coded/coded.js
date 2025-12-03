@@ -54,7 +54,6 @@
         const previewSection = document.querySelector('.preview-section');
         const container = document.querySelector('.container');
         const shareModeBanner = document.getElementById('shareModeBanner');
-        const updateShareBtn = document.getElementById('updateShareBtn');
         const startFreshBtn = document.getElementById('startFreshBtn');
         const toggleConsoleBtn = document.getElementById('toggleConsoleBtn');
         const consolePanel = document.getElementById('consolePanel');
@@ -157,7 +156,24 @@
                 // Remove from active traps
                 activeFocusTraps.delete(modalElement);
             }
-        }
+        };
+
+        // Screen reader announcement utility
+        window.announceToScreenReader = function(message, priority = 'polite') {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', priority); // 'polite' or 'assertive'
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+
+            // Remove after announcement (give screen readers time to read it)
+            setTimeout(() => {
+                if (announcement.parentNode) {
+                    announcement.parentNode.removeChild(announcement);
+                }
+            }, 1000);
+        };
 
         // Debounced auto-run (waits 500ms after last keystroke)
         function debouncedAutoRun() {
@@ -317,6 +333,9 @@
                 highlightEditor(cssEditor, cssHighlight, 'css');
                 highlightEditor(jsEditor, jsHighlight, 'javascript');
 
+                // Announce to screen readers
+                window.announceToScreenReader(`Loaded snippet: ${snippet.name}`);
+
                 saveCode();
                 runCode();
                 closeSnippetsModal();
@@ -346,10 +365,14 @@
             }
 
             snippetsList.innerHTML = snippets.map(snippet => `
-                <div class="snippet-item">
-                    <div class="snippet-name" onclick="loadSnippet(${snippet.id})">${snippet.name}</div>
+                <div class="snippet-item" role="group" aria-label="${snippet.name}">
+                    <div class="snippet-name" onclick="loadSnippet(${snippet.id})"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();loadSnippet(${snippet.id})}"
+                         tabindex="0" role="button" aria-label="Load snippet ${snippet.name}">${snippet.name}</div>
                     <div class="snippet-actions">
-                        <span class="snippet-delete" onclick="deleteSnippet(${snippet.id})">Delete</span>
+                        <span class="snippet-delete" onclick="deleteSnippet(${snippet.id})"
+                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();deleteSnippet(${snippet.id})}"
+                              tabindex="0" role="button" aria-label="Delete snippet ${snippet.name}">Delete</span>
                     </div>
                 </div>
             `).join('');
@@ -433,7 +456,10 @@
             popularLibraries.innerHTML = categoryLibs.map(lib => {
                 const isAdded = added.find(l => l.url === lib.url);
                 return `
-                    <div class="library-item ${isAdded ? 'added' : ''}" onclick="${isAdded ? '' : `addLibrary('${lib.name}', '${lib.url}', '${lib.type}')`}">
+                    <div class="library-item ${isAdded ? 'added' : ''}"
+                         ${isAdded ? '' : `onclick="addLibrary('${lib.name}', '${lib.url}', '${lib.type}')"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();addLibrary('${lib.name}', '${lib.url}', '${lib.type}')}"
+                         tabindex="0" role="button" aria-label="Add ${lib.name} library"`}>
                         <div>
                             <span class="library-name">${lib.name}</span>
                             <span class="library-version">${lib.type.toUpperCase()}</span>
@@ -448,12 +474,14 @@
                 addedLibrariesList.innerHTML = '<div class="empty-state-text" style="text-align: center; padding: 1rem; color: var(--secondary-color);">No libraries added yet</div>';
             } else {
                 addedLibrariesList.innerHTML = added.map(lib => `
-                    <div class="library-item">
+                    <div class="library-item" role="group" aria-label="${lib.name}">
                         <div>
                             <span class="library-name">${lib.name}</span>
                             <span class="library-version">${lib.type.toUpperCase()}</span>
                         </div>
-                        <span class="library-remove" onclick="removeLibrary('${lib.url}')">Remove</span>
+                        <span class="library-remove" onclick="removeLibrary('${lib.url}')"
+                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();removeLibrary('${lib.url}')}"
+                              tabindex="0" role="button" aria-label="Remove ${lib.name} library">Remove</span>
                     </div>
                 `).join('');
             }
@@ -775,6 +803,8 @@
                 closeLibrariesModal();
             } else if (settingsMenu.style.display === 'block') {
                 closeSettingsModal();
+            } else if (window.closeTemplatesModal && document.getElementById('templatesMenu').style.display === 'block') {
+                window.closeTemplatesModal();
             }
         });
 
@@ -1153,6 +1183,9 @@
             previewFrame.open();
             previewFrame.write(previewDoc);
             previewFrame.close();
+
+            // Announce to screen readers
+            window.announceToScreenReader('Code executed successfully');
         }
 
         // Listen for console messages from iframe
@@ -1664,6 +1697,17 @@ ${js}
                     shareModeBanner.classList.add('active');
                     document.body.classList.add('share-mode');
 
+                    // Update banner text to show it's shared code
+                    const bannerInfo = shareModeBanner.querySelector('.share-mode-info');
+                    if (bannerInfo) {
+                        bannerInfo.innerHTML = `<span style="font-size: 1.2rem;">🔗</span><span><strong>Loaded shared code</strong> — Make edits and save as needed</span>`;
+                    }
+
+                    // Announce to screen readers
+                    if (window.announceToScreenReader) {
+                        window.announceToScreenReader('Loaded shared code from URL');
+                    }
+
                     // Clean URL (remove share parameter) but keep share mode active
                     window.history.replaceState({}, document.title, window.location.pathname);
                 })
@@ -1983,7 +2027,6 @@ ${js}
         clearBtn.addEventListener('click', clearAll);
         exportBtn.addEventListener('click', exportCode);
         shareBtn.addEventListener('click', shareCode);
-        updateShareBtn.addEventListener('click', updateShareLink);
         startFreshBtn.addEventListener('click', startFresh);
 
         // Keyboard shortcuts
@@ -2060,7 +2103,21 @@ ${js}
                     // Run the code
                     runCode();
 
-                    alert(`Loaded: ${shareData.name || 'Untitled'}`);
+                    // Show banner to indicate file was loaded
+                    isShareMode = true;
+                    shareModeBanner.classList.add('active');
+                    document.body.classList.add('share-mode');
+
+                    // Update banner text to show file name
+                    const bannerInfo = shareModeBanner.querySelector('.share-mode-info');
+                    if (bannerInfo) {
+                        bannerInfo.innerHTML = `<span>📁 Loaded file: <strong>${shareData.name || 'Untitled.coded'}</strong></span>`;
+                    }
+
+                    // Announce to screen readers
+                    if (window.announceToScreenReader) {
+                        window.announceToScreenReader(`Loaded file: ${shareData.name || 'Untitled'}`);
+                    }
                 } catch (err) {
                     console.error('Error loading .coded file:', err);
                     alert('Failed to load .coded file. The file may be corrupted.');

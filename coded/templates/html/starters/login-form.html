@@ -75,25 +75,6 @@
         <p>Don't have an account? <a href="#signup" class="link">Sign up</a></p>
       </footer>
     </section>
-
-    <!-- Optional: Side panel with benefits/features -->
-    <aside class="login-aside" aria-label="Benefits of signing in">
-      <h2>Why sign in?</h2>
-      <ul>
-        <li>
-          <strong>Save your progress</strong>
-          <p>Keep track of your work across devices</p>
-        </li>
-        <li>
-          <strong>Personalized experience</strong>
-          <p>Get recommendations tailored to you</p>
-        </li>
-        <li>
-          <strong>Access premium features</strong>
-          <p>Unlock advanced tools and capabilities</p>
-        </li>
-      </ul>
-    </aside>
   </div>
 </div>
 
@@ -138,16 +119,10 @@ body {
 
 /* ===== LOGIN WRAPPER ===== */
 .login-wrapper {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  display: flex;
   align-items: center;
-}
-
-@media (min-width: 768px) {
-  .login-wrapper {
-    grid-template-columns: 1fr 1fr;
-  }
+  justify-content: center;
+  min-height: 70vh;
 }
 
 /* ===== LOGIN CARD ===== */
@@ -156,7 +131,7 @@ body {
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 450px;
+  max-width: 520px;
   width: 100%;
   margin: 0 auto;
 }
@@ -201,19 +176,23 @@ label {
 input[type="email"],
 input[type="password"],
 input[type="text"] {
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  line-height: 1.5;
   background: #ffffff;
+  color: #1e293b;
+  transition: border-color 0.2s ease;
+  box-shadow: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 input:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 input::placeholder {
@@ -241,10 +220,12 @@ input::placeholder {
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
   cursor: pointer;
   accent-color: #6366f1;
+  flex-shrink: 0;
 }
 
 .checkbox-label:hover {
@@ -377,60 +358,6 @@ input::placeholder {
 .login-footer p {
   color: #64748b;
   font-size: 0.9375rem;
-}
-
-/* ===== LOGIN ASIDE ===== */
-.login-aside {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 2.5rem;
-  color: #ffffff;
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .login-aside {
-    display: block;
-  }
-}
-
-.login-aside h2 {
-  font-size: 1.75rem;
-  margin-bottom: 1.5rem;
-  color: #ffffff;
-}
-
-.login-aside ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.login-aside li {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1.25rem;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.login-aside li:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateX(8px);
-}
-
-.login-aside strong {
-  display: block;
-  font-size: 1.125rem;
-  margin-bottom: 0.5rem;
-  color: #ffffff;
-}
-
-.login-aside p {
-  color: #e0e7ff;
-  font-size: 0.9375rem;
-  line-height: 1.5;
 }
 
 /* ===== RESPONSIVE STYLES ===== */

@@ -315,8 +315,13 @@ select {
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  line-height: 1.5;
   background: #ffffff;
+  color: #1e293b;
+  transition: border-color 0.2s ease;
+  box-shadow: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 input:focus,
@@ -324,12 +329,16 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
 input::placeholder,
 textarea::placeholder {
   color: #94a3b8;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
 .form-help {
