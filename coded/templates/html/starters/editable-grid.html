@@ -171,6 +171,13 @@
 
 <!-- Visually hidden class for screen readers -->
 <style>
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -181,6 +188,27 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 /* Container */
@@ -217,11 +245,11 @@
 
 /* Buttons */
 .btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   border: none;
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   background: #3498db;
@@ -230,7 +258,8 @@
 
 .btn:hover {
   background: #2c3e50;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
 .btn-secondary {
@@ -242,15 +271,22 @@
 .btn-secondary:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active,
+.btn-secondary:active {
+  transform: translateY(0);
 }
 
 .btn-icon {
   padding: 0.5rem 0.75rem;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border-radius: 6px;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
@@ -306,11 +342,6 @@
 
 .editable-grid tbody tr {
   border-bottom: 1px solid #e2e8f0;
-  transition: background 0.15s;
-}
-
-.editable-grid tbody tr:hover {
-  background: #f8fafc;
 }
 
 .editable-grid tbody tr:last-child {
@@ -318,7 +349,7 @@
 }
 
 .editable-grid td {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.625rem;
   vertical-align: middle;
 }
 
@@ -327,17 +358,17 @@
 .cell-select {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
   font-size: 0.9375rem;
   font-family: inherit;
   line-height: 1.5;
+  height: 38px;
   color: #1e293b;
   background: white;
   transition: border-color 0.2s ease;
-  height: 2.375rem;
-  vertical-align: middle;
   box-shadow: none;
+  appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
@@ -364,13 +395,10 @@
 
 .cell-select {
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
-  padding-right: 2.5rem;
+  padding-right: 2rem;
 }
 
 /* Grid Footer */
@@ -444,16 +472,11 @@
   .editable-grid tbody tr {
     display: flex;
     flex-direction: column;
-    background: #f8fafc;
+    background: #ffffff;
     padding: 1.25rem;
     border-radius: 12px;
     border: 2px solid #e2e8f0;
     border-bottom: 2px solid #e2e8f0;
-  }
-
-  .editable-grid tbody tr:hover {
-    background: #ffffff;
-    border-color: #cbd5e1;
   }
 
   .editable-grid td {

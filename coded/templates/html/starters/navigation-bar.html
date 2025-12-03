@@ -1,119 +1,169 @@
-<!-- Main navigation bar (sticky at top) -->
+<!-- Sticky navigation bar at top -->
 <nav class="navbar" aria-label="Main navigation">
   <div class="container">
     <div class="nav-content">
-      <!-- Logo/brand link -->
+      <!-- Logo -->
       <a href="#" class="logo" aria-label="Home">Brand</a>
-      
-      <!-- Navigation menu list -->
+
+      <!-- Mobile menu toggle button (hidden on desktop) -->
+      <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation menu (hidden on mobile until toggle clicked) -->
       <ul class="nav-menu" role="list">
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#team">Team</a></li>
+        <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
+        <li><a href="#signup">Sign up</a></li>
       </ul>
-      
-      <!-- Call-to-action button -->
-      <button class="btn nav-cta" aria-label="Sign up for an account">Sign up</button>
     </div>
   </div>
 </nav>
 
 <style>
-/* Sticky navigation bar with shadow */
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Navigation bar sticky positioning */
 .navbar {
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   position: sticky;
   top: 0;
   z-index: 100;
+  padding: 1rem 0;
 }
 
-/* Flexbox layout for nav items */
 .nav-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
   color: #2c3e50;
+  text-decoration: none;
 }
 
-/* Horizontal menu layout */
 .nav-menu {
   display: flex;
   gap: 2rem;
   list-style: none;
   margin: 0;
   padding: 0;
-  flex-wrap: wrap;
 }
 
 .nav-menu a {
   color: #333;
+  text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;
-  white-space: nowrap;
 }
 
 .nav-menu a:hover {
   color: #3498db;
 }
 
-/* Tablet responsive adjustments */
-@media (max-width: 900px) {
-  .nav-menu {
-    gap: 1.25rem;
-    font-size: 0.9375rem;
-  }
-  
-  .nav-cta {
-    font-size: 0.9375rem;
-    padding: 0.4rem 1rem;
-  }
+/* Mobile menu toggle button */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: #3498db;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem;
+  cursor: pointer;
 }
 
-/* Mobile responsive - stack vertically */
+.nav-toggle span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+/* Transform hamburger to X when active */
+.nav-toggle.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
-  .nav-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  /* Show hamburger menu toggle */
+  .nav-toggle {
+    display: flex;
   }
-  
-  .logo {
-    align-self: center;
-    width: 100%;
-    text-align: center;
-  }
-  
-  /* Vertical menu on mobile */
+
+  /* Hide menu by default on mobile */
   .nav-menu {
+    display: none;
     width: 100%;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0;
     text-align: center;
+    order: 3;
   }
-  
+
+  /* Show menu when active */
+  .nav-menu.active {
+    display: flex;
+  }
+
   .nav-menu li {
-    width: 100%;
-    padding: 0.5rem 0;
+    padding: 0.75rem 0;
     border-bottom: 1px solid #f0f0f0;
   }
-  
-  .nav-menu li:last-child {
-    border-bottom: none;
-  }
-  
-  .nav-cta {
-    width: 100%;
-    margin-top: 0.5rem;
+
+  .nav-content {
+    flex-wrap: wrap;
   }
 }
 </style>
+
+<script>
+// Mobile menu toggle functionality
+document.querySelector('.nav-toggle')?.addEventListener('click', function() {
+  const menu = document.querySelector('.nav-menu');
+  const isActive = menu.classList.toggle('active');
+  this.classList.toggle('active'); // Toggle X icon
+  this.setAttribute('aria-expanded', isActive);
+  this.setAttribute('aria-label', isActive ? 'Close navigation menu' : 'Toggle navigation menu');
+});
+</script>

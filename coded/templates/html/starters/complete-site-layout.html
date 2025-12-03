@@ -1,81 +1,81 @@
 <!-- Complete site layout combining navigation, content, and footer -->
-<!-- IMPORTANT: Load "Complete Starter" CSS for this to work properly! -->
+<!-- Self-contained template with all CSS and JavaScript inline -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete Site Layout</title>
+  <title>InGen - Biological Attractions</title>
 </head>
 <body>
-  
+
   <!-- Sticky navigation bar at top -->
   <nav class="navbar" aria-label="Main navigation">
     <div class="container">
       <div class="nav-content">
         <!-- Logo -->
-        <a href="#" class="logo" aria-label="Home">Brand</a>
-        
+        <a href="#" class="logo" aria-label="Home">InGen</a>
+
         <!-- Mobile menu toggle button (hidden on desktop) -->
         <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
           <span></span>
           <span></span>
           <span></span>
         </button>
-        
+
         <!-- Navigation menu (hidden on mobile until toggle clicked) -->
         <ul class="nav-menu" role="list">
-          <li><a href="#features">Features</a></li>
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="#signup">Sign up</a></li>
+          <li><a href="#features">Technologies</a></li>
+          <li><a href="#pricing">Experiences</a></li>
+          <li><a href="#about">Research</a></li>
+          <li><a href="#contact">Investors</a></li>
+          <li><a href="#signup">Reservations</a></li>
         </ul>
       </div>
     </div>
   </nav>
-  
+
   <!-- Main content area -->
   <main>
     <!-- Hero section -->
     <section class="hero" aria-labelledby="hero-heading">
       <div class="container">
-        <h1 id="hero-heading">Welcome to our platform</h1>
-        <p class="hero-subtitle">Build amazing things with our simple, powerful tools. Get started in minutes.</p>
+        <h1 id="hero-heading">Welcome to the future of biology</h1>
+        <p class="hero-subtitle">Experience the wonder of de-extinction. Witness living history. InGen is bringing prehistoric species back to life.</p>
         <div class="hero-actions">
-          <button class="btn" aria-label="Get started with our platform">Get started</button>
-          <button class="btn btn-secondary" aria-label="Learn more about our features">Learn more</button>
+          <button class="btn" aria-label="Get started with our platform">Book experience</button>
+          <button class="btn btn-secondary" aria-label="Learn more about our features">Our science</button>
         </div>
       </div>
     </section>
-    
+
     <!-- Features section -->
     <section id="features" class="features" aria-labelledby="features-heading">
       <div class="container">
-        <h2 id="features-heading">Why choose us</h2>
+        <h2 id="features-heading">Revolutionary breakthroughs</h2>
         <div class="grid">
           <article class="card">
-            <h3>Fast & Reliable</h3>
-            <p>Lightning-fast performance with 99.9% uptime guarantee.</p>
+            <h3>Genetic Engineering</h3>
+            <p>Proprietary DNA extraction and sequencing technology unlocking extinct genomes.</p>
           </article>
           <article class="card">
-            <h3>Easy to Use</h3>
-            <p>Intuitive interface designed for beginners and experts alike.</p>
+            <h3>De-Extinction Science</h3>
+            <p>Advanced cloning methodologies bringing prehistoric species into the modern world.</p>
           </article>
           <article class="card">
-            <h3>24/7 Support</h3>
-            <p>Our team is always here to help you succeed.</p>
+            <h3>Biological Attractions</h3>
+            <p>Immersive experiences showcasing the majesty of Earth's prehistoric past.</p>
           </article>
         </div>
       </div>
     </section>
-    
+
     <!-- CTA section -->
     <section class="cta-section" aria-labelledby="cta-heading">
       <div class="container">
-        <h2 id="cta-heading">Ready to get started?</h2>
-        <p>Join thousands of satisfied customers today.</p>
-        <button class="btn btn-large" aria-label="Start your free trial">Start free trial</button>
+        <h2 id="cta-heading">Ready to witness history?</h2>
+        <p>Reserve your place at the world's most extraordinary attraction.</p>
+        <button class="btn btn-large" aria-label="Start your free trial">Make reservation</button>
       </div>
     </section>
   </main>
@@ -85,31 +85,31 @@
     <div class="container">
       <div class="footer-columns">
         <div class="footer-column">
-          <h3>Company</h3>
-          <p>Building amazing web experiences since 2020.</p>
+          <h3>InGen</h3>
+          <p>International Genetic Technologies, Inc. Pioneering de-extinction since 1975.</p>
         </div>
         <div class="footer-column">
-          <h3>Quick links</h3>
+          <h3>Explore</h3>
           <nav aria-label="Footer navigation">
             <ul role="list">
-              <li><a href="#about">About</a></li>
-              <li><a href="#services">Services</a></li>
-              <li><a href="#team">Team</a></li>
+              <li><a href="#about">Our Research</a></li>
+              <li><a href="#services">Facilities</a></li>
+              <li><a href="#team">Scientists</a></li>
             </ul>
           </nav>
         </div>
         <div class="footer-column">
-          <h3>Connect</h3>
-          <nav aria-label="Social media links">
+          <h3>Information</h3>
+          <nav aria-label="Footer links">
             <ul role="list">
-              <li><a href="#twitter" aria-label="Follow us on Twitter">Twitter</a></li>
-              <li><a href="#github" aria-label="Visit our GitHub">GitHub</a></li>
+              <li><a href="#careers">Careers</a></li>
+              <li><a href="#investors">Investors</a></li>
             </ul>
           </nav>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2025 Your Company. All rights reserved.</p>
+        <p>&copy; 2025 International Genetic Technologies, Inc. All rights reserved.</p>
         <nav aria-label="Legal links">
           <a href="#privacy">Privacy</a>
           <a href="#terms">Terms</a>
@@ -122,7 +122,125 @@
 </html>
 
 <style>
-/* Minimal layout-specific styles - Complete Starter CSS handles most styling */
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Grid System */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* Card Component */
+.card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.card p {
+  color: #64748b;
+  margin: 0;
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:hover {
+  background: #2c3e50;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Typography */
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.2;
+}
 
 /* Navigation bar sticky positioning */
 .navbar {
@@ -189,7 +307,7 @@
 
 /* Transform hamburger to X when active */
 .nav-toggle.active span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+  transform: translateY(7px) rotate(45deg);
 }
 
 .nav-toggle.active span:nth-child(2) {
@@ -197,7 +315,7 @@
 }
 
 .nav-toggle.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -6px);
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* Dark background for toggle button with better contrast */

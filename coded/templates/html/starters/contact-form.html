@@ -103,12 +103,13 @@ textarea {
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   font-size: 1rem;
-  font-family: inherit;
+  font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   background: #ffffff;
   color: #1e293b;
   transition: border-color 0.2s ease;
   box-shadow: none;
+  appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
@@ -117,16 +118,24 @@ input:focus,
 textarea:focus {
   outline: none;
   border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+input:hover,
+textarea:hover {
+  border-color: #cbd5e1;
 }
 
 input::placeholder,
 textarea::placeholder {
   color: #94a3b8;
+  opacity: 1;
 }
 
 textarea {
   resize: vertical;
   min-height: 120px;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .btn {
@@ -134,9 +143,9 @@ textarea {
   padding: 0.75rem 1.5rem;
   background: #3498db;
   color: white;
-  border: 2px solid #3498db;
+  border: none;
   border-radius: 8px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -144,7 +153,11 @@ textarea {
 
 .btn:hover {
   background: #2c3e50;
-  border-color: #2c3e50;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 </style>

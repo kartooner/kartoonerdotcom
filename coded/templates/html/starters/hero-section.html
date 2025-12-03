@@ -4,7 +4,7 @@
     <!-- Main headline -->
     <h1 id="hero-heading">Build amazing things</h1>
     <p class="hero-subtitle">Start creating beautiful websites with our simple, powerful tools. No experience needed.</p>
-    
+
     <!-- Call-to-action buttons -->
     <div class="hero-actions">
       <button class="btn" aria-label="Get started with our platform">Get started</button>
@@ -14,6 +14,36 @@
 </section>
 
 <style>
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Standardized heading styles */
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
 /* Hero section with gradient background */
 .hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -25,6 +55,7 @@
 .hero h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: white;
 }
 
 .hero-subtitle {
@@ -41,9 +72,55 @@
   flex-wrap: wrap;
 }
 
-/* Mobile responsive adjustments */
+/* Button Styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
-  .hero h1 { font-size: 2rem; }
-  .hero-subtitle { font-size: 1rem; }
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
 }
 </style>

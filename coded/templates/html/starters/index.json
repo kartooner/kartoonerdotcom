@@ -75,7 +75,7 @@
     {
       "id": "complete-site-layout",
       "name": "Complete site layout",
-      "description": "Full site structure with nav, content, and footer - REQUIRES Complete Starter CSS",
+      "description": "Full site structure with nav, content, and footer",
       "file": "complete-site-layout.html"
     },
     {
