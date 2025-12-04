@@ -11,15 +11,12 @@
 
     // Check if we're in the fall theme date range
     function isFallSeason() {
-        // Don't activate if Christmas theme is active
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('theme') === 'christmas') {
-            return false;
-        }
+        const themeParam = urlParams.get('theme');
 
-        // Theme preview mode: add ?theme=halloween to URL
-        if (urlParams.get('theme') === 'halloween') {
-            return true;
+        // If a specific theme is requested, only activate if it matches
+        if (themeParam) {
+            return themeParam === 'halloween' || themeParam === 'fall';
         }
 
         const now = new Date();
@@ -102,8 +99,11 @@
     // Check if we're in the Christmas date range
     function isChristmasSeason() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('theme') === 'christmas') {
-            return true;
+        const themeParam = urlParams.get('theme');
+
+        // If a specific theme is requested, only activate if it matches
+        if (themeParam) {
+            return themeParam === 'christmas';
         }
 
         const now = new Date();
@@ -225,9 +225,159 @@
         }
     }
 
+    // ============ SPRING THEME ============
+
+    // Check if we're in the spring season date range
+    function isSpringSeason() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeParam = urlParams.get('theme');
+
+        // If a specific theme is requested, only activate if it matches
+        if (themeParam) {
+            return themeParam === 'spring';
+        }
+
+        const now = new Date();
+        const year = now.getFullYear();
+
+        // Spring season: March 1 - May 31
+        const startDate = new Date(year, 2, 1);   // Mar 1
+        const endDate = new Date(year, 4, 31);    // May 31
+
+        return now >= startDate && now <= endDate;
+    }
+
+    // Load the spring theme CSS
+    function loadSpringTheme() {
+        if (document.getElementById('spring-theme')) {
+            return;
+        }
+
+        const link = document.createElement('link');
+        link.id = 'spring-theme';
+        link.rel = 'stylesheet';
+        link.href = '/spring-theme.css';
+
+        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
+        if (mainStylesheet) {
+            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
+        } else {
+            document.head.appendChild(link);
+        }
+    }
+
+    // Update greeting to "Bloom!" during Spring
+    function updateSpringGreeting() {
+        const updateGreeting = () => {
+            const greetingSpan = document.querySelector('h1 span[lang="no"]');
+            if (greetingSpan) {
+                greetingSpan.textContent = 'Bloom!';
+                greetingSpan.setAttribute('lang', 'en');
+            }
+
+            const h1 = document.querySelector('h1');
+            if (h1) {
+                const walker = document.createTreeWalker(
+                    h1,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent.trim().startsWith(',')) {
+                        node.textContent = node.textContent.replace(/^,\s*/, ' ');
+                    }
+                }
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateGreeting);
+        } else {
+            updateGreeting();
+        }
+    }
+
+    // ============ SUMMER THEME ============
+
+    // Check if we're in the summer season date range
+    function isSummerSeason() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeParam = urlParams.get('theme');
+
+        // If a specific theme is requested, only activate if it matches
+        if (themeParam) {
+            return themeParam === 'summer';
+        }
+
+        const now = new Date();
+        const year = now.getFullYear();
+
+        // Summer season: June 1 - August 31
+        const startDate = new Date(year, 5, 1);   // Jun 1
+        const endDate = new Date(year, 7, 31);    // Aug 31
+
+        return now >= startDate && now <= endDate;
+    }
+
+    // Load the summer theme CSS
+    function loadSummerTheme() {
+        if (document.getElementById('summer-theme')) {
+            return;
+        }
+
+        const link = document.createElement('link');
+        link.id = 'summer-theme';
+        link.rel = 'stylesheet';
+        link.href = '/summer-theme.css';
+
+        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
+        if (mainStylesheet) {
+            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
+        } else {
+            document.head.appendChild(link);
+        }
+    }
+
+    // Update greeting to "Sunshine!" during Summer
+    function updateSummerGreeting() {
+        const updateGreeting = () => {
+            const greetingSpan = document.querySelector('h1 span[lang="no"]');
+            if (greetingSpan) {
+                greetingSpan.textContent = 'Sunshine!';
+                greetingSpan.setAttribute('lang', 'en');
+            }
+
+            const h1 = document.querySelector('h1');
+            if (h1) {
+                const walker = document.createTreeWalker(
+                    h1,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent.trim().startsWith(',')) {
+                        node.textContent = node.textContent.replace(/^,\s*/, ' ');
+                    }
+                }
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateGreeting);
+        } else {
+            updateGreeting();
+        }
+    }
+
     // ============ INITIALIZATION ============
 
-    // Christmas takes priority over Fall if both would be active
+    // Priority order: Christmas > Fall > Summer > Spring
     if (isChristmasSeason()) {
         loadChristmasTheme();
         updateChristmasGreeting();
@@ -259,6 +409,26 @@
             if (isHalloweenPeriod()) {
                 document.body.dataset.halloween = 'true';
             }
+        }
+    } else if (isSummerSeason()) {
+        loadSummerTheme();
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.dataset.summer = 'true';
+            });
+        } else {
+            document.body.dataset.summer = 'true';
+        }
+    } else if (isSpringSeason()) {
+        loadSpringTheme();
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.dataset.spring = 'true';
+            });
+        } else {
+            document.body.dataset.spring = 'true';
         }
     }
 })();

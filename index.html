@@ -20,7 +20,7 @@
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Load Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&family=Material+Symbols+Outlined&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
     <style>
@@ -111,7 +111,7 @@
         .skip-link:focus { top: 6px; }
     </style>
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/seasonal-loader.js"></script>
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -168,7 +168,7 @@
 
 <!-- Theme Toggle -->
 <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-    <span class="theme-toggle-icon">🌙</span>
+    <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
     <span class="theme-toggle-text">Dark mode</span>
 </button>
 
@@ -261,7 +261,7 @@
 
         <section class="contact-section" aria-labelledby="contact-heading">
             <div class="info-section">
-                <p><span class="material-symbols-outlined">communities</span> <strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
+                <p><strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
                 <div class="info-section-row">
                     <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Visit my Bluesky profile, opens in a new tab">Bluesky</a>
                     <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Visit my Threads profile, opens in a new tab">Threads</a>

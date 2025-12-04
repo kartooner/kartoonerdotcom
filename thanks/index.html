@@ -9,11 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/halloween-loader.js"></script>
-    <script src="/christmas-loader.js"></script>
+    <script src="/seasonal-loader.js"></script>
 
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="Special Thanks - Erik Sagen">
@@ -37,7 +35,7 @@
         .credits-poster {
             background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-secondary, var(--bg-color)) 100%);
             min-height: 80vh;
-            padding: 3rem 2rem;
+            padding: var(--space-6) var(--space-4); /* 48px 32px - consistent 8px grid */
             position: relative;
             overflow: hidden;
         }
@@ -78,9 +76,9 @@
         .credit-block {
             background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
             border-radius: 8px;
-            padding: 2rem 1.5rem;
+            padding: var(--space-4) var(--space-3); /* 32px 24px - consistent 8px grid */
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, background-color 0.3s ease;
             backdrop-filter: blur(10px);
         }
         
@@ -257,7 +255,7 @@
     
     <!-- Theme Toggle Button -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
@@ -380,7 +378,7 @@
         <!-- Contact Section -->
         <section class="contact-section animate-fade-in" role="region" aria-labelledby="contact-heading">
             <div class="info-section">
-                <p><span class="material-symbols-outlined">communities</span> <strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
+                <p><strong id="contact-heading">Let's connect.</strong> Find me on these social media platforms:</p>
                 <div class="info-section-row">
                     <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Visit my Bluesky profile, opens in a new tab">Bluesky</a>
                     <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Visit my Threads profile, opens in a new tab">Threads</a>
@@ -392,16 +390,7 @@
     </main>
 
     <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-        <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-            <strong>CSS Joy Webring</strong>
-            <div class="webring-links">
-                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
-            </div>
-        </div>
-
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+<p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>
 

@@ -14,10 +14,10 @@
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
     <!-- Load Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&family=Material+Symbols+Outlined&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/style.min.css">
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/seasonal-loader.js"></script>
 
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="About - Erik Sagen">
@@ -261,7 +261,7 @@
     
     <!-- Theme Toggle Button -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
@@ -271,14 +271,14 @@
         <h1 class="logo animate-fade-in animate-header">About me</h1>
         
         <div class="about-intro">
-            <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive />
+            <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive loading="lazy" />
             <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing games, writing short stories and putting on plays with my cousins. I was glued to cartoons like Darkwing Duck and TMNT and movies like Back to the Future and Jurassic Park shaped a lot of how I see the world and the stories within it.</p>
             
             <p>These days I lead design teams for work. Outside of that I'm usually drawing, writing, watching movies, playing games, or tinkering with projects like this one. Most nights it's simple: a book or time with my family.</p>
             
             <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when there's no clear answer; asking why helps me see a little better and shape what I'm working on.</p>
             
-            <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around" width="100px" height="100px" data-progressive class="darkwing-sprite" tabindex="0" role="button" aria-label="Darkwing Duck easter egg - click to animate" />
+            <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around" width="100" height="100" data-progressive class="darkwing-sprite" tabindex="0" role="button" aria-label="Darkwing Duck easter egg - click to animate" loading="lazy" />
         </div>
 
         <!-- Career Timeline -->
@@ -395,7 +395,7 @@
         <!-- Contact Section -->
         <section class="contact-section animate-fade-in">
             <div class="info-section">
-                <p><span class="material-symbols-outlined">communities</span> <strong>Let's connect.</strong> Find me on these social media platforms:</p>
+                <p><strong>Let's connect.</strong> Find me on these social media platforms:</p>
                 <div class="info-section-row">
                     <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Follow me on Bluesky, opens in a new tab">Bluesky</a>
                     <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" aria-label="Follow me on Threads, opens in a new tab">Threads</a>
@@ -407,15 +407,6 @@
     </main>
 
     <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-        <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-            <strong>CSS Joy Webring</strong>
-            <div class="webring-links">
-                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
-            </div>
-        </div>
-
         <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
     </footer>
 </div>

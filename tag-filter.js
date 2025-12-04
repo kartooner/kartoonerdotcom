@@ -56,7 +56,7 @@
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
                     <p class="recent-post-snippet">${snippet}</p>
-                    <a href="/entry/${entry.id}.html" class="recent-post-link">Read more →</a>
+                    <a href="/entry/${entry.id}.html" class="recent-post-link" aria-label="Read more about ${entry.title}">Read more →</a>
                 </div>
             `;
         }).join('');

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
 
@@ -31,11 +30,12 @@
         /* Featured post styling */
         .featured-post {
             background: rgba(var(--accent-rgb), 0.05);
-            padding: 2rem;
+            padding: var(--space-4); /* 32px - consistent 8px grid */
             border-radius: 12px;
             border: 2px solid var(--accent-color);
-            margin: 2rem 0;
+            margin: var(--space-4) 0; /* 32px - consistent spacing */
             position: relative;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         [data-theme="dark"] .featured-post {
@@ -236,10 +236,10 @@
 
         .recent-post-item {
             background: rgba(var(--accent-rgb), 0.05);
-            padding: 1.5rem;
+            padding: var(--space-3); /* 24px - consistent 8px grid */
             border-radius: 8px;
             border-left: 3px solid var(--accent-color);
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, background-color 0.3s ease;
         }
 
         .recent-post-item:hover {
@@ -314,9 +314,10 @@
 
         .info-section {
             background: rgba(var(--accent-rgb), 0.08);
-            padding: 2rem;
+            padding: var(--space-4); /* 32px - consistent 8px grid */
             border-radius: 8px;
-            margin: 2rem 0;
+            margin: var(--space-4) 0; /* 32px - consistent spacing */
+            transition: background-color 0.3s ease;
         }
 
         .info-section p {
@@ -346,15 +347,7 @@
             color: var(--accent-color);
         }
 
-        .info-section .material-symbols-outlined {
-            font-size: 1rem;
-        }
 
-        .info-section p .material-symbols-outlined {
-            font-size: 1.1rem;
-            margin-right: 0.5rem;
-            vertical-align: text-bottom;
-        }
 
         /* Read more link styling */
         .read-more {
@@ -403,7 +396,7 @@
     
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
@@ -424,7 +417,7 @@
                     <p>Don Hahn remembers dancing corndogs. </p>
 
 <p>Not the food itself, but the image: a cartoon advertisement projected onto a drive-in movie screen, animated hot dogs in their little breaded jackets, twirling under the stars. He was a kid in pajamas, sitting in the back of his family's Rambler station wagon, and something about those dancing corndogs mesmerized him.</p>
-                    <p class="read-more"><a href="/entry/everyone-creates.html">Read full post →</a></p>
+                    <p class="read-more"><a href="/entry/everyone-creates.html" aria-label="Read full post: Everyone Creates">Read full post →</a></p>
                 </div>
             </div>
         </section>
@@ -439,19 +432,19 @@
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h3>
                     <p class="recent-post-snippet">Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us.</p>
-                    <a href="/entry/growing-up-in-the-80s.html" class="recent-post-link">Read more →</a>
+                    <a href="/entry/growing-up-in-the-80s.html" class="recent-post-link" aria-label="Read more about Growing up in the 80s">Read more →</a>
                 </div>
                 
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h3>
                     <p class="recent-post-snippet">I was driving near my house when I turned past a corner and asked my wife, &quot;Has that pole always been there?&quot; She didn&#39;t even hesitate.</p>
-                    <a href="/entry/the-pole-on-the-corner.html" class="recent-post-link">Read more →</a>
+                    <a href="/entry/the-pole-on-the-corner.html" class="recent-post-link" aria-label="Read more about The Pole on the Corner">Read more →</a>
                 </div>
                 
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/here-we-go-again.html">Here we go again</a></h3>
                     <p class="recent-post-snippet">It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
-                    <a href="/entry/here-we-go-again.html" class="recent-post-link">Read more →</a>
+                    <a href="/entry/here-we-go-again.html" class="recent-post-link" aria-label="Read more about Here we go again">Read more →</a>
                 </div>
             </div>
 
@@ -461,21 +454,12 @@
         </div>
 
         <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-                <strong>CSS Joy Webring</strong>
-                <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
-                </div>
-            </div>
-
             <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
         </footer>
     </div>
 
     <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/seasonal-loader.js"></script>
     <script src="/tag-filter.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)

@@ -77,6 +77,7 @@
     margin: -3.5rem 0 1rem 0;
     pointer-events: none;
     z-index: 1;
+    opacity: 1; /* Show lights when Christmas theme is active */
 }
 
 .christmas-lights svg {

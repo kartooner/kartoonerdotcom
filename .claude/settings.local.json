@@ -55,7 +55,14 @@
       "Bash(git stash:*)",
       "Bash(cmd /c \"taskkill /F /PID 13556\")",
       "Bash(powershell -Command \"Stop-Process -Id 13556 -Force\")",
-      "WebFetch(domain:v6.robweychert.com)"
+      "WebFetch(domain:v6.robweychert.com)",
+      "WebFetch(domain:simplebits.com)",
+      "Bash(dir:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(npm run minify:css:*)",
+      "Bash(npm run build:css:*)",
+      "Bash(npm run:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
