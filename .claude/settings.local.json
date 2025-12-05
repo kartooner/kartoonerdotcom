@@ -62,7 +62,11 @@
       "Bash(npm run minify:css:*)",
       "Bash(npm run build:css:*)",
       "Bash(npm run:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cmd /c \"taskkill /F /PID 19308\")",
+      "Bash(powershell -Command \"Stop-Process -Id 19308 -Force\")",
+      "Bash(for file in about/index.html contact/index.html journal/index.html voice-acting/index.html thanks/index.html archive/index.html entry/*.html)",
+      "Bash(do echo \"Processing $file\")"
     ],
     "deny": [],
     "ask": []

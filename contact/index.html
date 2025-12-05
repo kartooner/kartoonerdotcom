@@ -13,20 +13,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
-    <link rel="stylesheet" href="/style.min.css">
+    <link rel="stylesheet" href="/style.css">
     <script src="/seasonal-loader.js"></script>
     <style>
-        .contact-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2em;
-        }
+        /* Using .container-narrow from style.css for consistent width */
 
         .contact-form {
             background: rgba(0, 0, 0, 0.03);
             border-radius: 8px;
-            padding: 2rem;
-            margin: 2rem 0;
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
         }
 
         [data-theme="dark"] .contact-form {
@@ -34,12 +30,12 @@
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: var(--space-3);
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: var(--space-1);
             color: var(--text-color);
             font-weight: 500;
         }
@@ -47,7 +43,7 @@
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 0.75rem;
+            padding: var(--space-2);
             border: 1px solid var(--tertiary-color);
             border-radius: 4px;
             font-family: var(--font-main);
@@ -74,7 +70,7 @@
             background: #6366f1;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: var(--space-2) var(--space-3);
             border-radius: 4px;
             font-family: var(--font-main);
             font-size: 1rem;
@@ -93,45 +89,45 @@
 
         .contact-intro {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: var(--space-4);
         }
 
         .contact-intro h1 {
             font-family: var(--font-secondary);
-            font-size: 5rem;
+            font-size: var(--text-7xl);
             color: var(--accent-color);
-            margin-bottom: 1rem;
+            margin-bottom: var(--space-2);
         }
 
         .contact-intro p {
             color: var(--text-color);
             font-family: var(--font-secondary);
-            font-size: 1.3rem;
-            line-height: 1.4;
+            font-size: var(--text-xl);
+            line-height: var(--leading-snug);
             max-width: 600px;
             margin: 0 auto;
         }
 
         .success-message {
             text-align: center;
-            padding: 2rem;
+            padding: var(--space-4);
             background: rgba(0, 128, 0, 0.1);
             border-radius: 8px;
             border: 1px solid rgba(0, 128, 0, 0.3);
-            margin: 2rem 0;
+            margin: var(--space-4) 0;
         }
 
         .success-message h2 {
             font-family: var(--font-secondary);
             color: var(--accent-color);
-            margin-bottom: 1rem;
-            font-size: 2rem;
+            margin-bottom: var(--space-2);
+            font-size: var(--text-2xl);
         }
 
         .success-message p {
             color: var(--text-color);
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
+            font-size: var(--text-lg);
+            margin-bottom: var(--space-3);
         }
 
         .sr-only {
@@ -267,7 +263,7 @@
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="contact-container">
+    <div class="container-narrow">
         <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
             <div class="contact-intro">
                 <h1>Contact me</h1>

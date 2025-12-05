@@ -8,11 +8,7 @@
     <link rel="stylesheet" href="/style.css">
     <style>
 
-        .journal-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2em;
-        }
+        /* Using .container-narrow from style.css for consistent width */
 
         h1, h2, h3 {
             color: var(--text-color);
@@ -74,7 +70,7 @@
         .logo {
             text-align: center;
             font-family: var(--font-secondary);
-            font-size: 5rem;
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
             color: var(--accent-color);
         }
 
@@ -400,7 +396,7 @@
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="journal-container animate-fade-in animate-main">
+    <div class="container-narrow animate-fade-in animate-main">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
 
         <div class="journal-intro">

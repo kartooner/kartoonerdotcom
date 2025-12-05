@@ -48,8 +48,11 @@
         `;
         title.after(clearFilter);
 
+        // Sort entries by date (newest first)
+        const sortedEntries = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         // Build filtered posts HTML using recent-post-item style
-        const postsHtml = entries.map(entry => {
+        const postsHtml = sortedEntries.map(entry => {
             const snippet = entry.excerpt || entry.subtitle || '';
 
             return `
@@ -62,7 +65,7 @@
         }).join('');
 
         // Replace existing content
-        const existingPosts = container.querySelectorAll('.post, .recent-posts');
+        const existingPosts = container.querySelectorAll('.post, .recent-posts, .journal-intro, .featured-post');
         existingPosts.forEach(el => el.remove());
 
         const postsContainer = document.createElement('div');
@@ -99,7 +102,7 @@
             </a>
         `;
 
-        const existingPosts = container.querySelectorAll('.post, .recent-posts');
+        const existingPosts = container.querySelectorAll('.post, .recent-posts, .journal-intro, .featured-post');
         existingPosts.forEach(el => el.remove());
 
         const divider = container.querySelector('hr.divider');

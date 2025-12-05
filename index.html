@@ -10,7 +10,6 @@
     <meta property="og:url" content="https://www.kartooner.com">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="author" content="Erik Sagen">
-    <meta name="theme-color" content="#191970">
     <title>Erik Sagen - Lead Product UX Designer</title>
     <!-- Resource hints for external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,21 +81,6 @@
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 2em; }
 
-        h1 {
-            font-family: var(--font-secondary);
-            font-size: var(--text-7xl);
-            line-height: var(--leading-tight);
-            margin-bottom: var(--space-sm);
-            font-weight: 500;
-        }
-
-        h2 {
-            font-family: var(--font-secondary);
-            font-size: var(--text-2xl);
-            margin-bottom: var(--space-sm);
-            font-weight: 500;
-        }
-
         .skip-link {
             position: absolute;
             top: -40px;
@@ -110,7 +94,14 @@
 
         .skip-link:focus { top: 6px; }
     </style>
-    <link rel="stylesheet" href="/style.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Index page h1 override - smaller for longer text */
+        h1 {
+            font-size: clamp(2rem, 4vw, 5rem);
+            color: var(--accent-color);
+        }
+    </style>
     <script src="/seasonal-loader.js"></script>
     <script type="application/ld+json">
         {

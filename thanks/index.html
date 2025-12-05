@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
-    <link rel="stylesheet" href="/style.min.css">
+    <link rel="stylesheet" href="/style.css">
     <script src="/seasonal-loader.js"></script>
 
     <!-- Open Graph meta tags -->
@@ -76,7 +76,7 @@
         .credit-block {
             background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
             border-radius: 8px;
-            padding: var(--space-4) var(--space-3); /* 32px 24px - consistent 8px grid */
+            padding: var(--space-5) var(--space-4); /* 40px 32px - consistent 8px grid */
             text-align: center;
             transition: all 0.3s ease, background-color 0.3s ease;
             backdrop-filter: blur(10px);
@@ -177,6 +177,10 @@
 
             .poster-title {
                 margin-bottom: 2rem;
+            }
+
+            .credit-block {
+                padding: var(--space-4) var(--space-3); /* 32px 24px on mobile */
             }
         }
 

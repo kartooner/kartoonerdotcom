@@ -10,7 +10,6 @@
     <meta property="og:url" content="https://www.kartooner.com/voice-acting">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="author" content="Erik Sagen">
-    <meta name="theme-color" content="#191970">
     <title>Voice Acting - Erik Sagen</title>
     <!-- Resource hints for external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,13 +21,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
-    <link rel="stylesheet" href="/style.min.css">
+    <link rel="stylesheet" href="/style.css">
     <script src="/seasonal-loader.js"></script>
     <style>
-        /* Voice Acting page specific container width override */
-        .container {
-            max-width: 800px;
-        }
+        /* Using .container-narrow from style.css for consistent width */
         
         /* First bio paragraph uses Cartridge Rough font */
         .voice-acting-intro .intro-text,
@@ -49,7 +45,7 @@
         .logo {
             text-align: center;
             font-family: var(--font-secondary);
-            font-size: 5rem;
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
             color: var(--accent-color);
         }
         
@@ -97,7 +93,7 @@
         }
         
         .voice-sample {
-            padding: var(--space-3); /* 24px - consistent 8px grid */
+            padding: var(--space-4); /* 32px - consistent 8px grid */
             background: rgba(99, 102, 241, 0.02);
             border-radius: 12px;
             border: 1px solid rgba(99, 102, 241, 0.08);
@@ -120,12 +116,12 @@
         }
         
         .voice-sample h3 {
-            margin-bottom: 0.5rem;
+            margin-bottom: var(--space-2); /* 16px - consistent spacing */
             color: var(--text-color);
         }
-        
+
         .voice-sample p {
-            margin-bottom: 1rem;
+            margin-bottom: var(--space-3); /* 24px - consistent spacing */
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
@@ -196,6 +192,12 @@
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
             z-index: 2;
         }
+
+        @media (max-width: 768px) {
+            .voice-sample {
+                padding: var(--space-3); /* 24px on mobile */
+            }
+        }
     </style>
 </head>
 <body>
@@ -228,7 +230,7 @@
     <span class="theme-toggle-text">Dark mode</span>
 </button>
 
-<div class="container">
+<div class="container-narrow">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
         
         <h1 class="logo animate-fade-in animate-header">Voice Acting</h1>

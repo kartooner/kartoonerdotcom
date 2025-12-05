@@ -197,7 +197,20 @@ main {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 2em;
+    padding: 0 var(--space-4);
+}
+
+/* Container width variants for different page types */
+.container-wide {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+.container-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
 }
 
 /* Main content responsive grid */
@@ -254,7 +267,7 @@ h6 {
 }
 
 h1 {
-    font-size: var(--text-7xl);
+    font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
     line-height: 1.1; /* Tighter for large headings */
     letter-spacing: -0.02em; /* Optical adjustment for large sizes */
     margin-bottom: var(--space-4); /* 32px - 4 baseline units */
