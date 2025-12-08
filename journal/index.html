@@ -23,29 +23,27 @@
             margin-bottom: 2rem;
         }
 
-        /* Featured post styling */
+        /* Featured post styling - clean, typography-focused with subtle container */
         .featured-post {
-            background: rgba(var(--accent-rgb), 0.05);
-            padding: var(--space-4); /* 32px - consistent 8px grid */
-            border-radius: 12px;
-            border: 2px solid var(--accent-color);
-            margin: var(--space-4) 0; /* 32px - consistent spacing */
+            background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
+            padding: var(--space-5) var(--space-4);
+            margin: 3rem 0 4rem 0;
+            border-radius: 8px;
             position: relative;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
-        [data-theme="dark"] .featured-post {
-            background: rgba(var(--accent-rgb), 0.08);
+        [data-theme="light"] .featured-post {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .featured-label {
             font-family: var(--font-secondary);
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             color: var(--accent-color);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 1.5rem;
-            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: 600;
         }
 
         .featured-post .post {
@@ -53,16 +51,13 @@
         }
 
         .featured-post .post-title {
-            font-size: 3.2rem;
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
         }
 
         @media (max-width: 768px) {
             .featured-post {
-                padding: 1.5rem;
-            }
-
-            .featured-post .post-title {
-                font-size: 2.4rem;
+                margin: 2rem 0 3rem 0;
             }
         }
 
@@ -80,35 +75,46 @@
 
         .post-date {
             color: var(--skills-color);
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            letter-spacing: 0.02em;
+        }
+
+        .post-date a {
+            color: var(--skills-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .post-date a:hover {
+            color: var(--accent-color);
         }
 
         .post-title {
             font-family: var(--font-secondary);
-            font-size: 2.8rem;
-            line-height: 1em;
-            margin-bottom: 10px;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            line-height: 1.1;
+            margin-bottom: 0.75rem;
             color: var(--heading-color);
         }
 
         .post-title a {
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: color 0.2s ease;
             display: inline-block;
         }
 
         .post-title a:hover,
         .post-title a:focus {
             color: var(--accent-color);
-            transform: translateX(5px);
         }
 
-        
         .post-subtitle {
-            font-family: var(--font-secondary);
-            font-size: 1.2rem;
-            color: var(--text-color);
-            margin-bottom: 20px;
+            font-family: var(--font-main);
+            font-size: 1.1rem;
+            color: var(--skills-color);
+            margin-bottom: 1.5rem;
+            font-style: italic;
         }
 
         .post-content {
@@ -213,14 +219,15 @@
         }
 
         .recent-posts {
-            font-family: var(--font-secondary);
-            margin-top: 40px;
+            margin-top: 3rem;
         }
-        
+
         .recent-posts h3 {
-            font-size: 2rem;
+            font-family: var(--font-secondary);
+            font-size: 1.5rem;
             color: var(--accent-color);
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
+            font-weight: 600;
         }
 
         .recent-posts-grid {
@@ -230,23 +237,29 @@
             margin: 0;
         }
 
+        @media (min-width: 768px) {
+            .recent-posts-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2.5rem;
+            }
+        }
+
         .recent-post-item {
-            background: rgba(var(--accent-rgb), 0.05);
-            padding: var(--space-3); /* 24px - consistent 8px grid */
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-color);
-            transition: all 0.3s ease, background-color 0.3s ease;
+            padding: 0;
+            border: none;
+            transition: all 0.2s ease;
         }
 
         .recent-post-item:hover {
-            background: rgba(var(--accent-rgb), 0.08);
-            transform: translateX(4px);
+            transform: translateY(-2px);
         }
 
         .recent-post-title {
-            font-size: 1.5rem;
-            margin: 0 0 0.75rem 0;
+            font-family: var(--font-secondary);
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            margin: 0 0 0.5rem 0;
             color: var(--heading-color);
+            line-height: 1.2;
         }
 
         .recent-post-title a {
@@ -261,11 +274,11 @@
         }
 
         .recent-post-snippet {
-            color: var(--text-color);
-            font-family: var(--font-primary);
-            font-size: 0.95rem;
+            color: var(--skills-color);
+            font-family: var(--font-main);
+            font-size: 1rem;
             line-height: 1.6;
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.75rem 0;
         }
 
         .recent-post-link {
@@ -279,14 +292,13 @@
         .recent-post-link:hover,
         .recent-post-link:focus {
             text-decoration: underline;
-            transform: translateX(2px);
         }
 
         footer {
             display: flex;
             justify-content: center;
-            margin-bottom: 2.5rem; /* 40px */
-            margin-top: 40px;
+            margin-bottom: 2.5rem;
+            margin-top: 3rem;
         }
 
         .view-all {
@@ -421,7 +433,7 @@
         <hr class="divider animate-fade-in animate-main" />
 
         <div class="recent-posts animate-fade-in animate-footer">
-            <h3>Recent posts</h3>
+            <h3>Other writings</h3>
 
             <div class="recent-posts-grid">
                 

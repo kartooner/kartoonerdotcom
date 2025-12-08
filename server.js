@@ -4,7 +4,7 @@ const path = require('path');
 const url = require('url');
 const zlib = require('zlib');
 
-const port = 3000;
+const port = 8000;
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'text/javascript',
