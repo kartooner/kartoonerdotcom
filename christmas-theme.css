@@ -99,12 +99,19 @@
     fill: #444;
 }
 
-/* Bulb Colors */
+/* Bulb Colors - Dark Theme */
 .bulb-red { fill: #e74c3c; }
 .bulb-green { fill: #2ecc71; }
 .bulb-blue { fill: #3498db; }
 .bulb-white { fill: #ecf0f1; }
 .bulb-gold { fill: #f39c12; }
+
+/* Bulb Colors - Light Theme (darker, more saturated for visibility) */
+[data-theme="light"] .bulb-red { fill: #c0392b; }
+[data-theme="light"] .bulb-green { fill: #27ae60; }
+[data-theme="light"] .bulb-blue { fill: #2980b9; }
+[data-theme="light"] .bulb-white { fill: #7f8c8d; }
+[data-theme="light"] .bulb-gold { fill: #d68910; }
 
 /* Blinking Animation */
 @keyframes blink {
