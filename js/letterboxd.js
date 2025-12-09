@@ -2,7 +2,13 @@
 class ReviewsUI {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://letterboxd.com/kartooner/rss/');
+        this.letterboxdRssUrl = 'https://letterboxd.com/kartooner/rss/';
+        // Multiple CORS proxies to try in sequence
+        this.proxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
         this.fallbackJsonUrl = 'letterboxd-fallback.json';
         this.profileUrl = 'https://letterboxd.com/kartooner/';
         this.fetchTimeoutMs = 6000;
@@ -10,22 +16,28 @@ class ReviewsUI {
 
     async initialize() {
         this.showLoading();
-        try {
-            const text = await this.fetchWithTimeout(this.proxyUrl, { timeout: this.fetchTimeoutMs });
-            const reviews = this.parseRss(text).slice(0, 4).filter(r => r.imageUrl);
-            if (reviews.length > 0) {
-                this.render(reviews);
-                return;
-            }
-            // If RSS parsed but no items/images, try fallback JSON
-            await this.loadFallback();
-        } catch (error) {
-            // Network or parse error: attempt fallback JSON, else CTA
+
+        // Try each proxy in sequence
+        for (let i = 0; i < this.proxies.length; i++) {
             try {
-                await this.loadFallback();
-            } catch (fallbackError) {
-                this.renderCta();
+                const proxyUrl = this.proxies[i] + encodeURIComponent(this.letterboxdRssUrl);
+                const text = await this.fetchWithTimeout(proxyUrl, { timeout: this.fetchTimeoutMs });
+                const reviews = this.parseRss(text).slice(0, 4).filter(r => r.imageUrl);
+                if (reviews.length > 0) {
+                    this.render(reviews);
+                    return;
+                }
+            } catch (error) {
+                // Try next proxy
+                continue;
             }
+        }
+
+        // If all proxies failed, try fallback JSON
+        try {
+            await this.loadFallback();
+        } catch (fallbackError) {
+            this.renderCta();
         }
     }
 
