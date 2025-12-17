@@ -47,6 +47,37 @@
             font-size: 1.3rem;
             font-weight: normal;
             line-height: 1.4;
+            color: #333333;
+        }
+
+        /* White text in dark mode - applies to all seasonal themes */
+        [data-theme="dark"] .about-intro .intro-text,
+        [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-christmas] [data-theme="dark"] .about-intro .intro-text,
+        body[data-christmas] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-fall] [data-theme="dark"] .about-intro .intro-text,
+        body[data-fall] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-halloween] [data-theme="dark"] .about-intro .intro-text,
+        body[data-halloween] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-summer] [data-theme="dark"] .about-intro .intro-text,
+        body[data-summer] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-spring] [data-theme="dark"] .about-intro .intro-text,
+        body[data-spring] [data-theme="dark"] .about-intro p:nth-of-type(1) {
+            color: #ffffff;
+        }
+
+        /* Dark text in light mode - applies to all seasonal themes */
+        body[data-christmas] .about-intro .intro-text,
+        body[data-christmas] .about-intro p:nth-of-type(1),
+        body[data-fall] .about-intro .intro-text,
+        body[data-fall] .about-intro p:nth-of-type(1),
+        body[data-halloween] .about-intro .intro-text,
+        body[data-halloween] .about-intro p:nth-of-type(1),
+        body[data-summer] .about-intro .intro-text,
+        body[data-summer] .about-intro p:nth-of-type(1),
+        body[data-spring] .about-intro .intro-text,
+        body[data-spring] .about-intro p:nth-of-type(1) {
+            color: #333333;
         }
         
         /* Second and third paragraphs use default Manrope font */

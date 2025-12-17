@@ -1466,6 +1466,22 @@ header {
 
 
 /* ==========================================
+   Page Intro Sections
+   ========================================== */
+.page-intro {
+    font-size: 1.1rem !important;
+    color: var(--skills-color) !important;
+    max-width: 600px;
+    margin: 0 auto 2rem !important;
+    line-height: 1.6 !important;
+    text-align: center !important;
+    font-weight: normal !important;
+    font-family: var(--font-main) !important;
+}
+
+/* Section intros for movies, reading sections on about page keep their own styling */
+
+/* ==========================================
    Contact Section
    ========================================== */
 .contact-section {
