@@ -1469,17 +1469,82 @@ header {
    Contact Section
    ========================================== */
 .contact-section {
-    margin-top: 2rem;
+    margin-top: 3rem;
     margin-bottom: var(--space-xl);
 }
 
-.contact-section h2 {
-    font-size: var(--text-2xl);
-    margin-bottom: var(--space-xs);
+.contact-section .section-divider {
+    border: none;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+    margin: 0 0 1.5rem 0;
 }
 
-.contact-section p {
-    margin-bottom: var(--space-lg);
+.contact-section h3 {
+    font-family: var(--font-secondary);
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+}
+
+.social-links-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.65rem 1.25rem;
+    background: rgba(var(--accent-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.social-link::before {
+    content: '→';
+    margin-right: 0.5rem;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: all 0.25s ease;
+}
+
+.social-link:hover::before {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.social-link:hover {
+    background: rgba(var(--accent-rgb), 0.15);
+    border-color: rgba(var(--accent-rgb), 0.4);
+    transform: translateY(-1px);
+}
+
+.social-link:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.social-name {
+    font-size: 1rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+@media (max-width: 600px) {
+    .social-links-wrapper {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .social-link {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* ==========================================
@@ -1849,8 +1914,13 @@ footer p {
 
 /* Tablet and smaller screens */
 @media (max-width: 768px) {
-    .doodle-lines { 
-        height: 60px; 
+    /* Scale down h1 for mobile */
+    h1 {
+        font-size: clamp(2.1rem, 5vw + 1rem, 3.15rem) !important;
+    }
+
+    .doodle-lines {
+        height: 60px;
     }
 
     .doodle-line {
@@ -2023,50 +2093,49 @@ footer p {
    ========================================== */
 
 .info-section {
-    background: rgba(var(--accent-rgb), 0.12);
-    padding: var(--space-4); /* 32px - consistent 8px grid */
-    border-radius: 8px;
-    margin: var(--space-4) 0; /* 32px - consistent spacing */
-    border: 1px solid rgba(var(--accent-rgb), 0.2);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    background: transparent;
+    padding: 1.5rem 0;
+    border-radius: 0;
+    margin: 1.5rem 0;
+    border: none;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.15);
 }
 
 .info-section p {
     text-align: left;
     font-size: 1rem;
-    color: var(--text-color-secondary, var(--skills-color));
-    margin-bottom: 0.75rem;
-    line-height: 1.4;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    line-height: 1.5;
 }
 
 .info-section-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .info-section a {
     color: var(--skills-color);
-    text-decoration: none;
+    text-decoration: underline;
     font-size: 1rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
+    font-weight: 400;
+    transition: color 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    min-height: 44px;
-    min-width: 44px;
-    background: rgba(var(--accent-rgb), 0.1);
-    border: 1px solid rgba(var(--accent-rgb), 0.15);
+    padding: 0;
+    border-radius: 0;
+    min-height: auto;
+    min-width: auto;
+    background: transparent;
+    border: none;
 }
 
 .info-section a:hover {
     color: var(--accent-color);
-    background: rgba(var(--accent-rgb), 0.2);
-    border-color: rgba(var(--accent-rgb), 0.3);
-    transform: translateY(-1px);
+    background: transparent;
+    border: none;
+    transform: none;
 }
 
 .info-section a:focus {

@@ -67,7 +67,12 @@
       "Bash(powershell -Command \"Stop-Process -Id 19308 -Force\")",
       "Bash(for file in about/index.html contact/index.html journal/index.html voice-acting/index.html thanks/index.html archive/index.html entry/*.html)",
       "Bash(do echo \"Processing $file\")",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "WebFetch(domain:www.jasonsantamaria.com)",
+      "WebFetch(domain:www.interaction-design.org)",
+      "WebSearch",
+      "WebFetch(domain:www.amazon.com)",
+      "Bash(file:*)"
     ],
     "deny": [],
     "ask": []
