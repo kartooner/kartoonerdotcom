@@ -3,33 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting...</title>
+    <title>404 - Page Not Found</title>
+    <meta name="description" content="Oops! This page doesn't exist. But hey, why not play some Dig Dug while you're here?">
+
+    <!-- Resource hints for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Preload custom fonts -->
+    <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+
+    <link rel="stylesheet" href="/style.css">
+    <script src="/seasonal-loader.js"></script>
+
+    <script src="//www.google.com/jsapi"></script>
     <script>
-        // GitHub Pages SPA redirect handler for deep links
-        const path = window.location.pathname;
-
-        // Check if this is an aiadvisor deep link
-        if (path.match(/^\/aiadvisor\/[^\/]+\/[^\/]+/)) {
-            // Check if already authenticated
-            const isAuthenticated = sessionStorage.getItem('aiadvisor_auth') === 'true';
-
-            if (isAuthenticated) {
-                // Already logged in - go directly to app.html
-                // Change URL to app.html but keep the path in history for React routing
-                window.history.replaceState({}, '', path);
-                window.location.replace('/aiadvisor/app.html');
-            } else {
-                // Not logged in - store path and redirect to app.html (which will redirect to login)
-                sessionStorage.setItem('aiadvisor_redirect', path);
-                window.location.replace('/aiadvisor/app.html');
-            }
-        } else {
-            // For other 404s, redirect to home
-            window.location.replace('/');
+        if (window.parent && window.parent.maeExportApis_) {
+            window.parent.maeExportApis_();
         }
     </script>
+
+    <style>
+        /* 404 page specific styles */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2em;
+        }
+
+        .error-message {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .error-code {
+            font-family: var(--font-secondary);
+            font-size: clamp(4rem, 8vw, 8rem);
+            color: var(--accent-color);
+            margin: 0;
+            line-height: 1;
+        }
+
+        .error-text {
+            font-family: var(--font-secondary);
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: var(--text-color);
+            margin: 1rem 0;
+        }
+
+        .error-description {
+            color: var(--skills-color);
+            font-size: 1.1rem;
+            margin: 1rem 0 2rem;
+            line-height: 1.6;
+        }
+
+        .game-section {
+            margin: 3rem 0;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+        }
+
+        .game-section h2 {
+            font-family: var(--font-secondary);
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .game-intro {
+            color: var(--skills-color);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            background: #000000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #game {
+            width: 100%;
+            height: 480px;
+        }
+
+        #startButton {
+            display: block;
+            width: 200px;
+            height: 50px;
+            background-color: var(--accent-color);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            margin: 40px auto;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #startButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        #startButton:active {
+            transform: translateY(0);
+            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-link {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .back-link a {
+            color: var(--accent-color);
+            text-decoration: underline;
+            font-size: 1.1rem;
+        }
+
+        .back-link a:hover {
+            color: var(--text-color);
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                max-width: 100%;
+            }
+
+            #game {
+                height: 360px;
+            }
+
+            #startButton {
+                width: 160px;
+                height: 45px;
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <p>Redirecting...</p>
+    <!-- Skip Navigation Link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
+            <a href="/contact">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+        <span class="theme-toggle-text">Dark mode</span>
+    </button>
+
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+
+            <div class="error-message">
+                <h1 class="error-code animate-fade-in animate-header">404</h1>
+                <p class="error-text">Page Not Found</p>
+                <p class="error-description">
+                    Looks like you've dug yourself into a hole! This page doesn't exist,
+                    but since you're here, how about a game of Dig Dug?
+                </p>
+            </div>
+
+            <div class="back-link">
+                <a href="/">← Back to home</a>
+            </div>
+
+            <!-- Game Section -->
+            <section class="game-section animate-fade-in">
+                <h2>Play Dig Dug</h2>
+                <p class="game-intro">Classic Atari 2600 arcade action. Dig tunnels, pump up enemies, and rack up points!</p>
+
+                <div class="game-container">
+                    <div id="game" style="display: none;"></div>
+                    <button id="startButton">PLAY</button>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById("game").style.display = "none";
+        let gameActive = false;
+
+        // Prevent arrow keys and space from scrolling the page when game is active
+        function preventGameKeys(e) {
+            if (gameActive) {
+                // Prevent arrow keys, space, and other game keys from scrolling
+                const gameKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Space'];
+                if (gameKeys.includes(e.key)) {
+                    e.preventDefault();
+                }
+            }
+        }
+
+        // Add focus trap when game starts
+        function enableFocusTrap() {
+            gameActive = true;
+            document.addEventListener('keydown', preventGameKeys, true);
+
+            // Add visual indicator that game has focus
+            const gameContainer = document.querySelector('.game-container');
+            if (gameContainer) {
+                gameContainer.style.outline = '3px solid var(--accent-color)';
+                gameContainer.style.boxShadow = '0 0 20px rgba(var(--accent-rgb), 0.5)';
+            }
+
+            console.log('🎮 Game controls active! Arrow keys will control the game. Click outside to release focus.');
+        }
+
+        // Allow clicking outside game to release focus trap
+        document.addEventListener('click', function(e) {
+            const gameContainer = document.querySelector('.game-container');
+            if (gameActive && gameContainer && !gameContainer.contains(e.target)) {
+                gameActive = false;
+                gameContainer.style.outline = '';
+                gameContainer.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
+                console.log('🎮 Game focus released. Arrow keys will scroll the page again.');
+            } else if (gameContainer && gameContainer.contains(e.target) && document.getElementById("game").style.display !== "none") {
+                enableFocusTrap();
+            }
+        });
+
+        function startGame() {
+            document.getElementById("game").style.display = "block";
+            document.getElementById("startButton").style.display = "none";
+
+            EJS_player = "#game";
+            EJS_core = "atari2600";
+            EJS_color = "#000000";
+            EJS_startOnLoaded = true;
+            EJS_pathtodata = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data";
+            EJS_gameUrl = "https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@00b075dab1123c34f488d1e9c87c945716887ede/Dig%20Dug%20(USA)%20(1).zip";
+
+            loadGame();
+
+            // Enable focus trap after a short delay to let game load
+            setTimeout(() => {
+                enableFocusTrap();
+            }, 1000);
+        }
+
+        function loadGame() {
+            var script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data/loader.js";
+            document.body.appendChild(script);
+        }
+
+        document.getElementById("startButton").addEventListener("click", startGame);
+    </script>
+
+    <script src="/app.min.js"></script>
 </body>
 </html>
