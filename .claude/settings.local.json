@@ -74,7 +74,14 @@
       "WebFetch(domain:www.amazon.com)",
       "Bash(file:*)",
       "Bash(cmd /c \"taskkill /F /PID 20032\")",
-      "Bash(powershell -Command \"Stop-Process -Id 20032 -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Id 20032 -Force\")",
+      "WebFetch(domain:learning.atheros.ai)",
+      "WebFetch(domain:fontawesome.com)",
+      "WebFetch(domain:icon-sets.iconify.design)",
+      "WebFetch(domain:justinjbird.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(cmd /c \"taskkill /F /PID 9396\")",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

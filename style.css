@@ -184,7 +184,7 @@ body {
         radial-gradient(circle at 3px 3px, rgba(255,255,255,0.02) 1px, transparent 0);
     background-size: 8px 8px, 12px 12px;
     line-height: var(--leading-normal);
-    padding: 0 0 var(--space-xl) 0;
+    padding: 0;
     /* Smooth theme transitions */
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -306,7 +306,7 @@ h6 {
 /* Body text hierarchy with vertical rhythm */
 p {
     font-size: var(--text-base);
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.6; /* 25.6px ≈ 24px (3 baseline units) */
     margin-top: 0;
     margin-bottom: var(--space-3); /* 24px - 3 baseline units */
@@ -316,7 +316,7 @@ p {
 ul,
 ol {
     font-size: var(--text-base);
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.6;
     margin-top: 0;
     margin-bottom: var(--space-3); /* 24px - 3 baseline units */
@@ -1131,9 +1131,9 @@ header {
    ========================================== */
 
 .bio {
-    font-family: "Cartridge Regular", var(--font-display), var(--font-secondary), sans-serif;
-    font-size: 1.2rem;
-    line-height: 1.5;
+    font-family: var(--font-main);
+    font-size: 1.05rem;
+    line-height: 1.6;
     margin-bottom: 2rem;
 }
 
@@ -1309,9 +1309,9 @@ header {
     padding-left: 1.25rem;
     margin-bottom: 0.75rem;
     font-size: 1.05rem;
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.4;
-    color: var(--skills-color);
+    color: var(--text-color);
 }
 
 .skills-list li::before {
@@ -1334,9 +1334,9 @@ header {
 }
 
 .experience p {
-    color: var(--experience-text-color);
+    color: var(--text-color);
     font-size: 0.9rem;
-    font-weight: 300;
+    font-weight: 400;
 }
 
 /* ==========================================
@@ -1735,8 +1735,15 @@ header {
 
 footer {
     width: 100%;
-    margin-bottom: 2rem;
-    padding: 2rem 0;
+    margin-top: 4rem;
+    padding: 2.5rem 0 2.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] footer {
+    background: rgba(0, 0, 0, 0.03);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 
@@ -1749,22 +1756,21 @@ footer {
 }
 
 footer p {
-    margin-top: 2rem;
+    margin: 0;
 }
 
 .changelog {
     color: var(--skills-color);
-    font-size: 0.875rem;
-    font-style: italic;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px dotted rgba(255, 255, 255, 0.1);
+    font-size: 1rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+    border-top: none;
     max-width: none!important;
 }
 
-[data-theme="light"] .changelog {
-    border-top: 1px dotted rgba(0, 0, 0, 0.15);
-}
 
 .changelog a {
     color: var(--skills-color);
@@ -1815,24 +1821,148 @@ footer p {
     transform: translateY(-2px);
 }
 
-/* Arcade GIF */
-.arcade-gif {
+/* Footer Content */
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
     text-align: center;
-    margin-top: 2.5rem;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-.arcade-gif img {
-    max-width: 150px;
+/* Footer Icon */
+.footer-icon {
+    margin: 0 0 0.5rem 0;
+}
+
+.footer-icon img {
+    max-width: 100px;
     height: auto;
-    image-rendering: pixelated;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: crisp-edges;
-    opacity: 0.8;
+    opacity: 1;
     transition: opacity 0.3s ease;
+    display: block;
 }
 
-.arcade-gif img:hover {
+.footer-icon img:hover {
+    opacity: 0.8;
+}
+
+/* Social Icons */
+.social-icons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem 0 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.social-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.125rem;
+    height: 3.125rem;
+    border-radius: 50%;
+    background: var(--bg-color);
+    color: var(--text-color);
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+
+.social-icon:hover,
+.social-icon:focus,
+.social-icon:visited {
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+
+.social-icon i {
+    font-size: 20px;
+    transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Tooltip */
+.social-icon .tooltip {
+    position: absolute;
+    top: 0;
+    font-size: 0.875rem;
+    background: #fff;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 5px;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.social-icon .tooltip::before {
+    position: absolute;
+    content: "";
+    height: 8px;
+    width: 8px;
+    background: #fff;
+    bottom: -3px;
+    left: 50%;
+    transform: translate(-50%) rotate(45deg);
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.social-icon:hover .tooltip {
+    top: -45px;
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.social-icon:hover .tooltip {
+    text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.1);
+}
+
+.social-icon:hover i {
+    transform: scale(1.1);
+}
+
+/* Remove external link icon from social icons */
+.social-icon[target="_blank"]::after {
+    display: none !important;
+}
+
+/* Brand Colors */
+.social-icon.bluesky:hover,
+.social-icon.bluesky:hover .tooltip,
+.social-icon.bluesky:hover .tooltip::before {
+    background: #1185fe;
+    color: #fff;
+}
+
+.social-icon.threads:hover,
+.social-icon.threads:hover .tooltip,
+.social-icon.threads:hover .tooltip::before {
+    background: #000000;
+    color: #fff;
+}
+
+.social-icon.linkedin:hover,
+.social-icon.linkedin:hover .tooltip,
+.social-icon.linkedin:hover .tooltip::before {
+    background: #0177B5;
+    color: #fff;
+}
+
+.social-icon.medium:hover,
+.social-icon.medium:hover .tooltip,
+.social-icon.medium:hover .tooltip::before {
+    background: #00ab6c;
+    color: #fff;
 }
 
 
@@ -2021,8 +2151,8 @@ footer p {
         margin-bottom: 0;
     }
 
-    .arcade-gif img {
-        max-width: 120px;
+    .footer-icon img {
+        max-width: 60px;
     }
 
     .webring {
