@@ -413,74 +413,10 @@
 
     </main>
 
-    <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-        <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-    </footer>
-</div>
+    <div id="footer-placeholder"></div>
+    <script src="/footer-loader.js"></script>
 
-<!-- Lightbox -->
-<div id="lightbox" class="lightbox">
-    <div class="lightbox-content">
-        <button class="lightbox-close" aria-label="Close lightbox">&times;</button>
-        <img class="lightbox-image" src="" alt="">
-        <div class="lightbox-info">
-            <h3 class="lightbox-title"></h3>
-            <p class="lightbox-description"></p>
-        </div>
-    </div>
-</div>
+    <script src="/app.min.js"></script>
 
-<script src="/app.min.js"></script>
-<script>
-// Simple lightbox functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImage = lightbox.querySelector('.lightbox-image');
-    const lightboxTitle = lightbox.querySelector('.lightbox-title');
-    const lightboxDescription = lightbox.querySelector('.lightbox-description');
-    const closeButton = lightbox.querySelector('.lightbox-close');
-    const illustrationCards = document.querySelectorAll('.illustration-card');
-    
-    // Open lightbox when clicking on illustration cards
-    illustrationCards.forEach(card => {
-        card.addEventListener('click', function() {
-            const title = this.dataset.title;
-            const description = this.dataset.description;
-            const imageDiv = this.querySelector('.illustration-image');
-            
-            // For now, use placeholder. Later you can add data-image-src attribute
-            lightboxImage.src = '/img/illustrations/' + title.toLowerCase().replace(/\s+/g, '-') + '.jpg';
-            lightboxImage.alt = title;
-            lightboxTitle.textContent = title;
-            lightboxDescription.textContent = description;
-            
-            lightbox.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-    });
-    
-    // Close lightbox
-    function closeLightbox() {
-        lightbox.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
-    closeButton.addEventListener('click', closeLightbox);
-    
-    // Close lightbox when clicking outside the content
-    lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) {
-            closeLightbox();
-        }
-    });
-    
-    // Close lightbox with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-            closeLightbox();
-        }
-    });
-});
-</script>
 </body>
 </html>
