@@ -267,7 +267,7 @@ h6 {
 }
 
 h1 {
-    font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
+    font-size: clamp(2.575rem, 3.3475rem + 4.944vw, 5.68148rem);
     line-height: 1.1; /* Tighter for large headings */
     letter-spacing: -0.02em; /* Optical adjustment for large sizes */
     margin-bottom: var(--space-4); /* 32px - 4 baseline units */
@@ -503,6 +503,10 @@ a:focus {
     color: var(--accent-color);
     text-decoration: underline;
     outline: none;
+    text-shadow: none;
+    box-shadow: none;
+    filter: none;
+    backdrop-filter: none;
 }
 
 a:active {
