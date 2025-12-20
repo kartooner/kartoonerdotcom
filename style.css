@@ -603,21 +603,8 @@ button:focus-visible {
 }
 
 [data-theme="light"] .persistent-nav {
-    background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-color) 100%);
+    background: rgba(0, 0, 0, 0.03);
     position: relative;
-}
-
-[data-theme="light"] .persistent-nav::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(var(--accent-rgb), 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb), 0.08) 0%, transparent 50%);
-    pointer-events: none;
 }
 
 /* Doodle lines for index page */
@@ -894,7 +881,7 @@ button:focus-visible {
 @media (max-width: 480px) {
     body {
         font-size: var(--text-sm);
-        padding: 0 0 var(--space-lg) 0;
+        padding: 0;
     }
     
     h1 {
@@ -1205,6 +1192,8 @@ header {
 
 .top-skills-list {
     list-style: none;
+    padding-left: 0;
+    margin: 0 auto;
 }
 
 .top-skills-list li {
@@ -2151,8 +2140,23 @@ footer p {
         margin-bottom: 0;
     }
 
+    /* Footer mobile styles */
+    footer {
+        padding: 2rem 1.5rem;
+        margin-top: 2.5rem;
+    }
+
+    .footer-content {
+        gap: 1rem;
+    }
+
+    .changelog {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
     .footer-icon img {
-        max-width: 60px;
+        max-width: 80px;
     }
 
     .webring {
