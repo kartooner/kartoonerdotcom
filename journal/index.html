@@ -5,69 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
     <style>
 
-        /* Using .container-narrow from style.css for consistent width */
-
+        .journal-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2em;
+        }
+        
         h1, h2, h3 {
             color: var(--text-color);
-        }
-
-        /* Journal intro styling */
-        .journal-intro .intro-text {
-            font-family: var(--font-secondary);
-            font-size: 1.3rem;
-            font-weight: normal;
-            line-height: 1.4;
-            margin-bottom: 2rem;
-        }
-
-        /* Featured post styling - clean, typography-focused with subtle container */
-        .featured-post {
-            background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
-            padding: var(--space-5) var(--space-4);
-            margin: 3rem 0 4rem 0;
-            border-radius: 8px;
-            position: relative;
-            transition: background-color 0.3s ease;
-        }
-
-        [data-theme="light"] .featured-post {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .featured-label {
-            font-family: var(--font-secondary);
-            font-size: 1.5rem;
-            color: var(--accent-color);
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        .featured-post .post {
-            margin-bottom: 0;
-        }
-
-        .featured-post .post-title {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            margin-bottom: 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .featured-post {
-                margin: 2rem 0 3rem 0;
-            }
         }
 
 
         .logo {
             text-align: center;
             font-family: var(--font-secondary);
-            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
+            font-size: 5rem;
             color: var(--accent-color);
         }
 
@@ -77,46 +34,35 @@
 
         .post-date {
             color: var(--skills-color);
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-            letter-spacing: 0.02em;
-        }
-
-        .post-date a {
-            color: var(--skills-color);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .post-date a:hover {
-            color: var(--accent-color);
+            margin-bottom: 10px;
         }
 
         .post-title {
             font-family: var(--font-secondary);
-            font-size: clamp(2rem, 4vw, 2.8rem);
-            line-height: 1.1;
-            margin-bottom: 0.75rem;
+            font-size: 2.8rem;
+            line-height: 1em;
+            margin-bottom: 10px;
             color: var(--heading-color);
         }
 
         .post-title a {
             text-decoration: none;
-            transition: color 0.2s ease;
+            transition: all 0.3s ease;
             display: inline-block;
         }
 
         .post-title a:hover,
         .post-title a:focus {
             color: var(--accent-color);
+            transform: translateX(5px);
         }
 
+        
         .post-subtitle {
-            font-family: var(--font-main);
-            font-size: 1.1rem;
-            color: var(--skills-color);
-            margin-bottom: 1.5rem;
-            font-style: italic;
+            font-family: var(--font-secondary);
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
         }
 
         .post-content {
@@ -221,15 +167,14 @@
         }
 
         .recent-posts {
-            margin-top: 3rem;
-        }
-
-        .recent-posts h3 {
             font-family: var(--font-secondary);
-            font-size: 1.5rem;
+            margin-top: 40px;
+        }
+        
+        .recent-posts h3 {
+            font-size: 2rem;
             color: var(--accent-color);
-            margin-bottom: 2rem;
-            font-weight: 600;
+            margin-bottom: 30px;
         }
 
         .recent-posts-grid {
@@ -239,29 +184,23 @@
             margin: 0;
         }
 
-        @media (min-width: 768px) {
-            .recent-posts-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 2.5rem;
-            }
-        }
-
         .recent-post-item {
-            padding: 0;
-            border: none;
-            transition: all 0.2s ease;
+            background: rgba(var(--accent-rgb), 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
         }
 
         .recent-post-item:hover {
-            transform: translateY(-2px);
+            background: rgba(var(--accent-rgb), 0.08);
+            transform: translateX(4px);
         }
 
         .recent-post-title {
-            font-family: var(--font-secondary);
-            font-size: clamp(1.5rem, 3vw, 2rem);
-            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            margin: 0 0 0.75rem 0;
             color: var(--heading-color);
-            line-height: 1.2;
         }
 
         .recent-post-title a {
@@ -276,11 +215,11 @@
         }
 
         .recent-post-snippet {
-            color: var(--skills-color);
-            font-family: var(--font-main);
-            font-size: 1rem;
+            color: var(--text-color);
+            font-family: var(--font-primary);
+            font-size: 0.95rem;
             line-height: 1.6;
-            margin: 0 0 0.75rem 0;
+            margin: 0 0 1rem 0;
         }
 
         .recent-post-link {
@@ -294,13 +233,14 @@
         .recent-post-link:hover,
         .recent-post-link:focus {
             text-decoration: underline;
+            transform: translateX(2px);
         }
 
-        .view-all-container {
+        footer {
             display: flex;
             justify-content: center;
-            margin-bottom: 2.5rem;
-            margin-top: 3rem;
+            margin-bottom: 2.5rem; /* 40px */
+            margin-top: 40px;
         }
 
         .view-all {
@@ -324,10 +264,9 @@
 
         .info-section {
             background: rgba(var(--accent-rgb), 0.08);
-            padding: var(--space-4); /* 32px - consistent 8px grid */
+            padding: 2rem;
             border-radius: 8px;
-            margin: var(--space-4) 0; /* 32px - consistent spacing */
-            transition: background-color 0.3s ease;
+            margin: 2rem 0;
         }
 
         .info-section p {
@@ -357,7 +296,15 @@
             color: var(--accent-color);
         }
 
+        .info-section .material-symbols-outlined {
+            font-size: 1rem;
+        }
 
+        .info-section p .material-symbols-outlined {
+            font-size: 1.1rem;
+            margin-right: 0.5rem;
+            vertical-align: text-bottom;
+        }
 
         /* Read more link styling */
         .read-more {
@@ -406,70 +353,74 @@
     
     <!-- Theme Toggle -->
     <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+        <span class="theme-toggle-icon">🌙</span>
         <span class="theme-toggle-text">Dark mode</span>
     </button>
 
-    <div class="container-narrow animate-fade-in animate-main">
+    <div class="journal-container animate-fade-in animate-main">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
+        <hr class="divider animate-fade-in animate-header" />
 
-        <div class="journal-intro">
-            <p class="intro-text page-intro">Beyond pixels and interfaces, I explore ideas through writing. Here are my thoughts on creativity, design, life, and everything in between.</p>
+        
+    <div class="post">
+        <div class="post-date"><a href="/entry/everyone-creates.html">#</a> &bull; Nov 14, 2025 &bull; 11 min read &bull; Erik Sagen</div>
+        <h2 class="post-title"><a href="/entry/everyone-creates.html">Everyone Creates</a></h2>
+        <div class="post-subtitle">Even when the system says you don't</div>
+        <div class="post-content">
+            <p>Don Hahn remembers dancing corndogs. </p>
+
+<p>Not the food itself, but the image: a cartoon advertisement projected onto a drive-in movie screen, animated hot dogs in their little breaded jackets, twirling under the stars. He was a kid in pajamas, sitting in the back of his family’s Rambler station wagon, and something about those dancing corndogs mesmerized him.</p>
+            <p class="read-more"><a href="/entry/everyone-creates.html">Read full post →</a></p>
         </div>
-
-        <section class="featured-post">
-            <h2 class="featured-label">Latest post</h2>
-            <div class="post">
-                <div class="post-date"><a href="/entry/everyone-creates.html">#</a> &bull; Nov 14, 2025 &bull; 11 min read &bull; Erik Sagen</div>
-                <h3 class="post-title"><a href="/entry/everyone-creates.html">Everyone Creates</a></h3>
-                <div class="post-subtitle">Even when the system says you don't</div>
-                <div class="post-content">
-                    <p>Don Hahn remembers dancing corndogs. </p>
-
-<p>Not the food itself, but the image: a cartoon advertisement projected onto a drive-in movie screen, animated hot dogs in their little breaded jackets, twirling under the stars. He was a kid in pajamas, sitting in the back of his family's Rambler station wagon, and something about those dancing corndogs mesmerized him.</p>
-                    <p class="read-more"><a href="/entry/everyone-creates.html" aria-label="Read full post: Everyone Creates">Read full post →</a></p>
-                </div>
-            </div>
-        </section>
+    </div>
 
         <hr class="divider animate-fade-in animate-main" />
 
         <div class="recent-posts animate-fade-in animate-footer">
-            <h3>Other writings</h3>
+            <h3>Recent posts</h3>
 
             <div class="recent-posts-grid">
                 
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/growing-up-in-the-80s.html">Growing up in the 80s</a></h3>
                     <p class="recent-post-snippet">Picture this: it&#39;s 1988, and I&#39;m sitting in a movie theater with whatever snacks my Dad bought us.</p>
-                    <a href="/entry/growing-up-in-the-80s.html" class="recent-post-link" aria-label="Read more about Growing up in the 80s">Read more →</a>
+                    <a href="/entry/growing-up-in-the-80s.html" class="recent-post-link">Read more →</a>
                 </div>
                 
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/the-pole-on-the-corner.html">The Pole on the Corner</a></h3>
                     <p class="recent-post-snippet">I was driving near my house when I turned past a corner and asked my wife, &quot;Has that pole always been there?&quot; She didn&#39;t even hesitate.</p>
-                    <a href="/entry/the-pole-on-the-corner.html" class="recent-post-link" aria-label="Read more about The Pole on the Corner">Read more →</a>
+                    <a href="/entry/the-pole-on-the-corner.html" class="recent-post-link">Read more →</a>
                 </div>
                 
                 <div class="recent-post-item">
                     <h3 class="recent-post-title"><a href="/entry/here-we-go-again.html">Here we go again</a></h3>
                     <p class="recent-post-snippet">It&#39;s been awhile since I&#39;ve written here. Long enough that I started to wonder if I&#39;d ever come back to this (blogging).</p>
-                    <a href="/entry/here-we-go-again.html" class="recent-post-link" aria-label="Read more about Here we go again">Read more →</a>
+                    <a href="/entry/here-we-go-again.html" class="recent-post-link">Read more →</a>
                 </div>
             </div>
 
-            <div class="view-all-container">
+            <footer>
                 <a href="/archive" class="view-all">View all posts</a>
-            </div>
+            </footer>
         </div>
 
+        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+            <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
+                <strong>CSS Joy Webring</strong>
+                <div class="webring-links">
+                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
+                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
+                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
+                </div>
+            </div>
+
+            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
+        </footer>
     </div>
 
-<div id="footer-placeholder"></div>
-<script src="/footer-loader.js"></script>
-
     <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js"></script>
+    <script src="/seasonal-loader.js" defer></script>
     <script src="/tag-filter.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)

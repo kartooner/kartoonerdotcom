@@ -10,6 +10,7 @@
     // Load the consolidated seasonal themes CSS file once
     function loadSeasonalThemesCSS() {
         if (document.getElementById('seasonal-themes')) {
+            console.log('🎄 Seasonal themes CSS already loaded');
             return;
         }
 
@@ -21,8 +22,10 @@
         const mainStylesheet = document.querySelector('link[href*="style.css"]') || document.querySelector('link[rel="stylesheet"]');
         if (mainStylesheet) {
             mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
+            console.log('🎄 Loaded seasonal-themes.css after main stylesheet');
         } else {
             document.head.appendChild(link);
+            console.log('🎄 Loaded seasonal-themes.css at end of head');
         }
     }
 
@@ -329,53 +332,24 @@
 
     // Priority order: Christmas > Fall > Summer > Spring
     if (isChristmasSeason()) {
+        console.log('🎄 Christmas season detected! Activating Christmas theme...');
         updateChristmasGreeting();
         addChristmasLights();
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.dataset.christmas = 'true';
-            });
-        } else {
-            document.body.dataset.christmas = 'true';
-        }
+        document.documentElement.dataset.christmas = 'true';
+        console.log('🎄 Set data-christmas="true" on html element');
     } else if (isFallSeason()) {
         if (isHalloweenPeriod()) {
             updateHalloweenGreeting();
         }
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.dataset.fall = 'true';
-                if (isHalloweenPeriod()) {
-                    document.body.dataset.halloween = 'true';
-                }
-            });
-        } else {
-            document.body.dataset.fall = 'true';
-            if (isHalloweenPeriod()) {
-                document.body.dataset.halloween = 'true';
-            }
+        document.documentElement.dataset.fall = 'true';
+        if (isHalloweenPeriod()) {
+            document.documentElement.dataset.halloween = 'true';
         }
     } else if (isSummerSeason()) {
         updateSummerGreeting();
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.dataset.summer = 'true';
-            });
-        } else {
-            document.body.dataset.summer = 'true';
-        }
+        document.documentElement.dataset.summer = 'true';
     } else if (isSpringSeason()) {
         updateSpringGreeting();
-
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                document.body.dataset.spring = 'true';
-            });
-        } else {
-            document.body.dataset.spring = 'true';
-        }
+        document.documentElement.dataset.spring = 'true';
     }
 })();
