@@ -1,11 +1,33 @@
 /**
  * Seasonal Theme Loader
- * Combines Halloween/Fall and Christmas theme loaders
- * Loads appropriate seasonal theme based on current date
+ * Loads consolidated seasonal themes and activates based on current date
+ * All themes are in one CSS file, switched via data attributes on <body>
  */
 
 (function() {
     'use strict';
+
+    // Load the consolidated seasonal themes CSS file once
+    function loadSeasonalThemesCSS() {
+        if (document.getElementById('seasonal-themes')) {
+            return;
+        }
+
+        const link = document.createElement('link');
+        link.id = 'seasonal-themes';
+        link.rel = 'stylesheet';
+        link.href = '/seasonal-themes.css';
+
+        const mainStylesheet = document.querySelector('link[href*="style.css"]') || document.querySelector('link[rel="stylesheet"]');
+        if (mainStylesheet) {
+            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
+        } else {
+            document.head.appendChild(link);
+        }
+    }
+
+    // Load the CSS file immediately
+    loadSeasonalThemesCSS();
 
     // ============ FALL/HALLOWEEN THEME ============
 
@@ -41,24 +63,6 @@
         return now >= startDate && now <= endDate;
     }
 
-    // Load the fall theme CSS
-    function loadFallTheme() {
-        if (document.getElementById('fall-theme')) {
-            return;
-        }
-
-        const link = document.createElement('link');
-        link.id = 'fall-theme';
-        link.rel = 'stylesheet';
-        link.href = '/halloween-theme.css';
-
-        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
-        if (mainStylesheet) {
-            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
-        } else {
-            document.head.appendChild(link);
-        }
-    }
 
     // Update greeting to "Boo!" during Halloween period only
     function updateHalloweenGreeting() {
@@ -116,24 +120,6 @@
         return now >= startDate && now <= endDate;
     }
 
-    // Load the Christmas theme CSS
-    function loadChristmasTheme() {
-        if (document.getElementById('christmas-theme')) {
-            return;
-        }
-
-        const link = document.createElement('link');
-        link.id = 'christmas-theme';
-        link.rel = 'stylesheet';
-        link.href = '/christmas-theme.css';
-
-        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
-        if (mainStylesheet) {
-            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
-        } else {
-            document.head.appendChild(link);
-        }
-    }
 
     // Update greeting to "God Jul!" during Christmas season
     function updateChristmasGreeting() {
@@ -247,24 +233,6 @@
         return now >= startDate && now <= endDate;
     }
 
-    // Load the spring theme CSS
-    function loadSpringTheme() {
-        if (document.getElementById('spring-theme')) {
-            return;
-        }
-
-        const link = document.createElement('link');
-        link.id = 'spring-theme';
-        link.rel = 'stylesheet';
-        link.href = '/spring-theme.css';
-
-        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
-        if (mainStylesheet) {
-            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
-        } else {
-            document.head.appendChild(link);
-        }
-    }
 
     // Update greeting to "Bloom!" during Spring
     function updateSpringGreeting() {
@@ -322,24 +290,6 @@
         return now >= startDate && now <= endDate;
     }
 
-    // Load the summer theme CSS
-    function loadSummerTheme() {
-        if (document.getElementById('summer-theme')) {
-            return;
-        }
-
-        const link = document.createElement('link');
-        link.id = 'summer-theme';
-        link.rel = 'stylesheet';
-        link.href = '/summer-theme.css';
-
-        const mainStylesheet = document.querySelector('link[href*="style.min.css"]');
-        if (mainStylesheet) {
-            mainStylesheet.parentNode.insertBefore(link, mainStylesheet.nextSibling);
-        } else {
-            document.head.appendChild(link);
-        }
-    }
 
     // Update greeting to "Sunshine!" during Summer
     function updateSummerGreeting() {
@@ -379,7 +329,6 @@
 
     // Priority order: Christmas > Fall > Summer > Spring
     if (isChristmasSeason()) {
-        loadChristmasTheme();
         updateChristmasGreeting();
         addChristmasLights();
 
@@ -391,8 +340,6 @@
             document.body.dataset.christmas = 'true';
         }
     } else if (isFallSeason()) {
-        loadFallTheme();
-
         if (isHalloweenPeriod()) {
             updateHalloweenGreeting();
         }
@@ -411,7 +358,7 @@
             }
         }
     } else if (isSummerSeason()) {
-        loadSummerTheme();
+        updateSummerGreeting();
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -421,7 +368,7 @@
             document.body.dataset.summer = 'true';
         }
     } else if (isSpringSeason()) {
-        loadSpringTheme();
+        updateSpringGreeting();
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
