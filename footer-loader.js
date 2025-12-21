@@ -18,6 +18,17 @@
             })
             .then(html => {
                 placeholder.outerHTML = html;
+
+                // Hide webring on all pages except index
+                const currentPath = window.location.pathname;
+                const isIndexPage = currentPath === '/' || currentPath === '/index.html';
+
+                if (!isIndexPage) {
+                    const webring = document.querySelector('.webring');
+                    if (webring) {
+                        webring.style.display = 'none';
+                    }
+                }
             })
             .catch(error => {
                 console.error('Error loading footer:', error);

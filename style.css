@@ -1814,6 +1814,14 @@ footer p {
     transform: translateY(-2px);
 }
 
+[data-theme="light"] .webring-links a {
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .webring-links a:hover {
+    border-color: var(--accent-color);
+}
+
 /* Footer Content */
 .footer-content {
     display: flex;

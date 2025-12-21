@@ -66,6 +66,17 @@
 [data-fall="true"] .persistent-nav { background: rgba(26, 10, 46, 0.45); }
 [data-fall="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%); }
 
+/* Mobile menu background for fall theme */
+@media (max-width: 768px) {
+    [data-fall="true"] .nav-links,
+    [data-fall="true"][data-theme="dark"] .nav-links {
+        background: rgba(26, 10, 46, 0.95);
+    }
+    [data-fall="true"][data-theme="light"] .nav-links {
+        background: rgba(255, 245, 230, 0.95);
+    }
+}
+
 [data-fall="true"] .top-skills-box {
     background-image: radial-gradient(circle, rgba(255, 111, 60, 0.15), rgba(201, 182, 228, 0.08));
     border: 1px solid rgba(255, 111, 60, 0.2);
@@ -194,6 +205,17 @@
 [data-christmas="true"] .persistent-nav { background: rgba(43, 45, 49, 0.5); }
 [data-christmas="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #faf7f2 0%, #f5f0ea 100%); }
 
+/* Mobile menu background for Christmas theme */
+@media (max-width: 768px) {
+    [data-christmas="true"] .nav-links,
+    [data-christmas="true"][data-theme="dark"] .nav-links {
+        background: rgba(43, 45, 49, 0.95);
+    }
+    [data-christmas="true"][data-theme="light"] .nav-links {
+        background: rgba(250, 247, 242, 0.95);
+    }
+}
+
 [data-christmas="true"] .top-skills-box {
     background-image: radial-gradient(circle, rgba(216, 94, 94, 0.12), rgba(230, 184, 92, 0.06));
     border: 1px solid rgba(216, 94, 94, 0.2);
@@ -283,6 +305,17 @@
 [data-spring="true"] .persistent-nav { background: rgba(26, 46, 31, 0.5); }
 [data-spring="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #f7fef5 0%, #f0f8ef 100%); }
 
+/* Mobile menu background for Spring theme */
+@media (max-width: 768px) {
+    [data-spring="true"] .nav-links,
+    [data-spring="true"][data-theme="dark"] .nav-links {
+        background: rgba(26, 46, 31, 0.95);
+    }
+    [data-spring="true"][data-theme="light"] .nav-links {
+        background: rgba(247, 254, 245, 0.95);
+    }
+}
+
 [data-spring="true"] .top-skills-box {
     background-image: radial-gradient(circle, rgba(125, 216, 125, 0.12), rgba(255, 196, 225, 0.06));
     border: 1px solid rgba(125, 216, 125, 0.2);
@@ -371,6 +404,17 @@
 
 [data-summer="true"] .persistent-nav { background: rgba(26, 34, 51, 0.5); }
 [data-summer="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #fffbf5 0%, #fff8ed 100%); }
+
+/* Mobile menu background for Summer theme */
+@media (max-width: 768px) {
+    [data-summer="true"] .nav-links,
+    [data-summer="true"][data-theme="dark"] .nav-links {
+        background: rgba(26, 34, 51, 0.95);
+    }
+    [data-summer="true"][data-theme="light"] .nav-links {
+        background: rgba(255, 251, 245, 0.95);
+    }
+}
 
 [data-summer="true"] .top-skills-box {
     background-image: radial-gradient(circle, rgba(255, 179, 71, 0.12), rgba(78, 205, 196, 0.06));

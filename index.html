@@ -251,39 +251,7 @@
 
 <div id="footer-placeholder"></div>
 <script src="/footer-loader.js"></script>
-<script>
-// Add webring to footer after it loads (index page only)
-(function() {
-    function addWebring() {
-        const footer = document.querySelector('footer .footer-content');
-        if (!footer) {
-            // Footer not loaded yet, try again
-            setTimeout(addWebring, 50);
-            return;
-        }
 
-        const webring = document.createElement('div');
-        webring.className = 'webring';
-        webring.setAttribute('role', 'region');
-        webring.setAttribute('aria-label', 'CSS Joy Webring navigation');
-        webring.innerHTML = `
-            <strong>CSS Joy Webring</strong>
-            <div class="webring-links">
-                <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.kartooner.com">Previous</a>
-                <a href="https://webri.ng/webring/cssjoy/random?via=https://www.kartooner.com">Random</a>
-                <a href="https://webri.ng/webring/cssjoy/next?via=https://www.kartooner.com">Next</a>
-            </div>
-        `;
-        footer.appendChild(webring);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addWebring);
-    } else {
-        addWebring();
-    }
-})();
-</script>
 <script src="/app.min.js"></script>
 </body>
 </html>
