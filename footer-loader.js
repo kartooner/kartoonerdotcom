@@ -19,6 +19,12 @@
             .then(html => {
                 placeholder.outerHTML = html;
 
+                // Set current year in copyright
+                const yearSpan = document.getElementById('current-year');
+                if (yearSpan) {
+                    yearSpan.textContent = new Date().getFullYear();
+                }
+
                 // Hide webring on all pages except index
                 const currentPath = window.location.pathname;
                 const isIndexPage = currentPath === '/' || currentPath === '/index.html';

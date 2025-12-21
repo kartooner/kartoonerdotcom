@@ -82,7 +82,8 @@
       "WebFetch(domain:github.com)",
       "Bash(cmd /c \"taskkill /F /PID 9396\")",
       "Bash(powershell:*)",
-      "Bash(del christmas-loader.js halloween-loader.js)"
+      "Bash(del christmas-loader.js halloween-loader.js)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

@@ -214,6 +214,208 @@
         }
     }
 
+    // ============ NEW YEAR'S THEME ============
+
+    // Check if we're in the New Year's date range
+    function isNewYearSeason() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeParam = urlParams.get('theme');
+
+        // If a specific theme is requested, only activate if it matches
+        if (themeParam) {
+            return themeParam === 'newyear';
+        }
+
+        const now = new Date();
+        const year = now.getFullYear();
+
+        // New Year's season: January 1 - March 20
+        const startDate = new Date(year, 0, 1);   // Jan 1
+        const endDate = new Date(year, 2, 20);    // Mar 20
+
+        return now >= startDate && now <= endDate;
+    }
+
+
+    // Add 3D disco ball animation for New Year's theme (replaces joystick icon in footer)
+    //
+    // Performance: Uses Three.js WebGL rendering for GPU acceleration
+    // Accessibility:
+    // - Marked with aria-hidden="true" (purely decorative)
+    // - Respects prefers-reduced-motion setting
+    // - Dynamically stops/resumes if motion preference changes
+    async function addDiscoBall() {
+        const addBall = async () => {
+            try {
+                // Respect user's motion preferences
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (prefersReducedMotion) {
+                    console.log('🎊 Reduced motion preferred, skipping disco ball animation');
+                    return;
+                }
+
+                if (document.querySelector('#discoBallCanvas')) {
+                    console.log('🎊 Disco ball already exists');
+                    return;
+                }
+
+                console.log('🎊 Loading Three.js disco ball...');
+
+            // Dynamically import Three.js
+            const THREE = await import('https://cdn.skypack.dev/three@0.133.1/build/three.module');
+            const BufferGeometryUtils = await import('https://cdn.skypack.dev/three@0.133.1/examples/jsm/utils/BufferGeometryUtils.js');
+
+            console.log('🎊 Three.js loaded successfully');
+
+            // Wait for footer to load
+            const waitForFooter = () => {
+                return new Promise((resolve) => {
+                    const checkFooter = () => {
+                        const footerIcon = document.querySelector('.footer-icon');
+                        if (footerIcon) {
+                            resolve(footerIcon);
+                        } else {
+                            setTimeout(checkFooter, 100);
+                        }
+                    };
+                    checkFooter();
+                });
+            };
+
+            const footerIcon = await waitForFooter();
+
+            // Create canvas container to replace footer icon
+            const canvasContainer = document.createElement('div');
+            canvasContainer.id = 'discoBallContainer';
+            canvasContainer.style.position = 'relative';
+            canvasContainer.style.display = 'flex';
+            canvasContainer.style.justifyContent = 'center';
+            canvasContainer.style.alignItems = 'center';
+            canvasContainer.setAttribute('aria-hidden', 'true');
+
+            // Responsive sizing
+            const isMobile = window.innerWidth <= 768;
+            const canvasSize = isMobile ? 60 : 80;
+            canvasContainer.style.width = canvasSize + 'px';
+            canvasContainer.style.height = canvasSize + 'px';
+
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.id = 'discoBallCanvas';
+            canvasContainer.appendChild(canvas);
+
+            // Replace footer icon with disco ball
+            footerIcon.innerHTML = '';
+            footerIcon.appendChild(canvasContainer);
+
+            console.log('🎊 Canvas created and added to DOM');
+
+            // Setup Three.js scene
+            const renderer = new THREE.WebGLRenderer({
+                alpha: true,
+                antialias: true,
+                canvas: canvas
+            });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(canvasSize, canvasSize);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 10);
+            camera.position.z = 2;
+
+            // Load matcap texture and create disco ball
+            new THREE.TextureLoader().load(
+                'https://assets.codepen.io/959327/matcap-crystal.png',
+                (texture) => {
+                    const discoBall = createDiscoBall(THREE, BufferGeometryUtils, texture);
+                    scene.add(discoBall);
+
+                    // Animation loop with motion preference check
+                    let animationFrameId;
+                    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+                    const animate = () => {
+                        if (!motionQuery.matches) {
+                            animationFrameId = requestAnimationFrame(animate);
+                            discoBall.rotation.y += 0.005;
+                            discoBall.rotation.x += 0.002;
+                            renderer.render(scene, camera);
+                        }
+                    };
+
+                    // Listen for motion preference changes
+                    motionQuery.addEventListener('change', (e) => {
+                        if (e.matches) {
+                            // User enabled reduced motion - stop animation
+                            if (animationFrameId) {
+                                cancelAnimationFrame(animationFrameId);
+                            }
+                            console.log('🎊 Reduced motion enabled, stopping disco ball');
+                        } else {
+                            // User disabled reduced motion - resume animation
+                            console.log('🎊 Reduced motion disabled, resuming disco ball');
+                            animate();
+                        }
+                    });
+
+                    animate();
+                }
+            );
+
+            function createDiscoBall(THREE, BufferGeometryUtils, texture) {
+                const dummy = new THREE.Object3D();
+                const mirrorMaterial = new THREE.MeshMatcapMaterial({ matcap: texture });
+
+                // Use icosahedron for disco ball shape
+                let geometryOriginal = new THREE.IcosahedronGeometry(0.5, 3);
+                geometryOriginal.deleteAttribute('normal');
+                geometryOriginal.deleteAttribute('uv');
+                geometryOriginal = BufferGeometryUtils.mergeVertices(geometryOriginal);
+                geometryOriginal.computeVertexNormals();
+
+                const mirrorSize = 0.11;
+                const mirrorGeometry = new THREE.PlaneGeometry(mirrorSize, mirrorSize);
+                let instancedMirrorMesh = new THREE.InstancedMesh(
+                    mirrorGeometry,
+                    mirrorMaterial,
+                    geometryOriginal.attributes.position.count
+                );
+
+                const positions = geometryOriginal.attributes.position.array;
+                const normals = geometryOriginal.attributes.normal.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    dummy.position.set(positions[i], positions[i + 1], positions[i + 2]);
+                    dummy.lookAt(
+                        positions[i] + normals[i],
+                        positions[i + 1] + normals[i + 1],
+                        positions[i + 2] + normals[i + 2]
+                    );
+                    dummy.updateMatrix();
+                    instancedMirrorMesh.setMatrixAt(i / 3, dummy.matrix);
+                }
+
+                const obj = new THREE.Group();
+                const innerGeometry = geometryOriginal.clone();
+                const ballInnerMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1714 });
+                const innerMesh = new THREE.Mesh(innerGeometry, ballInnerMaterial);
+                obj.add(innerMesh, instancedMirrorMesh);
+
+                return obj;
+            }
+
+            console.log('🎊 Disco ball created successfully!');
+            } catch (error) {
+                console.error('🎊 Error creating disco ball:', error);
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', addBall);
+        } else {
+            addBall();
+        }
+    }
+
     // ============ SPRING THEME ============
 
     // Check if we're in the spring season date range
@@ -229,9 +431,9 @@
         const now = new Date();
         const year = now.getFullYear();
 
-        // Spring season: March 1 - May 31
-        const startDate = new Date(year, 2, 1);   // Mar 1
-        const endDate = new Date(year, 4, 31);    // May 31
+        // Spring season: March 21 - May 31 (updated to start after New Year's theme ends)
+        const startDate = new Date(year, 2, 21);   // Mar 21
+        const endDate = new Date(year, 4, 31);     // May 31
 
         return now >= startDate && now <= endDate;
     }
@@ -330,13 +532,17 @@
 
     // ============ INITIALIZATION ============
 
-    // Priority order: Christmas > Fall > Summer > Spring
-    if (isChristmasSeason()) {
-        console.log('🎄 Christmas season detected! Activating Christmas theme...');
-        updateChristmasGreeting();
-        addChristmasLights();
-        document.documentElement.dataset.christmas = 'true';
-        console.log('🎄 Set data-christmas="true" on html element');
+    // Check for active seasonal theme (dates don't overlap, so order doesn't affect logic)
+    // Chronological order: New Year's (Jan 1-Mar 20) > Spring (Mar 21-May 31) > Summer (Jun 1-Aug 31) > Fall (Oct 1-Nov 30) > Christmas (Dec 1-31)
+    if (isNewYearSeason()) {
+        console.log('✨ New Year\'s season detected! Activating New Year\'s theme...');
+        addDiscoBall();
+        document.documentElement.dataset.newyear = 'true';
+        console.log('✨ Set data-newyear="true" on html element');
+    } else if (isSpringSeason()) {
+        document.documentElement.dataset.spring = 'true';
+    } else if (isSummerSeason()) {
+        document.documentElement.dataset.summer = 'true';
     } else if (isFallSeason()) {
         if (isHalloweenPeriod()) {
             updateHalloweenGreeting();
@@ -345,11 +551,11 @@
         if (isHalloweenPeriod()) {
             document.documentElement.dataset.halloween = 'true';
         }
-    } else if (isSummerSeason()) {
-        updateSummerGreeting();
-        document.documentElement.dataset.summer = 'true';
-    } else if (isSpringSeason()) {
-        updateSpringGreeting();
-        document.documentElement.dataset.spring = 'true';
+    } else if (isChristmasSeason()) {
+        console.log('🎄 Christmas season detected! Activating Christmas theme...');
+        updateChristmasGreeting();
+        addChristmasLights();
+        document.documentElement.dataset.christmas = 'true';
+        console.log('🎄 Set data-christmas="true" on html element');
     }
 })();
