@@ -25,6 +25,8 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            -ms-touch-action: none;
         }
 
         /* Spacer to allow scrolling into the experience */
@@ -253,6 +255,22 @@
     import * as THREE from 'three';
 
     const container = document.getElementById('footer-canvas');
+    const gameContainer = document.getElementById('game-container');
+
+    // Prevent pinch zoom on mobile
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('gesturechange', e => e.preventDefault());
+    document.addEventListener('gestureend', e => e.preventDefault());
+
+    // Prevent double-tap zoom (but allow barrel roll in game area)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', e => {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300 && !gameContainer.contains(e.target)) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
     const isMobile = window.innerWidth < 768;
     const scoreUI = document.getElementById('score-text');
     const highScoreUI = document.getElementById('high-score');
@@ -634,7 +652,7 @@
 
         // Update distance and calculate miles/level FIRST (needed for building logic)
         // Mobile gets faster progression (feels slower on iOS)
-        const speedMultiplier = isMobile ? 75 : 50;
+        const speedMultiplier = isMobile ? 120 : 50;
         distance += speed * speedMultiplier;
         const miles = distance / 5280;
         const newLevel = Math.floor(miles / 20) + 1; // Levels every 20 miles
