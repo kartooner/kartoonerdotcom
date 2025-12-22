@@ -83,7 +83,12 @@
       "Bash(cmd /c \"taskkill /F /PID 9396\")",
       "Bash(powershell:*)",
       "Bash(del christmas-loader.js halloween-loader.js)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)",
+      "Bash(move:*)",
+      "Bash(cmd /c \"taskkill /F /PID 22132\")",
+      "Bash(cmd /c \"taskkill /F /PID 8248\")"
     ],
     "deny": [],
     "ask": []

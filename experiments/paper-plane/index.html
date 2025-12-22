@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ThreeJS: Paper Airplane</title>
+    <style>
+        :root { --bg: #050505; --neon: #00ffff; --teal: #00ced1; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Spacer to allow scrolling into the experience */
+        .spacer { height: 40vh; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px; /* 16:9 container on desktop */
+            height: 80vh;
+            max-height: 675px; /* 16:9 ratio at max-width */
+            margin: 0 auto; /* Center on desktop */
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            cursor: crosshair;
+            border: 1px solid rgba(0, 255, 255, 0.3); /* Subtle border for desktop */
+        }
+
+        .horizon-glow {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px; height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+            z-index: 1; pointer-events: none;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            color: var(--neon);
+            pointer-events: none;
+            opacity: 0.9;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #footer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+
+        /* Parameter Editor Panel */
+        #param-editor {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 20, 0.9);
+            border: 1px solid var(--neon);
+            padding: 15px;
+            font-size: 11px;
+            color: var(--neon);
+            max-width: 220px;
+            z-index: 100;
+            display: none;
+        }
+        #param-editor.active { display: block; }
+        #param-editor h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+        .param-control {
+            margin: 8px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .param-control label {
+            font-size: 10px;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+        .param-control input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .param-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--neon);
+            cursor: pointer;
+        }
+        .param-control input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: var(--neon);
+            cursor: pointer;
+            border: none;
+        }
+        .param-value {
+            font-size: 10px;
+            opacity: 0.7;
+            text-align: right;
+        }
+        #toggle-params {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 20, 0.9);
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            z-index: 99;
+            font-family: 'Courier New', monospace;
+            display: none; /* Hidden until play */
+        }
+        #toggle-params.visible { display: block; }
+        #toggle-params:hover { background: rgba(0, 40, 40, 0.9); }
+
+        /* Play button overlay */
+        #play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            cursor: pointer;
+        }
+        #play-overlay.hidden { display: none; }
+        #play-button {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            letter-spacing: 4px;
+            padding: 20px 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        #play-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .spacer { height: 20vh; }
+            #game-container {
+                height: 85vh; /* Slightly smaller for performance */
+                max-width: 100%;
+                max-height: none;
+                border: none; /* Remove border on mobile */
+            }
+            .ui-overlay {
+                top: 15px;
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+            .spacer h1 { font-size: 1.5rem; }
+            .spacer p { font-size: 0.9rem; padding: 0 20px; }
+            #param-editor {
+                top: 60px;
+                right: 10px;
+                max-width: 180px;
+                font-size: 10px;
+            }
+            #toggle-params {
+                top: 15px;
+                right: 15px;
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<button id="toggle-params">PARAMS</button>
+
+<div id="param-editor">
+    <h3>PARAMETER EDITOR</h3>
+    <div class="param-control">
+        <label>Speed <span class="param-value" id="speed-val">0.22</span></label>
+        <input type="range" id="speed-slider" min="0.1" max="0.5" step="0.01" value="0.22">
+    </div>
+</div>
+
+<div class="spacer">
+    <h1>01001000 01001001</h1>
+</div>
+
+<div id="game-container">
+    <div id="play-overlay">
+        <div id="play-button">PLAY</div>
+    </div>
+    <div class="ui-overlay">
+        <span id="score-text">0 ----- 0mi</span><br>
+        <span id="high-score" style="font-size: 11px; opacity: 0.7;">BEST: 0mi</span><br>
+        <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span>
+    </div>
+    <div style="position: absolute; top: 25px; right: 25px; z-index: 10; color: #00ffff; font-family: 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: right; font-weight: bold; opacity: 0.9;">
+        <span id="score-display">SCORE: 0</span>
+    </div>
+    <div class="horizon-glow"></div>
+    <div id="footer-canvas"></div>
+</div>
+
+<div class="spacer">
+    <p>END OF TRANSMISSION</p>
+</div>
+
+<script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    const container = document.getElementById('footer-canvas');
+    const isMobile = window.innerWidth < 768;
+    const scoreUI = document.getElementById('score-text');
+    const highScoreUI = document.getElementById('high-score');
+    const levelUI = document.getElementById('level-text');
+    const scoreDisplayUI = document.getElementById('score-display');
+
+    // Game state
+    let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
+    let currentLevel = 1;
+    let crashMessage = '';
+    let crashMessageTimer = 0;
+    let levelUpMessage = '';
+    let levelUpMessageTimer = 0;
+    let score = 0; // Points from collecting rings
+
+    highScoreUI.innerText = `BEST: ${highScore}mi`;
+    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+    const scene = new THREE.Scene();
+    // Simpler fog for better performance
+    scene.fog = new THREE.Fog(0x000000, 15, 45);
+
+    const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
+    camera.position.set(0, 2.5, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    // Conservative pixel ratio for performance across all browsers
+    // Mobile: 1.25x, Desktop: 1.5x (lower = better Edge/Safari performance)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.5));
+    container.appendChild(renderer.domElement);
+
+    // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
+    const shipGroup = new THREE.Group();
+    const paperMat = new THREE.MeshStandardMaterial({
+        color: 0x008080,
+        side: THREE.DoubleSide,
+        metalness: 0.75,  // More reflective
+        roughness: 0.35,  // Smoother for better reflections
+        envMapIntensity: 1.2  // Enhance environment reflections
+    });
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+
+    // Custom Triangle Geometry (Paper Dart Fold)
+    const airplaneGeom = new THREE.BufferGeometry();
+    const vertices = new Float32Array([
+        0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
+       -0.6,  0.2,  0.5,   // Left Wing Back
+        0.6,  0.2,  0.5,   // Right Wing Back
+        0.0, -0.2,  0.3,   // Bottom Keel/Spine
+    ]);
+    const indices = [
+        0, 1, 3, // Left Face
+        0, 3, 2, // Right Face
+        1, 2, 3  // Rear/Bottom Closure
+    ];
+    airplaneGeom.setIndex(indices);
+    airplaneGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    airplaneGeom.computeVertexNormals();
+
+    const mainMesh = new THREE.Mesh(airplaneGeom, paperMat);
+    const wireMesh = new THREE.Mesh(airplaneGeom, wireMat);
+    wireMesh.scale.set(1.04, 1.04, 1.04);
+
+    shipGroup.add(mainMesh, wireMesh);
+    scene.add(shipGroup);
+
+    // Light sitting behind the plane to light up the tail
+    const engineLight = new THREE.PointLight(0x00ffff, 12, 12);
+    scene.add(engineLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    // --- 2. MOUNTAIN VALLEY (RANDOMIZED EACH LOAD) ---
+    // Reduced segments for better performance across all browsers
+    const terrainGeom = new THREE.PlaneGeometry(100, 120, isMobile ? 25 : 30, isMobile ? 25 : 30);
+    const pos = terrainGeom.attributes.position;
+
+    // Random terrain parameters for variety
+    const freqX = Math.random() * 0.3 + 0.3;   // 0.3 to 0.6
+    const freqY = Math.random() * 0.2 + 0.15;  // 0.15 to 0.35
+    const amplitude = Math.random() * 4 + 5;   // 5 to 9
+    const offset = Math.random() * 100;        // Random phase offset
+
+    for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let h = (Math.abs(x) > 8) ? Math.abs(Math.sin(x * freqX + offset) * Math.cos(y * freqY)) * amplitude : 0;
+        pos.setZ(i, h);
+    }
+    const terrainMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.25 });
+    const t1 = new THREE.Mesh(terrainGeom, terrainMat);
+    const t2 = t1.clone();
+    t2.position.z = -120;
+    t1.rotation.x = t2.rotation.x = -Math.PI / 2;
+    scene.add(t1, t2);
+
+    // --- 3. ANIMATED PARTICLES (STARS) ---
+    // Reduced for better performance across all browsers
+    const particleCount = isMobile ? 150 : 250;
+    const particleGeom = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleVelocities = [];
+
+    for(let i=0; i<particleCount; i++) {
+        const i3 = i * 3;
+        particlePositions[i3] = (Math.random()-0.5)*250;     // x
+        particlePositions[i3+1] = (Math.random()-0.5)*250;   // y
+        particlePositions[i3+2] = (Math.random()-0.5)*250;   // z
+
+        // Store velocity for each particle
+        particleVelocities.push({
+            z: Math.random() * 0.3 + 0.2,  // Forward movement
+            x: (Math.random()-0.5) * 0.05   // Slight lateral drift
+        });
+    }
+    particleGeom.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particles = new THREE.Points(particleGeom, new THREE.PointsMaterial({
+        color: 0x00ffff,
+        size: 0.2,
+        transparent: true,
+        opacity: 0.8
+    }));
+    scene.add(particles);
+
+    // --- 4. VARIED BUILDINGS (SQUARES, RECTANGLES, PYRAMIDS) - OPTIMIZED ---
+    const buildings = [];
+    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.4 });
+
+    // Different building geometries (low-poly for performance)
+    const boxGeometry = new THREE.BoxGeometry(2, 5, 2);
+    const pyramidGeometry = new THREE.ConeGeometry(2, 5, 4, 1); // 4 segments, 1 height segment
+
+    function createBuilding() {
+        const buildingType = Math.random();
+        let geometry, height;
+
+        if (buildingType < 0.4) {
+            // Square building
+            geometry = boxGeometry;
+            height = Math.random() * 6 + 3; // 3-9 units tall
+        } else if (buildingType < 0.7) {
+            // Rectangle (tall or wide)
+            geometry = boxGeometry;
+            height = Math.random() * 8 + 2; // 2-10 units tall
+        } else {
+            // Pyramid
+            geometry = pyramidGeometry;
+            height = Math.random() * 5 + 3; // 3-8 units tall
+        }
+
+        const b = new THREE.Mesh(geometry, buildMat);
+
+        // Random scale for variety
+        const scaleX = Math.random() * 0.8 + 0.6;
+        const scaleY = height / 5; // Scale to desired height
+        const scaleZ = Math.random() * 0.8 + 0.6;
+        b.scale.set(scaleX, scaleY, scaleZ);
+
+        b.userData.box = new THREE.Box3();
+        b.userData.height = height;
+        b.userData.geometry = geometry;
+
+        return b;
+    }
+
+    // Helper to find safe X position (no overlap)
+    function getSafeXPosition(existingBuildings, minDistance = 5) {
+        let attempts = 0;
+        let xPos;
+
+        while (attempts < 20) {
+            xPos = (Math.random() - 0.5) * 14;
+            let isSafe = true;
+
+            // Check distance from all existing buildings
+            for (let building of existingBuildings) {
+                if (Math.abs(building.position.x - xPos) < minDistance) {
+                    isSafe = false;
+                    break;
+                }
+            }
+
+            if (isSafe) return xPos;
+            attempts++;
+        }
+
+        // Fallback: use random position if no safe spot found
+        return (Math.random() - 0.5) * 14;
+    }
+
+    // Reduced to 5 buildings for better performance
+    for(let i=0; i<5; i++) {
+        const b = createBuilding();
+
+        // Start buildings VERY far back and VERY widely spaced, NO OVERLAP
+        const xPos = getSafeXPosition(buildings, 9); // Minimum 9 units apart (very wide)
+
+        b.position.set(
+            xPos,
+            b.userData.height / 2,
+            -150 - (i*70) // Even further back, even more spacing
+        );
+
+        scene.add(b);
+        buildings.push(b);
+    }
+
+    // --- 5. BONUS RINGS (RARE) ---
+    const rings = [];
+    // Simplified ring geometry for better performance
+    const ringGeometry = new THREE.TorusGeometry(3, 0.3, 6, 12);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.6 });
+
+    function spawnRing() {
+        const ring = new THREE.Mesh(ringGeometry, ringMat);
+        ring.position.set(
+            (Math.random() - 0.5) * 10,
+            Math.random() * 4 + 1,
+            -200 - Math.random() * 100
+        );
+        ring.rotation.x = 0; // Face camera straight on
+        ring.rotation.y = 0;
+        ring.userData.collected = false;
+        scene.add(ring);
+        rings.push(ring);
+    }
+
+    // Track when to spawn next ring section (every 7-11 miles = ~1-1.5 min)
+    let nextRingMilestone = 7 + Math.random() * 4; // First rings at 7-11 miles
+
+    // --- 6. FLIGHT CONTROLS (STICKY) WITH SWAY PHYSICS ---
+    let targetX = 0, targetY = 2.5, curX = 0, curY = 2.5;
+    let velocityX = 0, velocityY = 0;
+    let prevX = 0, prevY = 2.5;
+    let isInteracting = false;
+
+    // Barrel roll easter egg
+    let barrelRollActive = false;
+    let barrelRollProgress = 0;
+    let lastTapTime = 0;
+
+    // Speed boost
+    let speedBoostActive = false;
+
+    // Keyboard controls
+    const keys = { left: false, right: false, up: false, down: false };
+
+    const handleMove = (x, y) => {
+        const rect = container.getBoundingClientRect();
+        targetX = (((x - rect.left) / rect.width) * 2 - 1) * (isMobile ? 8 : 10);
+        targetY = 2.5 + (-((y - rect.top) / rect.height) * 2 + 1) * (isMobile ? 2.5 : 3);
+    };
+
+    const startInteraction = (x, y) => {
+        isInteracting = true;
+        handleMove(x, y);
+    };
+
+    const endInteraction = () => {
+        isInteracting = false;
+    };
+
+    // Mouse events
+    container.addEventListener('mousedown', e => startInteraction(e.clientX, e.clientY));
+    container.addEventListener('mousemove', e => { if(isInteracting) handleMove(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', endInteraction);
+
+    // Touch events with better mobile support
+    container.addEventListener('touchstart', e => {
+        e.preventDefault();
+        startInteraction(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+
+    container.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if(isInteracting) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+
+    container.addEventListener('touchend', e => {
+        e.preventDefault();
+        endInteraction();
+    }, { passive: false });
+
+    // KEYBOARD CONTROLS
+    window.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') keys.left = true;
+        if (e.key === 'ArrowRight') keys.right = true;
+        if (e.key === 'ArrowUp') keys.up = true;
+        if (e.key === 'ArrowDown') keys.down = true;
+        if (e.key === ' ') {
+            e.preventDefault();
+            speedBoostActive = true;
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.key === 'ArrowLeft') keys.left = false;
+        if (e.key === 'ArrowRight') keys.right = false;
+        if (e.key === 'ArrowUp') keys.up = false;
+        if (e.key === 'ArrowDown') keys.down = false;
+        if (e.key === ' ') speedBoostActive = false;
+    });
+
+    // BARREL ROLL EASTER EGG - Double click/tap
+    const triggerBarrelRoll = () => {
+        if (!barrelRollActive) {
+            barrelRollActive = true;
+            barrelRollProgress = 0;
+        }
+    };
+
+    // Double-click for desktop
+    container.addEventListener('dblclick', e => {
+        e.preventDefault();
+        triggerBarrelRoll();
+    });
+
+    // Double-tap for mobile
+    container.addEventListener('touchstart', e => {
+        const currentTime = new Date().getTime();
+        const tapGap = currentTime - lastTapTime;
+
+        if (tapGap < 300 && tapGap > 0) {
+            e.preventDefault();
+            triggerBarrelRoll();
+        }
+        lastTapTime = currentTime;
+    });
+
+    // --- 7. ANIMATION LOOP, COLLISION & GAME LOGIC ---
+    let baseSpeed = 0.22;
+    let distance = 0, time = 0, collisionFlash = 0;
+    const shipBox = new THREE.Box3();
+
+    // Set initial colors once
+    renderer.setClearColor(0x000000, 1);
+    terrainMat.color.setHex(0x00ffff);
+    wireMat.color.setHex(0x00ffff);
+
+    // Play button functionality
+    let gameStarted = false;
+    const playOverlay = document.getElementById('play-overlay');
+    const toggleParamsBtn = document.getElementById('toggle-params');
+
+    playOverlay.addEventListener('click', () => {
+        gameStarted = true;
+        playOverlay.classList.add('hidden');
+        toggleParamsBtn.classList.add('visible');
+        if (!animationRunning) {
+            animate();
+        }
+    });
+
+    let animationRunning = false;
+    function animate() {
+        if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
+        animationRunning = true;
+        requestAnimationFrame(animate);
+        time += 0.01;
+
+        // Speed boost effect
+        const speed = speedBoostActive ? baseSpeed * 2.5 : baseSpeed;
+
+        // Update distance and calculate miles/level FIRST (needed for building logic)
+        distance += speed * 50; // Much faster mile progression
+        const miles = distance / 5280;
+        const newLevel = Math.floor(miles / 20) + 1; // Levels every 20 miles
+        const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
+
+        // Keyboard controls
+        if (keys.left) targetX -= 0.3;
+        if (keys.right) targetX += 0.3;
+        if (keys.up) targetY += 0.2;
+        if (keys.down) targetY -= 0.2;
+
+        // Clamp targets
+        targetX = Math.max(-10, Math.min(10, targetX));
+        targetY = Math.max(0.5, Math.min(5.5, targetY));
+
+        // Terrain treadmill (simplified - no fade to prevent flashing)
+        [t1, t2].forEach(t => {
+            t.position.z += speed;
+            if (t.position.z >= 120) {
+                t.position.z -= 240;
+            }
+        });
+
+        // Animate particles (stars flying toward camera) - optimized
+        const positions = particleGeom.attributes.position.array;
+        for(let i=0; i<particleCount; i++) {
+            const i3 = i * 3;
+            const vel = particleVelocities[i];
+            positions[i3] += vel.x;      // x drift
+            positions[i3+2] += vel.z;    // z movement (toward camera)
+
+            // Reset particle if it goes past camera (staggered to prevent flash)
+            if(positions[i3+2] > 15) {
+                const rand = Math.random();
+                positions[i3] = (rand - 0.5) * 250;
+                positions[i3+1] = (Math.random() - 0.5) * 250;
+                positions[i3+2] = -125 - (rand * 20);
+            }
+        }
+        particleGeom.attributes.position.needsUpdate = true;
+
+        // Controls with momentum
+        const smoothing = 0.07;
+        curX += (targetX - curX) * smoothing;
+        curY += (targetY - curY) * smoothing;
+
+        // Calculate velocity for physics-based banking
+        velocityX = curX - prevX;
+        velocityY = curY - prevY;
+        prevX = curX;
+        prevY = curY;
+
+        // Natural bobbing motion
+        const bobY = Math.sin(time * 0.6) * 0.1;
+
+        // Add lateral drift based on velocity (sway effect)
+        const swayX = Math.sin(time * 1.2 + velocityX * 10) * Math.abs(velocityX) * 0.8;
+        const swayY = Math.cos(time * 0.8) * 0.05;
+
+        shipGroup.position.set(curX + swayX, curY + bobY + swayY, 3.5);
+
+        // Enhanced banking based on velocity (more arc/sway)
+        let rollAngle = -velocityX * 8; // Roll based on horizontal velocity
+        const pitchAngle = velocityY * 3 + (bobY * 0.1); // Pitch based on vertical velocity
+        const yawSway = Math.sin(velocityX * 15) * Math.abs(velocityX) * 0.3; // Subtle yaw sway
+
+        // BARREL ROLL ANIMATION (Star Fox style, optimized)
+        if (barrelRollActive) {
+            barrelRollProgress += 0.025;
+            // Simplified easing calculation for better performance
+            const t = barrelRollProgress;
+            const easeProgress = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+            rollAngle = 6.283185307179586 * easeProgress; // PI * 2 pre-calculated
+
+            if (barrelRollProgress >= 1) {
+                barrelRollActive = false;
+                barrelRollProgress = 0;
+            }
+        }
+
+        shipGroup.rotation.z = rollAngle;
+        shipGroup.rotation.x = pitchAngle;
+        shipGroup.rotation.y = yawSway;
+
+        // Light follow
+        engineLight.position.set(curX, curY, 5);
+        engineLight.intensity = 10 + Math.random()*3;
+
+        // Collision logic with varied buildings (simplified)
+        shipBox.setFromObject(shipGroup);
+        buildings.forEach(b => {
+            b.position.z += speed;
+
+            // Simple visibility toggle instead of gradual fade (prevents micro-flashing)
+            if(b.position.z > 15) {
+                b.visible = false;
+            } else {
+                b.visible = true;
+            }
+
+            if(b.position.z > 20) {
+                // Recreate building with new random type and scale
+                const buildingType = Math.random();
+                let geometry, height;
+
+                if (buildingType < 0.4) {
+                    geometry = boxGeometry;
+                    height = Math.random() * 6 + 3;
+                } else if (buildingType < 0.7) {
+                    geometry = boxGeometry;
+                    height = Math.random() * 8 + 2;
+                } else {
+                    geometry = pyramidGeometry;
+                    height = Math.random() * 5 + 3;
+                }
+
+                // Update geometry if it changed
+                if (b.geometry !== geometry) {
+                    b.geometry = geometry;
+                }
+
+                const scaleX = Math.random() * 0.8 + 0.6;
+                const scaleY = height / 5;
+                const scaleZ = Math.random() * 0.8 + 0.6;
+                b.scale.set(scaleX, scaleY, scaleZ);
+                b.userData.height = height;
+
+                // Progressive difficulty: buildings spawn closer as level increases
+                // Start at -180, gradually get closer (max 50 units closer at level 5)
+                // At level 1: -180, Level 2: -170, Level 3: -160, Level 4: -150, Level 5: -130
+                let spawnDistance = -180 - (Math.max(0, levelDifficulty - 1) * 10);
+
+                // If rings are active, spawn buildings much further back to give a breather
+                if (rings.length > 0) {
+                    spawnDistance = -400; // Far behind the ring section
+                }
+
+                // Find safe X position to avoid overlap - MUCH wider spacing early on
+                const minSpacing = levelDifficulty <= 2 ? 10 : (levelDifficulty <= 3 ? 8 : 6);
+                const xPos = getSafeXPosition(buildings, minSpacing);
+
+                b.position.set(
+                    xPos,
+                    height / 2,
+                    spawnDistance
+                );
+                b.visible = true;
+            }
+
+            // Only check collision if building is visible
+            if(b.visible && b.position.z < 15) {
+                b.userData.box.setFromObject(b);
+
+                // Make collision more forgiving for pyramids (they taper)
+                if (b.geometry === pyramidGeometry) {
+                    const size = b.userData.box.getSize(new THREE.Vector3());
+                    const center = b.userData.box.getCenter(new THREE.Vector3());
+                    // Shrink collision box by 20% for pyramids
+                    b.userData.box.setFromCenterAndSize(center, size.multiplyScalar(0.8));
+                }
+
+                if(shipBox.intersectsBox(b.userData.box)) {
+                    collisionFlash = 1.0;
+                    b.position.z = -120;
+                    b.visible = false;
+
+                    // CRASH - Just visual feedback, no penalty (infinite flying game)
+                    // Update high score if current distance is higher
+                    const currentMiles = Math.floor(miles);
+                    if (currentMiles > highScore) {
+                        highScore = currentMiles;
+                        localStorage.setItem('paperPlaneHighScore', highScore.toString());
+                        highScoreUI.innerText = `BEST: ${highScore}mi`;
+                    }
+
+                    crashMessage = 'BONK';
+                    crashMessageTimer = 60; // Show for 60 frames (~1 second)
+                }
+            }
+        });
+
+        // Ring collection logic
+        rings.forEach((ring, index) => {
+            if (!ring.userData.collected) {
+                ring.position.z += speed;
+                ring.rotation.z += 0.02; // Spin effect
+
+                // Check if plane flies through ring
+                const dist = Math.sqrt(
+                    Math.pow(ring.position.x - curX, 2) +
+                    Math.pow(ring.position.y - curY, 2)
+                );
+                if (Math.abs(ring.position.z - 3.5) < 2 && dist < 3) {
+                    ring.userData.collected = true;
+                    score += 50; // +50 points for collecting ring
+
+                    // Show +50 bonus in score display
+                    const previousScore = score - 50;
+                    scoreDisplayUI.innerText = `SCORE: ${previousScore} (+50)`;
+                    setTimeout(() => {
+                        scoreDisplayUI.innerText = `SCORE: ${score}`;
+                    }, 800);
+
+                    ring.material.color.setHex(0xffff00); // Flash yellow
+                    setTimeout(() => {
+                        scene.remove(ring);
+                        rings.splice(index, 1);
+                    }, 100);
+                }
+
+                // Remove if too far
+                if (ring.position.z > 20) {
+                    scene.remove(ring);
+                    rings.splice(index, 1);
+                }
+            }
+        });
+
+        // Level progression (every 100 miles)
+        if (newLevel > currentLevel) {
+            currentLevel = newLevel;
+            levelUI.innerText = `LEVEL ${currentLevel}`;
+            levelUpMessage = `LEVEL ${currentLevel}`;
+            levelUpMessageTimer = 90; // Show for 1.5 seconds
+        }
+
+        // Spawn a short section of rings every 7-11 miles (~1-1.5 minutes)
+        if (miles >= nextRingMilestone && rings.length === 0) {
+            // Spawn 2-3 rings in a short bonus section
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            for (let i = 0; i < ringCount; i++) {
+                const ring = new THREE.Mesh(ringGeometry, ringMat);
+                ring.position.set(
+                    (Math.random() - 0.5) * 8, // Keep them closer to center
+                    Math.random() * 2 + 2,     // Mid-height
+                    -150 - (i * 40)            // Spaced 40 units apart
+                );
+                ring.rotation.x = 0;
+                ring.rotation.y = 0;
+                ring.userData.collected = false;
+                scene.add(ring);
+                rings.push(ring);
+            }
+
+            // BONUS: Clear all buildings to create a building-free corridor
+            buildings.forEach(b => {
+                b.position.z = -500; // Move far back
+                b.visible = false;
+            });
+
+            nextRingMilestone = miles + 7 + Math.random() * 4; // Next rings in 7-11 miles
+        }
+
+        // Message timers
+        if (crashMessageTimer > 0) crashMessageTimer--;
+        if (levelUpMessageTimer > 0) levelUpMessageTimer--;
+
+        // Collision Glitch FX (RED) - only during collision
+        if (collisionFlash > 0) {
+            collisionFlash -= 0.05;
+            if (collisionFlash <= 0) {
+                // Collision ended - reset to normal
+                renderer.setClearColor(0x000000, 1);
+                terrainMat.color.setHex(0x00ffff);
+                wireMat.color.setHex(0x00ffff);
+            } else {
+                // Still flashing
+                renderer.setClearColor(new THREE.Color(collisionFlash * 0.4, 0, 0), 1);
+                terrainMat.color.setHex(0xff0033);
+                wireMat.color.setHex(0xff0033);
+                shipGroup.position.x += (Math.random() - 0.5) * collisionFlash * 0.3;
+            }
+        }
+
+        const distMiles = Math.floor(miles);
+        let displayText = `0 ----- ${distMiles}mi`;
+
+        // Show crash message
+        if (crashMessageTimer > 0) {
+            displayText = `💥 ${crashMessage} 💥`;
+        }
+        // Show level-up message (takes priority if both are active)
+        if (levelUpMessageTimer > 0) {
+            displayText = `⚡ ${levelUpMessage} ⚡`;
+        }
+
+        scoreUI.innerText = displayText;
+        renderer.render(scene, camera);
+    }
+    // Don't auto-start - wait for play button
+
+    // --- PARAMETER EDITOR CONTROLS ---
+    const paramEditor = document.getElementById('param-editor');
+    const toggleBtn = document.getElementById('toggle-params');
+
+    toggleBtn.addEventListener('click', () => {
+        paramEditor.classList.toggle('active');
+    });
+
+    // Speed control
+    document.getElementById('speed-slider').addEventListener('input', (e) => {
+        baseSpeed = parseFloat(e.target.value);
+        document.getElementById('speed-val').textContent = baseSpeed.toFixed(2);
+    });
+
+    // Note: Particle and building count changes would require regeneration
+    // Terrain amplitude is randomized on load, so we'll skip real-time editing for simplicity
+    // This keeps the parameter editor focused on safe, real-time adjustable values
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+</script>
+</body>
+</html>
