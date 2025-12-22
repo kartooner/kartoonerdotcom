@@ -224,6 +224,9 @@
     <div style="position: absolute; top: 25px; right: 25px; z-index: 10; color: #00ffff; font-family: 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: right; font-weight: bold; opacity: 0.9;">
         <span id="score-display">SCORE: 0</span>
     </div>
+    <div style="position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 10;">
+        <button id="pause-button" style="display: none; background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; color: #00ffff; font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 8px 20px; cursor: pointer; font-weight: bold;">PAUSE</button>
+    </div>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
 </div>
@@ -581,21 +584,37 @@
 
     // Play button functionality
     let gameStarted = false;
+    let isPaused = false;
     const playOverlay = document.getElementById('play-overlay');
     const toggleParamsBtn = document.getElementById('toggle-params');
+    const pauseButton = document.getElementById('pause-button');
 
     playOverlay.addEventListener('click', () => {
         gameStarted = true;
         playOverlay.classList.add('hidden');
         toggleParamsBtn.classList.add('visible');
+        pauseButton.style.display = 'block'; // Show pause button
         if (!animationRunning) {
             animate();
+        }
+    });
+
+    // Pause button functionality
+    pauseButton.addEventListener('click', () => {
+        isPaused = !isPaused;
+        pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
+        if (!isPaused && gameStarted) {
+            animate(); // Resume animation
         }
     });
 
     let animationRunning = false;
     function animate() {
         if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
+        if (isPaused) {
+            animationRunning = false;
+            return; // Stop animation loop when paused
+        }
         animationRunning = true;
         requestAnimationFrame(animate);
         time += 0.01;
@@ -604,7 +623,9 @@
         const speed = speedBoostActive ? baseSpeed * 2.5 : baseSpeed;
 
         // Update distance and calculate miles/level FIRST (needed for building logic)
-        distance += speed * 50; // Much faster mile progression
+        // Mobile gets faster progression (feels slower on iOS)
+        const speedMultiplier = isMobile ? 75 : 50;
+        distance += speed * speedMultiplier;
         const miles = distance / 5280;
         const newLevel = Math.floor(miles / 20) + 1; // Levels every 20 miles
         const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
@@ -900,7 +921,15 @@
     const toggleBtn = document.getElementById('toggle-params');
 
     toggleBtn.addEventListener('click', () => {
+        const isOpening = !paramEditor.classList.contains('active');
         paramEditor.classList.toggle('active');
+
+        // Auto-pause when opening parameters
+        if (isOpening && gameStarted && !isPaused) {
+            isPaused = true;
+            pauseButton.innerText = 'RESUME';
+            animationRunning = false;
+        }
     });
 
     // Speed control
