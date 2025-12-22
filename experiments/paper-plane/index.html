@@ -167,6 +167,7 @@
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .spacer { height: 20vh; }
+            .spacer h1 { display: none; } /* Hide binary text on mobile (iOS treats as phone number) */
             #game-container {
                 height: 85vh; /* Slightly smaller for performance */
                 max-width: 100%;
