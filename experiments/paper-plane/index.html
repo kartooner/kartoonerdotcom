@@ -1375,7 +1375,7 @@
 
     let animationRunning = false;
     let lastFrameTime = 0;
-    function animate(currentTime = performance.now()) {
+    function animate(timestamp = performance.now()) {
         if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
         if (isPaused) {
             animationRunning = false;
@@ -1384,13 +1384,13 @@
 
         // Initialize lastFrameTime on first frame
         if (!animationRunning) {
-            lastFrameTime = currentTime;
+            lastFrameTime = timestamp;
         }
         animationRunning = true;
 
         // Frame-rate independent animation
-        const deltaTime = lastFrameTime === 0 ? 1 : Math.min((currentTime - lastFrameTime) / 16.67, 2);
-        lastFrameTime = currentTime;
+        const deltaTime = lastFrameTime === 0 ? 1 : Math.min((timestamp - lastFrameTime) / 16.67, 2);
+        lastFrameTime = timestamp;
 
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
