@@ -176,6 +176,98 @@
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
 
+        /* Checkpoint ability selection overlay - Retro banking software style */
+        #checkpoint-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+            flex-direction: column;
+        }
+        #checkpoint-overlay.active { display: flex; }
+        #checkpoint-title {
+            color: var(--neon);
+            font-size: 16px;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.8;
+        }
+        #abilities-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-width: 800px;
+            width: 90%;
+            padding: 0 20px;
+        }
+        .ability-card {
+            background: #000;
+            border: 1px solid var(--neon);
+            padding: 0;
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: left;
+            position: relative;
+            margin-bottom: -1px;
+        }
+        .ability-card:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        .ability-card.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .ability-card.disabled:hover {
+            background: #000;
+        }
+        .ability-inner {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ability-name {
+            color: var(--neon);
+            font-size: 16px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        .ability-description {
+            color: #888;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .ability-cost {
+            color: #00ff00;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+        #skip-checkpoint {
+            margin-top: 15px;
+            background: #000;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 18px 20px;
+            cursor: pointer;
+            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-size: 16px;
+            letter-spacing: 1px;
+            max-width: 800px;
+            width: calc(90% - 40px);
+            text-align: left;
+            transition: background 0.1s;
+        }
+        #skip-checkpoint:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .spacer { height: 20vh; }
@@ -228,6 +320,11 @@
     <div id="play-overlay">
         <div id="play-button">PLAY</div>
     </div>
+    <div id="checkpoint-overlay">
+        <div id="checkpoint-title"></div>
+        <div id="abilities-container"></div>
+        <button id="skip-checkpoint">[ ] Not right now</button>
+    </div>
     <div class="ui-overlay">
         <span id="score-text">0 ----- 0mi</span><br>
         <span id="high-score" style="font-size: 11px; opacity: 0.7;">BEST: 0mi</span><br>
@@ -237,7 +334,8 @@
         <button id="pause-button" style="display: none; background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 8px 20px; cursor: pointer; font-weight: bold;">PAUSE</button>
     </div>
     <div style="position: absolute; top: 25px; right: 25px; z-index: 10; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: right; font-weight: bold; opacity: 0.9;">
-        <span id="score-display">SCORE: 0</span>
+        <span id="score-display">SCORE: 0</span><br>
+        <span style="font-size: 10px; opacity: 0.7;">+25 for each ring you pass through</span>
     </div>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
@@ -285,6 +383,56 @@
     let levelUpMessage = '';
     let levelUpMessageTimer = 0;
     let score = 0; // Points from collecting rings
+
+    // Checkpoint system
+    let nextCheckpoint = 50; // First checkpoint at 50 miles
+    let checkpointActive = false;
+
+    // Abilities system
+    const abilities = {
+        thrusters: {
+            name: 'Add Thrusters',
+            cost: 250,
+            owned: false,
+            description: 'Increases flight speed for faster travel'
+        },
+        randomColor: {
+            name: 'Random Color',
+            cost: 150,
+            owned: false,
+            description: 'Changes your plane to a random color'
+        },
+        changeShape: {
+            name: 'Change Plane Shape',
+            cost: 350,
+            owned: false,
+            description: 'Morphs your plane into a different primitive form'
+        },
+        lasers: {
+            name: 'Lasers',
+            cost: 600,
+            owned: false,
+            description: 'Adds shooting ability and asteroid enemies'
+        },
+        barrelRollUpgrade: {
+            name: 'Barrel Roll Upgrade',
+            cost: 750,
+            owned: false,
+            description: 'Must upgrade to unlock barrel roll ability'
+        },
+        increaseDifficulty: {
+            name: 'Increase Difficulty',
+            cost: 850,
+            owned: false,
+            description: 'More buildings spawn, fewer rings appear'
+        }
+    };
+
+    // Laser system
+    const lasers = [];
+    const enemies = [];
+    let canShoot = false;
+    let lastShot = 0;
 
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
@@ -498,8 +646,198 @@
         rings.push(ring);
     }
 
-    // Track when to spawn next ring section (every 7-11 miles = ~1-1.5 min)
-    let nextRingMilestone = 7 + Math.random() * 4; // First rings at 7-11 miles
+    // Track when to spawn next ring section (less frequent for better balance)
+    let nextRingMilestone = 15 + Math.random() * 10; // First rings at 15-25 miles
+
+    // --- CHECKPOINT GATE ---
+    const gates = [];
+    const gateGeometry = new THREE.BoxGeometry(20, 8, 0.5);
+    const gateMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.6 });
+
+    function createCheckpointGate() {
+        // Create frame-like gate
+        const gateGroup = new THREE.Group();
+
+        // Top bar
+        const topBar = new THREE.Mesh(new THREE.BoxGeometry(20, 0.5, 0.5), gateMaterial);
+        topBar.position.y = 4;
+        gateGroup.add(topBar);
+
+        // Left bar
+        const leftBar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 0.5), gateMaterial);
+        leftBar.position.x = -10;
+        gateGroup.add(leftBar);
+
+        // Right bar
+        const rightBar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 0.5), gateMaterial);
+        rightBar.position.x = 10;
+        gateGroup.add(rightBar);
+
+        gateGroup.position.set(0, 4, -200);
+        gateGroup.userData.passed = false;
+        scene.add(gateGroup);
+        gates.push(gateGroup);
+
+        return gateGroup;
+    }
+
+    // Checkpoint UI functions
+    function showCheckpointUI(milesReached) {
+        checkpointActive = true;
+        isPaused = true;
+
+        const checkpointOverlay = document.getElementById('checkpoint-overlay');
+        const checkpointTitle = document.getElementById('checkpoint-title');
+        const abilitiesContainer = document.getElementById('abilities-container');
+
+        checkpointTitle.innerHTML = `┌────────────────────────────────────────────────┐<br>│ You've got ${score} points, choose an ability to upgrade. │<br>└────────────────────────────────────────────────┘`;
+        abilitiesContainer.innerHTML = '';
+
+        // Get 2 random abilities
+        const abilityKeys = Object.keys(abilities);
+        const shuffled = abilityKeys.sort(() => 0.5 - Math.random());
+        const selectedAbilities = shuffled.slice(0, 2);
+
+        // Check if player can afford at least one ability
+        const canAffordAny = selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
+
+        if (!canAffordAny && selectedAbilities.every(key => abilities[key].owned)) {
+            // All abilities owned, just continue
+            checkpointActive = false;
+            isPaused = false;
+            return;
+        }
+
+        // Create ability cards
+        selectedAbilities.forEach(key => {
+            const ability = abilities[key];
+            const card = document.createElement('div');
+            card.className = 'ability-card';
+
+            const canAfford = score >= ability.cost && !ability.owned;
+            if (!canAfford || ability.owned) {
+                card.classList.add('disabled');
+            }
+
+            const checkbox = canAfford ? '[ ]' : '[X]';
+            const costText = ability.owned ? 'OWNED' : `COST: ${ability.cost} PTS`;
+
+            card.innerHTML = `
+                <div class="ability-inner">
+                    <div class="ability-name">${checkbox} ${ability.name}</div>
+                    <div class="ability-description">    ${ability.description}</div>
+                    <div class="ability-cost">    ${costText}</div>
+                </div>
+            `;
+
+            if (canAfford) {
+                card.addEventListener('click', () => purchaseAbility(key));
+            }
+
+            abilitiesContainer.appendChild(card);
+        });
+
+        // Update skip button text based on affordability
+        const skipButton = document.getElementById('skip-checkpoint');
+        if (!canAffordAny) {
+            skipButton.innerText = '[ ] Not right now (not enough points)';
+        } else {
+            skipButton.innerText = '[ ] Not right now';
+        }
+
+        checkpointOverlay.classList.add('active');
+    }
+
+    function purchaseAbility(abilityKey) {
+        const ability = abilities[abilityKey];
+
+        if (score >= ability.cost && !ability.owned) {
+            score -= ability.cost;
+            ability.owned = true;
+            scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+            // Apply ability effect
+            applyAbilityEffect(abilityKey);
+
+            // Close checkpoint UI
+            closeCheckpointUI();
+        }
+    }
+
+    function applyAbilityEffect(abilityKey) {
+        switch(abilityKey) {
+            case 'thrusters':
+                baseSpeed = isMobile ? 0.72 : 0.42;
+                break;
+            case 'randomColor':
+                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                paperMat.color.setHex(randomColor);
+                break;
+            case 'changeShape':
+                // Change plane shape (simplified for now - just scale it differently)
+                mainMesh.scale.set(1.2, 0.8, 1.1);
+                wireMesh.scale.set(1.25, 0.84, 1.15);
+                break;
+            case 'lasers':
+                canShoot = true;
+                break;
+            case 'barrelRollUpgrade':
+                // Barrel roll is now enabled (already exists in code)
+                break;
+            case 'increaseDifficulty':
+                // Increase difficulty (handled in spawn logic)
+                break;
+        }
+    }
+
+    function closeCheckpointUI() {
+        const checkpointOverlay = document.getElementById('checkpoint-overlay');
+        checkpointOverlay.classList.remove('active');
+        checkpointActive = false;
+        isPaused = false;
+        if (gameStarted) {
+            animate();
+        }
+    }
+
+    document.getElementById('skip-checkpoint').addEventListener('click', closeCheckpointUI);
+
+    // --- LASER & ENEMY SYSTEM ---
+    const laserGeometry = new THREE.BoxGeometry(0.1, 0.1, 2);
+    const laserMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, emissive: 0xff0000 });
+
+    const enemyGeometry = new THREE.DodecahedronGeometry(1.5, 0);
+    const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
+
+    function shootLaser() {
+        if (!canShoot) return;
+
+        const now = Date.now();
+        if (now - lastShot < 300) return; // Fire rate limit (300ms)
+
+        lastShot = now;
+
+        const laser = new THREE.Mesh(laserGeometry, laserMaterial);
+        laser.position.set(curX, curY, 3.5);
+        laser.userData.velocity = -2; // Move forward
+        scene.add(laser);
+        lasers.push(laser);
+    }
+
+    function spawnEnemy() {
+        if (!abilities.lasers.owned) return;
+
+        const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+        enemy.position.set(
+            (Math.random() - 0.5) * 12,
+            Math.random() * 5 + 1,
+            -200 - Math.random() * 50
+        );
+        enemy.userData.box = new THREE.Box3();
+        scene.add(enemy);
+        enemies.push(enemy);
+    }
 
     // --- 6. FLIGHT CONTROLS (STICKY) WITH SWAY PHYSICS ---
     let targetX = 0, targetY = 2.5, curX = 0, curY = 2.5;
@@ -562,7 +900,14 @@
         if (e.key === 'ArrowDown') keys.down = true;
         if (e.key === ' ') {
             e.preventDefault();
-            speedBoostActive = true;
+            if (abilities.lasers.owned) {
+                shootLaser();
+            } else {
+                speedBoostActive = true;
+            }
+        }
+        if (e.key.toLowerCase() === 'f' && abilities.lasers.owned) {
+            shootLaser();
         }
     });
 
@@ -574,28 +919,43 @@
         if (e.key === ' ') speedBoostActive = false;
     });
 
-    // BARREL ROLL EASTER EGG - Double click/tap
+    // BARREL ROLL - Double click/tap (requires upgrade)
     const triggerBarrelRoll = () => {
-        if (!barrelRollActive) {
+        if (!barrelRollActive && abilities.barrelRollUpgrade.owned) {
             barrelRollActive = true;
             barrelRollProgress = 0;
         }
     };
 
-    // Double-click for desktop
-    container.addEventListener('dblclick', e => {
-        e.preventDefault();
-        triggerBarrelRoll();
+    // Mouse click controls - single click shoots (if lasers), double click barrel roll (if upgraded)
+    let lastClickTime = 0;
+    container.addEventListener('click', e => {
+        const currentTime = new Date().getTime();
+        const clickGap = currentTime - lastClickTime;
+
+        if (clickGap < 300 && clickGap > 0) {
+            // Double click - barrel roll
+            e.preventDefault();
+            triggerBarrelRoll();
+        } else if (abilities.lasers.owned) {
+            // Single click - shoot laser
+            shootLaser();
+        }
+        lastClickTime = currentTime;
     });
 
-    // Double-tap for mobile
+    // Touch tap controls - single tap shoots (if lasers), double tap barrel roll (if upgraded)
     container.addEventListener('touchstart', e => {
         const currentTime = new Date().getTime();
         const tapGap = currentTime - lastTapTime;
 
         if (tapGap < 300 && tapGap > 0) {
+            // Double tap - barrel roll
             e.preventDefault();
             triggerBarrelRoll();
+        } else if (abilities.lasers.owned) {
+            // Single tap - shoot laser
+            shootLaser();
         }
         lastTapTime = currentTime;
     });
@@ -785,13 +1145,21 @@
                 // At level 1: -180, Level 2: -170, Level 3: -160, Level 4: -150, Level 5: -130
                 let spawnDistance = -180 - (Math.max(0, levelDifficulty - 1) * 10);
 
+                // Difficulty increase ability makes buildings spawn even closer
+                if (abilities.increaseDifficulty.owned) {
+                    spawnDistance += 30; // Spawn 30 units closer
+                }
+
                 // If rings are active, spawn buildings much further back to give a breather
                 if (rings.length > 0) {
                     spawnDistance = -400; // Far behind the ring section
                 }
 
-                // Find safe X position to avoid overlap - MUCH wider spacing early on
-                const minSpacing = levelDifficulty <= 2 ? 10 : (levelDifficulty <= 3 ? 8 : 6);
+                // Find safe X position to avoid overlap - spacing adjusts with difficulty ability
+                let minSpacing = levelDifficulty <= 2 ? 10 : (levelDifficulty <= 3 ? 8 : 6);
+                if (abilities.increaseDifficulty.owned) {
+                    minSpacing = Math.max(4, minSpacing - 2); // Tighter spacing when difficult
+                }
                 const xPos = getSafeXPosition(buildings, minSpacing);
 
                 b.position.set(
@@ -819,7 +1187,11 @@
                     b.position.z = -120;
                     b.visible = false;
 
-                    // CRASH - Just visual feedback, no penalty (infinite flying game)
+                    // CRASH - Deduct points for collision
+                    const pointsLost = 50;
+                    score = Math.max(0, score - pointsLost);
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
                     // Update high score if current distance is higher
                     const currentMiles = Math.floor(miles);
                     if (currentMiles > highScore) {
@@ -828,7 +1200,7 @@
                         highScoreUI.innerText = `BEST: ${highScore}mi`;
                     }
 
-                    crashMessage = 'BONK';
+                    crashMessage = `BONK -${pointsLost}`;
                     crashMessageTimer = 60; // Show for 60 frames (~1 second)
                 }
             }
@@ -847,11 +1219,11 @@
                 );
                 if (Math.abs(ring.position.z - 3.5) < 2 && dist < 3) {
                     ring.userData.collected = true;
-                    score += 50; // +50 points for collecting ring
+                    score += 25; // +25 points for collecting ring
 
-                    // Show +50 bonus in score display
-                    const previousScore = score - 50;
-                    scoreDisplayUI.innerText = `SCORE: ${previousScore} (+50)`;
+                    // Show +25 bonus in score display
+                    const previousScore = score - 25;
+                    scoreDisplayUI.innerText = `SCORE: ${previousScore} (+25)`;
                     setTimeout(() => {
                         scoreDisplayUI.innerText = `SCORE: ${score}`;
                     }, 800);
@@ -871,6 +1243,67 @@
             }
         });
 
+        // Laser update logic
+        lasers.forEach((laser, index) => {
+            laser.position.z += laser.userData.velocity;
+
+            // Remove if too far
+            if (laser.position.z < -50) {
+                scene.remove(laser);
+                lasers.splice(index, 1);
+            }
+        });
+
+        // Enemy update logic
+        enemies.forEach((enemy, index) => {
+            enemy.position.z += speed;
+            enemy.rotation.x += 0.02;
+            enemy.rotation.y += 0.03;
+
+            // Update collision box
+            enemy.userData.box.setFromObject(enemy);
+
+            // Check collision with plane
+            if (shipBox.intersectsBox(enemy.userData.box)) {
+                const pointsLost = 30;
+                score = Math.max(0, score - pointsLost);
+                scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                collisionFlash = 0.5;
+                crashMessage = `HIT -${pointsLost}`;
+                crashMessageTimer = 40;
+
+                scene.remove(enemy);
+                enemies.splice(index, 1);
+                return;
+            }
+
+            // Check collision with lasers
+            lasers.forEach((laser, laserIndex) => {
+                const laserBox = new THREE.Box3().setFromObject(laser);
+                if (laserBox.intersectsBox(enemy.userData.box)) {
+                    score += 10; // Bonus for destroying enemy
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                    scene.remove(enemy);
+                    enemies.splice(index, 1);
+                    scene.remove(laser);
+                    lasers.splice(laserIndex, 1);
+                }
+            });
+
+            // Remove if too far
+            if (enemy.position.z > 20) {
+                scene.remove(enemy);
+                enemies.splice(index, 1);
+            }
+        });
+
+        // Spawn enemies periodically when laser ability is owned
+        if (abilities.lasers.owned && Math.random() < 0.01 && enemies.length < 5) {
+            spawnEnemy();
+        }
+
         // Level progression (every 100 miles)
         if (newLevel > currentLevel) {
             currentLevel = newLevel;
@@ -879,16 +1312,43 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Spawn a short section of rings every 7-11 miles (~1-1.5 minutes)
+        // Checkpoint system - spawn gate every 100 miles
+        if (miles >= nextCheckpoint && gates.length === 0 && !checkpointActive) {
+            createCheckpointGate();
+        }
+
+        // Update gates
+        gates.forEach((gate, index) => {
+            gate.position.z += speed;
+            gate.rotation.z += 0.01; // Slow rotation
+
+            // Check if player passed through gate
+            if (Math.abs(gate.position.z - 3.5) < 3 && !gate.userData.passed) {
+                gate.userData.passed = true;
+                showCheckpointUI(Math.floor(nextCheckpoint));
+                nextCheckpoint += 50; // Next checkpoint in 50 miles
+            }
+
+            // Remove gate if too far
+            if (gate.position.z > 20) {
+                scene.remove(gate);
+                gates.splice(index, 1);
+            }
+        });
+
+        // Spawn rings less frequently - buildings are the main obstacle
         if (miles >= nextRingMilestone && rings.length === 0) {
-            // Spawn 2-3 rings in a short bonus section
-            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // Shorter ring sections - just 2-3 rings for a quick bonus opportunity
+            const ringCount = abilities.increaseDifficulty.owned ?
+                Math.floor(Math.random() * 1) + 1 : // 1-2 rings if difficult
+                Math.floor(Math.random() * 1) + 2; // 2-3 rings normally
+
             for (let i = 0; i < ringCount; i++) {
                 const ring = new THREE.Mesh(ringGeometry, ringMat);
                 ring.position.set(
                     (Math.random() - 0.5) * 8, // Keep them closer to center
                     Math.random() * 2 + 2,     // Mid-height
-                    -150 - (i * 40)            // Spaced 40 units apart
+                    -150 - (i * 50)            // Spaced further apart (50 units)
                 );
                 ring.rotation.x = 0;
                 ring.rotation.y = 0;
@@ -903,7 +1363,7 @@
                 b.visible = false;
             });
 
-            nextRingMilestone = miles + 7 + Math.random() * 4; // Next rings in 7-11 miles
+            nextRingMilestone = miles + 12 + Math.random() * 8; // Next rings in 12-20 miles
         }
 
         // Message timers
