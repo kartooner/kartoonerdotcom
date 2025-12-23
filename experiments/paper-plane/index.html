@@ -1573,12 +1573,7 @@
         }
 
         // Controls with momentum (varies by plane type)
-        // On mobile with active touch, use 1:1 movement for instant response
-        // Otherwise use smoothing for momentum physics
-        let smoothing = planeStats[currentPlaneType].smoothing;
-        if (isMobile && isInteracting) {
-            smoothing = 0.95; // Nearly 1:1 on mobile when touching
-        }
+        const smoothing = planeStats[currentPlaneType].smoothing;
         curX += (targetX - curX) * smoothing;
         curY += (targetY - curY) * smoothing;
 
