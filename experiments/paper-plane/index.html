@@ -379,7 +379,7 @@
                 width: calc(90% - 28px);
             }
             /* Score display mobile optimization - compact in top right, no border */
-            #game-container > div:nth-child(6) {
+            #score-container {
                 top: 50px !important;
                 right: 8px !important;
                 padding: 4px 6px !important;
@@ -389,14 +389,14 @@
                 border: none !important;
                 background: rgba(0, 20, 20, 0.85) !important;
             }
-            #game-container > div:nth-child(6) span:last-child {
+            #score-container span:last-child {
                 font-size: 7px !important;
                 opacity: 0.65 !important;
             }
-            #game-container > div:nth-child(6) #score-display {
+            #score-container #score-display {
                 font-size: 9px !important;
             }
-            #game-container > div:nth-child(6) #score-bonus {
+            #score-container #score-bonus {
                 font-size: 8px !important;
             }
             #play-button {
@@ -440,7 +440,7 @@
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
+    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
         <span id="score-display">SCORE: 0</span><br>
         <span id="score-bonus" style="font-size: 11px; opacity: 0.85; letter-spacing: 1px; color: #00ff88;"></span><br>
         <span style="font-size: 10px; opacity: 0.75; letter-spacing: 1px;">+25 green / +50 fuchsia rings</span>
@@ -2117,29 +2117,34 @@
 
         // Phase system: Check if it's time to switch phases
         const currentTime = Date.now();
-        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
+        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0 && walls.length === 0) {
             // Switch phase based on current phase
             if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings, add breather before rings
-                currentPhase = 'breather_before_rings';
+                // After buildings: 30% chance walls, 70% breather
+                if (Math.random() < 0.3) {
+                    currentPhase = 'walls';
+                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
+                    phaseDuration = 15000; // Walls phase lasts ~15 seconds
+                } else {
+                    currentPhase = 'breather_before_rings';
+                    phaseDuration = 2000; // 2 second breather
+                }
                 phaseStartTime = currentTime;
-                phaseDuration = 2000; // 2 second breather before rings
             } else if (currentPhase === 'breather_before_rings') {
-                // After breather, go back to buildings (rings now tied to checkpoints)
+                // After breather, go back to buildings
                 currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
-            } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, 25% chance for walls, 75% back to buildings
-                if (Math.random() < 0.25) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
-                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
-                } else {
-                    currentPhase = 'buildings';
-                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-                }
+            } else if (currentPhase === 'walls') {
+                // After walls, go back to buildings
+                currentPhase = 'buildings';
                 phaseStartTime = currentTime;
+                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+            } else if (currentPhase === 'breather_after_rings') {
+                // After rings breather, back to buildings
+                currentPhase = 'buildings';
+                phaseStartTime = currentTime;
+                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
             }
         }
 
@@ -2184,12 +2189,7 @@
             phaseDuration = 3000; // 3 second breather after rings
         }
 
-        // After all walls are passed, transition back to buildings
-        if (currentPhase === 'walls' && wallsSpawnedThisPhase && walls.length === 0) {
-            currentPhase = 'buildings';
-            phaseStartTime = Date.now();
-            phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-        }
+        // Wall phase completion is now handled in main phase system above
 
         // Check grace period expiration
         if (gracePeriodActive && Date.now() >= gracePeriodEndTime) {
