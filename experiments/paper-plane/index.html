@@ -537,7 +537,20 @@
             name: 'Ring Magnet',
             cost: 250,
             owned: false,
+            contextual: true, // Only show when rings are present
             description: 'Attracts nearby rings for 30 seconds'
+        },
+        smallPlane: {
+            name: 'Small Plane',
+            cost: 180,
+            owned: false,
+            description: 'Shrink your plane for 3 levels - easier dodging'
+        },
+        slowMotion: {
+            name: 'Slow Motion',
+            cost: 220,
+            owned: false,
+            description: 'Slows game to 50% speed for 20 seconds'
         },
         lasers: {
             name: 'Lasers',
@@ -565,6 +578,18 @@
     let canShoot = false;
     let lastShot = 0;
 
+    // Laser power-ups (only spawn when lasers owned)
+    const laserPowerUps = [];
+    let activePowerUp = null; // 'double', 'large', or 'triple'
+    let powerUpEndTime = 0;
+    const powerUpDuration = 15000; // 15 seconds
+
+    // Create power-up capsule geometry (small glowing sphere)
+    const powerUpGeom = new THREE.SphereGeometry(0.3, 8, 8);
+    const greenPowerUpMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 });
+    const orangePowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.8 });
+    const redPowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 });
+
     // Invincibility system
     let invincibilityActive = false;
     let invincibilityEndTime = 0;
@@ -573,6 +598,17 @@
     let ringMagnetActive = false;
     let ringMagnetEndTime = 0;
 
+    // Small plane system
+    let smallPlaneActive = false;
+    let smallPlaneActivationLevel = 0;
+    const smallPlaneScale = 0.6;
+    let planeMorphProgress = 1.0; // 1.0 = normal, 0.6 = small
+
+    // Slow motion system
+    let slowMotionActive = false;
+    let slowMotionEndTime = 0;
+    let timeScale = 1.0;
+
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
 
@@ -580,8 +616,11 @@
     // Simpler fog for better performance
     scene.fog = new THREE.Fog(0x000000, 15, 45);
 
-    const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
-    camera.position.set(0, 2.5, 8);
+    // Adaptive FOV: wider view for tablets, balanced for mobile/desktop
+    const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
+    const fov = isTablet ? 85 : (isMobile ? 75 : 55);
+    const camera = new THREE.PerspectiveCamera(fov, container.clientWidth / container.clientHeight, 0.1, 250);
+    camera.position.set(0, 2.5, isTablet ? 9 : 8); // Pull back slightly on tablet
 
     const renderer = new THREE.WebGLRenderer({
         antialias: false, // Disabled for crisp 80s aesthetic
@@ -622,19 +661,46 @@
     // Plane color tracking
     let currentPlaneColor = 0x008080; // Initial teal color
 
-    // Create different plane geometries
+    // Create different plane geometries with paper airplane characteristics
     function createDartGeometry() {
+        // Classic dart: Like the "Fastest Airplane" - simple with sharp point and center fold
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
-           -0.6,  0.2,  0.5,   // Left Wing Back
-            0.6,  0.2,  0.5,   // Right Wing Back
-            0.0, -0.2,  0.3,   // Bottom Keel/Spine
+            // Sharp triangular nose point
+            0.0,  0.0, -1.0,   // 0: NOSE tip (sharp point)
+
+            // Center fold ridge (creates the crease down middle, slightly raised)
+            0.0,  0.1, -0.2,   // 1: Center fold start (raised)
+            0.0,  0.08,  0.3,  // 2: Center fold mid
+            0.0,  0.05,  0.6,  // 3: Center fold tail
+
+            // Left wing edge
+           -0.6,  0.0,  0.0,   // 4: Left wing mid
+           -0.4,  0.0,  0.6,   // 5: Left wing back
+
+            // Right wing edge
+            0.6,  0.0,  0.0,   // 6: Right wing mid
+            0.4,  0.0,  0.6,   // 7: Right wing back
+
+            // Bottom keel (thickness from fold)
+            0.0, -0.15, 0.3,   // 8: Bottom keel
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Sharp nose to center fold (top)
+            0, 1, 4,  0, 1, 6,
+
+            // Left wing surface (flat sweep)
+            1, 4, 2,  4, 2, 8,  2, 8, 5,  2, 5, 3,
+
+            // Right wing surface (flat sweep)
+            1, 6, 2,  6, 2, 8,  2, 8, 7,  2, 7, 3,
+
+            // Bottom surfaces
+            0, 4, 8,  0, 8, 6,
+            8, 4, 5,  8, 5, 3,  8, 6, 7,  8, 7, 3,
+
+            // Tail closure
+            3, 5, 7
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -643,17 +709,43 @@
     }
 
     function createGliderGeometry() {
+        // Wide glider: Broad swept wings with visible folds
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.6,   // NOSE (shorter)
-           -1.0,  0.1,  0.4,   // Left Wing Back (wider)
-            1.0,  0.1,  0.4,   // Right Wing Back (wider)
-            0.0, -0.15,  0.2,  // Bottom Keel/Spine
+            // Blunt nose
+            0.0,  0.0, -0.6,   // 0: NOSE
+
+            // Body center line
+            0.0,  0.02, -0.3,  // 1: Mid top
+            0.0, -0.1,  0.1,   // 2: Mid bottom
+            0.0, -0.12,  0.4,  // 3: Tail center
+
+            // Left wing - wide and flat with fold line
+           -0.15,  0.0, -0.2,  // 4: Left inner edge
+           -0.6,  0.05, -0.1,  // 5: Left mid wing
+           -1.1,  0.08,  0.2,  // 6: Left wing tip (very wide)
+           -0.7,  0.05,  0.45, // 7: Left wing back
+           -0.2,  0.0,  0.4,   // 8: Left inner back
+
+            // Right wing - wide and flat with fold line
+            0.15,  0.0, -0.2,  // 9: Right inner edge
+            0.6,  0.05, -0.1,  // 10: Right mid wing
+            1.1,  0.08,  0.2,  // 11: Right wing tip (very wide)
+            0.7,  0.05,  0.45, // 12: Right wing back
+            0.2,  0.0,  0.4,   // 13: Right inner back
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Nose
+            0, 1, 4,  0, 1, 9,  0, 4, 2,  0, 9, 2,
+
+            // Left wing surfaces with folds
+            1, 4, 5,  4, 5, 6,  5, 6, 7,  4, 7, 8,  2, 4, 8,  2, 8, 3,  3, 8, 7,
+
+            // Right wing surfaces with folds
+            1, 9, 10,  9, 10, 11,  10, 11, 12,  9, 12, 13,  2, 9, 13,  2, 13, 3,  3, 13, 12,
+
+            // Tail
+            3, 7, 12
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -662,17 +754,53 @@
     }
 
     function createStuntGeometry() {
+        // Squat stunt plane: Boxy, angular with vertical fins
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.5,   // NOSE (boxy)
-           -0.5,  0.3,  0.4,   // Left Wing Back (higher, boxier)
-            0.5,  0.3,  0.4,   // Right Wing Back (higher, boxier)
-            0.0, -0.3,  0.4,   // Bottom (more squared)
+            // Blunt squared nose
+            0.0,  0.1, -0.5,   // 0: NOSE top
+            0.0, -0.2, -0.5,   // 1: NOSE bottom
+
+            // Squat body
+            0.0,  0.15,  0.0,  // 2: Body top mid
+            0.0, -0.25,  0.0,  // 3: Body bottom mid
+            0.0,  0.15,  0.5,  // 4: Tail top
+            0.0, -0.25,  0.5,  // 5: Tail bottom
+
+            // Left wing - short and boxy with upturned tip (dihedral)
+           -0.2,  0.1, -0.2,   // 6: Left wing inner
+           -0.5,  0.35,  0.2,  // 7: Left wing tip (high)
+           -0.4,  0.3,  0.4,   // 8: Left wing back
+
+            // Right wing - short and boxy with upturned tip (dihedral)
+            0.2,  0.1, -0.2,   // 9: Right wing inner
+            0.5,  0.35,  0.2,  // 10: Right wing tip (high)
+            0.4,  0.3,  0.4,   // 11: Right wing back
+
+            // Vertical fins for stability
+           -0.15,  0.35,  0.35, // 12: Left fin top
+            0.15,  0.35,  0.35, // 13: Right fin top
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Nose
+            0, 1, 2,  1, 2, 3,
+
+            // Body segments
+            0, 2, 6,  0, 6, 1,  1, 6, 3,
+            0, 2, 9,  0, 9, 1,  1, 9, 3,
+            2, 3, 4,  3, 4, 5,
+
+            // Left wing (boxy)
+            2, 6, 7,  6, 7, 8,  2, 7, 8,  2, 8, 4,  4, 8, 5,  3, 6, 8,  3, 8, 5,
+
+            // Right wing (boxy)
+            2, 9, 10,  9, 10, 11,  2, 10, 11,  2, 11, 4,  4, 11, 5,  3, 9, 11,  3, 11, 5,
+
+            // Vertical fins
+            4, 8, 12,  4, 11, 13,
+
+            // Tail
+            4, 5, 8,  4, 5, 11
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -1081,13 +1209,13 @@
         return frameGroup;
     }
 
-    // Pre-create punched wall pool (5 walls with different hole shapes)
+    // Pre-create punched wall pool (5 walls with SMALL challenging holes)
     const holeShapes = [
-        { width: 6, height: 6 },   // Square hole
-        { width: 8, height: 4 },   // Horizontal rectangle
-        { width: 4, height: 8 },   // Vertical rectangle
-        { width: 5, height: 5 },   // Small square
-        { width: 7, height: 5 }    // Medium rectangle
+        { width: 3.2, height: 3.8 },   // Tiny vertical slot
+        { width: 4.5, height: 3.2 },   // Small horizontal slot
+        { width: 3.8, height: 4.2 },   // Small square
+        { width: 5, height: 3.2 },     // Wide thin slot
+        { width: 3.2, height: 5 }      // Tall thin slot
     ];
 
     for (let i = 0; i < 5; i++) {
@@ -1107,6 +1235,75 @@
             return wall;
         }
         return null;
+    }
+
+    // Ambient scenery - decorative rocks for breather sections (no collision)
+    const ambientRocks = [];
+    const rockPool = [];
+    const rockMat = new THREE.MeshBasicMaterial({
+        color: 0x00cccc,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.3
+    });
+
+    // Create rock pool with varied sizes for organic feel (super small for ambient detail)
+    for (let i = 0; i < 20; i++) {
+        const size = 0.1 + Math.random() * 0.2; // 0.1 to 0.3 units - tiny scenery
+        const geometry = new THREE.DodecahedronGeometry(size, 0);
+        const rock = new THREE.Mesh(geometry, rockMat);
+        rock.visible = false;
+        rock.position.z = -1000;
+        scene.add(rock);
+        rockPool.push(rock);
+    }
+
+    function getRockFromPool(xPos, yPos, zPos) {
+        const rock = rockPool.find(r => !r.visible);
+        if (rock) {
+            rock.visible = true;
+            rock.position.set(xPos, yPos, zPos);
+            // Random rotation for variety
+            rock.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
+            return rock;
+        }
+        return null;
+    }
+
+    // Parallax star field - subtle background stars at various depths
+    const stars = [];
+    const starMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.6
+    });
+
+    // Create 150 stars scattered across the sky with parallax depths
+    for (let i = 0; i < 150; i++) {
+        const size = 0.05 + Math.random() * 0.08; // 0.05 to 0.13 units - very tiny
+        const geometry = new THREE.SphereGeometry(size, 4, 4);
+        const star = new THREE.Mesh(geometry, starMat);
+
+        // Scatter widely across X (left to right)
+        star.position.x = (Math.random() - 0.5) * 80;
+
+        // Place high in the sky and at horizon
+        star.position.y = Math.random() * 15 + 5; // 5 to 20 units high
+
+        // Scatter deep into the distance with varied depths
+        star.position.z = -50 - Math.random() * 200; // -50 to -250
+
+        // Store parallax depth (stars further away move slower)
+        // Depth 0-1: far stars move at 0.3x speed, near stars at 1.0x speed
+        const depth = Math.abs(star.position.z) / 250; // 0.2 to 1.0
+        star.userData.parallaxSpeed = 0.3 + (1.0 - depth) * 0.7; // 0.3 to 1.0
+
+        scene.add(star);
+        stars.push(star);
     }
 
     // Pre-create wall pool (10 walls total - mix of high and low)
@@ -1174,6 +1371,7 @@
     let phaseAlternator = false; // Toggle between rings and second building run
     let ringsSpawnedThisPhase = false; // Track if rings have been spawned for current ring phase
     let wallsSpawnedThisPhase = false; // Track if walls have been spawned for current wall phase
+    let rocksSpawnedThisPhase = false; // Track if ambient rocks have been spawned for current breather phase
 
     // --- CHECKPOINT GATE ---
     const gates = [];
@@ -1336,8 +1534,8 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                // Double the base speed for noticeable thruster effect
-                baseSpeed = isMobile ? 0.44 : 0.96;
+                // Permanent speed boost: mobile reaches desktop levels, desktop gets faster
+                thrusterMultiplier = 1.6; // Mobile: 0.30*1.6=0.48, Desktop: 0.48*1.6=0.77
                 break;
             case 'randomColor':
                 // Available colors (excluding current color) - added glass/frosty white
@@ -1373,6 +1571,16 @@
                 // Activate 30 second ring magnet
                 ringMagnetActive = true;
                 ringMagnetEndTime = Date.now() + 30000; // 30 seconds
+                break;
+            case 'smallPlane':
+                // Activate small plane for 3 levels
+                smallPlaneActive = true;
+                smallPlaneActivationLevel = currentLevel;
+                break;
+            case 'slowMotion':
+                // Activate 20 second slow motion
+                slowMotionActive = true;
+                slowMotionEndTime = Date.now() + 20000; // 20 seconds
                 break;
             case 'lasers':
                 canShoot = true;
@@ -1565,7 +1773,9 @@
     });
 
     // --- 7. ANIMATION LOOP, COLLISION & GAME LOGIC ---
-    let baseSpeed = isMobile ? 0.22 : 0.48;
+    // Faster mobile base speed, thrusters will boost mobile to desktop levels
+    let baseSpeed = isMobile ? 0.30 : 0.48;
+    let thrusterMultiplier = 1.0; // Permanent speed boost when thrusters owned
     let distance = 0, time = 0, collisionFlash = 0;
     const shipBox = new THREE.Box3();
 
@@ -1597,8 +1807,39 @@
         toggleParamsBtn.classList.add('visible');
         pauseButton.style.display = 'block'; // Show pause button
         phaseStartTime = Date.now(); // Initialize phase timer
+
+        // Focus trap: prevent page scrolling when game is active
+        gameContainer.focus();
+        gameContainer.setAttribute('tabindex', '0');
+
         if (!animationRunning) {
             animate();
+        }
+    });
+
+    // Prevent page scrolling when touching/clicking game container
+    gameContainer.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    gameContainer.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    gameContainer.addEventListener('wheel', (e) => {
+        if (gameStarted) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // ESC key to pause game
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && gameStarted && !checkpointActive) {
+            isPaused = !isPaused;
+            pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
+            if (!isPaused) {
+                animate(); // Resume animation
+            }
         }
     });
 
@@ -1633,10 +1874,10 @@
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
 
-        // Speed boost effect (includes near-miss boost) with deltaTime
+        // Speed boost effect (includes near-miss boost + thrusters) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
-        const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
+        const speed = baseSpeed * thrusterMultiplier * totalSpeedMultiplier * deltaTime * timeScale; // Thrusters permanent
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
@@ -1989,6 +2230,26 @@
             wallsSpawnedThisPhase = true;
         }
 
+        // Spawn ambient rocks during breather phases (ONLY ONCE per phase)
+        const isBreatherPhase = currentPhase === 'breather_before_rings' || currentPhase === 'breather_after_rings';
+        if (isBreatherPhase && !rocksSpawnedThisPhase) {
+            // Spawn 8-12 tiny rocks scattered organically in lanes
+            const rockCount = Math.floor(Math.random() * 5) + 8; // 8-12 rocks
+
+            for (let i = 0; i < rockCount; i++) {
+                const xPos = (Math.random() - 0.5) * 12; // Spread across lanes
+                const yPos = Math.random() * 5 + 1;      // Various heights
+                const zPos = -80 - (Math.random() * 60); // Scattered along path
+
+                const rock = getRockFromPool(xPos, yPos, zPos);
+                if (rock) {
+                    ambientRocks.push(rock);
+                }
+            }
+
+            rocksSpawnedThisPhase = true;
+        }
+
         // Optimized wall loop - iterate backwards to safely remove items
         for (let i = walls.length - 1; i >= 0; i--) {
             const wall = walls[i];
@@ -2098,6 +2359,36 @@
             }
         }
 
+        // Parallax star field update - subtle depth effect
+        stars.forEach(star => {
+            // Move stars forward based on parallax speed (far = slow, near = fast)
+            star.position.z += speed * star.userData.parallaxSpeed;
+
+            // Wrap around when star passes the player
+            if (star.position.z > 20) {
+                star.position.z = -200 - Math.random() * 50; // Reset to far distance
+                star.position.x = (Math.random() - 0.5) * 80; // Randomize X position
+                star.position.y = Math.random() * 15 + 5; // Randomize Y position
+            }
+        });
+
+        // Ambient rocks update - purely visual, no collision
+        for (let i = ambientRocks.length - 1; i >= 0; i--) {
+            const rock = ambientRocks[i];
+            rock.position.z += speed;
+
+            // Slow rotation for visual interest
+            rock.rotation.x += 0.01;
+            rock.rotation.y += 0.01;
+
+            // Return rock to pool when it passes the player
+            if (rock.position.z > 15) {
+                rock.visible = false;
+                rock.position.z = -1000;
+                ambientRocks.splice(i, 1);
+            }
+        }
+
         // Ring collection logic - optimized backwards loop
         for (let i = rings.length - 1; i >= 0; i--) {
             const ring = rings[i];
@@ -2114,7 +2405,10 @@
                     const dx = ring.position.x - curX;
                     const dy = ring.position.y - curY;
                     const distSq = dx * dx + dy * dy;
-                    const ringRadiusSq = 3 * 3; // 9
+                    // Scale collision radius based on ring size
+                    const ringScale = ring.userData.ringScale || 1.0;
+                    const ringRadius = 3 * ringScale;
+                    const ringRadiusSq = ringRadius * ringRadius;
 
                     if (distSq < ringRadiusSq) {
                         ring.userData.collected = true;
@@ -2229,11 +2523,11 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Ring spawning before checkpoints - 60% chance to spawn rings before checkpoint
+        // Ring spawning before checkpoints - 80% chance to spawn rings before checkpoint
         const milesUntilCheckpoint = nextCheckpoint - miles;
         if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
-            // 60% chance to spawn rings before checkpoint, 40% chance for checkpoint after buildings
-            if (Math.random() < 0.6) {
+            // 80% chance to spawn rings before checkpoint, 20% chance for checkpoint after buildings
+            if (Math.random() < 0.8) {
                 // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
                 const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
@@ -2244,12 +2538,33 @@
 
                     if (ring) {
                         ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+
+                        // Vary ring sizes: smaller = harder but worth more
+                        const sizeRoll = Math.random();
+                        let ringScale, ringPoints;
+                        if (sizeRoll < 0.15) {
+                            ringScale = 0.6; // Tiny ring - 40 pts
+                            ringPoints = 40;
+                        } else if (sizeRoll < 0.35) {
+                            ringScale = 0.8; // Small ring - 30 pts
+                            ringPoints = 30;
+                        } else if (sizeRoll < 0.75) {
+                            ringScale = 1.0; // Normal ring - 25 pts
+                            ringPoints = 25;
+                        } else {
+                            ringScale = 1.3; // Large ring - 15 pts (easier)
+                            ringPoints = 15;
+                        }
+
+                        ring.scale.set(ringScale, ringScale, ringScale);
+                        ring.userData.ringScale = ringScale;
+
                         ring.position.set(
                             (Math.random() - 0.5) * 10, // Wider horizontal spread
                             Math.random() * 6 + 1,      // Varied height: 1-7 (much harder!)
                             -150 - (i * 50)             // Spaced apart (50 units)
                         );
-                        ring.userData.points = isFuchsia ? 50 : 25;
+                        ring.userData.points = isFuchsia ? 50 : ringPoints;
                         rings.push(ring);
                     }
                 }
@@ -2312,7 +2627,8 @@
                     phaseDuration = 15000; // Walls phase lasts ~15 seconds
                 } else {
                     currentPhase = 'breather_before_rings';
-                    phaseDuration = 2000; // 2 second breather
+                    phaseDuration = 1000; // 1 second breather
+                    rocksSpawnedThisPhase = false; // Reset rock spawning flag
                 }
                 phaseStartTime = currentTime;
             } else if (currentPhase === 'breather_before_rings') {
@@ -2335,8 +2651,8 @@
 
         // Spawn rings during ring phase (ONLY ONCE per phase)
         if (currentPhase === 'rings' && !ringsSpawnedThisPhase) {
-            // SHORT ring runs: only 2-3 rings max
-            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // SHORT ring runs: 3-4 rings for better earning potential
+            const ringCount = Math.floor(Math.random() * 2) + 3; // 3-4 rings
 
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
@@ -2371,7 +2687,8 @@
             // All rings collected, switch to breather phase
             currentPhase = 'breather_after_rings';
             phaseStartTime = Date.now();
-            phaseDuration = 3000; // 3 second breather after rings
+            phaseDuration = 1500; // 1.5 second breather after rings
+            rocksSpawnedThisPhase = false; // Reset rock spawning flag
         }
 
         // Wall phase completion is now handled in main phase system above
@@ -2438,6 +2755,32 @@
                     }
                 });
             }
+        }
+
+        // Small plane effect: morph animation to smaller size for 3 levels
+        if (smallPlaneActive) {
+            // Check if 3 levels have passed
+            if (currentLevel >= smallPlaneActivationLevel + 3) {
+                smallPlaneActive = false;
+            }
+        }
+
+        // Smooth morph animation
+        const targetScale = smallPlaneActive ? smallPlaneScale : 1.0;
+        const morphSpeed = 0.05;
+        planeMorphProgress += (targetScale - planeMorphProgress) * morphSpeed;
+        shipGroup.scale.set(planeMorphProgress, planeMorphProgress, planeMorphProgress);
+
+        // Slow motion effect: reduce time scale
+        if (slowMotionActive) {
+            if (Date.now() >= slowMotionEndTime) {
+                slowMotionActive = false;
+                timeScale = 1.0;
+            } else {
+                timeScale = 0.5; // 50% speed
+            }
+        } else {
+            timeScale = 1.0;
         }
 
         // Message timers
