@@ -1211,11 +1211,11 @@
 
     // Pre-create punched wall pool (5 walls with SMALL challenging holes)
     const holeShapes = [
-        { width: 2.5, height: 3 },   // Tiny vertical slot
-        { width: 3.5, height: 2.5 }, // Small horizontal slot
-        { width: 3, height: 3.5 },   // Small square
-        { width: 4, height: 2.5 },   // Wide thin slot
-        { width: 2.5, height: 4 }    // Tall thin slot
+        { width: 3.2, height: 3.8 },   // Tiny vertical slot
+        { width: 4.5, height: 3.2 },   // Small horizontal slot
+        { width: 3.8, height: 4.2 },   // Small square
+        { width: 5, height: 3.2 },     // Wide thin slot
+        { width: 3.2, height: 5 }      // Tall thin slot
     ];
 
     for (let i = 0; i < 5; i++) {
@@ -2403,11 +2403,11 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Ring spawning before checkpoints - 60% chance to spawn rings before checkpoint
+        // Ring spawning before checkpoints - 80% chance to spawn rings before checkpoint
         const milesUntilCheckpoint = nextCheckpoint - miles;
         if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
-            // 60% chance to spawn rings before checkpoint, 40% chance for checkpoint after buildings
-            if (Math.random() < 0.6) {
+            // 80% chance to spawn rings before checkpoint, 20% chance for checkpoint after buildings
+            if (Math.random() < 0.8) {
                 // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
                 const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
@@ -2530,8 +2530,8 @@
 
         // Spawn rings during ring phase (ONLY ONCE per phase)
         if (currentPhase === 'rings' && !ringsSpawnedThisPhase) {
-            // SHORT ring runs: only 2-3 rings max
-            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // SHORT ring runs: 3-4 rings for better earning potential
+            const ringCount = Math.floor(Math.random() * 2) + 3; // 3-4 rings
 
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
