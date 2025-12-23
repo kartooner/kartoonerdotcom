@@ -578,6 +578,18 @@
     let canShoot = false;
     let lastShot = 0;
 
+    // Laser power-ups (only spawn when lasers owned)
+    const laserPowerUps = [];
+    let activePowerUp = null; // 'double', 'large', or 'triple'
+    let powerUpEndTime = 0;
+    const powerUpDuration = 15000; // 15 seconds
+
+    // Create power-up capsule geometry (small glowing sphere)
+    const powerUpGeom = new THREE.SphereGeometry(0.3, 8, 8);
+    const greenPowerUpMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 });
+    const orangePowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.8 });
+    const redPowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 });
+
     // Invincibility system
     let invincibilityActive = false;
     let invincibilityEndTime = 0;
