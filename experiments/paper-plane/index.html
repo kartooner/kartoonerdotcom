@@ -685,13 +685,26 @@
             newGeom = createDartGeometry();
         }
 
+        // Dispose old geometries
         mainMesh.geometry.dispose();
         wireMesh.geometry.dispose();
         shadowMesh.geometry.dispose();
+
+        // Assign new geometries (all meshes can share the same geometry)
         mainMesh.geometry = newGeom;
         wireMesh.geometry = newGeom;
         shadowMesh.geometry = newGeom;
+
+        // Force geometry update
+        mainMesh.geometry.attributes.position.needsUpdate = true;
+        wireMesh.geometry.attributes.position.needsUpdate = true;
+        shadowMesh.geometry.attributes.position.needsUpdate = true;
+
+        // Update current plane type
         currentPlaneType = type;
+
+        // Log for debugging
+        console.log('Plane shape changed to:', type);
     }
 
     // Light sitting behind the plane to light up the tail
