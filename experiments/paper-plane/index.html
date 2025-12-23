@@ -1398,6 +1398,16 @@
                 ringMagnetActive = true;
                 ringMagnetEndTime = Date.now() + 30000; // 30 seconds
                 break;
+            case 'smallPlane':
+                // Activate small plane for 3 levels
+                smallPlaneActive = true;
+                smallPlaneActivationLevel = currentLevel;
+                break;
+            case 'slowMotion':
+                // Activate 20 second slow motion
+                slowMotionActive = true;
+                slowMotionEndTime = Date.now() + 20000; // 20 seconds
+                break;
             case 'lasers':
                 canShoot = true;
                 break;
@@ -1621,8 +1631,39 @@
         toggleParamsBtn.classList.add('visible');
         pauseButton.style.display = 'block'; // Show pause button
         phaseStartTime = Date.now(); // Initialize phase timer
+
+        // Focus trap: prevent page scrolling when game is active
+        gameContainer.focus();
+        gameContainer.setAttribute('tabindex', '0');
+
         if (!animationRunning) {
             animate();
+        }
+    });
+
+    // Prevent page scrolling when touching/clicking game container
+    gameContainer.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    gameContainer.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    gameContainer.addEventListener('wheel', (e) => {
+        if (gameStarted) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // ESC key to pause game
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && gameStarted && !checkpointActive) {
+            isPaused = !isPaused;
+            pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
+            if (!isPaused) {
+                animate(); // Resume animation
+            }
         }
     });
 
@@ -1660,7 +1701,7 @@
         // Speed boost effect (includes near-miss boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
-        const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
+        const speed = baseSpeed * totalSpeedMultiplier * deltaTime * timeScale; // Apply slow motion
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
@@ -2486,6 +2527,32 @@
                     }
                 });
             }
+        }
+
+        // Small plane effect: morph animation to smaller size for 3 levels
+        if (smallPlaneActive) {
+            // Check if 3 levels have passed
+            if (currentLevel >= smallPlaneActivationLevel + 3) {
+                smallPlaneActive = false;
+            }
+        }
+
+        // Smooth morph animation
+        const targetScale = smallPlaneActive ? smallPlaneScale : 1.0;
+        const morphSpeed = 0.05;
+        planeMorphProgress += (targetScale - planeMorphProgress) * morphSpeed;
+        shipGroup.scale.set(planeMorphProgress, planeMorphProgress, planeMorphProgress);
+
+        // Slow motion effect: reduce time scale
+        if (slowMotionActive) {
+            if (Date.now() >= slowMotionEndTime) {
+                slowMotionActive = false;
+                timeScale = 1.0;
+            } else {
+                timeScale = 0.5; // 50% speed
+            }
+        } else {
+            timeScale = 1.0;
         }
 
         // Message timers
