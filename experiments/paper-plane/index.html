@@ -378,21 +378,26 @@
                 letter-spacing: 1px;
                 width: calc(90% - 28px);
             }
-            /* Score display mobile optimization - move to bottom left to avoid overlap */
+            /* Score display mobile optimization - compact in top right, no border */
             #game-container > div:nth-child(6) {
-                top: auto !important;
-                bottom: 10px !important;
-                left: 10px !important;
-                right: auto !important;
-                text-align: left !important;
-                padding: 6px 8px !important;
-                font-size: 10px !important;
-                letter-spacing: 0.8px !important;
-                line-height: 1.5 !important;
+                top: 50px !important;
+                right: 8px !important;
+                padding: 4px 6px !important;
+                font-size: 9px !important;
+                letter-spacing: 0.5px !important;
+                line-height: 1.3 !important;
+                border: none !important;
+                background: rgba(0, 20, 20, 0.85) !important;
             }
             #game-container > div:nth-child(6) span:last-child {
                 font-size: 7px !important;
-                opacity: 0.6 !important;
+                opacity: 0.65 !important;
+            }
+            #game-container > div:nth-child(6) #score-display {
+                font-size: 9px !important;
+            }
+            #game-container > div:nth-child(6) #score-bonus {
+                font-size: 8px !important;
             }
             #play-button {
                 font-size: 18px;
