@@ -537,7 +537,20 @@
             name: 'Ring Magnet',
             cost: 250,
             owned: false,
+            contextual: true, // Only show when rings are present
             description: 'Attracts nearby rings for 30 seconds'
+        },
+        smallPlane: {
+            name: 'Small Plane',
+            cost: 180,
+            owned: false,
+            description: 'Shrink your plane for 3 levels - easier dodging'
+        },
+        slowMotion: {
+            name: 'Slow Motion',
+            cost: 220,
+            owned: false,
+            description: 'Slows game to 50% speed for 20 seconds'
         },
         lasers: {
             name: 'Lasers',
@@ -572,6 +585,17 @@
     // Ring magnet system
     let ringMagnetActive = false;
     let ringMagnetEndTime = 0;
+
+    // Small plane system
+    let smallPlaneActive = false;
+    let smallPlaneActivationLevel = 0;
+    const smallPlaneScale = 0.6;
+    let planeMorphProgress = 1.0; // 1.0 = normal, 0.6 = small
+
+    // Slow motion system
+    let slowMotionActive = false;
+    let slowMotionEndTime = 0;
+    let timeScale = 1.0;
 
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
@@ -2114,7 +2138,10 @@
                     const dx = ring.position.x - curX;
                     const dy = ring.position.y - curY;
                     const distSq = dx * dx + dy * dy;
-                    const ringRadiusSq = 3 * 3; // 9
+                    // Scale collision radius based on ring size
+                    const ringScale = ring.userData.ringScale || 1.0;
+                    const ringRadius = 3 * ringScale;
+                    const ringRadiusSq = ringRadius * ringRadius;
 
                     if (distSq < ringRadiusSq) {
                         ring.userData.collected = true;
@@ -2244,12 +2271,33 @@
 
                     if (ring) {
                         ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+
+                        // Vary ring sizes: smaller = harder but worth more
+                        const sizeRoll = Math.random();
+                        let ringScale, ringPoints;
+                        if (sizeRoll < 0.15) {
+                            ringScale = 0.6; // Tiny ring - 40 pts
+                            ringPoints = 40;
+                        } else if (sizeRoll < 0.35) {
+                            ringScale = 0.8; // Small ring - 30 pts
+                            ringPoints = 30;
+                        } else if (sizeRoll < 0.75) {
+                            ringScale = 1.0; // Normal ring - 25 pts
+                            ringPoints = 25;
+                        } else {
+                            ringScale = 1.3; // Large ring - 15 pts (easier)
+                            ringPoints = 15;
+                        }
+
+                        ring.scale.set(ringScale, ringScale, ringScale);
+                        ring.userData.ringScale = ringScale;
+
                         ring.position.set(
                             (Math.random() - 0.5) * 10, // Wider horizontal spread
                             Math.random() * 6 + 1,      // Varied height: 1-7 (much harder!)
                             -150 - (i * 50)             // Spaced apart (50 units)
                         );
-                        ring.userData.points = isFuchsia ? 50 : 25;
+                        ring.userData.points = isFuchsia ? 50 : ringPoints;
                         rings.push(ring);
                     }
                 }
