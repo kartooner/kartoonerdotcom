@@ -211,16 +211,17 @@
         #checkpoint-overlay.active { display: flex; }
         #checkpoint-title {
             color: var(--neon);
-            font-size: 14px;
-            letter-spacing: 2px;
-            margin-bottom: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin-bottom: 35px;
             text-align: center;
-            line-height: 1.8;
+            line-height: 1.6;
             font-family: 'Cartridge Regular', 'Courier New', monospace;
             text-transform: uppercase;
-            border: 2px solid var(--neon);
-            padding: 15px 25px;
-            background: rgba(0, 255, 255, 0.05);
+            border-bottom: 3px solid var(--neon);
+            padding-bottom: 15px;
+            background: none;
         }
         #abilities-container {
             display: flex;
@@ -512,6 +513,9 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     // Edge-optimized pixel ratio: lower for better performance
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isEdge ? 1 : (isMobile ? 1.25 : 1.5)));
+    // Optimization: ensure efficient clearing
+    renderer.autoClear = true;
+    renderer.autoClearColor = true;
     container.appendChild(renderer.domElement);
 
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
@@ -637,7 +641,8 @@
 
     // --- 2. MOUNTAIN VALLEY (RANDOMIZED EACH LOAD) ---
     // Reduced segments for better performance across all browsers
-    const terrainGeom = new THREE.PlaneGeometry(100, 120, isMobile ? 25 : 30, isMobile ? 25 : 30);
+    const terrainSegments = isMobile ? 25 : (isEdge ? 28 : 30);
+    const terrainGeom = new THREE.PlaneGeometry(100, 120, terrainSegments, terrainSegments);
     const pos = terrainGeom.attributes.position;
 
     // Random terrain parameters for variety
@@ -697,23 +702,28 @@
     // Different building geometries (low-poly for performance)
     const boxGeometry = new THREE.BoxGeometry(2, 5, 2);
     const pyramidGeometry = new THREE.ConeGeometry(2, 5, 4, 1); // 4 segments, 1 height segment
+    const cylinderGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 8, 1); // 8 segments, low-poly
 
     function createBuilding() {
         const buildingType = Math.random();
         let geometry, height;
 
-        if (buildingType < 0.4) {
+        if (buildingType < 0.3) {
             // Square building
             geometry = boxGeometry;
             height = Math.random() * 6 + 3; // 3-9 units tall
-        } else if (buildingType < 0.7) {
+        } else if (buildingType < 0.5) {
             // Rectangle (tall or wide)
             geometry = boxGeometry;
             height = Math.random() * 8 + 2; // 2-10 units tall
-        } else {
+        } else if (buildingType < 0.7) {
             // Pyramid
             geometry = pyramidGeometry;
             height = Math.random() * 5 + 3; // 3-8 units tall
+        } else {
+            // Cylinder (squat or tall)
+            geometry = cylinderGeometry;
+            height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5; // Squat: 2-5, Tall: 5-13
         }
 
         const b = new THREE.Mesh(geometry, buildMat);
@@ -909,8 +919,9 @@
         buildings.push(b);
     }
 
-    // --- 5. HIGH WALLS & LOW WALLS (VERTICAL MOVEMENT) ---
+    // --- 5. HIGH WALLS & LOW WALLS (VERTICAL MOVEMENT) - OBJECT POOLING ---
     const walls = [];
+    const wallPool = []; // Pre-created walls for reuse
     const wallMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.5 });
 
     // High wall: long horizontal rectangle at top (y=8-10)
@@ -919,51 +930,62 @@
     // Low wall: long horizontal rectangle at ground level (y=0-2)
     const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
 
-    let lastWallSpawnTime = 0;
-    let wallSpawnInterval = 15000; // Spawn walls every 15 seconds (only during non-building phases)
-
-    function spawnWall() {
-        const wallType = Math.random() < 0.5 ? 'high' : 'low';
+    // Pre-create wall pool (10 walls total - mix of high and low)
+    for (let i = 0; i < 10; i++) {
+        const isHigh = i < 5;
         const wall = new THREE.Mesh(
-            wallType === 'high' ? highWallGeometry : lowWallGeometry,
+            isHigh ? highWallGeometry : lowWallGeometry,
             wallMat
         );
-
-        // Position with lots of visibility (far away)
-        wall.position.set(
-            0, // Center horizontally
-            wallType === 'high' ? 9 : 1.5, // High at top, low at bottom
-            -250 // Very far for visibility on mobile
-        );
-
-        wall.userData.type = wallType;
+        wall.userData.type = isHigh ? 'high' : 'low';
         wall.userData.box = new THREE.Box3();
-
+        wall.visible = false;
+        wall.position.z = -1000; // Off screen
         scene.add(wall);
-        walls.push(wall);
+        wallPool.push(wall);
     }
 
-    // --- 6. BONUS RINGS (RARE) ---
+    // Get wall from pool instead of creating new one
+    function getWallFromPool(type, zPos) {
+        const wall = wallPool.find(w => !w.visible && w.userData.type === type);
+        if (wall) {
+            wall.visible = true;
+            wall.position.set(0, type === 'high' ? 7 : 1.5, zPos);
+            return wall;
+        }
+        return null;
+    }
+
+    // --- 6. BONUS RINGS (RARE) - OBJECT POOLING ---
     const rings = [];
+    const ringPool = []; // Pre-created rings for reuse
     // Simplified ring geometry for better performance
     const ringGeometry = new THREE.TorusGeometry(3, 0.3, 6, 12);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.6 });
     const fuchsiaRingMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.7 });
 
-    // Air vents removed for better game flow
-
-    function spawnRing() {
+    // Pre-create ring pool (6 rings - enough for 2 sets of 3)
+    for (let i = 0; i < 6; i++) {
         const ring = new THREE.Mesh(ringGeometry, ringMat);
-        ring.position.set(
-            (Math.random() - 0.5) * 10,
-            Math.random() * 4 + 1,
-            -200 - Math.random() * 100
-        );
-        ring.rotation.x = 0; // Face camera straight on
+        ring.rotation.x = 0;
         ring.rotation.y = 0;
         ring.userData.collected = false;
+        ring.visible = false;
+        ring.position.z = -1000; // Off screen
         scene.add(ring);
-        rings.push(ring);
+        ringPool.push(ring);
+    }
+
+    // Get ring from pool instead of creating new one
+    function getRingFromPool() {
+        const ring = ringPool.find(r => !r.visible);
+        if (ring) {
+            ring.visible = true;
+            ring.userData.collected = false;
+            ring.userData.collectTime = 0;
+            return ring;
+        }
+        return null;
     }
 
     // Phase system for balancing building dodging and ring collection
@@ -1352,24 +1374,30 @@
     });
 
     let animationRunning = false;
-    function animate() {
+    let lastFrameTime = performance.now();
+    function animate(currentTime) {
         if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
         if (isPaused) {
             animationRunning = false;
             return; // Stop animation loop when paused
         }
         animationRunning = true;
-        requestAnimationFrame(animate);
-        time += 0.01;
 
-        // Speed boost effect (includes near-miss boost)
+        // Frame-rate independent animation
+        const deltaTime = Math.min((currentTime - lastFrameTime) / 16.67, 2); // Cap at 2x for lag spikes
+        lastFrameTime = currentTime;
+
+        requestAnimationFrame(animate);
+        time += 0.01 * deltaTime;
+
+        // Speed boost effect (includes near-miss boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
-        const speed = baseSpeed * totalSpeedMultiplier;
+        const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
 
-        // Decay near-miss boost over time
+        // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
-            nearMissBoost -= 0.01; // Smooth decay
+            nearMissBoost -= 0.01 * deltaTime; // Smooth decay
             if (nearMissBoost < 0) nearMissBoost = 0;
         }
 
@@ -1381,11 +1409,12 @@
         const newLevel = Math.floor(miles / 20) + 1; // Levels every 20 miles
         const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
 
-        // Keyboard controls
-        if (keys.left) targetX -= 0.3;
-        if (keys.right) targetX += 0.3;
-        if (keys.up) targetY += 0.2;
-        if (keys.down) targetY -= 0.2;
+        // Keyboard controls with deltaTime for smooth frame-rate independent movement
+        const keyboardSpeed = 0.3 * deltaTime;
+        if (keys.left) targetX -= keyboardSpeed;
+        if (keys.right) targetX += keyboardSpeed;
+        if (keys.up) targetY += keyboardSpeed * 0.67;
+        if (keys.down) targetY -= keyboardSpeed * 0.67;
 
         // Clamp targets
         targetX = Math.max(-10, Math.min(10, targetX));
@@ -1399,13 +1428,13 @@
             }
         });
 
-        // Animate particles (stars flying toward camera) - optimized
+        // Animate particles (stars flying toward camera) - optimized with deltaTime
         const positions = particleGeom.attributes.position.array;
         for(let i=0; i<particleCount; i++) {
             const i3 = i * 3;
             const vel = particleVelocities[i];
-            positions[i3] += vel.x;      // x drift
-            positions[i3+2] += vel.z;    // z movement (toward camera)
+            positions[i3] += vel.x * deltaTime;      // x drift
+            positions[i3+2] += vel.z * deltaTime;    // z movement (toward camera)
 
             // Reset particle if it goes past camera (staggered to prevent flash)
             if(positions[i3+2] > 15) {
@@ -1557,15 +1586,22 @@
                 const buildingType = Math.random();
                 let geometry, height;
 
-                if (buildingType < 0.4) {
+                if (buildingType < 0.3) {
+                    // Square building
                     geometry = boxGeometry;
                     height = Math.random() * 6 + 3;
-                } else if (buildingType < 0.7) {
+                } else if (buildingType < 0.5) {
+                    // Rectangle (tall or wide)
                     geometry = boxGeometry;
                     height = Math.random() * 8 + 2;
-                } else {
+                } else if (buildingType < 0.7) {
+                    // Pyramid
                     geometry = pyramidGeometry;
                     height = Math.random() * 5 + 3;
+                } else {
+                    // Cylinder (squat or tall)
+                    geometry = cylinderGeometry;
+                    height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5;
                 }
 
                 // Update geometry if it changed (avoid disposal to prevent micro-stutters)
@@ -1677,36 +1713,16 @@
                 const bothWalls = Math.random() < 0.3; // 30% chance for both high AND low (must stay centered)
 
                 if (bothWalls) {
-                    // Spawn BOTH high and low - player must stay centered
-                    const highWall = new THREE.Mesh(highWallGeometry, wallMat);
-                    highWall.position.set(0, 7, zPos); // Lower high wall from 9 to 7
-                    highWall.userData.type = 'high';
-                    highWall.userData.box = new THREE.Box3();
-                    scene.add(highWall);
-                    walls.push(highWall);
-
-                    const lowWall = new THREE.Mesh(lowWallGeometry, wallMat);
-                    lowWall.position.set(0, 1.5, zPos);
-                    lowWall.userData.type = 'low';
-                    lowWall.userData.box = new THREE.Box3();
-                    scene.add(lowWall);
-                    walls.push(lowWall);
+                    // Spawn BOTH high and low from pool - player must stay centered
+                    const highWall = getWallFromPool('high', zPos);
+                    const lowWall = getWallFromPool('low', zPos);
+                    if (highWall) walls.push(highWall);
+                    if (lowWall) walls.push(lowWall);
                 } else {
-                    // Spawn single wall (50/50 high or low)
+                    // Spawn single wall from pool (50/50 high or low)
                     const wallType = Math.random() < 0.5 ? 'high' : 'low';
-                    const wall = new THREE.Mesh(
-                        wallType === 'high' ? highWallGeometry : lowWallGeometry,
-                        wallMat
-                    );
-                    wall.position.set(
-                        0,
-                        wallType === 'high' ? 7 : 1.5, // Lower high wall height
-                        zPos
-                    );
-                    wall.userData.type = wallType;
-                    wall.userData.box = new THREE.Box3();
-                    scene.add(wall);
-                    walls.push(wall);
+                    const wall = getWallFromPool(wallType, zPos);
+                    if (wall) walls.push(wall);
                 }
             }
 
@@ -1724,9 +1740,10 @@
             const wall = walls[i];
             wall.position.z += speed;
 
-            // Remove wall when it passes the player
+            // Return wall to pool when it passes the player
             if (wall.position.z > 20) {
-                scene.remove(wall);
+                wall.visible = false;
+                wall.position.z = -1000;
                 walls.splice(i, 1);
                 continue;
             }
@@ -1745,7 +1762,8 @@
                     // Check grace period
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
-                        scene.remove(wall);
+                        wall.visible = false;
+                        wall.position.z = -1000;
                         walls.splice(i, 1);
 
                         // Apply damage (same as building collision)
@@ -1800,9 +1818,11 @@
                 }
             }
 
-            // Remove if too far OR collected for >100ms
+            // Return to pool if too far OR collected for >100ms
             if (ring.position.z > 20 || (ring.userData.collected && Date.now() - ring.userData.collectTime > 100)) {
-                scene.remove(ring);
+                ring.visible = false;
+                ring.position.z = -1000;
+                ring.material = ringMat; // Reset to green
                 rings.splice(i, 1);
             }
         }
@@ -1895,20 +1915,18 @@
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
                 const isFuchsia = Math.random() < 0.1;
-                const material = isFuchsia ? fuchsiaRingMat : ringMat;
-                const ring = new THREE.Mesh(ringGeometry, material);
+                const ring = getRingFromPool();
 
-                ring.position.set(
-                    (Math.random() - 0.5) * 8, // Keep them closer to center
-                    Math.random() * 2 + 2,     // Mid-height
-                    -150 - (i * 50)            // Spaced apart (50 units)
-                );
-                ring.rotation.x = 0;
-                ring.rotation.y = 0;
-                ring.userData.collected = false;
-                ring.userData.points = isFuchsia ? 50 : 25;
-                scene.add(ring);
-                rings.push(ring);
+                if (ring) {
+                    ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+                    ring.position.set(
+                        (Math.random() - 0.5) * 8, // Keep them closer to center
+                        Math.random() * 2 + 2,     // Mid-height
+                        -150 - (i * 50)            // Spaced apart (50 units)
+                    );
+                    ring.userData.points = isFuchsia ? 50 : 25;
+                    rings.push(ring);
+                }
             }
 
             // Clear all buildings and walls during ring collection
@@ -1916,8 +1934,10 @@
                 b.position.z = -500;
                 b.visible = false;
             });
+            // Return all active walls to pool
             walls.forEach(w => {
-                scene.remove(w);
+                w.visible = false;
+                w.position.z = -1000;
             });
             walls.length = 0; // Clear walls array
 
