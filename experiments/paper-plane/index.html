@@ -56,17 +56,18 @@
 
         .ui-overlay {
             position: absolute;
-            top: 25px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
             color: var(--neon);
             pointer-events: none;
-            opacity: 0.9;
-            font-size: 14px;
+            opacity: 0.95;
+            font-size: 15px;
             letter-spacing: 2px;
             text-align: center;
             font-weight: bold;
+            line-height: 1.6;
         }
 
         #footer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
@@ -176,14 +177,14 @@
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
 
-        /* Checkpoint ability selection overlay - Retro banking software style */
+        /* Checkpoint ability selection overlay - Early 80s banking terminal style */
         #checkpoint-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000;
+            background: #001a1a;
             display: none;
             align-items: center;
             justify-content: center;
@@ -193,79 +194,102 @@
         #checkpoint-overlay.active { display: flex; }
         #checkpoint-title {
             color: var(--neon);
-            font-size: 16px;
-            letter-spacing: 1px;
-            margin-bottom: 30px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
             text-align: center;
             line-height: 1.8;
+            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            text-transform: uppercase;
+            border: 2px solid var(--neon);
+            padding: 15px 25px;
+            background: rgba(0, 255, 255, 0.05);
         }
         #abilities-container {
             display: flex;
             flex-direction: column;
-            gap: 0;
-            max-width: 800px;
+            gap: 8px;
+            max-width: 700px;
             width: 90%;
             padding: 0 20px;
         }
         .ability-card {
-            background: #000;
-            border: 1px solid var(--neon);
+            background: rgba(0, 20, 20, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.5);
             padding: 0;
             cursor: pointer;
-            transition: background 0.1s;
+            transition: all 0.15s;
             text-align: left;
             position: relative;
-            margin-bottom: -1px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         .ability-card:hover {
-            background: rgba(0, 255, 255, 0.1);
+            background: rgba(0, 255, 255, 0.15);
+            border-color: var(--neon);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
         }
         .ability-card.disabled {
-            opacity: 0.3;
+            opacity: 0.4;
             cursor: not-allowed;
+            border-color: rgba(0, 255, 255, 0.2);
         }
         .ability-card.disabled:hover {
-            background: #000;
+            background: rgba(0, 20, 20, 0.6);
+            border-color: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         .ability-inner {
-            padding: 18px 20px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .ability-name {
             color: var(--neon);
-            font-size: 16px;
-            letter-spacing: 1px;
+            font-size: 15px;
+            letter-spacing: 1.5px;
             font-weight: bold;
+            text-transform: uppercase;
         }
         .ability-description {
-            color: #888;
-            font-size: 13px;
-            line-height: 1.5;
+            color: #66cccc;
+            font-size: 12px;
+            line-height: 1.6;
+            padding-left: 4px;
         }
         .ability-cost {
-            color: #00ff00;
-            font-size: 13px;
-            letter-spacing: 1px;
+            color: #00ff88;
+            font-size: 12px;
+            letter-spacing: 1.2px;
+            padding-left: 4px;
+            font-weight: bold;
         }
         #skip-checkpoint {
-            margin-top: 15px;
-            background: #000;
-            border: 1px solid var(--neon);
+            margin-top: 20px;
+            background: rgba(0, 20, 20, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.5);
             color: var(--neon);
-            padding: 18px 20px;
+            padding: 16px 20px;
             cursor: pointer;
             font-family: 'Cartridge Regular', 'Courier New', monospace;
-            font-size: 16px;
-            letter-spacing: 1px;
-            max-width: 800px;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            max-width: 700px;
             width: calc(90% - 40px);
             text-align: left;
-            transition: background 0.1s;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         #skip-checkpoint:hover {
-            background: rgba(0, 255, 255, 0.1);
+            background: rgba(0, 255, 255, 0.15);
+            border-color: var(--neon);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        #pause-button:hover {
+            background: rgba(0, 40, 40, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
 
         /* Mobile optimizations */
@@ -279,8 +303,8 @@
                 border: none; /* Remove border on mobile */
             }
             .ui-overlay {
-                top: 15px;
-                font-size: 12px;
+                top: 12px;
+                font-size: 11px;
                 letter-spacing: 1px;
             }
             .spacer h1 { font-size: 1.5rem; }
@@ -296,6 +320,10 @@
                 right: 15px;
                 padding: 6px 10px;
                 font-size: 10px;
+            }
+            #pause-button {
+                font-size: 11px !important;
+                padding: 8px 16px !important;
             }
         }
     </style>
@@ -330,12 +358,12 @@
         <span id="high-score" style="font-size: 11px; opacity: 0.7;">BEST: 0mi</span><br>
         <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span>
     </div>
-    <div style="position: absolute; top: 25px; left: 25px; z-index: 10;">
-        <button id="pause-button" style="display: none; background: rgba(0, 255, 255, 0.1); border: 1px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 8px 20px; cursor: pointer; font-weight: bold;">PAUSE</button>
+    <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
+        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div style="position: absolute; top: 25px; right: 25px; z-index: 10; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: right; font-weight: bold; opacity: 0.9;">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
         <span id="score-display">SCORE: 0</span><br>
-        <span style="font-size: 10px; opacity: 0.7;">+25 for each ring you pass through</span>
+        <span style="font-size: 10px; opacity: 0.75; letter-spacing: 1px;">+25 green / +50 fuchsia rings</span>
     </div>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
@@ -370,6 +398,7 @@
         lastTouchEnd = now;
     }, false);
     const isMobile = window.innerWidth < 768;
+    const isEdge = /Edg/.test(navigator.userAgent); // Detect Edge browser
     const scoreUI = document.getElementById('score-text');
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
@@ -387,6 +416,14 @@
     // Checkpoint system
     let nextCheckpoint = 50; // First checkpoint at 50 miles
     let checkpointActive = false;
+
+    // Grace period and shield mechanics
+    let gracePeriodActive = false;
+    let gracePeriodEndTime = 0;
+    let previousGracePeriodActive = false; // Track state changes to avoid unnecessary material updates
+    let shieldActive = true;
+    let shieldHits = 0;
+    const maxShieldHits = 3;
 
     // Abilities system
     const abilities = {
@@ -444,11 +481,14 @@
     const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
     camera.position.set(0, 2.5, 8);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true });
+    const renderer = new THREE.WebGLRenderer({
+        antialias: !isMobile && !isEdge, // Disable antialiasing on Edge for performance
+        alpha: true,
+        powerPreference: 'high-performance' // Request high-performance GPU
+    });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    // Conservative pixel ratio for performance across all browsers
-    // Mobile: 1.25x, Desktop: 1.5x (lower = better Edge/Safari performance)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 1.5));
+    // Edge-optimized pixel ratio: lower for better performance
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isEdge ? 1 : (isMobile ? 1.25 : 1.5)));
     container.appendChild(renderer.domElement);
 
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
@@ -462,29 +502,110 @@
     });
     const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
 
-    // Custom Triangle Geometry (Paper Dart Fold)
-    const airplaneGeom = new THREE.BufferGeometry();
-    const vertices = new Float32Array([
-        0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
-       -0.6,  0.2,  0.5,   // Left Wing Back
-        0.6,  0.2,  0.5,   // Right Wing Back
-        0.0, -0.2,  0.3,   // Bottom Keel/Spine
-    ]);
-    const indices = [
-        0, 1, 3, // Left Face
-        0, 3, 2, // Right Face
-        1, 2, 3  // Rear/Bottom Closure
-    ];
-    airplaneGeom.setIndex(indices);
-    airplaneGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    airplaneGeom.computeVertexNormals();
+    // Plane type tracking
+    let currentPlaneType = 'dart';
+    let planeStats = {
+        dart: { smoothing: 0.07, barrelRollSpeed: 0.025 },
+        glider: { smoothing: 0.12, barrelRollSpeed: 0.020 },
+        stunt: { smoothing: 0.05, barrelRollSpeed: 0.035 }
+    };
 
+    // Create different plane geometries
+    function createDartGeometry() {
+        const geom = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
+           -0.6,  0.2,  0.5,   // Left Wing Back
+            0.6,  0.2,  0.5,   // Right Wing Back
+            0.0, -0.2,  0.3,   // Bottom Keel/Spine
+        ]);
+        const indices = [
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
+        ];
+        geom.setIndex(indices);
+        geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geom.computeVertexNormals();
+        return geom;
+    }
+
+    function createGliderGeometry() {
+        const geom = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            0.0,  0.0, -0.6,   // NOSE (shorter)
+           -1.0,  0.1,  0.4,   // Left Wing Back (wider)
+            1.0,  0.1,  0.4,   // Right Wing Back (wider)
+            0.0, -0.15,  0.2,  // Bottom Keel/Spine
+        ]);
+        const indices = [
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
+        ];
+        geom.setIndex(indices);
+        geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geom.computeVertexNormals();
+        return geom;
+    }
+
+    function createStuntGeometry() {
+        const geom = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            0.0,  0.0, -0.5,   // NOSE (boxy)
+           -0.5,  0.3,  0.4,   // Left Wing Back (higher, boxier)
+            0.5,  0.3,  0.4,   // Right Wing Back (higher, boxier)
+            0.0, -0.3,  0.4,   // Bottom (more squared)
+        ]);
+        const indices = [
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
+        ];
+        geom.setIndex(indices);
+        geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geom.computeVertexNormals();
+        return geom;
+    }
+
+    // Start with Dart
+    const airplaneGeom = createDartGeometry();
     const mainMesh = new THREE.Mesh(airplaneGeom, paperMat);
     const wireMesh = new THREE.Mesh(airplaneGeom, wireMat);
     wireMesh.scale.set(1.04, 1.04, 1.04);
 
-    shipGroup.add(mainMesh, wireMesh);
+    // Add subtle shadow
+    const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    const shadowMesh = new THREE.Mesh(airplaneGeom, shadowMat);
+    shadowMesh.position.y = -0.05;
+
+    shipGroup.add(shadowMesh, mainMesh, wireMesh);
     scene.add(shipGroup);
+
+    // Function to swap plane geometry
+    function changePlaneShape(type) {
+        let newGeom;
+        if (type === 'glider') {
+            newGeom = createGliderGeometry();
+        } else if (type === 'stunt') {
+            newGeom = createStuntGeometry();
+        } else {
+            newGeom = createDartGeometry();
+        }
+
+        mainMesh.geometry.dispose();
+        wireMesh.geometry.dispose();
+        shadowMesh.geometry.dispose();
+        mainMesh.geometry = newGeom;
+        wireMesh.geometry = newGeom;
+        shadowMesh.geometry = newGeom;
+        currentPlaneType = type;
+    }
 
     // Light sitting behind the plane to light up the tail
     const engineLight = new THREE.PointLight(0x00ffff, 12, 12);
@@ -516,8 +637,8 @@
     scene.add(t1, t2);
 
     // --- 3. ANIMATED PARTICLES (STARS) ---
-    // Reduced for better performance across all browsers
-    const particleCount = isMobile ? 150 : 250;
+    // Reduced for better performance across all browsers, especially Edge
+    const particleCount = isMobile ? 150 : (isEdge ? 180 : 250);
     const particleGeom = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleVelocities = [];
@@ -546,6 +667,9 @@
     // --- 4. VARIED BUILDINGS (SQUARES, RECTANGLES, PYRAMIDS) - OPTIMIZED ---
     const buildings = [];
     const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.4 });
+
+    // Lane-based system for building placement (5 lanes)
+    const lanes = [-8, -4, 0, 4, 8]; // 5 lanes across the playing field
 
     // Different building geometries (low-poly for performance)
     const boxGeometry = new THREE.BoxGeometry(2, 5, 2);
@@ -584,40 +708,176 @@
         return b;
     }
 
-    // Helper to find safe X position (no overlap)
-    function getSafeXPosition(existingBuildings, minDistance = 5) {
-        let attempts = 0;
-        let xPos;
+    // Helper to get random lane position
+    function getRandomLane(occupiedLanes = []) {
+        const availableLanes = lanes.filter(lane => !occupiedLanes.includes(lane));
+        if (availableLanes.length === 0) return lanes[Math.floor(Math.random() * lanes.length)];
+        return availableLanes[Math.floor(Math.random() * availableLanes.length)];
+    }
 
-        while (attempts < 20) {
-            xPos = (Math.random() - 0.5) * 14;
-            let isSafe = true;
+    // Wave tracking
+    let currentWave = null;
+    let currentWavePositions = null; // Cache wave positions
+    let waveProgress = 0;
+    let nextWaveDistance = -200;
 
-            // Check distance from all existing buildings
-            for (let building of existingBuildings) {
-                if (Math.abs(building.position.x - xPos) < minDistance) {
-                    isSafe = false;
-                    break;
-                }
+    // Anti-camping system
+    let playerLane = 2; // Center lane (0-4)
+    let lastPlayerLane = 2;
+    let timeInSameLane = 0;
+    let campingThreshold = 4000; // 4 seconds
+    let antiCampingActive = false;
+
+    // Helper function to determine which lane the player is in
+    function getPlayerLane(xPosition) {
+        // Find closest lane to player position
+        let closestLane = 0;
+        let minDistance = Math.abs(xPosition - lanes[0]);
+
+        for (let i = 1; i < lanes.length; i++) {
+            const distance = Math.abs(xPosition - lanes[i]);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestLane = i;
             }
-
-            if (isSafe) return xPos;
-            attempts++;
         }
 
-        // Fallback: use random position if no safe spot found
-        return (Math.random() - 0.5) * 14;
+        return closestLane;
+    }
+
+    // Define building wave patterns
+    const wavePatterns = {
+        breather: {
+            buildings: 0,
+            getPositions: () => [] // No buildings, just a breather
+        },
+        antiCamping: {
+            buildings: 1,
+            getPositions: () => [{ lane: playerLane, offset: 0 }] // Spawn directly in player's lane
+        },
+        single: {
+            buildings: 1,
+            getPositions: () => [{ lane: Math.floor(Math.random() * 5), offset: 0 }]
+        },
+        double: {
+            buildings: 2,
+            getPositions: () => {
+                const lane1 = Math.floor(Math.random() * 5);
+                let lane2 = Math.floor(Math.random() * 5);
+                while (lane2 === lane1) lane2 = Math.floor(Math.random() * 5);
+                return [
+                    { lane: lane1, offset: 0 },
+                    { lane: lane2, offset: -60 } // Wide spacing
+                ];
+            }
+        },
+        triple: {
+            buildings: 3,
+            getPositions: () => {
+                // Pick 3 random lanes, leave 2 open
+                const allLanes = [0, 1, 2, 3, 4];
+                const shuffled = allLanes.sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, 3).map((lane, i) => ({
+                    lane,
+                    offset: i * -40
+                }));
+            }
+        },
+        gentle_wall: {
+            buildings: 3,
+            getPositions: () => {
+                // Block only 3 lanes, leave 2 lanes CLEARLY open (adjacent for visibility)
+                const openStart = Math.floor(Math.random() * 4); // 0-3
+                const positions = [];
+                for (let i = 0; i < 5; i++) {
+                    // Skip two adjacent lanes
+                    if (i !== openStart && i !== openStart + 1) {
+                        positions.push({ lane: i, offset: 0 });
+                    }
+                }
+                return positions;
+            }
+        },
+        wall: {
+            buildings: 4,
+            getPositions: () => {
+                // Always leave 1 lane CLEARLY open in center or edges
+                const openLaneOptions = [0, 2, 4]; // Left, Center, or Right (more visible)
+                const openLane = openLaneOptions[Math.floor(Math.random() * openLaneOptions.length)];
+                const positions = [];
+                for (let i = 0; i < 5; i++) {
+                    if (i !== openLane) {
+                        positions.push({ lane: i, offset: 0 });
+                    }
+                }
+                return positions;
+            }
+        },
+        staircase: {
+            buildings: 3,
+            getPositions: () => {
+                // Gentler staircase - only 3 buildings
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                const startLane = direction > 0 ? 0 : 4;
+                const positions = [];
+                for (let i = 0; i < 3; i++) {
+                    positions.push({
+                        lane: startLane + (i * direction),
+                        offset: i * -40 // More spacing
+                    });
+                }
+                return positions;
+            }
+        }
+    };
+
+    // Get wave pattern based on level
+    function getWavePattern(level) {
+        const rand = Math.random();
+
+        // Levels 1-2: Very gentle, mostly singles and breathers
+        if (level <= 2) {
+            if (rand < 0.40) return 'breather'; // 40% breather
+            if (rand < 0.80) return 'single';   // 40% single
+            return 'double';                     // 20% double
+        }
+        // Level 3: Introduce variety but still forgiving
+        else if (level === 3) {
+            if (rand < 0.25) return 'breather'; // 25% breather
+            if (rand < 0.50) return 'single';   // 25% single
+            if (rand < 0.75) return 'double';   // 25% double
+            return 'triple';                     // 25% triple
+        }
+        // Levels 4-5: More challenging but always escapable
+        else if (level <= 5) {
+            if (rand < 0.20) return 'breather';     // 20% breather
+            if (rand < 0.35) return 'single';       // 15% single
+            if (rand < 0.55) return 'double';       // 20% double
+            if (rand < 0.75) return 'triple';       // 20% triple
+            if (rand < 0.90) return 'gentle_wall';  // 15% gentle_wall
+            return 'wall';                           // 10% wall
+        }
+        // Level 6+: Full difficulty with occasional breathers
+        else {
+            if (rand < 0.15) return 'breather';     // 15% breather
+            if (rand < 0.25) return 'single';       // 10% single
+            if (rand < 0.40) return 'double';       // 15% double
+            if (rand < 0.60) return 'triple';       // 20% triple
+            if (rand < 0.75) return 'gentle_wall';  // 15% gentle_wall
+            if (rand < 0.90) return 'wall';         // 15% wall
+            return 'staircase';                      // 10% staircase
+        }
     }
 
     // Reduced to 5 buildings for better performance
     for(let i=0; i<5; i++) {
         const b = createBuilding();
 
-        // Start buildings VERY far back and VERY widely spaced, NO OVERLAP
-        const xPos = getSafeXPosition(buildings, 9); // Minimum 9 units apart (very wide)
+        // Use lane-based positioning
+        const lanePosition = getRandomLane();
 
         b.position.set(
-            xPos,
+            lanePosition,
             b.userData.height / 2,
             -150 - (i*70) // Even further back, even more spacing
         );
@@ -626,11 +886,48 @@
         buildings.push(b);
     }
 
-    // --- 5. BONUS RINGS (RARE) ---
+    // --- 5. HIGH WALLS & LOW WALLS (VERTICAL MOVEMENT) ---
+    const walls = [];
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.5 });
+
+    // High wall: long horizontal rectangle at top (y=8-10)
+    const highWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8); // Wide, thin, shallow
+
+    // Low wall: long horizontal rectangle at ground level (y=0-2)
+    const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
+
+    let lastWallSpawnTime = 0;
+    let wallSpawnInterval = 15000; // Spawn walls every 15 seconds (only during non-building phases)
+
+    function spawnWall() {
+        const wallType = Math.random() < 0.5 ? 'high' : 'low';
+        const wall = new THREE.Mesh(
+            wallType === 'high' ? highWallGeometry : lowWallGeometry,
+            wallMat
+        );
+
+        // Position with lots of visibility (far away)
+        wall.position.set(
+            0, // Center horizontally
+            wallType === 'high' ? 9 : 1.5, // High at top, low at bottom
+            -250 // Very far for visibility on mobile
+        );
+
+        wall.userData.type = wallType;
+        wall.userData.box = new THREE.Box3();
+
+        scene.add(wall);
+        walls.push(wall);
+    }
+
+    // --- 6. BONUS RINGS (RARE) ---
     const rings = [];
     // Simplified ring geometry for better performance
     const ringGeometry = new THREE.TorusGeometry(3, 0.3, 6, 12);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.6 });
+    const fuchsiaRingMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.7 });
+
+    // Air vents removed for better game flow
 
     function spawnRing() {
         const ring = new THREE.Mesh(ringGeometry, ringMat);
@@ -646,8 +943,13 @@
         rings.push(ring);
     }
 
-    // Track when to spawn next ring section (less frequent for better balance)
-    let nextRingMilestone = 15 + Math.random() * 10; // First rings at 15-25 miles
+    // Phase system for balancing building dodging and ring collection
+    let currentPhase = 'buildings'; // 'buildings', 'rings', or 'walls'
+    let phaseStartTime = 0;
+    let phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes in milliseconds
+    let phaseAlternator = false; // Toggle between rings and second building run
+    let ringsSpawnedThisPhase = false; // Track if rings have been spawned for current ring phase
+    let wallsSpawnedThisPhase = false; // Track if walls have been spawned for current wall phase
 
     // --- CHECKPOINT GATE ---
     const gates = [];
@@ -655,30 +957,16 @@
     const gateMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.6 });
 
     function createCheckpointGate() {
-        // Create frame-like gate
-        const gateGroup = new THREE.Group();
+        // Simple torus ring gate (optimized for Edge)
+        const simpleGateGeometry = new THREE.TorusGeometry(8, 0.4, 6, 12);
+        const gate = new THREE.Mesh(simpleGateGeometry, gateMaterial);
 
-        // Top bar
-        const topBar = new THREE.Mesh(new THREE.BoxGeometry(20, 0.5, 0.5), gateMaterial);
-        topBar.position.y = 4;
-        gateGroup.add(topBar);
+        gate.position.set(0, 4, -200);
+        gate.userData.passed = false;
+        scene.add(gate);
+        gates.push(gate);
 
-        // Left bar
-        const leftBar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 0.5), gateMaterial);
-        leftBar.position.x = -10;
-        gateGroup.add(leftBar);
-
-        // Right bar
-        const rightBar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 0.5), gateMaterial);
-        rightBar.position.x = 10;
-        gateGroup.add(rightBar);
-
-        gateGroup.position.set(0, 4, -200);
-        gateGroup.userData.passed = false;
-        scene.add(gateGroup);
-        gates.push(gateGroup);
-
-        return gateGroup;
+        return gate;
     }
 
     // Checkpoint UI functions
@@ -690,7 +978,7 @@
         const checkpointTitle = document.getElementById('checkpoint-title');
         const abilitiesContainer = document.getElementById('abilities-container');
 
-        checkpointTitle.innerHTML = `┌────────────────────────────────────────────────┐<br>│ You've got ${score} points, choose an ability to upgrade. │<br>└────────────────────────────────────────────────┘`;
+        checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span>`;
         abilitiesContainer.innerHTML = '';
 
         // Get 2 random abilities
@@ -719,14 +1007,14 @@
                 card.classList.add('disabled');
             }
 
-            const checkbox = canAfford ? '[ ]' : '[X]';
-            const costText = ability.owned ? 'OWNED' : `COST: ${ability.cost} PTS`;
+            const statusIcon = ability.owned ? '■' : (canAfford ? '□' : '×');
+            const costText = ability.owned ? 'ACQUIRED' : `${ability.cost} PTS`;
 
             card.innerHTML = `
                 <div class="ability-inner">
-                    <div class="ability-name">${checkbox} ${ability.name}</div>
-                    <div class="ability-description">    ${ability.description}</div>
-                    <div class="ability-cost">    ${costText}</div>
+                    <div class="ability-name">${statusIcon} ${ability.name}</div>
+                    <div class="ability-description">${ability.description}</div>
+                    <div class="ability-cost">${costText}</div>
                 </div>
             `;
 
@@ -740,9 +1028,9 @@
         // Update skip button text based on affordability
         const skipButton = document.getElementById('skip-checkpoint');
         if (!canAffordAny) {
-            skipButton.innerText = '[ ] Not right now (not enough points)';
+            skipButton.innerText = '□ SKIP UPGRADE (INSUFFICIENT BALANCE)';
         } else {
-            skipButton.innerText = '[ ] Not right now';
+            skipButton.innerText = '□ SKIP UPGRADE';
         }
 
         checkpointOverlay.classList.add('active');
@@ -775,9 +1063,10 @@
                 paperMat.color.setHex(randomColor);
                 break;
             case 'changeShape':
-                // Change plane shape (simplified for now - just scale it differently)
-                mainMesh.scale.set(1.2, 0.8, 1.1);
-                wireMesh.scale.set(1.25, 0.84, 1.15);
+                // Change to random plane shape
+                const planeTypes = ['dart', 'glider', 'stunt'];
+                const randomType = planeTypes[Math.floor(Math.random() * planeTypes.length)];
+                changePlaneShape(randomType);
                 break;
             case 'lasers':
                 canShoot = true;
@@ -795,6 +1084,11 @@
         const checkpointOverlay = document.getElementById('checkpoint-overlay');
         checkpointOverlay.classList.remove('active');
         checkpointActive = false;
+
+        // Activate 3-second grace period when exiting upgrade screen
+        gracePeriodActive = true;
+        gracePeriodEndTime = Date.now() + 3000;
+
         isPaused = false;
         if (gameStarted) {
             animate();
@@ -818,9 +1112,13 @@
 
         lastShot = now;
 
+        // Recoil: Kick the ship back and up slightly for better game feel
+        curY += 0.2;
+        targetY -= 0.1;
+
         const laser = new THREE.Mesh(laserGeometry, laserMaterial);
         laser.position.set(curX, curY, 3.5);
-        laser.userData.velocity = -2; // Move forward
+        laser.userData.velocity = -2.5; // Move forward (slightly faster)
         scene.add(laser);
         lasers.push(laser);
     }
@@ -965,6 +1263,16 @@
     let distance = 0, time = 0, collisionFlash = 0;
     const shipBox = new THREE.Box3();
 
+    // Near-miss speed boost
+    let nearMissBoost = 0; // Multiplier that decays over time
+    const nearMissDistance = 2.5; // How close counts as "near miss"
+    const nearMissDistSq = nearMissDistance * nearMissDistance; // Pre-calculate for performance
+
+    // Reusable Vector3 and Box3 objects to avoid garbage collection
+    const tempVec3_1 = new THREE.Vector3();
+    const tempVec3_2 = new THREE.Vector3();
+    const tempBox = new THREE.Box3();
+
     // Set initial colors once
     renderer.setClearColor(0x000000, 1);
     terrainMat.color.setHex(0x00ffff);
@@ -982,6 +1290,7 @@
         playOverlay.classList.add('hidden');
         toggleParamsBtn.classList.add('visible');
         pauseButton.style.display = 'block'; // Show pause button
+        phaseStartTime = Date.now(); // Initialize phase timer
         if (!animationRunning) {
             animate();
         }
@@ -1007,8 +1316,16 @@
         requestAnimationFrame(animate);
         time += 0.01;
 
-        // Speed boost effect
-        const speed = speedBoostActive ? baseSpeed * 2.5 : baseSpeed;
+        // Speed boost effect (includes near-miss boost)
+        const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
+        const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
+        const speed = baseSpeed * totalSpeedMultiplier;
+
+        // Decay near-miss boost over time
+        if (nearMissBoost > 0) {
+            nearMissBoost -= 0.01; // Smooth decay
+            if (nearMissBoost < 0) nearMissBoost = 0;
+        }
 
         // Update distance and calculate miles/level FIRST (needed for building logic)
         // Mobile gets faster progression (feels slower on iOS)
@@ -1054,10 +1371,28 @@
         }
         particleGeom.attributes.position.needsUpdate = true;
 
-        // Controls with momentum
-        const smoothing = 0.07;
+        // Warp lines effect when speed boost/thrusters active
+        const warpFactor = (speedBoostActive || abilities.thrusters.owned) ? 4.0 : 1.0;
+        particles.scale.z = warpFactor;
+
+        // Controls with momentum (varies by plane type)
+        const smoothing = planeStats[currentPlaneType].smoothing;
         curX += (targetX - curX) * smoothing;
         curY += (targetY - curY) * smoothing;
+
+        // Anti-camping detection (backend only, no message)
+        playerLane = getPlayerLane(curX);
+        if (playerLane === lastPlayerLane) {
+            timeInSameLane += 16.67; // Approximate ms per frame (60fps)
+            if (timeInSameLane > campingThreshold && !antiCampingActive) {
+                antiCampingActive = true;
+                // Backend spawns building in player's lane automatically
+            }
+        } else {
+            timeInSameLane = 0;
+            antiCampingActive = false;
+            lastPlayerLane = playerLane;
+        }
 
         // Calculate velocity for physics-based banking
         velocityX = curX - prevX;
@@ -1081,7 +1416,7 @@
 
         // BARREL ROLL ANIMATION (Star Fox style, optimized)
         if (barrelRollActive) {
-            barrelRollProgress += 0.025;
+            barrelRollProgress += planeStats[currentPlaneType].barrelRollSpeed;
             // Simplified easing calculation for better performance
             const t = barrelRollProgress;
             const easeProgress = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
@@ -1103,7 +1438,29 @@
 
         // Collision logic with varied buildings (simplified)
         shipBox.setFromObject(shipGroup);
+        // Make collision more forgiving - shrink ship hitbox by 30%
+        // Reuse temp vectors to avoid garbage collection
+        shipBox.getSize(tempVec3_1);
+        shipBox.getCenter(tempVec3_2);
+        tempVec3_1.multiplyScalar(0.7);
+        shipBox.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+        // Check if we're in a breather phase to skip building updates
+        const isBreatherPhase = currentPhase === 'rings' ||
+                               currentPhase === 'breather_before_rings' ||
+                               currentPhase === 'breather_after_rings' ||
+                               currentPhase === 'walls';
+
         buildings.forEach(b => {
+            // During breather phases, skip all building logic to avoid stutters
+            if (isBreatherPhase) {
+                if (b.visible) {
+                    b.visible = false; // Hide once, then skip
+                    b.position.z = -500; // Move far back once
+                }
+                return; // Skip rest of building logic during breathers
+            }
+
             b.position.z += speed;
 
             // Simple visibility toggle instead of gradual fade (prevents micro-flashing)
@@ -1114,6 +1471,42 @@
             }
 
             if(b.position.z > 20) {
+                // Check if we need to spawn a new wave
+                if (currentWave === null || waveProgress >= currentWave.buildings) {
+                    // Anti-camping: Force spawn in player's lane if they're camping
+                    let patternName;
+                    if (antiCampingActive && Math.random() < 0.5) {
+                        patternName = 'antiCamping';
+                        antiCampingActive = false; // Reset after spawning punishment
+                        timeInSameLane = 0; // Reset timer
+                    } else {
+                        // Normal wave pattern selection
+                        patternName = getWavePattern(levelDifficulty);
+                    }
+
+                    currentWave = wavePatterns[patternName];
+                    currentWavePositions = currentWave.getPositions(); // Cache positions
+                    waveProgress = 0;
+                    nextWaveDistance = b.position.z - 80; // Start new wave far back
+
+                    // If breather wave (no buildings), push building far back
+                    if (currentWave.buildings === 0) {
+                        b.position.z = -400;
+                        b.visible = false;
+                        return; // Skip building spawn during breather
+                    }
+                }
+
+                // Skip if no positions (breather wave)
+                if (currentWavePositions.length === 0) {
+                    b.position.z = -400;
+                    b.visible = false;
+                    return;
+                }
+
+                // Get position from cached wave positions
+                const position = currentWavePositions[waveProgress % currentWavePositions.length];
+
                 // Recreate building with new random type and scale
                 const buildingType = Math.random();
                 let geometry, height;
@@ -1129,8 +1522,9 @@
                     height = Math.random() * 5 + 3;
                 }
 
-                // Update geometry if it changed
+                // Update geometry if it changed (avoid disposal to prevent micro-stutters)
                 if (b.geometry !== geometry) {
+                    // Don't dispose, just replace reference
                     b.geometry = geometry;
                 }
 
@@ -1141,127 +1535,255 @@
                 b.userData.height = height;
 
                 // Progressive difficulty: buildings spawn closer as level increases
-                // Start at -180, gradually get closer (max 50 units closer at level 5)
-                // At level 1: -180, Level 2: -170, Level 3: -160, Level 4: -150, Level 5: -130
-                let spawnDistance = -180 - (Math.max(0, levelDifficulty - 1) * 10);
+                let spawnDistance = nextWaveDistance + position.offset;
 
-                // Difficulty increase ability makes buildings spawn even closer
-                if (abilities.increaseDifficulty.owned) {
-                    spawnDistance += 30; // Spawn 30 units closer
-                }
-
-                // If rings are active, spawn buildings much further back to give a breather
-                if (rings.length > 0) {
-                    spawnDistance = -400; // Far behind the ring section
-                }
-
-                // Find safe X position to avoid overlap - spacing adjusts with difficulty ability
-                let minSpacing = levelDifficulty <= 2 ? 10 : (levelDifficulty <= 3 ? 8 : 6);
-                if (abilities.increaseDifficulty.owned) {
-                    minSpacing = Math.max(4, minSpacing - 2); // Tighter spacing when difficult
-                }
-                const xPos = getSafeXPosition(buildings, minSpacing);
+                // Use lane-based positioning from wave pattern
+                const xPos = lanes[position.lane];
 
                 b.position.set(
                     xPos,
                     height / 2,
                     spawnDistance
                 );
-                b.visible = true;
+                b.visible = true; // Always visible when spawning (breather check happens at top)
+
+                waveProgress++;
             }
 
             // Only check collision if building is visible
             if(b.visible && b.position.z < 15) {
                 b.userData.box.setFromObject(b);
 
-                // Make collision more forgiving for pyramids (they taper)
-                if (b.geometry === pyramidGeometry) {
-                    const size = b.userData.box.getSize(new THREE.Vector3());
-                    const center = b.userData.box.getCenter(new THREE.Vector3());
-                    // Shrink collision box by 20% for pyramids
-                    b.userData.box.setFromCenterAndSize(center, size.multiplyScalar(0.8));
+                // Make collision more forgiving - shrink all building hitboxes
+                // Reuse temp vectors to avoid garbage collection
+                b.userData.box.getSize(tempVec3_1);
+                b.userData.box.getCenter(tempVec3_2);
+                // Shrink collision box by 25% for pyramids, 20% for others
+                const shrinkFactor = b.geometry === pyramidGeometry ? 0.75 : 0.8;
+                tempVec3_1.multiplyScalar(shrinkFactor);
+                b.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+                // Near-miss detection (close but not colliding) - optimized with squared distance
+                if (!shipBox.intersectsBox(b.userData.box) && !b.userData.nearMissCredited) {
+                    // Only check when building is in the right Z range
+                    const zDiff = b.position.z - 3.5;
+                    if (zDiff > -3 && zDiff < 3) {
+                        // Use squared distance to avoid expensive Math.sqrt
+                        const dx = b.position.x - curX;
+                        const dy = b.position.y - curY;
+                        const distSq = dx * dx + dy * dy;
+
+                        if (distSq < nearMissDistSq) {
+                            // Apply near-miss boost!
+                            nearMissBoost = Math.max(nearMissBoost, 0.3); // 30% speed boost
+                            b.userData.nearMissCredited = true; // Only credit once per building
+                        }
+                    }
                 }
 
                 if(shipBox.intersectsBox(b.userData.box)) {
-                    collisionFlash = 1.0;
-                    b.position.z = -120;
-                    b.visible = false;
+                    // Check grace period first
+                    if (!gracePeriodActive) {
+                        collisionFlash = 0.5;
+                        b.position.z = -120;
+                        b.visible = false;
 
-                    // CRASH - Deduct points for collision
-                    const pointsLost = 50;
-                    score = Math.max(0, score - pointsLost);
-                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+                        // Shield mechanic: first hits damage shield, not points
+                        if (shieldActive && shieldHits < maxShieldHits) {
+                            shieldHits++;
+                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                            crashMessageTimer = 50;
 
-                    // Update high score if current distance is higher
-                    const currentMiles = Math.floor(miles);
-                    if (currentMiles > highScore) {
-                        highScore = currentMiles;
-                        localStorage.setItem('paperPlaneHighScore', highScore.toString());
-                        highScoreUI.innerText = `BEST: ${highScore}mi`;
+                            if (shieldHits >= maxShieldHits) {
+                                shieldActive = false;
+                                crashMessage = `SHIELD DOWN!`;
+                            }
+                        } else {
+                            // Shield down - lose points
+                            const pointsLost = 25; // Reduced from 50
+                            score = Math.max(0, score - pointsLost);
+                            scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                            crashMessage = `BONK -${pointsLost}`;
+                            crashMessageTimer = 60;
+                        }
+
+                        // Update high score if current distance is higher
+                        const currentMiles = Math.floor(miles);
+                        if (currentMiles > highScore) {
+                            highScore = currentMiles;
+                            localStorage.setItem('paperPlaneHighScore', highScore.toString());
+                            highScoreUI.innerText = `BEST: ${highScore}mi`;
+                        }
                     }
-
-                    crashMessage = `BONK -${pointsLost}`;
-                    crashMessageTimer = 60; // Show for 60 frames (~1 second)
                 }
             }
         });
 
-        // Ring collection logic
-        rings.forEach((ring, index) => {
+        // High/Low Wall update and collision logic
+        // Only spawn walls during the 'walls' phase
+        if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
+            // Spawn 3-4 wall "sets" - sometimes single, sometimes both high+low
+            const wallSetCount = Math.floor(Math.random() * 2) + 3; // 3-4 sets
+
+            for (let i = 0; i < wallSetCount; i++) {
+                const zPos = -200 - (i * 80); // Very far for visibility, spaced 80 units apart
+                const bothWalls = Math.random() < 0.3; // 30% chance for both high AND low (must stay centered)
+
+                if (bothWalls) {
+                    // Spawn BOTH high and low - player must stay centered
+                    const highWall = new THREE.Mesh(highWallGeometry, wallMat);
+                    highWall.position.set(0, 7, zPos); // Lower high wall from 9 to 7
+                    highWall.userData.type = 'high';
+                    highWall.userData.box = new THREE.Box3();
+                    scene.add(highWall);
+                    walls.push(highWall);
+
+                    const lowWall = new THREE.Mesh(lowWallGeometry, wallMat);
+                    lowWall.position.set(0, 1.5, zPos);
+                    lowWall.userData.type = 'low';
+                    lowWall.userData.box = new THREE.Box3();
+                    scene.add(lowWall);
+                    walls.push(lowWall);
+                } else {
+                    // Spawn single wall (50/50 high or low)
+                    const wallType = Math.random() < 0.5 ? 'high' : 'low';
+                    const wall = new THREE.Mesh(
+                        wallType === 'high' ? highWallGeometry : lowWallGeometry,
+                        wallMat
+                    );
+                    wall.position.set(
+                        0,
+                        wallType === 'high' ? 7 : 1.5, // Lower high wall height
+                        zPos
+                    );
+                    wall.userData.type = wallType;
+                    wall.userData.box = new THREE.Box3();
+                    scene.add(wall);
+                    walls.push(wall);
+                }
+            }
+
+            // Clear all buildings during wall phase
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+
+            wallsSpawnedThisPhase = true;
+        }
+
+        // Optimized wall loop - iterate backwards to safely remove items
+        for (let i = walls.length - 1; i >= 0; i--) {
+            const wall = walls[i];
+            wall.position.z += speed;
+
+            // Remove wall when it passes the player
+            if (wall.position.z > 20) {
+                scene.remove(wall);
+                walls.splice(i, 1);
+                continue;
+            }
+
+            // Only check collision when wall is close
+            if (wall.position.z > -20 && wall.position.z < 15) {
+                wall.userData.box.setFromObject(wall);
+
+                // Forgiving hitbox - shrink by 15%
+                wall.userData.box.getSize(tempVec3_1);
+                wall.userData.box.getCenter(tempVec3_2);
+                tempVec3_1.multiplyScalar(0.85);
+                wall.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+                if (shipBox.intersectsBox(wall.userData.box)) {
+                    // Check grace period
+                    if (!gracePeriodActive) {
+                        collisionFlash = 0.5;
+                        scene.remove(wall);
+                        walls.splice(i, 1);
+
+                        // Apply damage (same as building collision)
+                        if (shieldActive && shieldHits < maxShieldHits) {
+                            shieldHits++;
+                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                            crashMessageTimer = 50;
+
+                            if (shieldHits >= maxShieldHits) {
+                                shieldActive = false;
+                                crashMessage = `SHIELD DOWN!`;
+                            }
+                        } else {
+                            // Shield down - lose points
+                            score = Math.max(0, score - 15);
+                            crashMessage = `-15 POINTS`;
+                            crashMessageTimer = 50;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ring collection logic - optimized backwards loop
+        for (let i = rings.length - 1; i >= 0; i--) {
+            const ring = rings[i];
+
+            // Always move ring forward
+            ring.position.z += speed;
+
             if (!ring.userData.collected) {
-                ring.position.z += speed;
                 ring.rotation.z += 0.02; // Spin effect
 
-                // Check if plane flies through ring
-                const dist = Math.sqrt(
-                    Math.pow(ring.position.x - curX, 2) +
-                    Math.pow(ring.position.y - curY, 2)
-                );
-                if (Math.abs(ring.position.z - 3.5) < 2 && dist < 3) {
-                    ring.userData.collected = true;
-                    score += 25; // +25 points for collecting ring
+                // Check if plane flies through ring - optimized with squared distance
+                const zDiff = Math.abs(ring.position.z - 3.5);
+                if (zDiff < 2) {
+                    const dx = ring.position.x - curX;
+                    const dy = ring.position.y - curY;
+                    const distSq = dx * dx + dy * dy;
+                    const ringRadiusSq = 3 * 3; // 9
 
-                    // Show +25 bonus in score display
-                    const previousScore = score - 25;
-                    scoreDisplayUI.innerText = `SCORE: ${previousScore} (+25)`;
-                    setTimeout(() => {
-                        scoreDisplayUI.innerText = `SCORE: ${score}`;
-                    }, 800);
+                    if (distSq < ringRadiusSq) {
+                        ring.userData.collected = true;
+                        ring.userData.collectTime = Date.now(); // Track when collected
+                        const points = ring.userData.points || 25;
+                        score += points;
 
-                    ring.material.color.setHex(0xffff00); // Flash yellow
-                    setTimeout(() => {
-                        scene.remove(ring);
-                        rings.splice(index, 1);
-                    }, 100);
-                }
-
-                // Remove if too far
-                if (ring.position.z > 20) {
-                    scene.remove(ring);
-                    rings.splice(index, 1);
+                        // Show bonus in score display
+                        scoreDisplayUI.innerText = `SCORE: ${score} (+${points})`;
+                        ring.material.color.setHex(0xffff00); // Flash yellow
+                    }
                 }
             }
-        });
 
-        // Laser update logic
-        lasers.forEach((laser, index) => {
+            // Remove if too far OR collected for >100ms
+            if (ring.position.z > 20 || (ring.userData.collected && Date.now() - ring.userData.collectTime > 100)) {
+                scene.remove(ring);
+                rings.splice(i, 1);
+            }
+        }
+
+        // Laser update logic - optimized backwards loop
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            const laser = lasers[i];
             laser.position.z += laser.userData.velocity;
 
             // Remove if too far
             if (laser.position.z < -50) {
                 scene.remove(laser);
-                lasers.splice(index, 1);
+                lasers.splice(i, 1);
             }
-        });
+        }
 
-        // Enemy update logic
-        enemies.forEach((enemy, index) => {
+        // Enemy update logic - optimized backwards loop
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
             enemy.position.z += speed;
             enemy.rotation.x += 0.02;
             enemy.rotation.y += 0.03;
 
             // Update collision box
             enemy.userData.box.setFromObject(enemy);
+
+            let enemyRemoved = false;
 
             // Check collision with plane
             if (shipBox.intersectsBox(enemy.userData.box)) {
@@ -1274,30 +1796,36 @@
                 crashMessageTimer = 40;
 
                 scene.remove(enemy);
-                enemies.splice(index, 1);
-                return;
+                enemies.splice(i, 1);
+                enemyRemoved = true;
             }
 
-            // Check collision with lasers
-            lasers.forEach((laser, laserIndex) => {
-                const laserBox = new THREE.Box3().setFromObject(laser);
-                if (laserBox.intersectsBox(enemy.userData.box)) {
-                    score += 10; // Bonus for destroying enemy
-                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+            // Check collision with lasers (only if enemy wasn't already removed)
+            if (!enemyRemoved) {
+                for (let j = lasers.length - 1; j >= 0; j--) {
+                    const laser = lasers[j];
+                    // Reuse tempBox to avoid garbage collection
+                    tempBox.setFromObject(laser);
+                    if (tempBox.intersectsBox(enemy.userData.box)) {
+                        score += 10; // Bonus for destroying enemy
+                        scoreDisplayUI.innerText = `SCORE: ${score}`;
 
-                    scene.remove(enemy);
-                    enemies.splice(index, 1);
-                    scene.remove(laser);
-                    lasers.splice(laserIndex, 1);
+                        scene.remove(enemy);
+                        enemies.splice(i, 1);
+                        scene.remove(laser);
+                        lasers.splice(j, 1);
+                        enemyRemoved = true;
+                        break; // Exit laser loop since enemy is destroyed
+                    }
                 }
-            });
-
-            // Remove if too far
-            if (enemy.position.z > 20) {
-                scene.remove(enemy);
-                enemies.splice(index, 1);
             }
-        });
+
+            // Remove if too far (only if enemy wasn't already removed)
+            if (!enemyRemoved && enemy.position.z > 20) {
+                scene.remove(enemy);
+                enemies.splice(i, 1);
+            }
+        }
 
         // Spawn enemies periodically when laser ability is owned
         if (abilities.lasers.owned && Math.random() < 0.01 && enemies.length < 5) {
@@ -1317,8 +1845,9 @@
             createCheckpointGate();
         }
 
-        // Update gates
-        gates.forEach((gate, index) => {
+        // Update gates - optimized backwards loop
+        for (let i = gates.length - 1; i >= 0; i--) {
+            const gate = gates[i];
             gate.position.z += speed;
             gate.rotation.z += 0.01; // Slow rotation
 
@@ -1327,24 +1856,64 @@
                 gate.userData.passed = true;
                 showCheckpointUI(Math.floor(nextCheckpoint));
                 nextCheckpoint += 50; // Next checkpoint in 50 miles
+
+                // Activate 3-second grace period
+                gracePeriodActive = true;
+                gracePeriodEndTime = Date.now() + 3000;
             }
 
             // Remove gate if too far
             if (gate.position.z > 20) {
                 scene.remove(gate);
-                gates.splice(index, 1);
+                gates.splice(i, 1);
             }
-        });
+        }
 
-        // Spawn rings less frequently - buildings are the main obstacle
-        if (miles >= nextRingMilestone && rings.length === 0) {
-            // Shorter ring sections - just 2-3 rings for a quick bonus opportunity
-            const ringCount = abilities.increaseDifficulty.owned ?
-                Math.floor(Math.random() * 1) + 1 : // 1-2 rings if difficult
-                Math.floor(Math.random() * 1) + 2; // 2-3 rings normally
+        // Phase system: Check if it's time to switch phases
+        const currentTime = Date.now();
+        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
+            // Switch phase based on current phase
+            if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
+                // After buildings, add breather before rings
+                currentPhase = 'breather_before_rings';
+                phaseStartTime = currentTime;
+                phaseDuration = 2000; // 2 second breather before rings
+            } else if (currentPhase === 'breather_before_rings') {
+                // After breather, start ring phase (or alternate with buildings)
+                if (phaseAlternator) {
+                    currentPhase = 'buildings'; // Skip rings, go straight to buildings
+                } else {
+                    currentPhase = 'rings';
+                    ringsSpawnedThisPhase = false; // Reset flag for new ring phase
+                }
+                phaseAlternator = !phaseAlternator;
+                phaseStartTime = currentTime;
+                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
+            } else if (currentPhase === 'breather_after_rings') {
+                // After rings breather, 25% chance for walls, 75% back to buildings
+                if (Math.random() < 0.25) {
+                    currentPhase = 'walls';
+                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
+                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
+                } else {
+                    currentPhase = 'buildings';
+                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+                }
+                phaseStartTime = currentTime;
+            }
+        }
+
+        // Spawn rings during ring phase (ONLY ONCE per phase)
+        if (currentPhase === 'rings' && !ringsSpawnedThisPhase) {
+            // SHORT ring runs: only 2-3 rings max
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
             for (let i = 0; i < ringCount; i++) {
-                const ring = new THREE.Mesh(ringGeometry, ringMat);
+                // 10% chance for rare fuchsia ring (50 bonus)
+                const isFuchsia = Math.random() < 0.1;
+                const material = isFuchsia ? fuchsiaRingMat : ringMat;
+                const ring = new THREE.Mesh(ringGeometry, material);
+
                 ring.position.set(
                     (Math.random() - 0.5) * 8, // Keep them closer to center
                     Math.random() * 2 + 2,     // Mid-height
@@ -1353,17 +1922,61 @@
                 ring.rotation.x = 0;
                 ring.rotation.y = 0;
                 ring.userData.collected = false;
+                ring.userData.points = isFuchsia ? 50 : 25; // Track points for each ring
                 scene.add(ring);
                 rings.push(ring);
             }
 
-            // BONUS: Clear all buildings to create a building-free corridor
+            // Clear all buildings to create a building-free corridor
             buildings.forEach(b => {
                 b.position.z = -500; // Move far back
                 b.visible = false;
             });
 
-            nextRingMilestone = miles + 12 + Math.random() * 8; // Next rings in 12-20 miles
+            ringsSpawnedThisPhase = true; // Mark rings as spawned for this phase
+        }
+
+        // After rings are collected, add breather before buildings spawn
+        if (currentPhase === 'rings' && ringsSpawnedThisPhase && rings.length === 0) {
+            // All rings collected, switch to breather phase
+            currentPhase = 'breather_after_rings';
+            phaseStartTime = Date.now();
+            phaseDuration = 3000; // 3 second breather after rings
+        }
+
+        // After all walls are passed, transition back to buildings
+        if (currentPhase === 'walls' && wallsSpawnedThisPhase && walls.length === 0) {
+            currentPhase = 'buildings';
+            phaseStartTime = Date.now();
+            phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+        }
+
+        // Check grace period expiration
+        if (gracePeriodActive && Date.now() >= gracePeriodEndTime) {
+            gracePeriodActive = false;
+        }
+
+        // Grace period visual effect: pulse and transparency
+        // Only change material.transparent when state changes to avoid shader recompilation
+        if (gracePeriodActive !== previousGracePeriodActive) {
+            if (gracePeriodActive) {
+                mainMesh.material.transparent = true;
+                wireMesh.material.transparent = true;
+            } else {
+                mainMesh.material.transparent = false;
+                mainMesh.material.opacity = 1.0;
+                wireMesh.material.opacity = 1.0;
+                shadowMesh.material.opacity = 0.3;
+            }
+            previousGracePeriodActive = gracePeriodActive;
+        }
+
+        // Update opacity for pulse effect (only when grace period is active)
+        if (gracePeriodActive) {
+            const pulse = Math.sin(time * 10) * 0.3 + 0.7;
+            mainMesh.material.opacity = pulse;
+            wireMesh.material.opacity = pulse;
+            shadowMesh.material.opacity = pulse * 0.3;
         }
 
         // Message timers
