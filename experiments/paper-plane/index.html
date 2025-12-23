@@ -1274,6 +1274,38 @@
         return null;
     }
 
+    // Parallax star field - subtle background stars at various depths
+    const stars = [];
+    const starMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.6
+    });
+
+    // Create 150 stars scattered across the sky with parallax depths
+    for (let i = 0; i < 150; i++) {
+        const size = 0.05 + Math.random() * 0.08; // 0.05 to 0.13 units - very tiny
+        const geometry = new THREE.SphereGeometry(size, 4, 4);
+        const star = new THREE.Mesh(geometry, starMat);
+
+        // Scatter widely across X (left to right)
+        star.position.x = (Math.random() - 0.5) * 80;
+
+        // Place high in the sky and at horizon
+        star.position.y = Math.random() * 15 + 5; // 5 to 20 units high
+
+        // Scatter deep into the distance with varied depths
+        star.position.z = -50 - Math.random() * 200; // -50 to -250
+
+        // Store parallax depth (stars further away move slower)
+        // Depth 0-1: far stars move at 0.3x speed, near stars at 1.0x speed
+        const depth = Math.abs(star.position.z) / 250; // 0.2 to 1.0
+        star.userData.parallaxSpeed = 0.3 + (1.0 - depth) * 0.7; // 0.3 to 1.0
+
+        scene.add(star);
+        stars.push(star);
+    }
+
     // Pre-create wall pool (10 walls total - mix of high and low)
     for (let i = 0; i < 10; i++) {
         const isHigh = i < 5;
@@ -2326,6 +2358,19 @@
                 }
             }
         }
+
+        // Parallax star field update - subtle depth effect
+        stars.forEach(star => {
+            // Move stars forward based on parallax speed (far = slow, near = fast)
+            star.position.z += speed * star.userData.parallaxSpeed;
+
+            // Wrap around when star passes the player
+            if (star.position.z > 20) {
+                star.position.z = -200 - Math.random() * 50; // Reset to far distance
+                star.position.x = (Math.random() - 0.5) * 80; // Randomize X position
+                star.position.y = Math.random() * 15 + 5; // Randomize Y position
+            }
+        });
 
         // Ambient rocks update - purely visual, no collision
         for (let i = ambientRocks.length - 1; i >= 0; i--) {
