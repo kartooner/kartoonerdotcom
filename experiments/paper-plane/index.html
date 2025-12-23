@@ -604,8 +604,11 @@
     // Simpler fog for better performance
     scene.fog = new THREE.Fog(0x000000, 15, 45);
 
-    const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
-    camera.position.set(0, 2.5, 8);
+    // Adaptive FOV: wider view for tablets, balanced for mobile/desktop
+    const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
+    const fov = isTablet ? 85 : (isMobile ? 75 : 55);
+    const camera = new THREE.PerspectiveCamera(fov, container.clientWidth / container.clientHeight, 0.1, 250);
+    camera.position.set(0, 2.5, isTablet ? 9 : 8); // Pull back slightly on tablet
 
     const renderer = new THREE.WebGLRenderer({
         antialias: false, // Disabled for crisp 80s aesthetic
@@ -646,19 +649,42 @@
     // Plane color tracking
     let currentPlaneColor = 0x008080; // Initial teal color
 
-    // Create different plane geometries
+    // Create different plane geometries with paper airplane characteristics
     function createDartGeometry() {
+        // Classic dart: Sharp nose, narrow wings with center fold
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
-           -0.6,  0.2,  0.5,   // Left Wing Back
-            0.6,  0.2,  0.5,   // Right Wing Back
-            0.0, -0.2,  0.3,   // Bottom Keel/Spine
+            // Sharp nose point
+            0.0,  0.0, -0.9,   // 0: NOSE tip
+
+            // Center fold line (creates crease down middle)
+            0.0,  0.05, -0.4,  // 1: Center fold top
+            0.0, -0.15,  0.0,  // 2: Center fold mid
+            0.0, -0.2,  0.4,   // 3: Tail center bottom
+
+            // Left wing with fold
+           -0.05,  0.0, -0.3,  // 4: Left inner fold
+           -0.5,  0.15,  0.3,  // 5: Left wing tip
+           -0.3,  0.1,  0.5,   // 6: Left wing back
+
+            // Right wing with fold
+            0.05,  0.0, -0.3,  // 7: Right inner fold
+            0.5,  0.15,  0.3,  // 8: Right wing tip
+            0.3,  0.1,  0.5,   // 9: Right wing back
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Nose to center fold
+            0, 1, 4,  0, 1, 7,  // Upper nose sides
+            0, 4, 2,  0, 7, 2,  // Lower nose sides
+
+            // Left wing
+            1, 4, 5,  4, 2, 5,  2, 5, 6,  2, 6, 3,
+
+            // Right wing
+            1, 7, 8,  7, 2, 8,  2, 8, 9,  2, 9, 3,
+
+            // Tail closure
+            3, 6, 9
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -667,17 +693,43 @@
     }
 
     function createGliderGeometry() {
+        // Wide glider: Broad swept wings with visible folds
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.6,   // NOSE (shorter)
-           -1.0,  0.1,  0.4,   // Left Wing Back (wider)
-            1.0,  0.1,  0.4,   // Right Wing Back (wider)
-            0.0, -0.15,  0.2,  // Bottom Keel/Spine
+            // Blunt nose
+            0.0,  0.0, -0.6,   // 0: NOSE
+
+            // Body center line
+            0.0,  0.02, -0.3,  // 1: Mid top
+            0.0, -0.1,  0.1,   // 2: Mid bottom
+            0.0, -0.12,  0.4,  // 3: Tail center
+
+            // Left wing - wide and flat with fold line
+           -0.15,  0.0, -0.2,  // 4: Left inner edge
+           -0.6,  0.05, -0.1,  // 5: Left mid wing
+           -1.1,  0.08,  0.2,  // 6: Left wing tip (very wide)
+           -0.7,  0.05,  0.45, // 7: Left wing back
+           -0.2,  0.0,  0.4,   // 8: Left inner back
+
+            // Right wing - wide and flat with fold line
+            0.15,  0.0, -0.2,  // 9: Right inner edge
+            0.6,  0.05, -0.1,  // 10: Right mid wing
+            1.1,  0.08,  0.2,  // 11: Right wing tip (very wide)
+            0.7,  0.05,  0.45, // 12: Right wing back
+            0.2,  0.0,  0.4,   // 13: Right inner back
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Nose
+            0, 1, 4,  0, 1, 9,  0, 4, 2,  0, 9, 2,
+
+            // Left wing surfaces with folds
+            1, 4, 5,  4, 5, 6,  5, 6, 7,  4, 7, 8,  2, 4, 8,  2, 8, 3,  3, 8, 7,
+
+            // Right wing surfaces with folds
+            1, 9, 10,  9, 10, 11,  10, 11, 12,  9, 12, 13,  2, 9, 13,  2, 13, 3,  3, 13, 12,
+
+            // Tail
+            3, 7, 12
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -686,17 +738,53 @@
     }
 
     function createStuntGeometry() {
+        // Squat stunt plane: Boxy, angular with vertical fins
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            0.0,  0.0, -0.5,   // NOSE (boxy)
-           -0.5,  0.3,  0.4,   // Left Wing Back (higher, boxier)
-            0.5,  0.3,  0.4,   // Right Wing Back (higher, boxier)
-            0.0, -0.3,  0.4,   // Bottom (more squared)
+            // Blunt squared nose
+            0.0,  0.1, -0.5,   // 0: NOSE top
+            0.0, -0.2, -0.5,   // 1: NOSE bottom
+
+            // Squat body
+            0.0,  0.15,  0.0,  // 2: Body top mid
+            0.0, -0.25,  0.0,  // 3: Body bottom mid
+            0.0,  0.15,  0.5,  // 4: Tail top
+            0.0, -0.25,  0.5,  // 5: Tail bottom
+
+            // Left wing - short and boxy with upturned tip (dihedral)
+           -0.2,  0.1, -0.2,   // 6: Left wing inner
+           -0.5,  0.35,  0.2,  // 7: Left wing tip (high)
+           -0.4,  0.3,  0.4,   // 8: Left wing back
+
+            // Right wing - short and boxy with upturned tip (dihedral)
+            0.2,  0.1, -0.2,   // 9: Right wing inner
+            0.5,  0.35,  0.2,  // 10: Right wing tip (high)
+            0.4,  0.3,  0.4,   // 11: Right wing back
+
+            // Vertical fins for stability
+           -0.15,  0.35,  0.35, // 12: Left fin top
+            0.15,  0.35,  0.35, // 13: Right fin top
         ]);
         const indices = [
-            0, 1, 3, // Left Face
-            0, 3, 2, // Right Face
-            1, 2, 3  // Rear/Bottom Closure
+            // Nose
+            0, 1, 2,  1, 2, 3,
+
+            // Body segments
+            0, 2, 6,  0, 6, 1,  1, 6, 3,
+            0, 2, 9,  0, 9, 1,  1, 9, 3,
+            2, 3, 4,  3, 4, 5,
+
+            // Left wing (boxy)
+            2, 6, 7,  6, 7, 8,  2, 7, 8,  2, 8, 4,  4, 8, 5,  3, 6, 8,  3, 8, 5,
+
+            // Right wing (boxy)
+            2, 9, 10,  9, 10, 11,  2, 10, 11,  2, 11, 4,  4, 11, 5,  3, 9, 11,  3, 11, 5,
+
+            // Vertical fins
+            4, 8, 12,  4, 11, 13,
+
+            // Tail
+            4, 5, 8,  4, 5, 11
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
