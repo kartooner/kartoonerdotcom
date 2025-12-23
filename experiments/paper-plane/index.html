@@ -321,9 +321,10 @@
                 border: none; /* Remove border on mobile */
             }
             .ui-overlay {
-                top: 12px;
-                font-size: 11px;
-                letter-spacing: 1px;
+                top: 10px;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                max-width: 50%;
             }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
@@ -342,6 +343,61 @@
             #pause-button {
                 font-size: 11px !important;
                 padding: 8px 16px !important;
+            }
+            /* Checkpoint overlay mobile improvements */
+            #checkpoint-title {
+                font-size: 14px;
+                letter-spacing: 2px;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+            }
+            #abilities-container {
+                max-width: 90%;
+                padding: 0 10px;
+                gap: 10px;
+            }
+            .ability-inner {
+                padding: 12px 14px;
+                gap: 4px;
+            }
+            .ability-name {
+                font-size: 13px;
+                letter-spacing: 1px;
+            }
+            .ability-description {
+                font-size: 11px;
+                line-height: 1.4;
+            }
+            .ability-cost {
+                font-size: 11px;
+                letter-spacing: 1px;
+            }
+            #skip-checkpoint {
+                padding: 12px 14px;
+                font-size: 12px;
+                letter-spacing: 1px;
+                width: calc(90% - 28px);
+            }
+            /* Score display mobile optimization - move to bottom left to avoid overlap */
+            #game-container > div:nth-child(6) {
+                top: auto;
+                bottom: 10px;
+                left: 10px;
+                right: auto;
+                text-align: left;
+                padding: 6px 8px;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                line-height: 1.5;
+            }
+            #game-container > div:nth-child(6) span:last-child {
+                font-size: 7px !important;
+                opacity: 0.6;
+            }
+            #play-button {
+                font-size: 18px;
+                letter-spacing: 3px;
+                padding: 15px 35px;
             }
         }
     </style>
@@ -457,12 +513,14 @@
             name: 'Random Color',
             cost: 150,
             owned: false,
+            repeatable: true,
             description: 'Changes your plane to a random color'
         },
         changeShape: {
             name: 'Change Plane Shape',
             cost: 350,
             owned: false,
+            repeatable: true,
             description: 'Morphs your plane into a different primitive form'
         },
         lasers: {
@@ -1043,10 +1101,17 @@
         }
 
         // Check if player can afford at least one ability (or first checkpoint = free)
-        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
+        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => {
+            const ability = abilities[key];
+            // Repeatable abilities can always be afforded if player has enough points
+            return ability.repeatable ? score >= ability.cost : (!ability.owned && score >= ability.cost);
+        });
 
-        if (!canAffordAny && selectedAbilities.every(key => abilities[key].owned)) {
-            // All abilities owned, just continue
+        if (!canAffordAny && selectedAbilities.every(key => {
+            const ability = abilities[key];
+            return !ability.repeatable && ability.owned;
+        })) {
+            // All non-repeatable abilities owned and can't afford repeatable ones, just continue
             checkpointActive = false;
             isPaused = false;
             return;
@@ -1058,14 +1123,26 @@
             const card = document.createElement('div');
             card.className = 'ability-card';
 
-            // On first checkpoint, all unowned abilities are available for free
-            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && !ability.owned);
-            if (!canAfford || ability.owned) {
+            // On first checkpoint, randomColor is free if not owned yet
+            let canAfford;
+            if (isFirstCheckpoint && key === 'randomColor' && !ability.owned) {
+                canAfford = true;
+            } else if (ability.repeatable) {
+                // Repeatable abilities can always be purchased if you have points
+                canAfford = score >= ability.cost;
+            } else {
+                // Non-repeatable abilities can only be purchased once
+                canAfford = !ability.owned && score >= ability.cost;
+            }
+
+            if (!canAfford) {
                 card.classList.add('disabled');
             }
 
-            const statusIcon = ability.owned ? '■' : (canAfford ? '□' : '×');
-            const costText = ability.owned ? 'ACQUIRED' : (isFirstCheckpoint ? 'FREE' : `${ability.cost} PTS`);
+            const statusIcon = (ability.owned && !ability.repeatable) ? '■' : (canAfford ? '□' : '×');
+            const costText = (ability.owned && !ability.repeatable) ? 'ACQUIRED' :
+                           (isFirstCheckpoint && key === 'randomColor' && !ability.owned) ? 'FREE' :
+                           `${ability.cost} PTS`;
 
             card.innerHTML = `
                 <div class="ability-inner">
@@ -1096,15 +1173,30 @@
     function purchaseAbility(abilityKey) {
         const ability = abilities[abilityKey];
 
-        // First checkpoint is free, subsequent checkpoints cost points
-        const isFree = isFirstCheckpoint && !ability.owned;
-        const canPurchase = isFree || (score >= ability.cost && !ability.owned);
+        // First checkpoint randomColor is free if not owned yet
+        const isFree = isFirstCheckpoint && abilityKey === 'randomColor' && !ability.owned;
+
+        // Repeatable abilities can be purchased multiple times
+        let canPurchase;
+        if (ability.repeatable) {
+            canPurchase = isFree || score >= ability.cost;
+        } else {
+            canPurchase = isFree || (score >= ability.cost && !ability.owned);
+        }
 
         if (canPurchase) {
             if (!isFree) {
                 score -= ability.cost;
             }
-            ability.owned = true;
+
+            // Only mark as owned for non-repeatable abilities
+            if (!ability.repeatable) {
+                ability.owned = true;
+            } else {
+                // Mark repeatable as owned after first purchase (for tracking first free purchase)
+                if (!ability.owned) ability.owned = true;
+            }
+
             scoreDisplayUI.innerText = `SCORE: ${score}`;
 
             // Disable first checkpoint bonus after first upgrade
@@ -1123,7 +1215,8 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                baseSpeed = isMobile ? 0.42 : 0.68;
+                // Double the base speed for noticeable thruster effect
+                baseSpeed = isMobile ? 0.44 : 0.96;
                 break;
             case 'randomColor':
                 const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
@@ -1131,9 +1224,10 @@
                 paperMat.color.setHex(randomColor);
                 break;
             case 'changeShape':
-                // Change to random plane shape
+                // Change to different plane shape (never the same as current)
                 const planeTypes = ['dart', 'glider', 'stunt'];
-                const randomType = planeTypes[Math.floor(Math.random() * planeTypes.length)];
+                const availableTypes = planeTypes.filter(type => type !== currentPlaneType);
+                const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
                 changePlaneShape(randomType);
                 break;
             case 'lasers':
@@ -1455,6 +1549,14 @@
         const warpFactor = (speedBoostActive || abilities.thrusters.owned) ? 4.0 : 1.0;
         particles.scale.z = warpFactor;
 
+        // Thruster visual effect - brighter engine light when thrusters owned
+        if (abilities.thrusters.owned) {
+            engineLight.intensity = 15 + Math.random() * 5;
+            engineLight.color.setHex(0x00ffff);
+        } else {
+            engineLight.intensity = 10 + Math.random() * 3;
+        }
+
         // Controls with momentum (varies by plane type)
         const smoothing = planeStats[currentPlaneType].smoothing;
         curX += (targetX - curX) * smoothing;
@@ -1514,7 +1616,6 @@
 
         // Light follow
         engineLight.position.set(curX, curY, 5);
-        engineLight.intensity = 10 + Math.random()*3;
 
         // Collision logic with varied buildings (simplified)
         shipBox.setFromObject(shipGroup);
@@ -1911,42 +2012,45 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
+        // Ring spawning before checkpoints - 60% chance to spawn rings before checkpoint
         const milesUntilCheckpoint = nextCheckpoint - miles;
         if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
-            // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
-            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // 60% chance to spawn rings before checkpoint, 40% chance for checkpoint after buildings
+            if (Math.random() < 0.6) {
+                // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
+                const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
-            for (let i = 0; i < ringCount; i++) {
-                // 10% chance for rare fuchsia ring (50 bonus)
-                const isFuchsia = Math.random() < 0.1;
-                const ring = getRingFromPool();
+                for (let i = 0; i < ringCount; i++) {
+                    // 10% chance for rare fuchsia ring (50 bonus)
+                    const isFuchsia = Math.random() < 0.1;
+                    const ring = getRingFromPool();
 
-                if (ring) {
-                    ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
-                    ring.position.set(
-                        (Math.random() - 0.5) * 8, // Keep them closer to center
-                        Math.random() * 2 + 2,     // Mid-height
-                        -150 - (i * 50)            // Spaced apart (50 units)
-                    );
-                    ring.userData.points = isFuchsia ? 50 : 25;
-                    rings.push(ring);
+                    if (ring) {
+                        ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+                        ring.position.set(
+                            (Math.random() - 0.5) * 8, // Keep them closer to center
+                            Math.random() * 2 + 2,     // Mid-height
+                            -150 - (i * 50)            // Spaced apart (50 units)
+                        );
+                        ring.userData.points = isFuchsia ? 50 : 25;
+                        rings.push(ring);
+                    }
                 }
+
+                // Clear all buildings and walls during ring collection
+                buildings.forEach(b => {
+                    b.position.z = -500;
+                    b.visible = false;
+                });
+                // Return all active walls to pool
+                walls.forEach(w => {
+                    w.visible = false;
+                    w.position.z = -1000;
+                });
+                walls.length = 0; // Clear walls array
             }
 
-            // Clear all buildings and walls during ring collection
-            buildings.forEach(b => {
-                b.position.z = -500;
-                b.visible = false;
-            });
-            // Return all active walls to pool
-            walls.forEach(w => {
-                w.visible = false;
-                w.position.z = -1000;
-            });
-            walls.length = 0; // Clear walls array
-
-            ringsSpawnedForCheckpoint = true;
+            ringsSpawnedForCheckpoint = true; // Mark as handled regardless
         }
 
         // Checkpoint system - spawn gate at checkpoint
