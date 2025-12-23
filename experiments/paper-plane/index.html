@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- iOS-specific optimizations -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Android-specific optimizations -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#050505">
+
     <title>ThreeJS: Paper Airplane</title>
     <style>
         @font-face {
@@ -44,6 +54,13 @@
             touch-action: none;
             cursor: crosshair;
             border: 1px solid rgba(0, 255, 255, 0.3); /* Subtle border for desktop */
+
+            /* Mobile GPU acceleration */
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
         }
 
         .horizon-glow {
@@ -414,8 +431,10 @@
     let score = 0; // Points from collecting rings
 
     // Checkpoint system
-    let nextCheckpoint = 50; // First checkpoint at 50 miles
+    let nextCheckpoint = 25; // First checkpoint at 25 miles
     let checkpointActive = false;
+    let ringsSpawnedForCheckpoint = false; // Track if rings spawned before this checkpoint
+    let isFirstCheckpoint = true; // First checkpoint gives free upgrade
 
     // Grace period and shield mechanics
     let gracePeriodActive = false;
@@ -482,9 +501,13 @@
     camera.position.set(0, 2.5, 8);
 
     const renderer = new THREE.WebGLRenderer({
-        antialias: !isMobile && !isEdge, // Disable antialiasing on Edge for performance
+        antialias: false, // Disabled for crisp 80s aesthetic
         alpha: true,
-        powerPreference: 'high-performance' // Request high-performance GPU
+        powerPreference: 'high-performance', // Request high-performance GPU
+        precision: 'highp', // High precision for mobile GPUs (iOS/Android)
+        preserveDrawingBuffer: false, // Better mobile performance
+        stencil: false, // Disable stencil buffer for mobile performance
+        depth: true // Keep depth buffer for 3D rendering
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
     // Edge-optimized pixel ratio: lower for better performance
@@ -978,16 +1001,27 @@
         const checkpointTitle = document.getElementById('checkpoint-title');
         const abilitiesContainer = document.getElementById('abilities-container');
 
-        checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span>`;
+        // Special messaging for first checkpoint
+        if (isFirstCheckpoint) {
+            checkpointTitle.innerHTML = `FIRST CHECKPOINT!<br><span style="font-size: 12px; opacity: 0.8;">🎁 FREE PLANE COLOR!</span>`;
+        } else {
+            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span>`;
+        }
         abilitiesContainer.innerHTML = '';
 
-        // Get 2 random abilities
-        const abilityKeys = Object.keys(abilities);
-        const shuffled = abilityKeys.sort(() => 0.5 - Math.random());
-        const selectedAbilities = shuffled.slice(0, 2);
+        // First checkpoint: Always show Plane Color (free)
+        // Subsequent checkpoints: Show 2 random abilities
+        let selectedAbilities;
+        if (isFirstCheckpoint) {
+            selectedAbilities = ['randomColor']; // Only show plane color on first checkpoint
+        } else {
+            const abilityKeys = Object.keys(abilities);
+            const shuffled = abilityKeys.sort(() => 0.5 - Math.random());
+            selectedAbilities = shuffled.slice(0, 2);
+        }
 
-        // Check if player can afford at least one ability
-        const canAffordAny = selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
+        // Check if player can afford at least one ability (or first checkpoint = free)
+        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
 
         if (!canAffordAny && selectedAbilities.every(key => abilities[key].owned)) {
             // All abilities owned, just continue
@@ -1002,13 +1036,14 @@
             const card = document.createElement('div');
             card.className = 'ability-card';
 
-            const canAfford = score >= ability.cost && !ability.owned;
+            // On first checkpoint, all unowned abilities are available for free
+            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && !ability.owned);
             if (!canAfford || ability.owned) {
                 card.classList.add('disabled');
             }
 
             const statusIcon = ability.owned ? '■' : (canAfford ? '□' : '×');
-            const costText = ability.owned ? 'ACQUIRED' : `${ability.cost} PTS`;
+            const costText = ability.owned ? 'ACQUIRED' : (isFirstCheckpoint ? 'FREE' : `${ability.cost} PTS`);
 
             card.innerHTML = `
                 <div class="ability-inner">
@@ -1039,10 +1074,21 @@
     function purchaseAbility(abilityKey) {
         const ability = abilities[abilityKey];
 
-        if (score >= ability.cost && !ability.owned) {
-            score -= ability.cost;
+        // First checkpoint is free, subsequent checkpoints cost points
+        const isFree = isFirstCheckpoint && !ability.owned;
+        const canPurchase = isFree || (score >= ability.cost && !ability.owned);
+
+        if (canPurchase) {
+            if (!isFree) {
+                score -= ability.cost;
+            }
             ability.owned = true;
             scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+            // Disable first checkpoint bonus after first upgrade
+            if (isFirstCheckpoint) {
+                isFirstCheckpoint = false;
+            }
 
             // Apply ability effect
             applyAbilityEffect(abilityKey);
@@ -1840,7 +1886,45 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Checkpoint system - spawn gate every 100 miles
+        // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
+        const milesUntilCheckpoint = nextCheckpoint - miles;
+        if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
+            // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+
+            for (let i = 0; i < ringCount; i++) {
+                // 10% chance for rare fuchsia ring (50 bonus)
+                const isFuchsia = Math.random() < 0.1;
+                const material = isFuchsia ? fuchsiaRingMat : ringMat;
+                const ring = new THREE.Mesh(ringGeometry, material);
+
+                ring.position.set(
+                    (Math.random() - 0.5) * 8, // Keep them closer to center
+                    Math.random() * 2 + 2,     // Mid-height
+                    -150 - (i * 50)            // Spaced apart (50 units)
+                );
+                ring.rotation.x = 0;
+                ring.rotation.y = 0;
+                ring.userData.collected = false;
+                ring.userData.points = isFuchsia ? 50 : 25;
+                scene.add(ring);
+                rings.push(ring);
+            }
+
+            // Clear all buildings and walls during ring collection
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+            walls.forEach(w => {
+                scene.remove(w);
+            });
+            walls.length = 0; // Clear walls array
+
+            ringsSpawnedForCheckpoint = true;
+        }
+
+        // Checkpoint system - spawn gate at checkpoint
         if (miles >= nextCheckpoint && gates.length === 0 && !checkpointActive) {
             createCheckpointGate();
         }
@@ -1855,7 +1939,8 @@
             if (Math.abs(gate.position.z - 3.5) < 3 && !gate.userData.passed) {
                 gate.userData.passed = true;
                 showCheckpointUI(Math.floor(nextCheckpoint));
-                nextCheckpoint += 50; // Next checkpoint in 50 miles
+                nextCheckpoint += 25; // Next checkpoint in 25 miles
+                ringsSpawnedForCheckpoint = false; // Reset for next checkpoint
 
                 // Activate 3-second grace period
                 gracePeriodActive = true;
@@ -1879,14 +1964,8 @@
                 phaseStartTime = currentTime;
                 phaseDuration = 2000; // 2 second breather before rings
             } else if (currentPhase === 'breather_before_rings') {
-                // After breather, start ring phase (or alternate with buildings)
-                if (phaseAlternator) {
-                    currentPhase = 'buildings'; // Skip rings, go straight to buildings
-                } else {
-                    currentPhase = 'rings';
-                    ringsSpawnedThisPhase = false; // Reset flag for new ring phase
-                }
-                phaseAlternator = !phaseAlternator;
+                // After breather, go back to buildings (rings now tied to checkpoints)
+                currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
             } else if (currentPhase === 'breather_after_rings') {
