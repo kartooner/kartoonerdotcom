@@ -599,6 +599,9 @@
         stunt: { smoothing: 0.05, barrelRollSpeed: 0.035 }
     };
 
+    // Plane color tracking
+    let currentPlaneColor = 0x008080; // Initial teal color
+
     // Create different plane geometries
     function createDartGeometry() {
         const geom = new THREE.BufferGeometry();
@@ -1236,9 +1239,12 @@
                 baseSpeed = isMobile ? 0.44 : 0.96;
                 break;
             case 'randomColor':
-                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                // Available colors (excluding current color)
+                const allColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                const availableColors = allColors.filter(color => color !== currentPlaneColor);
+                const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
                 paperMat.color.setHex(randomColor);
+                currentPlaneColor = randomColor; // Track the new color
                 break;
             case 'changeShape':
                 // Change to different plane shape (never the same as current)
