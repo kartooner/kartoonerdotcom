@@ -335,10 +335,7 @@
                 font-size: 10px;
             }
             #toggle-params {
-                top: 15px;
-                right: 15px;
-                padding: 6px 10px;
-                font-size: 10px;
+                display: none !important; /* Hide PARAMS on mobile, score is more important */
             }
             #pause-button {
                 font-size: 11px !important;
@@ -380,8 +377,8 @@
             }
             /* Score display mobile optimization - compact in top right, no border */
             #score-container {
-                top: 50px !important;
-                right: 8px !important;
+                top: 20px !important;
+                right: 10px !important;
                 padding: 4px 6px !important;
                 font-size: 9px !important;
                 letter-spacing: 0.5px !important;
@@ -601,6 +598,9 @@
         glider: { smoothing: 0.12, barrelRollSpeed: 0.020 },
         stunt: { smoothing: 0.05, barrelRollSpeed: 0.035 }
     };
+
+    // Plane color tracking
+    let currentPlaneColor = 0x008080; // Initial teal color
 
     // Create different plane geometries
     function createDartGeometry() {
@@ -1239,9 +1239,12 @@
                 baseSpeed = isMobile ? 0.44 : 0.96;
                 break;
             case 'randomColor':
-                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                // Available colors (excluding current color)
+                const allColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                const availableColors = allColors.filter(color => color !== currentPlaneColor);
+                const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
                 paperMat.color.setHex(randomColor);
+                currentPlaneColor = randomColor; // Track the new color
                 break;
             case 'changeShape':
                 // Change to different plane shape (never the same as current)
