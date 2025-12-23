@@ -1374,17 +1374,22 @@
     });
 
     let animationRunning = false;
-    let lastFrameTime = performance.now();
+    let lastFrameTime = 0;
     function animate(currentTime = performance.now()) {
         if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
         if (isPaused) {
             animationRunning = false;
             return; // Stop animation loop when paused
         }
+
+        // Initialize lastFrameTime on first frame
+        if (!animationRunning) {
+            lastFrameTime = currentTime;
+        }
         animationRunning = true;
 
         // Frame-rate independent animation
-        const deltaTime = Math.min((currentTime - lastFrameTime) / 16.67, 2); // Cap at 2x for lag spikes
+        const deltaTime = lastFrameTime === 0 ? 1 : Math.min((currentTime - lastFrameTime) / 16.67, 2);
         lastFrameTime = currentTime;
 
         requestAnimationFrame(animate);
