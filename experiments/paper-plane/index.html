@@ -380,19 +380,19 @@
             }
             /* Score display mobile optimization - move to bottom left to avoid overlap */
             #game-container > div:nth-child(6) {
-                top: auto;
-                bottom: 10px;
-                left: 10px;
-                right: auto;
-                text-align: left;
-                padding: 6px 8px;
-                font-size: 10px;
-                letter-spacing: 0.8px;
-                line-height: 1.5;
+                top: auto !important;
+                bottom: 10px !important;
+                left: 10px !important;
+                right: auto !important;
+                text-align: left !important;
+                padding: 6px 8px !important;
+                font-size: 10px !important;
+                letter-spacing: 0.8px !important;
+                line-height: 1.5 !important;
             }
             #game-container > div:nth-child(6) span:last-child {
                 font-size: 7px !important;
-                opacity: 0.6;
+                opacity: 0.6 !important;
             }
             #play-button {
                 font-size: 18px;
@@ -685,13 +685,26 @@
             newGeom = createDartGeometry();
         }
 
+        // Dispose old geometries
         mainMesh.geometry.dispose();
         wireMesh.geometry.dispose();
         shadowMesh.geometry.dispose();
+
+        // Assign new geometries (all meshes can share the same geometry)
         mainMesh.geometry = newGeom;
         wireMesh.geometry = newGeom;
         shadowMesh.geometry = newGeom;
+
+        // Force geometry update
+        mainMesh.geometry.attributes.position.needsUpdate = true;
+        wireMesh.geometry.attributes.position.needsUpdate = true;
+        shadowMesh.geometry.attributes.position.needsUpdate = true;
+
+        // Update current plane type
         currentPlaneType = type;
+
+        // Log for debugging
+        console.log('Plane shape changed to:', type);
     }
 
     // Light sitting behind the plane to light up the tail
@@ -1560,12 +1573,7 @@
         }
 
         // Controls with momentum (varies by plane type)
-        // On mobile with active touch, use 1:1 movement for instant response
-        // Otherwise use smoothing for momentum physics
-        let smoothing = planeStats[currentPlaneType].smoothing;
-        if (isMobile && isInteracting) {
-            smoothing = 0.95; // Nearly 1:1 on mobile when touching
-        }
+        const smoothing = planeStats[currentPlaneType].smoothing;
         curX += (targetX - curX) * smoothing;
         curY += (targetY - curY) * smoothing;
 
