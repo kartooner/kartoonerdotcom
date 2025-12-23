@@ -437,6 +437,7 @@
     </div>
     <div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
         <span id="score-display">SCORE: 0</span><br>
+        <span id="score-bonus" style="font-size: 11px; opacity: 0.85; letter-spacing: 1px; color: #00ff88;"></span><br>
         <span style="font-size: 10px; opacity: 0.75; letter-spacing: 1px;">+25 green / +50 fuchsia rings</span>
     </div>
     <div class="horizon-glow"></div>
@@ -477,6 +478,7 @@
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
     const scoreDisplayUI = document.getElementById('score-display');
+    const scoreBonusUI = document.getElementById('score-bonus');
 
     // Game state
     let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
@@ -1558,7 +1560,12 @@
         }
 
         // Controls with momentum (varies by plane type)
-        const smoothing = planeStats[currentPlaneType].smoothing;
+        // On mobile with active touch, use 1:1 movement for instant response
+        // Otherwise use smoothing for momentum physics
+        let smoothing = planeStats[currentPlaneType].smoothing;
+        if (isMobile && isInteracting) {
+            smoothing = 0.95; // Nearly 1:1 on mobile when touching
+        }
         curX += (targetX - curX) * smoothing;
         curY += (targetY - curY) * smoothing;
 
@@ -1917,8 +1924,14 @@
                         const points = ring.userData.points || 25;
                         score += points;
 
-                        // Show bonus in score display
-                        scoreDisplayUI.innerText = `SCORE: ${score} (+${points})`;
+                        // Show bonus in separate line below score
+                        scoreDisplayUI.innerText = `SCORE: ${score}`;
+                        scoreBonusUI.innerText = `+${points}`;
+                        scoreBonusUI.style.display = 'inline';
+                        scoreBonusUI.style.color = '#00ff88'; // Green for positive bonus
+                        setTimeout(() => {
+                            scoreBonusUI.style.display = 'none';
+                        }, 2000); // Hide bonus after 2 seconds
                         ring.material.color.setHex(0xffff00); // Flash yellow
                     }
                 }
@@ -1981,6 +1994,12 @@
                     if (tempBox.intersectsBox(enemy.userData.box)) {
                         score += 10; // Bonus for destroying enemy
                         scoreDisplayUI.innerText = `SCORE: ${score}`;
+                        scoreBonusUI.innerText = `+10`;
+                        scoreBonusUI.style.display = 'inline';
+                        scoreBonusUI.style.color = '#00ff88';
+                        setTimeout(() => {
+                            scoreBonusUI.style.display = 'none';
+                        }, 2000);
 
                         scene.remove(enemy);
                         enemies.splice(i, 1);
