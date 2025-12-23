@@ -1375,7 +1375,7 @@
 
     let animationRunning = false;
     let lastFrameTime = performance.now();
-    function animate(currentTime) {
+    function animate(currentTime = performance.now()) {
         if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
         if (isPaused) {
             animationRunning = false;
