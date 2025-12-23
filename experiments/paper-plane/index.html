@@ -2117,29 +2117,34 @@
 
         // Phase system: Check if it's time to switch phases
         const currentTime = Date.now();
-        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
+        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0 && walls.length === 0) {
             // Switch phase based on current phase
             if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings, add breather before rings
-                currentPhase = 'breather_before_rings';
+                // After buildings: 30% chance walls, 70% breather
+                if (Math.random() < 0.3) {
+                    currentPhase = 'walls';
+                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
+                    phaseDuration = 15000; // Walls phase lasts ~15 seconds
+                } else {
+                    currentPhase = 'breather_before_rings';
+                    phaseDuration = 2000; // 2 second breather
+                }
                 phaseStartTime = currentTime;
-                phaseDuration = 2000; // 2 second breather before rings
             } else if (currentPhase === 'breather_before_rings') {
-                // After breather, go back to buildings (rings now tied to checkpoints)
+                // After breather, go back to buildings
                 currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
-            } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, 25% chance for walls, 75% back to buildings
-                if (Math.random() < 0.25) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
-                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
-                } else {
-                    currentPhase = 'buildings';
-                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-                }
+            } else if (currentPhase === 'walls') {
+                // After walls, go back to buildings
+                currentPhase = 'buildings';
                 phaseStartTime = currentTime;
+                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+            } else if (currentPhase === 'breather_after_rings') {
+                // After rings breather, back to buildings
+                currentPhase = 'buildings';
+                phaseStartTime = currentTime;
+                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
             }
         }
 
@@ -2184,12 +2189,7 @@
             phaseDuration = 3000; // 3 second breather after rings
         }
 
-        // After all walls are passed, transition back to buildings
-        if (currentPhase === 'walls' && wallsSpawnedThisPhase && walls.length === 0) {
-            currentPhase = 'buildings';
-            phaseStartTime = Date.now();
-            phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-        }
+        // Wall phase completion is now handled in main phase system above
 
         // Check grace period expiration
         if (gracePeriodActive && Date.now() >= gracePeriodEndTime) {
