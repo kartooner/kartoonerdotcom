@@ -505,43 +505,55 @@
     let shieldHits = 0;
     const maxShieldHits = 3;
 
-    // Abilities system
+    // Abilities system (costs reduced for better economy)
     const abilities = {
         thrusters: {
             name: 'Add Thrusters',
-            cost: 250,
+            cost: 150,
             owned: false,
             description: 'Increases flight speed for faster travel'
         },
         randomColor: {
             name: 'Random Color',
-            cost: 150,
+            cost: 75,
             owned: false,
             repeatable: true,
             description: 'Changes your plane to a random color'
         },
         changeShape: {
             name: 'Change Plane Shape',
-            cost: 350,
+            cost: 200,
             owned: false,
             repeatable: true,
             description: 'Morphs your plane into a different primitive form'
         },
+        invincibility: {
+            name: 'Invincibility',
+            cost: 300,
+            owned: false,
+            description: 'Yellow flash for 90s - no crash penalties'
+        },
+        ringMagnet: {
+            name: 'Ring Magnet',
+            cost: 250,
+            owned: false,
+            description: 'Attracts nearby rings for 30 seconds'
+        },
         lasers: {
             name: 'Lasers',
-            cost: 600,
+            cost: 350,
             owned: false,
             description: 'Adds shooting ability and asteroid enemies'
         },
         barrelRollUpgrade: {
             name: 'Barrel Roll Upgrade',
-            cost: 750,
+            cost: 400,
             owned: false,
             description: 'Must upgrade to unlock barrel roll ability'
         },
         increaseDifficulty: {
             name: 'Increase Difficulty',
-            cost: 850,
+            cost: 500,
             owned: false,
             description: 'More buildings spawn, fewer rings appear'
         }
@@ -552,6 +564,14 @@
     const enemies = [];
     let canShoot = false;
     let lastShot = 0;
+
+    // Invincibility system
+    let invincibilityActive = false;
+    let invincibilityEndTime = 0;
+
+    // Ring magnet system
+    let ringMagnetActive = false;
+    let ringMagnetEndTime = 0;
 
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
@@ -1008,6 +1028,87 @@
     // Low wall: long horizontal rectangle at ground level (y=0-2)
     const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
 
+    // Punched walls: frame with hole in center (like Japanese game show)
+    const punchedWalls = [];
+    const punchedWallPool = [];
+    const punchedWallMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.6 });
+
+    // Create a frame with a hole - made of 4 rectangles forming borders
+    function createPunchedWallFrame(holeWidth, holeHeight) {
+        const frameGroup = new THREE.Group();
+        const frameThickness = 2;
+        const totalWidth = 20;
+        const totalHeight = 12;
+
+        // Top bar
+        const topBar = new THREE.Mesh(
+            new THREE.BoxGeometry(totalWidth, frameThickness, 0.5),
+            punchedWallMat
+        );
+        topBar.position.y = totalHeight / 2 - frameThickness / 2;
+
+        // Bottom bar
+        const bottomBar = new THREE.Mesh(
+            new THREE.BoxGeometry(totalWidth, frameThickness, 0.5),
+            punchedWallMat
+        );
+        bottomBar.position.y = -totalHeight / 2 + frameThickness / 2;
+
+        // Left bar
+        const leftBarHeight = totalHeight - (2 * frameThickness);
+        const leftBar = new THREE.Mesh(
+            new THREE.BoxGeometry(frameThickness, leftBarHeight, 0.5),
+            punchedWallMat
+        );
+        leftBar.position.x = -totalWidth / 2 + frameThickness / 2;
+
+        // Right bar
+        const rightBar = new THREE.Mesh(
+            new THREE.BoxGeometry(frameThickness, leftBarHeight, 0.5),
+            punchedWallMat
+        );
+        rightBar.position.x = totalWidth / 2 - frameThickness / 2;
+
+        frameGroup.add(topBar, bottomBar, leftBar, rightBar);
+
+        // Store hole dimensions for collision detection
+        frameGroup.userData.holeWidth = holeWidth;
+        frameGroup.userData.holeHeight = holeHeight;
+        frameGroup.userData.totalWidth = totalWidth;
+        frameGroup.userData.totalHeight = totalHeight;
+        frameGroup.userData.type = 'punched';
+
+        return frameGroup;
+    }
+
+    // Pre-create punched wall pool (5 walls with different hole shapes)
+    const holeShapes = [
+        { width: 6, height: 6 },   // Square hole
+        { width: 8, height: 4 },   // Horizontal rectangle
+        { width: 4, height: 8 },   // Vertical rectangle
+        { width: 5, height: 5 },   // Small square
+        { width: 7, height: 5 }    // Medium rectangle
+    ];
+
+    for (let i = 0; i < 5; i++) {
+        const shape = holeShapes[i];
+        const wall = createPunchedWallFrame(shape.width, shape.height);
+        wall.visible = false;
+        wall.position.z = -1000;
+        scene.add(wall);
+        punchedWallPool.push(wall);
+    }
+
+    function getPunchedWallFromPool(zPos) {
+        const wall = punchedWallPool.find(w => !w.visible);
+        if (wall) {
+            wall.visible = true;
+            wall.position.set(0, 4, zPos); // Centered vertically
+            return wall;
+        }
+        return null;
+    }
+
     // Pre-create wall pool (10 walls total - mix of high and low)
     for (let i = 0; i < 10; i++) {
         const isHigh = i < 5;
@@ -1239,11 +1340,21 @@
                 baseSpeed = isMobile ? 0.44 : 0.96;
                 break;
             case 'randomColor':
-                // Available colors (excluding current color)
-                const allColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                // Available colors (excluding current color) - added glass/frosty white
+                const allColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800, 0xf0f8ff];
                 const availableColors = allColors.filter(color => color !== currentPlaneColor);
                 const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
                 paperMat.color.setHex(randomColor);
+
+                // Glass effect: when color is frosty white, increase metalness for glassy look
+                if (randomColor === 0xf0f8ff) {
+                    paperMat.metalness = 0.9;
+                    paperMat.roughness = 0.1;
+                } else {
+                    paperMat.metalness = 0.75;
+                    paperMat.roughness = 0.25;
+                }
+
                 currentPlaneColor = randomColor; // Track the new color
                 break;
             case 'changeShape':
@@ -1252,6 +1363,16 @@
                 const availableTypes = planeTypes.filter(type => type !== currentPlaneType);
                 const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
                 changePlaneShape(randomType);
+                break;
+            case 'invincibility':
+                // Activate 90 second invincibility
+                invincibilityActive = true;
+                invincibilityEndTime = Date.now() + 90000; // 90 seconds
+                break;
+            case 'ringMagnet':
+                // Activate 30 second ring magnet
+                ringMagnetActive = true;
+                ringMagnetEndTime = Date.now() + 30000; // 30 seconds
                 break;
             case 'lasers':
                 canShoot = true;
@@ -1793,8 +1914,8 @@
                 }
 
                 if(shipBox.intersectsBox(b.userData.box)) {
-                    // Check grace period first
-                    if (!gracePeriodActive) {
+                    // Check grace period and invincibility first
+                    if (!gracePeriodActive && !invincibilityActive) {
                         collisionFlash = 0.5;
                         b.position.z = -120;
                         b.visible = false;
@@ -1834,24 +1955,28 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
-            // Spawn 3-4 wall "sets" - sometimes single, sometimes both high+low
+            // Spawn 3-4 wall "sets" - mix of high/low/punched walls
             const wallSetCount = Math.floor(Math.random() * 2) + 3; // 3-4 sets
 
             for (let i = 0; i < wallSetCount; i++) {
                 const zPos = -200 - (i * 80); // Very far for visibility, spaced 80 units apart
-                const bothWalls = Math.random() < 0.3; // 30% chance for both high AND low (must stay centered)
+                const wallTypeRoll = Math.random();
 
-                if (bothWalls) {
-                    // Spawn BOTH high and low from pool - player must stay centered
+                if (wallTypeRoll < 0.25) {
+                    // 25% chance: Spawn BOTH high and low - player must stay centered
                     const highWall = getWallFromPool('high', zPos);
                     const lowWall = getWallFromPool('low', zPos);
                     if (highWall) walls.push(highWall);
                     if (lowWall) walls.push(lowWall);
-                } else {
-                    // Spawn single wall from pool (50/50 high or low)
+                } else if (wallTypeRoll < 0.6) {
+                    // 35% chance: Spawn single wall (high or low)
                     const wallType = Math.random() < 0.5 ? 'high' : 'low';
                     const wall = getWallFromPool(wallType, zPos);
                     if (wall) walls.push(wall);
+                } else {
+                    // 40% chance: Spawn punched wall (player must fit through hole)
+                    const punchedWall = getPunchedWallFromPool(zPos);
+                    if (punchedWall) punchedWalls.push(punchedWall);
                 }
             }
 
@@ -1889,7 +2014,7 @@
 
                 if (shipBox.intersectsBox(wall.userData.box)) {
                     // Check grace period
-                    if (!gracePeriodActive) {
+                    if (!gracePeriodActive && !invincibilityActive) {
                         collisionFlash = 0.5;
                         wall.visible = false;
                         wall.position.z = -1000;
@@ -1908,6 +2033,63 @@
                         } else {
                             // Shield down - lose points
                             score = Math.max(0, score - 15);
+                            crashMessage = `-15 POINTS`;
+                            crashMessageTimer = 50;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Punched wall collision logic - check if plane fits through hole
+        for (let i = punchedWalls.length - 1; i >= 0; i--) {
+            const wall = punchedWalls[i];
+            wall.position.z += speed;
+
+            // Return wall to pool when it passes the player
+            if (wall.position.z > 20) {
+                wall.visible = false;
+                wall.position.z = -1000;
+                punchedWalls.splice(i, 1);
+                continue;
+            }
+
+            // Check collision when wall is at player's z position
+            if (wall.position.z > -2 && wall.position.z < 10) {
+                // Get hole bounds (relative to wall center at y=4)
+                const holeWidth = wall.userData.holeWidth;
+                const holeHeight = wall.userData.holeHeight;
+                const holeLeft = wall.position.x - holeWidth / 2;
+                const holeRight = wall.position.x + holeWidth / 2;
+                const holeBottom = wall.position.y - holeHeight / 2;
+                const holeTop = wall.position.y + holeHeight / 2;
+
+                // Check if plane is OUTSIDE the hole bounds (collision)
+                const planeIsOutsideHole = curX < holeLeft || curX > holeRight ||
+                                          curY < holeBottom || curY > holeTop;
+
+                // Only check collision when wall is very close to plane
+                const zDiff = Math.abs(wall.position.z - 3.5);
+                if (zDiff < 1.5 && planeIsOutsideHole) {
+                    if (!gracePeriodActive && !invincibilityActive) {
+                        collisionFlash = 0.5;
+                        wall.visible = false;
+                        wall.position.z = -1000;
+                        punchedWalls.splice(i, 1);
+
+                        // Apply damage (same as regular wall collision)
+                        if (shieldActive && shieldHits < maxShieldHits) {
+                            shieldHits++;
+                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                            crashMessageTimer = 50;
+
+                            if (shieldHits >= maxShieldHits) {
+                                shieldActive = false;
+                                crashMessage = `SHIELD DOWN!`;
+                            }
+                        } else {
+                            score = Math.max(0, score - 15);
+                            scoreDisplayUI.innerText = `SCORE: ${score}`;
                             crashMessage = `-15 POINTS`;
                             crashMessageTimer = 50;
                         }
@@ -2063,9 +2245,9 @@
                     if (ring) {
                         ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
                         ring.position.set(
-                            (Math.random() - 0.5) * 8, // Keep them closer to center
-                            Math.random() * 2 + 2,     // Mid-height
-                            -150 - (i * 50)            // Spaced apart (50 units)
+                            (Math.random() - 0.5) * 10, // Wider horizontal spread
+                            Math.random() * 6 + 1,      // Varied height: 1-7 (much harder!)
+                            -150 - (i * 50)             // Spaced apart (50 units)
                         );
                         ring.userData.points = isFuchsia ? 50 : 25;
                         rings.push(ring);
@@ -2220,6 +2402,42 @@
             mainMesh.material.opacity = pulse;
             wireMesh.material.opacity = pulse;
             shadowMesh.material.opacity = pulse * 0.3;
+        }
+
+        // Invincibility effect: Yellow flash like Mario
+        if (invincibilityActive) {
+            if (Date.now() >= invincibilityEndTime) {
+                invincibilityActive = false;
+                // Reset to normal color
+                paperMat.color.setHex(currentPlaneColor);
+            } else {
+                // Flash between yellow and current color
+                const flashSpeed = Math.sin(time * 15) > 0;
+                paperMat.color.setHex(flashSpeed ? 0xffff00 : currentPlaneColor);
+            }
+        }
+
+        // Ring magnet effect: attract nearby rings
+        if (ringMagnetActive) {
+            if (Date.now() >= ringMagnetEndTime) {
+                ringMagnetActive = false;
+            } else {
+                // Pull rings toward player
+                rings.forEach(ring => {
+                    if (!ring.userData.collected) {
+                        const dx = curX - ring.position.x;
+                        const dy = curY - ring.position.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        // Attract if within magnet radius (10 units)
+                        if (distance < 10 && distance > 0.5) {
+                            const pullStrength = 0.15;
+                            ring.position.x += dx * pullStrength;
+                            ring.position.y += dy * pullStrength;
+                        }
+                    }
+                });
+            }
         }
 
         // Message timers
