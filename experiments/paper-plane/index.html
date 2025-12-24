@@ -639,6 +639,9 @@
     renderer.autoClearColor = true;
     container.appendChild(renderer.domElement);
 
+    // CRITICAL FIX: Canvas blocks play button clicks. Disable pointer events until game starts.
+    renderer.domElement.style.pointerEvents = 'none';
+
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
     const shipGroup = new THREE.Group();
     const paperMat = new THREE.MeshStandardMaterial({
@@ -1808,10 +1811,13 @@
             gameStarted = true;
             playOverlay.classList.add('hidden');
             toggleParamsBtn.classList.add('visible');
-            pauseButton.style.display = 'block'; // Show pause button
-            phaseStartTime = Date.now(); // Initialize phase timer
+            pauseButton.style.display = 'block';
+            phaseStartTime = Date.now();
 
-            // Focus trap: prevent page scrolling when game is active
+            // Enable canvas pointer events now that game is starting
+            renderer.domElement.style.pointerEvents = 'auto';
+
+            // Focus trap
             gameContainer.focus();
             gameContainer.setAttribute('tabindex', '0');
 
