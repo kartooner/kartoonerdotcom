@@ -460,37 +460,37 @@
     const abilities = {
         thrusters: {
             name: 'Add Thrusters',
-            cost: 250,
+            cost: 150,
             owned: false,
             description: 'Increases flight speed for faster travel'
         },
         randomColor: {
             name: 'Random Color',
-            cost: 150,
+            cost: 100,
             owned: false,
             description: 'Changes your plane to a random color'
         },
         changeShape: {
             name: 'Change Plane Shape',
-            cost: 350,
+            cost: 200,
             owned: false,
             description: 'Morphs your plane into a different primitive form'
         },
         lasers: {
             name: 'Lasers',
-            cost: 600,
+            cost: 300,
             owned: false,
             description: 'Adds shooting ability and asteroid enemies'
         },
         barrelRollUpgrade: {
-            name: 'Barrel Roll Upgrade',
-            cost: 750,
+            name: 'Barrel Roll',
+            cost: 400,
             owned: false,
-            description: 'Must upgrade to unlock barrel roll ability'
+            description: 'Unlock barrel roll ability with double-click'
         },
         increaseDifficulty: {
             name: 'Increase Difficulty',
-            cost: 850,
+            cost: 500,
             owned: false,
             description: 'More buildings spawn, fewer rings appear'
         }
@@ -656,29 +656,28 @@
     const terrainGeom = new THREE.PlaneGeometry(100, 120, terrainSegments, terrainSegments);
     const pos = terrainGeom.attributes.position;
 
-    // Random terrain parameters for variety (will change based on level)
-    let freqX = Math.random() * 0.3 + 0.3;   // 0.3 to 0.6
-    let freqY = Math.random() * 0.2 + 0.15;  // 0.15 to 0.35
-    let currentAmplitude = Math.random() * 4 + 5;   // 5 to 9
+    // Random terrain parameters for variety (dynamic based on level)
+    const freqX = Math.random() * 0.3 + 0.3;   // 0.3 to 0.6
+    const freqY = Math.random() * 0.2 + 0.15;  // 0.15 to 0.35
+    let currentAmplitude = Math.random() * 4 + 5;   // 5 to 9 (changes with level)
     const offset = Math.random() * 100;        // Random phase offset
     let lastTerrainLevel = 1; // Track when we last updated terrain
 
-    // Function to update terrain based on level
+    // Function to smoothly update terrain based on level
     function updateTerrainForLevel(level) {
         // Every 3 levels, mountains get less tall (more flat terrain)
-        // Level 1-2: amplitude 5-9
-        // Level 3-5: amplitude 3-6
-        // Level 6-8: amplitude 2-4
-        // Level 9+: amplitude 1-3 (very flat, focus on dodging)
+        let targetAmplitude;
         if (level <= 2) {
-            currentAmplitude = Math.random() * 4 + 5; // 5-9
+            targetAmplitude = Math.random() * 4 + 5; // 5-9
         } else if (level <= 5) {
-            currentAmplitude = Math.random() * 3 + 3; // 3-6
+            targetAmplitude = Math.random() * 3 + 3; // 3-6
         } else if (level <= 8) {
-            currentAmplitude = Math.random() * 2 + 2; // 2-4
+            targetAmplitude = Math.random() * 2 + 2; // 2-4
         } else {
-            currentAmplitude = Math.random() * 2 + 1; // 1-3
+            targetAmplitude = Math.random() * 2 + 1; // 1-3
         }
+
+        currentAmplitude = targetAmplitude;
 
         // Update terrain geometry
         for (let i = 0; i < pos.count; i++) {
@@ -705,8 +704,8 @@
     scene.add(t1, t2);
 
     // --- 3. ANIMATED PARTICLES (STARS) ---
-    // Reduced for better performance across all browsers, especially Edge
-    const particleCount = isMobile ? 150 : (isEdge ? 180 : 250);
+    // Increased for more visual depth while maintaining performance
+    const particleCount = isMobile ? 200 : (isEdge ? 250 : 350);
     const particleGeom = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleVelocities = [];
@@ -766,7 +765,8 @@
             height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5; // Squat: 2-5, Tall: 5-13
         }
 
-        const b = new THREE.Mesh(geometry, buildMat);
+        // Clone material so each building can fade independently
+        const b = new THREE.Mesh(geometry, buildMat.clone());
 
         // Random scale for variety
         const scaleX = Math.random() * 0.8 + 0.6;
@@ -1631,11 +1631,22 @@
 
             b.position.z += speed;
 
-            // Simple visibility toggle instead of gradual fade (prevents micro-flashing)
-            if(b.position.z > 15) {
-                b.visible = false;
-            } else {
+            // Gradual fade as buildings pass camera (smoother than instant toggle)
+            if(b.position.z > 10) {
+                // Start fading when approaching camera (z > 10)
+                const fadeStart = 10;
+                const fadeEnd = 20;
+                const fadeProgress = Math.min((b.position.z - fadeStart) / (fadeEnd - fadeStart), 1);
+                b.material.opacity = 1 - fadeProgress;
                 b.visible = true;
+            } else {
+                b.material.opacity = 1;
+                b.visible = true;
+            }
+
+            // Fully hide once far past camera
+            if(b.position.z > 20) {
+                b.visible = false;
             }
 
             if(b.position.z > 20) {
@@ -1721,6 +1732,7 @@
                     spawnDistance
                 );
                 b.visible = true; // Always visible when spawning (breather check happens at top)
+                b.material.opacity = 1; // Reset opacity for new spawn
 
                 waveProgress++;
             }
@@ -1733,8 +1745,8 @@
                 // Reuse temp vectors to avoid garbage collection
                 b.userData.box.getSize(tempVec3_1);
                 b.userData.box.getCenter(tempVec3_2);
-                // Shrink collision box by 25% for pyramids, 20% for others
-                const shrinkFactor = b.geometry === pyramidGeometry ? 0.75 : 0.8;
+                // Shrink collision box by 35% for pyramids (most forgiving), 25% for others
+                const shrinkFactor = b.geometry === pyramidGeometry ? 0.65 : 0.75;
                 tempVec3_1.multiplyScalar(shrinkFactor);
                 b.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
 
@@ -2019,8 +2031,13 @@
             levelUpMessage = `LEVEL ${currentLevel}`;
             levelUpMessageTimer = 90; // Show for 1.5 seconds
 
-            // Update terrain every 3 levels for variety
-            if (currentLevel % 3 === 0 && currentLevel !== lastTerrainLevel) {
+            // Update terrain every 3 levels during breather phases (to avoid visual glitches)
+            const isInBreatherPhase = currentPhase === 'breather_before_rings' ||
+                                     currentPhase === 'breather_after_rings' ||
+                                     currentPhase === 'rings' ||
+                                     currentPhase === 'walls';
+
+            if (currentLevel % 3 === 0 && currentLevel !== lastTerrainLevel && isInBreatherPhase) {
                 updateTerrainForLevel(currentLevel);
                 lastTerrainLevel = currentLevel;
             }
