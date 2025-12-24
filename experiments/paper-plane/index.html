@@ -314,8 +314,11 @@
         @media (min-width: 769px) and (max-width: 1024px) {
             #game-container {
                 height: 90vh; /* Bigger viewport on tablet */
-                max-width: 100%;
+                width: 99vw; /* Prevent right-side cutoff */
+                max-width: 99vw;
                 max-height: none;
+                border: none; /* Remove border on tablet */
+                margin: 0 auto;
             }
         }
 
