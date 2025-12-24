@@ -1817,13 +1817,17 @@
         }
     });
 
-    // Prevent page scrolling when touching/clicking game container
+    // Prevent page scrolling when touching/clicking game container (ONLY after game starts)
     gameContainer.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        if (gameStarted) {
+            e.preventDefault();
+        }
     }, { passive: false });
 
     gameContainer.addEventListener('touchmove', (e) => {
-        e.preventDefault();
+        if (gameStarted) {
+            e.preventDefault();
+        }
     }, { passive: false });
 
     gameContainer.addEventListener('wheel', (e) => {
