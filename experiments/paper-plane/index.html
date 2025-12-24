@@ -441,6 +441,12 @@
     let shieldHits = 0;
     const maxShieldHits = 3;
 
+    // Upgrade loss system (risk/reward mechanic)
+    let buildingHitsSinceUpgrade = 0;
+    let hitsUntilUpgradeLoss = 0;
+    let activeUpgrades = []; // Track order of upgrades acquired (for removal)
+    let hasActiveUpgrades = false;
+
     // Abilities system
     const abilities = {
         thrusters: {
@@ -1021,9 +1027,9 @@
 
         // Special messaging for first checkpoint
         if (isFirstCheckpoint) {
-            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">PLANE COLOR (FREE)</span>`;
+            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">PLANE COLOR (FREE)</span><br><span style="font-size: 10px; opacity: 0.6; color: #ff8800;">⚠ WARNING: 3-4 building hits will remove your upgrade</span>`;
         } else {
-            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span>`;
+            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span><br><span style="font-size: 10px; opacity: 0.6; color: #ff8800;">⚠ WARNING: 3-4 building hits will remove your upgrade</span>`;
         }
         abilitiesContainer.innerHTML = '';
 
@@ -1111,6 +1117,12 @@
             // Apply ability effect
             applyAbilityEffect(abilityKey);
 
+            // Track upgrade for potential loss (risk/reward)
+            activeUpgrades.push(abilityKey);
+            hasActiveUpgrades = true;
+            buildingHitsSinceUpgrade = 0;
+            hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // Random 3-4 hits
+
             // Close checkpoint UI
             closeCheckpointUI();
         }
@@ -1119,7 +1131,7 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                baseSpeed = isMobile ? 0.42 : 0.68;
+                baseSpeed = isMobile ? 0.825 : 1.2;
                 break;
             case 'randomColor':
                 const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
@@ -1142,6 +1154,55 @@
                 // Increase difficulty (handled in spawn logic)
                 break;
         }
+    }
+
+    function removeUpgrade(abilityKey) {
+        if (!abilities[abilityKey]) return;
+
+        // Revert the upgrade effect
+        switch(abilityKey) {
+            case 'thrusters':
+                baseSpeed = isMobile ? 0.33 : 0.48; // Revert to base speed
+                break;
+            case 'randomColor':
+                paperMat.color.setHex(0x008080); // Revert to original teal
+                break;
+            case 'changeShape':
+                changePlaneShape('dart'); // Revert to dart shape
+                break;
+            case 'lasers':
+                canShoot = false; // Disable shooting
+                // Clean up existing lasers and enemies
+                lasers.forEach(laser => scene.remove(laser));
+                lasers.length = 0;
+                enemies.forEach(enemy => scene.remove(enemy));
+                enemies.length = 0;
+                break;
+            case 'barrelRollUpgrade':
+                // Can't really disable barrel roll mid-animation,
+                // but we can mark it as not owned
+                break;
+            case 'increaseDifficulty':
+                // Difficulty changes are applied during spawn,
+                // so just marking as not owned will revert it
+                break;
+        }
+
+        // Mark ability as not owned
+        abilities[abilityKey].owned = false;
+
+        // Remove from active upgrades
+        const index = activeUpgrades.indexOf(abilityKey);
+        if (index > -1) {
+            activeUpgrades.splice(index, 1);
+        }
+
+        // Update flag
+        hasActiveUpgrades = activeUpgrades.length > 0;
+
+        // Show message
+        crashMessage = `UPGRADE LOST: ${abilities[abilityKey].name.toUpperCase()}`;
+        crashMessageTimer = 90;
     }
 
     function closeCheckpointUI() {
@@ -1323,7 +1384,7 @@
     });
 
     // --- 7. ANIMATION LOOP, COLLISION & GAME LOGIC ---
-    let baseSpeed = isMobile ? 0.22 : 0.48;
+    let baseSpeed = isMobile ? 0.33 : 0.48;
     let distance = 0, time = 0, collisionFlash = 0;
     const shipBox = new THREE.Box3();
 
@@ -1689,6 +1750,24 @@
 
                             crashMessage = `BONK -${pointsLost}`;
                             crashMessageTimer = 60;
+                        }
+
+                        // Upgrade loss system: track building hits
+                        if (hasActiveUpgrades) {
+                            buildingHitsSinceUpgrade++;
+
+                            if (buildingHitsSinceUpgrade >= hitsUntilUpgradeLoss) {
+                                // Remove most recent upgrade
+                                const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                if (lostUpgrade) {
+                                    removeUpgrade(lostUpgrade);
+                                    // Reset counter for next upgrade
+                                    buildingHitsSinceUpgrade = 0;
+                                    if (activeUpgrades.length > 0) {
+                                        hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // New random 3-4
+                                    }
+                                }
+                            }
                         }
 
                         // Update high score if current distance is higher
