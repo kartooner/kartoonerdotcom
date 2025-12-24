@@ -1846,15 +1846,11 @@
                 renderer.domElement.style.pointerEvents = 'auto';
                 console.log('4. Canvas pointer-events enabled');
 
-                gameContainer.focus();
-                gameContainer.setAttribute('tabindex', '0');
-                console.log('5. Focus set on game container');
-
                 if (!animationRunning) {
-                    console.log('6. Starting animation (animationRunning was false)');
+                    console.log('5. Starting animation (animationRunning was false)');
                     animate();
                 } else {
-                    console.log('6. Animation already running - NOT calling animate()');
+                    console.log('5. Animation already running - NOT calling animate()');
                 }
                 console.log('🎮 ===== PLAY SETUP COMPLETE =====');
             } catch (error) {
@@ -1871,25 +1867,6 @@
     } else {
         console.error('❌ Play overlay NOT FOUND!');
     }
-
-    // Prevent page scrolling when touching/clicking game container (ONLY after game starts)
-    gameContainer.addEventListener('touchstart', (e) => {
-        if (gameStarted) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-
-    gameContainer.addEventListener('touchmove', (e) => {
-        if (gameStarted) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-
-    gameContainer.addEventListener('wheel', (e) => {
-        if (gameStarted) {
-            e.preventDefault();
-        }
-    }, { passive: false });
 
     // ESC key to pause game
     document.addEventListener('keydown', (e) => {
