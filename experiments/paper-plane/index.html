@@ -429,7 +429,7 @@
 </div>
 
 <div id="game-container">
-    <div id="play-overlay">
+    <div id="play-overlay" onclick="alert('PLAY OVERLAY CLICKED! Check if this shows.')">
         <div id="play-button">PLAY</div>
     </div>
     <div id="checkpoint-overlay">
@@ -463,6 +463,8 @@
 </script>
 
 <script type="module">
+    // FIRST LINE - if you don't see this in console, script isn't running at all
+    alert('🚨 SCRIPT STARTING - Check console now!');
     console.log('🎮 Game script loading...');
     import * as THREE from 'three';
     console.log('✓ THREE.js imported');
