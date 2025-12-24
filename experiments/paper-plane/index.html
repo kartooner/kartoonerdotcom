@@ -460,37 +460,37 @@
     const abilities = {
         thrusters: {
             name: 'Add Thrusters',
-            cost: 250,
+            cost: 150,
             owned: false,
             description: 'Increases flight speed for faster travel'
         },
         randomColor: {
             name: 'Random Color',
-            cost: 150,
+            cost: 100,
             owned: false,
             description: 'Changes your plane to a random color'
         },
         changeShape: {
             name: 'Change Plane Shape',
-            cost: 350,
+            cost: 200,
             owned: false,
             description: 'Morphs your plane into a different primitive form'
         },
         lasers: {
             name: 'Lasers',
-            cost: 600,
+            cost: 300,
             owned: false,
             description: 'Adds shooting ability and asteroid enemies'
         },
         barrelRollUpgrade: {
-            name: 'Barrel Roll Upgrade',
-            cost: 750,
+            name: 'Barrel Roll',
+            cost: 400,
             owned: false,
-            description: 'Must upgrade to unlock barrel roll ability'
+            description: 'Unlock barrel roll ability with double-click'
         },
         increaseDifficulty: {
             name: 'Increase Difficulty',
-            cost: 850,
+            cost: 500,
             owned: false,
             description: 'More buildings spawn, fewer rings appear'
         }
@@ -705,8 +705,8 @@
     scene.add(t1, t2);
 
     // --- 3. ANIMATED PARTICLES (STARS) ---
-    // Reduced for better performance across all browsers, especially Edge
-    const particleCount = isMobile ? 150 : (isEdge ? 180 : 250);
+    // Increased for more visual depth while maintaining performance
+    const particleCount = isMobile ? 200 : (isEdge ? 250 : 350);
     const particleGeom = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleVelocities = [];
@@ -1733,8 +1733,8 @@
                 // Reuse temp vectors to avoid garbage collection
                 b.userData.box.getSize(tempVec3_1);
                 b.userData.box.getCenter(tempVec3_2);
-                // Shrink collision box by 25% for pyramids, 20% for others
-                const shrinkFactor = b.geometry === pyramidGeometry ? 0.75 : 0.8;
+                // Shrink collision box by 35% for pyramids (most forgiving), 25% for others
+                const shrinkFactor = b.geometry === pyramidGeometry ? 0.65 : 0.75;
                 tempVec3_1.multiplyScalar(shrinkFactor);
                 b.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
 
