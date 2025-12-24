@@ -656,45 +656,17 @@
     const terrainGeom = new THREE.PlaneGeometry(100, 120, terrainSegments, terrainSegments);
     const pos = terrainGeom.attributes.position;
 
-    // Random terrain parameters for variety (will change based on level)
-    let freqX = Math.random() * 0.3 + 0.3;   // 0.3 to 0.6
-    let freqY = Math.random() * 0.2 + 0.15;  // 0.15 to 0.35
-    let currentAmplitude = Math.random() * 4 + 5;   // 5 to 9
+    // Random terrain parameters for variety
+    const freqX = Math.random() * 0.3 + 0.3;   // 0.3 to 0.6
+    const freqY = Math.random() * 0.2 + 0.15;  // 0.15 to 0.35
+    const amplitude = Math.random() * 4 + 5;   // 5 to 9
     const offset = Math.random() * 100;        // Random phase offset
-    let lastTerrainLevel = 1; // Track when we last updated terrain
-
-    // Function to update terrain based on level
-    function updateTerrainForLevel(level) {
-        // Every 3 levels, mountains get less tall (more flat terrain)
-        // Level 1-2: amplitude 5-9
-        // Level 3-5: amplitude 3-6
-        // Level 6-8: amplitude 2-4
-        // Level 9+: amplitude 1-3 (very flat, focus on dodging)
-        if (level <= 2) {
-            currentAmplitude = Math.random() * 4 + 5; // 5-9
-        } else if (level <= 5) {
-            currentAmplitude = Math.random() * 3 + 3; // 3-6
-        } else if (level <= 8) {
-            currentAmplitude = Math.random() * 2 + 2; // 2-4
-        } else {
-            currentAmplitude = Math.random() * 2 + 1; // 1-3
-        }
-
-        // Update terrain geometry
-        for (let i = 0; i < pos.count; i++) {
-            let x = pos.getX(i);
-            let y = pos.getY(i);
-            let h = (Math.abs(x) > 8) ? Math.abs(Math.sin(x * freqX + offset) * Math.cos(y * freqY)) * currentAmplitude : 0;
-            pos.setZ(i, h);
-        }
-        pos.needsUpdate = true;
-    }
 
     // Initial terrain setup
     for (let i = 0; i < pos.count; i++) {
         let x = pos.getX(i);
         let y = pos.getY(i);
-        let h = (Math.abs(x) > 8) ? Math.abs(Math.sin(x * freqX + offset) * Math.cos(y * freqY)) * currentAmplitude : 0;
+        let h = (Math.abs(x) > 8) ? Math.abs(Math.sin(x * freqX + offset) * Math.cos(y * freqY)) * amplitude : 0;
         pos.setZ(i, h);
     }
     const terrainMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.25 });
@@ -2018,12 +1990,6 @@
             levelUI.innerText = `LEVEL ${currentLevel}`;
             levelUpMessage = `LEVEL ${currentLevel}`;
             levelUpMessageTimer = 90; // Show for 1.5 seconds
-
-            // Update terrain every 3 levels for variety
-            if (currentLevel % 3 === 0 && currentLevel !== lastTerrainLevel) {
-                updateTerrainForLevel(currentLevel);
-                lastTerrainLevel = currentLevel;
-            }
         }
 
         // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
