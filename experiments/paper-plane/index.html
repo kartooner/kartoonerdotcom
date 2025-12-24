@@ -18,8 +18,8 @@
         @font-face {
             font-family: "Cartridge Regular";
             src:
-                url(../../assets/Cartridge-Regular.woff2) format("woff2"),
-                url("../../assets/Cartridge-Regular.woff") format("woff");
+                    url(../../assets/Cartridge-Regular.woff2) format("woff2"),
+                    url("../../assets/Cartridge-Regular.woff") format("woff");
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -310,33 +310,20 @@
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
 
-        /* Tablet optimizations */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            #game-container {
-                height: 90vh; /* Bigger viewport on tablet */
-                width: 99vw; /* Prevent right-side cutoff */
-                max-width: 99vw;
-                max-height: none;
-                border: none; /* Remove border on tablet */
-                margin: 0 auto;
-            }
-        }
-
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .spacer { height: 20vh; }
             .spacer h1 { display: none; } /* Hide binary text on mobile (iOS treats as phone number) */
             #game-container {
-                height: 90vh; /* Bigger viewport on mobile too */
+                height: 85vh; /* Slightly smaller for performance */
                 max-width: 100%;
                 max-height: none;
                 border: none; /* Remove border on mobile */
             }
             .ui-overlay {
-                top: 10px;
-                font-size: 10px;
-                letter-spacing: 0.8px;
-                max-width: 50%;
+                top: 12px;
+                font-size: 11px;
+                letter-spacing: 1px;
             }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
@@ -347,71 +334,14 @@
                 font-size: 10px;
             }
             #toggle-params {
-                display: none !important; /* Hide PARAMS on mobile, score is more important */
+                top: 15px;
+                right: 15px;
+                padding: 6px 10px;
+                font-size: 10px;
             }
             #pause-button {
                 font-size: 11px !important;
                 padding: 8px 16px !important;
-            }
-            /* Checkpoint overlay mobile improvements */
-            #checkpoint-title {
-                font-size: 14px;
-                letter-spacing: 2px;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-            }
-            #abilities-container {
-                max-width: 90%;
-                padding: 0 10px;
-                gap: 10px;
-            }
-            .ability-inner {
-                padding: 12px 14px;
-                gap: 4px;
-            }
-            .ability-name {
-                font-size: 13px;
-                letter-spacing: 1px;
-            }
-            .ability-description {
-                font-size: 11px;
-                line-height: 1.4;
-            }
-            .ability-cost {
-                font-size: 11px;
-                letter-spacing: 1px;
-            }
-            #skip-checkpoint {
-                padding: 12px 14px;
-                font-size: 12px;
-                letter-spacing: 1px;
-                width: calc(90% - 28px);
-            }
-            /* Score display mobile optimization - compact in top right, no border */
-            #score-container {
-                top: 20px !important;
-                right: 10px !important;
-                padding: 4px 6px !important;
-                font-size: 9px !important;
-                letter-spacing: 0.5px !important;
-                line-height: 1.3 !important;
-                border: none !important;
-                background: rgba(0, 20, 20, 0.85) !important;
-            }
-            #score-container span:last-child {
-                font-size: 7px !important;
-                opacity: 0.65 !important;
-            }
-            #score-container #score-display {
-                font-size: 9px !important;
-            }
-            #score-container #score-bonus {
-                font-size: 8px !important;
-            }
-            #play-button {
-                font-size: 18px;
-                letter-spacing: 3px;
-                padding: 15px 35px;
             }
         }
     </style>
@@ -428,8 +358,14 @@
     </div>
 </div>
 
+<div class="spacer">
+    <h1>01001000 01001001</h1>
+</div>
+
 <div id="game-container">
-    <!-- Play button removed - game auto-starts -->
+    <div id="play-overlay">
+        <div id="play-button">PLAY</div>
+    </div>
     <div id="checkpoint-overlay">
         <div id="checkpoint-title"></div>
         <div id="abilities-container"></div>
@@ -443,9 +379,8 @@
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
         <span id="score-display">SCORE: 0</span><br>
-        <span id="score-bonus" style="font-size: 11px; opacity: 0.85; letter-spacing: 1px; color: #00ff88;"></span><br>
         <span style="font-size: 10px; opacity: 0.75; letter-spacing: 1px;">+25 green / +50 fuchsia rings</span>
     </div>
     <div class="horizon-glow"></div>
@@ -457,37 +392,14 @@
 </div>
 
 <script type="importmap">
-  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
 
 <script type="module">
-    // TEST: This should show if script runs at all
-    alert('SCRIPT IS RUNNING! Check console.');
-    console.log('🎮 Game script loading...');
-
-    let THREE;
-    try {
-        const importStart = performance.now();
-        THREE = await import('three');
-        const importTime = performance.now() - importStart;
-        console.log(`✓ THREE.js imported in ${importTime.toFixed(0)}ms`);
-        console.log('THREE object keys:', Object.keys(THREE).slice(0, 10));
-        window.THREE = THREE; // Make available globally for debugging
-    } catch (error) {
-        console.error('❌ THREE.js IMPORT FAILED:', error);
-        alert('THREE.js failed to load: ' + error.message);
-        document.body.innerHTML = '<h1 style="color: red; padding: 50px;">THREE.js failed to load. Check internet connection.</h1>';
-        throw error;
-    }
-
-    if (!THREE) {
-        alert('THREE is undefined!');
-        throw new Error('THREE undefined after import');
-    }
+    import * as THREE from 'three';
 
     const container = document.getElementById('footer-canvas');
     const gameContainer = document.getElementById('game-container');
-    console.log('✓ Containers found:', container ? 'yes' : 'NO', gameContainer ? 'yes' : 'NO');
 
     // Prevent pinch zoom on mobile
     document.addEventListener('gesturestart', e => e.preventDefault());
@@ -509,7 +421,6 @@
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
     const scoreDisplayUI = document.getElementById('score-display');
-    const scoreBonusUI = document.getElementById('score-bonus');
 
     // Game state
     let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
@@ -534,68 +445,41 @@
     let shieldHits = 0;
     const maxShieldHits = 3;
 
-    // Abilities system (costs reduced for better economy)
+    // Abilities system
     const abilities = {
         thrusters: {
             name: 'Add Thrusters',
-            cost: 150,
+            cost: 250,
             owned: false,
             description: 'Increases flight speed for faster travel'
         },
         randomColor: {
             name: 'Random Color',
-            cost: 75,
+            cost: 150,
             owned: false,
-            repeatable: true,
             description: 'Changes your plane to a random color'
         },
         changeShape: {
             name: 'Change Plane Shape',
-            cost: 200,
+            cost: 350,
             owned: false,
-            repeatable: true,
             description: 'Morphs your plane into a different primitive form'
-        },
-        invincibility: {
-            name: 'Invincibility',
-            cost: 300,
-            owned: false,
-            description: 'Yellow flash for 90s - no crash penalties'
-        },
-        ringMagnet: {
-            name: 'Ring Magnet',
-            cost: 250,
-            owned: false,
-            contextual: true, // Only show when rings are present
-            description: 'Attracts nearby rings for 30 seconds'
-        },
-        smallPlane: {
-            name: 'Small Plane',
-            cost: 180,
-            owned: false,
-            description: 'Shrink your plane for 3 levels - easier dodging'
-        },
-        slowMotion: {
-            name: 'Slow Motion',
-            cost: 220,
-            owned: false,
-            description: 'Slows game to 50% speed for 20 seconds'
         },
         lasers: {
             name: 'Lasers',
-            cost: 350,
+            cost: 600,
             owned: false,
             description: 'Adds shooting ability and asteroid enemies'
         },
         barrelRollUpgrade: {
             name: 'Barrel Roll Upgrade',
-            cost: 400,
+            cost: 750,
             owned: false,
             description: 'Must upgrade to unlock barrel roll ability'
         },
         increaseDifficulty: {
             name: 'Increase Difficulty',
-            cost: 500,
+            cost: 850,
             owned: false,
             description: 'More buildings spawn, fewer rings appear'
         }
@@ -607,37 +491,6 @@
     let canShoot = false;
     let lastShot = 0;
 
-    // Laser power-ups (only spawn when lasers owned)
-    const laserPowerUps = [];
-    let activePowerUp = null; // 'double', 'large', or 'triple'
-    let powerUpEndTime = 0;
-    const powerUpDuration = 15000; // 15 seconds
-
-    // Create power-up capsule geometry (small glowing sphere)
-    const powerUpGeom = new THREE.SphereGeometry(0.3, 8, 8);
-    const greenPowerUpMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 });
-    const orangePowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.8 });
-    const redPowerUpMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 });
-
-    // Invincibility system
-    let invincibilityActive = false;
-    let invincibilityEndTime = 0;
-
-    // Ring magnet system
-    let ringMagnetActive = false;
-    let ringMagnetEndTime = 0;
-
-    // Small plane system
-    let smallPlaneActive = false;
-    let smallPlaneActivationLevel = 0;
-    const smallPlaneScale = 0.6;
-    let planeMorphProgress = 1.0; // 1.0 = normal, 0.6 = small
-
-    // Slow motion system
-    let slowMotionActive = false;
-    let slowMotionEndTime = 0;
-    let timeScale = 1.0;
-
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
 
@@ -645,11 +498,8 @@
     // Simpler fog for better performance
     scene.fog = new THREE.Fog(0x000000, 15, 45);
 
-    // Adaptive FOV: wider view for tablets, balanced for mobile/desktop
-    const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
-    const fov = isTablet ? 85 : (isMobile ? 75 : 55);
-    const camera = new THREE.PerspectiveCamera(fov, container.clientWidth / container.clientHeight, 0.1, 250);
-    camera.position.set(0, 2.5, isTablet ? 9 : 8); // Pull back slightly on tablet
+    const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
+    camera.position.set(0, 2.5, 8);
 
     const renderer = new THREE.WebGLRenderer({
         antialias: false, // Disabled for crisp 80s aesthetic
@@ -667,8 +517,6 @@
     renderer.autoClear = true;
     renderer.autoClearColor = true;
     container.appendChild(renderer.domElement);
-
-    // Canvas pointer events enabled (no play button - game auto-starts)
 
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
     const shipGroup = new THREE.Group();
@@ -689,49 +537,19 @@
         stunt: { smoothing: 0.05, barrelRollSpeed: 0.035 }
     };
 
-    // Plane color tracking
-    let currentPlaneColor = 0x008080; // Initial teal color
-
-    // Create different plane geometries with paper airplane characteristics
+    // Create different plane geometries
     function createDartGeometry() {
-        // Classic dart: Like the "Fastest Airplane" - simple with sharp point and center fold
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            // Sharp triangular nose point
-            0.0,  0.0, -1.0,   // 0: NOSE tip (sharp point)
-
-            // Center fold ridge (creates the crease down middle, slightly raised)
-            0.0,  0.1, -0.2,   // 1: Center fold start (raised)
-            0.0,  0.08,  0.3,  // 2: Center fold mid
-            0.0,  0.05,  0.6,  // 3: Center fold tail
-
-            // Left wing edge
-           -0.6,  0.0,  0.0,   // 4: Left wing mid
-           -0.4,  0.0,  0.6,   // 5: Left wing back
-
-            // Right wing edge
-            0.6,  0.0,  0.0,   // 6: Right wing mid
-            0.4,  0.0,  0.6,   // 7: Right wing back
-
-            // Bottom keel (thickness from fold)
-            0.0, -0.15, 0.3,   // 8: Bottom keel
+            0.0,  0.0, -0.8,   // NOSE (Negative Z is forward)
+            -0.6,  0.2,  0.5,   // Left Wing Back
+            0.6,  0.2,  0.5,   // Right Wing Back
+            0.0, -0.2,  0.3,   // Bottom Keel/Spine
         ]);
         const indices = [
-            // Sharp nose to center fold (top)
-            0, 1, 4,  0, 1, 6,
-
-            // Left wing surface (flat sweep)
-            1, 4, 2,  4, 2, 8,  2, 8, 5,  2, 5, 3,
-
-            // Right wing surface (flat sweep)
-            1, 6, 2,  6, 2, 8,  2, 8, 7,  2, 7, 3,
-
-            // Bottom surfaces
-            0, 4, 8,  0, 8, 6,
-            8, 4, 5,  8, 5, 3,  8, 6, 7,  8, 7, 3,
-
-            // Tail closure
-            3, 5, 7
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -740,43 +558,17 @@
     }
 
     function createGliderGeometry() {
-        // Wide glider: Broad swept wings with visible folds
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            // Blunt nose
-            0.0,  0.0, -0.6,   // 0: NOSE
-
-            // Body center line
-            0.0,  0.02, -0.3,  // 1: Mid top
-            0.0, -0.1,  0.1,   // 2: Mid bottom
-            0.0, -0.12,  0.4,  // 3: Tail center
-
-            // Left wing - wide and flat with fold line
-           -0.15,  0.0, -0.2,  // 4: Left inner edge
-           -0.6,  0.05, -0.1,  // 5: Left mid wing
-           -1.1,  0.08,  0.2,  // 6: Left wing tip (very wide)
-           -0.7,  0.05,  0.45, // 7: Left wing back
-           -0.2,  0.0,  0.4,   // 8: Left inner back
-
-            // Right wing - wide and flat with fold line
-            0.15,  0.0, -0.2,  // 9: Right inner edge
-            0.6,  0.05, -0.1,  // 10: Right mid wing
-            1.1,  0.08,  0.2,  // 11: Right wing tip (very wide)
-            0.7,  0.05,  0.45, // 12: Right wing back
-            0.2,  0.0,  0.4,   // 13: Right inner back
+            0.0,  0.0, -0.6,   // NOSE (shorter)
+            -1.0,  0.1,  0.4,   // Left Wing Back (wider)
+            1.0,  0.1,  0.4,   // Right Wing Back (wider)
+            0.0, -0.15,  0.2,  // Bottom Keel/Spine
         ]);
         const indices = [
-            // Nose
-            0, 1, 4,  0, 1, 9,  0, 4, 2,  0, 9, 2,
-
-            // Left wing surfaces with folds
-            1, 4, 5,  4, 5, 6,  5, 6, 7,  4, 7, 8,  2, 4, 8,  2, 8, 3,  3, 8, 7,
-
-            // Right wing surfaces with folds
-            1, 9, 10,  9, 10, 11,  10, 11, 12,  9, 12, 13,  2, 9, 13,  2, 13, 3,  3, 13, 12,
-
-            // Tail
-            3, 7, 12
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -785,53 +577,17 @@
     }
 
     function createStuntGeometry() {
-        // Squat stunt plane: Boxy, angular with vertical fins
         const geom = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            // Blunt squared nose
-            0.0,  0.1, -0.5,   // 0: NOSE top
-            0.0, -0.2, -0.5,   // 1: NOSE bottom
-
-            // Squat body
-            0.0,  0.15,  0.0,  // 2: Body top mid
-            0.0, -0.25,  0.0,  // 3: Body bottom mid
-            0.0,  0.15,  0.5,  // 4: Tail top
-            0.0, -0.25,  0.5,  // 5: Tail bottom
-
-            // Left wing - short and boxy with upturned tip (dihedral)
-           -0.2,  0.1, -0.2,   // 6: Left wing inner
-           -0.5,  0.35,  0.2,  // 7: Left wing tip (high)
-           -0.4,  0.3,  0.4,   // 8: Left wing back
-
-            // Right wing - short and boxy with upturned tip (dihedral)
-            0.2,  0.1, -0.2,   // 9: Right wing inner
-            0.5,  0.35,  0.2,  // 10: Right wing tip (high)
-            0.4,  0.3,  0.4,   // 11: Right wing back
-
-            // Vertical fins for stability
-           -0.15,  0.35,  0.35, // 12: Left fin top
-            0.15,  0.35,  0.35, // 13: Right fin top
+            0.0,  0.0, -0.5,   // NOSE (boxy)
+            -0.5,  0.3,  0.4,   // Left Wing Back (higher, boxier)
+            0.5,  0.3,  0.4,   // Right Wing Back (higher, boxier)
+            0.0, -0.3,  0.4,   // Bottom (more squared)
         ]);
         const indices = [
-            // Nose
-            0, 1, 2,  1, 2, 3,
-
-            // Body segments
-            0, 2, 6,  0, 6, 1,  1, 6, 3,
-            0, 2, 9,  0, 9, 1,  1, 9, 3,
-            2, 3, 4,  3, 4, 5,
-
-            // Left wing (boxy)
-            2, 6, 7,  6, 7, 8,  2, 7, 8,  2, 8, 4,  4, 8, 5,  3, 6, 8,  3, 8, 5,
-
-            // Right wing (boxy)
-            2, 9, 10,  9, 10, 11,  2, 10, 11,  2, 11, 4,  4, 11, 5,  3, 9, 11,  3, 11, 5,
-
-            // Vertical fins
-            4, 8, 12,  4, 11, 13,
-
-            // Tail
-            4, 5, 8,  4, 5, 11
+            0, 1, 3, // Left Face
+            0, 3, 2, // Right Face
+            1, 2, 3  // Rear/Bottom Closure
         ];
         geom.setIndex(indices);
         geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -869,26 +625,13 @@
             newGeom = createDartGeometry();
         }
 
-        // Dispose old geometries
         mainMesh.geometry.dispose();
         wireMesh.geometry.dispose();
         shadowMesh.geometry.dispose();
-
-        // Assign new geometries (all meshes can share the same geometry)
         mainMesh.geometry = newGeom;
         wireMesh.geometry = newGeom;
         shadowMesh.geometry = newGeom;
-
-        // Force geometry update
-        mainMesh.geometry.attributes.position.needsUpdate = true;
-        wireMesh.geometry.attributes.position.needsUpdate = true;
-        shadowMesh.geometry.attributes.position.needsUpdate = true;
-
-        // Update current plane type
         currentPlaneType = type;
-
-        // Log for debugging
-        console.log('Plane shape changed to:', type);
     }
 
     // Light sitting behind the plane to light up the tail
@@ -1187,156 +930,6 @@
     // Low wall: long horizontal rectangle at ground level (y=0-2)
     const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
 
-    // Punched walls: frame with hole in center (like Japanese game show)
-    const punchedWalls = [];
-    const punchedWallPool = [];
-    const punchedWallMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.6 });
-
-    // Create a frame with a hole - made of 4 rectangles forming borders
-    function createPunchedWallFrame(holeWidth, holeHeight) {
-        const frameGroup = new THREE.Group();
-        const frameThickness = 2;
-        const totalWidth = 20;
-        const totalHeight = 12;
-
-        // Top bar
-        const topBar = new THREE.Mesh(
-            new THREE.BoxGeometry(totalWidth, frameThickness, 0.5),
-            punchedWallMat
-        );
-        topBar.position.y = totalHeight / 2 - frameThickness / 2;
-
-        // Bottom bar
-        const bottomBar = new THREE.Mesh(
-            new THREE.BoxGeometry(totalWidth, frameThickness, 0.5),
-            punchedWallMat
-        );
-        bottomBar.position.y = -totalHeight / 2 + frameThickness / 2;
-
-        // Left bar
-        const leftBarHeight = totalHeight - (2 * frameThickness);
-        const leftBar = new THREE.Mesh(
-            new THREE.BoxGeometry(frameThickness, leftBarHeight, 0.5),
-            punchedWallMat
-        );
-        leftBar.position.x = -totalWidth / 2 + frameThickness / 2;
-
-        // Right bar
-        const rightBar = new THREE.Mesh(
-            new THREE.BoxGeometry(frameThickness, leftBarHeight, 0.5),
-            punchedWallMat
-        );
-        rightBar.position.x = totalWidth / 2 - frameThickness / 2;
-
-        frameGroup.add(topBar, bottomBar, leftBar, rightBar);
-
-        // Store hole dimensions for collision detection
-        frameGroup.userData.holeWidth = holeWidth;
-        frameGroup.userData.holeHeight = holeHeight;
-        frameGroup.userData.totalWidth = totalWidth;
-        frameGroup.userData.totalHeight = totalHeight;
-        frameGroup.userData.type = 'punched';
-
-        return frameGroup;
-    }
-
-    // Pre-create punched wall pool (5 walls with SMALL challenging holes)
-    const holeShapes = [
-        { width: 3.2, height: 3.8 },   // Tiny vertical slot
-        { width: 4.5, height: 3.2 },   // Small horizontal slot
-        { width: 3.8, height: 4.2 },   // Small square
-        { width: 5, height: 3.2 },     // Wide thin slot
-        { width: 3.2, height: 5 }      // Tall thin slot
-    ];
-
-    for (let i = 0; i < 5; i++) {
-        const shape = holeShapes[i];
-        const wall = createPunchedWallFrame(shape.width, shape.height);
-        wall.visible = false;
-        wall.position.z = -1000;
-        scene.add(wall);
-        punchedWallPool.push(wall);
-    }
-
-    function getPunchedWallFromPool(zPos) {
-        const wall = punchedWallPool.find(w => !w.visible);
-        if (wall) {
-            wall.visible = true;
-            wall.position.set(0, 4, zPos); // Centered vertically
-            return wall;
-        }
-        return null;
-    }
-
-    // Ambient scenery - decorative rocks for breather sections (no collision)
-    const ambientRocks = [];
-    const rockPool = [];
-    const rockMat = new THREE.MeshBasicMaterial({
-        color: 0x00cccc,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.3
-    });
-
-    // Create rock pool with varied sizes for organic feel (super small for ambient detail)
-    for (let i = 0; i < 20; i++) {
-        const size = 0.1 + Math.random() * 0.2; // 0.1 to 0.3 units - tiny scenery
-        const geometry = new THREE.DodecahedronGeometry(size, 0);
-        const rock = new THREE.Mesh(geometry, rockMat);
-        rock.visible = false;
-        rock.position.z = -1000;
-        scene.add(rock);
-        rockPool.push(rock);
-    }
-
-    function getRockFromPool(xPos, yPos, zPos) {
-        const rock = rockPool.find(r => !r.visible);
-        if (rock) {
-            rock.visible = true;
-            rock.position.set(xPos, yPos, zPos);
-            // Random rotation for variety
-            rock.rotation.set(
-                Math.random() * Math.PI,
-                Math.random() * Math.PI,
-                Math.random() * Math.PI
-            );
-            return rock;
-        }
-        return null;
-    }
-
-    // Parallax star field - subtle background stars at various depths
-    const stars = [];
-    const starMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.6
-    });
-
-    // Create 150 stars scattered across the sky with parallax depths
-    for (let i = 0; i < 150; i++) {
-        const size = 0.05 + Math.random() * 0.08; // 0.05 to 0.13 units - very tiny
-        const geometry = new THREE.SphereGeometry(size, 4, 4);
-        const star = new THREE.Mesh(geometry, starMat);
-
-        // Scatter widely across X (left to right)
-        star.position.x = (Math.random() - 0.5) * 80;
-
-        // Place high in the sky and at horizon
-        star.position.y = Math.random() * 15 + 5; // 5 to 20 units high
-
-        // Scatter deep into the distance with varied depths
-        star.position.z = -50 - Math.random() * 200; // -50 to -250
-
-        // Store parallax depth (stars further away move slower)
-        // Depth 0-1: far stars move at 0.3x speed, near stars at 1.0x speed
-        const depth = Math.abs(star.position.z) / 250; // 0.2 to 1.0
-        star.userData.parallaxSpeed = 0.3 + (1.0 - depth) * 0.7; // 0.3 to 1.0
-
-        scene.add(star);
-        stars.push(star);
-    }
-
     // Pre-create wall pool (10 walls total - mix of high and low)
     for (let i = 0; i < 10; i++) {
         const isHigh = i < 5;
@@ -1402,7 +995,6 @@
     let phaseAlternator = false; // Toggle between rings and second building run
     let ringsSpawnedThisPhase = false; // Track if rings have been spawned for current ring phase
     let wallsSpawnedThisPhase = false; // Track if walls have been spawned for current wall phase
-    let rocksSpawnedThisPhase = false; // Track if ambient rocks have been spawned for current breather phase
 
     // --- CHECKPOINT GATE ---
     const gates = [];
@@ -1451,17 +1043,10 @@
         }
 
         // Check if player can afford at least one ability (or first checkpoint = free)
-        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => {
-            const ability = abilities[key];
-            // Repeatable abilities can always be afforded if player has enough points
-            return ability.repeatable ? score >= ability.cost : (!ability.owned && score >= ability.cost);
-        });
+        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
 
-        if (!canAffordAny && selectedAbilities.every(key => {
-            const ability = abilities[key];
-            return !ability.repeatable && ability.owned;
-        })) {
-            // All non-repeatable abilities owned and can't afford repeatable ones, just continue
+        if (!canAffordAny && selectedAbilities.every(key => abilities[key].owned)) {
+            // All abilities owned, just continue
             checkpointActive = false;
             isPaused = false;
             return;
@@ -1473,26 +1058,14 @@
             const card = document.createElement('div');
             card.className = 'ability-card';
 
-            // On first checkpoint, randomColor is free if not owned yet
-            let canAfford;
-            if (isFirstCheckpoint && key === 'randomColor' && !ability.owned) {
-                canAfford = true;
-            } else if (ability.repeatable) {
-                // Repeatable abilities can always be purchased if you have points
-                canAfford = score >= ability.cost;
-            } else {
-                // Non-repeatable abilities can only be purchased once
-                canAfford = !ability.owned && score >= ability.cost;
-            }
-
-            if (!canAfford) {
+            // On first checkpoint, all unowned abilities are available for free
+            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && !ability.owned);
+            if (!canAfford || ability.owned) {
                 card.classList.add('disabled');
             }
 
-            const statusIcon = (ability.owned && !ability.repeatable) ? '■' : (canAfford ? '□' : '×');
-            const costText = (ability.owned && !ability.repeatable) ? 'ACQUIRED' :
-                           (isFirstCheckpoint && key === 'randomColor' && !ability.owned) ? 'FREE' :
-                           `${ability.cost} PTS`;
+            const statusIcon = ability.owned ? '■' : (canAfford ? '□' : '×');
+            const costText = ability.owned ? 'ACQUIRED' : (isFirstCheckpoint ? 'FREE' : `${ability.cost} PTS`);
 
             card.innerHTML = `
                 <div class="ability-inner">
@@ -1523,30 +1096,15 @@
     function purchaseAbility(abilityKey) {
         const ability = abilities[abilityKey];
 
-        // First checkpoint randomColor is free if not owned yet
-        const isFree = isFirstCheckpoint && abilityKey === 'randomColor' && !ability.owned;
-
-        // Repeatable abilities can be purchased multiple times
-        let canPurchase;
-        if (ability.repeatable) {
-            canPurchase = isFree || score >= ability.cost;
-        } else {
-            canPurchase = isFree || (score >= ability.cost && !ability.owned);
-        }
+        // First checkpoint is free, subsequent checkpoints cost points
+        const isFree = isFirstCheckpoint && !ability.owned;
+        const canPurchase = isFree || (score >= ability.cost && !ability.owned);
 
         if (canPurchase) {
             if (!isFree) {
                 score -= ability.cost;
             }
-
-            // Only mark as owned for non-repeatable abilities
-            if (!ability.repeatable) {
-                ability.owned = true;
-            } else {
-                // Mark repeatable as owned after first purchase (for tracking first free purchase)
-                if (!ability.owned) ability.owned = true;
-            }
-
+            ability.owned = true;
             scoreDisplayUI.innerText = `SCORE: ${score}`;
 
             // Disable first checkpoint bonus after first upgrade
@@ -1565,53 +1123,18 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                // Permanent speed boost: mobile reaches desktop levels, desktop gets faster
-                thrusterMultiplier = 1.6; // Mobile: 0.30*1.6=0.48, Desktop: 0.48*1.6=0.77
+                baseSpeed = isMobile ? 0.42 : 0.68;
                 break;
             case 'randomColor':
-                // Available colors (excluding current color) - added glass/frosty white
-                const allColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800, 0xf0f8ff];
-                const availableColors = allColors.filter(color => color !== currentPlaneColor);
-                const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
                 paperMat.color.setHex(randomColor);
-
-                // Glass effect: when color is frosty white, increase metalness for glassy look
-                if (randomColor === 0xf0f8ff) {
-                    paperMat.metalness = 0.9;
-                    paperMat.roughness = 0.1;
-                } else {
-                    paperMat.metalness = 0.75;
-                    paperMat.roughness = 0.25;
-                }
-
-                currentPlaneColor = randomColor; // Track the new color
                 break;
             case 'changeShape':
-                // Change to different plane shape (never the same as current)
+                // Change to random plane shape
                 const planeTypes = ['dart', 'glider', 'stunt'];
-                const availableTypes = planeTypes.filter(type => type !== currentPlaneType);
-                const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+                const randomType = planeTypes[Math.floor(Math.random() * planeTypes.length)];
                 changePlaneShape(randomType);
-                break;
-            case 'invincibility':
-                // Activate 90 second invincibility
-                invincibilityActive = true;
-                invincibilityEndTime = Date.now() + 90000; // 90 seconds
-                break;
-            case 'ringMagnet':
-                // Activate 30 second ring magnet
-                ringMagnetActive = true;
-                ringMagnetEndTime = Date.now() + 30000; // 30 seconds
-                break;
-            case 'smallPlane':
-                // Activate small plane for 3 levels
-                smallPlaneActive = true;
-                smallPlaneActivationLevel = currentLevel;
-                break;
-            case 'slowMotion':
-                // Activate 20 second slow motion
-                slowMotionActive = true;
-                slowMotionEndTime = Date.now() + 20000; // 20 seconds
                 break;
             case 'lasers':
                 canShoot = true;
@@ -1804,9 +1327,7 @@
     });
 
     // --- 7. ANIMATION LOOP, COLLISION & GAME LOGIC ---
-    // Faster mobile base speed, thrusters will boost mobile to desktop levels
-    let baseSpeed = isMobile ? 0.30 : 0.48;
-    let thrusterMultiplier = 1.0; // Permanent speed boost when thrusters owned
+    let baseSpeed = isMobile ? 0.22 : 0.48;
     let distance = 0, time = 0, collisionFlash = 0;
     const shipBox = new THREE.Box3();
 
@@ -1825,44 +1346,21 @@
     terrainMat.color.setHex(0x00ffff);
     wireMat.color.setHex(0x00ffff);
 
-    // AUTO-START GAME (Play button removed temporarily)
-    console.log('🎮 Auto-starting game...');
-
-    let gameStarted = true;  // Start immediately
+    // Play button functionality
+    let gameStarted = false;
     let isPaused = false;
+    const playOverlay = document.getElementById('play-overlay');
     const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
 
-    try {
-        console.log('toggleParamsBtn:', toggleParamsBtn);
-        console.log('pauseButton:', pauseButton);
-
-        // Show UI elements immediately
-        if (toggleParamsBtn) toggleParamsBtn.classList.add('visible');
-        if (pauseButton) pauseButton.style.display = 'block';
-        phaseStartTime = Date.now();
-
-        console.log('phaseStartTime:', phaseStartTime);
-        console.log('typeof animate:', typeof animate);
-
-        // Start animation immediately
-        console.log('✓ Calling animate()...');
-        animate();
-        console.log('✓ animate() called successfully');
-    } catch (error) {
-        console.error('❌ ERROR in auto-start:', error.message);
-        console.error('Stack:', error.stack);
-        alert('Game failed to start: ' + error.message);
-    }
-
-    // ESC key to pause game
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && gameStarted && !checkpointActive) {
-            isPaused = !isPaused;
-            pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
-            if (!isPaused) {
-                animate(); // Resume animation
-            }
+    playOverlay.addEventListener('click', () => {
+        gameStarted = true;
+        playOverlay.classList.add('hidden');
+        toggleParamsBtn.classList.add('visible');
+        pauseButton.style.display = 'block'; // Show pause button
+        phaseStartTime = Date.now(); // Initialize phase timer
+        if (!animationRunning) {
+            animate();
         }
     });
 
@@ -1897,10 +1395,10 @@
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
 
-        // Speed boost effect (includes near-miss boost + thrusters) with deltaTime
+        // Speed boost effect (includes near-miss boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
-        const speed = baseSpeed * thrusterMultiplier * totalSpeedMultiplier * deltaTime * timeScale; // Thrusters permanent
+        const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
@@ -1956,14 +1454,6 @@
         // Warp lines effect when speed boost/thrusters active
         const warpFactor = (speedBoostActive || abilities.thrusters.owned) ? 4.0 : 1.0;
         particles.scale.z = warpFactor;
-
-        // Thruster visual effect - brighter engine light when thrusters owned
-        if (abilities.thrusters.owned) {
-            engineLight.intensity = 15 + Math.random() * 5;
-            engineLight.color.setHex(0x00ffff);
-        } else {
-            engineLight.intensity = 10 + Math.random() * 3;
-        }
 
         // Controls with momentum (varies by plane type)
         const smoothing = planeStats[currentPlaneType].smoothing;
@@ -2024,6 +1514,7 @@
 
         // Light follow
         engineLight.position.set(curX, curY, 5);
+        engineLight.intensity = 10 + Math.random()*3;
 
         // Collision logic with varied buildings (simplified)
         shipBox.setFromObject(shipGroup);
@@ -2036,9 +1527,9 @@
 
         // Check if we're in a breather phase to skip building updates
         const isBreatherPhase = currentPhase === 'rings' ||
-                               currentPhase === 'breather_before_rings' ||
-                               currentPhase === 'breather_after_rings' ||
-                               currentPhase === 'walls';
+            currentPhase === 'breather_before_rings' ||
+            currentPhase === 'breather_after_rings' ||
+            currentPhase === 'walls';
 
         buildings.forEach(b => {
             // During breather phases, skip all building logic to avoid stutters
@@ -2178,8 +1669,8 @@
                 }
 
                 if(shipBox.intersectsBox(b.userData.box)) {
-                    // Check grace period and invincibility first
-                    if (!gracePeriodActive && !invincibilityActive) {
+                    // Check grace period first
+                    if (!gracePeriodActive) {
                         collisionFlash = 0.5;
                         b.position.z = -120;
                         b.visible = false;
@@ -2219,28 +1710,24 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
-            // Spawn 3-4 wall "sets" - mix of high/low/punched walls
+            // Spawn 3-4 wall "sets" - sometimes single, sometimes both high+low
             const wallSetCount = Math.floor(Math.random() * 2) + 3; // 3-4 sets
 
             for (let i = 0; i < wallSetCount; i++) {
                 const zPos = -200 - (i * 80); // Very far for visibility, spaced 80 units apart
-                const wallTypeRoll = Math.random();
+                const bothWalls = Math.random() < 0.3; // 30% chance for both high AND low (must stay centered)
 
-                if (wallTypeRoll < 0.25) {
-                    // 25% chance: Spawn BOTH high and low - player must stay centered
+                if (bothWalls) {
+                    // Spawn BOTH high and low from pool - player must stay centered
                     const highWall = getWallFromPool('high', zPos);
                     const lowWall = getWallFromPool('low', zPos);
                     if (highWall) walls.push(highWall);
                     if (lowWall) walls.push(lowWall);
-                } else if (wallTypeRoll < 0.6) {
-                    // 35% chance: Spawn single wall (high or low)
+                } else {
+                    // Spawn single wall from pool (50/50 high or low)
                     const wallType = Math.random() < 0.5 ? 'high' : 'low';
                     const wall = getWallFromPool(wallType, zPos);
                     if (wall) walls.push(wall);
-                } else {
-                    // 40% chance: Spawn punched wall (player must fit through hole)
-                    const punchedWall = getPunchedWallFromPool(zPos);
-                    if (punchedWall) punchedWalls.push(punchedWall);
                 }
             }
 
@@ -2251,26 +1738,6 @@
             });
 
             wallsSpawnedThisPhase = true;
-        }
-
-        // Spawn ambient rocks during breather phases (ONLY ONCE per phase)
-        const isBreatherPhase = currentPhase === 'breather_before_rings' || currentPhase === 'breather_after_rings';
-        if (isBreatherPhase && !rocksSpawnedThisPhase) {
-            // Spawn 8-12 tiny rocks scattered organically in lanes
-            const rockCount = Math.floor(Math.random() * 5) + 8; // 8-12 rocks
-
-            for (let i = 0; i < rockCount; i++) {
-                const xPos = (Math.random() - 0.5) * 12; // Spread across lanes
-                const yPos = Math.random() * 5 + 1;      // Various heights
-                const zPos = -80 - (Math.random() * 60); // Scattered along path
-
-                const rock = getRockFromPool(xPos, yPos, zPos);
-                if (rock) {
-                    ambientRocks.push(rock);
-                }
-            }
-
-            rocksSpawnedThisPhase = true;
         }
 
         // Optimized wall loop - iterate backwards to safely remove items
@@ -2298,7 +1765,7 @@
 
                 if (shipBox.intersectsBox(wall.userData.box)) {
                     // Check grace period
-                    if (!gracePeriodActive && !invincibilityActive) {
+                    if (!gracePeriodActive) {
                         collisionFlash = 0.5;
                         wall.visible = false;
                         wall.position.z = -1000;
@@ -2325,93 +1792,6 @@
             }
         }
 
-        // Punched wall collision logic - check if plane fits through hole
-        for (let i = punchedWalls.length - 1; i >= 0; i--) {
-            const wall = punchedWalls[i];
-            wall.position.z += speed;
-
-            // Return wall to pool when it passes the player
-            if (wall.position.z > 20) {
-                wall.visible = false;
-                wall.position.z = -1000;
-                punchedWalls.splice(i, 1);
-                continue;
-            }
-
-            // Check collision when wall is at player's z position
-            if (wall.position.z > -2 && wall.position.z < 10) {
-                // Get hole bounds (relative to wall center at y=4)
-                const holeWidth = wall.userData.holeWidth;
-                const holeHeight = wall.userData.holeHeight;
-                const holeLeft = wall.position.x - holeWidth / 2;
-                const holeRight = wall.position.x + holeWidth / 2;
-                const holeBottom = wall.position.y - holeHeight / 2;
-                const holeTop = wall.position.y + holeHeight / 2;
-
-                // Check if plane is OUTSIDE the hole bounds (collision)
-                const planeIsOutsideHole = curX < holeLeft || curX > holeRight ||
-                                          curY < holeBottom || curY > holeTop;
-
-                // Only check collision when wall is very close to plane
-                const zDiff = Math.abs(wall.position.z - 3.5);
-                if (zDiff < 1.5 && planeIsOutsideHole) {
-                    if (!gracePeriodActive && !invincibilityActive) {
-                        collisionFlash = 0.5;
-                        wall.visible = false;
-                        wall.position.z = -1000;
-                        punchedWalls.splice(i, 1);
-
-                        // Apply damage (same as regular wall collision)
-                        if (shieldActive && shieldHits < maxShieldHits) {
-                            shieldHits++;
-                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
-                            crashMessageTimer = 50;
-
-                            if (shieldHits >= maxShieldHits) {
-                                shieldActive = false;
-                                crashMessage = `SHIELD DOWN!`;
-                            }
-                        } else {
-                            score = Math.max(0, score - 15);
-                            scoreDisplayUI.innerText = `SCORE: ${score}`;
-                            crashMessage = `-15 POINTS`;
-                            crashMessageTimer = 50;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Parallax star field update - subtle depth effect
-        stars.forEach(star => {
-            // Move stars forward based on parallax speed (far = slow, near = fast)
-            star.position.z += speed * star.userData.parallaxSpeed;
-
-            // Wrap around when star passes the player
-            if (star.position.z > 20) {
-                star.position.z = -200 - Math.random() * 50; // Reset to far distance
-                star.position.x = (Math.random() - 0.5) * 80; // Randomize X position
-                star.position.y = Math.random() * 15 + 5; // Randomize Y position
-            }
-        });
-
-        // Ambient rocks update - purely visual, no collision
-        for (let i = ambientRocks.length - 1; i >= 0; i--) {
-            const rock = ambientRocks[i];
-            rock.position.z += speed;
-
-            // Slow rotation for visual interest
-            rock.rotation.x += 0.01;
-            rock.rotation.y += 0.01;
-
-            // Return rock to pool when it passes the player
-            if (rock.position.z > 15) {
-                rock.visible = false;
-                rock.position.z = -1000;
-                ambientRocks.splice(i, 1);
-            }
-        }
-
         // Ring collection logic - optimized backwards loop
         for (let i = rings.length - 1; i >= 0; i--) {
             const ring = rings[i];
@@ -2428,10 +1808,7 @@
                     const dx = ring.position.x - curX;
                     const dy = ring.position.y - curY;
                     const distSq = dx * dx + dy * dy;
-                    // Scale collision radius based on ring size
-                    const ringScale = ring.userData.ringScale || 1.0;
-                    const ringRadius = 3 * ringScale;
-                    const ringRadiusSq = ringRadius * ringRadius;
+                    const ringRadiusSq = 3 * 3; // 9
 
                     if (distSq < ringRadiusSq) {
                         ring.userData.collected = true;
@@ -2439,14 +1816,8 @@
                         const points = ring.userData.points || 25;
                         score += points;
 
-                        // Show bonus in separate line below score
-                        scoreDisplayUI.innerText = `SCORE: ${score}`;
-                        scoreBonusUI.innerText = `+${points}`;
-                        scoreBonusUI.style.display = 'inline';
-                        scoreBonusUI.style.color = '#00ff88'; // Green for positive bonus
-                        setTimeout(() => {
-                            scoreBonusUI.style.display = 'none';
-                        }, 2000); // Hide bonus after 2 seconds
+                        // Show bonus in score display
+                        scoreDisplayUI.innerText = `SCORE: ${score} (+${points})`;
                         ring.material.color.setHex(0xffff00); // Flash yellow
                     }
                 }
@@ -2509,12 +1880,6 @@
                     if (tempBox.intersectsBox(enemy.userData.box)) {
                         score += 10; // Bonus for destroying enemy
                         scoreDisplayUI.innerText = `SCORE: ${score}`;
-                        scoreBonusUI.innerText = `+10`;
-                        scoreBonusUI.style.display = 'inline';
-                        scoreBonusUI.style.color = '#00ff88';
-                        setTimeout(() => {
-                            scoreBonusUI.style.display = 'none';
-                        }, 2000);
 
                         scene.remove(enemy);
                         enemies.splice(i, 1);
@@ -2546,66 +1911,42 @@
             levelUpMessageTimer = 90; // Show for 1.5 seconds
         }
 
-        // Ring spawning before checkpoints - 80% chance to spawn rings before checkpoint
+        // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
         const milesUntilCheckpoint = nextCheckpoint - miles;
         if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
-            // 80% chance to spawn rings before checkpoint, 20% chance for checkpoint after buildings
-            if (Math.random() < 0.8) {
-                // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
-                const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
-                for (let i = 0; i < ringCount; i++) {
-                    // 10% chance for rare fuchsia ring (50 bonus)
-                    const isFuchsia = Math.random() < 0.1;
-                    const ring = getRingFromPool();
+            for (let i = 0; i < ringCount; i++) {
+                // 10% chance for rare fuchsia ring (50 bonus)
+                const isFuchsia = Math.random() < 0.1;
+                const ring = getRingFromPool();
 
-                    if (ring) {
-                        ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
-
-                        // Vary ring sizes: smaller = harder but worth more
-                        const sizeRoll = Math.random();
-                        let ringScale, ringPoints;
-                        if (sizeRoll < 0.15) {
-                            ringScale = 0.6; // Tiny ring - 40 pts
-                            ringPoints = 40;
-                        } else if (sizeRoll < 0.35) {
-                            ringScale = 0.8; // Small ring - 30 pts
-                            ringPoints = 30;
-                        } else if (sizeRoll < 0.75) {
-                            ringScale = 1.0; // Normal ring - 25 pts
-                            ringPoints = 25;
-                        } else {
-                            ringScale = 1.3; // Large ring - 15 pts (easier)
-                            ringPoints = 15;
-                        }
-
-                        ring.scale.set(ringScale, ringScale, ringScale);
-                        ring.userData.ringScale = ringScale;
-
-                        ring.position.set(
-                            (Math.random() - 0.5) * 10, // Wider horizontal spread
-                            Math.random() * 6 + 1,      // Varied height: 1-7 (much harder!)
-                            -150 - (i * 50)             // Spaced apart (50 units)
-                        );
-                        ring.userData.points = isFuchsia ? 50 : ringPoints;
-                        rings.push(ring);
-                    }
+                if (ring) {
+                    ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+                    ring.position.set(
+                        (Math.random() - 0.5) * 8, // Keep them closer to center
+                        Math.random() * 2 + 2,     // Mid-height
+                        -150 - (i * 50)            // Spaced apart (50 units)
+                    );
+                    ring.userData.points = isFuchsia ? 50 : 25;
+                    rings.push(ring);
                 }
-
-                // Clear all buildings and walls during ring collection
-                buildings.forEach(b => {
-                    b.position.z = -500;
-                    b.visible = false;
-                });
-                // Return all active walls to pool
-                walls.forEach(w => {
-                    w.visible = false;
-                    w.position.z = -1000;
-                });
-                walls.length = 0; // Clear walls array
             }
 
-            ringsSpawnedForCheckpoint = true; // Mark as handled regardless
+            // Clear all buildings and walls during ring collection
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+            // Return all active walls to pool
+            walls.forEach(w => {
+                w.visible = false;
+                w.position.z = -1000;
+            });
+            walls.length = 0; // Clear walls array
+
+            ringsSpawnedForCheckpoint = true;
         }
 
         // Checkpoint system - spawn gate at checkpoint
@@ -2640,42 +1981,36 @@
 
         // Phase system: Check if it's time to switch phases
         const currentTime = Date.now();
-        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0 && walls.length === 0) {
+        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
             // Switch phase based on current phase
             if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings: 30% chance walls, 70% breather
-                if (Math.random() < 0.3) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
-                    phaseDuration = 15000; // Walls phase lasts ~15 seconds
-                } else {
-                    currentPhase = 'breather_before_rings';
-                    phaseDuration = 1000; // 1 second breather
-                    rocksSpawnedThisPhase = false; // Reset rock spawning flag
-                }
+                // After buildings, add breather before rings
+                currentPhase = 'breather_before_rings';
                 phaseStartTime = currentTime;
+                phaseDuration = 2000; // 2 second breather before rings
             } else if (currentPhase === 'breather_before_rings') {
-                // After breather, go back to buildings
+                // After breather, go back to buildings (rings now tied to checkpoints)
                 currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
-            } else if (currentPhase === 'walls') {
-                // After walls, go back to buildings
-                currentPhase = 'buildings';
-                phaseStartTime = currentTime;
-                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
             } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, back to buildings
-                currentPhase = 'buildings';
+                // After rings breather, 25% chance for walls, 75% back to buildings
+                if (Math.random() < 0.25) {
+                    currentPhase = 'walls';
+                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
+                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
+                } else {
+                    currentPhase = 'buildings';
+                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+                }
                 phaseStartTime = currentTime;
-                phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
             }
         }
 
         // Spawn rings during ring phase (ONLY ONCE per phase)
         if (currentPhase === 'rings' && !ringsSpawnedThisPhase) {
-            // SHORT ring runs: 3-4 rings for better earning potential
-            const ringCount = Math.floor(Math.random() * 2) + 3; // 3-4 rings
+            // SHORT ring runs: only 2-3 rings max
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
@@ -2710,11 +2045,15 @@
             // All rings collected, switch to breather phase
             currentPhase = 'breather_after_rings';
             phaseStartTime = Date.now();
-            phaseDuration = 1500; // 1.5 second breather after rings
-            rocksSpawnedThisPhase = false; // Reset rock spawning flag
+            phaseDuration = 3000; // 3 second breather after rings
         }
 
-        // Wall phase completion is now handled in main phase system above
+        // After all walls are passed, transition back to buildings
+        if (currentPhase === 'walls' && wallsSpawnedThisPhase && walls.length === 0) {
+            currentPhase = 'buildings';
+            phaseStartTime = Date.now();
+            phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
+        }
 
         // Check grace period expiration
         if (gracePeriodActive && Date.now() >= gracePeriodEndTime) {
@@ -2742,68 +2081,6 @@
             mainMesh.material.opacity = pulse;
             wireMesh.material.opacity = pulse;
             shadowMesh.material.opacity = pulse * 0.3;
-        }
-
-        // Invincibility effect: Yellow flash like Mario
-        if (invincibilityActive) {
-            if (Date.now() >= invincibilityEndTime) {
-                invincibilityActive = false;
-                // Reset to normal color
-                paperMat.color.setHex(currentPlaneColor);
-            } else {
-                // Flash between yellow and current color
-                const flashSpeed = Math.sin(time * 15) > 0;
-                paperMat.color.setHex(flashSpeed ? 0xffff00 : currentPlaneColor);
-            }
-        }
-
-        // Ring magnet effect: attract nearby rings
-        if (ringMagnetActive) {
-            if (Date.now() >= ringMagnetEndTime) {
-                ringMagnetActive = false;
-            } else {
-                // Pull rings toward player
-                rings.forEach(ring => {
-                    if (!ring.userData.collected) {
-                        const dx = curX - ring.position.x;
-                        const dy = curY - ring.position.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-
-                        // Attract if within magnet radius (10 units)
-                        if (distance < 10 && distance > 0.5) {
-                            const pullStrength = 0.15;
-                            ring.position.x += dx * pullStrength;
-                            ring.position.y += dy * pullStrength;
-                        }
-                    }
-                });
-            }
-        }
-
-        // Small plane effect: morph animation to smaller size for 3 levels
-        if (smallPlaneActive) {
-            // Check if 3 levels have passed
-            if (currentLevel >= smallPlaneActivationLevel + 3) {
-                smallPlaneActive = false;
-            }
-        }
-
-        // Smooth morph animation
-        const targetScale = smallPlaneActive ? smallPlaneScale : 1.0;
-        const morphSpeed = 0.05;
-        planeMorphProgress += (targetScale - planeMorphProgress) * morphSpeed;
-        shipGroup.scale.set(planeMorphProgress, planeMorphProgress, planeMorphProgress);
-
-        // Slow motion effect: reduce time scale
-        if (slowMotionActive) {
-            if (Date.now() >= slowMotionEndTime) {
-                slowMotionActive = false;
-                timeScale = 1.0;
-            } else {
-                timeScale = 0.5; // 50% speed
-            }
-        } else {
-            timeScale = 1.0;
         }
 
         // Message timers
