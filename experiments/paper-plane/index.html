@@ -13,24 +13,19 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#050505">
 
+    <!-- Google Font: Press Start 2P -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
     <title>ThreeJS: Paper Airplane</title>
     <style>
-        @font-face {
-            font-family: "Cartridge Regular";
-            src:
-                    url(../../assets/Cartridge-Regular.woff2) format("woff2"),
-                    url("../../assets/Cartridge-Regular.woff") format("woff");
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-
         :root { --bg: #050505; --neon: #00ffff; --teal: #00ced1; }
         body {
             margin: 0;
             background: var(--bg);
             color: white;
-            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
             overflow-x: hidden;
             -webkit-user-select: none;
             user-select: none;
@@ -156,7 +151,7 @@
             cursor: pointer;
             font-size: 11px;
             z-index: 99;
-            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
             display: none; /* Hidden until play */
         }
         #toggle-params.visible { display: block; }
@@ -181,7 +176,7 @@
             background: rgba(0, 255, 255, 0.1);
             border: 2px solid var(--neon);
             color: var(--neon);
-            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 24px;
             letter-spacing: 4px;
             padding: 20px 50px;
@@ -217,7 +212,7 @@
             margin-bottom: 35px;
             text-align: center;
             line-height: 1.6;
-            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
             text-transform: uppercase;
             border-bottom: 3px solid var(--neon);
             padding-bottom: 15px;
@@ -289,7 +284,7 @@
             color: var(--neon);
             padding: 16px 20px;
             cursor: pointer;
-            font-family: 'Cartridge Regular', 'Courier New', monospace;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 14px;
             letter-spacing: 1.5px;
             max-width: 700px;
@@ -373,11 +368,11 @@
         <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span>
     </div>
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
-        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
+        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(0, 20, 20, 0.75); border: 1px solid rgba(0, 255, 255, 0.4); padding: 12px 16px; color: #00ffff; font-family: 'Cartridge Regular', 'Courier New', monospace; font-size: 14px; letter-spacing: 1.5px; text-align: right; font-weight: bold; opacity: 0.95; line-height: 1.6;">
+    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
         <span id="score-display">SCORE: 0</span><br>
-        <span style="font-size: 10px; opacity: 0.75; letter-spacing: 1px;">+25 green / +50 fuchsia rings</span>
+        <span id="score-bonus" style="font-size: 9px; opacity: 0; transition: opacity 0.3s;">+0</span>
     </div>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
@@ -417,6 +412,7 @@
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
     const scoreDisplayUI = document.getElementById('score-display');
+    const scoreBonusUI = document.getElementById('score-bonus');
 
     // Game state
     let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
@@ -426,6 +422,7 @@
     let levelUpMessage = '';
     let levelUpMessageTimer = 0;
     let score = 0; // Points from collecting rings
+    let bonusFadeTimer = 0; // Timer for fading bonus display
 
     // Checkpoint system
     let nextCheckpoint = 25; // First checkpoint at 25 miles
@@ -1891,8 +1888,11 @@
                         const points = ring.userData.points || 25;
                         score += points;
 
-                        // Show bonus in score display
-                        scoreDisplayUI.innerText = `SCORE: ${score} (+${points})`;
+                        // Show bonus in score display with fade effect
+                        scoreDisplayUI.innerText = `SCORE: ${score}`;
+                        scoreBonusUI.innerText = `+${points}`;
+                        scoreBonusUI.style.opacity = '1';
+                        bonusFadeTimer = 90; // Show for ~1.5 seconds at 60fps
                         ring.material.color.setHex(0xffff00); // Flash yellow
                     }
                 }
@@ -2161,6 +2161,14 @@
         // Message timers
         if (crashMessageTimer > 0) crashMessageTimer--;
         if (levelUpMessageTimer > 0) levelUpMessageTimer--;
+
+        // Bonus fade timer
+        if (bonusFadeTimer > 0) {
+            bonusFadeTimer--;
+            if (bonusFadeTimer === 0) {
+                scoreBonusUI.style.opacity = '0';
+            }
+        }
 
         // Collision Glitch FX (RED) - only during collision
         if (collisionFlash > 0) {
