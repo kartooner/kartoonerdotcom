@@ -310,12 +310,21 @@
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
 
+        /* Tablet optimizations */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #game-container {
+                height: 90vh; /* Bigger viewport on tablet */
+                max-width: 100%;
+                max-height: none;
+            }
+        }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .spacer { height: 20vh; }
             .spacer h1 { display: none; } /* Hide binary text on mobile (iOS treats as phone number) */
             #game-container {
-                height: 85vh; /* Slightly smaller for performance */
+                height: 90vh; /* Bigger viewport on mobile too */
                 max-width: 100%;
                 max-height: none;
                 border: none; /* Remove border on mobile */
@@ -416,10 +425,6 @@
     </div>
 </div>
 
-<div class="spacer">
-    <h1>01001000 01001001</h1>
-</div>
-
 <div id="game-container">
     <div id="play-overlay">
         <div id="play-button">PLAY</div>
@@ -455,10 +460,13 @@
 </script>
 
 <script type="module">
+    console.log('🎮 Game script loading...');
     import * as THREE from 'three';
+    console.log('✓ THREE.js imported');
 
     const container = document.getElementById('footer-canvas');
     const gameContainer = document.getElementById('game-container');
+    console.log('✓ Containers found:', container ? 'yes' : 'NO', gameContainer ? 'yes' : 'NO');
 
     // Prevent pinch zoom on mobile
     document.addEventListener('gesturestart', e => e.preventDefault());
@@ -1798,44 +1806,70 @@
     wireMat.color.setHex(0x00ffff);
 
     // Play button functionality
+    console.log('🎯 Setting up play button...');
     let gameStarted = false;
     let isPaused = false;
     const playOverlay = document.getElementById('play-overlay');
     const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
+    console.log('🎯 Play overlay element:', playOverlay);
+    console.log('🎯 Play overlay visible?', playOverlay ? window.getComputedStyle(playOverlay).display : 'N/A');
 
     // Ensure play overlay exists and add click handler
     if (playOverlay) {
+        console.log('✓ Adding click listener to play overlay');
+
+        // Test if ANY events work
+        playOverlay.addEventListener('mousedown', () => console.log('🖱️ mousedown'));
+        playOverlay.addEventListener('touchstart', () => console.log('👆 touchstart'));
+        playOverlay.addEventListener('pointerdown', () => console.log('👉 pointerdown'));
+
         playOverlay.addEventListener('click', (e) => {
-            console.log('Play button clicked!');
-            gameStarted = true;
-            playOverlay.classList.add('hidden');
-            toggleParamsBtn.classList.add('visible');
-            pauseButton.style.display = 'block';
-            phaseStartTime = Date.now();
+            console.log('🎮 ===== PLAY BUTTON CLICKED =====');
+            e.preventDefault();
+            e.stopPropagation();
 
-            // Enable canvas pointer events now that game is starting
-            renderer.domElement.style.pointerEvents = 'auto';
+            try {
+                gameStarted = true;
+                console.log('1. gameStarted =', gameStarted);
 
-            // Focus trap
-            gameContainer.focus();
-            gameContainer.setAttribute('tabindex', '0');
+                // Force hide with style.display
+                playOverlay.style.display = 'none';
+                console.log('2. Play overlay display set to none');
 
-            if (!animationRunning) {
-                animate();
+                toggleParamsBtn.classList.add('visible');
+                pauseButton.style.display = 'block';
+                phaseStartTime = Date.now();
+                console.log('3. UI elements updated');
+
+                // Enable canvas pointer events
+                renderer.domElement.style.pointerEvents = 'auto';
+                console.log('4. Canvas pointer-events enabled');
+
+                gameContainer.focus();
+                gameContainer.setAttribute('tabindex', '0');
+                console.log('5. Focus set on game container');
+
+                if (!animationRunning) {
+                    console.log('6. Starting animation (animationRunning was false)');
+                    animate();
+                } else {
+                    console.log('6. Animation already running - NOT calling animate()');
+                }
+                console.log('🎮 ===== PLAY SETUP COMPLETE =====');
+            } catch (error) {
+                console.error('❌ ERROR:', error.message, error.stack);
             }
-        });
+        }, { passive: false });
 
-        // Also listen on the play button itself for extra reliability
         const playButton = document.getElementById('play-button');
         if (playButton) {
-            playButton.addEventListener('click', (e) => {
-                console.log('Play button (child) clicked!');
-                // Event will bubble up to playOverlay, this is just for debugging
+            playButton.addEventListener('click', () => {
+                console.log('🎯 Play button child clicked');
             });
         }
     } else {
-        console.error('Play overlay not found!');
+        console.error('❌ Play overlay NOT FOUND!');
     }
 
     // Prevent page scrolling when touching/clicking game container (ONLY after game starts)
