@@ -206,17 +206,25 @@
         #checkpoint-overlay.active { display: flex; }
         #checkpoint-title {
             color: var(--neon);
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 4px;
-            margin-bottom: 35px;
+            font-size: 14px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.8;
             font-family: 'Press Start 2P', 'Courier New', monospace;
-            text-transform: uppercase;
-            border-bottom: 3px solid var(--neon);
-            padding-bottom: 15px;
+            text-transform: none;
+            border: none;
+            padding: 0;
             background: none;
+        }
+        #checkpoint-subtitle {
+            color: var(--neon);
+            font-size: 11px;
+            margin-bottom: 25px;
+            text-align: center;
+            opacity: 0.9;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
         }
         #abilities-container {
             display: flex;
@@ -285,10 +293,10 @@
             padding: 16px 20px;
             cursor: pointer;
             font-family: 'Press Start 2P', 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 12px;
             letter-spacing: 1.5px;
             max-width: 700px;
-            width: calc(90% - 40px);
+            width: 90%;
             text-align: left;
             transition: all 0.15s;
             text-transform: uppercase;
@@ -298,6 +306,14 @@
             background: rgba(0, 255, 255, 0.15);
             border-color: var(--neon);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        #checkpoint-warning {
+            color: #ff8800;
+            font-size: 9px;
+            margin-top: 20px;
+            text-align: center;
+            opacity: 0.7;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
         }
 
         #pause-button:hover {
@@ -353,8 +369,10 @@
     </div>
     <div id="checkpoint-overlay">
         <div id="checkpoint-title"></div>
+        <div id="checkpoint-subtitle"></div>
         <div id="abilities-container"></div>
-        <button id="skip-checkpoint">[ ] Not right now</button>
+        <button id="skip-checkpoint">[ ] Skip upgrade</button>
+        <div id="checkpoint-warning"></div>
     </div>
     <div class="ui-overlay">
         <span id="score-text">0 ----- 0mi</span><br>
@@ -1043,14 +1061,15 @@
 
         const checkpointOverlay = document.getElementById('checkpoint-overlay');
         const checkpointTitle = document.getElementById('checkpoint-title');
+        const checkpointSubtitle = document.getElementById('checkpoint-subtitle');
+        const checkpointWarning = document.getElementById('checkpoint-warning');
         const abilitiesContainer = document.getElementById('abilities-container');
 
-        // Special messaging for first checkpoint
-        if (isFirstCheckpoint) {
-            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">PLANE COLOR (FREE)</span><br><span style="font-size: 10px; opacity: 0.6; color: #ff8800;">⚠ WARNING: 3-4 building hits will remove your upgrade</span>`;
-        } else {
-            checkpointTitle.innerHTML = `CHECKPOINT REACHED<br><span style="font-size: 12px; opacity: 0.8;">BALANCE: ${score} PTS / SELECT UPGRADE</span><br><span style="font-size: 10px; opacity: 0.6; color: #ff8800;">⚠ WARNING: 3-4 building hits will remove your upgrade</span>`;
-        }
+        // Simplified title and subtitle
+        checkpointTitle.innerText = '= Checkpoint reached =';
+        checkpointSubtitle.innerHTML = `Balance: ${score}<br><br>Please choose an upgrade:`;
+        checkpointWarning.innerText = '(3-4 hits will remove your upgrade)';
+
         abilitiesContainer.innerHTML = '';
 
         // First checkpoint: Always show Plane Color (free)
@@ -1103,14 +1122,6 @@
 
             abilitiesContainer.appendChild(card);
         });
-
-        // Update skip button text based on affordability
-        const skipButton = document.getElementById('skip-checkpoint');
-        if (!canAffordAny) {
-            skipButton.innerText = '□ SKIP UPGRADE (INSUFFICIENT BALANCE)';
-        } else {
-            skipButton.innerText = '□ SKIP UPGRADE';
-        }
 
         checkpointOverlay.classList.add('active');
     }
