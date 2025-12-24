@@ -1801,21 +1801,36 @@
     const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
 
-    playOverlay.addEventListener('click', () => {
-        gameStarted = true;
-        playOverlay.classList.add('hidden');
-        toggleParamsBtn.classList.add('visible');
-        pauseButton.style.display = 'block'; // Show pause button
-        phaseStartTime = Date.now(); // Initialize phase timer
+    // Ensure play overlay exists and add click handler
+    if (playOverlay) {
+        playOverlay.addEventListener('click', (e) => {
+            console.log('Play button clicked!');
+            gameStarted = true;
+            playOverlay.classList.add('hidden');
+            toggleParamsBtn.classList.add('visible');
+            pauseButton.style.display = 'block'; // Show pause button
+            phaseStartTime = Date.now(); // Initialize phase timer
 
-        // Focus trap: prevent page scrolling when game is active
-        gameContainer.focus();
-        gameContainer.setAttribute('tabindex', '0');
+            // Focus trap: prevent page scrolling when game is active
+            gameContainer.focus();
+            gameContainer.setAttribute('tabindex', '0');
 
-        if (!animationRunning) {
-            animate();
+            if (!animationRunning) {
+                animate();
+            }
+        });
+
+        // Also listen on the play button itself for extra reliability
+        const playButton = document.getElementById('play-button');
+        if (playButton) {
+            playButton.addEventListener('click', (e) => {
+                console.log('Play button (child) clicked!');
+                // Event will bubble up to playOverlay, this is just for debugging
+            });
         }
-    });
+    } else {
+        console.error('Play overlay not found!');
+    }
 
     // Prevent page scrolling when touching/clicking game container (ONLY after game starts)
     gameContainer.addEventListener('touchstart', (e) => {
