@@ -1807,19 +1807,33 @@
 
     // AUTO-START GAME (Play button removed temporarily)
     console.log('🎮 Auto-starting game...');
+
     let gameStarted = true;  // Start immediately
     let isPaused = false;
     const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
 
-    // Show UI elements immediately
-    toggleParamsBtn.classList.add('visible');
-    pauseButton.style.display = 'block';
-    phaseStartTime = Date.now();
+    try {
+        console.log('toggleParamsBtn:', toggleParamsBtn);
+        console.log('pauseButton:', pauseButton);
 
-    // Start animation immediately
-    console.log('✓ Starting animation automatically...');
-    animate();
+        // Show UI elements immediately
+        if (toggleParamsBtn) toggleParamsBtn.classList.add('visible');
+        if (pauseButton) pauseButton.style.display = 'block';
+        phaseStartTime = Date.now();
+
+        console.log('phaseStartTime:', phaseStartTime);
+        console.log('typeof animate:', typeof animate);
+
+        // Start animation immediately
+        console.log('✓ Calling animate()...');
+        animate();
+        console.log('✓ animate() called successfully');
+    } catch (error) {
+        console.error('❌ ERROR in auto-start:', error.message);
+        console.error('Stack:', error.stack);
+        alert('Game failed to start: ' + error.message);
+    }
 
     // ESC key to pause game
     document.addEventListener('keydown', (e) => {
