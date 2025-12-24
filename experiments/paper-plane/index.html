@@ -429,9 +429,7 @@
 </div>
 
 <div id="game-container">
-    <div id="play-overlay" onclick="alert('PLAY OVERLAY CLICKED! Check if this shows.')">
-        <div id="play-button">PLAY</div>
-    </div>
+    <!-- Play button removed - game auto-starts -->
     <div id="checkpoint-overlay">
         <div id="checkpoint-title"></div>
         <div id="abilities-container"></div>
@@ -463,8 +461,6 @@
 </script>
 
 <script type="module">
-    // FIRST LINE - if you don't see this in console, script isn't running at all
-    alert('🚨 SCRIPT STARTING - Check console now!');
     console.log('🎮 Game script loading...');
     import * as THREE from 'three';
     console.log('✓ THREE.js imported');
@@ -652,8 +648,7 @@
     renderer.autoClearColor = true;
     container.appendChild(renderer.domElement);
 
-    // CRITICAL FIX: Canvas blocks play button clicks. Disable pointer events until game starts.
-    renderer.domElement.style.pointerEvents = 'none';
+    // Canvas pointer events enabled (no play button - game auto-starts)
 
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
     const shipGroup = new THREE.Group();
@@ -1810,68 +1805,21 @@
     terrainMat.color.setHex(0x00ffff);
     wireMat.color.setHex(0x00ffff);
 
-    // Play button functionality
-    console.log('🎯 Setting up play button...');
-    let gameStarted = false;
+    // AUTO-START GAME (Play button removed temporarily)
+    console.log('🎮 Auto-starting game...');
+    let gameStarted = true;  // Start immediately
     let isPaused = false;
-    const playOverlay = document.getElementById('play-overlay');
     const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
-    console.log('🎯 Play overlay element:', playOverlay);
-    console.log('🎯 Play overlay visible?', playOverlay ? window.getComputedStyle(playOverlay).display : 'N/A');
 
-    // Ensure play overlay exists and add click handler
-    if (playOverlay) {
-        console.log('✓ Adding click listener to play overlay');
+    // Show UI elements immediately
+    toggleParamsBtn.classList.add('visible');
+    pauseButton.style.display = 'block';
+    phaseStartTime = Date.now();
 
-        // Test if ANY events work
-        playOverlay.addEventListener('mousedown', () => console.log('🖱️ mousedown'));
-        playOverlay.addEventListener('touchstart', () => console.log('👆 touchstart'));
-        playOverlay.addEventListener('pointerdown', () => console.log('👉 pointerdown'));
-
-        playOverlay.addEventListener('click', (e) => {
-            console.log('🎮 ===== PLAY BUTTON CLICKED =====');
-            e.preventDefault();
-            e.stopPropagation();
-
-            try {
-                gameStarted = true;
-                console.log('1. gameStarted =', gameStarted);
-
-                // Force hide with style.display
-                playOverlay.style.display = 'none';
-                console.log('2. Play overlay display set to none');
-
-                toggleParamsBtn.classList.add('visible');
-                pauseButton.style.display = 'block';
-                phaseStartTime = Date.now();
-                console.log('3. UI elements updated');
-
-                // Enable canvas pointer events
-                renderer.domElement.style.pointerEvents = 'auto';
-                console.log('4. Canvas pointer-events enabled');
-
-                if (!animationRunning) {
-                    console.log('5. Starting animation (animationRunning was false)');
-                    animate();
-                } else {
-                    console.log('5. Animation already running - NOT calling animate()');
-                }
-                console.log('🎮 ===== PLAY SETUP COMPLETE =====');
-            } catch (error) {
-                console.error('❌ ERROR:', error.message, error.stack);
-            }
-        }, { passive: false });
-
-        const playButton = document.getElementById('play-button');
-        if (playButton) {
-            playButton.addEventListener('click', () => {
-                console.log('🎯 Play button child clicked');
-            });
-        }
-    } else {
-        console.error('❌ Play overlay NOT FOUND!');
-    }
+    // Start animation immediately
+    console.log('✓ Starting animation automatically...');
+    animate();
 
     // ESC key to pause game
     document.addEventListener('keydown', (e) => {
