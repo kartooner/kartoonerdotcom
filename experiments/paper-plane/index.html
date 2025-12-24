@@ -461,9 +461,29 @@
 </script>
 
 <script type="module">
+    // TEST: This should show if script runs at all
+    alert('SCRIPT IS RUNNING! Check console.');
     console.log('🎮 Game script loading...');
-    import * as THREE from 'three';
-    console.log('✓ THREE.js imported');
+
+    let THREE;
+    try {
+        const importStart = performance.now();
+        THREE = await import('three');
+        const importTime = performance.now() - importStart;
+        console.log(`✓ THREE.js imported in ${importTime.toFixed(0)}ms`);
+        console.log('THREE object keys:', Object.keys(THREE).slice(0, 10));
+        window.THREE = THREE; // Make available globally for debugging
+    } catch (error) {
+        console.error('❌ THREE.js IMPORT FAILED:', error);
+        alert('THREE.js failed to load: ' + error.message);
+        document.body.innerHTML = '<h1 style="color: red; padding: 50px;">THREE.js failed to load. Check internet connection.</h1>';
+        throw error;
+    }
+
+    if (!THREE) {
+        alert('THREE is undefined!');
+        throw new Error('THREE undefined after import');
+    }
 
     const container = document.getElementById('footer-canvas');
     const gameContainer = document.getElementById('game-container');
