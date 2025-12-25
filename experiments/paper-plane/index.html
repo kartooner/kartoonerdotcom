@@ -333,8 +333,18 @@
             }
             .ui-overlay {
                 top: 12px;
-                font-size: 11px;
-                letter-spacing: 1px;
+                font-size: 10px;
+                letter-spacing: 0.5px;
+                line-height: 1.4;
+            }
+            #score-text {
+                font-size: 9px;
+            }
+            #high-score {
+                font-size: 8px !important;
+            }
+            #level-text {
+                font-size: 9px !important;
             }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
@@ -780,7 +790,7 @@
         const geometry = debrisGeometries[Math.floor(Math.random() * debrisGeometries.length)];
         const chunk = new THREE.Mesh(geometry, debrisMat.clone());
         chunk.material.opacity = 0.8; // More visible than ground debris
-        chunk.material.color.setHex(0xff00ff); // Magenta for collision debris
+        chunk.material.color.setHex(0x00ffff); // Cyan to match structures
         chunk.visible = false;
         chunk.position.set(0, 0, -1000);
         chunk.userData.velocity = new THREE.Vector3();
@@ -816,19 +826,19 @@
             const dirX = shipX - structureX;
             const dirY = shipY - structureY;
 
-            // Spawn debris on the side of impact, slightly AHEAD so it's visible
+            // Spawn debris at structure position - they will spray out forward
             chunk.position.set(
-                structureX + dirX * 0.5 + (Math.random() - 0.5) * 2, // Spawn on collision side
-                structureY + dirY * 0.5 + (Math.random() - 0.5) * 2,
-                structureZ - 10 - Math.random() * 5 // Spawn 10-15 units ahead
+                structureX + dirX * 0.3 + (Math.random() - 0.5) * 2, // Spawn on collision side with spread
+                structureY + Math.max(2, Math.abs(dirY) * 0.5),      // Start at structure height (min 2 units up)
+                structureZ - 8 - Math.random() * 8                    // Spawn 8-16 units ahead
             );
 
-            // Set velocity: debris moves SLOWER than scene speed so it stays visible ahead
-            // Scene speed is ~0.48, so debris at 0.2-0.4 will stay ahead and visible
+            // Set velocity: spray FORWARD and DOWN onto ground ahead
+            // More forward velocity so debris sprays out visibly
             chunk.userData.velocity.set(
-                dirX * 0.4 + (Math.random() - 0.5) * 0.5,    // Sideways based on collision direction
-                Math.abs(dirY) * 0.3 + Math.random() * 0.8,  // Good upward arc
-                0.15 + Math.random() * 0.25                   // Slow forward (0.15-0.4, slower than scene!)
+                dirX * 0.2 + (Math.random() - 0.5) * 0.3,   // Sideways based on hit direction
+                -0.2 - Math.random() * 0.2,                 // Downward (falls to ground)
+                0.4 + Math.random() * 0.4                   // Forward spray (0.4-0.8)
             );
 
             // Strong rotation velocity for dramatic spin-off effect
@@ -2486,7 +2496,8 @@
         }
 
         const distMiles = Math.floor(miles);
-        let displayText = `0 ----- ${distMiles}mi`;
+        const dashes = isMobile ? '--' : '-----'; // Fewer dashes on mobile
+        let displayText = `0 ${dashes} ${distMiles}mi`;
 
         // Show crash message
         if (crashMessageTimer > 0) {
