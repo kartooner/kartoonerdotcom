@@ -816,19 +816,19 @@
             const dirX = shipX - structureX;
             const dirY = shipY - structureY;
 
-            // Spawn debris on the side of impact
+            // Spawn debris on the side of impact, slightly AHEAD so it's visible
             chunk.position.set(
                 structureX + dirX * 0.5 + (Math.random() - 0.5) * 2, // Spawn on collision side
                 structureY + dirY * 0.5 + (Math.random() - 0.5) * 2,
-                structureZ
+                structureZ - 10 - Math.random() * 5 // Spawn 10-15 units ahead
             );
 
-            // Set velocity: debris flies strongly FORWARD and in direction of collision
-            // Fast forward velocity + upward arc so chunks are visible tumbling on landscape
+            // Set velocity: debris moves SLOWER than scene speed so it stays visible ahead
+            // Scene speed is ~0.48, so debris at 0.2-0.4 will stay ahead and visible
             chunk.userData.velocity.set(
                 dirX * 0.4 + (Math.random() - 0.5) * 0.5,    // Sideways based on collision direction
-                Math.abs(dirY) * 0.3 + Math.random() * 0.6,  // Upward for dramatic arc
-                2.5 + Math.random() * 1.5                     // Very fast forward (2.5-4.0)
+                Math.abs(dirY) * 0.3 + Math.random() * 0.8,  // Good upward arc
+                0.15 + Math.random() * 0.25                   // Slow forward (0.15-0.4, slower than scene!)
             );
 
             // Strong rotation velocity for dramatic spin-off effect
@@ -1738,17 +1738,17 @@
                 chunk.rotation.y += chunk.userData.rotationVelocity.y;
                 chunk.rotation.z += chunk.userData.rotationVelocity.z;
 
-                // Friction - slow down gradually
-                chunk.userData.velocity.x *= 0.95;
-                chunk.userData.velocity.z *= 0.95;
-                chunk.userData.rotationVelocity.multiplyScalar(0.98);
+                // Friction - slow down VERY gradually so debris stays visible longer
+                chunk.userData.velocity.x *= 0.97;
+                chunk.userData.velocity.z *= 0.97;
+                chunk.userData.rotationVelocity.multiplyScalar(0.99);
 
-                // Fade out after tumbling for a while
-                if (chunk.userData.lifetime > 60) { // ~1 second of tumbling
-                    const fadeProgress = (chunk.userData.lifetime - 60) / 30; // 30 frames to fade
+                // Fade out after tumbling for a while - MUCH longer visibility
+                if (chunk.userData.lifetime > 180) { // ~3 seconds of tumbling (was 1 second)
+                    const fadeProgress = (chunk.userData.lifetime - 180) / 60; // 60 frames (1 sec) to fade
                     chunk.material.opacity = 0.8 * (1 - fadeProgress);
 
-                    if (chunk.userData.lifetime > 90) { // Total 1.5 seconds on ground
+                    if (chunk.userData.lifetime > 240) { // Total 4 seconds on ground (was 1.5)
                         // Deactivate and remove from active list
                         chunk.userData.active = false;
                         chunk.visible = false;
@@ -1759,8 +1759,9 @@
                 }
             }
 
-            // Remove if went too far off screen
-            if (chunk.position.z > 50 || Math.abs(chunk.position.x) > 60) {
+            // Remove if player has passed the debris (debris is behind camera)
+            // Or if went too far off screen
+            if (chunk.position.z > 15 || Math.abs(chunk.position.x) > 80) {
                 chunk.userData.active = false;
                 chunk.visible = false;
                 chunk.position.set(0, 0, -1000);
