@@ -768,6 +768,75 @@
         debris.push(rock);
     }
 
+    // --- 4.5. COLLISION DEBRIS (CHUNKS FROM STRUCTURES) ---
+    // Physics-based debris that spawns when hitting buildings/walls
+    const collisionDebris = [];
+    const collisionDebrisPool = [];
+    const collisionDebrisCount = isMobile ? 20 : 30; // Pool of debris chunks
+    const collisionDebrisMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.8 });
+    const collisionDebrisGeometries = [
+        new THREE.BoxGeometry(0.5, 0.5, 0.5),           // Small cube chunk
+        new THREE.BoxGeometry(0.3, 0.8, 0.3),           // Tall chunk
+        new THREE.BoxGeometry(0.8, 0.3, 0.5),           // Wide chunk
+        new THREE.TetrahedronGeometry(0.4, 0)           // Pyramid chunk
+    ];
+
+    // Pre-create collision debris pool
+    for (let i = 0; i < collisionDebrisCount; i++) {
+        const geometry = collisionDebrisGeometries[Math.floor(Math.random() * collisionDebrisGeometries.length)];
+        const chunk = new THREE.Mesh(geometry, collisionDebrisMat.clone());
+        chunk.visible = false;
+        chunk.position.set(0, 0, -1000);
+        chunk.userData.velocity = new THREE.Vector3();
+        chunk.userData.rotationVelocity = new THREE.Vector3();
+        chunk.userData.active = false;
+        scene.add(chunk);
+        collisionDebrisPool.push(chunk);
+    }
+
+    // Function to spawn debris chunks from a collision point
+    function spawnCollisionDebris(x, y, z) {
+        const chunkCount = Math.floor(Math.random() * 3) + 2; // 2-4 chunks per collision
+
+        for (let i = 0; i < chunkCount; i++) {
+            // Find available chunk from pool
+            const chunk = collisionDebrisPool.find(c => !c.userData.active);
+            if (!chunk) break; // No more available chunks
+
+            // Activate and position chunk
+            chunk.userData.active = true;
+            chunk.visible = true;
+            chunk.position.set(
+                x + (Math.random() - 0.5) * 2, // Slight spread around collision point
+                y + (Math.random() - 0.5) * 2,
+                z
+            );
+
+            // Set forward and downward velocity (chunks fall forward since structure is at camera)
+            chunk.userData.velocity.set(
+                (Math.random() - 0.5) * 0.3,    // Random sideways spread
+                -0.1 - Math.random() * 0.15,    // Downward velocity
+                0.4 + Math.random() * 0.3       // Forward velocity (toward camera)
+            );
+
+            // Random rotation velocity for tumbling effect
+            chunk.userData.rotationVelocity.set(
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2
+            );
+
+            // Random initial rotation
+            chunk.rotation.set(
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2
+            );
+
+            collisionDebris.push(chunk);
+        }
+    }
+
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
     const distantStars = [];
@@ -1031,9 +1100,9 @@
     // Low wall: long horizontal rectangle at ground level (y=0-2)
     const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
 
-    // Pre-create wall pool (10 walls total - mix of high and low)
-    for (let i = 0; i < 10; i++) {
-        const isHigh = i < 5;
+    // Pre-create wall pool (16 walls total - mix of high and low, increased for more frequent spawning)
+    for (let i = 0; i < 16; i++) {
+        const isHigh = i < 8;
         const wall = new THREE.Mesh(
             isHigh ? highWallGeometry : lowWallGeometry,
             wallMat
@@ -1616,6 +1685,31 @@
             }
         });
 
+        // Update collision debris with physics (iterate backwards to safely remove)
+        for (let i = collisionDebris.length - 1; i >= 0; i--) {
+            const chunk = collisionDebris[i];
+
+            // Apply velocity
+            chunk.position.add(chunk.userData.velocity);
+
+            // Apply gravity
+            chunk.userData.velocity.y -= 0.01; // Gravity acceleration
+
+            // Apply rotation
+            chunk.rotation.x += chunk.userData.rotationVelocity.x;
+            chunk.rotation.y += chunk.userData.rotationVelocity.y;
+            chunk.rotation.z += chunk.userData.rotationVelocity.z;
+
+            // Check if chunk hit the ground or went too far
+            if (chunk.position.y <= 0.2 || chunk.position.z > 30 || Math.abs(chunk.position.x) > 50) {
+                // Deactivate and remove from active list
+                chunk.userData.active = false;
+                chunk.visible = false;
+                chunk.position.set(0, 0, -1000);
+                collisionDebris.splice(i, 1);
+            }
+        }
+
         // Animate distant stars (twinkling effect)
         distantStars.forEach(star => {
             const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinkleOffset);
@@ -1851,6 +1945,10 @@
                     // Check grace period first
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
+
+                        // Spawn debris chunks from building collision
+                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z);
+
                         b.position.z = -120;
                         b.visible = false;
 
@@ -1907,12 +2005,12 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
-            // Spawn 3-4 wall "sets" - sometimes single, sometimes both high+low
-            const wallSetCount = Math.floor(Math.random() * 2) + 3; // 3-4 sets
+            // Spawn 6-8 wall "sets" - sometimes single, sometimes both high+low
+            const wallSetCount = Math.floor(Math.random() * 3) + 6; // 6-8 sets (increased from 3-4)
 
             for (let i = 0; i < wallSetCount; i++) {
-                const zPos = -200 - (i * 80); // Very far for visibility, spaced 80 units apart
-                const bothWalls = Math.random() < 0.3; // 30% chance for both high AND low (must stay centered)
+                const zPos = -200 - (i * 60); // Very far for visibility, spaced 60 units apart (tighter than before)
+                const bothWalls = Math.random() < 0.35; // 35% chance for both high AND low (increased from 30%)
 
                 if (bothWalls) {
                     // Spawn BOTH high and low from pool - player must stay centered
@@ -1964,6 +2062,10 @@
                     // Check grace period
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
+
+                        // Spawn debris chunks from wall collision
+                        spawnCollisionDebris(wall.position.x, wall.position.y, wall.position.z);
+
                         wall.visible = false;
                         wall.position.z = -1000;
                         walls.splice(i, 1);
