@@ -1476,9 +1476,9 @@
         const bossCount = Math.floor(Math.random() * 2) + 3; // 3 or 4 bosses
         const spacing = 700; // 700 units apart (~1 minute total at avg speed)
 
-        // Alternate rotation direction based on encounter number
-        const clockwise = bossEncounterCount % 2 === 1;
-        const rotationSpeed = clockwise ? 0.01 : -0.01; // Slower rotation (was 0.02)
+        // Speed alternates per encounter: slow, fast, slow, fast...
+        const isFastEncounter = bossEncounterCount % 2 === 0;
+        const baseSpeed = isFastEncounter ? 0.02 : 0.01; // Fast or slow
 
         for (let i = 0; i < bossCount; i++) {
             const boss = bossPool.find(b => !b.userData.active);
@@ -1487,7 +1487,11 @@
             boss.userData.active = true;
             boss.visible = true;
             boss.position.set(0, 4, -400 - (i * spacing)); // Spawn progressively further back
-            boss.userData.rotationSpeed = rotationSpeed;
+
+            // Each boss alternates rotation direction: left, right, left, right
+            const rotateLeft = i % 2 === 0;
+            boss.userData.rotationSpeed = rotateLeft ? -baseSpeed : baseSpeed;
+
             bosses.push(boss);
         }
     }
