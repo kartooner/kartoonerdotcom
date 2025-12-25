@@ -1454,6 +1454,15 @@
         bossEncounterCount++;
         bossActive = true; // Set flag to prevent other spawns
 
+        // Cancel invincibility for boss arena (bosses must be fair challenge)
+        if (invincibilityActive) {
+            invincibilityActive = false;
+            invincibilityEndTime = 0;
+            paperMat.color.setHex(0x008080); // Revert to original teal
+            crashMessage = 'INVINCIBILITY DISABLED';
+            crashMessageTimer = 60;
+        }
+
         // Clear arena - hide all buildings, walls, and coins
         buildings.forEach(b => {
             b.visible = false;
