@@ -1411,6 +1411,7 @@
     // --- ROTATING BOSS (MINI-BOSS CHALLENGE) ---
     const bosses = [];
     let bossEncounterCount = 0; // Track number of boss encounters for rotation direction
+    let bossActive = false; // Flag to prevent other spawns during boss encounter
     const bossMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.7 });
 
     // Create rotating boss structure - giant cylinder with blades
@@ -1454,6 +1455,7 @@
         if (!boss) return null;
 
         bossEncounterCount++;
+        bossActive = true; // Set flag to prevent other spawns
         boss.userData.active = true;
         boss.visible = true;
         boss.position.set(0, 4, -400);
@@ -1461,6 +1463,24 @@
         // Alternate rotation direction based on encounter number
         const clockwise = bossEncounterCount % 2 === 1;
         boss.userData.rotationSpeed = clockwise ? 0.02 : -0.02;
+
+        // Clear arena - hide all buildings, walls, and coins
+        buildings.forEach(b => {
+            b.visible = false;
+            b.position.z = -500;
+        });
+        walls.forEach(w => {
+            w.visible = false;
+            w.position.z = -1000;
+        });
+        coins.forEach(c => {
+            c.visible = false;
+            c.position.z = -1000;
+            c.userData.collected = false;
+        });
+        // Clear active arrays
+        walls.length = 0;
+        coins.length = 0;
 
         bosses.push(boss);
         return boss;
@@ -2303,8 +2323,8 @@
             }
 
             if(b.position.z > 20) {
-                // Check if we need to spawn a new wave
-                if (currentWave === null || waveProgress >= currentWave.buildings) {
+                // Check if we need to spawn a new wave (not during boss)
+                if (!bossActive && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
                     if (antiCampingActive && Math.random() < 0.5) {
@@ -2490,8 +2510,8 @@
         });
 
         // High/Low Wall update and collision logic
-        // Only spawn walls during the 'walls' phase
-        if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
+        // Only spawn walls during the 'walls' phase (and not during boss)
+        if (currentPhase === 'walls' && !wallsSpawnedThisPhase && !bossActive) {
             // Spawn 6-8 wall "sets" - sometimes single, sometimes both high+low
             const wallSetCount = Math.floor(Math.random() * 3) + 6; // 6-8 sets (increased from 3-4)
 
@@ -2889,7 +2909,8 @@
         }
 
         // Spawn coins randomly in the environment (not too many at once)
-        if (Math.random() < 0.001 && coins.length < 6) {
+        // Don't spawn during boss encounters
+        if (Math.random() < 0.001 && coins.length < 6 && !bossActive) {
             const coin = getCoinFromPool();
             if (coin) {
                 // X position biased toward edges (not obvious center path)
@@ -3132,6 +3153,7 @@
                 boss.visible = false;
                 boss.position.z = -400;
                 bosses.splice(i, 1);
+                bossActive = false; // Re-enable normal spawning
             }
         }
 
