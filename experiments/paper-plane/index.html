@@ -2439,7 +2439,7 @@
 
             for (let i = 0; i < wallSetCount; i++) {
                 const zPos = -200 - (i * 60); // Very far for visibility, spaced 60 units apart (tighter than before)
-                const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+                const bothWalls = Math.random() < 0.60; // 60% chance for both high AND low walls (increased from 40%)
 
                 if (bothWalls) {
                     // Spawn BOTH high and low from pool - player must stay centered
@@ -2593,11 +2593,11 @@
 
                 if (distSq < collectRadiusSq) {
                     coin.userData.collected = true;
-                    score += 5; // 5 points per coin
+                    score += 2; // 2 points per coin - small additive bonus
 
                     // Show bonus in score display
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
-                    scoreBonusUI.innerText = `+5`;
+                    scoreBonusUI.innerText = `+2`;
                     scoreBonusUI.style.opacity = '1';
                     bonusFadeTimer = 60; // Show briefly
                 }
@@ -2829,13 +2829,21 @@
         }
 
         // Spawn coins randomly in the environment (not too many at once)
-        if (Math.random() < 0.0005 && coins.length < 5) {
+        if (Math.random() < 0.001 && coins.length < 6) {
             const coin = getCoinFromPool();
             if (coin) {
-                // Random X position across the play area
-                const coinX = (Math.random() - 0.5) * 16; // -8 to 8
-                // High or low Y position (50/50 chance)
-                const coinY = Math.random() < 0.5 ? (1 + Math.random() * 1.5) : (3.5 + Math.random() * 1.5); // Low: 1-2.5, High: 3.5-5
+                // X position biased toward edges (not obvious center path)
+                // 70% chance for edge positions, 30% chance for center
+                const coinX = Math.random() < 0.7
+                    ? (Math.random() < 0.5 ? -9 + Math.random() * 3 : 6 + Math.random() * 3) // Edges: -9 to -6 or 6 to 9
+                    : (Math.random() - 0.5) * 8; // Center: -4 to 4
+
+                // More varied Y heights - very low, low, high, very high
+                const heightRoll = Math.random();
+                const coinY = heightRoll < 0.25 ? (0.8 + Math.random() * 0.7) :  // Very low: 0.8-1.5
+                              heightRoll < 0.5 ? (1.8 + Math.random() * 1) :      // Low: 1.8-2.8
+                              heightRoll < 0.75 ? (3.2 + Math.random() * 1) :     // High: 3.2-4.2
+                              (4.5 + Math.random() * 1);                          // Very high: 4.5-5.5
                 const coinZ = -150 - Math.random() * 50; // Spawn 150-200 units ahead
 
                 // Check if coin would overlap with any visible building
@@ -2959,8 +2967,8 @@
                 phaseStartTime = currentTime;
                 phaseDuration = 1000; // 1 second breather before rings (faster action)
             } else if (currentPhase === 'breather_before_rings') {
-                // 50% chance to spawn walls instead of going back to buildings
-                if (Math.random() < 0.50) {
+                // 80% chance to spawn walls instead of going back to buildings (increased from 50%)
+                if (Math.random() < 0.80) {
                     currentPhase = 'walls';
                     wallsSpawnedThisPhase = false;
                     phaseDuration = 20000;
