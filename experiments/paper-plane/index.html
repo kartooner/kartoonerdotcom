@@ -503,6 +503,12 @@
             cost: 500,
             owned: false,
             description: 'More buildings spawn, fewer rings appear'
+        },
+        invincibility: {
+            name: 'Invincibility',
+            cost: 250,
+            owned: false,
+            description: 'Become invincible for 2 minutes - flash yellow like Mario'
         }
     };
 
@@ -511,6 +517,11 @@
     const enemies = [];
     let canShoot = false;
     let lastShot = 0;
+
+    // Invincibility system
+    let invincibilityActive = false;
+    let invincibilityEndTime = 0;
+    let invincibilityPulsePhase = 0;
 
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
@@ -1292,11 +1303,13 @@
     }
 
     // Get wall from pool instead of creating new one
-    function getWallFromPool(type, zPos) {
+    function getWallFromPool(type, zPos, yOverride = null) {
         const wall = wallPool.find(w => !w.visible && w.userData.type === type);
         if (wall) {
             wall.visible = true;
-            wall.position.set(0, type === 'high' ? 7 : 1.5, zPos);
+            // Use yOverride if provided (for anti-camping), otherwise use default heights
+            const yPos = yOverride !== null ? yOverride : (type === 'high' ? 5 : 1.5);
+            wall.position.set(0, yPos, zPos);
             return wall;
         }
         return null;
@@ -1507,6 +1520,11 @@
             case 'increaseDifficulty':
                 // Increase difficulty (handled in spawn logic)
                 break;
+            case 'invincibility':
+                invincibilityActive = true;
+                invincibilityEndTime = Date.now() + 120000; // 2 minutes (120 seconds)
+                invincibilityPulsePhase = 0;
+                break;
         }
     }
 
@@ -1539,6 +1557,11 @@
             case 'increaseDifficulty':
                 // Difficulty changes are applied during spawn,
                 // so just marking as not owned will revert it
+                break;
+            case 'invincibility':
+                invincibilityActive = false;
+                invincibilityEndTime = 0;
+                paperMat.color.setHex(0x008080); // Revert to original teal
                 break;
         }
 
@@ -2023,6 +2046,29 @@
             }
         }
 
+        // Invincibility pulsating yellow effect (like Mario)
+        if (invincibilityActive) {
+            // Check if invincibility expired
+            if (Date.now() >= invincibilityEndTime) {
+                invincibilityActive = false;
+                paperMat.color.setHex(0x008080); // Revert to original teal
+            } else {
+                // Pulsate between yellow and original color
+                invincibilityPulsePhase += 0.15; // Speed of pulsing
+                const pulseValue = Math.sin(invincibilityPulsePhase) * 0.5 + 0.5; // 0 to 1
+
+                // Blend between teal (0x008080) and yellow (0xffff00)
+                const tealR = 0x00, tealG = 0x80, tealB = 0x80;
+                const yellowR = 0xff, yellowG = 0xff, yellowB = 0x00;
+
+                const r = Math.floor(tealR + (yellowR - tealR) * pulseValue);
+                const g = Math.floor(tealG + (yellowG - tealG) * pulseValue);
+                const b = Math.floor(tealB + (yellowB - tealB) * pulseValue);
+
+                paperMat.color.setRGB(r / 255, g / 255, b / 255);
+            }
+        }
+
         // Animate distant stars (twinkling effect)
         distantStars.forEach(star => {
             const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinkleOffset);
@@ -2041,6 +2087,17 @@
             if (timeInSameLane > campingThreshold && !antiCampingActive) {
                 antiCampingActive = true;
                 // Backend spawns building in player's lane automatically
+
+                // Also spawn walls at player's exact Y position to prevent camping (e.g., top-right safe zone)
+                // Spawn 3-4 walls directly at player's height
+                const antiCampWallCount = Math.floor(Math.random() * 2) + 3; // 3-4 walls
+                for (let i = 0; i < antiCampWallCount; i++) {
+                    const zPos = -100 - (i * 40); // Spawn ahead at 40 unit spacing
+                    // Alternate high/low type, but override Y to player's exact position
+                    const wallType = i % 2 === 0 ? 'high' : 'low';
+                    const wall = getWallFromPool(wallType, zPos, curY); // Use player's current Y
+                    if (wall) walls.push(wall);
+                }
             }
         } else {
             timeInSameLane = 0;
@@ -2257,47 +2314,54 @@
                 if(shipBox.intersectsBox(b.userData.box)) {
                     // Check grace period first
                     if (!gracePeriodActive) {
-                        collisionFlash = 0.5;
-
                         // Spawn debris chunks from building collision (pass building for realistic break pattern)
                         spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY, b);
 
                         b.position.z = -120;
                         b.visible = false;
 
-                        // Shield mechanic: first hits damage shield, not points
-                        if (shieldActive && shieldHits < maxShieldHits) {
-                            shieldHits++;
-                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
-                            crashMessageTimer = 50;
-
-                            if (shieldHits >= maxShieldHits) {
-                                shieldActive = false;
-                                crashMessage = `SHIELD DOWN!`;
-                            }
+                        // Invincibility: no damage, just show message
+                        if (invincibilityActive) {
+                            crashMessage = `INVINCIBLE!`;
+                            crashMessageTimer = 40;
                         } else {
-                            // Shield down - lose points
-                            const pointsLost = 25; // Reduced from 50
-                            score = Math.max(0, score - pointsLost);
-                            scoreDisplayUI.innerText = `SCORE: ${score}`;
+                            // Normal collision damage
+                            collisionFlash = 0.5;
 
-                            crashMessage = `BONK -${pointsLost}`;
-                            crashMessageTimer = 60;
-                        }
+                            // Shield mechanic: first hits damage shield, not points
+                            if (shieldActive && shieldHits < maxShieldHits) {
+                                shieldHits++;
+                                crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                                crashMessageTimer = 50;
 
-                        // Upgrade loss system: track building hits
-                        if (hasActiveUpgrades) {
-                            buildingHitsSinceUpgrade++;
+                                if (shieldHits >= maxShieldHits) {
+                                    shieldActive = false;
+                                    crashMessage = `SHIELD DOWN!`;
+                                }
+                            } else {
+                                // Shield down - lose points
+                                const pointsLost = 25; // Reduced from 50
+                                score = Math.max(0, score - pointsLost);
+                                scoreDisplayUI.innerText = `SCORE: ${score}`;
 
-                            if (buildingHitsSinceUpgrade >= hitsUntilUpgradeLoss) {
-                                // Remove most recent upgrade
-                                const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
-                                if (lostUpgrade) {
-                                    removeUpgrade(lostUpgrade);
-                                    // Reset counter for next upgrade
-                                    buildingHitsSinceUpgrade = 0;
-                                    if (activeUpgrades.length > 0) {
-                                        hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // New random 3-4
+                                crashMessage = `BONK -${pointsLost}`;
+                                crashMessageTimer = 60;
+                            }
+
+                            // Upgrade loss system: track building hits
+                            if (hasActiveUpgrades) {
+                                buildingHitsSinceUpgrade++;
+
+                                if (buildingHitsSinceUpgrade >= hitsUntilUpgradeLoss) {
+                                    // Remove most recent upgrade
+                                    const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                    if (lostUpgrade) {
+                                        removeUpgrade(lostUpgrade);
+                                        // Reset counter for next upgrade
+                                        buildingHitsSinceUpgrade = 0;
+                                        if (activeUpgrades.length > 0) {
+                                            hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // New random 3-4
+                                        }
                                     }
                                 }
                             }
@@ -2374,8 +2438,6 @@
                 if (shipBox.intersectsBox(wall.userData.box)) {
                     // Check grace period
                     if (!gracePeriodActive) {
-                        collisionFlash = 0.5;
-
                         // Spawn debris chunks from wall collision (directional based on ship position)
                         spawnCollisionDebris(wall.position.x, wall.position.y, wall.position.z, curX, curY);
 
@@ -2383,21 +2445,30 @@
                         wall.position.z = -1000;
                         walls.splice(i, 1);
 
-                        // Apply damage (same as building collision)
-                        if (shieldActive && shieldHits < maxShieldHits) {
-                            shieldHits++;
-                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
-                            crashMessageTimer = 50;
-
-                            if (shieldHits >= maxShieldHits) {
-                                shieldActive = false;
-                                crashMessage = `SHIELD DOWN!`;
-                            }
+                        // Invincibility: no damage, just show message
+                        if (invincibilityActive) {
+                            crashMessage = `INVINCIBLE!`;
+                            crashMessageTimer = 40;
                         } else {
-                            // Shield down - lose points
-                            score = Math.max(0, score - 15);
-                            crashMessage = `-15 POINTS`;
-                            crashMessageTimer = 50;
+                            // Normal collision damage
+                            collisionFlash = 0.5;
+
+                            // Apply damage (same as building collision)
+                            if (shieldActive && shieldHits < maxShieldHits) {
+                                shieldHits++;
+                                crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                                crashMessageTimer = 50;
+
+                                if (shieldHits >= maxShieldHits) {
+                                    shieldActive = false;
+                                    crashMessage = `SHIELD DOWN!`;
+                                }
+                            } else {
+                                // Shield down - lose points
+                                score = Math.max(0, score - 15);
+                                crashMessage = `-15 POINTS`;
+                                crashMessageTimer = 50;
+                            }
                         }
                     }
                 }
@@ -2611,17 +2682,24 @@
 
             // Check collision with plane
             if (shipBox.intersectsBox(enemy.userData.box)) {
-                const pointsLost = 30;
-                score = Math.max(0, score - pointsLost);
-                scoreDisplayUI.innerText = `SCORE: ${score}`;
-
-                collisionFlash = 0.5;
-                crashMessage = `HIT -${pointsLost}`;
-                crashMessageTimer = 40;
-
                 scene.remove(enemy);
                 enemies.splice(i, 1);
                 enemyRemoved = true;
+
+                // Invincibility: no damage, just show message
+                if (invincibilityActive) {
+                    crashMessage = `INVINCIBLE!`;
+                    crashMessageTimer = 40;
+                } else {
+                    // Normal collision damage
+                    const pointsLost = 30;
+                    score = Math.max(0, score - pointsLost);
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                    collisionFlash = 0.5;
+                    crashMessage = `HIT -${pointsLost}`;
+                    crashMessageTimer = 40;
+                }
             }
 
             // Check collision with lasers (only if enemy wasn't already removed)
@@ -2748,25 +2826,28 @@
         if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
             // Switch phase based on current phase
             if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings, add breather before rings
-                currentPhase = 'breather_before_rings';
-                phaseStartTime = currentTime;
-                phaseDuration = 1000; // 1 second breather before rings (faster action)
+                // After buildings, 40% chance for walls, 60% breather before rings
+                if (Math.random() < 0.40) {
+                    currentPhase = 'walls';
+                    wallsSpawnedThisPhase = false;
+                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
+                    phaseStartTime = currentTime;
+                } else {
+                    // Add breather before rings
+                    currentPhase = 'breather_before_rings';
+                    phaseStartTime = currentTime;
+                    phaseDuration = 1000; // 1 second breather before rings (faster action)
+                }
             } else if (currentPhase === 'breather_before_rings') {
                 // After breather, go back to buildings (rings now tied to checkpoints)
                 currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
             } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, 65% chance for walls, 35% back to buildings (walls more common)
-                if (Math.random() < 0.65) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false; // Reset flag for new wall phase
-                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
-                } else {
-                    currentPhase = 'buildings';
-                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-                }
+                // After rings breather, ALWAYS spawn walls (was 65%, now 100% for more frequency)
+                currentPhase = 'walls';
+                wallsSpawnedThisPhase = false; // Reset flag for new wall phase
+                phaseDuration = 20000; // Walls phase lasts ~20 seconds
                 phaseStartTime = currentTime;
             }
         }
