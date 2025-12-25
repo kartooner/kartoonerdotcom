@@ -84,86 +84,6 @@
 
         #footer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
 
-        /* Parameter Editor Panel */
-        #param-editor {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 20, 20, 0.9);
-            border: 1px solid var(--neon);
-            padding: 15px;
-            font-size: 11px;
-            color: var(--neon);
-            max-width: 220px;
-            z-index: 100;
-            display: none;
-        }
-        #param-editor.active { display: block; }
-        #param-editor h3 {
-            margin: 0 0 10px 0;
-            font-size: 13px;
-            letter-spacing: 1px;
-        }
-        .param-control {
-            margin: 8px 0;
-            display: flex;
-            flex-direction: column;
-        }
-        .param-control label {
-            font-size: 10px;
-            margin-bottom: 3px;
-            opacity: 0.8;
-        }
-        .param-control input[type="range"] {
-            width: 100%;
-            height: 4px;
-            background: rgba(0, 255, 255, 0.3);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        .param-control input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--neon);
-            cursor: pointer;
-        }
-        .param-control input[type="range"]::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: var(--neon);
-            cursor: pointer;
-            border: none;
-        }
-        .param-value {
-            font-size: 10px;
-            opacity: 0.7;
-            text-align: right;
-        }
-        #toggle-params {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 20, 20, 0.9);
-            border: 1px solid var(--neon);
-            color: var(--neon);
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 11px;
-            z-index: 99;
-            font-family: 'Press Start 2P', 'Courier New', monospace;
-            display: none; /* Hidden until play */
-        }
-        #toggle-params.visible { display: block; }
-        #toggle-params:hover { background: rgba(0, 40, 40, 0.9); }
-
-        /* Tablet landscape: move score down to avoid overlap with params button */
-        @media (min-width: 600px) and (max-width: 1024px) and (orientation: landscape) {
-            #score-container {
-                top: 70px !important;
-            }
-        }
-
         /* Play button overlay */
         #play-overlay {
             position: absolute;
@@ -369,16 +289,6 @@
     </style>
 </head>
 <body>
-
-<button id="toggle-params">PARAMS</button>
-
-<div id="param-editor">
-    <h3>PARAMETER EDITOR</h3>
-    <div class="param-control">
-        <label>Speed <span class="param-value" id="speed-val"></span></label>
-        <input type="range" id="speed-slider" min="0.11" max="0.56" step="0.01" value="">
-    </div>
-</div>
 
 <div id="game-container">
     <div id="play-overlay">
@@ -1492,6 +1402,44 @@
             return coin;
         }
         return null;
+    }
+
+    // --- CHRISTMAS SNOW (Seasonal: Until Jan 1st) ---
+    const snowflakes = [];
+    const isChristmasSeason = () => {
+        const now = new Date();
+        const month = now.getMonth(); // 0-11
+        const day = now.getDate();
+        // Show snow from Dec 20 through Jan 1
+        return (month === 11 && day >= 20) || (month === 0 && day === 1);
+    };
+
+    if (isChristmasSeason()) {
+        const snowGeometry = new THREE.CircleGeometry(0.15, 6); // Small hexagon
+        const snowMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+
+        // Pre-create 50 snowflakes for subtle effect
+        for (let i = 0; i < 50; i++) {
+            const snowflake = new THREE.Mesh(snowGeometry, snowMat.clone());
+
+            // Random starting positions spread across view
+            snowflake.position.x = (Math.random() - 0.5) * 40; // Wide spread
+            snowflake.position.y = Math.random() * 20 + 5; // High up
+            snowflake.position.z = (Math.random() - 0.5) * 100 - 50; // Depth variation
+
+            // Random fall speeds and drift
+            snowflake.userData.fallSpeed = Math.random() * 0.02 + 0.01; // 0.01-0.03
+            snowflake.userData.driftSpeed = (Math.random() - 0.5) * 0.01; // Slight horizontal drift
+            snowflake.userData.rotationSpeed = (Math.random() - 0.5) * 0.02; // Gentle rotation
+
+            scene.add(snowflake);
+            snowflakes.push(snowflake);
+        }
     }
 
     // --- CHECKPOINT GATE ---
@@ -3183,6 +3131,29 @@
             }
         }
 
+        // Update Christmas snowflakes (seasonal)
+        for (let i = 0; i < snowflakes.length; i++) {
+            const snow = snowflakes[i];
+
+            // Fall down
+            snow.position.y -= snow.userData.fallSpeed;
+
+            // Gentle horizontal drift
+            snow.position.x += snow.userData.driftSpeed;
+
+            // Gentle rotation
+            snow.rotation.z += snow.userData.rotationSpeed;
+
+            // Billboard effect - face camera
+            snow.lookAt(camera.position);
+
+            // Reset when falls below view
+            if (snow.position.y < -2) {
+                snow.position.y = Math.random() * 5 + 15; // Reset to top
+                snow.position.x = (Math.random() - 0.5) * 40; // New random X
+            }
+        }
+
         // Phase system: Check if it's time to switch phases
         const currentTime = Date.now();
         if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
@@ -3379,36 +3350,6 @@
     // Don't auto-start - wait for play button
 
     // --- PARAMETER EDITOR CONTROLS ---
-    const paramEditor = document.getElementById('param-editor');
-    const toggleBtn = document.getElementById('toggle-params');
-
-    toggleBtn.addEventListener('click', () => {
-        const isOpening = !paramEditor.classList.contains('active');
-        paramEditor.classList.toggle('active');
-
-        // Auto-pause when opening parameters
-        if (isOpening && gameStarted && !isPaused) {
-            isPaused = true;
-            pauseButton.innerText = 'RESUME';
-            animationRunning = false;
-        }
-    });
-
-    // Speed control - initialize with device-specific value
-    const speedSlider = document.getElementById('speed-slider');
-    const speedVal = document.getElementById('speed-val');
-    speedSlider.value = baseSpeed;
-    speedVal.textContent = baseSpeed.toFixed(2);
-
-    speedSlider.addEventListener('input', (e) => {
-        baseSpeed = parseFloat(e.target.value);
-        speedVal.textContent = baseSpeed.toFixed(2);
-    });
-
-    // Note: Particle and building count changes would require regeneration
-    // Terrain amplitude is randomized on load, so we'll skip real-time editing for simplicity
-    // This keeps the parameter editor focused on safe, real-time adjustable values
-
     window.addEventListener('resize', () => {
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
