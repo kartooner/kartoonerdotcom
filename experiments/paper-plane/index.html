@@ -1415,16 +1415,16 @@
     };
 
     if (isChristmasSeason()) {
-        const snowGeometry = new THREE.CircleGeometry(0.15, 6); // Small hexagon
+        const snowGeometry = new THREE.CircleGeometry(0.08, 6); // Smaller hexagon (was 0.15)
         const snowMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
+            color: 0xcccccc, // Light gray instead of white (less contrast)
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.25, // Much more subtle (was 0.6)
             side: THREE.DoubleSide
         });
 
-        // Pre-create 50 snowflakes for subtle effect
-        for (let i = 0; i < 50; i++) {
+        // Pre-create 25 snowflakes for very subtle effect (was 50)
+        for (let i = 0; i < 25; i++) {
             const snowflake = new THREE.Mesh(snowGeometry, snowMat.clone());
 
             // Random starting positions spread across view
@@ -1432,10 +1432,10 @@
             snowflake.position.y = Math.random() * 20 + 5; // High up
             snowflake.position.z = (Math.random() - 0.5) * 100 - 50; // Depth variation
 
-            // Random fall speeds and drift
-            snowflake.userData.fallSpeed = Math.random() * 0.02 + 0.01; // 0.01-0.03
-            snowflake.userData.driftSpeed = (Math.random() - 0.5) * 0.01; // Slight horizontal drift
-            snowflake.userData.rotationSpeed = (Math.random() - 0.5) * 0.02; // Gentle rotation
+            // Random fall speeds and drift - slower (less distracting)
+            snowflake.userData.fallSpeed = Math.random() * 0.015 + 0.008; // 0.008-0.023 (was 0.01-0.03)
+            snowflake.userData.driftSpeed = (Math.random() - 0.5) * 0.008; // Less drift (was 0.01)
+            snowflake.userData.rotationSpeed = (Math.random() - 0.5) * 0.015; // Slower rotation (was 0.02)
 
             scene.add(snowflake);
             snowflakes.push(snowflake);
