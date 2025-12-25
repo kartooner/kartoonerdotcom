@@ -780,7 +780,7 @@
         const geometry = debrisGeometries[Math.floor(Math.random() * debrisGeometries.length)];
         const chunk = new THREE.Mesh(geometry, debrisMat.clone());
         chunk.material.opacity = 0.8; // More visible than ground debris
-        chunk.material.color.setHex(0xff00ff); // Magenta for collision debris
+        chunk.material.color.setHex(0x00ffff); // Cyan to match structures
         chunk.visible = false;
         chunk.position.set(0, 0, -1000);
         chunk.userData.velocity = new THREE.Vector3();
@@ -816,19 +816,19 @@
             const dirX = shipX - structureX;
             const dirY = shipY - structureY;
 
-            // Spawn debris on the SIDE of impact, but AHEAD so it falls onto ground plane
+            // Spawn debris at structure position - they will spray out forward
             chunk.position.set(
-                structureX + dirX * 0.5 + (Math.random() - 0.5) * 1, // Spawn on collision side (reduced spread)
-                structureY + Math.abs(dirY) * 0.5,                    // Start at structure height
-                structureZ - 15 - Math.random() * 10                  // Spawn 15-25 units ahead
+                structureX + dirX * 0.3 + (Math.random() - 0.5) * 2, // Spawn on collision side with spread
+                structureY + Math.max(2, Math.abs(dirY) * 0.5),      // Start at structure height (min 2 units up)
+                structureZ - 8 - Math.random() * 8                    // Spawn 8-16 units ahead
             );
 
-            // Set velocity: debris falls DOWN onto ground ahead, minimal sideways motion
-            // Spawn position is based on collision side, but velocity is mostly down+forward
+            // Set velocity: spray FORWARD and DOWN onto ground ahead
+            // More forward velocity so debris sprays out visibly
             chunk.userData.velocity.set(
-                dirX * 0.15 + (Math.random() - 0.5) * 0.2,  // Small sideways drift based on hit direction
-                -0.3 - Math.random() * 0.3,                  // Strong downward (falls to ground)
-                0.2 + Math.random() * 0.3                    // Slow forward (0.2-0.5, slower than scene)
+                dirX * 0.2 + (Math.random() - 0.5) * 0.3,   // Sideways based on hit direction
+                -0.2 - Math.random() * 0.2,                 // Downward (falls to ground)
+                0.4 + Math.random() * 0.4                   // Forward spray (0.4-0.8)
             );
 
             // Strong rotation velocity for dramatic spin-off effect
