@@ -157,6 +157,13 @@
         #toggle-params.visible { display: block; }
         #toggle-params:hover { background: rgba(0, 40, 40, 0.9); }
 
+        /* Tablet landscape: move score down to avoid overlap with params button */
+        @media (min-width: 600px) and (max-width: 1024px) and (orientation: landscape) {
+            #score-container {
+                top: 70px !important;
+            }
+        }
+
         /* Play button overlay */
         #play-overlay {
             position: absolute;
@@ -392,7 +399,7 @@
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
+    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
         <span id="score-display">SCORE: 0</span><br>
         <span id="score-bonus" style="font-size: 9px; opacity: 0; transition: opacity 0.3s;">+0</span>
     </div>
@@ -1457,6 +1464,12 @@
         opacity: 0.8,
         side: THREE.DoubleSide
     });
+
+    // Pre-create reusable rotation objects to prevent garbage collection hitching
+    const coinXRotQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    const coinSpinQuat = new THREE.Quaternion();
+    const coinLookAtQuat = new THREE.Quaternion();
+    const coinZAxis = new THREE.Vector3(0, 0, 1);
 
     // Pre-create coin pool (20 coins - enough for scattered placement)
     for (let i = 0; i < 20; i++) {
@@ -2775,15 +2788,12 @@
                 // Face the camera (billboard effect)
                 coin.lookAt(camera.position);
 
-                // Save the lookAt quaternion
-                const lookAtQuat = coin.quaternion.clone();
+                // Reuse quaternions to prevent garbage collection
+                coinLookAtQuat.copy(coin.quaternion);
+                coinSpinQuat.setFromAxisAngle(coinZAxis, coin.userData.spinAngle);
 
-                // Create rotation quaternions for 90° X rotation and spin
-                const xRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-                const spinRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), coin.userData.spinAngle);
-
-                // Combine: lookAt * xRot * spinRot
-                coin.quaternion.copy(lookAtQuat).multiply(xRot).multiply(spinRot);
+                // Combine: lookAt * xRot * spinRot (reusing pre-created objects)
+                coin.quaternion.copy(coinLookAtQuat).multiply(coinXRotQuat).multiply(coinSpinQuat);
 
                 // Sheen effect - pulse opacity based on spin angle
                 const sheenValue = Math.abs(Math.sin(coin.userData.spinAngle * 2)); // Rotation-based pulse
