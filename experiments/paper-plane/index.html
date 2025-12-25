@@ -447,7 +447,7 @@
     let bonusFadeTimer = 0; // Timer for fading bonus display
 
     // Checkpoint system
-    let nextCheckpoint = 25; // First checkpoint at 25 miles
+    let nextCheckpoint = 20 + Math.floor(Math.random() * 11); // First checkpoint at 20-30 miles (random)
     let checkpointActive = false;
     let ringsSpawnedForCheckpoint = false; // Track if rings spawned before this checkpoint
     let isFirstCheckpoint = true; // First checkpoint gives free upgrade
@@ -3062,7 +3062,10 @@
             if (Math.abs(gate.position.z - 3.5) < 3 && !gate.userData.passed) {
                 gate.userData.passed = true;
                 showCheckpointUI(Math.floor(nextCheckpoint));
-                nextCheckpoint += 25; // Next checkpoint in 25 miles
+
+                // Variable checkpoint distances for replayability (20-30 miles)
+                const checkpointDistance = 20 + Math.floor(Math.random() * 11);
+                nextCheckpoint += checkpointDistance;
                 ringsSpawnedForCheckpoint = false; // Reset for next checkpoint
 
                 // Activate 3-second grace period
