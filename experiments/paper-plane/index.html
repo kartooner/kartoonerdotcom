@@ -2439,7 +2439,7 @@
 
             for (let i = 0; i < wallSetCount; i++) {
                 const zPos = -200 - (i * 60); // Very far for visibility, spaced 60 units apart (tighter than before)
-                const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+                const bothWalls = Math.random() < 0.60; // 60% chance for both high AND low walls (increased from 40%)
 
                 if (bothWalls) {
                     // Spawn BOTH high and low from pool - player must stay centered
@@ -2959,8 +2959,8 @@
                 phaseStartTime = currentTime;
                 phaseDuration = 1000; // 1 second breather before rings (faster action)
             } else if (currentPhase === 'breather_before_rings') {
-                // 50% chance to spawn walls instead of going back to buildings
-                if (Math.random() < 0.50) {
+                // 80% chance to spawn walls instead of going back to buildings (increased from 50%)
+                if (Math.random() < 0.80) {
                     currentPhase = 'walls';
                     wallsSpawnedThisPhase = false;
                     phaseDuration = 20000;
