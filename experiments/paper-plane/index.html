@@ -2578,12 +2578,11 @@
             coin.position.z += speed;
 
             if (!coin.userData.collected) {
-                // Spin the coin (rotate on Y axis)
-                coin.rotation.y += coin.userData.spinSpeed;
-
-                // Make coin always face camera (billboard effect for depth rotation)
+                // Make coin face camera (billboard) - face forward toward player
                 coin.lookAt(camera.position);
-                coin.rotation.y += Math.PI / 2; // Adjust so it's vertical when spinning
+
+                // Spin around the forward axis (Z axis after lookAt)
+                coin.rotateZ(coin.userData.spinSpeed);
 
                 // Check if plane collects coin - simple distance check
                 const dx = coin.position.x - curX;
@@ -2830,7 +2829,7 @@
         }
 
         // Spawn coins randomly in the environment (not too many at once)
-        if (Math.random() < 0.02 && coins.length < 10) {
+        if (Math.random() < 0.0005 && coins.length < 5) {
             const coin = getCoinFromPool();
             if (coin) {
                 // Random X position across the play area
