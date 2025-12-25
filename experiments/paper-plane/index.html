@@ -1968,13 +1968,11 @@
     let gameStarted = false;
     let isPaused = false;
     const playOverlay = document.getElementById('play-overlay');
-    const toggleParamsBtn = document.getElementById('toggle-params');
     const pauseButton = document.getElementById('pause-button');
 
     playOverlay.addEventListener('click', () => {
         gameStarted = true;
         playOverlay.classList.add('hidden');
-        toggleParamsBtn.classList.add('visible');
         pauseButton.style.display = 'block'; // Show pause button
         phaseStartTime = Date.now(); // Initialize phase timer
         if (!animationRunning) {
