@@ -2593,11 +2593,11 @@
 
                 if (distSq < collectRadiusSq) {
                     coin.userData.collected = true;
-                    score += 5; // 5 points per coin
+                    score += 2; // 2 points per coin - small additive bonus
 
                     // Show bonus in score display
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
-                    scoreBonusUI.innerText = `+5`;
+                    scoreBonusUI.innerText = `+2`;
                     scoreBonusUI.style.opacity = '1';
                     bonusFadeTimer = 60; // Show briefly
                 }
