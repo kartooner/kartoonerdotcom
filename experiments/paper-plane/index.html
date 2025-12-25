@@ -1373,6 +1373,7 @@
         const coin = new THREE.Mesh(coinGeometry, coinMat.clone());
         coin.userData.collected = false;
         coin.userData.spinSpeed = 0.05; // Rotation speed
+        coin.userData.spinAngle = 0; // Track total spin rotation
         coin.visible = false;
         coin.position.z = -1000; // Off screen
         scene.add(coin);
@@ -2675,17 +2676,24 @@
             coin.position.z += speed;
 
             if (!coin.userData.collected) {
-                // Face the camera (billboard effect) - flat circle always visible
+                // Increment spin angle
+                coin.userData.spinAngle += coin.userData.spinSpeed;
+
+                // Face the camera (billboard effect)
                 coin.lookAt(camera.position);
 
-                // Cylinder needs 90° rotation so flat face points at camera
-                coin.rotateX(Math.PI / 2);
+                // Save the lookAt quaternion
+                const lookAtQuat = coin.quaternion.clone();
 
-                // Spin around the axis pointing at camera (local Z after orientation)
-                coin.rotateZ(coin.userData.spinSpeed);
+                // Create rotation quaternions for 90° X rotation and spin
+                const xRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+                const spinRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), coin.userData.spinAngle);
 
-                // Sheen effect - pulse opacity based on total rotation
-                const sheenValue = Math.abs(Math.sin(Date.now() * 0.005)); // Time-based pulse
+                // Combine: lookAt * xRot * spinRot
+                coin.quaternion.copy(lookAtQuat).multiply(xRot).multiply(spinRot);
+
+                // Sheen effect - pulse opacity based on spin angle
+                const sheenValue = Math.abs(Math.sin(coin.userData.spinAngle * 2)); // Rotation-based pulse
                 coin.material.opacity = 0.6 + (sheenValue * 0.3); // Pulse between 0.6 and 0.9
 
                 // Check if plane collects coin - simple distance check
@@ -2712,6 +2720,7 @@
                 coin.visible = false;
                 coin.position.z = -1000;
                 coin.userData.collected = false;
+                coin.userData.spinAngle = 0; // Reset spin for next use
                 coins.splice(i, 1);
             }
         }
