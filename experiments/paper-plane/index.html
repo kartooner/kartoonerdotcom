@@ -1494,6 +1494,44 @@
         return null;
     }
 
+    // --- CHRISTMAS SNOW (Seasonal: Until Jan 1st) ---
+    const snowflakes = [];
+    const isChristmasSeason = () => {
+        const now = new Date();
+        const month = now.getMonth(); // 0-11
+        const day = now.getDate();
+        // Show snow from Dec 20 through Jan 1
+        return (month === 11 && day >= 20) || (month === 0 && day === 1);
+    };
+
+    if (isChristmasSeason()) {
+        const snowGeometry = new THREE.CircleGeometry(0.15, 6); // Small hexagon
+        const snowMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide
+        });
+
+        // Pre-create 50 snowflakes for subtle effect
+        for (let i = 0; i < 50; i++) {
+            const snowflake = new THREE.Mesh(snowGeometry, snowMat.clone());
+
+            // Random starting positions spread across view
+            snowflake.position.x = (Math.random() - 0.5) * 40; // Wide spread
+            snowflake.position.y = Math.random() * 20 + 5; // High up
+            snowflake.position.z = (Math.random() - 0.5) * 100 - 50; // Depth variation
+
+            // Random fall speeds and drift
+            snowflake.userData.fallSpeed = Math.random() * 0.02 + 0.01; // 0.01-0.03
+            snowflake.userData.driftSpeed = (Math.random() - 0.5) * 0.01; // Slight horizontal drift
+            snowflake.userData.rotationSpeed = (Math.random() - 0.5) * 0.02; // Gentle rotation
+
+            scene.add(snowflake);
+            snowflakes.push(snowflake);
+        }
+    }
+
     // --- CHECKPOINT GATE ---
     const gates = [];
     const gateGeometry = new THREE.BoxGeometry(20, 8, 0.5);
@@ -3180,6 +3218,29 @@
             if (gate.position.z > 20) {
                 scene.remove(gate);
                 gates.splice(i, 1);
+            }
+        }
+
+        // Update Christmas snowflakes (seasonal)
+        for (let i = 0; i < snowflakes.length; i++) {
+            const snow = snowflakes[i];
+
+            // Fall down
+            snow.position.y -= snow.userData.fallSpeed;
+
+            // Gentle horizontal drift
+            snow.position.x += snow.userData.driftSpeed;
+
+            // Gentle rotation
+            snow.rotation.z += snow.userData.rotationSpeed;
+
+            // Billboard effect - face camera
+            snow.lookAt(camera.position);
+
+            // Reset when falls below view
+            if (snow.position.y < -2) {
+                snow.position.y = Math.random() * 5 + 15; // Reset to top
+                snow.position.x = (Math.random() - 0.5) * 40; // New random X
             }
         }
 
