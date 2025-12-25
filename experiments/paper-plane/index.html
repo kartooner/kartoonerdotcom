@@ -770,60 +770,72 @@
 
     // --- 4.5. COLLISION DEBRIS (CHUNKS FROM STRUCTURES) ---
     // Physics-based debris that spawns when hitting buildings/walls
+    // Reuses existing ground debris geometries for performance
     const collisionDebris = [];
     const collisionDebrisPool = [];
-    const collisionDebrisCount = isMobile ? 20 : 30; // Pool of debris chunks
-    const collisionDebrisMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.8 });
-    const collisionDebrisGeometries = [
-        new THREE.BoxGeometry(0.5, 0.5, 0.5),           // Small cube chunk
-        new THREE.BoxGeometry(0.3, 0.8, 0.3),           // Tall chunk
-        new THREE.BoxGeometry(0.8, 0.3, 0.5),           // Wide chunk
-        new THREE.TetrahedronGeometry(0.4, 0)           // Pyramid chunk
-    ];
+    const collisionDebrisCount = isMobile ? 25 : 40; // Pool of debris chunks (reuse ground debris count)
 
-    // Pre-create collision debris pool
+    // Pre-create collision debris pool using existing debris geometries for performance
     for (let i = 0; i < collisionDebrisCount; i++) {
-        const geometry = collisionDebrisGeometries[Math.floor(Math.random() * collisionDebrisGeometries.length)];
-        const chunk = new THREE.Mesh(geometry, collisionDebrisMat.clone());
+        const geometry = debrisGeometries[Math.floor(Math.random() * debrisGeometries.length)];
+        const chunk = new THREE.Mesh(geometry, debrisMat.clone());
+        chunk.material.opacity = 0.8; // More visible than ground debris
+        chunk.material.color.setHex(0xff00ff); // Magenta for collision debris
         chunk.visible = false;
         chunk.position.set(0, 0, -1000);
         chunk.userData.velocity = new THREE.Vector3();
         chunk.userData.rotationVelocity = new THREE.Vector3();
         chunk.userData.active = false;
+
+        // Scale up a bit for visibility
+        const scale = Math.random() * 1.5 + 1.0; // 1.0 to 2.5 (larger than ground debris)
+        chunk.scale.set(scale, scale, scale);
+
         scene.add(chunk);
         collisionDebrisPool.push(chunk);
     }
 
     // Function to spawn debris chunks from a collision point
-    function spawnCollisionDebris(x, y, z) {
-        const chunkCount = Math.floor(Math.random() * 3) + 2; // 2-4 chunks per collision
+    // Direction-based: debris flies in direction relative to collision point
+    function spawnCollisionDebris(structureX, structureY, structureZ, shipX, shipY) {
+        const chunkCount = Math.floor(Math.random() * 3) + 3; // 3-5 chunks per collision
 
         for (let i = 0; i < chunkCount; i++) {
             // Find available chunk from pool
             const chunk = collisionDebrisPool.find(c => !c.userData.active);
             if (!chunk) break; // No more available chunks
 
-            // Activate and position chunk
+            // Activate and position chunk at collision point
             chunk.userData.active = true;
             chunk.visible = true;
+
+            // Calculate collision direction (where ship hit the structure)
+            const dirX = shipX - structureX;
+            const dirY = shipY - structureY;
+
+            // Spawn debris on the side of impact
             chunk.position.set(
-                x + (Math.random() - 0.5) * 2, // Slight spread around collision point
-                y + (Math.random() - 0.5) * 2,
-                z
+                structureX + dirX * 0.5 + (Math.random() - 0.5) * 2, // Spawn on collision side
+                structureY + dirY * 0.5 + (Math.random() - 0.5) * 2,
+                structureZ
             );
 
-            // Set forward and downward velocity (chunks fall forward since structure is at camera)
+            // Set velocity: debris flies strongly FORWARD and in direction of collision
+            // Much faster forward velocity so debris is visible
             chunk.userData.velocity.set(
-                (Math.random() - 0.5) * 0.3,    // Random sideways spread
-                -0.1 - Math.random() * 0.15,    // Downward velocity
-                0.4 + Math.random() * 0.3       // Forward velocity (toward camera)
+                dirX * 0.3 + (Math.random() - 0.5) * 0.4,    // Sideways based on collision direction
+                dirY * 0.2 + (Math.random() - 0.5) * 0.3,    // Up/down based on collision direction
+                1.5 + Math.random() * 1.0                     // MUCH faster forward (1.5-2.5, was 0.4-0.7)
             );
 
-            // Random rotation velocity for tumbling effect
+            // Add slight downward gravity component
+            chunk.userData.velocity.y -= 0.2;
+
+            // Strong rotation velocity for dramatic spin-off effect
             chunk.userData.rotationVelocity.set(
-                (Math.random() - 0.5) * 0.2,
-                (Math.random() - 0.5) * 0.2,
-                (Math.random() - 0.5) * 0.2
+                (Math.random() - 0.5) * 0.4,
+                (Math.random() - 0.5) * 0.4,
+                (Math.random() - 0.5) * 0.4
             );
 
             // Random initial rotation
@@ -1946,8 +1958,8 @@
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
 
-                        // Spawn debris chunks from building collision
-                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z);
+                        // Spawn debris chunks from building collision (directional based on ship position)
+                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY);
 
                         b.position.z = -120;
                         b.visible = false;
@@ -2010,7 +2022,7 @@
 
             for (let i = 0; i < wallSetCount; i++) {
                 const zPos = -200 - (i * 60); // Very far for visibility, spaced 60 units apart (tighter than before)
-                const bothWalls = Math.random() < 0.35; // 35% chance for both high AND low (increased from 30%)
+                const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
 
                 if (bothWalls) {
                     // Spawn BOTH high and low from pool - player must stay centered
@@ -2063,8 +2075,8 @@
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
 
-                        // Spawn debris chunks from wall collision
-                        spawnCollisionDebris(wall.position.x, wall.position.y, wall.position.z);
+                        // Spawn debris chunks from wall collision (directional based on ship position)
+                        spawnCollisionDebris(wall.position.x, wall.position.y, wall.position.z, curX, curY);
 
                         wall.visible = false;
                         wall.position.z = -1000;
