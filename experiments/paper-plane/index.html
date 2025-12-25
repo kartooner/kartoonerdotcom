@@ -2430,28 +2430,28 @@
             }
         }
 
-        // Auto-shooting logic: fire at buildings and enemies ahead
+        // Auto-shooting logic: fire at buildings and enemies directly in path
         if (canShoot) {
             let targetAhead = false;
 
-            // Check for buildings in shooting range (ahead of player)
+            // Check for buildings directly in player's path
             for (let i = 0; i < buildings.length; i++) {
                 const building = buildings[i];
-                // Target buildings within 60 units ahead and roughly aligned (within 15 units horizontally)
+                // Target only buildings within 60 units ahead and DIRECTLY in path (±2.5 units)
                 if (building.position.z < 5 && building.position.z > -60 &&
-                    Math.abs(building.position.x - curX) < 15) {
+                    Math.abs(building.position.x - curX) < 2.5) {
                     targetAhead = true;
                     break;
                 }
             }
 
-            // Check for enemies in shooting range if no building found
+            // Check for enemies directly in path if no building found
             if (!targetAhead) {
                 for (let i = 0; i < enemies.length; i++) {
                     const enemy = enemies[i];
-                    // Target enemies within 60 units ahead and roughly aligned (within 15 units horizontally)
+                    // Target only enemies within 60 units ahead and DIRECTLY in path (±2.5 units)
                     if (enemy.position.z < 5 && enemy.position.z > -60 &&
-                        Math.abs(enemy.position.x - curX) < 15) {
+                        Math.abs(enemy.position.x - curX) < 2.5) {
                         targetAhead = true;
                         break;
                     }
