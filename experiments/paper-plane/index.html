@@ -1359,7 +1359,7 @@
     const coins = [];
     const coinPool = []; // Pre-created coins for reuse
     // Spinning yellow coins that face the camera
-    const coinGeometry = new THREE.CircleGeometry(0.5, 8); // Small octagon
+    const coinGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 8); // Thin cylinder (slightly 3D)
     const coinMat = new THREE.MeshBasicMaterial({
         color: 0xffff00,
         wireframe: true,
@@ -1444,25 +1444,24 @@
         return bossGroup;
     }
 
-    // Pre-create boss pool (3 bosses - can reuse)
+    // Pre-create boss pool (12 bosses - enough for 3 encounters of 4 bosses each)
     const bossPool = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 12; i++) {
         bossPool.push(createRotatingBoss());
     }
 
     function spawnBoss() {
-        const boss = bossPool.find(b => !b.userData.active);
-        if (!boss) return null;
-
         bossEncounterCount++;
         bossActive = true; // Set flag to prevent other spawns
-        boss.userData.active = true;
-        boss.visible = true;
-        boss.position.set(0, 4, -400);
 
-        // Alternate rotation direction based on encounter number
-        const clockwise = bossEncounterCount % 2 === 1;
-        boss.userData.rotationSpeed = clockwise ? 0.02 : -0.02;
+        // Cancel invincibility for boss arena (bosses must be fair challenge)
+        if (invincibilityActive) {
+            invincibilityActive = false;
+            invincibilityEndTime = 0;
+            paperMat.color.setHex(0x008080); // Revert to original teal
+            crashMessage = 'INVINCIBILITY DISABLED';
+            crashMessageTimer = 60;
+        }
 
         // Clear arena - hide all buildings, walls, and coins
         buildings.forEach(b => {
@@ -1482,8 +1481,28 @@
         walls.length = 0;
         coins.length = 0;
 
-        bosses.push(boss);
-        return boss;
+        // Spawn 3-4 bosses in a row, spaced out for ~1 minute encounter
+        const bossCount = Math.floor(Math.random() * 2) + 3; // 3 or 4 bosses
+        const spacing = 700; // 700 units apart (~1 minute total at avg speed)
+
+        // Speed alternates per encounter: slow, fast, slow, fast...
+        const isFastEncounter = bossEncounterCount % 2 === 0;
+        const baseSpeed = isFastEncounter ? 0.02 : 0.01; // Fast or slow
+
+        for (let i = 0; i < bossCount; i++) {
+            const boss = bossPool.find(b => !b.userData.active);
+            if (!boss) break; // No more available bosses in pool
+
+            boss.userData.active = true;
+            boss.visible = true;
+            boss.position.set(0, 4, -400 - (i * spacing)); // Spawn progressively further back
+
+            // Each boss alternates rotation direction: left, right, left, right
+            const rotateLeft = i % 2 === 0;
+            boss.userData.rotationSpeed = rotateLeft ? -baseSpeed : baseSpeed;
+
+            bosses.push(boss);
+        }
     }
 
     // Checkpoint UI functions
@@ -2656,12 +2675,15 @@
             coin.position.z += speed;
 
             if (!coin.userData.collected) {
-                // Spin on X axis (horizontal spin like a coin flipping)
-                coin.rotation.x += coin.userData.spinSpeed;
+                // Face the camera (billboard effect)
+                coin.lookAt(camera.position);
+
+                // Spin on Z axis (perpendicular to camera view - like a spinning coin)
+                coin.rotateZ(coin.userData.spinSpeed);
 
                 // Sheen effect - pulse opacity based on rotation angle
                 // Creates a shiny/reflective appearance
-                const sheenValue = Math.abs(Math.sin(coin.rotation.x * 2)); // 0 to 1
+                const sheenValue = Math.abs(Math.sin(coin.rotation.z * 2)); // 0 to 1
                 coin.material.opacity = 0.6 + (sheenValue * 0.3); // Pulse between 0.6 and 0.9
 
                 // Check if plane collects coin - simple distance check
