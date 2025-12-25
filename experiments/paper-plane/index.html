@@ -849,33 +849,40 @@
             }
             chunk.scale.set(scale, scale, scale);
 
-            // Structure-specific spawn patterns
+            // Structure-specific spawn patterns with random variations for variety
             let spawnX, spawnY, spawnZ, velX, velY, velZ;
 
+            // Random variation factors for each chunk (adds variety to same structure type)
+            const sprayVariation = Math.random(); // 0-1, affects how debris sprays
+            const heightVariation = Math.random() * 2; // 0-2, affects spawn height
+
             if (isPyramid) {
-                // Pyramids: debris from top/sides, spray outward
-                spawnX = structureX + dirX * 0.4 + (Math.random() - 0.5) * 3;
-                spawnY = structureY + Math.abs(dirY) + 1; // Higher spawn
-                spawnZ = structureZ - 12 - Math.random() * 15; // 12-27 units ahead
-                velX = dirX * 0.3 + (Math.random() - 0.5) * 0.5; // More spread
-                velY = -0.15 - Math.random() * 0.2; // Slower fall
-                velZ = 0.5 + Math.random() * 0.6; // Fast forward spray (0.5-1.1)
+                // Pyramids: debris from top/sides, spray outward with variation
+                const spreadFactor = 2 + sprayVariation * 2; // 2-4 units spread
+                spawnX = structureX + dirX * 0.4 + (Math.random() - 0.5) * spreadFactor;
+                spawnY = structureY + Math.abs(dirY) + heightVariation;
+                spawnZ = structureZ - (10 + sprayVariation * 20); // 10-30 units ahead (random)
+                velX = dirX * (0.2 + sprayVariation * 0.3) + (Math.random() - 0.5) * 0.5;
+                velY = -0.1 - Math.random() * 0.25;
+                velZ = 0.4 + Math.random() * 0.8; // 0.4-1.2 (wide range)
             } else if (isCylinder) {
-                // Cylinders: shatter in all directions, more chaotic
-                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * 4; // Wide spread
-                spawnY = structureY + Math.max(2, Math.abs(dirY) * 0.5);
-                spawnZ = structureZ - 10 - Math.random() * 20; // 10-30 units ahead
-                velX = dirX * 0.25 + (Math.random() - 0.5) * 0.6; // Very scattered
-                velY = -0.2 - Math.random() * 0.25;
-                velZ = 0.6 + Math.random() * 0.7; // Very fast forward (0.6-1.3)
+                // Cylinders: shatter chaotically with high variation
+                const chaosFactor = 3 + sprayVariation * 3; // 3-6 units chaos
+                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * chaosFactor;
+                spawnY = structureY + Math.max(1.5, Math.abs(dirY) * 0.5 + heightVariation);
+                spawnZ = structureZ - (8 + sprayVariation * 25); // 8-33 units ahead (very random)
+                velX = dirX * (0.15 + sprayVariation * 0.4) + (Math.random() - 0.5) * 0.7;
+                velY = -0.15 - Math.random() * 0.3;
+                velZ = 0.5 + Math.random() * 0.9; // 0.5-1.4 (chaotic)
             } else {
-                // Boxes/Walls: break into clean chunks, forward spray
-                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * 2.5;
-                spawnY = structureY + Math.max(2, Math.abs(dirY) * 0.5);
-                spawnZ = structureZ - 15 - Math.random() * 18; // 15-33 units ahead
-                velX = dirX * 0.2 + (Math.random() - 0.5) * 0.4;
-                velY = -0.25 - Math.random() * 0.2;
-                velZ = 0.6 + Math.random() * 0.5; // Strong forward (0.6-1.1)
+                // Boxes/Walls: clean break with moderate variation
+                const cleanFactor = 2 + sprayVariation * 2; // 2-4 units
+                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * cleanFactor;
+                spawnY = structureY + Math.max(2, Math.abs(dirY) * 0.5 + heightVariation * 0.5);
+                spawnZ = structureZ - (12 + sprayVariation * 22); // 12-34 units ahead (varied)
+                velX = dirX * (0.15 + sprayVariation * 0.25) + (Math.random() - 0.5) * 0.5;
+                velY = -0.2 - Math.random() * 0.25;
+                velZ = 0.5 + Math.random() * 0.7; // 0.5-1.2 (moderate)
             }
 
             chunk.position.set(spawnX, spawnY, spawnZ);
