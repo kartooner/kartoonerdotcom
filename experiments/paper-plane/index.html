@@ -2086,17 +2086,17 @@
             timeInSameLane += 16.67; // Approximate ms per frame (60fps)
             if (timeInSameLane > campingThreshold && !antiCampingActive) {
                 antiCampingActive = true;
-                // Backend spawns building in player's lane automatically
 
-                // Also spawn walls at player's exact Y position to prevent camping (e.g., top-right safe zone)
-                // Spawn 3-4 walls directly at player's height
-                const antiCampWallCount = Math.floor(Math.random() * 2) + 3; // 3-4 walls
-                for (let i = 0; i < antiCampWallCount; i++) {
-                    const zPos = -100 - (i * 40); // Spawn ahead at 40 unit spacing
-                    // Alternate high/low type, but override Y to player's exact position
-                    const wallType = i % 2 === 0 ? 'high' : 'low';
-                    const wall = getWallFromPool(wallType, zPos, curY); // Use player's current Y
-                    if (wall) walls.push(wall);
+                // Spawn a super tall building directly in player's lane to prevent camping
+                const antiCampBuilding = buildings.find(b => !b.visible);
+                if (antiCampBuilding) {
+                    antiCampBuilding.geometry = boxGeometry; // Use box geometry
+                    antiCampBuilding.position.x = lanes[playerLane]; // Player's current lane
+                    antiCampBuilding.position.y = 6; // Extra tall: reaches to Y=11 (6 + 10/2)
+                    antiCampBuilding.position.z = -120; // Spawn far ahead
+                    antiCampBuilding.scale.set(1, 2, 1); // Double height: 5 * 2 = 10 units tall
+                    antiCampBuilding.visible = true;
+                    antiCampBuilding.material.opacity = 0.5;
                 }
             }
         } else {
@@ -2826,25 +2826,17 @@
         if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
             // Switch phase based on current phase
             if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings, 40% chance for walls, 60% breather before rings
-                if (Math.random() < 0.40) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false;
-                    phaseDuration = 20000; // Walls phase lasts ~20 seconds
-                    phaseStartTime = currentTime;
-                } else {
-                    // Add breather before rings
-                    currentPhase = 'breather_before_rings';
-                    phaseStartTime = currentTime;
-                    phaseDuration = 1000; // 1 second breather before rings (faster action)
-                }
+                // After buildings, add breather before rings (no walls during building phase)
+                currentPhase = 'breather_before_rings';
+                phaseStartTime = currentTime;
+                phaseDuration = 1000; // 1 second breather before rings (faster action)
             } else if (currentPhase === 'breather_before_rings') {
                 // After breather, go back to buildings (rings now tied to checkpoints)
                 currentPhase = 'buildings';
                 phaseStartTime = currentTime;
                 phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
             } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, ALWAYS spawn walls (was 65%, now 100% for more frequency)
+                // After rings breather, ALWAYS spawn walls (100% frequency after building sections)
                 currentPhase = 'walls';
                 wallsSpawnedThisPhase = false; // Reset flag for new wall phase
                 phaseDuration = 20000; // Walls phase lasts ~20 seconds
