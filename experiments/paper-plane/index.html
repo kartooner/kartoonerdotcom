@@ -1390,10 +1390,17 @@
         }
 
         // Check if player can afford at least one ability (or first checkpoint = free)
-        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => !abilities[key].owned && score >= abilities[key].cost);
+        // Cosmetic upgrades (color/shape) can always be purchased if affordable
+        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => {
+            const isCosmetic = key === 'randomColor' || key === 'changeShape';
+            return (isCosmetic || !abilities[key].owned) && score >= abilities[key].cost;
+        });
 
-        if (!canAffordAny && selectedAbilities.every(key => abilities[key].owned)) {
-            // All abilities owned, just continue
+        if (!canAffordAny && selectedAbilities.every(key => {
+            const isCosmetic = key === 'randomColor' || key === 'changeShape';
+            return abilities[key].owned && !isCosmetic;
+        })) {
+            // All non-cosmetic abilities owned and can't afford cosmetics, just continue
             checkpointActive = false;
             isPaused = false;
             return;
@@ -1405,14 +1412,17 @@
             const card = document.createElement('div');
             card.className = 'ability-card';
 
+            // Cosmetic upgrades can be purchased multiple times
+            const isCosmetic = key === 'randomColor' || key === 'changeShape';
+
             // On first checkpoint, all unowned abilities are available for free
-            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && !ability.owned);
-            if (!canAfford || ability.owned) {
+            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && (isCosmetic || !ability.owned));
+            if (!canAfford || (ability.owned && !isCosmetic)) {
                 card.classList.add('disabled');
             }
 
-            const statusIcon = ability.owned ? '■' : (canAfford ? '□' : '×');
-            const costText = ability.owned ? 'ACQUIRED' : (isFirstCheckpoint ? 'FREE' : `${ability.cost} PTS`);
+            const statusIcon = (ability.owned && !isCosmetic) ? '■' : (canAfford ? '□' : '×');
+            const costText = (ability.owned && !isCosmetic) ? 'ACQUIRED' : (isFirstCheckpoint && !ability.owned ? 'FREE' : `${ability.cost} PTS`);
 
             card.innerHTML = `
                 <div class="ability-inner">
@@ -1435,14 +1445,19 @@
     function purchaseAbility(abilityKey) {
         const ability = abilities[abilityKey];
 
+        // Cosmetic upgrades (color/shape) can be purchased multiple times
+        const isCosmetic = abilityKey === 'randomColor' || abilityKey === 'changeShape';
+
         // First checkpoint is free, subsequent checkpoints cost points
         const isFree = isFirstCheckpoint && !ability.owned;
-        const canPurchase = isFree || (score >= ability.cost && !ability.owned);
+        const canPurchase = isFree || (score >= ability.cost && (isCosmetic || !ability.owned));
 
         if (canPurchase) {
             if (!isFree) {
                 score -= ability.cost;
             }
+
+            // Mark as owned (cosmetic upgrades stay purchasable via the isCosmetic check above)
             ability.owned = true;
             scoreDisplayUI.innerText = `SCORE: ${score}`;
 
@@ -1454,8 +1469,10 @@
             // Apply ability effect
             applyAbilityEffect(abilityKey);
 
-            // Track upgrade for potential loss (risk/reward)
-            activeUpgrades.push(abilityKey);
+            // Track upgrade for potential loss (risk/reward) - but not cosmetics multiple times
+            if (!isCosmetic || !activeUpgrades.includes(abilityKey)) {
+                activeUpgrades.push(abilityKey);
+            }
             hasActiveUpgrades = true;
             buildingHitsSinceUpgrade = 0;
             hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // Random 3-4 hits
