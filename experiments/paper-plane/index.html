@@ -797,8 +797,9 @@
 
     // Function to spawn debris chunks from a collision point
     // Direction-based: debris flies in direction relative to collision point
+    // NOTE: Will be reused for laser impacts in the future
     function spawnCollisionDebris(structureX, structureY, structureZ, shipX, shipY) {
-        const chunkCount = Math.floor(Math.random() * 3) + 3; // 3-5 chunks per collision
+        const chunkCount = Math.floor(Math.random() * 3) + 4; // 4-6 chunks per collision
 
         for (let i = 0; i < chunkCount; i++) {
             // Find available chunk from pool
@@ -808,6 +809,8 @@
             // Activate and position chunk at collision point
             chunk.userData.active = true;
             chunk.visible = true;
+            chunk.userData.onGround = false; // Track if chunk is tumbling on ground
+            chunk.userData.lifetime = 0; // Track how long chunk has existed (for fadeout)
 
             // Calculate collision direction (where ship hit the structure)
             const dirX = shipX - structureX;
@@ -821,21 +824,18 @@
             );
 
             // Set velocity: debris flies strongly FORWARD and in direction of collision
-            // Much faster forward velocity so debris is visible
+            // Fast forward velocity + upward arc so chunks are visible tumbling on landscape
             chunk.userData.velocity.set(
-                dirX * 0.3 + (Math.random() - 0.5) * 0.4,    // Sideways based on collision direction
-                dirY * 0.2 + (Math.random() - 0.5) * 0.3,    // Up/down based on collision direction
-                1.5 + Math.random() * 1.0                     // MUCH faster forward (1.5-2.5, was 0.4-0.7)
+                dirX * 0.4 + (Math.random() - 0.5) * 0.5,    // Sideways based on collision direction
+                Math.abs(dirY) * 0.3 + Math.random() * 0.6,  // Upward for dramatic arc
+                2.5 + Math.random() * 1.5                     // Very fast forward (2.5-4.0)
             );
-
-            // Add slight downward gravity component
-            chunk.userData.velocity.y -= 0.2;
 
             // Strong rotation velocity for dramatic spin-off effect
             chunk.userData.rotationVelocity.set(
-                (Math.random() - 0.5) * 0.4,
-                (Math.random() - 0.5) * 0.4,
-                (Math.random() - 0.5) * 0.4
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5,
+                (Math.random() - 0.5) * 0.5
             );
 
             // Random initial rotation
@@ -1700,24 +1700,71 @@
         // Update collision debris with physics (iterate backwards to safely remove)
         for (let i = collisionDebris.length - 1; i >= 0; i--) {
             const chunk = collisionDebris[i];
+            chunk.userData.lifetime++;
 
-            // Apply velocity
-            chunk.position.add(chunk.userData.velocity);
+            if (!chunk.userData.onGround) {
+                // AIRBORNE PHASE: Apply physics until chunk hits ground
+                chunk.position.add(chunk.userData.velocity);
 
-            // Apply gravity
-            chunk.userData.velocity.y -= 0.01; // Gravity acceleration
+                // Apply gravity
+                chunk.userData.velocity.y -= 0.015; // Gravity acceleration
 
-            // Apply rotation
-            chunk.rotation.x += chunk.userData.rotationVelocity.x;
-            chunk.rotation.y += chunk.userData.rotationVelocity.y;
-            chunk.rotation.z += chunk.userData.rotationVelocity.z;
+                // Apply rotation while airborne
+                chunk.rotation.x += chunk.userData.rotationVelocity.x;
+                chunk.rotation.y += chunk.userData.rotationVelocity.y;
+                chunk.rotation.z += chunk.userData.rotationVelocity.z;
 
-            // Check if chunk hit the ground or went too far
-            if (chunk.position.y <= 0.2 || chunk.position.z > 30 || Math.abs(chunk.position.x) > 50) {
-                // Deactivate and remove from active list
+                // Check if chunk hit the ground
+                if (chunk.position.y <= 0.3) {
+                    chunk.userData.onGround = true;
+                    chunk.position.y = 0.3; // Lock to ground level
+                    chunk.userData.lifetime = 0; // Reset lifetime for ground phase
+
+                    // Reduce velocities on impact (bounce/slide effect)
+                    chunk.userData.velocity.x *= 0.3; // Slow sideways
+                    chunk.userData.velocity.z *= 0.6; // Keep some forward momentum
+                    chunk.userData.velocity.y = 0; // Stop vertical
+
+                    // Reduce rotation speed when on ground
+                    chunk.userData.rotationVelocity.multiplyScalar(0.4);
+                }
+            } else {
+                // GROUND PHASE: Tumble on landscape for a while
+                chunk.position.x += chunk.userData.velocity.x;
+                chunk.position.z += chunk.userData.velocity.z;
+
+                // Keep tumbling on ground
+                chunk.rotation.x += chunk.userData.rotationVelocity.x;
+                chunk.rotation.y += chunk.userData.rotationVelocity.y;
+                chunk.rotation.z += chunk.userData.rotationVelocity.z;
+
+                // Friction - slow down gradually
+                chunk.userData.velocity.x *= 0.95;
+                chunk.userData.velocity.z *= 0.95;
+                chunk.userData.rotationVelocity.multiplyScalar(0.98);
+
+                // Fade out after tumbling for a while
+                if (chunk.userData.lifetime > 60) { // ~1 second of tumbling
+                    const fadeProgress = (chunk.userData.lifetime - 60) / 30; // 30 frames to fade
+                    chunk.material.opacity = 0.8 * (1 - fadeProgress);
+
+                    if (chunk.userData.lifetime > 90) { // Total 1.5 seconds on ground
+                        // Deactivate and remove from active list
+                        chunk.userData.active = false;
+                        chunk.visible = false;
+                        chunk.position.set(0, 0, -1000);
+                        chunk.material.opacity = 0.8; // Reset for next use
+                        collisionDebris.splice(i, 1);
+                    }
+                }
+            }
+
+            // Remove if went too far off screen
+            if (chunk.position.z > 50 || Math.abs(chunk.position.x) > 60) {
                 chunk.userData.active = false;
                 chunk.visible = false;
                 chunk.position.set(0, 0, -1000);
+                chunk.material.opacity = 0.8; // Reset for next use
                 collisionDebris.splice(i, 1);
             }
         }
