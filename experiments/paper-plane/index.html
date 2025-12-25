@@ -816,19 +816,19 @@
             const dirX = shipX - structureX;
             const dirY = shipY - structureY;
 
-            // Spawn debris on the side of impact, slightly AHEAD so it's visible
+            // Spawn debris on the SIDE of impact, but AHEAD so it falls onto ground plane
             chunk.position.set(
-                structureX + dirX * 0.5 + (Math.random() - 0.5) * 2, // Spawn on collision side
-                structureY + dirY * 0.5 + (Math.random() - 0.5) * 2,
-                structureZ - 10 - Math.random() * 5 // Spawn 10-15 units ahead
+                structureX + dirX * 0.5 + (Math.random() - 0.5) * 1, // Spawn on collision side (reduced spread)
+                structureY + Math.abs(dirY) * 0.5,                    // Start at structure height
+                structureZ - 15 - Math.random() * 10                  // Spawn 15-25 units ahead
             );
 
-            // Set velocity: debris moves SLOWER than scene speed so it stays visible ahead
-            // Scene speed is ~0.48, so debris at 0.2-0.4 will stay ahead and visible
+            // Set velocity: debris falls DOWN onto ground ahead, minimal sideways motion
+            // Spawn position is based on collision side, but velocity is mostly down+forward
             chunk.userData.velocity.set(
-                dirX * 0.4 + (Math.random() - 0.5) * 0.5,    // Sideways based on collision direction
-                Math.abs(dirY) * 0.3 + Math.random() * 0.8,  // Good upward arc
-                0.15 + Math.random() * 0.25                   // Slow forward (0.15-0.4, slower than scene!)
+                dirX * 0.15 + (Math.random() - 0.5) * 0.2,  // Small sideways drift based on hit direction
+                -0.3 - Math.random() * 0.3,                  // Strong downward (falls to ground)
+                0.2 + Math.random() * 0.3                    // Slow forward (0.2-0.5, slower than scene)
             );
 
             // Strong rotation velocity for dramatic spin-off effect
