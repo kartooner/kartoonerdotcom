@@ -893,16 +893,16 @@
 
             // Spawn position: mostly forward with slight fracture-based offset
             const spawnX = structureX + (chunkOffset * spreadFactor); // Spread based on fracture zone
-            const spawnY = structureY + 1 + Math.random() * 2; // Start elevated
+            const spawnY = structureY + 0.5 + Math.random() * 1; // Start slightly elevated (lower spawn)
             const spawnZ = structureZ - 15 - Math.random() * 25; // 15-40 units AHEAD
 
-            // Velocity: DRAMATIC FORWARD spray with minimal sideways drift
+            // Velocity: DRAMATIC FORWARD spray with DOWNWARD arc (always falls to ground)
             const forwardVel = 0.8 + Math.random() * 0.8; // 0.8-1.6 (very fast forward!)
             const sidewaysVel = chunkOffset * 0.15; // Minimal sideways (fracture spread only)
-            const downwardVel = -0.3 - Math.random() * 0.4; // Strong downward (falls to ground)
+            const upwardVel = -0.1 - Math.random() * 0.15; // Slight upward arc (0.1-0.25), then gravity pulls down
 
             chunk.position.set(spawnX, spawnY, spawnZ);
-            chunk.userData.velocity.set(sidewaysVel, downwardVel, forwardVel);
+            chunk.userData.velocity.set(sidewaysVel, upwardVel, forwardVel);
 
             // DRAMATIC tumbling based on chunk size and structure type
             const baseSpin = 3.0 / scale; // Smaller chunks spin MUCH faster
@@ -923,6 +923,12 @@
             // Erratic wobble for realism
             chunk.userData.wobblePhase = Math.random() * Math.PI * 2;
             chunk.userData.wobbleSpeed = 0.1 + Math.random() * 0.15; // Faster wobble
+
+            // VARIETY: Each chunk gets unique physics characteristics
+            chunk.userData.frictionFactor = 0.92 + Math.random() * 0.04; // 0.92-0.96 (varied friction)
+            chunk.userData.rotationDecay = 0.91 + Math.random() * 0.04; // 0.91-0.95 (varied spin slowdown)
+            chunk.userData.wobbleIntensity = 0.5 + Math.random() * 1.0; // 0.5-1.5 (varied wobble strength)
+            chunk.userData.skidPattern = Math.floor(Math.random() * 3); // 0-2 (different skid behaviors)
 
             // Random initial rotation
             chunk.rotation.set(
@@ -1792,8 +1798,8 @@
                 // AIRBORNE PHASE: Apply physics until chunk hits ground
                 chunk.position.add(chunk.userData.velocity);
 
-                // Apply gravity
-                chunk.userData.velocity.y -= 0.015; // Gravity acceleration
+                // Strong downward pull (like magnetism to ground)
+                chunk.userData.velocity.y -= 0.025; // Stronger gravity - pulls chunks down fast
 
                 // Dynamic tumbling with wobble (erratic realistic spin)
                 chunk.userData.wobblePhase += chunk.userData.wobbleSpeed;
@@ -1815,56 +1821,54 @@
                     chunk.position.y = 0.3; // Lock to ground level
                     chunk.userData.lifetime = 0; // Reset lifetime for ground phase
 
-                    // DRAMATIC bounce/skid on impact
-                    const impactSpeed = Math.abs(chunk.userData.velocity.y);
+                    // Skid on impact - NO bouncing, debris stays on ground
                     chunk.userData.velocity.x *= 0.4; // Some sideways retained
                     chunk.userData.velocity.z *= 0.75; // Keep MOST forward momentum (skidding)
-                    chunk.userData.velocity.y = impactSpeed * 0.3; // Small bounce up
+                    chunk.userData.velocity.y = 0; // LOCK to ground, no bounce
 
                     // Ground impact intensifies rotation (dramatic tumbling)
                     chunk.userData.rotationVelocity.multiplyScalar(0.7);
-                    chunk.userData.bounceCount = 0; // Track bounces
                 }
             } else {
-                // GROUND PHASE: Dramatic skidding, bouncing, tumbling on landscape
+                // GROUND PHASE: Dramatic skidding and tumbling on landscape (no bouncing)
 
-                // Small bounces as it skids forward
-                if (chunk.userData.velocity.y === 0 || chunk.userData.velocity.y > -0.05) {
-                    if (chunk.userData.bounceCount < 2 && Math.random() < 0.3) {
-                        // Random small bounce (looks like hitting rough ground)
-                        chunk.userData.velocity.y = -0.05 - Math.random() * 0.08;
-                        chunk.userData.bounceCount++;
-                    }
-                }
-
-                // Apply velocities
+                // Apply velocities (no Y movement - stays on ground)
                 chunk.position.x += chunk.userData.velocity.x;
                 chunk.position.z += chunk.userData.velocity.z;
-                chunk.position.y += chunk.userData.velocity.y;
+                chunk.position.y = 0.3; // FORCE to ground level (no bouncing)
 
-                // Micro-gravity for bounces
-                if (chunk.position.y > 0.3) {
-                    chunk.userData.velocity.y += 0.008; // Gravity pulls down during bounce
+                // VARIED tumbling based on chunk's unique characteristics
+                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.7;
+                const wobbleBase = 0.03 * chunk.userData.wobbleIntensity; // Unique wobble strength
+
+                // Different skid patterns create variety
+                let groundWobbleX, groundWobbleY, groundWobbleZ;
+                if (chunk.userData.skidPattern === 0) {
+                    // Rolling pattern - smooth roll
+                    groundWobbleX = Math.sin(chunk.userData.wobblePhase) * wobbleBase;
+                    groundWobbleY = Math.cos(chunk.userData.wobblePhase * 2.0) * wobbleBase * 1.5;
+                    groundWobbleZ = Math.sin(chunk.userData.wobblePhase * 0.5) * wobbleBase * 0.8;
+                } else if (chunk.userData.skidPattern === 1) {
+                    // Tumbling pattern - erratic tumble
+                    groundWobbleX = Math.cos(chunk.userData.wobblePhase * 1.3) * wobbleBase * 1.8;
+                    groundWobbleY = Math.sin(chunk.userData.wobblePhase * 1.7) * wobbleBase * 1.2;
+                    groundWobbleZ = Math.cos(chunk.userData.wobblePhase * 0.9) * wobbleBase * 1.5;
                 } else {
-                    chunk.position.y = 0.3; // Lock back to ground
-                    chunk.userData.velocity.y = 0;
+                    // Skidding pattern - mostly forward roll with slight wobble
+                    groundWobbleX = Math.sin(chunk.userData.wobblePhase * 2.5) * wobbleBase * 0.6;
+                    groundWobbleY = Math.cos(chunk.userData.wobblePhase * 3.0) * wobbleBase * 2.0;
+                    groundWobbleZ = Math.sin(chunk.userData.wobblePhase * 0.3) * wobbleBase * 0.4;
                 }
 
-                // DRAMATIC tumbling with enhanced wobble
-                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.7; // Faster wobble on ground
-                const groundWobbleX = Math.sin(chunk.userData.wobblePhase) * 0.03; // Stronger wobble
-                const groundWobbleY = Math.cos(chunk.userData.wobblePhase * 1.8) * 0.04;
-                const groundWobbleZ = Math.sin(chunk.userData.wobblePhase * 0.6) * 0.025;
-
-                // Enhanced ground tumbling (looks like rolling/skidding on rough terrain)
+                // Enhanced ground tumbling with variety
                 chunk.rotation.x += chunk.userData.rotationVelocity.x + groundWobbleX;
                 chunk.rotation.y += chunk.userData.rotationVelocity.y + groundWobbleY;
                 chunk.rotation.z += chunk.userData.rotationVelocity.z + groundWobbleZ;
 
-                // Realistic friction - forward motion slows faster than rotation
-                chunk.userData.velocity.x *= 0.94; // High friction
-                chunk.userData.velocity.z *= 0.94; // High friction (skidding slows down)
-                chunk.userData.rotationVelocity.multiplyScalar(0.93); // Rotation slows dramatically
+                // VARIED friction and rotation decay per chunk (unique behavior)
+                chunk.userData.velocity.x *= chunk.userData.frictionFactor;
+                chunk.userData.velocity.z *= chunk.userData.frictionFactor;
+                chunk.userData.rotationVelocity.multiplyScalar(chunk.userData.rotationDecay);
 
                 // Realistic breakage: pieces get smaller as they skid/tumble (hitting ground)
                 const currentScale = chunk.scale.x;
