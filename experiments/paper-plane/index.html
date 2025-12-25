@@ -796,20 +796,31 @@
         chunk.userData.velocity = new THREE.Vector3();
         chunk.userData.rotationVelocity = new THREE.Vector3();
         chunk.userData.active = false;
-
-        // Scale up a bit for visibility
-        const scale = Math.random() * 1.5 + 1.0; // 1.0 to 2.5 (larger than ground debris)
-        chunk.scale.set(scale, scale, scale);
+        // Scale set per-spawn for varied sizes
 
         scene.add(chunk);
         collisionDebrisPool.push(chunk);
     }
 
     // Function to spawn debris chunks from a collision point
-    // Direction-based: debris flies in direction relative to collision point
+    // Different break patterns for different structure types (realistic destruction)
     // NOTE: Will be reused for laser impacts in the future
-    function spawnCollisionDebris(structureX, structureY, structureZ, shipX, shipY) {
-        const chunkCount = Math.floor(Math.random() * 3) + 4; // 4-6 chunks per collision
+    function spawnCollisionDebris(structureX, structureY, structureZ, shipX, shipY, structureObj = null) {
+        // Determine structure type for realistic break pattern
+        const isBox = structureObj && (structureObj.geometry === boxGeometry);
+        const isPyramid = structureObj && (structureObj.geometry === pyramidGeometry);
+        const isCylinder = structureObj && (structureObj.geometry === cylinderGeometry);
+        const isWall = !structureObj; // Walls don't pass structure object
+
+        // Different chunk counts for different structures
+        let chunkCount;
+        if (isPyramid) {
+            chunkCount = 3 + Math.floor(Math.random() * 2); // 3-4 chunks (pyramids break into fewer pieces)
+        } else if (isCylinder) {
+            chunkCount = 5 + Math.floor(Math.random() * 3); // 5-7 chunks (cylinders shatter)
+        } else {
+            chunkCount = 4 + Math.floor(Math.random() * 3); // 4-6 chunks (boxes/walls)
+        }
 
         for (let i = 0; i < chunkCount; i++) {
             // Find available chunk from pool
@@ -826,20 +837,56 @@
             const dirX = shipX - structureX;
             const dirY = shipY - structureY;
 
-            // Spawn debris at structure position - they will spray out forward
-            chunk.position.set(
-                structureX + dirX * 0.3 + (Math.random() - 0.5) * 2, // Spawn on collision side with spread
-                structureY + Math.max(2, Math.abs(dirY) * 0.5),      // Start at structure height (min 2 units up)
-                structureZ - 8 - Math.random() * 8                    // Spawn 8-16 units ahead
-            );
+            // Varied chunk sizes (mix of small and large)
+            const sizeType = Math.random();
+            let scale;
+            if (sizeType < 0.4) {
+                scale = Math.random() * 0.8 + 0.5; // Small chunks (0.5-1.3)
+            } else if (sizeType < 0.8) {
+                scale = Math.random() * 1.0 + 1.3; // Medium chunks (1.3-2.3)
+            } else {
+                scale = Math.random() * 1.5 + 2.3; // Large chunks (2.3-3.8)
+            }
+            chunk.scale.set(scale, scale, scale);
 
-            // Set velocity: spray FORWARD and DOWN onto ground ahead
-            // More forward velocity so debris sprays out visibly
-            chunk.userData.velocity.set(
-                dirX * 0.2 + (Math.random() - 0.5) * 0.3,   // Sideways based on hit direction
-                -0.2 - Math.random() * 0.2,                 // Downward (falls to ground)
-                0.4 + Math.random() * 0.4                   // Forward spray (0.4-0.8)
-            );
+            // Structure-specific spawn patterns with random variations for variety
+            let spawnX, spawnY, spawnZ, velX, velY, velZ;
+
+            // Random variation factors for each chunk (adds variety to same structure type)
+            const sprayVariation = Math.random(); // 0-1, affects how debris sprays
+            const heightVariation = Math.random() * 2; // 0-2, affects spawn height
+
+            if (isPyramid) {
+                // Pyramids: debris from top/sides, spray outward with variation
+                const spreadFactor = 2 + sprayVariation * 2; // 2-4 units spread
+                spawnX = structureX + dirX * 0.4 + (Math.random() - 0.5) * spreadFactor;
+                spawnY = structureY + Math.abs(dirY) + heightVariation;
+                spawnZ = structureZ - (10 + sprayVariation * 20); // 10-30 units ahead (random)
+                velX = dirX * (0.2 + sprayVariation * 0.3) + (Math.random() - 0.5) * 0.5;
+                velY = -0.1 - Math.random() * 0.25;
+                velZ = 0.4 + Math.random() * 0.8; // 0.4-1.2 (wide range)
+            } else if (isCylinder) {
+                // Cylinders: shatter chaotically with high variation
+                const chaosFactor = 3 + sprayVariation * 3; // 3-6 units chaos
+                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * chaosFactor;
+                spawnY = structureY + Math.max(1.5, Math.abs(dirY) * 0.5 + heightVariation);
+                spawnZ = structureZ - (8 + sprayVariation * 25); // 8-33 units ahead (very random)
+                velX = dirX * (0.15 + sprayVariation * 0.4) + (Math.random() - 0.5) * 0.7;
+                velY = -0.15 - Math.random() * 0.3;
+                velZ = 0.5 + Math.random() * 0.9; // 0.5-1.4 (chaotic)
+            } else {
+                // Boxes/Walls: clean break with moderate variation
+                const cleanFactor = 2 + sprayVariation * 2; // 2-4 units
+                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * cleanFactor;
+                spawnY = structureY + Math.max(2, Math.abs(dirY) * 0.5 + heightVariation * 0.5);
+                spawnZ = structureZ - (12 + sprayVariation * 22); // 12-34 units ahead (varied)
+                velX = dirX * (0.15 + sprayVariation * 0.25) + (Math.random() - 0.5) * 0.5;
+                velY = -0.2 - Math.random() * 0.25;
+                velZ = 0.5 + Math.random() * 0.7; // 0.5-1.2 (moderate)
+            }
+
+            chunk.position.set(spawnX, spawnY, spawnZ);
+            chunk.userData.velocity.set(velX, velY, velZ);
 
             // Strong rotation velocity for dramatic spin-off effect
             chunk.userData.rotationVelocity.set(
@@ -1739,7 +1786,7 @@
                     chunk.userData.rotationVelocity.multiplyScalar(0.4);
                 }
             } else {
-                // GROUND PHASE: Tumble on landscape for a while
+                // GROUND PHASE: Tumble on landscape, breaking apart as it rolls
                 chunk.position.x += chunk.userData.velocity.x;
                 chunk.position.z += chunk.userData.velocity.z;
 
@@ -1748,30 +1795,21 @@
                 chunk.rotation.y += chunk.userData.rotationVelocity.y;
                 chunk.rotation.z += chunk.userData.rotationVelocity.z;
 
-                // Friction - slow down VERY gradually so debris stays visible longer
-                chunk.userData.velocity.x *= 0.97;
-                chunk.userData.velocity.z *= 0.97;
-                chunk.userData.rotationVelocity.multiplyScalar(0.99);
+                // Friction - slow down gradually
+                chunk.userData.velocity.x *= 0.96;
+                chunk.userData.velocity.z *= 0.96;
+                chunk.userData.rotationVelocity.multiplyScalar(0.97);
 
-                // Fade out after tumbling for a while - MUCH longer visibility
-                if (chunk.userData.lifetime > 180) { // ~3 seconds of tumbling (was 1 second)
-                    const fadeProgress = (chunk.userData.lifetime - 180) / 60; // 60 frames (1 sec) to fade
-                    chunk.material.opacity = 0.8 * (1 - fadeProgress);
-
-                    if (chunk.userData.lifetime > 240) { // Total 4 seconds on ground (was 1.5)
-                        // Deactivate and remove from active list
-                        chunk.userData.active = false;
-                        chunk.visible = false;
-                        chunk.position.set(0, 0, -1000);
-                        chunk.material.opacity = 0.8; // Reset for next use
-                        collisionDebris.splice(i, 1);
-                    }
-                }
+                // Realistic breakage: pieces get smaller as they tumble (hitting ground)
+                const currentScale = chunk.scale.x;
+                const shrinkRate = 0.992; // Gradual size reduction
+                const newScale = currentScale * shrinkRate;
+                chunk.scale.set(newScale, newScale, newScale);
             }
 
-            // Remove if player has passed the debris (debris is behind camera)
-            // Or if went too far off screen
-            if (chunk.position.z > 15 || Math.abs(chunk.position.x) > 80) {
+            // Immediate cleanup when player passes debris (z > 5 means debris is behind/at camera)
+            // Also remove if too far off screen or too small
+            if (chunk.position.z > 5 || Math.abs(chunk.position.x) > 80 || chunk.scale.x < 0.3) {
                 chunk.userData.active = false;
                 chunk.visible = false;
                 chunk.position.set(0, 0, -1000);
@@ -2016,8 +2054,8 @@
                     if (!gracePeriodActive) {
                         collisionFlash = 0.5;
 
-                        // Spawn debris chunks from building collision (directional based on ship position)
-                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY);
+                        // Spawn debris chunks from building collision (pass building for realistic break pattern)
+                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY, b);
 
                         b.position.z = -120;
                         b.visible = false;
