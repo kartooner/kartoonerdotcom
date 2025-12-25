@@ -2675,15 +2675,17 @@
             coin.position.z += speed;
 
             if (!coin.userData.collected) {
-                // Face the camera (billboard effect)
+                // Face the camera (billboard effect) - flat circle always visible
                 coin.lookAt(camera.position);
 
-                // Spin on Z axis (perpendicular to camera view - like a spinning coin)
+                // Cylinder needs 90° rotation so flat face points at camera
+                coin.rotateX(Math.PI / 2);
+
+                // Spin around the axis pointing at camera (local Z after orientation)
                 coin.rotateZ(coin.userData.spinSpeed);
 
-                // Sheen effect - pulse opacity based on rotation angle
-                // Creates a shiny/reflective appearance
-                const sheenValue = Math.abs(Math.sin(coin.rotation.z * 2)); // 0 to 1
+                // Sheen effect - pulse opacity based on total rotation
+                const sheenValue = Math.abs(Math.sin(Date.now() * 0.005)); // Time-based pulse
                 coin.material.opacity = 0.6 + (sheenValue * 0.3); // Pulse between 0.6 and 0.9
 
                 // Check if plane collects coin - simple distance check
