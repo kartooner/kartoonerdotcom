@@ -2578,11 +2578,13 @@
             coin.position.z += speed;
 
             if (!coin.userData.collected) {
-                // Make coin face camera (billboard) - face forward toward player
-                coin.lookAt(camera.position);
+                // Spin on X axis (horizontal spin like a coin flipping)
+                coin.rotation.x += coin.userData.spinSpeed;
 
-                // Spin around the forward axis (Z axis after lookAt)
-                coin.rotateZ(coin.userData.spinSpeed);
+                // Sheen effect - pulse opacity based on rotation angle
+                // Creates a shiny/reflective appearance
+                const sheenValue = Math.abs(Math.sin(coin.rotation.x * 2)); // 0 to 1
+                coin.material.opacity = 0.6 + (sheenValue * 0.3); // Pulse between 0.6 and 0.9
 
                 // Check if plane collects coin - simple distance check
                 const dx = coin.position.x - curX;
