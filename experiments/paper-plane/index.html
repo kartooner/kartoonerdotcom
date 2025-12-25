@@ -802,8 +802,33 @@
         collisionDebrisPool.push(chunk);
     }
 
+    // Pre-calculated fracture patterns for each structure type
+    // Better performance and more realistic breaking
+    const fracturePatterns = {
+        box: {
+            // Boxes break into 4-6 chunks based on impact location
+            top: { chunks: 4, spread: 2 },      // Top impact
+            bottom: { chunks: 3, spread: 1.5 }, // Bottom impact
+            left: { chunks: 4, spread: 2 },     // Left side impact
+            right: { chunks: 4, spread: 2 },    // Right side impact
+            front: { chunks: 5, spread: 2.5 }   // Front impact (most chunks)
+        },
+        pyramid: {
+            // Pyramids break at apex or base
+            top: { chunks: 2, spread: 1.5 },    // Apex breaks off
+            bottom: { chunks: 4, spread: 2 },   // Base shatters
+            side: { chunks: 3, spread: 2 }      // Side impact
+        },
+        cylinder: {
+            // Cylinders shatter into many pieces
+            top: { chunks: 5, spread: 3 },      // Top ring breaks
+            middle: { chunks: 6, spread: 3.5 }, // Middle shatters
+            bottom: { chunks: 5, spread: 2.5 }  // Base breaks
+        }
+    };
+
     // Function to spawn debris chunks from a collision point
-    // Different break patterns for different structure types (realistic destruction)
+    // Uses pre-calculated fracture patterns based on impact location
     // NOTE: Will be reused for laser impacts in the future
     function spawnCollisionDebris(structureX, structureY, structureZ, shipX, shipY, structureObj = null) {
         // Determine structure type for realistic break pattern
@@ -812,15 +837,33 @@
         const isCylinder = structureObj && (structureObj.geometry === cylinderGeometry);
         const isWall = !structureObj; // Walls don't pass structure object
 
-        // Different chunk counts for different structures
-        let chunkCount;
+        // Calculate impact location relative to structure
+        const relX = shipX - structureX;
+        const relY = shipY - structureY;
+
+        // Determine fracture zone based on impact location
+        let fractureZone;
         if (isPyramid) {
-            chunkCount = 3 + Math.floor(Math.random() * 2); // 3-4 chunks (pyramids break into fewer pieces)
+            // Pyramids: top vs bottom vs side
+            if (relY > 1) fractureZone = fracturePatterns.pyramid.top;
+            else if (Math.abs(relX) > 1) fractureZone = fracturePatterns.pyramid.side;
+            else fractureZone = fracturePatterns.pyramid.bottom;
         } else if (isCylinder) {
-            chunkCount = 5 + Math.floor(Math.random() * 3); // 5-7 chunks (cylinders shatter)
+            // Cylinders: top vs middle vs bottom
+            if (relY > 1.5) fractureZone = fracturePatterns.cylinder.top;
+            else if (relY < -1) fractureZone = fracturePatterns.cylinder.bottom;
+            else fractureZone = fracturePatterns.cylinder.middle;
         } else {
-            chunkCount = 4 + Math.floor(Math.random() * 3); // 4-6 chunks (boxes/walls)
+            // Boxes/Walls: determine side hit
+            if (Math.abs(relY) > Math.abs(relX)) {
+                fractureZone = relY > 0 ? fracturePatterns.box.top : fracturePatterns.box.bottom;
+            } else {
+                fractureZone = relX > 0 ? fracturePatterns.box.right : fracturePatterns.box.left;
+            }
         }
+
+        const chunkCount = fractureZone.chunks;
+        const spreadFactor = fractureZone.spread;
 
         for (let i = 0; i < chunkCount; i++) {
             // Find available chunk from pool
@@ -830,91 +873,56 @@
             // Activate and position chunk at collision point
             chunk.userData.active = true;
             chunk.visible = true;
-            chunk.userData.onGround = false; // Track if chunk is tumbling on ground
-            chunk.userData.lifetime = 0; // Track how long chunk has existed (for fadeout)
-
-            // Calculate collision direction (where ship hit the structure)
-            const dirX = shipX - structureX;
-            const dirY = shipY - structureY;
+            chunk.userData.onGround = false;
+            chunk.userData.lifetime = 0;
 
             // Varied chunk sizes (mix of small and large)
             const sizeType = Math.random();
             let scale;
-            if (sizeType < 0.4) {
-                scale = Math.random() * 0.8 + 0.5; // Small chunks (0.5-1.3)
-            } else if (sizeType < 0.8) {
-                scale = Math.random() * 1.0 + 1.3; // Medium chunks (1.3-2.3)
+            if (sizeType < 0.3) {
+                scale = Math.random() * 0.8 + 0.5; // Small (0.5-1.3) - 30%
+            } else if (sizeType < 0.7) {
+                scale = Math.random() * 1.0 + 1.3; // Medium (1.3-2.3) - 40%
             } else {
-                scale = Math.random() * 1.5 + 2.3; // Large chunks (2.3-3.8)
+                scale = Math.random() * 1.5 + 2.3; // Large (2.3-3.8) - 30%
             }
             chunk.scale.set(scale, scale, scale);
 
-            // Structure-specific spawn patterns with random variations for variety
-            let spawnX, spawnY, spawnZ, velX, velY, velZ;
+            // FORWARD-FOCUSED SPRAY: debris spills onto landscape ahead, minimal sideways
+            const chunkOffset = (i / chunkCount) - 0.5; // -0.5 to 0.5 for spreading chunks
 
-            // Random variation factors for each chunk (adds variety to same structure type)
-            const sprayVariation = Math.random(); // 0-1, affects how debris sprays
-            const heightVariation = Math.random() * 2; // 0-2, affects spawn height
+            // Spawn position: mostly forward with slight fracture-based offset
+            const spawnX = structureX + (chunkOffset * spreadFactor); // Spread based on fracture zone
+            const spawnY = structureY + 1 + Math.random() * 2; // Start elevated
+            const spawnZ = structureZ - 15 - Math.random() * 25; // 15-40 units AHEAD
 
-            if (isPyramid) {
-                // Pyramids: debris from top/sides, spray outward with variation
-                const spreadFactor = 2 + sprayVariation * 2; // 2-4 units spread
-                spawnX = structureX + dirX * 0.4 + (Math.random() - 0.5) * spreadFactor;
-                spawnY = structureY + Math.abs(dirY) + heightVariation;
-                spawnZ = structureZ - (10 + sprayVariation * 20); // 10-30 units ahead (random)
-                velX = dirX * (0.2 + sprayVariation * 0.3) + (Math.random() - 0.5) * 0.5;
-                velY = -0.1 - Math.random() * 0.25;
-                velZ = 0.4 + Math.random() * 0.8; // 0.4-1.2 (wide range)
-            } else if (isCylinder) {
-                // Cylinders: shatter chaotically with high variation
-                const chaosFactor = 3 + sprayVariation * 3; // 3-6 units chaos
-                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * chaosFactor;
-                spawnY = structureY + Math.max(1.5, Math.abs(dirY) * 0.5 + heightVariation);
-                spawnZ = structureZ - (8 + sprayVariation * 25); // 8-33 units ahead (very random)
-                velX = dirX * (0.15 + sprayVariation * 0.4) + (Math.random() - 0.5) * 0.7;
-                velY = -0.15 - Math.random() * 0.3;
-                velZ = 0.5 + Math.random() * 0.9; // 0.5-1.4 (chaotic)
-            } else {
-                // Boxes/Walls: clean break with moderate variation
-                const cleanFactor = 2 + sprayVariation * 2; // 2-4 units
-                spawnX = structureX + dirX * 0.3 + (Math.random() - 0.5) * cleanFactor;
-                spawnY = structureY + Math.max(2, Math.abs(dirY) * 0.5 + heightVariation * 0.5);
-                spawnZ = structureZ - (12 + sprayVariation * 22); // 12-34 units ahead (varied)
-                velX = dirX * (0.15 + sprayVariation * 0.25) + (Math.random() - 0.5) * 0.5;
-                velY = -0.2 - Math.random() * 0.25;
-                velZ = 0.5 + Math.random() * 0.7; // 0.5-1.2 (moderate)
-            }
+            // Velocity: DRAMATIC FORWARD spray with minimal sideways drift
+            const forwardVel = 0.8 + Math.random() * 0.8; // 0.8-1.6 (very fast forward!)
+            const sidewaysVel = chunkOffset * 0.15; // Minimal sideways (fracture spread only)
+            const downwardVel = -0.3 - Math.random() * 0.4; // Strong downward (falls to ground)
 
             chunk.position.set(spawnX, spawnY, spawnZ);
-            chunk.userData.velocity.set(velX, velY, velZ);
+            chunk.userData.velocity.set(sidewaysVel, downwardVel, forwardVel);
 
-            // Dynamic rotation based on chunk size - smaller chunks spin faster (realistic)
-            // Larger chunks tumble slower, smaller ones spin wildly
-            const baseSpin = 2.0 / scale; // Smaller = faster spin (inverse relationship)
-            const spinMultiplier = 0.8 + Math.random() * 0.6; // 0.8-1.4 variation
+            // DRAMATIC tumbling based on chunk size and structure type
+            const baseSpin = 3.0 / scale; // Smaller chunks spin MUCH faster
+            let spinIntensity;
+            if (isPyramid) spinIntensity = 1.8; // Very dramatic
+            else if (isCylinder) spinIntensity = 2.2; // Extremely dramatic
+            else spinIntensity = 1.5; // Dramatic
 
-            // Structure-specific spin characteristics
-            let rotationIntensity;
-            if (isPyramid) {
-                rotationIntensity = 1.2; // Pyramids tumble dramatically
-            } else if (isCylinder) {
-                rotationIntensity = 1.5; // Cylinders spin wildly
-            } else {
-                rotationIntensity = 1.0; // Boxes tumble moderately
-            }
+            const finalSpin = baseSpin * spinIntensity;
 
-            const finalSpin = baseSpin * spinMultiplier * rotationIntensity;
-
-            // Multi-axis tumbling for realistic physics
+            // Multi-axis tumbling - exaggerated for visual impact
             chunk.userData.rotationVelocity.set(
-                (Math.random() - 0.5) * finalSpin,      // X-axis tumble
-                (Math.random() - 0.5) * finalSpin * 1.2, // Y-axis spin (slightly faster)
-                (Math.random() - 0.5) * finalSpin * 0.8  // Z-axis roll
+                (Math.random() - 0.5) * finalSpin * 1.5, // X-axis tumble
+                (Math.random() - 0.5) * finalSpin * 1.8, // Y-axis spin (fastest)
+                (Math.random() - 0.5) * finalSpin * 1.2  // Z-axis roll
             );
 
-            // Add erratic wobble for realism (changes over time)
+            // Erratic wobble for realism
             chunk.userData.wobblePhase = Math.random() * Math.PI * 2;
-            chunk.userData.wobbleSpeed = 0.05 + Math.random() * 0.1;
+            chunk.userData.wobbleSpeed = 0.1 + Math.random() * 0.15; // Faster wobble
 
             // Random initial rotation
             chunk.rotation.set(
@@ -1807,37 +1815,60 @@
                     chunk.position.y = 0.3; // Lock to ground level
                     chunk.userData.lifetime = 0; // Reset lifetime for ground phase
 
-                    // Reduce velocities on impact (bounce/slide effect)
-                    chunk.userData.velocity.x *= 0.3; // Slow sideways
-                    chunk.userData.velocity.z *= 0.6; // Keep some forward momentum
-                    chunk.userData.velocity.y = 0; // Stop vertical
+                    // DRAMATIC bounce/skid on impact
+                    const impactSpeed = Math.abs(chunk.userData.velocity.y);
+                    chunk.userData.velocity.x *= 0.4; // Some sideways retained
+                    chunk.userData.velocity.z *= 0.75; // Keep MOST forward momentum (skidding)
+                    chunk.userData.velocity.y = impactSpeed * 0.3; // Small bounce up
 
-                    // Reduce rotation speed when hitting ground (but keep tumbling)
-                    chunk.userData.rotationVelocity.multiplyScalar(0.5);
+                    // Ground impact intensifies rotation (dramatic tumbling)
+                    chunk.userData.rotationVelocity.multiplyScalar(0.7);
+                    chunk.userData.bounceCount = 0; // Track bounces
                 }
             } else {
-                // GROUND PHASE: Tumble on landscape, breaking apart as it rolls
+                // GROUND PHASE: Dramatic skidding, bouncing, tumbling on landscape
+
+                // Small bounces as it skids forward
+                if (chunk.userData.velocity.y === 0 || chunk.userData.velocity.y > -0.05) {
+                    if (chunk.userData.bounceCount < 2 && Math.random() < 0.3) {
+                        // Random small bounce (looks like hitting rough ground)
+                        chunk.userData.velocity.y = -0.05 - Math.random() * 0.08;
+                        chunk.userData.bounceCount++;
+                    }
+                }
+
+                // Apply velocities
                 chunk.position.x += chunk.userData.velocity.x;
                 chunk.position.z += chunk.userData.velocity.z;
+                chunk.position.y += chunk.userData.velocity.y;
 
-                // Continue wobble on ground for realistic rolling/tumbling
-                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.5; // Slower wobble on ground
-                const groundWobbleX = Math.sin(chunk.userData.wobblePhase) * 0.015;
-                const groundWobbleY = Math.cos(chunk.userData.wobblePhase * 1.5) * 0.015;
+                // Micro-gravity for bounces
+                if (chunk.position.y > 0.3) {
+                    chunk.userData.velocity.y += 0.008; // Gravity pulls down during bounce
+                } else {
+                    chunk.position.y = 0.3; // Lock back to ground
+                    chunk.userData.velocity.y = 0;
+                }
 
-                // Ground tumbling with wobble
+                // DRAMATIC tumbling with enhanced wobble
+                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.7; // Faster wobble on ground
+                const groundWobbleX = Math.sin(chunk.userData.wobblePhase) * 0.03; // Stronger wobble
+                const groundWobbleY = Math.cos(chunk.userData.wobblePhase * 1.8) * 0.04;
+                const groundWobbleZ = Math.sin(chunk.userData.wobblePhase * 0.6) * 0.025;
+
+                // Enhanced ground tumbling (looks like rolling/skidding on rough terrain)
                 chunk.rotation.x += chunk.userData.rotationVelocity.x + groundWobbleX;
                 chunk.rotation.y += chunk.userData.rotationVelocity.y + groundWobbleY;
-                chunk.rotation.z += chunk.userData.rotationVelocity.z;
+                chunk.rotation.z += chunk.userData.rotationVelocity.z + groundWobbleZ;
 
-                // Friction - slow down gradually (both movement and rotation)
-                chunk.userData.velocity.x *= 0.96;
-                chunk.userData.velocity.z *= 0.96;
-                chunk.userData.rotationVelocity.multiplyScalar(0.96); // Slightly faster decay for visible slowdown
+                // Realistic friction - forward motion slows faster than rotation
+                chunk.userData.velocity.x *= 0.94; // High friction
+                chunk.userData.velocity.z *= 0.94; // High friction (skidding slows down)
+                chunk.userData.rotationVelocity.multiplyScalar(0.93); // Rotation slows dramatically
 
-                // Realistic breakage: pieces get smaller as they tumble (hitting ground)
+                // Realistic breakage: pieces get smaller as they skid/tumble (hitting ground)
                 const currentScale = chunk.scale.x;
-                const shrinkRate = 0.992; // Gradual size reduction
+                const shrinkRate = 0.988; // Faster shrinking (more dramatic)
                 const newScale = currentScale * shrinkRate;
                 chunk.scale.set(newScale, newScale, newScale);
             }
