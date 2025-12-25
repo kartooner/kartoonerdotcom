@@ -1408,6 +1408,84 @@
         return gate;
     }
 
+    // --- ROTATING BOSS (MINI-BOSS CHALLENGE) ---
+    const bosses = [];
+    let bossEncounterCount = 0; // Track number of boss encounters for rotation direction
+    let bossActive = false; // Flag to prevent other spawns during boss encounter
+    const bossMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.7 });
+
+    // Create rotating boss structure - giant cylinder with blades
+    function createRotatingBoss() {
+        const bossGroup = new THREE.Group();
+
+        // Central cylinder (the "axle")
+        const axleGeometry = new THREE.CylinderGeometry(1, 1, 20, 8);
+        const axle = new THREE.Mesh(axleGeometry, bossMaterial);
+        axle.rotation.z = Math.PI / 2; // Horizontal
+        bossGroup.add(axle);
+
+        // Create 4 blades arranged around the cylinder
+        const bladeGeometry = new THREE.BoxGeometry(3, 18, 0.5);
+        for (let i = 0; i < 4; i++) {
+            const blade = new THREE.Mesh(bladeGeometry, bossMaterial.clone());
+            const angle = (i / 4) * Math.PI * 2;
+            blade.position.y = Math.cos(angle) * 10;
+            blade.position.x = Math.sin(angle) * 10;
+            blade.rotation.z = angle;
+            bossGroup.add(blade);
+        }
+
+        bossGroup.position.set(0, 4, -400); // Spawn far ahead
+        bossGroup.userData.rotationSpeed = 0.02; // Slow rotation
+        bossGroup.userData.active = false;
+        bossGroup.userData.box = new THREE.Box3();
+
+        scene.add(bossGroup);
+        return bossGroup;
+    }
+
+    // Pre-create boss pool (3 bosses - can reuse)
+    const bossPool = [];
+    for (let i = 0; i < 3; i++) {
+        bossPool.push(createRotatingBoss());
+    }
+
+    function spawnBoss() {
+        const boss = bossPool.find(b => !b.userData.active);
+        if (!boss) return null;
+
+        bossEncounterCount++;
+        bossActive = true; // Set flag to prevent other spawns
+        boss.userData.active = true;
+        boss.visible = true;
+        boss.position.set(0, 4, -400);
+
+        // Alternate rotation direction based on encounter number
+        const clockwise = bossEncounterCount % 2 === 1;
+        boss.userData.rotationSpeed = clockwise ? 0.02 : -0.02;
+
+        // Clear arena - hide all buildings, walls, and coins
+        buildings.forEach(b => {
+            b.visible = false;
+            b.position.z = -500;
+        });
+        walls.forEach(w => {
+            w.visible = false;
+            w.position.z = -1000;
+        });
+        coins.forEach(c => {
+            c.visible = false;
+            c.position.z = -1000;
+            c.userData.collected = false;
+        });
+        // Clear active arrays
+        walls.length = 0;
+        coins.length = 0;
+
+        bosses.push(boss);
+        return boss;
+    }
+
     // Checkpoint UI functions
     function showCheckpointUI(milesReached) {
         checkpointActive = true;
@@ -2245,8 +2323,8 @@
             }
 
             if(b.position.z > 20) {
-                // Check if we need to spawn a new wave
-                if (currentWave === null || waveProgress >= currentWave.buildings) {
+                // Check if we need to spawn a new wave (not during boss)
+                if (!bossActive && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
                     if (antiCampingActive && Math.random() < 0.5) {
@@ -2432,8 +2510,8 @@
         });
 
         // High/Low Wall update and collision logic
-        // Only spawn walls during the 'walls' phase
-        if (currentPhase === 'walls' && !wallsSpawnedThisPhase) {
+        // Only spawn walls during the 'walls' phase (and not during boss)
+        if (currentPhase === 'walls' && !wallsSpawnedThisPhase && !bossActive) {
             // Spawn 6-8 wall "sets" - sometimes single, sometimes both high+low
             const wallSetCount = Math.floor(Math.random() * 3) + 6; // 6-8 sets (increased from 3-4)
 
@@ -2831,7 +2909,8 @@
         }
 
         // Spawn coins randomly in the environment (not too many at once)
-        if (Math.random() < 0.001 && coins.length < 6) {
+        // Don't spawn during boss encounters
+        if (Math.random() < 0.001 && coins.length < 6 && !bossActive) {
             const coin = getCoinFromPool();
             if (coin) {
                 // X position biased toward edges (not obvious center path)
@@ -2889,6 +2968,12 @@
                 updateTerrainForLevel(currentLevel);
                 lastTerrainLevel = currentLevel;
             }
+        }
+
+        // Boss spawning at 150 miles, then every 100 miles (250, 350, 450...)
+        const currentMiles = Math.floor(miles);
+        if (currentMiles >= 150 && (currentMiles === 150 || (currentMiles - 150) % 100 === 0) && bosses.length === 0) {
+            spawnBoss();
         }
 
         // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
@@ -3029,6 +3114,47 @@
             currentPhase = 'breather_after_rings';
             phaseStartTime = Date.now();
             phaseDuration = 1500; // 1.5 second breather after rings (faster action)
+        }
+
+        // Boss update and collision logic
+        for (let i = bosses.length - 1; i >= 0; i--) {
+            const boss = bosses[i];
+
+            // Move boss forward with world
+            boss.position.z += speed;
+
+            // Rotate the boss (direction determined at spawn)
+            boss.rotation.z += boss.userData.rotationSpeed;
+
+            // Update collision box
+            boss.userData.box.setFromObject(boss);
+
+            // Check collision with player
+            if (boss.position.z > -50 && boss.position.z < 15) {
+                if (shipBox.intersectsBox(boss.userData.box)) {
+                    // Check grace period and invincibility
+                    if (!gracePeriodActive && !invincibilityActive) {
+                        collisionFlash = 0.5;
+
+                        // Boss collision - significant damage
+                        const pointsLost = 50;
+                        score = Math.max(0, score - pointsLost);
+                        scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                        crashMessage = `BOSS HIT -${pointsLost}`;
+                        crashMessageTimer = 60;
+                    }
+                }
+            }
+
+            // Remove boss if too far past camera
+            if (boss.position.z > 30) {
+                boss.userData.active = false;
+                boss.visible = false;
+                boss.position.z = -400;
+                bosses.splice(i, 1);
+                bossActive = false; // Re-enable normal spawning
+            }
         }
 
         // After all walls are passed, transition back to buildings
