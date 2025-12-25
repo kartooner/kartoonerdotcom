@@ -333,8 +333,18 @@
             }
             .ui-overlay {
                 top: 12px;
-                font-size: 11px;
-                letter-spacing: 1px;
+                font-size: 10px;
+                letter-spacing: 0.5px;
+                line-height: 1.4;
+            }
+            #score-text {
+                font-size: 9px;
+            }
+            #high-score {
+                font-size: 8px !important;
+            }
+            #level-text {
+                font-size: 9px !important;
             }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
@@ -2486,7 +2496,8 @@
         }
 
         const distMiles = Math.floor(miles);
-        let displayText = `0 ----- ${distMiles}mi`;
+        const dashes = isMobile ? '--' : '-----'; // Fewer dashes on mobile
+        let displayText = `0 ${dashes} ${distMiles}mi`;
 
         // Show crash message
         if (crashMessageTimer > 0) {
