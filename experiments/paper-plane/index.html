@@ -827,6 +827,78 @@
         }
     };
 
+    // --- 4.7. DUST PARTICLE SYSTEM (SPILLED POWDER EFFECT) ---
+    // Fine particles that spawn when debris hits ground - like spilled salt/powder
+    const dustParticles = [];
+    const dustParticlePool = [];
+    const dustParticlePoolSize = isMobile ? 10 : 20; // Pool of dust clouds
+    const dustParticlesPerCloud = isMobile ? 30 : 60; // Particles per dust cloud
+
+    // Pre-create dust particle clouds
+    for (let p = 0; p < dustParticlePoolSize; p++) {
+        const dustGeom = new THREE.BufferGeometry();
+        const dustPositions = new Float32Array(dustParticlesPerCloud * 3);
+
+        dustGeom.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+
+        const dustCloud = new THREE.Points(dustGeom, new THREE.PointsMaterial({
+            color: 0x00ffff,
+            size: 0.08, // Very small - like powder
+            transparent: true,
+            opacity: 0.6,
+            sizeAttenuation: true // Particles get smaller with distance
+        }));
+
+        dustCloud.visible = false;
+        dustCloud.userData.active = false;
+        dustCloud.userData.lifetime = 0;
+        dustCloud.userData.maxLifetime = 60; // Fade over ~1 second (60 frames)
+        dustCloud.userData.velocities = []; // Store velocity for each particle
+
+        scene.add(dustCloud);
+        dustParticlePool.push(dustCloud);
+    }
+
+    // Function to spawn dust cloud when debris hits ground
+    function spawnDustCloud(x, y, z, velocityX, velocityZ) {
+        const dustCloud = dustParticlePool.find(d => !d.userData.active);
+        if (!dustCloud) return; // Pool exhausted
+
+        const positions = dustCloud.geometry.attributes.position.array;
+        dustCloud.userData.velocities = [];
+
+        // Spawn particles in a spreading pattern (like spilled powder)
+        for (let i = 0; i < dustParticlesPerCloud; i++) {
+            const i3 = i * 3;
+
+            // Small initial spread around impact point
+            const angle = (i / dustParticlesPerCloud) * Math.PI * 2;
+            const radius = Math.random() * 0.5; // Start clustered
+
+            positions[i3] = x + Math.cos(angle) * radius;     // x
+            positions[i3 + 1] = y + Math.random() * 0.1;      // y (just above ground)
+            positions[i3 + 2] = z + Math.sin(angle) * radius; // z
+
+            // Particle velocities: spread forward and sideways like powder
+            const spreadAngle = angle + (Math.random() - 0.5) * 0.5;
+            const spreadSpeed = 0.15 + Math.random() * 0.25; // 0.15-0.4
+
+            dustCloud.userData.velocities.push({
+                x: Math.cos(spreadAngle) * spreadSpeed + velocityX * 0.3, // Inherit some debris velocity
+                y: 0, // Stays on ground
+                z: Math.sin(spreadAngle) * spreadSpeed + velocityZ * 0.5  // More forward bias
+            });
+        }
+
+        dustCloud.geometry.attributes.position.needsUpdate = true;
+        dustCloud.visible = true;
+        dustCloud.userData.active = true;
+        dustCloud.userData.lifetime = 0;
+        dustCloud.material.opacity = 0.6; // Reset opacity
+
+        dustParticles.push(dustCloud);
+    }
+
     // Function to spawn debris chunks from a collision point
     // Uses pre-calculated fracture patterns based on impact location
     // NOTE: Will be reused for laser impacts in the future
@@ -1828,6 +1900,15 @@
 
                     // Ground impact intensifies rotation (dramatic tumbling)
                     chunk.userData.rotationVelocity.multiplyScalar(0.7);
+
+                    // Spawn dust cloud on impact (like spilled powder)
+                    spawnDustCloud(
+                        chunk.position.x,
+                        chunk.position.y,
+                        chunk.position.z,
+                        chunk.userData.velocity.x,
+                        chunk.userData.velocity.z
+                    );
                 }
             } else {
                 // GROUND PHASE: Dramatic skidding and tumbling on landscape (no bouncing)
@@ -1885,6 +1966,43 @@
                 chunk.position.set(0, 0, -1000);
                 chunk.material.opacity = 0.8; // Reset for next use
                 collisionDebris.splice(i, 1);
+            }
+        }
+
+        // Update dust particle clouds (iterate backwards to safely remove)
+        for (let i = dustParticles.length - 1; i >= 0; i--) {
+            const dustCloud = dustParticles[i];
+            dustCloud.userData.lifetime++;
+
+            const positions = dustCloud.geometry.attributes.position.array;
+
+            // Animate each particle in the cloud
+            for (let p = 0; p < dustParticlesPerCloud; p++) {
+                const p3 = p * 3;
+                const vel = dustCloud.userData.velocities[p];
+
+                // Apply velocity to spread particles
+                positions[p3] += vel.x;     // x
+                positions[p3 + 2] += vel.z; // z (forward movement)
+
+                // Friction - particles slow down as they spread
+                vel.x *= 0.95;
+                vel.z *= 0.95;
+            }
+
+            dustCloud.geometry.attributes.position.needsUpdate = true;
+
+            // Fade out over lifetime
+            const fadeProgress = dustCloud.userData.lifetime / dustCloud.userData.maxLifetime;
+            dustCloud.material.opacity = 0.6 * (1 - fadeProgress); // Fade to 0
+
+            // Remove when fully faded or passed by player
+            if (dustCloud.userData.lifetime >= dustCloud.userData.maxLifetime ||
+                positions[2] > 5) { // Check first particle's z position
+                dustCloud.userData.active = false;
+                dustCloud.visible = false;
+                dustCloud.material.opacity = 0.6; // Reset
+                dustParticles.splice(i, 1);
             }
         }
 
@@ -2312,6 +2430,40 @@
             }
         }
 
+        // Auto-shooting logic: fire at buildings and enemies directly in path
+        if (canShoot) {
+            let targetAhead = false;
+
+            // Check for buildings directly in player's path
+            for (let i = 0; i < buildings.length; i++) {
+                const building = buildings[i];
+                // Target only buildings within 60 units ahead and DIRECTLY in path (±2.5 units)
+                if (building.position.z < 5 && building.position.z > -60 &&
+                    Math.abs(building.position.x - curX) < 2.5) {
+                    targetAhead = true;
+                    break;
+                }
+            }
+
+            // Check for enemies directly in path if no building found
+            if (!targetAhead) {
+                for (let i = 0; i < enemies.length; i++) {
+                    const enemy = enemies[i];
+                    // Target only enemies within 60 units ahead and DIRECTLY in path (±2.5 units)
+                    if (enemy.position.z < 5 && enemy.position.z > -60 &&
+                        Math.abs(enemy.position.x - curX) < 2.5) {
+                        targetAhead = true;
+                        break;
+                    }
+                }
+            }
+
+            // Auto-fire if target detected (shootLaser handles fire rate limiting)
+            if (targetAhead) {
+                shootLaser();
+            }
+        }
+
         // Laser update logic - optimized backwards loop
         for (let i = lasers.length - 1; i >= 0; i--) {
             const laser = lasers[i];
@@ -2322,6 +2474,110 @@
                 scene.remove(laser);
                 lasers.splice(i, 1);
             }
+        }
+
+        // Laser-building collision detection
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            const laser = lasers[i];
+            let laserRemoved = false;
+
+            // Check collision with each building
+            for (let j = buildings.length - 1; j >= 0; j--) {
+                const building = buildings[j];
+
+                // Update building collision box
+                if (!building.userData.box) {
+                    building.userData.box = new THREE.Box3();
+                }
+                building.userData.box.setFromObject(building);
+
+                // Check laser-building collision using tempBox
+                tempBox.setFromObject(laser);
+                if (tempBox.intersectsBox(building.userData.box)) {
+                    // Spawn debris at building location with laser impact
+                    spawnCollisionDebris(
+                        building.position.x,
+                        building.position.y,
+                        building.position.z,
+                        laser.position.x,
+                        laser.position.y,
+                        building
+                    );
+
+                    // Add score bonus for destroying building with laser
+                    score += 15;
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                    // Show bonus message
+                    scoreBonusUI.innerText = '+15';
+                    scoreBonusUI.style.opacity = '1';
+                    setTimeout(() => {
+                        scoreBonusUI.style.opacity = '0';
+                    }, 800);
+
+                    // Remove building and laser
+                    scene.remove(building);
+                    buildings.splice(j, 1);
+                    scene.remove(laser);
+                    lasers.splice(i, 1);
+                    laserRemoved = true;
+                    break; // Exit building loop since laser is destroyed
+                }
+            }
+
+            if (laserRemoved) break; // Exit laser loop iteration
+        }
+
+        // Laser-wall collision detection
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            const laser = lasers[i];
+            let laserRemoved = false;
+
+            // Check collision with each wall
+            for (let j = walls.length - 1; j >= 0; j--) {
+                const wall = walls[j];
+
+                // Update wall collision box
+                if (!wall.userData.box) {
+                    wall.userData.box = new THREE.Box3();
+                }
+                wall.userData.box.setFromObject(wall);
+
+                // Check laser-wall collision using tempBox
+                tempBox.setFromObject(laser);
+                if (tempBox.intersectsBox(wall.userData.box)) {
+                    // Spawn debris at wall location with laser impact
+                    spawnCollisionDebris(
+                        wall.position.x,
+                        wall.position.y,
+                        wall.position.z,
+                        laser.position.x,
+                        laser.position.y,
+                        null // Walls don't pass structure object
+                    );
+
+                    // Add score bonus for destroying wall with laser
+                    score += 10;
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+
+                    // Show bonus message
+                    scoreBonusUI.innerText = '+10';
+                    scoreBonusUI.style.opacity = '1';
+                    setTimeout(() => {
+                        scoreBonusUI.style.opacity = '0';
+                    }, 800);
+
+                    // Remove wall and laser
+                    scene.remove(wall);
+                    walls.splice(j, 1);
+                    scene.remove(laser);
+                    lasers.splice(i, 1);
+                    laserRemoved = true;
+                    break; // Exit wall loop since laser is destroyed
+                }
+            }
+
+            if (laserRemoved) break; // Exit laser loop iteration
         }
 
         // Enemy update logic - optimized backwards loop
