@@ -2606,14 +2606,26 @@
     resetButton.addEventListener('mousedown', startResetHold);
     resetButton.addEventListener('mouseup', cancelResetHold);
     resetButton.addEventListener('mouseleave', cancelResetHold);
+
+    // Improved mobile touch handling
     resetButton.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         startResetHold();
-    });
+    }, { passive: false });
+
     resetButton.addEventListener('touchend', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         cancelResetHold();
-    });
+    }, { passive: false });
+
+    resetButton.addEventListener('touchmove', (e) => {
+        // Cancel if finger moves (dragging/scrolling)
+        e.preventDefault();
+        cancelResetHold();
+    }, { passive: false });
+
     resetButton.addEventListener('touchcancel', cancelResetHold);
 
     let animationRunning = false;
