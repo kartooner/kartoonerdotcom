@@ -160,6 +160,60 @@
             }
         }
 
+        /* Desktop two-column layout - adaptive for smaller windows */
+        @media (min-width: 600px) {
+            #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 30px;
+                max-width: 600px;
+                padding: 30px 40px;
+            }
+
+            #game-logo {
+                grid-column: 1;
+                grid-row: 1;
+                margin-bottom: 0;
+                text-align: center;
+            }
+
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: start;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: end;
+            }
+
+            #play-button, #how-to-play-button {
+                margin: 0;
+            }
+
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                margin-top: 0;
+                text-align: center;
+            }
+
+            /* Checkpoint UI desktop - two column abilities */
+            #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px !important;
+                max-width: 700px !important;
+            }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+        }
+
         /* Tablet landscape optimizations - two column layout */
         @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
             #start-screen-container {
