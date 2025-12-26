@@ -1774,6 +1774,10 @@
         checkpointActive = true;
         isPaused = true;
 
+        // Replenish health at checkpoint
+        currentHealth = maxHealth;
+        updateHealthBar();
+
         const checkpointOverlay = document.getElementById('checkpoint-overlay');
         const checkpointTitle = document.getElementById('checkpoint-title');
         const checkpointSubtitle = document.getElementById('checkpoint-subtitle');
@@ -2788,9 +2792,7 @@
                                         crashMessage = `LOST UPGRADE -${pointsLost}`;
                                     }
 
-                                    // Replenish health after losing upgrade
-                                    currentHealth = maxHealth;
-                                    updateHealthBar();
+                                    // Stay at 0 hearts - only replenish at checkpoints
                                 }
                             }
                         }
@@ -2914,9 +2916,7 @@
                                         crashMessage = `LOST UPGRADE -${pointsLost}`;
                                     }
 
-                                    // Replenish health after losing upgrade
-                                    currentHealth = maxHealth;
-                                    updateHealthBar();
+                                    // Stay at 0 hearts - only replenish at checkpoints
                                 }
                             }
                         }
