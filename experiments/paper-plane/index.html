@@ -1823,6 +1823,37 @@
         return null;
     }
 
+    // --- COIN SPARKLE PARTICLES ---
+    const sparkles = [];
+    const sparkleGeometry = new THREE.PlaneGeometry(0.2, 0.2);
+    const sparkleMat = new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        transparent: true,
+        opacity: 1,
+        side: THREE.DoubleSide
+    });
+
+    // Spawn sparkle particles at coin collection
+    function spawnCoinSparkles(x, y, z) {
+        const particleCount = 6; // 6 sparkle particles
+        for (let i = 0; i < particleCount; i++) {
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMat.clone());
+            sparkle.position.set(x, y, z);
+
+            // Random velocity for each particle
+            sparkle.userData.velocity = {
+                x: (Math.random() - 0.5) * 0.15,
+                y: Math.random() * 0.15 + 0.05,
+                z: (Math.random() - 0.5) * 0.15
+            };
+            sparkle.userData.life = 30; // Frames to live
+            sparkle.userData.maxLife = 30;
+
+            scene.add(sparkle);
+            sparkles.push(sparkle);
+        }
+    }
+
     // --- CHRISTMAS SNOW (Seasonal: Until Jan 1st) ---
     const snowflakes = [];
     const isChristmasSeason = () => {
@@ -3311,6 +3342,9 @@
                     coin.userData.collected = true;
                     score += 2; // 2 points per coin - small additive bonus
 
+                    // Spawn sparkle particles at coin position
+                    spawnCoinSparkles(coin.position.x, coin.position.y, coin.position.z);
+
                     // Show bonus in score display
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
                     scoreBonusUI.innerText = `+2`;
@@ -3478,9 +3512,10 @@
             if (coin) {
                 // X position biased toward edges (not obvious center path)
                 // 70% chance for edge positions, 30% chance for center
+                // Adjusted to be less extreme for easier collection
                 const coinX = Math.random() < 0.7
-                    ? (Math.random() < 0.5 ? -9 + Math.random() * 3 : 6 + Math.random() * 3) // Edges: -9 to -6 or 6 to 9
-                    : (Math.random() - 0.5) * 8; // Center: -4 to 4
+                    ? (Math.random() < 0.5 ? -7 + Math.random() * 3 : 4 + Math.random() * 3) // Edges: -7 to -4 or 4 to 7
+                    : (Math.random() - 0.5) * 6; // Center: -3 to 3
 
                 // More varied Y heights - very low, low, high, very high
                 const heightRoll = Math.random();
@@ -3795,6 +3830,37 @@
             mainMesh.material.opacity = pulse;
             wireMesh.material.opacity = pulse;
             shadowMesh.material.opacity = pulse * 0.3;
+        }
+
+        // Update sparkle particles
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+            const sparkle = sparkles[i];
+            sparkle.userData.life--;
+
+            // Move sparkle with velocity
+            sparkle.position.x += sparkle.userData.velocity.x;
+            sparkle.position.y += sparkle.userData.velocity.y;
+            sparkle.position.z += sparkle.userData.velocity.z;
+
+            // Move forward with world
+            sparkle.position.z += speed;
+
+            // Fade out based on life remaining
+            const lifeRatio = sparkle.userData.life / sparkle.userData.maxLife;
+            sparkle.material.opacity = lifeRatio;
+
+            // Scale down as it fades
+            const scale = 0.5 + (lifeRatio * 0.5);
+            sparkle.scale.set(scale, scale, scale);
+
+            // Billboard effect - always face camera
+            sparkle.lookAt(camera.position);
+
+            // Remove if life expired
+            if (sparkle.userData.life <= 0) {
+                scene.remove(sparkle);
+                sparkles.splice(i, 1);
+            }
         }
 
         // Message timers
