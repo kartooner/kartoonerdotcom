@@ -77,13 +77,13 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 200;
-            cursor: pointer;
         }
         #play-overlay.hidden { display: none; }
-        #play-button {
+        #play-button, #how-to-play-button {
             background: rgba(0, 255, 255, 0.1);
             border: 2px solid var(--neon);
             color: var(--neon);
@@ -94,8 +94,141 @@
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
+            margin: 10px;
         }
-        #play-button:hover {
+        #play-button:hover, #how-to-play-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        #how-to-play-button {
+            font-size: 16px;
+            padding: 15px 35px;
+        }
+
+        /* Instructions overlay - Atari manual style */
+        #instructions-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: none;
+            z-index: 150;
+            overflow: hidden;
+        }
+        #instructions-overlay.active { display: block; }
+        #instructions-container {
+            max-width: 700px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 40px 30px 60px 30px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            color: #00ffff;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            line-height: 2;
+            font-size: 10px;
+        }
+        #instructions-container::-webkit-scrollbar {
+            width: 12px;
+        }
+        #instructions-container::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid #00ffff;
+        }
+        #instructions-container::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border: 1px solid #000;
+        }
+        #instructions-container::-webkit-scrollbar-thumb:hover {
+            background: #00cccc;
+        }
+        #instructions-container h1 {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 3px;
+            color: #00ffff;
+        }
+        #instructions-container h2 {
+            font-size: 13px;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            color: #00ffff;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 8px;
+        }
+        #instructions-container p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        #instructions-container ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+        #instructions-container li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+        #instructions-container li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+        }
+        #instructions-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #00ffff;
+            text-align: center;
+            font-size: 8px;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+        #close-instructions {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            padding: 12px 30px;
+            cursor: pointer;
+            font-weight: bold;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 151;
+            transition: all 0.3s ease;
+        }
+        #close-instructions:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        #close-instructions-x {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 151;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #close-instructions-x:hover {
             background: rgba(0, 255, 255, 0.2);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
@@ -286,6 +419,51 @@
 <div id="game-container">
     <div id="play-overlay">
         <div id="play-button">PLAY</div>
+        <div id="how-to-play-button">HOW TO PLAY</div>
+    </div>
+    <div id="instructions-overlay">
+        <button id="close-instructions-x">×</button>
+        <div id="instructions-container">
+            <h1>AIRPLANE</h1>
+
+            <h2>WELCOME TO AIRPLANE</h2>
+            <p>Congratulations, pilot! You've just been cleared for the flight of your life. AIRPLANE is an infinite flying experience that will test your reflexes, decision-making, and pure survival instincts.</p>
+
+            <p>Your mission? Simple. FLY. Dodge obstacles. Collect rings. Earn points. Purchase upgrades. There is no ending—only how far YOU can push yourself before the inevitable happens.</p>
+
+            <p>Navigate through an endless neon skyline filled with deadly buildings, treacherous walls, and the occasional massive boss enemy. Fly through glowing rings to rack up points, then spend those hard-earned points at checkpoints to upgrade your plane with thruster boosts, laser weapons, invincibility, and more.</p>
+
+            <p>Every 25 miles you'll reach a checkpoint—your only chance to catch your breath, restore your hearts, and choose your next upgrade. But remember: hits will strip away your upgrades. Choose wisely!</p>
+
+            <h2>BASIC CONTROLS</h2>
+            <p><strong>Desktop:</strong> Move your mouse to control the plane. Click to shoot lasers (if unlocked). Double-click to barrel roll (if unlocked).</p>
+
+            <p><strong>Tablet/Mobile:</strong> Touch and drag your finger to steer the plane. Tap to shoot lasers (if unlocked). Double-tap for barrel roll (if unlocked).</p>
+
+            <p><strong>Handling:</strong> Your plane responds smoothly to your input with realistic momentum. Be careful not to over-correct! The plane will drift slightly, so plan your movements ahead of time.</p>
+
+            <h2>FEATURES</h2>
+            <ul>
+                <li><strong>Realistic Flying Physics:</strong> Your plane has weight and momentum. Master the drift!</li>
+                <li><strong>Health System:</strong> You have 4 hearts. Lose them all and every hit costs you 5 points (plus upgrades). Hearts restore only at checkpoints.</li>
+                <li><strong>Shield Upgrade:</strong> Purchase shields (200 pts) to absorb 2 extra hits. Collect green capsules to restore shields.</li>
+                <li><strong>Spectacular Destruction:</strong> When you crash, your plane explodes into debris chunks with realistic physics.</li>
+                <li><strong>High and Low Walls:</strong> Obstacles appear both high and low. Stay alert and fly smart!</li>
+                <li><strong>Boss Encounters:</strong> At 150 miles (and every 100 miles after), face massive spinning boss formations. Survive to prove your skill.</li>
+                <li><strong>Holiday Snow:</strong> Limited-time feature! Watch for snowfall during the winter season.</li>
+                <li><strong>Endless Progression:</strong> Levels increase every 20 miles. Terrain changes every 3 levels. Difficulty ramps up as you fly further.</li>
+                <li><strong>Checkpoint Upgrades:</strong> Every 25 miles, choose from thrusters, lasers, invincibility, shields, barrel rolls, and more!</li>
+                <li><strong>Rings & Coins:</strong> Fly through green rings (25 pts) or rare fuchsia rings (50 pts). Collect coins for 2 pts each.</li>
+            </ul>
+
+            <p>Good luck, pilot. The sky is waiting.</p>
+
+            <div id="instructions-footer">
+                ARPLN-GM Rev 2<br>
+                Printed in USA
+            </div>
+        </div>
+        <button id="close-instructions">CLOSE</button>
     </div>
     <div id="checkpoint-overlay">
         <div id="checkpoint-title"></div>
@@ -2195,8 +2373,14 @@
     let isPaused = false;
     const playOverlay = document.getElementById('play-overlay');
     const pauseButton = document.getElementById('pause-button');
+    const playButton = document.getElementById('play-button');
+    const howToPlayButton = document.getElementById('how-to-play-button');
+    const instructionsOverlay = document.getElementById('instructions-overlay');
+    const closeInstructions = document.getElementById('close-instructions');
+    const closeInstructionsX = document.getElementById('close-instructions-x');
 
-    playOverlay.addEventListener('click', () => {
+    playButton.addEventListener('click', (e) => {
+        e.stopPropagation();
         gameStarted = true;
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block'; // Show pause button
@@ -2207,6 +2391,19 @@
         if (!animationRunning) {
             animate();
         }
+    });
+
+    howToPlayButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        instructionsOverlay.classList.add('active');
+    });
+
+    closeInstructions.addEventListener('click', () => {
+        instructionsOverlay.classList.remove('active');
+    });
+
+    closeInstructionsX.addEventListener('click', () => {
+        instructionsOverlay.classList.remove('active');
     });
 
     // Pause button functionality
