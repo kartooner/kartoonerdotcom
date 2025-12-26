@@ -86,38 +86,67 @@
 
         #start-screen-container {
             border: 1px solid rgba(0, 255, 255, 0.3);
-            padding: 50px 40px 30px 40px;
-            background: rgba(0, 0, 0, 0.5);
-            max-width: 500px;
+            padding: 40px 30px 25px 30px;
+            max-width: 400px;
+            /* CRT scanline effect background */
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.15),
+                    rgba(0, 0, 0, 0.15) 1px,
+                    rgba(0, 20, 20, 0.15) 1px,
+                    rgba(0, 20, 20, 0.15) 2px
+                ),
+                rgba(0, 10, 10, 0.7);
         }
 
         #game-logo {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             font-family: 'Press Start 2P', 'Courier New', monospace;
         }
         #game-logo .plane-glyph {
-            font-size: 24px;
+            font-size: 20px;
             color: #00ffff;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
+            margin-bottom: 10px;
+            letter-spacing: 0;
         }
         #game-logo .game-title {
-            font-size: 28px;
+            font-size: 18px;
             color: #ffffff;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
             font-weight: bold;
-            /* Cyan drop shadow visible against black background */
+            white-space: nowrap;
+            /* Black drop shadow visible against scanline background */
             text-shadow:
-                2px 2px 0px #00ffff,
-                3px 3px 0px rgba(0, 255, 255, 0.5);
+                2px 2px 0px #000000,
+                3px 3px 0px rgba(0, 0, 0, 0.5);
         }
         #game-logo .swoosh {
-            font-size: 14px;
+            font-size: 12px;
             color: #00ffff;
-            letter-spacing: 20px;
+            letter-spacing: 8px;
             opacity: 0.6;
+        }
+
+        /* Mobile scaling */
+        @media (max-width: 768px) {
+            #start-screen-container {
+                max-width: 320px;
+                padding: 30px 20px 20px 20px;
+            }
+            #game-logo .plane-glyph {
+                font-size: 16px;
+            }
+            #game-logo .game-title {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+            #game-logo .swoosh {
+                font-size: 10px;
+                letter-spacing: 6px;
+            }
         }
         #play-button, #how-to-play-button {
             font-family: 'Press Start 2P', 'Courier New', monospace;
