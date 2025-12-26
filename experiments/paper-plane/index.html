@@ -112,16 +112,17 @@
             letter-spacing: 0;
         }
         #game-logo .game-title {
-            font-size: 18px;
+            font-size: 26px;
             color: #ffffff;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
+            letter-spacing: 3px;
+            margin-bottom: 0;
+            line-height: 1.3;
             font-weight: bold;
-            white-space: nowrap;
-            /* Black drop shadow visible against scanline background */
+            /* Thick black drop shadow for retro arcade look */
             text-shadow:
-                2px 2px 0px #000000,
-                3px 3px 0px rgba(0, 0, 0, 0.5);
+                3px 3px 0px #000000,
+                4px 4px 0px #000000,
+                5px 5px 0px rgba(0, 0, 0, 0.6);
         }
         #game-logo .swoosh {
             font-size: 12px;
@@ -140,8 +141,8 @@
                 font-size: 16px;
             }
             #game-logo .game-title {
-                font-size: 14px;
-                letter-spacing: 1px;
+                font-size: 20px;
+                letter-spacing: 2px;
             }
             #game-logo .swoosh {
                 font-size: 10px;
@@ -499,7 +500,7 @@
         <div id="start-screen-container">
             <div id="game-logo">
                 <div class="plane-glyph">✈</div>
-                <div class="game-title">= AIRPLANE GAME =</div>
+                <div class="game-title">AIRPLANE<br>GAME</div>
                 <div class="swoosh">~•—•~</div>
             </div>
             <div id="play-button">PLAY GAME</div>
