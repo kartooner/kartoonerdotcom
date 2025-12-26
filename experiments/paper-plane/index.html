@@ -3222,8 +3222,9 @@
         // When plane lifts up, terrain appears slightly smaller (further away)
         const altitudeOffset = curY - 2.5; // 2.5 is default Y position
         const terrainScale = 1 - (altitudeOffset * 0.04); // Subtle 4% scale change per unit
-        t1.scale.set(terrainScale, terrainScale, terrainScale);
-        t2.scale.set(terrainScale, terrainScale, terrainScale);
+        // Only scale X and Y, keep Z at 1.0 to prevent gaps in terrain tiling
+        t1.scale.set(terrainScale, terrainScale, 1);
+        t2.scale.set(terrainScale, terrainScale, 1);
 
         // Enhanced banking based on velocity (more arc/sway)
         let rollAngle = -velocityX * 8; // Roll based on horizontal velocity
