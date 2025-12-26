@@ -1533,13 +1533,12 @@
         walls.length = 0;
         coins.length = 0;
 
-        // Spawn 3-4 bosses in a row, spaced out for ~1 minute encounter
-        const bossCount = Math.floor(Math.random() * 2) + 3; // 3 or 4 bosses
-        const spacing = 700; // 700 units apart (~1 minute total at avg speed)
+        // Spawn 4 fan blades in a row, spaced out for ~1.5 minute encounter
+        const bossCount = 4; // Exactly 4 blades
+        const spacing = 1050; // Spaced for ~1.5 minute encounter
 
-        // Speed alternates per encounter: slow, fast, slow, fast...
-        const isFastEncounter = bossEncounterCount % 2 === 0;
-        const baseSpeed = isFastEncounter ? 0.02 : 0.01; // Fast or slow
+        // Consistent moderate speed - challenging but dodgeable
+        const baseSpeed = 0.015; // Moderate rotation speed for all encounters
 
         for (let i = 0; i < bossCount; i++) {
             const boss = bossPool.find(b => !b.userData.active);
@@ -3244,8 +3243,8 @@
                     if (!gracePeriodActive && !invincibilityActive) {
                         collisionFlash = 0.5;
 
-                        // Boss collision - significant damage
-                        const pointsLost = 50;
+                        // Boss collision - moderate damage
+                        const pointsLost = 25;
                         score = Math.max(0, score - pointsLost);
                         scoreDisplayUI.innerText = `SCORE: ${score}`;
 
