@@ -3223,9 +3223,9 @@
         // Fly DOWN: terrain scales up (appears closer/larger)
         const altitudeOffset = curY - 2.5; // Distance from default height (can be + or -)
         const terrainScale = 1 - (altitudeOffset * 0.04); // 4% scale change per unit
-        // Only scale X and Y, keep Z at 1.0 to prevent gaps in terrain tiling
-        t1.scale.set(terrainScale, terrainScale, 1);
-        t2.scale.set(terrainScale, terrainScale, 1);
+        // Scale X (width) and Z (height), keep Y at 1.0 (length along flight path after rotation)
+        t1.scale.set(terrainScale, 1, terrainScale);
+        t2.scale.set(terrainScale, 1, terrainScale);
 
         // Enhanced banking based on velocity (more arc/sway)
         let rollAngle = -velocityX * 8; // Roll based on horizontal velocity
