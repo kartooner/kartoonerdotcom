@@ -3218,6 +3218,13 @@
 
         shipGroup.position.set(curX + swayX, curY + bobY + swayY, 3.5);
 
+        // Terrain altitude scaling - slight parallax effect for game feel
+        // When plane lifts up, terrain appears slightly smaller (further away)
+        const altitudeOffset = curY - 2.5; // 2.5 is default Y position
+        const terrainScale = 1 - (altitudeOffset * 0.04); // Subtle 4% scale change per unit
+        t1.scale.set(terrainScale, terrainScale, terrainScale);
+        t2.scale.set(terrainScale, terrainScale, terrainScale);
+
         // Enhanced banking based on velocity (more arc/sway)
         let rollAngle = -velocityX * 8; // Roll based on horizontal velocity
         const pitchAngle = velocityY * 3 + (bobY * 0.1); // Pitch based on vertical velocity
