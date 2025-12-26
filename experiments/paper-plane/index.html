@@ -1747,6 +1747,7 @@
         b.userData.box = new THREE.Box3();
         b.userData.height = height;
         b.userData.geometry = geometry;
+        b.userData.originalScale = { x: scaleX, y: scaleY, z: scaleZ }; // Store original scale for parallax
 
         return b;
     }
@@ -2056,12 +2057,15 @@
         // Use lane-based positioning
         const lanePosition = getRandomLane();
 
+        // ConeGeometry (pyramids) has base at origin, others are centered
+        const isPyramid = b.userData.geometry === pyramidGeometry;
+        const baseY = isPyramid ? 0 : b.userData.height / 2;
         b.position.set(
             lanePosition,
-            b.userData.height / 2,
+            baseY,
             -150 - (i*70) // Even further back, even more spacing
         );
-        b.userData.originalY = b.userData.height / 2; // Store original Y for parallax scaling
+        b.userData.originalY = baseY; // Store original Y for parallax scaling
 
         scene.add(b);
         buildings.push(b);
@@ -2087,6 +2091,7 @@
         );
         wall.userData.type = isHigh ? 'high' : 'low';
         wall.userData.box = new THREE.Box3();
+        wall.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
         wall.visible = false;
         wall.position.z = -1000; // Off screen
         scene.add(wall);
@@ -2122,6 +2127,7 @@
         ring.rotation.x = 0;
         ring.rotation.y = 0;
         ring.userData.collected = false;
+        ring.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
         ring.visible = false;
         ring.position.z = -1000; // Off screen
         scene.add(ring);
@@ -2149,6 +2155,8 @@
     // Pre-create shield pickup pool (3 pickups)
     for (let i = 0; i < 3; i++) {
         const pickup = new THREE.Mesh(capsuleGeometry, capsuleMat);
+        pickup.scale.set(2, 2, 2); // Make shields 2x larger for better visibility
+        pickup.userData.originalScale = { x: 2, y: 2, z: 2 }; // Store for parallax
         pickup.userData.collected = false;
         pickup.visible = false;
         pickup.position.z = -1000;
@@ -2216,6 +2224,7 @@
         coin.userData.collected = false;
         coin.userData.spinSpeed = 0.05; // Rotation speed
         coin.userData.spinAngle = 0; // Track total spin rotation
+        coin.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
         coin.visible = false;
         coin.position.z = -1000; // Off screen
         scene.add(coin);
@@ -2351,6 +2360,7 @@
         bossGroup.userData.rotationSpeed = 0.02; // Slow rotation
         bossGroup.userData.active = false;
         bossGroup.userData.box = new THREE.Box3();
+        bossGroup.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
 
         scene.add(bossGroup);
         return bossGroup;
@@ -3329,8 +3339,14 @@
             }
 
             b.position.z += speed;
-            // Apply altitude parallax scaling to buildings
-            b.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to buildings (multiply with original scale, don't replace!)
+            if (b.userData.originalScale) {
+                b.scale.set(
+                    b.userData.originalScale.x * terrainScale,
+                    b.userData.originalScale.y * terrainScale,
+                    b.userData.originalScale.z * terrainScale
+                );
+            }
             // Scale Y position to keep buildings grounded (prevent floating)
             if (b.userData.originalY !== undefined) {
                 b.position.y = b.userData.originalY * terrainScale;
@@ -3413,11 +3429,10 @@
                     height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5;
                 }
 
-                // Update geometry if it changed (avoid disposal to prevent micro-stutters)
-                if (b.geometry !== geometry) {
-                    // Don't dispose, just replace reference
-                    b.geometry = geometry;
-                }
+                // Update geometry (avoid disposal to prevent micro-stutters)
+                // Always update both geometry and userData to stay in sync
+                b.geometry = geometry;
+                b.userData.geometry = geometry;
 
                 // Use width from procedural generation if available, otherwise random
                 const buildingWidth = position.width || 1;
@@ -3430,6 +3445,7 @@
                 b.scale.set(scaleX, scaleY, scaleZ);
                 b.userData.height = height;
                 b.userData.width = buildingWidth;
+                b.userData.originalScale = { x: scaleX, y: scaleY, z: scaleZ }; // Update original scale for parallax
 
                 // Progressive difficulty: buildings spawn closer as level increases
                 let spawnDistance = nextWaveDistance + position.offset;
@@ -3466,10 +3482,13 @@
                     }
                 }
 
-                b.userData.originalY = height / 2; // Store original Y for parallax scaling
+                // ConeGeometry (pyramids) has base at origin, others are centered
+                // Pyramids need Y=0, others need Y=height/2
+                const baseY = (b.userData.geometry === pyramidGeometry) ? 0 : height / 2;
+                b.userData.originalY = baseY; // Store original Y for parallax scaling
                 b.position.set(
                     xPos,
-                    (height / 2) * terrainScale, // Apply parallax Y scaling immediately
+                    baseY * terrainScale, // Apply parallax Y scaling immediately
                     spawnDistance
                 );
                 b.visible = true; // Always visible when spawning (breather check happens at top)
@@ -3613,8 +3632,14 @@
         for (let i = walls.length - 1; i >= 0; i--) {
             const wall = walls[i];
             wall.position.z += speed;
-            // Apply altitude parallax scaling to walls
-            wall.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to walls (multiply with original scale)
+            if (wall.userData.originalScale) {
+                wall.scale.set(
+                    wall.userData.originalScale.x * terrainScale,
+                    wall.userData.originalScale.y * terrainScale,
+                    wall.userData.originalScale.z * terrainScale
+                );
+            }
             // Scale Y position to keep walls properly positioned
             if (wall.userData.originalY !== undefined) {
                 wall.position.y = wall.userData.originalY * terrainScale;
@@ -3704,8 +3729,14 @@
 
             // Always move ring forward
             ring.position.z += speed;
-            // Apply altitude parallax scaling to rings
-            ring.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to rings (multiply with original scale)
+            if (ring.userData.originalScale) {
+                ring.scale.set(
+                    ring.userData.originalScale.x * terrainScale,
+                    ring.userData.originalScale.y * terrainScale,
+                    ring.userData.originalScale.z * terrainScale
+                );
+            }
 
             if (!ring.userData.collected) {
                 ring.rotation.z += 0.02; // Spin effect
@@ -3752,8 +3783,14 @@
 
             // Move pickup forward
             pickup.position.z += speed;
-            // Apply altitude parallax scaling to shield pickups
-            pickup.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to shield pickups (multiply with original scale)
+            if (pickup.userData.originalScale) {
+                pickup.scale.set(
+                    pickup.userData.originalScale.x * terrainScale,
+                    pickup.userData.originalScale.y * terrainScale,
+                    pickup.userData.originalScale.z * terrainScale
+                );
+            }
 
             if (!pickup.userData.collected) {
                 // Rotate pickup for visual effect
@@ -3792,8 +3829,14 @@
 
             // Move coin forward with world
             coin.position.z += speed;
-            // Apply altitude parallax scaling to coins
-            coin.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to coins (multiply with original scale)
+            if (coin.userData.originalScale) {
+                coin.scale.set(
+                    coin.userData.originalScale.x * terrainScale,
+                    coin.userData.originalScale.y * terrainScale,
+                    coin.userData.originalScale.z * terrainScale
+                );
+            }
 
             if (!coin.userData.collected) {
                 // Increment spin angle
@@ -4201,6 +4244,7 @@
                 ring.rotation.y = 0;
                 ring.userData.collected = false;
                 ring.userData.points = isFuchsia ? 50 : 25; // Track points for each ring
+                ring.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
                 scene.add(ring);
                 rings.push(ring);
             }
@@ -4228,8 +4272,14 @@
 
             // Move boss forward with world
             boss.position.z += speed;
-            // Apply altitude parallax scaling to bosses
-            boss.scale.set(terrainScale, terrainScale, terrainScale);
+            // Apply altitude parallax scaling to bosses (multiply with original scale)
+            if (boss.userData.originalScale) {
+                boss.scale.set(
+                    boss.userData.originalScale.x * terrainScale,
+                    boss.userData.originalScale.y * terrainScale,
+                    boss.userData.originalScale.z * terrainScale
+                );
+            }
 
             // Rotate the boss (direction determined at spawn)
             boss.rotation.z += boss.userData.rotationSpeed;
