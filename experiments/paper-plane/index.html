@@ -66,22 +66,6 @@
             z-index: 1; pointer-events: none;
         }
 
-        .ui-overlay {
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            color: var(--neon);
-            pointer-events: none;
-            opacity: 0.95;
-            font-size: 15px;
-            letter-spacing: 2px;
-            text-align: center;
-            font-weight: bold;
-            line-height: 1.6;
-        }
-
         #footer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
 
         /* Play button overlay */
@@ -258,38 +242,33 @@
                 max-height: none;
                 border: none; /* Remove border on mobile */
             }
-            .ui-overlay {
-                top: 40px;
-                font-size: 10px;
-                letter-spacing: 0.5px;
-                line-height: 1.4;
-            }
             #score-text {
-                font-size: 9px;
+                font-size: 8px !important;
             }
-            #high-score {
+            #score-display {
                 font-size: 8px !important;
             }
             #level-text {
                 font-size: 9px !important;
             }
             #health-bar {
-                font-size: 11px !important;
-                margin-top: 6px !important;
+                font-size: 10px !important;
+                margin-top: 4px !important;
                 letter-spacing: 2px !important;
             }
             #shield-bar {
-                font-size: 8px !important;
+                font-size: 7px !important;
                 margin-top: 3px !important;
                 letter-spacing: 1px !important;
             }
             #pause-button {
-                font-size: 11px !important;
+                font-size: 10px !important;
                 padding: 8px 16px !important;
-                top: 40px !important;
+                margin-bottom: 8px !important;
             }
-            #score-container {
-                top: 40px !important;
+            #center-message {
+                font-size: 11px !important;
+                letter-spacing: 1px !important;
             }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
@@ -315,20 +294,23 @@
         <button id="skip-checkpoint">[ ] Skip upgrade</button>
         <div id="checkpoint-warning"></div>
     </div>
-    <div class="ui-overlay">
-        <span id="score-text">0 ----- 0mi</span><br>
-        <span id="high-score" style="font-size: 11px; opacity: 0.7;">BEST: 0mi</span><br>
-        <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span><br>
-        <div id="health-bar" style="font-size: 14px; margin-top: 8px; letter-spacing: 3px;">♥ ♥ ♥ ♥</div>
-        <div id="shield-bar" style="font-size: 10px; margin-top: 4px; letter-spacing: 2px; opacity: 0.9;">[ | | ]</div>
+    <div style="position: absolute; top: 20px; left: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; text-align: left; line-height: 1.8;">
+        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s; margin-bottom: 12px;">PAUSE</button>
+        <div style="font-size: 11px; letter-spacing: 1px; font-weight: bold;">
+            <span id="level-text" style="opacity: 0.9;">LEVEL 1</span><br>
+            <div id="health-bar" style="font-size: 13px; margin-top: 6px; letter-spacing: 3px;">♥ ♥ ♥ ♥</div>
+            <div id="shield-bar" style="font-size: 9px; margin-top: 4px; letter-spacing: 2px; opacity: 0;">[ | | ]</div>
+        </div>
     </div>
-    <div style="position: absolute; top: 50px; left: 20px; z-index: 10;">
-        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
-    </div>
-    <div id="score-container" style="position: absolute; top: 50px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
+    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
         <span id="score-display">SCORE: 0</span><br>
+        <span id="score-text">0mi</span><br>
         <span id="score-bonus" style="font-size: 9px; opacity: 0; transition: opacity 0.3s;">+0</span>
     </div>
+    <!-- Center message display for crashes and level-ups -->
+    <div id="center-message" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 15; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: center; font-weight: bold; opacity: 0; pointer-events: none;"></div>
+    <!-- Hidden high score element (keep for JS reference) -->
+    <span id="high-score" style="display: none;"></span>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
 </div>
@@ -366,6 +348,7 @@
     const shieldBarUI = document.getElementById('shield-bar');
     const scoreDisplayUI = document.getElementById('score-display');
     const scoreBonusUI = document.getElementById('score-bonus');
+    const centerMessageUI = document.getElementById('center-message');
 
     // Game state
     let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
@@ -387,7 +370,7 @@
     let gracePeriodActive = false;
     let gracePeriodEndTime = 0;
     let previousGracePeriodActive = false; // Track state changes to avoid unnecessary material updates
-    let shieldActive = true;
+    let shieldActive = false; // Start without shields - must be purchased
     let shieldHits = 0;
     const maxShieldHits = 2;
 
@@ -444,6 +427,12 @@
             cost: 250,
             owned: false,
             description: 'Become invincible for 2 minutes - flash yellow like Mario'
+        },
+        shields: {
+            name: 'Shields',
+            cost: 200,
+            owned: false,
+            description: 'Adds 2-hit shield protection - collect green capsules to restore'
         }
     };
 
@@ -1562,8 +1551,8 @@
 
     // Spawn shield pickup if conditions are met
     function trySpawnShieldPickup() {
-        // Only spawn if player doesn't have full shields (has lost some or all shield)
-        if ((!shieldActive || shieldHits >= 1) && shieldPickups.length === 0) {
+        // Only spawn if player owns shields AND doesn't have full shields (has lost some or all shield)
+        if (abilities.shields.owned && (!shieldActive || shieldHits >= 1) && shieldPickups.length === 0) {
             const pickup = getShieldPickupFromPool();
             if (pickup) {
                 pickup.position.set(
@@ -1930,6 +1919,11 @@
                 invincibilityEndTime = Date.now() + 120000; // 2 minutes (120 seconds)
                 invincibilityPulsePhase = 0;
                 break;
+            case 'shields':
+                shieldActive = true;
+                shieldHits = 0;
+                updateShieldBar();
+                break;
         }
     }
 
@@ -1967,6 +1961,11 @@
                 invincibilityActive = false;
                 invincibilityEndTime = 0;
                 paperMat.color.setHex(0x008080); // Revert to original teal
+                break;
+            case 'shields':
+                shieldActive = false;
+                shieldHits = 0;
+                updateShieldBar();
                 break;
         }
 
@@ -3620,19 +3619,22 @@
         }
 
         const distMiles = Math.floor(miles);
-        const dashes = isMobile ? '--' : '-----'; // Fewer dashes on mobile
-        let displayText = `0 ${dashes} ${distMiles}mi`;
 
-        // Show crash message
+        // Update miles display in top-right
+        scoreUI.innerText = `${distMiles}mi`;
+
+        // Show crash message in center
         if (crashMessageTimer > 0) {
-            displayText = `💥 ${crashMessage} 💥`;
-        }
-        // Show level-up message (takes priority if both are active)
-        if (levelUpMessageTimer > 0) {
-            displayText = `⚡ ${levelUpMessage} ⚡`;
+            centerMessageUI.innerText = `💥 ${crashMessage} 💥`;
+            centerMessageUI.style.opacity = '1';
+        } else if (levelUpMessageTimer > 0) {
+            // Show level-up message (takes priority if both are active)
+            centerMessageUI.innerText = `⚡ ${levelUpMessage} ⚡`;
+            centerMessageUI.style.opacity = '1';
+        } else {
+            centerMessageUI.style.opacity = '0';
         }
 
-        scoreUI.innerText = displayText;
         renderer.render(scene, camera);
     }
     // Don't auto-start - wait for play button
