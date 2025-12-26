@@ -159,6 +159,45 @@
                 margin-top: 30px;
             }
         }
+
+        /* Landscape mobile optimizations */
+        @media (max-width: 768px) and (max-height: 500px) and (orientation: landscape) {
+            #start-screen-container {
+                max-width: 500px;
+                padding: 15px 20px 10px 20px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            #game-logo {
+                margin-bottom: 10px;
+            }
+            #game-logo .plane-glyph {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+            #game-logo .game-title {
+                font-size: 16px;
+                letter-spacing: 1px;
+                line-height: 1.2;
+                margin-bottom: 0;
+            }
+            #game-logo .swoosh {
+                font-size: 8px;
+                letter-spacing: 4px;
+                margin-bottom: 8px;
+            }
+            #play-button, #how-to-play-button {
+                font-size: 11px;
+                letter-spacing: 1px;
+                padding: 10px 12px;
+                margin: 4px 0;
+            }
+            #copyright-notice {
+                font-size: 7px;
+                margin-top: 10px;
+                line-height: 1.4;
+            }
+        }
         #play-button, #how-to-play-button {
             font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 16px;
