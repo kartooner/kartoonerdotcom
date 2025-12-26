@@ -84,9 +84,17 @@
         }
         #play-overlay.hidden { display: none; }
 
+        #start-screen-container {
+            border: 3px solid #00ffff;
+            padding: 50px 40px 30px 40px;
+            background: rgba(0, 20, 20, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 30px rgba(0, 255, 255, 0.1);
+            max-width: 500px;
+        }
+
         #game-logo {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 40px;
             font-family: 'Press Start 2P', 'Courier New', monospace;
         }
         #game-logo .plane-glyph {
@@ -137,6 +145,17 @@
         #how-to-play-button:hover {
             background: rgba(128, 128, 128, 0.2);
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.3);
+        }
+
+        #copyright-notice {
+            text-align: center;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 10px;
+            color: #00ffff;
+            opacity: 0.5;
+            margin-top: 40px;
+            line-height: 1.8;
+            letter-spacing: 1px;
         }
 
         /* Instructions overlay - Atari manual style */
@@ -433,13 +452,19 @@
 
 <div id="game-container">
     <div id="play-overlay">
-        <div id="game-logo">
-            <div class="plane-glyph">✈</div>
-            <div class="game-title">AIRPLANE GAME</div>
-            <div class="swoosh">~~~</div>
+        <div id="start-screen-container">
+            <div id="game-logo">
+                <div class="plane-glyph">✈</div>
+                <div class="game-title">= AIRPLANE GAME =</div>
+                <div class="swoosh">~~~</div>
+            </div>
+            <div id="play-button">PLAY GAME</div>
+            <div id="how-to-play-button">HOW TO PLAY</div>
+            <div id="copyright-notice">
+                © 1980 Erik Sagen<br>
+                MCMLXXX
+            </div>
         </div>
-        <div id="play-button">PLAY GAME</div>
-        <div id="how-to-play-button">HOW TO PLAY</div>
     </div>
     <div id="instructions-overlay">
         <button id="close-instructions-x">×</button>
