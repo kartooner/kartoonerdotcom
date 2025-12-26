@@ -782,7 +782,7 @@
     <div id="play-overlay">
         <div id="start-screen-container">
             <div id="game-logo">
-                <div class="plane-glyph">✈</div>
+                <div class="plane-glyph">»</div>
                 <div class="game-title">PAPER<br>AIRPLANE</div>
                 <div class="swoosh">~•—•~</div>
             </div>
@@ -3280,6 +3280,8 @@
             }
 
             b.position.z += speed;
+            // Apply altitude parallax scaling to buildings
+            b.scale.set(terrainScale, terrainScale, terrainScale);
 
             // Gradual fade as buildings pass camera (smoother than instant toggle)
             if(b.position.z > 10) {
@@ -3525,6 +3527,8 @@
         for (let i = walls.length - 1; i >= 0; i--) {
             const wall = walls[i];
             wall.position.z += speed;
+            // Apply altitude parallax scaling to walls
+            wall.scale.set(terrainScale, terrainScale, terrainScale);
 
             // Return wall to pool when it passes the player
             if (wall.position.z > 20) {
@@ -3610,6 +3614,8 @@
 
             // Always move ring forward
             ring.position.z += speed;
+            // Apply altitude parallax scaling to rings
+            ring.scale.set(terrainScale, terrainScale, terrainScale);
 
             if (!ring.userData.collected) {
                 ring.rotation.z += 0.02; // Spin effect
@@ -3656,6 +3662,8 @@
 
             // Move pickup forward
             pickup.position.z += speed;
+            // Apply altitude parallax scaling to shield pickups
+            pickup.scale.set(terrainScale, terrainScale, terrainScale);
 
             if (!pickup.userData.collected) {
                 // Rotate pickup for visual effect
@@ -3694,6 +3702,8 @@
 
             // Move coin forward with world
             coin.position.z += speed;
+            // Apply altitude parallax scaling to coins
+            coin.scale.set(terrainScale, terrainScale, terrainScale);
 
             if (!coin.userData.collected) {
                 // Increment spin angle
@@ -4128,6 +4138,8 @@
 
             // Move boss forward with world
             boss.position.z += speed;
+            // Apply altitude parallax scaling to bosses
+            boss.scale.set(terrainScale, terrainScale, terrainScale);
 
             // Rotate the boss (direction determined at spawn)
             boss.rotation.z += boss.userData.rotationSpeed;
