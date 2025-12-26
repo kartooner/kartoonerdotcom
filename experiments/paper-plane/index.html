@@ -1974,6 +1974,49 @@
         procedural: {
             buildings: -1, // Variable
             getPositions: () => generateProceduralWave(miles) // Use new procedural system
+        },
+        // Wide building patterns - appear at higher levels
+        wide_single: {
+            buildings: 1,
+            getPositions: () => {
+                // Single wide building (2 lanes), leaving 3 lanes open
+                const startLane = Math.floor(seededRandom() * 4); // 0-3 (can't start at 4)
+                return [{ lane: startLane, offset: 0, width: 2 }];
+            }
+        },
+        wide_gap_regular: {
+            buildings: 2,
+            getPositions: () => {
+                // Wide building (2 lanes), gap, regular building
+                const wideStart = Math.floor(seededRandom() * 2); // 0 or 1 (lanes 0-1 or 1-2)
+                const regularLanes = wideStart === 0 ? [3, 4] : [4]; // Pick from remaining lanes
+                const regularLane = regularLanes[Math.floor(seededRandom() * regularLanes.length)];
+                return [
+                    { lane: wideStart, offset: 0, width: 2 },
+                    { lane: regularLane, offset: -50, width: 1 }
+                ];
+            }
+        },
+        wide_sandwich: {
+            buildings: 3,
+            getPositions: () => {
+                // Regular, wide (2 lanes), regular - creates tight corridor
+                return [
+                    { lane: 0, offset: 0, width: 1 },
+                    { lane: 1, offset: -45, width: 2 },
+                    { lane: 4, offset: -90, width: 1 }
+                ];
+            }
+        },
+        double_wide: {
+            buildings: 2,
+            getPositions: () => {
+                // Two wide buildings with gap - challenging but fair
+                return [
+                    { lane: 0, offset: 0, width: 2 },
+                    { lane: 3, offset: -60, width: 2 }
+                ];
+            }
         }
     };
 
@@ -1994,11 +2037,15 @@
             if (rand < 0.45) return 'double';   // 15% double
             return 'procedural'; // 55% procedural
         } else {
-            // Late levels: mostly procedural (dense)
-            if (rand < 0.10) return 'breather';     // 10% breather
-            if (rand < 0.20) return 'wall';         // 10% wall
-            if (rand < 0.30) return 'staircase';    // 10% staircase
-            return 'procedural'; // 70% procedural (will be dense)
+            // Late levels: mostly procedural (dense) + wide building variants
+            if (rand < 0.08) return 'breather';         // 8% breather
+            if (rand < 0.16) return 'wall';             // 8% wall
+            if (rand < 0.24) return 'staircase';        // 8% staircase
+            if (rand < 0.32) return 'wide_single';      // 8% wide single
+            if (rand < 0.40) return 'wide_gap_regular'; // 8% wide + gap + regular
+            if (rand < 0.46) return 'wide_sandwich';    // 6% wide sandwich
+            if (rand < 0.50) return 'double_wide';      // 4% double wide (challenging)
+            return 'procedural'; // 50% procedural (will be dense)
         }
     }
 
@@ -3374,7 +3421,10 @@
 
                 // Use width from procedural generation if available, otherwise random
                 const buildingWidth = position.width || 1;
-                const scaleX = (seededRandom() * 0.4 + 0.6) * buildingWidth; // Multiply by width for variety
+                // Wide buildings (width=2) get extra X scale to span 2 lanes
+                // Base geometry is 2 units wide, lanes are 4 units apart, so width=2 needs ~4x scale
+                const baseScale = seededRandom() * 0.4 + 0.6;
+                const scaleX = buildingWidth > 1 ? baseScale * 2.2 : baseScale;
                 const scaleY = height / 5;
                 const scaleZ = seededRandom() * 0.8 + 0.6;
                 b.scale.set(scaleX, scaleY, scaleZ);
@@ -3387,26 +3437,41 @@
                 // Use lane-based positioning from wave pattern
                 const xPos = lanes[position.lane];
 
-                // Prevent buildings from spawning too close in the same lane
+                // Prevent buildings from spawning too close in overlapping lanes
                 const minLaneSpacing = 15; // Minimum Z distance between buildings in same lane
+                const thisWidth = buildingWidth;
+                const laneSpacing = 4; // Distance between lane centers
+
                 for (let j = 0; j < buildings.length; j++) {
                     const other = buildings[j];
-                    if (other !== b && other.visible && Math.abs(other.position.x - xPos) < 1) {
-                        // Same lane, check Z distance
-                        const zDist = Math.abs(other.position.z - spawnDistance);
-                        if (zDist < minLaneSpacing) {
-                            // Too close, push this building further back
-                            spawnDistance = other.position.z - minLaneSpacing;
+                    if (other !== b && other.visible) {
+                        // Calculate lane overlap accounting for width
+                        const otherWidth = other.userData.width || 1;
+                        const thisLaneMin = xPos;
+                        const thisLaneMax = xPos + (thisWidth - 1) * laneSpacing;
+                        const otherLaneMin = other.position.x;
+                        const otherLaneMax = other.position.x + (otherWidth - 1) * laneSpacing;
+
+                        // Check if lanes overlap
+                        const lanesOverlap = thisLaneMax >= otherLaneMin - 0.5 && thisLaneMin <= otherLaneMax + 0.5;
+
+                        if (lanesOverlap) {
+                            // Overlapping lanes, check Z distance
+                            const zDist = Math.abs(other.position.z - spawnDistance);
+                            if (zDist < minLaneSpacing) {
+                                // Too close, push this building further back
+                                spawnDistance = other.position.z - minLaneSpacing;
+                            }
                         }
                     }
                 }
 
+                b.userData.originalY = height / 2; // Store original Y for parallax scaling
                 b.position.set(
                     xPos,
-                    height / 2,
+                    (height / 2) * terrainScale, // Apply parallax Y scaling immediately
                     spawnDistance
                 );
-                b.userData.originalY = height / 2; // Store original Y for parallax scaling
                 b.visible = true; // Always visible when spawning (breather check happens at top)
                 b.material.opacity = 1; // Reset opacity for new spawn
 
