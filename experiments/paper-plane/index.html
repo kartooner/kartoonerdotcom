@@ -83,6 +83,31 @@
             z-index: 200;
         }
         #play-overlay.hidden { display: none; }
+
+        #game-logo {
+            text-align: center;
+            margin-bottom: 60px;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+        #game-logo .plane-glyph {
+            font-size: 24px;
+            color: #00ffff;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        #game-logo .game-title {
+            font-size: 28px;
+            color: #00ffff;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        #game-logo .swoosh {
+            font-size: 14px;
+            color: #00ffff;
+            letter-spacing: 20px;
+            opacity: 0.6;
+        }
         #play-button, #how-to-play-button {
             font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 18px;
@@ -408,6 +433,11 @@
 
 <div id="game-container">
     <div id="play-overlay">
+        <div id="game-logo">
+            <div class="plane-glyph">✈</div>
+            <div class="game-title">AIRPLANE GAME</div>
+            <div class="swoosh">~~~</div>
+        </div>
         <div id="play-button">PLAY GAME</div>
         <div id="how-to-play-button">HOW TO PLAY</div>
     </div>
