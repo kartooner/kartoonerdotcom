@@ -767,7 +767,7 @@
         <div id="start-screen-container">
             <div id="game-logo">
                 <div class="plane-glyph">✈</div>
-                <div class="game-title">AIRPLANE<br>GAME</div>
+                <div class="game-title">PAPER<br>AIRPLANE</div>
                 <div class="swoosh">~•—•~</div>
             </div>
             <div id="play-button">PLAY GAME</div>
@@ -781,13 +781,13 @@
     <div id="instructions-overlay">
         <button id="close-instructions-x">×</button>
         <div id="instructions-container">
-            <h1>AIRPLANE</h1>
+            <h1>PAPER AIRPLANE</h1>
 
-            <h2>WELCOME TO AIRPLANE</h2>
+            <h2>WELCOME TO PAPER AIRPLANE</h2>
             <div style="text-align: center; margin: 20px 0;">
-                <img src="screenshot.jpg" alt="Airplane Game Screenshot" style="max-width: 100%; border: 2px solid #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);">
+                <img src="screenshot.jpg" alt="Paper Airplane Screenshot" style="max-width: 100%; border: 2px solid #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);">
             </div>
-            <p>You're a pilot on the flight of a lifetime! AIRPLANE is a game where you fly forever. Test your reflexes and see how far you can go.</p>
+            <p>You're a pilot on the flight of a lifetime! PAPER AIRPLANE is a game where you fly forever. Test your reflexes and see how far you can go.</p>
 
             <p>Your job is simple: FLY. Don't crash into things. Collect rings. Earn points. Buy cool upgrades. The game never ends—only YOU decide how far you'll fly!</p>
 
@@ -2770,6 +2770,9 @@
     const nearMissDistance = 2.5; // How close counts as "near miss"
     const nearMissDistSq = nearMissDistance * nearMissDistance; // Pre-calculate for performance
 
+    // Ring boost - temporary speed boost when flying through rings
+    let ringBoost = 0; // Multiplier that decays over time
+
     // Reusable Vector3 and Box3 objects to avoid garbage collection
     const tempVec3_1 = new THREE.Vector3();
     const tempVec3_2 = new THREE.Vector3();
@@ -2872,15 +2875,21 @@
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
 
-        // Speed boost effect (includes near-miss boost) with deltaTime
+        // Speed boost effect (includes near-miss boost and ring boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
-        const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost;
+        const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost + ringBoost;
         const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
             nearMissBoost -= 0.01 * deltaTime; // Smooth decay
             if (nearMissBoost < 0) nearMissBoost = 0;
+        }
+
+        // Decay ring boost over time (frame-rate independent)
+        if (ringBoost > 0) {
+            ringBoost -= 0.008 * deltaTime; // Slightly slower decay than near-miss
+            if (ringBoost < 0) ringBoost = 0;
         }
 
         // Update distance and calculate miles/level FIRST (needed for building logic)
@@ -3600,6 +3609,9 @@
                         scoreBonusUI.style.opacity = '1';
                         bonusFadeTimer = 90; // Show for ~1.5 seconds at 60fps
                         ring.material.color.setHex(0xffff00); // Flash yellow
+
+                        // Apply ring boost - temporary speed boost!
+                        ringBoost = Math.max(ringBoost, 0.5); // 0.5x speed multiplier
                     }
                 }
             }
@@ -3855,19 +3867,14 @@
         if (Math.random() < 0.001 && coins.length < 6 && !bossActive) {
             const coin = getCoinFromPool();
             if (coin) {
-                // X position biased toward edges (not obvious center path)
-                // 70% chance for edge positions, 30% chance for center
-                // Adjusted to be less extreme for easier collection
-                const coinX = Math.random() < 0.7
-                    ? (Math.random() < 0.5 ? -7 + Math.random() * 3 : 4 + Math.random() * 3) // Edges: -7 to -4 or 4 to 7
-                    : (Math.random() - 0.5) * 6; // Center: -3 to 3
+                // X position: Only spawn in center 3 lanes (-4, 0, 4)
+                const centerLanes = [-4, 0, 4];
+                const coinX = centerLanes[Math.floor(Math.random() * centerLanes.length)];
 
-                // More varied Y heights - very low, low, high, very high
-                const heightRoll = Math.random();
-                const coinY = heightRoll < 0.25 ? (0.8 + Math.random() * 0.7) :  // Very low: 0.8-1.5
-                              heightRoll < 0.5 ? (1.8 + Math.random() * 1) :      // Low: 1.8-2.8
-                              heightRoll < 0.75 ? (3.2 + Math.random() * 1) :     // High: 3.2-4.2
-                              (4.5 + Math.random() * 1);                          // Very high: 4.5-5.5
+                // Random Y heights - up high or down low
+                const coinY = Math.random() < 0.5
+                    ? (0.8 + Math.random() * 1.2)   // Low: 0.8-2.0
+                    : (4.0 + Math.random() * 1.5);  // High: 4.0-5.5
                 const coinZ = -150 - Math.random() * 50; // Spawn 150-200 units ahead
 
                 // Check if coin would overlap with any visible building
