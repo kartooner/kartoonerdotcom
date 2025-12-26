@@ -611,7 +611,7 @@
             name: 'Lasers',
             cost: 300,
             owned: false,
-            description: 'Adds shooting ability and asteroid enemies'
+            description: 'Shooting ability for 2 minutes'
         },
         barrelRollUpgrade: {
             name: 'Barrel Roll',
@@ -649,6 +649,10 @@
     let invincibilityActive = false;
     let invincibilityEndTime = 0;
     let invincibilityPulsePhase = 0;
+
+    // Laser timer system (lasers are time-limited like invincibility)
+    let lasersActive = false;
+    let lasersEndTime = 0;
 
     highScoreUI.innerText = `BEST: ${highScore}mi`;
     scoreDisplayUI.innerText = `SCORE: ${score}`;
@@ -1686,7 +1690,8 @@
         if (wall) {
             wall.visible = true;
             // Use yOverride if provided (for anti-camping), otherwise use default heights
-            const yPos = yOverride !== null ? yOverride : (type === 'high' ? 5 : 1.5);
+            // Low walls are at y=0.75 (bottom at ground level) to prevent camping lowest position
+            const yPos = yOverride !== null ? yOverride : (type === 'high' ? 5 : 0.75);
             wall.position.set(0, yPos, zPos);
             return wall;
         }
@@ -1916,9 +1921,14 @@
         bossPool.push(createRotatingBoss());
     }
 
+    let bossesDefeated = 0; // Track how many bosses defeated in current encounter
+    const totalBossesPerEncounter = 4; // 4 bosses per encounter
+    const bossSpacing = 120; // Distance between bosses (closer spacing for better flow)
+
     function spawnBoss() {
         bossEncounterCount++;
         bossActive = true; // Set flag to prevent other spawns
+        bossesDefeated = 0; // Reset counter for new encounter
 
         // Cancel invincibility for boss arena (bosses must be fair challenge)
         if (invincibilityActive) {
@@ -1947,27 +1957,26 @@
         walls.length = 0;
         coins.length = 0;
 
-        // Spawn 4 fan blades in a row, spaced out for ~1.5 minute encounter
-        const bossCount = 4; // Exactly 4 blades
-        const spacing = 1050; // Spaced for ~1.5 minute encounter
+        // Spawn ONLY the first boss - others will spawn after each defeat
+        spawnNextBoss();
+    }
+
+    function spawnNextBoss() {
+        const boss = bossPool.find(b => !b.userData.active);
+        if (!boss) return; // No more available bosses in pool
+
+        boss.userData.active = true;
+        boss.visible = true;
+        boss.position.set(0, 4, -120); // Spawn closer for better reaction time
 
         // Consistent moderate speed - challenging but dodgeable
-        const baseSpeed = 0.015; // Moderate rotation speed for all encounters
+        const baseSpeed = 0.015;
 
-        for (let i = 0; i < bossCount; i++) {
-            const boss = bossPool.find(b => !b.userData.active);
-            if (!boss) break; // No more available bosses in pool
+        // Alternate rotation direction based on how many bosses defeated
+        const rotateLeft = bossesDefeated % 2 === 0;
+        boss.userData.rotationSpeed = rotateLeft ? -baseSpeed : baseSpeed;
 
-            boss.userData.active = true;
-            boss.visible = true;
-            boss.position.set(0, 4, -400 - (i * spacing)); // Spawn progressively further back
-
-            // Each boss alternates rotation direction: left, right, left, right
-            const rotateLeft = i % 2 === 0;
-            boss.userData.rotationSpeed = rotateLeft ? -baseSpeed : baseSpeed;
-
-            bosses.push(boss);
-        }
+        bosses.push(boss);
     }
 
     // Checkpoint UI functions
@@ -2114,6 +2123,8 @@
                 break;
             case 'lasers':
                 canShoot = true;
+                lasersActive = true;
+                lasersEndTime = Date.now() + 120000; // 2 minutes (120 seconds)
                 break;
             case 'barrelRollUpgrade':
                 // Barrel roll is now enabled (already exists in code)
@@ -2150,6 +2161,8 @@
                 break;
             case 'lasers':
                 canShoot = false; // Disable shooting
+                lasersActive = false;
+                lasersEndTime = 0;
                 // Clean up existing lasers and enemies
                 lasers.forEach(laser => scene.remove(laser));
                 lasers.length = 0;
@@ -2236,19 +2249,19 @@
         lasers.push(laser);
     }
 
-    function spawnEnemy() {
-        if (!abilities.lasers.owned) return;
-
-        const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
-        enemy.position.set(
-            (Math.random() - 0.5) * 12,
-            Math.random() * 5 + 1,
-            -200 - Math.random() * 50
-        );
-        enemy.userData.box = new THREE.Box3();
-        scene.add(enemy);
-        enemies.push(enemy);
-    }
+    // Enemy spawning removed - lasers now destroy buildings/walls instead
+    // function spawnEnemy() {
+    //     if (!abilities.lasers.owned) return;
+    //     const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+    //     enemy.position.set(
+    //         (Math.random() - 0.5) * 12,
+    //         Math.random() * 5 + 1,
+    //         -200 - Math.random() * 50
+    //     );
+    //     enemy.userData.box = new THREE.Box3();
+    //     scene.add(enemy);
+    //     enemies.push(enemy);
+    // }
 
     // --- 6. FLIGHT CONTROLS (STICKY) WITH SWAY PHYSICS ---
     let targetX = 0, targetY = 2.5, curX = 0, curY = 2.5;
@@ -2721,6 +2734,19 @@
 
                 paperMat.color.setRGB(r / 255, g / 255, b / 255);
             }
+        }
+
+        // Check if lasers expired
+        if (lasersActive && Date.now() >= lasersEndTime) {
+            lasersActive = false;
+            canShoot = false;
+            abilities.lasers.owned = false;
+            // Clean up existing lasers
+            lasers.forEach(laser => scene.remove(laser));
+            lasers.length = 0;
+            // Show expiration message
+            crashMessage = 'LASERS EXPIRED';
+            crashMessageTimer = 60;
         }
 
         // Animate distant stars (twinkling effect)
@@ -3318,18 +3344,7 @@
                 }
             }
 
-            // Check for enemies directly in path if no building found
-            if (!targetAhead) {
-                for (let i = 0; i < enemies.length; i++) {
-                    const enemy = enemies[i];
-                    // Target only enemies within 60 units ahead and DIRECTLY in path (±2.5 units)
-                    if (enemy.position.z < 5 && enemy.position.z > -60 &&
-                        Math.abs(enemy.position.x - curX) < 2.5) {
-                        targetAhead = true;
-                        break;
-                    }
-                }
-            }
+            // Enemy targeting removed (enemies no longer spawn)
 
             // Auto-fire if target detected (shootLaser handles fire rate limiting)
             if (targetAhead) {
@@ -3453,71 +3468,8 @@
             if (laserRemoved) break; // Exit laser loop iteration
         }
 
-        // Enemy update logic - optimized backwards loop
-        for (let i = enemies.length - 1; i >= 0; i--) {
-            const enemy = enemies[i];
-            enemy.position.z += speed;
-            enemy.rotation.x += 0.02;
-            enemy.rotation.y += 0.03;
-
-            // Update collision box
-            enemy.userData.box.setFromObject(enemy);
-
-            let enemyRemoved = false;
-
-            // Check collision with plane
-            if (shipBox.intersectsBox(enemy.userData.box)) {
-                scene.remove(enemy);
-                enemies.splice(i, 1);
-                enemyRemoved = true;
-
-                // Invincibility: no damage, just show message
-                if (invincibilityActive) {
-                    crashMessage = `INVINCIBLE!`;
-                    crashMessageTimer = 40;
-                } else {
-                    // Normal collision damage
-                    const pointsLost = 30;
-                    score = Math.max(0, score - pointsLost);
-                    scoreDisplayUI.innerText = `SCORE: ${score}`;
-
-                    collisionFlash = 0.5;
-                    crashMessage = `HIT -${pointsLost}`;
-                    crashMessageTimer = 40;
-                }
-            }
-
-            // Check collision with lasers (only if enemy wasn't already removed)
-            if (!enemyRemoved) {
-                for (let j = lasers.length - 1; j >= 0; j--) {
-                    const laser = lasers[j];
-                    // Reuse tempBox to avoid garbage collection
-                    tempBox.setFromObject(laser);
-                    if (tempBox.intersectsBox(enemy.userData.box)) {
-                        score += 10; // Bonus for destroying enemy
-                        scoreDisplayUI.innerText = `SCORE: ${score}`;
-
-                        scene.remove(enemy);
-                        enemies.splice(i, 1);
-                        scene.remove(laser);
-                        lasers.splice(j, 1);
-                        enemyRemoved = true;
-                        break; // Exit laser loop since enemy is destroyed
-                    }
-                }
-            }
-
-            // Remove if too far (only if enemy wasn't already removed)
-            if (!enemyRemoved && enemy.position.z > 20) {
-                scene.remove(enemy);
-                enemies.splice(i, 1);
-            }
-        }
-
-        // Spawn enemies periodically when laser ability is owned
-        if (abilities.lasers.owned && Math.random() < 0.01 && enemies.length < 5) {
-            spawnEnemy();
-        }
+        // Enemy system removed - lasers now destroy buildings/walls instead
+        // (Enemy update logic commented out)
 
         // Spawn coins randomly in the environment (not too many at once)
         // Don't spawn during boss encounters
@@ -3592,9 +3544,9 @@
             trySpawnShieldPickup();
         }
 
-        // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
+        // Ring spawning before checkpoints - spawn 5 miles before each checkpoint (not during boss)
         const milesUntilCheckpoint = nextCheckpoint - miles;
-        if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0) {
+        if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0 && !bossActive) {
             // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
             const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
@@ -3717,8 +3669,8 @@
             }
         }
 
-        // Spawn rings during ring phase (ONLY ONCE per phase)
-        if (currentPhase === 'rings' && !ringsSpawnedThisPhase) {
+        // Spawn rings during ring phase (ONLY ONCE per phase, not during boss)
+        if (currentPhase === 'rings' && !ringsSpawnedThisPhase && !bossActive) {
             // SHORT ring runs: only 2-3 rings max
             const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
@@ -3795,7 +3747,18 @@
                 boss.visible = false;
                 boss.position.z = -400;
                 bosses.splice(i, 1);
-                bossActive = false; // Re-enable normal spawning
+
+                // Increment defeated counter
+                bossesDefeated++;
+
+                // Spawn next boss if we haven't reached the total
+                if (bossesDefeated < totalBossesPerEncounter) {
+                    // Wait a bit before spawning next boss
+                    setTimeout(() => spawnNextBoss(), 1000);
+                } else {
+                    // All bosses defeated - re-enable normal spawning
+                    bossActive = false;
+                }
             }
         }
 
