@@ -85,10 +85,9 @@
         #play-overlay.hidden { display: none; }
 
         #start-screen-container {
-            border: 3px solid #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.3);
             padding: 50px 40px 30px 40px;
-            background: rgba(0, 20, 20, 0.3);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 30px rgba(0, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.5);
             max-width: 500px;
         }
 
@@ -104,19 +103,15 @@
             letter-spacing: 2px;
         }
         #game-logo .game-title {
-            font-size: 36px;
+            font-size: 28px;
             color: #ffffff;
-            letter-spacing: 6px;
+            letter-spacing: 4px;
             margin-bottom: 10px;
-            font-weight: 900;
-            /* Bitmapped chunky look with simple drop shadow */
-            text-rendering: optimizeSpeed;
-            -webkit-font-smoothing: none;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+            font-weight: bold;
+            /* Cyan drop shadow visible against black background */
             text-shadow:
-                4px 4px 0px #000000,
-                5px 5px 0px rgba(0, 0, 0, 0.5);
+                2px 2px 0px #00ffff,
+                3px 3px 0px rgba(0, 255, 255, 0.5);
         }
         #game-logo .swoosh {
             font-size: 14px;
@@ -464,7 +459,7 @@
             <div id="game-logo">
                 <div class="plane-glyph">✈</div>
                 <div class="game-title">= AIRPLANE GAME =</div>
-                <div class="swoosh">~~~</div>
+                <div class="swoosh">~•—•~</div>
             </div>
             <div id="play-button">PLAY GAME</div>
             <div id="how-to-play-button">HOW TO PLAY</div>
@@ -548,6 +543,7 @@
 </div>
 
 <div style="max-width: 1200px; margin: 20px auto; text-align: center;">
+    <button id="reset-button" style="display: none; background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; margin-right: 10px;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">RESET</button>
     <button id="how-to-play-bottom" style="display: none; background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">HOW TO PLAY</button>
 </div>
 
@@ -2476,9 +2472,12 @@
     const playButton = document.getElementById('play-button');
     const howToPlayButton = document.getElementById('how-to-play-button');
     const howToPlayBottomButton = document.getElementById('how-to-play-bottom');
+    const resetButton = document.getElementById('reset-button');
     const instructionsOverlay = document.getElementById('instructions-overlay');
     const closeInstructionsX = document.getElementById('close-instructions-x');
     let wasPlayingBeforeInstructions = false;
+    let resetHoldTimer = null;
+    let resetHoldProgress = 0;
 
     playButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2486,6 +2485,7 @@
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block'; // Show pause button
         howToPlayBottomButton.style.display = 'inline-block'; // Show bottom How to Play button
+        resetButton.style.display = 'inline-block'; // Show reset button
         phaseStartTime = Date.now(); // Initialize phase timer
         // Initialize health and shield bars
         updateHealthBar();
@@ -2537,6 +2537,55 @@
             animate(); // Resume animation
         }
     });
+
+    // Reset button - hold for 2 seconds to reset
+    const resetButtonOriginalText = 'RESET';
+    let resetHoldStartTime = 0;
+    const resetHoldDuration = 2000; // 2 seconds
+
+    function startResetHold() {
+        resetHoldStartTime = Date.now();
+        resetButton.innerText = 'HOLD...';
+        resetHoldTimer = setInterval(() => {
+            const elapsed = Date.now() - resetHoldStartTime;
+            const progress = Math.min(elapsed / resetHoldDuration, 1);
+
+            if (progress >= 1) {
+                clearInterval(resetHoldTimer);
+                resetGame();
+            } else {
+                // Show progress
+                const dots = '.'.repeat(Math.floor(progress * 3) + 1);
+                resetButton.innerText = `HOLD${dots}`;
+            }
+        }, 100);
+    }
+
+    function cancelResetHold() {
+        if (resetHoldTimer) {
+            clearInterval(resetHoldTimer);
+            resetHoldTimer = null;
+        }
+        resetButton.innerText = resetButtonOriginalText;
+    }
+
+    function resetGame() {
+        // Reload the page to fully reset the game
+        location.reload();
+    }
+
+    resetButton.addEventListener('mousedown', startResetHold);
+    resetButton.addEventListener('mouseup', cancelResetHold);
+    resetButton.addEventListener('mouseleave', cancelResetHold);
+    resetButton.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startResetHold();
+    });
+    resetButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        cancelResetHold();
+    });
+    resetButton.addEventListener('touchcancel', cancelResetHold);
 
     let animationRunning = false;
     let lastFrameTime = 0;
