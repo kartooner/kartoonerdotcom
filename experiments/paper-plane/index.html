@@ -3219,9 +3219,9 @@
         shipGroup.position.set(curX + swayX, curY + bobY + swayY, 3.5);
 
         // Terrain altitude scaling - slight parallax effect for game feel
-        // When plane lifts up, terrain appears slightly smaller (further away)
-        const altitudeOffset = curY - 2.5; // 2.5 is default Y position
-        const terrainScale = 1 - (altitudeOffset * 0.04); // Subtle 4% scale change per unit
+        // Only scale when going UP from default position, smooth from midpoint to max height
+        const altitudeOffset = Math.max(0, curY - 2.5); // Only scale when above default (2.5)
+        const terrainScale = 1 - (altitudeOffset * 0.04); // Subtle 4% scale change per unit upward
         // Only scale X and Y, keep Z at 1.0 to prevent gaps in terrain tiling
         t1.scale.set(terrainScale, terrainScale, 1);
         t2.scale.set(terrainScale, terrainScale, 1);
