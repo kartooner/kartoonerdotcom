@@ -841,8 +841,13 @@
     // Simpler fog for better performance
     scene.fog = new THREE.Fog(0x000000, 15, 45);
 
-    const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 55, container.clientWidth / container.clientHeight, 0.1, 250);
-    camera.position.set(0, 2.5, 8);
+    // Adjust FOV and camera position based on device and orientation
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 55; // Wider FOV for portrait mobile
+    const cameraZ = isMobile && isPortrait ? 10 : 8; // Pull back camera on portrait mobile
+
+    const camera = new THREE.PerspectiveCamera(cameraFOV, container.clientWidth / container.clientHeight, 0.1, 250);
+    camera.position.set(0, 2.5, cameraZ);
 
     const renderer = new THREE.WebGLRenderer({
         antialias: false, // Disabled for crisp 80s aesthetic
@@ -4095,6 +4100,15 @@
 
     // --- PARAMETER EDITOR CONTROLS ---
     window.addEventListener('resize', () => {
+        // Adjust camera for orientation changes
+        const isPortraitNow = window.innerHeight > window.innerWidth;
+        const isMobileNow = window.innerWidth < 768;
+
+        if (isMobileNow) {
+            camera.fov = isPortraitNow ? 85 : 75;
+            camera.position.z = isPortraitNow ? 10 : 8;
+        }
+
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
