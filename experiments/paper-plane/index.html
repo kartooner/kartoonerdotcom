@@ -3387,6 +3387,20 @@
                 // Use lane-based positioning from wave pattern
                 const xPos = lanes[position.lane];
 
+                // Prevent buildings from spawning too close in the same lane
+                const minLaneSpacing = 15; // Minimum Z distance between buildings in same lane
+                for (let j = 0; j < buildings.length; j++) {
+                    const other = buildings[j];
+                    if (other !== b && other.visible && Math.abs(other.position.x - xPos) < 1) {
+                        // Same lane, check Z distance
+                        const zDist = Math.abs(other.position.z - spawnDistance);
+                        if (zDist < minLaneSpacing) {
+                            // Too close, push this building further back
+                            spawnDistance = other.position.z - minLaneSpacing;
+                        }
+                    }
+                }
+
                 b.position.set(
                     xPos,
                     height / 2,
