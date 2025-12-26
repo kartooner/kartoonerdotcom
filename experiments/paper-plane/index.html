@@ -279,20 +279,21 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
-                gap: 20px;
+                grid-template-rows: auto auto auto;
+                gap: 12px;
+                row-gap: 8px;
                 max-width: 700px;
                 padding: 20px 30px;
                 max-height: 95vh;
                 overflow-y: auto;
-                align-items: center;
             }
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
+                align-self: center;
             }
 
             #game-logo .plane-glyph {
@@ -313,17 +314,15 @@
                 margin-bottom: 0;
             }
 
-            /* Button container on right */
+            /* Buttons on right side, stacked vertically */
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: start;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
-                grid-row: 1;
-                align-self: end;
+                grid-row: 2;
             }
 
             #play-button, #how-to-play-button {
@@ -336,9 +335,9 @@
             /* Copyright spans both columns at bottom */
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
                 font-size: 7px;
-                margin-top: 0;
+                margin-top: 4px;
                 line-height: 1.6;
                 text-align: center;
             }
@@ -355,7 +354,7 @@
 
             #checkpoint-subtitle {
                 font-size: 10px !important;
-                margin-bottom: 12px !important;
+                margin-bottom: 10px !important;
             }
 
             #abilities-container {
@@ -548,6 +547,7 @@
             justify-content: center;
             z-index: 150;
             flex-direction: column;
+            padding: 20px;
         }
         #checkpoint-overlay.active { display: flex; }
         #checkpoint-title {
@@ -555,7 +555,7 @@
             font-size: 14px;
             font-weight: normal;
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-align: center;
             line-height: 1.8;
             font-family: 'Press Start 2P', 'Courier New', monospace;
@@ -567,7 +567,7 @@
         #checkpoint-subtitle {
             color: var(--neon);
             font-size: 11px;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             text-align: center;
             opacity: 0.9;
             font-family: 'Press Start 2P', 'Courier New', monospace;
@@ -720,11 +720,11 @@
             /* Checkpoint UI mobile optimizations */
             #checkpoint-title {
                 font-size: 11px !important;
-                margin-bottom: 12px !important;
+                margin-bottom: 8px !important;
             }
             #checkpoint-subtitle {
                 font-size: 9px !important;
-                margin-bottom: 15px !important;
+                margin-bottom: 10px !important;
             }
             #abilities-container {
                 max-height: 50vh !important;
