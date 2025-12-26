@@ -197,27 +197,6 @@
             opacity: 0.7;
             letter-spacing: 1px;
         }
-        #close-instructions {
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid var(--neon);
-            color: var(--neon);
-            font-family: 'Press Start 2P', 'Courier New', monospace;
-            font-size: 12px;
-            letter-spacing: 2px;
-            padding: 12px 30px;
-            cursor: pointer;
-            font-weight: bold;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 151;
-            transition: all 0.3s ease;
-        }
-        #close-instructions:hover {
-            background: rgba(0, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
         #close-instructions-x {
             position: fixed;
             top: 20px;
@@ -472,7 +451,6 @@
                 Printed in USA
             </div>
         </div>
-        <button id="close-instructions">CLOSE</button>
     </div>
     <div id="checkpoint-overlay">
         <div id="checkpoint-title"></div>
@@ -505,7 +483,7 @@
 </div>
 
 <div style="max-width: 1200px; margin: 20px auto; text-align: center;">
-    <button id="how-to-play-bottom" style="background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">HOW TO PLAY</button>
+    <button id="how-to-play-bottom" style="display: none; background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">HOW TO PLAY</button>
 </div>
 
 <script type="importmap">
@@ -2390,7 +2368,6 @@
     const howToPlayButton = document.getElementById('how-to-play-button');
     const howToPlayBottomButton = document.getElementById('how-to-play-bottom');
     const instructionsOverlay = document.getElementById('instructions-overlay');
-    const closeInstructions = document.getElementById('close-instructions');
     const closeInstructionsX = document.getElementById('close-instructions-x');
     let wasPlayingBeforeInstructions = false;
 
@@ -2399,6 +2376,7 @@
         gameStarted = true;
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block'; // Show pause button
+        howToPlayBottomButton.style.display = 'inline-block'; // Show bottom How to Play button
         phaseStartTime = Date.now(); // Initialize phase timer
         // Initialize health and shield bars
         updateHealthBar();
@@ -2440,7 +2418,6 @@
         }
     }
 
-    closeInstructions.addEventListener('click', closeInstructionsHandler);
     closeInstructionsX.addEventListener('click', closeInstructionsHandler);
 
     // Pause button functionality
