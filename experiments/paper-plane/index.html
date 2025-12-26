@@ -504,6 +504,10 @@
     <div id="footer-canvas"></div>
 </div>
 
+<div style="max-width: 1200px; margin: 20px auto; text-align: center;">
+    <button id="how-to-play-bottom" style="background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">HOW TO PLAY</button>
+</div>
+
 <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
@@ -2384,9 +2388,11 @@
     const pauseButton = document.getElementById('pause-button');
     const playButton = document.getElementById('play-button');
     const howToPlayButton = document.getElementById('how-to-play-button');
+    const howToPlayBottomButton = document.getElementById('how-to-play-bottom');
     const instructionsOverlay = document.getElementById('instructions-overlay');
     const closeInstructions = document.getElementById('close-instructions');
     const closeInstructionsX = document.getElementById('close-instructions-x');
+    let wasPlayingBeforeInstructions = false;
 
     playButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2408,15 +2414,34 @@
         instructionsOverlay.classList.add('active');
     });
 
-    closeInstructions.addEventListener('click', () => {
-        instructionsOverlay.classList.remove('active');
-        playOverlay.classList.remove('hidden');
+    // Bottom "How to Play" button (during gameplay)
+    howToPlayBottomButton.addEventListener('click', () => {
+        wasPlayingBeforeInstructions = gameStarted && !isPaused;
+        if (wasPlayingBeforeInstructions) {
+            isPaused = true;
+            pauseButton.innerText = 'RESUME';
+        }
+        instructionsOverlay.classList.add('active');
     });
 
-    closeInstructionsX.addEventListener('click', () => {
+    function closeInstructionsHandler() {
         instructionsOverlay.classList.remove('active');
-        playOverlay.classList.remove('hidden');
-    });
+        if (!gameStarted) {
+            // Game hasn't started yet, show play overlay
+            playOverlay.classList.remove('hidden');
+        } else if (wasPlayingBeforeInstructions) {
+            // Game was playing, resume it
+            isPaused = false;
+            pauseButton.innerText = 'PAUSE';
+            wasPlayingBeforeInstructions = false;
+            if (!animationRunning) {
+                animate();
+            }
+        }
+    }
+
+    closeInstructions.addEventListener('click', closeInstructionsHandler);
+    closeInstructionsX.addEventListener('click', closeInstructionsHandler);
 
     // Pause button functionality
     pauseButton.addEventListener('click', () => {
