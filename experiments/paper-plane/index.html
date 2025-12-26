@@ -2395,15 +2395,18 @@
 
     howToPlayButton.addEventListener('click', (e) => {
         e.stopPropagation();
+        playOverlay.classList.add('hidden');
         instructionsOverlay.classList.add('active');
     });
 
     closeInstructions.addEventListener('click', () => {
         instructionsOverlay.classList.remove('active');
+        playOverlay.classList.remove('hidden');
     });
 
     closeInstructionsX.addEventListener('click', () => {
         instructionsOverlay.classList.remove('active');
+        playOverlay.classList.remove('hidden');
     });
 
     // Pause button functionality
