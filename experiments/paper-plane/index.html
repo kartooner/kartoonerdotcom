@@ -4259,10 +4259,21 @@
     // Don't auto-start - wait for play button
 
     // --- PARAMETER EDITOR CONTROLS ---
+    // Track previous orientation for auto-pause
+    let previousOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+
     window.addEventListener('resize', () => {
         // Adjust camera for orientation changes
         const isPortraitNow = window.innerHeight > window.innerWidth;
         const isMobileNow = window.innerWidth < 768;
+        const currentOrientation = isPortraitNow ? 'portrait' : 'landscape';
+
+        // Auto-pause on orientation change (mobile only)
+        if (isMobileNow && currentOrientation !== previousOrientation && gameStarted && !isPaused) {
+            isPaused = true;
+            pauseButton.innerText = 'RESUME';
+        }
+        previousOrientation = currentOrientation;
 
         if (isMobileNow) {
             camera.fov = isPortraitNow ? 85 : 75;
@@ -4272,6 +4283,11 @@
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
+
+        // Re-render if paused to update display immediately
+        if (isPaused && gameStarted) {
+            renderer.render(scene, camera);
+        }
     });
 </script>
 <script data-goatcounter="https://kartooner.goatcounter.com/count"
