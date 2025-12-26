@@ -160,63 +160,169 @@
             }
         }
 
-        /* Landscape mobile optimizations - take advantage of wider view */
+        /* Tablet landscape optimizations - two column layout */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 30px;
+                max-width: 800px;
+                padding: 30px 40px;
+            }
+
+            #game-logo {
+                grid-column: 1;
+                grid-row: 1;
+                margin-bottom: 0;
+                text-align: center;
+            }
+
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: start;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: end;
+            }
+
+            #play-button, #how-to-play-button {
+                font-size: 15px;
+                letter-spacing: 2px;
+                padding: 14px 20px;
+                margin: 0;
+            }
+
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                font-size: 8px;
+                margin-top: 0;
+                line-height: 1.6;
+                text-align: center;
+            }
+
+            /* Checkpoint UI tablet landscape - two column abilities */
+            #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px !important;
+                max-width: 85% !important;
+                max-height: 60vh !important;
+            }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+        }
+
+        /* Landscape mobile optimizations - two column layout */
         @media (max-width: 896px) and (max-height: 500px) and (orientation: landscape) {
             #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 20px;
                 max-width: 700px;
-                padding: 12px 30px 10px 30px;
+                padding: 20px 30px;
                 max-height: 95vh;
                 overflow-y: auto;
+                align-items: center;
             }
+
             #game-logo {
+                grid-column: 1;
+                grid-row: 1;
+                margin-bottom: 0;
+                text-align: center;
+            }
+
+            #game-logo .plane-glyph {
+                font-size: 18px;
                 margin-bottom: 8px;
             }
-            #game-logo .plane-glyph {
-                font-size: 16px;
-                margin-bottom: 6px;
-            }
+
             #game-logo .game-title {
-                font-size: 20px;
+                font-size: 18px;
                 letter-spacing: 2px;
                 line-height: 1.2;
                 margin-bottom: 0;
             }
+
             #game-logo .swoosh {
                 font-size: 10px;
                 letter-spacing: 6px;
-                margin-bottom: 6px;
-            }
-            #play-button, #how-to-play-button {
-                font-size: 14px;
-                letter-spacing: 2px;
-                padding: 12px 20px;
-                margin: 4px 0;
-            }
-            #copyright-notice {
-                font-size: 8px;
-                margin-top: 12px;
-                line-height: 1.6;
+                margin-bottom: 0;
             }
 
-            /* Checkpoint UI landscape optimizations */
+            /* Button container on right */
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: start;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: end;
+            }
+
+            #play-button, #how-to-play-button {
+                font-size: 13px;
+                letter-spacing: 1px;
+                padding: 12px 16px;
+                margin: 0;
+            }
+
+            /* Copyright spans both columns at bottom */
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                font-size: 7px;
+                margin-top: 0;
+                line-height: 1.6;
+                text-align: center;
+            }
+
+            /* Checkpoint UI landscape optimizations - two column abilities */
+            #checkpoint-overlay {
+                padding: 20px;
+            }
+
             #checkpoint-title {
                 font-size: 12px !important;
                 margin-bottom: 8px !important;
             }
+
             #checkpoint-subtitle {
                 font-size: 10px !important;
-                margin-bottom: 10px !important;
+                margin-bottom: 12px !important;
             }
+
             #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px !important;
                 max-width: 90% !important;
-                max-height: 60vh !important;
-                gap: 6px !important;
+                max-height: 55vh !important;
+                padding: 0 10px !important;
             }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+
             #skip-checkpoint {
-                margin-top: 10px !important;
+                margin-top: 12px !important;
                 padding: 10px 20px !important;
                 font-size: 11px !important;
             }
+
             #checkpoint-warning {
                 font-size: 8px !important;
                 margin-top: 6px !important;
