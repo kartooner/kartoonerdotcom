@@ -84,9 +84,17 @@
         }
         #play-overlay.hidden { display: none; }
 
+        #start-screen-container {
+            border: 3px solid #00ffff;
+            padding: 50px 40px 30px 40px;
+            background: rgba(0, 20, 20, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 30px rgba(0, 255, 255, 0.1);
+            max-width: 500px;
+        }
+
         #game-logo {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 40px;
             font-family: 'Press Start 2P', 'Courier New', monospace;
         }
         #game-logo .plane-glyph {
@@ -96,11 +104,19 @@
             letter-spacing: 2px;
         }
         #game-logo .game-title {
-            font-size: 28px;
-            color: #00ffff;
-            letter-spacing: 4px;
+            font-size: 36px;
+            color: #ffffff;
+            letter-spacing: 6px;
             margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            font-weight: 900;
+            /* Bitmapped chunky look with simple drop shadow */
+            text-rendering: optimizeSpeed;
+            -webkit-font-smoothing: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            text-shadow:
+                4px 4px 0px #000000,
+                5px 5px 0px rgba(0, 0, 0, 0.5);
         }
         #game-logo .swoosh {
             font-size: 14px;
@@ -137,6 +153,17 @@
         #how-to-play-button:hover {
             background: rgba(128, 128, 128, 0.2);
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.3);
+        }
+
+        #copyright-notice {
+            text-align: center;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 10px;
+            color: #00ffff;
+            opacity: 0.5;
+            margin-top: 40px;
+            line-height: 1.8;
+            letter-spacing: 1px;
         }
 
         /* Instructions overlay - Atari manual style */
@@ -433,13 +460,19 @@
 
 <div id="game-container">
     <div id="play-overlay">
-        <div id="game-logo">
-            <div class="plane-glyph">✈</div>
-            <div class="game-title">AIRPLANE GAME</div>
-            <div class="swoosh">~~~</div>
+        <div id="start-screen-container">
+            <div id="game-logo">
+                <div class="plane-glyph">✈</div>
+                <div class="game-title">= AIRPLANE GAME =</div>
+                <div class="swoosh">~~~</div>
+            </div>
+            <div id="play-button">PLAY GAME</div>
+            <div id="how-to-play-button">HOW TO PLAY</div>
+            <div id="copyright-notice">
+                © 1980 Erik Sagen<br>
+                MCMLXXX
+            </div>
         </div>
-        <div id="play-button">PLAY GAME</div>
-        <div id="how-to-play-button">HOW TO PLAY</div>
     </div>
     <div id="instructions-overlay">
         <button id="close-instructions-x">×</button>
@@ -1821,6 +1854,37 @@
             return coin;
         }
         return null;
+    }
+
+    // --- COIN SPARKLE PARTICLES ---
+    const sparkles = [];
+    const sparkleGeometry = new THREE.PlaneGeometry(0.2, 0.2);
+    const sparkleMat = new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        transparent: true,
+        opacity: 1,
+        side: THREE.DoubleSide
+    });
+
+    // Spawn sparkle particles at coin collection
+    function spawnCoinSparkles(x, y, z) {
+        const particleCount = 6; // 6 sparkle particles
+        for (let i = 0; i < particleCount; i++) {
+            const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMat.clone());
+            sparkle.position.set(x, y, z);
+
+            // Random velocity for each particle
+            sparkle.userData.velocity = {
+                x: (Math.random() - 0.5) * 0.15,
+                y: Math.random() * 0.15 + 0.05,
+                z: (Math.random() - 0.5) * 0.15
+            };
+            sparkle.userData.life = 30; // Frames to live
+            sparkle.userData.maxLife = 30;
+
+            scene.add(sparkle);
+            sparkles.push(sparkle);
+        }
     }
 
     // --- CHRISTMAS SNOW (Seasonal: Until Jan 1st) ---
@@ -3311,6 +3375,9 @@
                     coin.userData.collected = true;
                     score += 2; // 2 points per coin - small additive bonus
 
+                    // Spawn sparkle particles at coin position
+                    spawnCoinSparkles(coin.position.x, coin.position.y, coin.position.z);
+
                     // Show bonus in score display
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
                     scoreBonusUI.innerText = `+2`;
@@ -3478,9 +3545,10 @@
             if (coin) {
                 // X position biased toward edges (not obvious center path)
                 // 70% chance for edge positions, 30% chance for center
+                // Adjusted to be less extreme for easier collection
                 const coinX = Math.random() < 0.7
-                    ? (Math.random() < 0.5 ? -9 + Math.random() * 3 : 6 + Math.random() * 3) // Edges: -9 to -6 or 6 to 9
-                    : (Math.random() - 0.5) * 8; // Center: -4 to 4
+                    ? (Math.random() < 0.5 ? -7 + Math.random() * 3 : 4 + Math.random() * 3) // Edges: -7 to -4 or 4 to 7
+                    : (Math.random() - 0.5) * 6; // Center: -3 to 3
 
                 // More varied Y heights - very low, low, high, very high
                 const heightRoll = Math.random();
@@ -3795,6 +3863,37 @@
             mainMesh.material.opacity = pulse;
             wireMesh.material.opacity = pulse;
             shadowMesh.material.opacity = pulse * 0.3;
+        }
+
+        // Update sparkle particles
+        for (let i = sparkles.length - 1; i >= 0; i--) {
+            const sparkle = sparkles[i];
+            sparkle.userData.life--;
+
+            // Move sparkle with velocity
+            sparkle.position.x += sparkle.userData.velocity.x;
+            sparkle.position.y += sparkle.userData.velocity.y;
+            sparkle.position.z += sparkle.userData.velocity.z;
+
+            // Move forward with world
+            sparkle.position.z += speed;
+
+            // Fade out based on life remaining
+            const lifeRatio = sparkle.userData.life / sparkle.userData.maxLife;
+            sparkle.material.opacity = lifeRatio;
+
+            // Scale down as it fades
+            const scale = 0.5 + (lifeRatio * 0.5);
+            sparkle.scale.set(scale, scale, scale);
+
+            // Billboard effect - always face camera
+            sparkle.lookAt(camera.position);
+
+            // Remove if life expired
+            if (sparkle.userData.life <= 0) {
+                scene.remove(sparkle);
+                sparkles.splice(i, 1);
+            }
         }
 
         // Message timers
