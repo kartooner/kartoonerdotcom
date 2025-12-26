@@ -68,7 +68,7 @@
 
         .ui-overlay {
             position: absolute;
-            top: 20px;
+            top: 50px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -259,7 +259,7 @@
                 border: none; /* Remove border on mobile */
             }
             .ui-overlay {
-                top: 12px;
+                top: 40px;
                 font-size: 10px;
                 letter-spacing: 0.5px;
                 line-height: 1.4;
@@ -273,6 +273,24 @@
             #level-text {
                 font-size: 9px !important;
             }
+            #health-bar {
+                font-size: 11px !important;
+                margin-top: 6px !important;
+                letter-spacing: 2px !important;
+            }
+            #shield-bar {
+                font-size: 8px !important;
+                margin-top: 3px !important;
+                letter-spacing: 1px !important;
+            }
+            #pause-button {
+                font-size: 11px !important;
+                padding: 8px 16px !important;
+                top: 40px !important;
+            }
+            #score-container {
+                top: 40px !important;
+            }
             .spacer h1 { font-size: 1.5rem; }
             .spacer p { font-size: 0.9rem; padding: 0 20px; }
             #param-editor {
@@ -280,10 +298,6 @@
             }
             #toggle-params {
                 display: none !important; /* Hide params button on mobile */
-            }
-            #pause-button {
-                font-size: 11px !important;
-                padding: 8px 16px !important;
             }
         }
     </style>
@@ -304,21 +318,19 @@
     <div class="ui-overlay">
         <span id="score-text">0 ----- 0mi</span><br>
         <span id="high-score" style="font-size: 11px; opacity: 0.7;">BEST: 0mi</span><br>
-        <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span>
+        <span id="level-text" style="font-size: 12px; opacity: 0.8;">LEVEL 1</span><br>
+        <div id="health-bar" style="font-size: 14px; margin-top: 8px; letter-spacing: 3px;">♥ ♥ ♥ ♥</div>
+        <div id="shield-bar" style="font-size: 10px; margin-top: 4px; letter-spacing: 2px; opacity: 0.9;">[ | | ]</div>
     </div>
-    <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
+    <div style="position: absolute; top: 50px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
     </div>
-    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
+    <div id="score-container" style="position: absolute; top: 50px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
         <span id="score-display">SCORE: 0</span><br>
         <span id="score-bonus" style="font-size: 9px; opacity: 0; transition: opacity 0.3s;">+0</span>
     </div>
     <div class="horizon-glow"></div>
     <div id="footer-canvas"></div>
-</div>
-
-<div class="spacer">
-    <p>END OF TRANSMISSION</p>
 </div>
 
 <script type="importmap">
@@ -350,6 +362,8 @@
     const scoreUI = document.getElementById('score-text');
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
+    const healthBarUI = document.getElementById('health-bar');
+    const shieldBarUI = document.getElementById('shield-bar');
     const scoreDisplayUI = document.getElementById('score-display');
     const scoreBonusUI = document.getElementById('score-bonus');
 
@@ -375,7 +389,11 @@
     let previousGracePeriodActive = false; // Track state changes to avoid unnecessary material updates
     let shieldActive = true;
     let shieldHits = 0;
-    const maxShieldHits = 3;
+    const maxShieldHits = 2;
+
+    // Health system
+    let currentHealth = 4;
+    const maxHealth = 4;
 
     // Upgrade loss system (risk/reward mechanic)
     let buildingHitsSinceUpgrade = 0;
@@ -757,6 +775,35 @@
             pos.setZ(i, h);
         }
         pos.needsUpdate = true;
+    }
+
+    // Function to update health bar display
+    function updateHealthBar() {
+        const hearts = [];
+        for (let i = 0; i < maxHealth; i++) {
+            if (i < currentHealth) {
+                hearts.push('♥');
+            } else {
+                hearts.push('♡'); // Empty heart
+            }
+        }
+        healthBarUI.innerText = hearts.join(' ');
+    }
+
+    // Function to update shield bar display
+    function updateShieldBar() {
+        if (!shieldActive) {
+            shieldBarUI.style.opacity = '0';
+        } else {
+            shieldBarUI.style.opacity = '0.9';
+            if (shieldHits === 0) {
+                shieldBarUI.innerText = '[ | | ]';
+            } else if (shieldHits === 1) {
+                shieldBarUI.innerText = '[ | ]';
+            } else {
+                shieldBarUI.innerText = '[ ]';
+            }
+        }
     }
 
     // Initial terrain setup
@@ -1483,7 +1530,48 @@
             ring.userData.collectTime = 0;
             return ring;
         }
+
+    // --- SHIELD PICKUPS (GREEN CAPSULES) ---
+    const shieldPickups = [];
+    const shieldPickupPool = [];
+    const capsuleGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+    const capsuleMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.7 });
+
+    // Pre-create shield pickup pool (3 pickups)
+    for (let i = 0; i < 3; i++) {
+        const pickup = new THREE.Mesh(capsuleGeometry, capsuleMat);
+        pickup.userData.collected = false;
+        pickup.visible = false;
+        pickup.position.z = -1000;
+        scene.add(pickup);
+        shieldPickupPool.push(pickup);
+    }
+
+    // Get shield pickup from pool
+    function getShieldPickupFromPool() {
+        const pickup = shieldPickupPool.find(p => !p.visible);
+        if (pickup) {
+            pickup.visible = true;
+            pickup.userData.collected = false;
+            return pickup;
+        }
         return null;
+    }
+
+    // Spawn shield pickup if conditions are met
+    function trySpawnShieldPickup() {
+        // Only spawn if player doesn't have full shields (has lost some or all shield)
+        if ((!shieldActive || shieldHits >= 1) && shieldPickups.length === 0) {
+            const pickup = getShieldPickupFromPool();
+            if (pickup) {
+                pickup.position.set(
+                    (Math.random() - 0.5) * 10,
+                    Math.random() * 3 + 2,
+                    -120
+                );
+                shieldPickups.push(pickup);
+            }
+        }
     }
 
     // Phase system for balancing building dodging and ring collection
@@ -2106,6 +2194,9 @@
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block'; // Show pause button
         phaseStartTime = Date.now(); // Initialize phase timer
+        // Initialize health and shield bars
+        updateHealthBar();
+        updateShieldBar();
         if (!animationRunning) {
             animate();
         }
@@ -2661,41 +2752,42 @@
                             // Normal collision damage
                             collisionFlash = 0.5;
 
-                            // Shield mechanic: first hits damage shield, not points
+                            // Shield mechanic: first hits damage shield, not health
                             if (shieldActive && shieldHits < maxShieldHits) {
                                 shieldHits++;
+                                updateShieldBar();
                                 crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
                                 crashMessageTimer = 50;
 
                                 if (shieldHits >= maxShieldHits) {
                                     shieldActive = false;
+                                    updateShieldBar();
                                     crashMessage = `SHIELD DOWN!`;
                                 }
-                            } else {
-                                // Shield down - lose points
-                                const pointsLost = 25; // Reduced from 50
-                                score = Math.max(0, score - pointsLost);
-                                scoreDisplayUI.innerText = `SCORE: ${score}`;
-
-                                crashMessage = `BONK -${pointsLost}`;
+                            } else if (currentHealth > 0) {
+                                // Shield down - lose health
+                                currentHealth--;
+                                updateHealthBar();
+                                crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                 crashMessageTimer = 60;
-                            }
 
-                            // Upgrade loss system: track building hits
-                            if (hasActiveUpgrades) {
-                                buildingHitsSinceUpgrade++;
+                                // After health is depleted, lose points and upgrades
+                                if (currentHealth === 0) {
+                                    const pointsLost = 5;
+                                    score = Math.max(0, score - pointsLost);
+                                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+                                    crashMessage = `BONK -${pointsLost}`;
 
-                                if (buildingHitsSinceUpgrade >= hitsUntilUpgradeLoss) {
-                                    // Remove most recent upgrade
-                                    const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
-                                    if (lostUpgrade) {
+                                    // Lose an upgrade if available
+                                    if (hasActiveUpgrades && activeUpgrades.length > 0) {
+                                        const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
                                         removeUpgrade(lostUpgrade);
-                                        // Reset counter for next upgrade
-                                        buildingHitsSinceUpgrade = 0;
-                                        if (activeUpgrades.length > 0) {
-                                            hitsUntilUpgradeLoss = Math.floor(Math.random() * 2) + 3; // New random 3-4
-                                        }
+                                        crashMessage = `LOST UPGRADE -${pointsLost}`;
                                     }
+
+                                    // Replenish health after losing upgrade
+                                    currentHealth = maxHealth;
+                                    updateHealthBar();
                                 }
                             }
                         }
@@ -2786,21 +2878,43 @@
                             // Normal collision damage
                             collisionFlash = 0.5;
 
-                            // Apply damage (same as building collision)
+                            // Shield mechanic: first hits damage shield, not health
                             if (shieldActive && shieldHits < maxShieldHits) {
                                 shieldHits++;
+                                updateShieldBar();
                                 crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
                                 crashMessageTimer = 50;
 
                                 if (shieldHits >= maxShieldHits) {
                                     shieldActive = false;
+                                    updateShieldBar();
                                     crashMessage = `SHIELD DOWN!`;
                                 }
-                            } else {
-                                // Shield down - lose points
-                                score = Math.max(0, score - 15);
-                                crashMessage = `-15 POINTS`;
+                            } else if (currentHealth > 0) {
+                                // Shield down - lose health
+                                currentHealth--;
+                                updateHealthBar();
+                                crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                 crashMessageTimer = 50;
+
+                                // After health is depleted, lose points and upgrades
+                                if (currentHealth === 0) {
+                                    const pointsLost = 5;
+                                    score = Math.max(0, score - pointsLost);
+                                    scoreDisplayUI.innerText = `SCORE: ${score}`;
+                                    crashMessage = `BONK -${pointsLost}`;
+
+                                    // Lose an upgrade if available
+                                    if (hasActiveUpgrades && activeUpgrades.length > 0) {
+                                        const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                        removeUpgrade(lostUpgrade);
+                                        crashMessage = `LOST UPGRADE -${pointsLost}`;
+                                    }
+
+                                    // Replenish health after losing upgrade
+                                    currentHealth = maxHealth;
+                                    updateHealthBar();
+                                }
                             }
                         }
                     }
@@ -2848,6 +2962,44 @@
                 ring.position.z = -1000;
                 ring.material = ringMat; // Reset to green
                 rings.splice(i, 1);
+            }
+        }
+
+        // Shield pickup collection logic
+        for (let i = shieldPickups.length - 1; i >= 0; i--) {
+            const pickup = shieldPickups[i];
+
+            // Move pickup forward
+            pickup.position.z += speed;
+
+            if (!pickup.userData.collected) {
+                // Rotate pickup for visual effect
+                pickup.rotation.y += 0.03;
+                pickup.rotation.x += 0.02;
+
+                // Check if plane collects pickup
+                const dx = pickup.position.x - curX;
+                const dy = pickup.position.y - curY;
+                const dz = pickup.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const collectRadiusSq = 2 * 2;
+
+                if (distSq < collectRadiusSq) {
+                    pickup.userData.collected = true;
+                    // Restore shield
+                    shieldActive = true;
+                    shieldHits = 0;
+                    updateShieldBar();
+                    crashMessage = 'SHIELD RESTORED!';
+                    crashMessageTimer = 60;
+                }
+            }
+
+            // Return to pool if too far or collected
+            if (pickup.position.z > 20 || pickup.userData.collected) {
+                pickup.visible = false;
+                pickup.position.z = -1000;
+                shieldPickups.splice(i, 1);
             }
         }
 
@@ -3187,6 +3339,11 @@
         const currentMiles = Math.floor(miles);
         if (currentMiles >= 150 && (currentMiles === 150 || (currentMiles - 150) % 100 === 0) && bosses.length === 0) {
             spawnBoss();
+        }
+
+        // Try to spawn shield pickup periodically if player needs it
+        if (Math.random() < 0.01) { // 1% chance per frame when conditions are met
+            trySpawnShieldPickup();
         }
 
         // Ring spawning before checkpoints - spawn 5 miles before each checkpoint
