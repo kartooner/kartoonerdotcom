@@ -206,7 +206,6 @@
                 display: grid !important;
                 grid-template-columns: 1fr 1fr;
                 gap: 10px !important;
-                max-width: 700px !important;
             }
 
             #abilities-container .ability-button {
@@ -265,7 +264,6 @@
                 display: grid !important;
                 grid-template-columns: 1fr 1fr;
                 gap: 10px !important;
-                max-width: 85% !important;
                 max-height: 60vh !important;
             }
 
@@ -344,7 +342,7 @@
 
             /* Checkpoint UI landscape optimizations - two column abilities */
             #checkpoint-overlay {
-                padding: 10px 20px;
+                padding: 10px 5% !important;
             }
 
             #checkpoint-title {
@@ -361,9 +359,7 @@
                 display: grid !important;
                 grid-template-columns: 1fr 1fr;
                 gap: 8px !important;
-                max-width: 90% !important;
                 max-height: 55vh !important;
-                padding: 0 !important;
             }
 
             #abilities-container .ability-button {
@@ -547,7 +543,7 @@
             justify-content: center;
             z-index: 150;
             flex-direction: column;
-            padding: 20px;
+            padding: 20px 5%;
         }
         #checkpoint-overlay.active { display: flex; }
         #checkpoint-title {
@@ -577,7 +573,7 @@
             flex-direction: column;
             gap: 8px;
             max-width: 700px;
-            width: 90%;
+            width: 100%;
             padding: 0;
             max-height: 60vh;
             overflow-y: auto;
@@ -718,6 +714,9 @@
             }
 
             /* Checkpoint UI mobile optimizations */
+            #checkpoint-overlay {
+                padding: 15px 5% !important;
+            }
             #checkpoint-title {
                 font-size: 11px !important;
                 margin-bottom: 8px !important;
@@ -729,7 +728,6 @@
             #abilities-container {
                 max-height: 50vh !important;
                 gap: 6px !important;
-                padding: 0 !important;
             }
             .ability-card {
                 padding: 10px !important;
