@@ -8,6 +8,10 @@ let wasPlayingBeforeInstructions = false;
 // Track previous orientation for auto-pause
 let previousOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
 
+// Track last dimensions for resize optimization
+let lastWidth = window.innerWidth;
+let lastHeight = window.innerHeight;
+
 // Last updated values for change detection (optimization)
 let lastScore = null;
 let lastHighScore = null;
@@ -109,10 +113,21 @@ export function initUI(callbacks) {
         closeCheckpointUI(onCheckpointSkip);
     });
 
-    // Resize handler
+    // Resize handler with dimension change detection
     window.addEventListener('resize', () => {
-        const isPortraitNow = window.innerHeight > window.innerWidth;
-        const isMobileNow = window.innerWidth < 768;
+        const currentWidth = window.innerWidth;
+        const currentHeight = window.innerHeight;
+
+        // Skip if dimensions haven't actually changed
+        if (currentWidth === lastWidth && currentHeight === lastHeight) {
+            return;
+        }
+
+        lastWidth = currentWidth;
+        lastHeight = currentHeight;
+
+        const isPortraitNow = currentHeight > currentWidth;
+        const isMobileNow = currentWidth < 768;
         const currentOrientation = isPortraitNow ? 'portrait' : 'landscape';
 
         // Auto-pause on orientation change (mobile only)

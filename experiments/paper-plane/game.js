@@ -144,8 +144,8 @@
         depth: true // Keep depth buffer for 3D rendering
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    // Edge-optimized pixel ratio: lower for better performance
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isEdge ? 1 : (isMobile ? 1.25 : 1.5)));
+    // Clamp pixel ratio to max 2 for mobile performance
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     // Optimization: ensure efficient clearing
     renderer.autoClear = true;
     renderer.autoClearColor = true;
@@ -1857,10 +1857,11 @@
     // Ring boost - temporary speed boost when flying through rings
     let ringBoost = 0; // Multiplier that decays over time
 
-    // Reusable Vector3 and Box3 objects to avoid garbage collection
+    // Reusable Vector3, Box3, and Color objects to avoid garbage collection
     const tempVec3_1 = new THREE.Vector3();
     const tempVec3_2 = new THREE.Vector3();
     const tempBox = new THREE.Box3();
+    const tempColor = new THREE.Color();
 
     // Set initial colors once
     renderer.setClearColor(0x000000, 1);
@@ -2491,6 +2492,18 @@
 
             // Only check collision if building is visible
             if(b.visible && b.position.z < 15) {
+                // Broad-phase culling: distance check before expensive Box3 operations
+                const dx = b.position.x - curX;
+                const dy = b.position.y - curY;
+                const dz = b.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const maxCollisionDistSq = 100; // ~10 units squared
+
+                // Skip if too far away for collision
+                if (distSq > maxCollisionDistSq) {
+                    return;
+                }
+
                 b.userData.box.setFromObject(b);
 
                 // Make collision more forgiving - shrink all building hitboxes
@@ -2645,6 +2658,18 @@
 
             // Only check collision when wall is close
             if (wall.position.z > -20 && wall.position.z < 15) {
+                // Broad-phase culling: distance check before expensive Box3 operations
+                const dx = wall.position.x - curX;
+                const dy = wall.position.y - curY;
+                const dz = wall.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const maxCollisionDistSq = 100; // ~10 units squared
+
+                // Skip if too far away for collision
+                if (distSq > maxCollisionDistSq) {
+                    continue;
+                }
+
                 wall.userData.box.setFromObject(wall);
 
                 // Forgiving hitbox - shrink by 15%
@@ -2920,10 +2945,7 @@
             for (let j = buildings.length - 1; j >= 0; j--) {
                 const building = buildings[j];
 
-                // Update building collision box
-                if (!building.userData.box) {
-                    building.userData.box = new THREE.Box3();
-                }
+                // Update building collision box (pre-created during initialization)
                 building.userData.box.setFromObject(building);
 
                 // Check laser-building collision using tempBox
@@ -2970,10 +2992,7 @@
             for (let j = walls.length - 1; j >= 0; j--) {
                 const wall = walls[j];
 
-                // Update wall collision box
-                if (!wall.userData.box) {
-                    wall.userData.box = new THREE.Box3();
-                }
+                // Update wall collision box (pre-created during initialization)
                 wall.userData.box.setFromObject(wall);
 
                 // Check laser-wall collision using tempBox
@@ -3271,7 +3290,15 @@
 
             // Check collision with player
             if (boss.position.z > -50 && boss.position.z < 15) {
-                if (shipBox.intersectsBox(boss.userData.box)) {
+                // Broad-phase culling: distance check before expensive Box3 operations
+                const dx = boss.position.x - curX;
+                const dy = boss.position.y - curY;
+                const dz = boss.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const maxCollisionDistSq = 100; // ~10 units squared
+
+                // Only check Box3 intersection if within range
+                if (distSq <= maxCollisionDistSq && shipBox.intersectsBox(boss.userData.box)) {
                     // Check grace period and invincibility
                     if (!gracePeriodActive && !invincibilityActive) {
                         collisionFlash = 0.5;
@@ -3391,8 +3418,9 @@
                 terrainMat.color.setHex(0x00ffff);
                 wireMat.color.setHex(0x00ffff);
             } else {
-                // Still flashing
-                renderer.setClearColor(new THREE.Color(collisionFlash * 0.4, 0, 0), 1);
+                // Still flashing - use reusable color object
+                tempColor.setRGB(collisionFlash * 0.4, 0, 0);
+                renderer.setClearColor(tempColor, 1);
                 terrainMat.color.setHex(0xff0033);
                 wireMat.color.setHex(0xff0033);
                 shipGroup.position.x += (Math.random() - 0.5) * collisionFlash * 0.3;
