@@ -1474,6 +1474,59 @@
         return null;
     }
 
+    // --- WIND GUSTS (SPEED BOOSTS) ---
+    const windGusts = [];
+    const windGustPool = [];
+
+    // Create wind gust visual - @ symbol / snail shell spiral pattern
+    function createWindGustGeometry() {
+        const group = new THREE.Group();
+        const gustColor = 0xbbbbbb; // Off-grey
+
+        // Create 3 staggered circular lines (@ symbol / snail shell pattern)
+        for (let i = 0; i < 3; i++) {
+            const radius = 2.0 + (i * 0.4);
+            const ringGeom = new THREE.TorusGeometry(radius, 0.12, 4, 20);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: gustColor,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.65 - (i * 0.1)
+            });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            // Offset each ring slightly to create spiral/@ effect
+            ring.position.z = i * 0.3;
+            ring.userData.rotationOffset = i * 0.3;
+            group.add(ring);
+        }
+
+        group.userData.animationTime = 0;
+        return group;
+    }
+
+    // Pre-create wind gust pool (2 gusts - rare)
+    for (let i = 0; i < 2; i++) {
+        const gust = createWindGustGeometry();
+        gust.userData.collected = false;
+        gust.userData.originalScale = { x: 1, y: 1, z: 1 };
+        gust.visible = false;
+        gust.position.z = -1000;
+        scene.add(gust);
+        windGustPool.push(gust);
+    }
+
+    // Get wind gust from pool
+    function getWindGustFromPool() {
+        const gust = windGustPool.find(g => !g.visible);
+        if (gust) {
+            gust.visible = true;
+            gust.userData.collected = false;
+            gust.userData.collectTime = 0;
+            return gust;
+        }
+        return null;
+    }
+
     // Spawn shield pickup if conditions are met
     function trySpawnShieldPickup() {
         // Only spawn if player owns shields AND doesn't have full shields (has lost some or all shield)
@@ -3150,6 +3203,58 @@
             }
         }
 
+        // Wind gust collection and animation logic
+        for (let i = windGusts.length - 1; i >= 0; i--) {
+            const gust = windGusts[i];
+
+            // Move gust forward
+            gust.position.z += speed;
+
+            if (!gust.userData.collected) {
+                // Animate wind gust - @ symbol unfurling away from camera
+                gust.userData.animationTime += 0.03;
+                gust.children.forEach((ring, idx) => {
+                    // Rotate each ring at different speeds for spiral effect
+                    const rotationSpeed = 0.025 + (idx * 0.01);
+                    ring.rotation.z += rotationSpeed;
+
+                    // Expanding/unfurling effect - rings expand outward and fade
+                    const unfurlPhase = (gust.userData.animationTime + (idx * 0.5)) % 3;
+                    const expansion = 0.8 + (unfurlPhase * 0.15); // Gradually expand
+                    ring.scale.set(expansion, expansion, 1);
+
+                    // Fade as they unfurl outward
+                    ring.material.opacity = Math.max(0.2, 0.65 - (unfurlPhase * 0.15) - (idx * 0.1));
+                });
+
+                // Check if plane flies through gust
+                const dx = gust.position.x - curX;
+                const dy = gust.position.y - curY;
+                const dz = gust.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const collectRadiusSq = 3 * 3;
+
+                if (distSq < collectRadiusSq) {
+                    gust.userData.collected = true;
+                    gust.userData.collectTime = Date.now();
+
+                    // WIND BOOST - zoom ahead!
+                    ringBoost = Math.max(ringBoost, 1.5); // Strong speed boost!
+
+                    crashMessage = 'WIND BOOST!';
+                    crashMessageTimer = 45;
+                }
+            }
+
+            // Return to pool if too far or collected
+            if (gust.position.z > 20 || (gust.userData.collected && Date.now() - gust.userData.collectTime > 150)) {
+                gust.visible = false;
+                gust.position.z = -1000;
+                gust.userData.animationTime = 0;
+                windGusts.splice(i, 1);
+            }
+        }
+
         // Coin collection logic - optimized backwards loop
         for (let i = coins.length - 1; i >= 0; i--) {
             const coin = coins[i];
@@ -3412,6 +3517,29 @@
         // Try to spawn shield pickup periodically if player needs it
         if (Math.random() < 0.01) { // 1% chance per frame when conditions are met
             trySpawnShieldPickup();
+        }
+
+        // Try to spawn wind gusts during breather/ring moments (rare)
+        const isBreatherMoment = currentPhase === 'rings' ||
+            currentPhase === 'breather_before_rings' ||
+            currentPhase === 'breather_after_rings';
+
+        if (isBreatherMoment && windGusts.length === 0 && Math.random() < 0.003) {
+            // Occasionally spawn 2-3 in a row (30% chance), otherwise just 1
+            const gustCount = Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1; // 30% chance for 2-3, otherwise 1
+
+            for (let i = 0; i < gustCount; i++) {
+                const gust = getWindGustFromPool();
+                if (gust) {
+                    // Spawn in safe lane, mid-height, spaced apart
+                    gust.position.set(
+                        (Math.random() - 0.5) * 6, // Center lanes
+                        Math.random() * 2 + 2.5,   // Mid-height
+                        -120 - (i * 60)             // Spaced 60 units apart
+                    );
+                    windGusts.push(gust);
+                }
+            }
         }
 
         // Ring spawning before checkpoints - spawn 5 miles before each checkpoint (not during boss)
