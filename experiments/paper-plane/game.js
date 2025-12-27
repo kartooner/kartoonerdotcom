@@ -792,6 +792,116 @@
         }
     }
 
+    // --- 4.7. TREE PROPS (BILLBOARD SPRITES) ---
+    // Simple billboard trees for visual interest, no collision
+    const trees = [];
+    const treeCount = 15; // Sparse placement for visual variety
+
+    // Create simple tree sprite material using canvas
+    function createTreeSprite() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 48;
+        const ctx = canvas.getContext('2d');
+
+        // Draw simple tree silhouette (triangle + trunk)
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+
+        // Trunk
+        ctx.beginPath();
+        ctx.moveTo(14, 40);
+        ctx.lineTo(14, 48);
+        ctx.moveTo(18, 40);
+        ctx.lineTo(18, 48);
+        ctx.stroke();
+
+        // Foliage (triangle)
+        ctx.beginPath();
+        ctx.moveTo(16, 8);
+        ctx.lineTo(6, 40);
+        ctx.lineTo(26, 40);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Inner detail
+        ctx.beginPath();
+        ctx.moveTo(16, 16);
+        ctx.lineTo(10, 30);
+        ctx.moveTo(16, 16);
+        ctx.lineTo(22, 30);
+        ctx.stroke();
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0.6
+        });
+        return material;
+    }
+
+    const treeMat = createTreeSprite();
+
+    // Helper to check if position is clear of buildings and debris
+    function isTreePositionClear(x, z) {
+        const minDistFromDebris = 3;
+        const minDistFromBuildings = 8;
+
+        // Check against debris
+        for (let rock of debris) {
+            const dx = rock.position.x - x;
+            const dz = rock.position.z - z;
+            if (Math.sqrt(dx * dx + dz * dz) < minDistFromDebris) {
+                return false;
+            }
+        }
+
+        // Check against buildings (if any exist yet)
+        if (typeof buildings !== 'undefined') {
+            for (let building of buildings) {
+                if (!building.visible) continue;
+                const dx = building.position.x - x;
+                const dz = building.position.z - z;
+                if (Math.sqrt(dx * dx + dz * dz) < minDistFromBuildings) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // Spawn trees with collision avoidance
+    for (let i = 0; i < treeCount; i++) {
+        let attempts = 0;
+        let x, z;
+
+        // Try to find clear position (max 10 attempts)
+        do {
+            x = (Math.random() - 0.5) * 70; // Stay within terrain bounds
+            z = (Math.random() - 0.5) * 180; // Spread along depth
+            attempts++;
+        } while (!isTreePositionClear(x, z) && attempts < 10);
+
+        // Skip if no clear position found
+        if (attempts >= 10) continue;
+
+        const tree = new THREE.Sprite(treeMat.clone());
+        tree.position.x = x;
+        tree.position.y = 1.2; // Height above ground
+        tree.position.z = z;
+
+        // Random scale for variety
+        const scale = Math.random() * 0.8 + 0.8; // 0.8 to 1.6
+        tree.scale.set(scale, scale * 1.5, 1); // Taller than wide
+
+        tree.userData.baseZ = z; // Store for scrolling
+
+        scene.add(tree);
+        trees.push(tree);
+    }
+
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
     const distantStars = [];
@@ -2124,6 +2234,17 @@
             if (rock.position.z > 20) {
                 rock.position.z = rock.userData.baseZ - 200;
                 rock.position.x = (Math.random() - 0.5) * 80;
+            }
+        });
+
+        // Animate trees (scroll with terrain, billboards always face camera)
+        trees.forEach(tree => {
+            tree.position.z += speed;
+
+            // Reset tree when it passes camera
+            if (tree.position.z > 20) {
+                tree.position.z = tree.userData.baseZ - 200;
+                tree.position.x = (Math.random() - 0.5) * 70;
             }
         });
 
