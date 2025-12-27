@@ -795,56 +795,48 @@
     // --- 4.7. TREE PROPS (BILLBOARD SPRITES) ---
     // Simple billboard trees for visual interest, no collision
     const trees = [];
-
-    /* TEMPORARILY DISABLED FOR DEBUGGING
-
     const treeCount = 15; // Sparse placement for visual variety
 
-    // Create simple tree sprite material using canvas
-    function createTreeSprite() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 32;
-        canvas.height = 48;
-        const ctx = canvas.getContext('2d');
+    // Create simple tree sprite texture using canvas (shared by all trees)
+    const treeCanvas = document.createElement('canvas');
+    treeCanvas.width = 32;
+    treeCanvas.height = 48;
+    const treeCtx = treeCanvas.getContext('2d');
 
-        // Draw simple tree silhouette (triangle + trunk)
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 2;
+    // Draw simple tree silhouette (triangle + trunk)
+    treeCtx.strokeStyle = '#00ffff';
+    treeCtx.lineWidth = 2;
 
-        // Trunk
-        ctx.beginPath();
-        ctx.moveTo(14, 40);
-        ctx.lineTo(14, 48);
-        ctx.moveTo(18, 40);
-        ctx.lineTo(18, 48);
-        ctx.stroke();
+    // Trunk
+    treeCtx.beginPath();
+    treeCtx.moveTo(14, 40);
+    treeCtx.lineTo(14, 48);
+    treeCtx.moveTo(18, 40);
+    treeCtx.lineTo(18, 48);
+    treeCtx.stroke();
 
-        // Foliage (triangle)
-        ctx.beginPath();
-        ctx.moveTo(16, 8);
-        ctx.lineTo(6, 40);
-        ctx.lineTo(26, 40);
-        ctx.closePath();
-        ctx.stroke();
+    // Foliage (triangle)
+    treeCtx.beginPath();
+    treeCtx.moveTo(16, 8);
+    treeCtx.lineTo(6, 40);
+    treeCtx.lineTo(26, 40);
+    treeCtx.closePath();
+    treeCtx.stroke();
 
-        // Inner detail
-        ctx.beginPath();
-        ctx.moveTo(16, 16);
-        ctx.lineTo(10, 30);
-        ctx.moveTo(16, 16);
-        ctx.lineTo(22, 30);
-        ctx.stroke();
+    // Inner detail
+    treeCtx.beginPath();
+    treeCtx.moveTo(16, 16);
+    treeCtx.lineTo(10, 30);
+    treeCtx.moveTo(16, 16);
+    treeCtx.lineTo(22, 30);
+    treeCtx.stroke();
 
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            opacity: 0.6
-        });
-        return material;
-    }
-
-    const treeMat = createTreeSprite();
+    const treeTexture = new THREE.CanvasTexture(treeCanvas);
+    const treeMat = new THREE.SpriteMaterial({
+        map: treeTexture,
+        transparent: true,
+        opacity: 0.6
+    });
 
     // Helper to check if position is clear of buildings and debris
     function isTreePositionClear(x, z) {
@@ -890,7 +882,7 @@
         // Skip if no clear position found
         if (attempts >= 10) continue;
 
-        const tree = new THREE.Sprite(treeMat.clone());
+        const tree = new THREE.Sprite(treeMat);
         tree.position.x = x;
         tree.position.y = 1.2; // Height above ground
         tree.position.z = z;
@@ -904,7 +896,6 @@
         scene.add(tree);
         trees.push(tree);
     }
-    */
 
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
@@ -2242,7 +2233,6 @@
         });
 
         // Animate trees (scroll with terrain, billboards always face camera)
-        /* TEMPORARILY DISABLED
         trees.forEach(tree => {
             tree.position.z += speed;
 
@@ -2252,7 +2242,6 @@
                 tree.position.x = (Math.random() - 0.5) * 70;
             }
         });
-        */
 
         // Update collision debris with physics (iterate backwards to safely remove)
         for (let i = collisionDebris.length - 1; i >= 0; i--) {
