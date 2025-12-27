@@ -424,7 +424,7 @@
 
     // --- 2. MOUNTAIN VALLEY (RANDOMIZED EACH LOAD) ---
     // Reduced segments for better performance across all browsers
-    const terrainSegments = isMobile ? 25 : (isEdge ? 28 : 30);
+    const terrainSegments = isMobile ? 25 : 28;
     const terrainGeom = new THREE.PlaneGeometry(100, 120, terrainSegments, terrainSegments);
     const pos = terrainGeom.attributes.position;
 
@@ -476,8 +476,8 @@
     scene.add(t1, t2);
 
     // --- 3. ANIMATED PARTICLES (STARS) ---
-    // Increased for more visual depth while maintaining performance
-    const particleCount = isMobile ? 200 : (isEdge ? 250 : 350);
+    // Optimized for better performance while maintaining visual depth
+    const particleCount = isMobile ? 200 : 300;
     const particleGeom = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleVelocities = [];
@@ -506,7 +506,7 @@
     // --- 4. GROUND DEBRIS (ROCKS & SMALL OBJECTS) ---
     // Small decorative debris on the terrain for visual interest
     const debris = [];
-    const debrisCount = isMobile ? 25 : 40; // Fewer on mobile for performance
+    const debrisCount = isMobile ? 25 : 35; // Optimized for performance
     const debrisMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.3 });
     const debrisGeometries = [
         new THREE.BoxGeometry(0.3, 0.3, 0.3),           // Small cube
@@ -545,7 +545,7 @@
     // Reuses existing ground debris geometries for performance
     const collisionDebris = [];
     const collisionDebrisPool = [];
-    const collisionDebrisCount = isMobile ? 25 : 40; // Pool of debris chunks (reuse ground debris count)
+    const collisionDebrisCount = isMobile ? 25 : 35; // Pool of debris chunks (reuse ground debris count)
 
     // Pre-create collision debris pool using existing debris geometries for performance
     for (let i = 0; i < collisionDebrisCount; i++) {
@@ -778,7 +778,7 @@
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
     const distantStars = [];
-    const starCount = isMobile ? 30 : 50;
+    const starCount = isMobile ? 30 : 40;
     const starMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
     const starGeometry = new THREE.SphereGeometry(0.5, 4, 3); // Small low-poly sphere
 
@@ -1639,7 +1639,7 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                baseSpeed = isMobile ? 0.825 : 1.2;
+                baseSpeed = isMobile ? 0.825 : 1.0;
                 break;
             case 'randomColor':
                 const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
@@ -1847,12 +1847,12 @@
         endInteraction();
     }, { passive: false });
 
-    // KEYBOARD CONTROLS
+    // KEYBOARD CONTROLS (Arrow keys + WASD)
     window.addEventListener('keydown', e => {
-        if (e.key === 'ArrowLeft') keys.left = true;
-        if (e.key === 'ArrowRight') keys.right = true;
-        if (e.key === 'ArrowUp') keys.up = true;
-        if (e.key === 'ArrowDown') keys.down = true;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = true;
+        if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = true;
+        if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.up = true;
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = true;
         if (e.key === ' ') {
             e.preventDefault();
             if (abilities.lasers.owned) {
@@ -1868,10 +1868,10 @@
     });
 
     window.addEventListener('keyup', e => {
-        if (e.key === 'ArrowLeft') keys.left = false;
-        if (e.key === 'ArrowRight') keys.right = false;
-        if (e.key === 'ArrowUp') keys.up = false;
-        if (e.key === 'ArrowDown') keys.down = false;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = false;
+        if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
+        if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.up = false;
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = false;
         if (e.key === ' ') speedBoostActive = false;
     });
 
@@ -2057,7 +2057,7 @@
         const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
 
         // Keyboard controls with deltaTime for smooth frame-rate independent movement
-        const keyboardSpeed = 0.3 * deltaTime;
+        const keyboardSpeed = 0.5 * deltaTime;
         if (keys.left) targetX -= keyboardSpeed;
         if (keys.right) targetX += keyboardSpeed;
         if (keys.up) targetY += keyboardSpeed * 0.67;
