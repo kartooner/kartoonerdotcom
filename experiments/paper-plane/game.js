@@ -143,7 +143,7 @@
     const scene = new THREE.Scene();
     // Simpler fog for better performance
     // Dark CRT green background so ground shadow is visible
-    const bgColor = 0x001a00; // Very dark green
+    const bgColor = 0x000f00; // Very dark green (nearly black)
     scene.background = new THREE.Color(bgColor);
     scene.fog = new THREE.Fog(bgColor, 15, 45);
 
@@ -186,9 +186,9 @@
     // Plane type tracking
     let currentPlaneType = 'dart';
     let planeStats = {
-        dart: { smoothing: 0.10, barrelRollSpeed: 0.025 },    // Increased for smoother keyboard control
-        glider: { smoothing: 0.15, barrelRollSpeed: 0.020 },  // Increased for smoother keyboard control
-        stunt: { smoothing: 0.08, barrelRollSpeed: 0.035 }    // Increased for smoother keyboard control
+        dart: { smoothing: 0.10, barrelRollSpeed: 0.025, shadowSize: 0.7 },    // Compact, small shadow
+        glider: { smoothing: 0.15, barrelRollSpeed: 0.020, shadowSize: 1.0 },  // Large wingspan, bigger shadow
+        stunt: { smoothing: 0.08, barrelRollSpeed: 0.035, shadowSize: 0.8 }    // Medium size
     };
 
     // Create different plane geometries
@@ -427,7 +427,7 @@
 
     // --- GROUND SHADOW (CHEAP BLOB) ---
     // Simple circular shadow for depth perception
-    const groundShadowGeom = new THREE.CircleGeometry(1.5, 16);
+    const groundShadowGeom = new THREE.CircleGeometry(0.8, 16);
     const groundShadowMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
@@ -2379,8 +2379,10 @@
         // Update ground shadow position, scale, and opacity based on altitude
         groundShadow.position.x = curX + swayX;
         groundShadow.position.z = 3.5;
-        // Scale: smaller when higher, larger when lower (altitude range: 0.5 to 5.5)
-        const shadowScale = 1.5 - ((curY - 0.5) * 0.2); // Shrinks as plane goes up
+        // Scale: proportional to plane type, smaller when higher, larger when lower (altitude range: 0.5 to 5.5)
+        const baseShadowSize = planeStats[currentPlaneType].shadowSize;
+        const altitudeScale = 1.5 - ((curY - 0.5) * 0.2); // Shrinks as plane goes up
+        const shadowScale = baseShadowSize * altitudeScale;
         groundShadow.scale.set(shadowScale, shadowScale, 1);
         // Opacity: fade out when higher (max 0.4 at ground level, min 0.1 at max altitude)
         groundShadowMat.opacity = Math.max(0.1, 0.5 - ((curY - 0.5) * 0.08));
