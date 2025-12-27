@@ -795,6 +795,9 @@
     // --- 4.7. TREE PROPS (BILLBOARD SPRITES) ---
     // Simple billboard trees for visual interest, no collision
     const trees = [];
+
+    /* TEMPORARILY DISABLED FOR DEBUGGING
+
     const treeCount = 15; // Sparse placement for visual variety
 
     // Create simple tree sprite material using canvas
@@ -901,6 +904,7 @@
         scene.add(tree);
         trees.push(tree);
     }
+    */
 
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
@@ -2238,6 +2242,7 @@
         });
 
         // Animate trees (scroll with terrain, billboards always face camera)
+        /* TEMPORARILY DISABLED
         trees.forEach(tree => {
             tree.position.z += speed;
 
@@ -2247,6 +2252,7 @@
                 tree.position.x = (Math.random() - 0.5) * 70;
             }
         });
+        */
 
         // Update collision debris with physics (iterate backwards to safely remove)
         for (let i = collisionDebris.length - 1; i >= 0; i--) {
