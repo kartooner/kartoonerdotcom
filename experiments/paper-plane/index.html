@@ -23,10 +23,14 @@
         :root { --bg: #050505; --neon: #00ffff; --teal: #00ced1; }
         body {
             margin: 0;
+            padding: 0;
             background: var(--bg);
             color: white;
             font-family: 'Press Start 2P', 'Courier New', monospace;
-            overflow-x: hidden;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -34,21 +38,40 @@
             -ms-touch-action: none;
         }
 
-        /* Spacer to allow scrolling into the experience */
-        .spacer { height: 40vh; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        /* Force consistent scrollbar behavior across browsers */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            scrollbar-gutter: stable;
+        }
+
+        /* Spacer removed - game now fills viewport immediately */
+        .spacer { display: none; }
+
+        /* Hide content outside game container (but not scripts) */
+        #game-container ~ div {
+            display: none !important;
+        }
 
         #game-container {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 1200px; /* 16:9 container on desktop */
-            height: 80vh;
-            max-height: 675px; /* 16:9 ratio at max-width */
-            margin: 0 auto; /* Center on desktop */
+            height: 100%;
+            margin: 0;
             background: #000;
             overflow: hidden;
             touch-action: none;
             cursor: crosshair;
-            border: 1px solid rgba(0, 255, 255, 0.3); /* Subtle border for desktop */
 
             /* Mobile GPU acceleration */
             -webkit-transform: translate3d(0, 0, 0);
@@ -56,6 +79,20 @@
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             will-change: transform;
+        }
+
+        /* Full screen optimizations - expand to fill viewport */
+        #game-container:fullscreen,
+        #game-container:-webkit-full-screen,
+        #game-container:-moz-full-screen,
+        #game-container:-ms-fullscreen {
+            max-width: 100vw;
+            max-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            /* Enhanced GPU acceleration for full screen */
+            will-change: transform, opacity;
         }
 
         .horizon-glow {
@@ -87,7 +124,8 @@
         #start-screen-container {
             border: 2px solid rgba(0, 255, 255, 0.3);
             padding: 40px 30px 25px 30px;
-            max-width: 400px;
+            max-width: 90vw;
+            max-height: 90vh;
             /* Dark green CRT scanline effect background */
             background:
                 repeating-linear-gradient(
@@ -134,7 +172,8 @@
         /* Mobile scaling */
         @media (max-width: 768px) {
             #start-screen-container {
-                max-width: 320px;
+                max-width: 90vw;
+                max-height: 85vh;
                 padding: 30px 20px 20px 20px;
             }
             #game-logo .plane-glyph {
@@ -152,7 +191,7 @@
                 font-size: 13px;
                 letter-spacing: 1px;
                 padding: 14px 16px;
-                margin: 6px 0;
+                margin: 7.5px 0;
             }
             #copyright-notice {
                 font-size: 8px;
@@ -165,45 +204,46 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
+                grid-template-rows: auto auto auto auto;
                 gap: 30px;
-                max-width: 600px;
+                row-gap: 0px;
+                max-width: 80vw;
+                max-height: 70vh;
                 padding: 30px 40px;
             }
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
+                align-self: center;
             }
 
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: start;
+                align-self: center;
+                margin-bottom: 7.5px;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
-                grid-row: 1;
-                align-self: end;
-            }
-
-            #play-button, #how-to-play-button {
-                margin: 0;
+                grid-row: 2;
+                align-self: center;
+                margin-top: 7.5px;
             }
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
                 margin-top: 0;
                 text-align: center;
             }
 
             #fullscreen-hint {
                 grid-column: 1 / -1;
-                grid-row: 3;
+                grid-row: 4;
                 margin-top: 0;
             }
 
@@ -231,8 +271,9 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto auto auto;
                 gap: 30px;
-                row-gap: 12px;
-                max-width: 800px;
+                row-gap: 0px;
+                max-width: 85vw;
+                max-height: 75vh;
                 padding: 30px 40px;
             }
 
@@ -247,20 +288,21 @@
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: end;
+                align-self: center;
+                margin-bottom: 7.5px;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
                 grid-row: 2;
-                align-self: start;
+                align-self: center;
+                margin-top: 7.5px;
             }
 
             #play-button, #how-to-play-button {
                 font-size: 15px;
                 letter-spacing: 2px;
                 padding: 14px 20px;
-                margin: 0;
             }
 
             #copyright-notice {
@@ -303,10 +345,10 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto auto auto;
                 gap: 12px;
-                row-gap: 8px;
-                max-width: 700px;
+                row-gap: 0px;
+                max-width: 90vw;
                 padding: 20px 30px;
-                max-height: 95vh;
+                max-height: 85vh;
                 overflow-y: auto;
             }
 
@@ -464,34 +506,35 @@
             background: #1a1a1a;
             display: none;
             z-index: 150;
-            overflow: hidden;
-        }
-        #instructions-overlay.active { display: block; }
-        #instructions-container {
-            max-width: 700px;
-            height: 100%;
-            margin: 0 auto;
-            padding: 40px 30px 120px 30px;
             overflow-y: auto;
             overflow-x: hidden;
+            padding: 40px 5% 200px 5%;
+            box-sizing: border-box;
+        }
+        #instructions-overlay.active { display: block; }
+        #instructions-overlay::-webkit-scrollbar {
+            width: 12px !important;
+            background: transparent;
+        }
+        #instructions-overlay::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid #00ffff;
+        }
+        #instructions-overlay::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border: 1px solid #000;
+        }
+        #instructions-overlay::-webkit-scrollbar-thumb:hover {
+            background: #00cccc;
+        }
+        #instructions-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 0;
             color: #00ffff;
             font-family: 'Press Start 2P', 'Courier New', monospace;
             line-height: 2;
             font-size: 10px;
-        }
-        #instructions-container::-webkit-scrollbar {
-            width: 12px;
-        }
-        #instructions-container::-webkit-scrollbar-track {
-            background: #000;
-            border: 1px solid #00ffff;
-        }
-        #instructions-container::-webkit-scrollbar-thumb {
-            background: #00ffff;
-            border: 1px solid #000;
-        }
-        #instructions-container::-webkit-scrollbar-thumb:hover {
-            background: #00cccc;
         }
         #instructions-container h1 {
             font-size: 18px;
@@ -704,13 +747,13 @@
 
         /* Mobile optimizations */
         @media (max-width: 768px) {
-            .spacer { height: 20vh; }
-            .spacer h1 { display: none; } /* Hide binary text on mobile (iOS treats as phone number) */
             #game-container {
-                height: 85vh; /* Slightly smaller for performance */
-                max-width: 100%;
-                max-height: none;
-                border: none; /* Remove border on mobile */
+                height: 100vh;
+                width: 100vw;
+            }
+            /* Hide fullscreen hint on mobile (no F key) */
+            #fullscreen-hint-game {
+                display: none !important;
             }
             #score-text {
                 font-size: 8px !important;

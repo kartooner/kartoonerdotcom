@@ -159,14 +159,15 @@
         antialias: false, // Disabled for crisp 80s aesthetic
         alpha: true,
         powerPreference: 'high-performance', // Request high-performance GPU
-        precision: 'highp', // High precision for mobile GPUs (iOS/Android)
+        precision: isEdge ? 'mediump' : 'highp', // Lower precision for Edge performance
         preserveDrawingBuffer: false, // Better mobile performance
         stencil: false, // Disable stencil buffer for mobile performance
         depth: true // Keep depth buffer for 3D rendering
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    // Clamp pixel ratio to max 2 for mobile performance
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Clamp pixel ratio - lower for Edge, max 2 for mobile
+    const maxPixelRatio = isEdge ? 1.5 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     // Optimization: ensure efficient clearing
     renderer.autoClear = true;
     renderer.autoClearColor = true;
@@ -901,22 +902,44 @@
     */ // END TREE CODE
 
     // --- 5. DISTANT BACKGROUND STARS ---
-    // Large, distant stars for atmospheric depth
+    // Distant stars for atmospheric depth - what you're flying towards
     const distantStars = [];
-    const starCount = 30;
-    const starMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
-    const starGeometry = new THREE.SphereGeometry(0.5, 4, 3); // Small low-poly sphere
+    const starCount = 150; // More stars for better visibility
 
     for (let i = 0; i < starCount; i++) {
-        const star = new THREE.Mesh(starGeometry, starMat.clone());
+        // Subtle mix of colors - cyan, white, light blue, pink (rare)
+        const rand = Math.random();
+        let starColor;
+        if (rand < 0.50) {
+            starColor = 0x00ffff; // Cyan (50%)
+        } else if (rand < 0.85) {
+            starColor = 0xffffff; // White (35%)
+        } else if (rand < 0.95) {
+            starColor = 0x88ccff; // Light blue (10%)
+        } else {
+            starColor = 0xffaacc; // Pink (5% - rare)
+        }
 
-        // Position far in the background
-        star.position.x = (Math.random() - 0.5) * 300;
-        star.position.y = Math.random() * 100 + 20; // High in the sky
-        star.position.z = -Math.random() * 200 - 100; // Far behind
+        const starMat = new THREE.MeshBasicMaterial({
+            color: starColor,
+            transparent: true,
+            opacity: 0.8, // Brighter base
+            fog: false // Prevent fog from hiding stars
+        });
 
-        // Random opacity for twinkling effect
-        star.material.opacity = Math.random() * 0.4 + 0.3; // 0.3 to 0.7
+        // Tiny period-sized stars
+        const starSize = Math.random() * 0.08 + 0.08; // 0.08 to 0.16 - period sized
+        const starGeometry = new THREE.SphereGeometry(starSize, 6, 4);
+        const star = new THREE.Mesh(starGeometry, starMat);
+
+        // Position far ahead in the distance (what you're flying towards)
+        // Only in top half of viewport to avoid clipping through landscape
+        star.position.x = (Math.random() - 0.5) * 600; // Very wide spread
+        star.position.y = Math.random() * 80 + 50; // Top half only (y: 50 to 130)
+        star.position.z = -Math.random() * 180 - 20; // Far ahead (z: -20 to -200)
+
+        // Twinkling effect
+        star.userData.baseOpacity = Math.random() * 0.3 + 0.5; // 0.5 to 0.8
         star.userData.twinkleSpeed = Math.random() * 0.02 + 0.01;
         star.userData.twinkleOffset = Math.random() * Math.PI * 2;
 
@@ -1470,7 +1493,7 @@
     // Phase system for balancing building dodging and ring collection
     let currentPhase = 'buildings'; // 'buildings', 'rings', or 'walls'
     let phaseStartTime = 0;
-    let phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes in milliseconds
+    let phaseDuration = 15000 + Math.random() * 10000; // 15-25 seconds - varied breather moments
     let phaseAlternator = false; // Toggle between rings and second building run
     let ringsSpawnedThisPhase = false; // Track if rings have been spawned for current ring phase
     let wallsSpawnedThisPhase = false; // Track if walls have been spawned for current wall phase
@@ -2099,6 +2122,12 @@
             purchaseAbility(abilityKey);
         },
         onResize: (isPortraitNow, isMobileNow) => {
+            // Detect full screen mode
+            const isFullscreen = !!(document.fullscreenElement ||
+                                   document.webkitFullscreenElement ||
+                                   document.mozFullScreenElement ||
+                                   document.msFullscreenElement);
+
             if (isMobileNow) {
                 camera.fov = isPortraitNow ? 85 : 75;
                 camera.position.z = isPortraitNow ? 10 : 8;
@@ -2106,6 +2135,18 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
+
+            // Full screen optimizations - Edge gets lower pixel ratio for better performance
+            let pixelRatio;
+            if (isEdge) {
+                pixelRatio = isFullscreen ? 1.25 : 1.5;
+            } else {
+                pixelRatio = isFullscreen ? 1.5 : 2;
+            }
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio));
+
+            // Performance optimization: Hide plane shadow in full screen mode
+            shadowMesh.visible = !isFullscreen;
 
             const uiState = uiControls.getGameState();
             if (uiState.isPaused && uiState.gameStarted) {
@@ -2429,10 +2470,16 @@
             crashMessageTimer = 60;
         }
 
-        // Animate distant stars (twinkling effect)
+        // Animate distant stars (twinkling effect + subtle altitude brightness)
         distantStars.forEach(star => {
             const twinkle = Math.sin(time * star.userData.twinkleSpeed + star.userData.twinkleOffset);
-            star.material.opacity = 0.3 + (twinkle * 0.2); // Subtle twinkle between 0.1 and 0.5
+            const baseOpacity = star.userData.baseOpacity || 0.8;
+
+            // Subtle altitude effect: stars get slightly brighter when climbing
+            // curY ranges roughly 0.5 to 8, normalize to subtle 0.85-1.1 multiplier
+            const altitudeFactor = 0.85 + ((curY - 0.5) / 7.5) * 0.25; // 0.85 to 1.1 - subtle
+
+            star.material.opacity = (baseOpacity + (twinkle * 0.2)) * altitudeFactor;
         });
 
         // Controls with momentum (varies by plane type)
@@ -2560,13 +2607,16 @@
             currentPhase === 'walls';
 
         buildings.forEach(b => {
-            // During breather phases, skip all building logic to avoid stutters
+            // During breather phases, only hide buildings that haven't spawned yet (far back)
+            // Let already-visible buildings pass naturally to avoid jarring disappearance
             if (isBreatherPhase) {
-                if (b.visible) {
-                    b.visible = false; // Hide once, then skip
-                    b.position.z = -500; // Move far back once
+                if (b.position.z < -50) {
+                    // Only hide buildings that are far back (not yet spawned)
+                    b.visible = false;
+                    b.position.z = -500; // Keep them far back
+                    return; // Skip rest of logic for unspawned buildings
                 }
-                return; // Skip rest of building logic during breathers
+                // Let visible/spawned buildings continue their natural movement
             }
 
             b.position.z += speed;
@@ -3478,7 +3528,7 @@
                     // After breather, go back to buildings (rings now tied to checkpoints)
                     currentPhase = 'buildings';
                     phaseStartTime = currentTime;
-                    phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes for next building phase
+                    phaseDuration = 15000 + Math.random() * 10000; // 15-25 seconds - varied breather moments
                 }
             } else if (currentPhase === 'breather_after_rings') {
                 // After rings breather, ALWAYS spawn walls (100% frequency after building sections)

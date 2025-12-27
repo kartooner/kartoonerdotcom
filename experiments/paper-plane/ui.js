@@ -65,7 +65,7 @@ export function initUI(callbacks) {
         gameStarted = true;
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block';
-        howToPlayBottomButton.style.display = 'inline-block';
+        // How to Play is only accessible from start screen
         onPlayClick();
     });
 
@@ -171,15 +171,28 @@ export function initUI(callbacks) {
     // Listen for fullscreen change events (to sync state if user exits with ESC)
     document.addEventListener('fullscreenchange', () => {
         isFullscreen = !!document.fullscreenElement;
+        // Trigger resize to apply full screen optimizations
+        setTimeout(() => {
+            onResize(window.innerHeight > window.innerWidth, window.innerWidth < 768);
+        }, 100);
     });
     document.addEventListener('webkitfullscreenchange', () => {
         isFullscreen = !!document.webkitFullscreenElement;
+        setTimeout(() => {
+            onResize(window.innerHeight > window.innerWidth, window.innerWidth < 768);
+        }, 100);
     });
     document.addEventListener('mozfullscreenchange', () => {
         isFullscreen = !!document.mozFullScreenElement;
+        setTimeout(() => {
+            onResize(window.innerHeight > window.innerWidth, window.innerWidth < 768);
+        }, 100);
     });
     document.addEventListener('msfullscreenchange', () => {
         isFullscreen = !!document.msFullscreenElement;
+        setTimeout(() => {
+            onResize(window.innerHeight > window.innerWidth, window.innerWidth < 768);
+        }, 100);
     });
 
     // Show brief feedback message
