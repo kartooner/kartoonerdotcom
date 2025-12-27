@@ -849,6 +849,41 @@
         return availableLanes[Math.floor(seededRandom() * availableLanes.length)];
     }
 
+    // Check if building position has minimum X separation from other buildings
+    function hasMinimumSeparation(xPos, zPos, buildingWidth, excludeBuilding = null) {
+        const minXSeparation = 3; // Minimum horizontal distance between building edges
+        const laneSpacing = 4;
+
+        for (let i = 0; i < buildings.length; i++) {
+            const other = buildings[i];
+            if (other === excludeBuilding || !other.visible) continue;
+
+            // Calculate building bounds accounting for scale and width
+            const otherWidth = other.userData.width || 1;
+            const otherScaleX = other.scale.x;
+            const thisScaleX = buildingWidth * 1.5; // Approximate scale (will be set properly later)
+
+            // Calculate X extents (accounting for geometry size and scale)
+            const thisHalfWidth = (buildingWidth * laneSpacing / 2) + (thisScaleX * 1);
+            const otherHalfWidth = (otherWidth * laneSpacing / 2) + (otherScaleX * 1);
+
+            const thisMinX = xPos - thisHalfWidth;
+            const thisMaxX = xPos + thisHalfWidth;
+            const otherMinX = other.position.x - otherHalfWidth;
+            const otherMaxX = other.position.x + otherHalfWidth;
+
+            // Check if X ranges overlap or are too close
+            const xOverlap = thisMaxX + minXSeparation > otherMinX && thisMinX - minXSeparation < otherMaxX;
+
+            // Only check separation if Z positions are close (within spawn proximity)
+            const zDist = Math.abs(other.position.z - zPos);
+            if (xOverlap && zDist < 50) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Wave tracking
     let currentWave = null;
     let currentWavePositions = null; // Cache wave positions
@@ -1134,8 +1169,26 @@
     for(let i=0; i<5; i++) {
         const b = createBuilding();
 
-        // Use lane-based positioning
-        const lanePosition = getRandomLane();
+        // Use lane-based positioning with separation checking
+        let lanePosition;
+        let validPosition = false;
+        const zPos = -150 - (i*70);
+        const buildingWidth = b.userData.width || 1;
+
+        // Try up to 8 times to find valid position
+        for (let attempt = 0; attempt < 8; attempt++) {
+            lanePosition = getRandomLane();
+            if (hasMinimumSeparation(lanePosition, zPos, buildingWidth, b)) {
+                validPosition = true;
+                break;
+            }
+        }
+
+        // Skip spawn if no valid position found
+        if (!validPosition) {
+            // Don't add this building
+            continue;
+        }
 
         // ConeGeometry (pyramids) has base at origin, others are centered
         const isPyramid = b.userData.geometry === pyramidGeometry;
@@ -1143,7 +1196,7 @@
         b.position.set(
             lanePosition,
             baseY,
-            -150 - (i*70) // Even further back, even more spacing
+            zPos
         );
         b.userData.originalY = baseY; // Store original Y for parallax scaling
 
@@ -2443,8 +2496,31 @@
                 // Progressive difficulty: buildings spawn closer as level increases
                 let spawnDistance = nextWaveDistance + position.offset;
 
-                // Use lane-based positioning from wave pattern
-                const xPos = lanes[position.lane];
+                // Use lane-based positioning from wave pattern with retry logic
+                let xPos;
+                let validPosition = false;
+                const maxAttempts = 8;
+
+                // Try to find valid X position (with minimum separation)
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    // For first attempt, use wave pattern lane; for retries, try random lanes
+                    const tryLane = attempt === 0 ? position.lane : Math.floor(seededRandom() * lanes.length);
+                    xPos = lanes[tryLane];
+
+                    // Check minimum X separation
+                    if (hasMinimumSeparation(xPos, spawnDistance, buildingWidth, b)) {
+                        validPosition = true;
+                        break;
+                    }
+                }
+
+                // Skip spawn if no valid position found
+                if (!validPosition) {
+                    b.position.z = -500;
+                    b.visible = false;
+                    waveProgress++;
+                    return;
+                }
 
                 // Prevent buildings from spawning too close in overlapping lanes
                 const minLaneSpacing = 15; // Minimum Z distance between buildings in same lane
