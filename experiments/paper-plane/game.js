@@ -1639,7 +1639,7 @@
     function applyAbilityEffect(abilityKey) {
         switch(abilityKey) {
             case 'thrusters':
-                baseSpeed = isMobile ? 0.825 : 1.2;
+                baseSpeed = isMobile ? 0.825 : 1.0;
                 break;
             case 'randomColor':
                 const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
@@ -1847,12 +1847,12 @@
         endInteraction();
     }, { passive: false });
 
-    // KEYBOARD CONTROLS
+    // KEYBOARD CONTROLS (Arrow keys + WASD)
     window.addEventListener('keydown', e => {
-        if (e.key === 'ArrowLeft') keys.left = true;
-        if (e.key === 'ArrowRight') keys.right = true;
-        if (e.key === 'ArrowUp') keys.up = true;
-        if (e.key === 'ArrowDown') keys.down = true;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = true;
+        if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = true;
+        if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.up = true;
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = true;
         if (e.key === ' ') {
             e.preventDefault();
             if (abilities.lasers.owned) {
@@ -1868,10 +1868,10 @@
     });
 
     window.addEventListener('keyup', e => {
-        if (e.key === 'ArrowLeft') keys.left = false;
-        if (e.key === 'ArrowRight') keys.right = false;
-        if (e.key === 'ArrowUp') keys.up = false;
-        if (e.key === 'ArrowDown') keys.down = false;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = false;
+        if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
+        if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') keys.up = false;
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = false;
         if (e.key === ' ') speedBoostActive = false;
     });
 
@@ -2057,7 +2057,7 @@
         const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
 
         // Keyboard controls with deltaTime for smooth frame-rate independent movement
-        const keyboardSpeed = 0.3 * deltaTime;
+        const keyboardSpeed = 0.5 * deltaTime;
         if (keys.left) targetX -= keyboardSpeed;
         if (keys.right) targetX += keyboardSpeed;
         if (keys.up) targetY += keyboardSpeed * 0.67;
