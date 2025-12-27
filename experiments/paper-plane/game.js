@@ -143,7 +143,7 @@
     const scene = new THREE.Scene();
     // Simpler fog for better performance
     // Dark CRT green background so ground shadow is visible
-    const bgColor = 0x001a00; // Very dark green
+    const bgColor = 0x000f00; // Very dark green (nearly black)
     scene.background = new THREE.Color(bgColor);
     scene.fog = new THREE.Fog(bgColor, 15, 45);
 
@@ -427,7 +427,7 @@
 
     // --- GROUND SHADOW (CHEAP BLOB) ---
     // Simple circular shadow for depth perception
-    const groundShadowGeom = new THREE.CircleGeometry(1.5, 16);
+    const groundShadowGeom = new THREE.CircleGeometry(0.8, 16);
     const groundShadowMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
