@@ -1843,8 +1843,9 @@
                 speedBoostActive = true;
             }
         }
-        if (e.key.toLowerCase() === 'f' && abilities.lasers.owned) {
-            shootLaser();
+        if (e.key.toLowerCase() === 'f') {
+            e.preventDefault();
+            uiControls.toggleFullscreen();
         }
     });
 

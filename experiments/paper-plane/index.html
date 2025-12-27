@@ -165,38 +165,46 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
+                grid-template-rows: auto auto auto;
                 gap: 30px;
+                row-gap: 12px;
                 max-width: 600px;
                 padding: 30px 40px;
             }
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
+                align-self: center;
             }
 
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: start;
+                align-self: end;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
-                grid-row: 1;
+                grid-row: 2;
+                align-self: center;
+            }
+
+            #start-screen-container > #fullscreen-button-start {
+                grid-column: 2;
+                grid-row: 2;
                 align-self: end;
             }
 
-            #play-button, #how-to-play-button {
+            #play-button, #how-to-play-button, #fullscreen-button-start {
                 margin: 0;
             }
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
                 margin-top: 0;
                 text-align: center;
             }
@@ -223,7 +231,7 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
+                grid-template-rows: auto auto auto auto;
                 gap: 30px;
                 row-gap: 12px;
                 max-width: 800px;
@@ -232,7 +240,7 @@
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1 / 3;
+                grid-row: 1 / 4;
                 margin-bottom: 0;
                 text-align: center;
                 align-self: center;
@@ -247,10 +255,16 @@
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
                 grid-row: 2;
+                align-self: center;
+            }
+
+            #start-screen-container > #fullscreen-button-start {
+                grid-column: 2;
+                grid-row: 3;
                 align-self: start;
             }
 
-            #play-button, #how-to-play-button {
+            #play-button, #how-to-play-button, #fullscreen-button-start {
                 font-size: 15px;
                 letter-spacing: 2px;
                 padding: 14px 20px;
@@ -259,7 +273,7 @@
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 3;
+                grid-row: 4;
                 font-size: 8px;
                 margin-top: 0;
                 line-height: 1.6;
@@ -289,9 +303,9 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
+                grid-template-rows: auto auto auto auto;
                 gap: 12px;
-                row-gap: 8px;
+                row-gap: 6px;
                 max-width: 700px;
                 padding: 20px 30px;
                 max-height: 95vh;
@@ -300,7 +314,7 @@
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1 / 3;
+                grid-row: 1 / 4;
                 margin-bottom: 0;
                 text-align: center;
                 align-self: center;
@@ -335,7 +349,12 @@
                 grid-row: 2;
             }
 
-            #play-button, #how-to-play-button {
+            #start-screen-container > #fullscreen-button-start {
+                grid-column: 2;
+                grid-row: 3;
+            }
+
+            #play-button, #how-to-play-button, #fullscreen-button-start {
                 font-size: 13px;
                 letter-spacing: 1px;
                 padding: 12px 16px;
@@ -345,7 +364,7 @@
             /* Copyright spans both columns at bottom */
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 3;
+                grid-row: 4;
                 font-size: 7px;
                 margin-top: 4px;
                 line-height: 1.6;
@@ -394,7 +413,7 @@
                 margin-top: 6px !important;
             }
         }
-        #play-button, #how-to-play-button {
+        #play-button, #how-to-play-button, #fullscreen-button-start {
             font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 16px;
             letter-spacing: 2px;
@@ -417,12 +436,12 @@
             background: rgba(0, 20, 20, 0.2);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
-        #how-to-play-button {
+        #how-to-play-button, #fullscreen-button-start {
             background: rgba(128, 128, 128, 0.1);
             border: 2px solid #888888;
             color: #888888;
         }
-        #how-to-play-button:hover {
+        #how-to-play-button:hover, #fullscreen-button-start:hover {
             background: rgba(128, 128, 128, 0.2);
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.3);
         }
@@ -790,6 +809,7 @@
             </div>
             <div id="play-button">PLAY GAME</div>
             <div id="how-to-play-button">HOW TO PLAY</div>
+            <div id="fullscreen-button-start" style="display: none;">FULL SCREEN</div>
             <div id="copyright-notice">
                 © 1980 Erik Sagen<br>
                 MCMLXXX
@@ -819,6 +839,9 @@
             <p><strong>Tablet/Mobile:</strong> Touch and drag your finger to steer. Tap to shoot lasers (if you bought them). Double-tap for barrel roll (if you bought it).</p>
 
             <p><strong>How It Flies:</strong> Your plane moves smoothly like a real plane. It has weight, so it drifts a little. Don't turn too hard or you might crash!</p>
+
+            <h2>DISPLAY</h2>
+            <p><strong>Full screen (Desktop):</strong> Press F to toggle full screen mode. You can also use the FULL SCREEN button on the title screen or pause menu.</p>
 
             <h2>FEATURES</h2>
             <ul>
@@ -851,6 +874,7 @@
     </div>
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
+        <button id="fullscreen-button-game" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 11px; letter-spacing: 1px; padding: 8px 16px; cursor: pointer; font-weight: bold; transition: all 0.2s; margin-top: 8px;">FULL SCREEN</button>
     </div>
     <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; text-align: center; line-height: 1.8;">
         <div style="font-size: 11px; letter-spacing: 1px; font-weight: bold;">
