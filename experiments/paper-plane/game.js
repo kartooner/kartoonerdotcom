@@ -2320,7 +2320,7 @@
         // Animate ground debris (scroll with terrain)
         debris.forEach(rock => {
             rock.position.z += speed;
-            rock.rotation.y += rock.userData.rotationSpeed; // Slow rotation
+            rock.rotation.y += rock.userData.rotationSpeed * deltaTime; // Slow rotation
 
             // Reset debris when it passes camera
             if (rock.position.z > 20) {
@@ -2929,15 +2929,17 @@
                                     uiControls.updateShieldBar(shieldActive, shieldHits);
                                     crashMessage = `SHIELD DOWN!`;
                                 }
-                            } else if (currentHealth > 0) {
-                                // Shield down - lose health
-                                currentHealth--;
-                                uiControls.updateHealthBar(currentHealth, maxHealth);
-                                crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
-                                crashMessageTimer = 60;
+                            } else {
+                                // Shield down - lose health or upgrades
+                                if (currentHealth > 0) {
+                                    currentHealth--;
+                                    uiControls.updateHealthBar(currentHealth, maxHealth);
+                                    crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
+                                    crashMessageTimer = 60;
+                                }
 
                                 // After health is depleted, lose points and upgrades
-                                if (currentHealth === 0) {
+                                if (currentHealth <= 0) {
                                     const pointsLost = 5;
                                     score = Math.max(0, score - pointsLost);
                                     crashMessage = `BONK -${pointsLost}`;
@@ -3075,15 +3077,17 @@
                                     uiControls.updateShieldBar(shieldActive, shieldHits);
                                     crashMessage = `SHIELD DOWN!`;
                                 }
-                            } else if (currentHealth > 0) {
-                                // Shield down - lose health
-                                currentHealth--;
-                                uiControls.updateHealthBar(currentHealth, maxHealth);
-                                crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
-                                crashMessageTimer = 50;
+                            } else {
+                                // Shield down - lose health or upgrades
+                                if (currentHealth > 0) {
+                                    currentHealth--;
+                                    uiControls.updateHealthBar(currentHealth, maxHealth);
+                                    crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
+                                    crashMessageTimer = 50;
+                                }
 
                                 // After health is depleted, lose points and upgrades
-                                if (currentHealth === 0) {
+                                if (currentHealth <= 0) {
                                     const pointsLost = 5;
                                     score = Math.max(0, score - pointsLost);
                                     crashMessage = `BONK -${pointsLost}`;
@@ -3120,7 +3124,7 @@
             }
 
             if (!ring.userData.collected) {
-                ring.rotation.z += 0.02; // Spin effect
+                ring.rotation.z += 0.02 * deltaTime; // Spin effect
 
                 // Check if plane flies through ring - optimized with squared distance
                 const zDiff = Math.abs(ring.position.z - 3.5);
@@ -3174,8 +3178,8 @@
 
             if (!pickup.userData.collected) {
                 // Rotate pickup for visual effect
-                pickup.rotation.y += 0.03;
-                pickup.rotation.x += 0.02;
+                pickup.rotation.y += 0.03 * deltaTime;
+                pickup.rotation.x += 0.02 * deltaTime;
 
                 // Check if plane collects pickup
                 const dx = pickup.position.x - curX;
@@ -3212,11 +3216,11 @@
 
             if (!gust.userData.collected) {
                 // Animate wind gust - @ symbol unfurling away from camera
-                gust.userData.animationTime += 0.03;
+                gust.userData.animationTime += 0.03 * deltaTime;
                 gust.children.forEach((ring, idx) => {
                     // Rotate each ring at different speeds for spiral effect
                     const rotationSpeed = 0.025 + (idx * 0.01);
-                    ring.rotation.z += rotationSpeed;
+                    ring.rotation.z += rotationSpeed * deltaTime;
 
                     // Expanding/unfurling effect - rings expand outward and fade
                     const unfurlPhase = (gust.userData.animationTime + (idx * 0.5)) % 3;
@@ -3272,7 +3276,7 @@
 
             if (!coin.userData.collected) {
                 // Increment spin angle
-                coin.userData.spinAngle += coin.userData.spinSpeed;
+                coin.userData.spinAngle += coin.userData.spinSpeed * deltaTime;
 
                 // Face the camera (billboard effect)
                 coin.lookAt(camera.position);
@@ -3589,7 +3593,7 @@
         for (let i = gates.length - 1; i >= 0; i--) {
             const gate = gates[i];
             gate.position.z += speed;
-            gate.rotation.z += 0.01; // Slow rotation
+            gate.rotation.z += 0.01 * deltaTime; // Slow rotation
 
             // Check if player passed through gate
             if (Math.abs(gate.position.z - 3.5) < 3 && !gate.userData.passed) {
@@ -3618,13 +3622,13 @@
             const snow = snowflakes[i];
 
             // Fall down
-            snow.position.y -= snow.userData.fallSpeed;
+            snow.position.y -= snow.userData.fallSpeed * deltaTime;
 
             // Gentle horizontal drift
-            snow.position.x += snow.userData.driftSpeed;
+            snow.position.x += snow.userData.driftSpeed * deltaTime;
 
             // Gentle rotation
-            snow.rotation.z += snow.userData.rotationSpeed;
+            snow.rotation.z += snow.userData.rotationSpeed * deltaTime;
 
             // Billboard effect - face camera
             snow.lookAt(camera.position);
@@ -3725,7 +3729,7 @@
             }
 
             // Rotate the boss (direction determined at spawn)
-            boss.rotation.z += boss.userData.rotationSpeed;
+            boss.rotation.z += boss.userData.rotationSpeed * deltaTime;
 
             // Update collision box
             boss.userData.box.setFromObject(boss);
