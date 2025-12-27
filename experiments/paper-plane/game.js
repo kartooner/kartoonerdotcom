@@ -142,7 +142,10 @@
 
     const scene = new THREE.Scene();
     // Simpler fog for better performance
-    scene.fog = new THREE.Fog(0x000000, 15, 45);
+    // Dark CRT green background so ground shadow is visible
+    const bgColor = 0x001a00; // Very dark green
+    scene.background = new THREE.Color(bgColor);
+    scene.fog = new THREE.Fog(bgColor, 15, 45);
 
     // Adjust FOV and camera position based on device and orientation
     const isPortrait = window.innerHeight > window.innerWidth;
@@ -421,6 +424,20 @@
     const engineLight = new THREE.PointLight(0x00ffff, 12, 12);
     scene.add(engineLight);
     scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    // --- GROUND SHADOW (CHEAP BLOB) ---
+    // Simple circular shadow for depth perception
+    const groundShadowGeom = new THREE.CircleGeometry(1.5, 16);
+    const groundShadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.4,
+        depthWrite: false // Prevent z-fighting with terrain
+    });
+    const groundShadow = new THREE.Mesh(groundShadowGeom, groundShadowMat);
+    groundShadow.rotation.x = -Math.PI / 2; // Lay flat on ground
+    groundShadow.position.y = 0.05; // Slightly above terrain to prevent z-fighting
+    scene.add(groundShadow);
 
     // --- 2. MOUNTAIN VALLEY (RANDOMIZED EACH LOAD) ---
     // Optimized segments for consistent performance across all platforms
@@ -2358,6 +2375,15 @@
         const swayY = Math.cos(time * 0.8) * 0.05;
 
         shipGroup.position.set(curX + swayX, curY + bobY + swayY, 3.5);
+
+        // Update ground shadow position, scale, and opacity based on altitude
+        groundShadow.position.x = curX + swayX;
+        groundShadow.position.z = 3.5;
+        // Scale: smaller when higher, larger when lower (altitude range: 0.5 to 5.5)
+        const shadowScale = 1.5 - ((curY - 0.5) * 0.2); // Shrinks as plane goes up
+        groundShadow.scale.set(shadowScale, shadowScale, 1);
+        // Opacity: fade out when higher (max 0.4 at ground level, min 0.1 at max altitude)
+        groundShadowMat.opacity = Math.max(0.1, 0.5 - ((curY - 0.5) * 0.08));
 
         // Terrain altitude scaling - bidirectional parallax effect for game feel
         // Fly UP: terrain scales down (appears further away)
