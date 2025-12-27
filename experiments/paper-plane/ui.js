@@ -114,7 +114,7 @@ export function initUI(callbacks) {
     });
 
     // Fullscreen functionality (desktop only)
-    const fullscreenButtonStart = document.getElementById('fullscreen-button-start');
+    const fullscreenHint = document.getElementById('fullscreen-hint');
     const fullscreenButtonGame = document.getElementById('fullscreen-button-game');
     const gameContainer = document.getElementById('game-container');
     let isFullscreen = false;
@@ -125,9 +125,9 @@ export function initUI(callbacks) {
                                 document.mozFullScreenEnabled ||
                                 document.msFullscreenEnabled;
 
-    // Show fullscreen buttons on desktop if supported
+    // Show fullscreen hint and button on desktop if supported
     if (fullscreenSupported && window.innerWidth >= 768) {
-        fullscreenButtonStart.style.display = 'block';
+        fullscreenHint.style.display = 'block';
         fullscreenButtonGame.style.display = 'block';
     }
 
@@ -146,7 +146,6 @@ export function initUI(callbacks) {
                 elem.msRequestFullscreen();
             }
             isFullscreen = true;
-            fullscreenButtonStart.innerText = 'EXIT FULL SCREEN';
             fullscreenButtonGame.innerText = 'EXIT FULL SCREEN';
             showFeedbackMessage('FULL SCREEN ON');
         } else {
@@ -161,7 +160,6 @@ export function initUI(callbacks) {
                 document.msExitFullscreen();
             }
             isFullscreen = false;
-            fullscreenButtonStart.innerText = 'FULL SCREEN';
             fullscreenButtonGame.innerText = 'FULL SCREEN';
             showFeedbackMessage('FULL SCREEN OFF');
         }
@@ -175,31 +173,23 @@ export function initUI(callbacks) {
     // Listen for fullscreen change events (to sync state if user exits with ESC)
     document.addEventListener('fullscreenchange', () => {
         isFullscreen = !!document.fullscreenElement;
-        fullscreenButtonStart.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
         fullscreenButtonGame.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
     });
     document.addEventListener('webkitfullscreenchange', () => {
         isFullscreen = !!document.webkitFullscreenElement;
-        fullscreenButtonStart.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
         fullscreenButtonGame.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
     });
     document.addEventListener('mozfullscreenchange', () => {
         isFullscreen = !!document.mozFullScreenElement;
-        fullscreenButtonStart.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
         fullscreenButtonGame.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
     });
     document.addEventListener('msfullscreenchange', () => {
         isFullscreen = !!document.msFullscreenElement;
-        fullscreenButtonStart.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
         fullscreenButtonGame.innerText = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
     });
 
-    // Fullscreen button event listeners
+    // Fullscreen button event listener
     if (fullscreenSupported) {
-        fullscreenButtonStart.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleFullscreen();
-        });
         fullscreenButtonGame.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleFullscreen();

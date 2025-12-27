@@ -49,6 +49,24 @@
     let currentHealth = 4;
     const maxHealth = 4;
 
+    // Debug scaffolding (internal only - no display)
+    const DEBUG_ENABLED = false; // Must remain false by default
+    let debugMetrics = {
+        fps: 0,
+        frameCount: 0,
+        lastFrameTime: performance.now(),
+        avgFrameTime: 0,
+        minFps: Infinity,
+        maxFps: 0,
+        difficultyScalar: 1.0,
+        performance: {
+            renderTime: 0,
+            collisionChecks: 0,
+            activeObjects: 0,
+            pooledObjects: 0
+        }
+    };
+
     // Upgrade loss system (risk/reward mechanic)
     let buildingHitsSinceUpgrade = 0;
     let hitsUntilUpgradeLoss = 0;
@@ -1994,6 +2012,22 @@
         const deltaTime = lastFrameTime === 0 ? 1 : Math.min((timestamp - lastFrameTime) / 16.67, 2);
         lastFrameTime = timestamp;
 
+        // Debug metrics tracking (internal only)
+        if (DEBUG_ENABLED) {
+            const frameDelta = timestamp - debugMetrics.lastFrameTime;
+            debugMetrics.frameCount++;
+            debugMetrics.fps = 1000 / frameDelta;
+            debugMetrics.minFps = Math.min(debugMetrics.minFps, debugMetrics.fps);
+            debugMetrics.maxFps = Math.max(debugMetrics.maxFps, debugMetrics.fps);
+            debugMetrics.avgFrameTime = (debugMetrics.avgFrameTime * 0.9) + (frameDelta * 0.1);
+            debugMetrics.lastFrameTime = timestamp;
+            debugMetrics.performance.activeObjects =
+                buildings.filter(b => b.visible).length +
+                walls.filter(w => w.visible).length +
+                rings.filter(r => r.visible).length;
+            debugMetrics.performance.collisionChecks = 0; // Reset per frame
+        }
+
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
 
@@ -2591,6 +2625,9 @@
                 const shrinkFactor = b.geometry === pyramidGeometry ? 0.65 : 0.75;
                 tempVec3_1.multiplyScalar(shrinkFactor);
                 b.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+                // Track collision checks for debug metrics
+                if (DEBUG_ENABLED) debugMetrics.performance.collisionChecks++;
 
                 // Near-miss detection (close but not colliding) - optimized with squared distance
                 if (!shipBox.intersectsBox(b.userData.box) && !b.userData.nearMissCredited) {
