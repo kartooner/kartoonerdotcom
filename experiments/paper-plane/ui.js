@@ -168,6 +168,10 @@ export function initUI(callbacks) {
             showCheckpointUI(state, abilities, onAbilityPurchase);
         },
 
+        closeCheckpointUI: () => {
+            closeCheckpointUI();
+        },
+
         getGameState: () => ({
             gameStarted,
             isPaused
@@ -330,10 +334,12 @@ function showCheckpointUI(state, abilities, onPurchase) {
 
 /**
  * Close checkpoint UI
- * @param {Function} onClose - Callback when closed
+ * @param {Function} onClose - Optional callback when closed
  */
 function closeCheckpointUI(onClose) {
     const checkpointOverlay = document.getElementById('checkpoint-overlay');
     checkpointOverlay.classList.remove('active');
-    onClose();
+    if (onClose) {
+        onClose();
+    }
 }

@@ -1667,6 +1667,9 @@
     }
 
     function closeCheckpointUI() {
+        // Close the UI overlay
+        uiControls.closeCheckpointUI();
+
         checkpointActive = false;
 
         // Activate 3-second grace period when exiting upgrade screen
