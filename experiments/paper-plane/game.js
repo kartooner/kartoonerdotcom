@@ -146,7 +146,7 @@
 
     // Adjust FOV and camera position based on device and orientation
     const isPortrait = window.innerHeight > window.innerWidth;
-    const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 55; // Wider FOV for portrait mobile
+    const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 70; // Consistent wider FOV for better spatial awareness
     const cameraZ = isMobile && isPortrait ? 10 : 8; // Pull back camera on portrait mobile
 
     const camera = new THREE.PerspectiveCamera(cameraFOV, container.clientWidth / container.clientHeight, 0.1, 250);
@@ -183,9 +183,9 @@
     // Plane type tracking
     let currentPlaneType = 'dart';
     let planeStats = {
-        dart: { smoothing: 0.07, barrelRollSpeed: 0.025 },
-        glider: { smoothing: 0.12, barrelRollSpeed: 0.020 },
-        stunt: { smoothing: 0.05, barrelRollSpeed: 0.035 }
+        dart: { smoothing: 0.10, barrelRollSpeed: 0.025 },    // Increased for smoother keyboard control
+        glider: { smoothing: 0.15, barrelRollSpeed: 0.020 },  // Increased for smoother keyboard control
+        stunt: { smoothing: 0.08, barrelRollSpeed: 0.035 }    // Increased for smoother keyboard control
     };
 
     // Create different plane geometries
@@ -423,8 +423,8 @@
     scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
     // --- 2. MOUNTAIN VALLEY (RANDOMIZED EACH LOAD) ---
-    // Reduced segments for better performance across all browsers
-    const terrainSegments = isMobile ? 25 : 28;
+    // Optimized segments for consistent performance across all platforms
+    const terrainSegments = 25;
     const terrainGeom = new THREE.PlaneGeometry(100, 120, terrainSegments, terrainSegments);
     const pos = terrainGeom.attributes.position;
 
@@ -476,8 +476,8 @@
     scene.add(t1, t2);
 
     // --- 3. ANIMATED PARTICLES (STARS) ---
-    // Optimized for better performance while maintaining visual depth
-    const particleCount = isMobile ? 200 : 300;
+    // Optimized for consistent performance across all platforms
+    const particleCount = 200;
     const particleGeom = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleVelocities = [];
@@ -506,7 +506,7 @@
     // --- 4. GROUND DEBRIS (ROCKS & SMALL OBJECTS) ---
     // Small decorative debris on the terrain for visual interest
     const debris = [];
-    const debrisCount = isMobile ? 25 : 35; // Optimized for performance
+    const debrisCount = 25; // Optimized for consistent performance
     const debrisMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.3 });
     const debrisGeometries = [
         new THREE.BoxGeometry(0.3, 0.3, 0.3),           // Small cube
@@ -545,7 +545,7 @@
     // Reuses existing ground debris geometries for performance
     const collisionDebris = [];
     const collisionDebrisPool = [];
-    const collisionDebrisCount = isMobile ? 25 : 35; // Pool of debris chunks (reuse ground debris count)
+    const collisionDebrisCount = 25; // Optimized pool of debris chunks
 
     // Pre-create collision debris pool using existing debris geometries for performance
     for (let i = 0; i < collisionDebrisCount; i++) {
@@ -778,7 +778,7 @@
     // --- 5. DISTANT BACKGROUND STARS ---
     // Large, distant stars for atmospheric depth
     const distantStars = [];
-    const starCount = isMobile ? 30 : 40;
+    const starCount = 30;
     const starMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
     const starGeometry = new THREE.SphereGeometry(0.5, 4, 3); // Small low-poly sphere
 
@@ -2057,7 +2057,8 @@
         const levelDifficulty = Math.max(1, Math.min(newLevel, 5)); // Start at 1, cap at 5
 
         // Keyboard controls with deltaTime for smooth frame-rate independent movement
-        const keyboardSpeed = 0.5 * deltaTime;
+        // Reduced speed for less finicky, more controlled movement
+        const keyboardSpeed = 0.3 * deltaTime;
         if (keys.left) targetX -= keyboardSpeed;
         if (keys.right) targetX += keyboardSpeed;
         if (keys.up) targetY += keyboardSpeed * 0.67;
