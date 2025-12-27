@@ -167,46 +167,44 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto auto auto;
                 gap: 30px;
-                row-gap: 12px;
                 max-width: 600px;
                 padding: 30px 40px;
             }
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1 / 3;
+                grid-row: 1;
                 margin-bottom: 0;
                 text-align: center;
-                align-self: center;
             }
 
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: end;
+                align-self: start;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
-                grid-row: 2;
-                align-self: center;
-            }
-
-            #start-screen-container > #fullscreen-button-start {
-                grid-column: 2;
-                grid-row: 2;
+                grid-row: 1;
                 align-self: end;
             }
 
-            #play-button, #how-to-play-button, #fullscreen-button-start {
+            #play-button, #how-to-play-button {
                 margin: 0;
             }
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 3;
+                grid-row: 2;
                 margin-top: 0;
                 text-align: center;
+            }
+
+            #fullscreen-hint {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 0;
             }
 
             /* Checkpoint UI desktop - two column abilities */
@@ -231,7 +229,7 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto auto;
+                grid-template-rows: auto auto auto;
                 gap: 30px;
                 row-gap: 12px;
                 max-width: 800px;
@@ -240,7 +238,7 @@
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1 / 4;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
                 align-self: center;
@@ -255,16 +253,10 @@
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
                 grid-row: 2;
-                align-self: center;
-            }
-
-            #start-screen-container > #fullscreen-button-start {
-                grid-column: 2;
-                grid-row: 3;
                 align-self: start;
             }
 
-            #play-button, #how-to-play-button, #fullscreen-button-start {
+            #play-button, #how-to-play-button {
                 font-size: 15px;
                 letter-spacing: 2px;
                 padding: 14px 20px;
@@ -273,11 +265,17 @@
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 4;
+                grid-row: 3;
                 font-size: 8px;
                 margin-top: 0;
                 line-height: 1.6;
                 text-align: center;
+            }
+
+            #fullscreen-hint {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 15px;
             }
 
             /* Checkpoint UI tablet landscape - two column abilities */
@@ -303,9 +301,9 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto auto;
+                grid-template-rows: auto auto auto;
                 gap: 12px;
-                row-gap: 6px;
+                row-gap: 8px;
                 max-width: 700px;
                 padding: 20px 30px;
                 max-height: 95vh;
@@ -314,7 +312,7 @@
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1 / 4;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
                 align-self: center;
@@ -349,12 +347,7 @@
                 grid-row: 2;
             }
 
-            #start-screen-container > #fullscreen-button-start {
-                grid-column: 2;
-                grid-row: 3;
-            }
-
-            #play-button, #how-to-play-button, #fullscreen-button-start {
+            #play-button, #how-to-play-button {
                 font-size: 13px;
                 letter-spacing: 1px;
                 padding: 12px 16px;
@@ -364,11 +357,15 @@
             /* Copyright spans both columns at bottom */
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 4;
+                grid-row: 3;
                 font-size: 7px;
                 margin-top: 4px;
                 line-height: 1.6;
                 text-align: center;
+            }
+
+            #fullscreen-hint {
+                display: none; /* Hide on mobile landscape */
             }
 
             /* Checkpoint UI landscape optimizations - two column abilities */
@@ -413,7 +410,7 @@
                 margin-top: 6px !important;
             }
         }
-        #play-button, #how-to-play-button, #fullscreen-button-start {
+        #play-button, #how-to-play-button {
             font-family: 'Press Start 2P', 'Courier New', monospace;
             font-size: 16px;
             letter-spacing: 2px;
@@ -436,12 +433,12 @@
             background: rgba(0, 20, 20, 0.2);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
-        #how-to-play-button, #fullscreen-button-start {
+        #how-to-play-button {
             background: rgba(128, 128, 128, 0.1);
             border: 2px solid #888888;
             color: #888888;
         }
-        #how-to-play-button:hover, #fullscreen-button-start:hover {
+        #how-to-play-button:hover {
             background: rgba(128, 128, 128, 0.2);
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.3);
         }
@@ -809,11 +806,11 @@
             </div>
             <div id="play-button">PLAY GAME</div>
             <div id="how-to-play-button">HOW TO PLAY</div>
-            <div id="fullscreen-button-start" style="display: none;">FULL SCREEN</div>
             <div id="copyright-notice">
                 © 1980 Erik Sagen<br>
                 MCMLXXX
             </div>
+            <div id="fullscreen-hint" style="display: none; font-size: 8px; color: #666; margin-top: 10px; text-align: center; opacity: 0.7;">Hit F for Full Screen</div>
         </div>
     </div>
     <div id="instructions-overlay">
