@@ -1,4 +1,5 @@
     import * as THREE from 'three';
+    import { initUI, updateUI } from './ui.js';
 
     const container = document.getElementById('footer-canvas');
     const gameContainer = document.getElementById('game-container');
@@ -19,14 +20,6 @@
     }, false);
     const isMobile = window.innerWidth < 768;
     const isEdge = /Edg/.test(navigator.userAgent); // Detect Edge browser
-    const scoreUI = document.getElementById('score-text');
-    const highScoreUI = document.getElementById('high-score');
-    const levelUI = document.getElementById('level-text');
-    const healthBarUI = document.getElementById('health-bar');
-    const shieldBarUI = document.getElementById('shield-bar');
-    const scoreDisplayUI = document.getElementById('score-display');
-    const scoreBonusUI = document.getElementById('score-bonus');
-    const centerMessageUI = document.getElementById('center-message');
 
     // Game state
     let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
@@ -128,9 +121,6 @@
     // Laser timer system (lasers are time-limited like invincibility)
     let lasersActive = false;
     let lasersEndTime = 0;
-
-    highScoreUI.innerText = `BEST: ${highScore}mi`;
-    scoreDisplayUI.innerText = `SCORE: ${score}`;
 
     const scene = new THREE.Scene();
     // Simpler fog for better performance
@@ -451,35 +441,6 @@
             pos.setZ(i, h);
         }
         pos.needsUpdate = true;
-    }
-
-    // Function to update health bar display
-    function updateHealthBar() {
-        const hearts = [];
-        for (let i = 0; i < maxHealth; i++) {
-            if (i < currentHealth) {
-                hearts.push('♥');
-            } else {
-                hearts.push('♡'); // Empty heart
-            }
-        }
-        healthBarUI.innerText = hearts.join(' ');
-    }
-
-    // Function to update shield bar display
-    function updateShieldBar() {
-        if (!shieldActive) {
-            shieldBarUI.style.opacity = '0';
-        } else {
-            shieldBarUI.style.opacity = '0.9';
-            if (shieldHits === 0) {
-                shieldBarUI.innerText = '[ | | ]';
-            } else if (shieldHits === 1) {
-                shieldBarUI.innerText = '[ | ]';
-            } else {
-                shieldBarUI.innerText = '[ ]';
-            }
-        }
     }
 
     // Initial terrain setup
@@ -1556,83 +1517,13 @@
 
         // Replenish health at checkpoint
         currentHealth = maxHealth;
-        updateHealthBar();
+        uiControls.updateHealthBar(currentHealth, maxHealth);
 
-        const checkpointOverlay = document.getElementById('checkpoint-overlay');
-        const checkpointTitle = document.getElementById('checkpoint-title');
-        const checkpointSubtitle = document.getElementById('checkpoint-subtitle');
-        const checkpointWarning = document.getElementById('checkpoint-warning');
-        const abilitiesContainer = document.getElementById('abilities-container');
-
-        // Simplified title and subtitle
-        checkpointTitle.innerText = '= Checkpoint reached =';
-        checkpointSubtitle.innerHTML = `Balance: ${score}<br><br>Please choose an upgrade:`;
-        checkpointWarning.innerText = '(3-4 hits will remove your upgrade)';
-
-        abilitiesContainer.innerHTML = '';
-
-        // First checkpoint: Always show Plane Color (free)
-        // Subsequent checkpoints: Show 2 random abilities
-        let selectedAbilities;
-        if (isFirstCheckpoint) {
-            selectedAbilities = ['randomColor']; // Only show plane color on first checkpoint
-        } else {
-            const abilityKeys = Object.keys(abilities);
-            const shuffled = abilityKeys.sort(() => 0.5 - Math.random());
-            selectedAbilities = shuffled.slice(0, 2);
-        }
-
-        // Check if player can afford at least one ability (or first checkpoint = free)
-        // Cosmetic upgrades (color/shape) can always be purchased if affordable
-        const canAffordAny = isFirstCheckpoint || selectedAbilities.some(key => {
-            const isCosmetic = key === 'randomColor' || key === 'changeShape';
-            return (isCosmetic || !abilities[key].owned) && score >= abilities[key].cost;
-        });
-
-        if (!canAffordAny && selectedAbilities.every(key => {
-            const isCosmetic = key === 'randomColor' || key === 'changeShape';
-            return abilities[key].owned && !isCosmetic;
-        })) {
-            // All non-cosmetic abilities owned and can't afford cosmetics, just continue
-            checkpointActive = false;
-            isPaused = false;
-            return;
-        }
-
-        // Create ability cards
-        selectedAbilities.forEach(key => {
-            const ability = abilities[key];
-            const card = document.createElement('div');
-            card.className = 'ability-card';
-
-            // Cosmetic upgrades can be purchased multiple times
-            const isCosmetic = key === 'randomColor' || key === 'changeShape';
-
-            // On first checkpoint, all unowned abilities are available for free
-            const canAfford = isFirstCheckpoint ? !ability.owned : (score >= ability.cost && (isCosmetic || !ability.owned));
-            if (!canAfford || (ability.owned && !isCosmetic)) {
-                card.classList.add('disabled');
-            }
-
-            const statusIcon = (ability.owned && !isCosmetic) ? '■' : (canAfford ? '□' : '×');
-            const costText = (ability.owned && !isCosmetic) ? 'ACQUIRED' : (isFirstCheckpoint && !ability.owned ? 'FREE' : `${ability.cost} PTS`);
-
-            card.innerHTML = `
-                <div class="ability-inner">
-                    <div class="ability-name">${statusIcon} ${ability.name}</div>
-                    <div class="ability-description">${ability.description}</div>
-                    <div class="ability-cost">${costText}</div>
-                </div>
-            `;
-
-            if (canAfford) {
-                card.addEventListener('click', () => purchaseAbility(key));
-            }
-
-            abilitiesContainer.appendChild(card);
-        });
-
-        checkpointOverlay.classList.add('active');
+        // Call UI module to show checkpoint overlay
+        uiControls.showCheckpointUI({
+            score,
+            isFirstCheckpoint
+        }, abilities);
     }
 
     function purchaseAbility(abilityKey) {
@@ -1652,7 +1543,6 @@
 
             // Mark as owned (cosmetic upgrades stay purchasable via the isCosmetic check above)
             ability.owned = true;
-            scoreDisplayUI.innerText = `SCORE: ${score}`;
 
             // Disable first checkpoint bonus after first upgrade
             if (isFirstCheckpoint) {
@@ -1710,7 +1600,7 @@
             case 'shields':
                 shieldActive = true;
                 shieldHits = 0;
-                updateShieldBar();
+                uiControls.updateShieldBar(shieldActive, shieldHits);
                 break;
         }
     }
@@ -1755,7 +1645,7 @@
             case 'shields':
                 shieldActive = false;
                 shieldHits = 0;
-                updateShieldBar();
+                uiControls.updateShieldBar(shieldActive, shieldHits);
                 break;
         }
 
@@ -1777,8 +1667,6 @@
     }
 
     function closeCheckpointUI() {
-        const checkpointOverlay = document.getElementById('checkpoint-overlay');
-        checkpointOverlay.classList.remove('active');
         checkpointActive = false;
 
         // Activate 3-second grace period when exiting upgrade screen
@@ -1786,12 +1674,11 @@
         gracePeriodEndTime = Date.now() + 3000;
 
         isPaused = false;
-        if (gameStarted) {
+        const uiState = uiControls.getGameState();
+        if (uiState.gameStarted) {
             animate();
         }
     }
-
-    document.getElementById('skip-checkpoint').addEventListener('click', closeCheckpointUI);
 
     // --- LASER & ENEMY SYSTEM ---
     const laserGeometry = new THREE.BoxGeometry(0.1, 0.1, 2);
@@ -1977,81 +1864,64 @@
     terrainMat.color.setHex(0x00ffff);
     wireMat.color.setHex(0x00ffff);
 
-    // Play button functionality
-    let gameStarted = false;
-    let isPaused = false;
-    const playOverlay = document.getElementById('play-overlay');
-    const pauseButton = document.getElementById('pause-button');
-    const playButton = document.getElementById('play-button');
-    const howToPlayButton = document.getElementById('how-to-play-button');
-    const howToPlayBottomButton = document.getElementById('how-to-play-bottom');
-    const instructionsOverlay = document.getElementById('instructions-overlay');
-    const closeInstructionsX = document.getElementById('close-instructions-x');
-    let wasPlayingBeforeInstructions = false;
-
-    playButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        gameStarted = true;
-        playOverlay.classList.add('hidden');
-        pauseButton.style.display = 'block'; // Show pause button
-        howToPlayBottomButton.style.display = 'inline-block'; // Show bottom How to Play button
-        phaseStartTime = Date.now(); // Initialize phase timer
-        // Initialize health and shield bars
-        updateHealthBar();
-        updateShieldBar();
-        if (!animationRunning) {
-            animate();
-        }
-    });
-
-    howToPlayButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        playOverlay.classList.add('hidden');
-        instructionsOverlay.classList.add('active');
-    });
-
-    // Bottom "How to Play" button (during gameplay)
-    howToPlayBottomButton.addEventListener('click', () => {
-        wasPlayingBeforeInstructions = gameStarted && !isPaused;
-        if (wasPlayingBeforeInstructions) {
-            isPaused = true;
-            pauseButton.innerText = 'RESUME';
-        }
-        instructionsOverlay.classList.add('active');
-    });
-
-    function closeInstructionsHandler() {
-        instructionsOverlay.classList.remove('active');
-        if (!gameStarted) {
-            // Game hasn't started yet, show play overlay
-            playOverlay.classList.remove('hidden');
-        } else if (wasPlayingBeforeInstructions) {
-            // Game was playing, resume it
-            isPaused = false;
-            pauseButton.innerText = 'PAUSE';
-            wasPlayingBeforeInstructions = false;
+    // UI Initialization
+    const uiControls = initUI({
+        onPlayClick: () => {
+            phaseStartTime = Date.now();
+            uiControls.updateHealthBar(currentHealth, maxHealth);
+            uiControls.updateShieldBar(shieldActive, shieldHits);
             if (!animationRunning) {
                 animate();
             }
-        }
-    }
+        },
+        onPauseClick: (paused) => {
+            isPaused = paused;
+            if (!paused) {
+                const uiState = uiControls.getGameState();
+                if (uiState.gameStarted) {
+                    animate();
+                }
+            }
+        },
+        onHowToPlayClick: () => {
+            // Handled in UI module
+        },
+        onCloseInstructions: () => {
+            if (!animationRunning) {
+                animate();
+            }
+        },
+        onCheckpointSkip: () => {
+            closeCheckpointUI();
+        },
+        onAbilityPurchase: (abilityKey) => {
+            purchaseAbility(abilityKey);
+        },
+        onResize: (isPortraitNow, isMobileNow) => {
+            if (isMobileNow) {
+                camera.fov = isPortraitNow ? 85 : 75;
+                camera.position.z = isPortraitNow ? 10 : 8;
+            }
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
 
-    closeInstructionsX.addEventListener('click', closeInstructionsHandler);
-
-    // Pause button functionality
-    pauseButton.addEventListener('click', () => {
-        isPaused = !isPaused;
-        pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
-        if (!isPaused && gameStarted) {
-            animate(); // Resume animation
-        }
+            const uiState = uiControls.getGameState();
+            if (uiState.isPaused && uiState.gameStarted) {
+                renderer.render(scene, camera);
+            }
+        },
+        getAnimationRunning: () => animationRunning
     });
 
     let animationRunning = false;
     let lastFrameTime = 0;
+    let isPaused = false;
+
     function animate(timestamp = performance.now()) {
-        if (!gameStarted && !animationRunning) return; // Don't start until play button clicked
-        if (isPaused) {
+        const uiState = uiControls.getGameState();
+        if (!uiState.gameStarted && !animationRunning) return; // Don't start until play button clicked
+        if (uiState.isPaused) {
             animationRunning = false;
             return; // Stop animation loop when paused
         }
@@ -2667,19 +2537,19 @@
                             // Shield mechanic: first hits damage shield, not health
                             if (shieldActive && shieldHits < maxShieldHits) {
                                 shieldHits++;
-                                updateShieldBar();
+                                uiControls.updateShieldBar(shieldActive, shieldHits);
                                 crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
                                 crashMessageTimer = 50;
 
                                 if (shieldHits >= maxShieldHits) {
                                     shieldActive = false;
-                                    updateShieldBar();
+                                    uiControls.updateShieldBar(shieldActive, shieldHits);
                                     crashMessage = `SHIELD DOWN!`;
                                 }
                             } else if (currentHealth > 0) {
                                 // Shield down - lose health
                                 currentHealth--;
-                                updateHealthBar();
+                                uiControls.updateHealthBar(currentHealth, maxHealth);
                                 crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                 crashMessageTimer = 60;
 
@@ -2687,7 +2557,6 @@
                                 if (currentHealth === 0) {
                                     const pointsLost = 5;
                                     score = Math.max(0, score - pointsLost);
-                                    scoreDisplayUI.innerText = `SCORE: ${score}`;
                                     crashMessage = `BONK -${pointsLost}`;
 
                                     // Lose an upgrade if available
@@ -2707,7 +2576,6 @@
                         if (currentMiles > highScore) {
                             highScore = currentMiles;
                             localStorage.setItem('paperPlaneHighScore', highScore.toString());
-                            highScoreUI.innerText = `BEST: ${highScore}mi`;
                         }
                     }
                 }
@@ -2803,19 +2671,19 @@
                             // Shield mechanic: first hits damage shield, not health
                             if (shieldActive && shieldHits < maxShieldHits) {
                                 shieldHits++;
-                                updateShieldBar();
+                                uiControls.updateShieldBar(shieldActive, shieldHits);
                                 crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
                                 crashMessageTimer = 50;
 
                                 if (shieldHits >= maxShieldHits) {
                                     shieldActive = false;
-                                    updateShieldBar();
+                                    uiControls.updateShieldBar(shieldActive, shieldHits);
                                     crashMessage = `SHIELD DOWN!`;
                                 }
                             } else if (currentHealth > 0) {
                                 // Shield down - lose health
                                 currentHealth--;
-                                updateHealthBar();
+                                uiControls.updateHealthBar(currentHealth, maxHealth);
                                 crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                 crashMessageTimer = 50;
 
@@ -2823,7 +2691,6 @@
                                 if (currentHealth === 0) {
                                     const pointsLost = 5;
                                     score = Math.max(0, score - pointsLost);
-                                    scoreDisplayUI.innerText = `SCORE: ${score}`;
                                     crashMessage = `BONK -${pointsLost}`;
 
                                     // Lose an upgrade if available
@@ -2875,9 +2742,8 @@
                         score += points;
 
                         // Show bonus in score display with fade effect
-                        scoreDisplayUI.innerText = `SCORE: ${score}`;
-                        scoreBonusUI.innerText = `+${points}`;
-                        scoreBonusUI.style.opacity = '1';
+                        uiControls.elements.scoreBonusUI.innerText = `+${points}`;
+                        uiControls.elements.scoreBonusUI.style.opacity = '1';
                         bonusFadeTimer = 90; // Show for ~1.5 seconds at 60fps
                         ring.material.color.setHex(0xffff00); // Flash yellow
 
@@ -2928,7 +2794,7 @@
                     // Restore shield
                     shieldActive = true;
                     shieldHits = 0;
-                    updateShieldBar();
+                    uiControls.updateShieldBar(shieldActive, shieldHits);
                     crashMessage = 'SHIELD RESTORED!';
                     crashMessageTimer = 60;
                 }
@@ -2991,8 +2857,8 @@
 
                     // Show bonus in score display
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
-                    scoreBonusUI.innerText = `+2`;
-                    scoreBonusUI.style.opacity = '1';
+                    uiControls.elements.scoreBonusUI.innerText = `+2`;
+                    uiControls.elements.scoreBonusUI.style.opacity = '1';
                     bonusFadeTimer = 60; // Show briefly
                 }
             }
@@ -3075,11 +2941,9 @@
                     scoreDisplayUI.innerText = `SCORE: ${score}`;
 
                     // Show bonus message
-                    scoreBonusUI.innerText = '+15';
-                    scoreBonusUI.style.opacity = '1';
-                    setTimeout(() => {
-                        scoreBonusUI.style.opacity = '0';
-                    }, 800);
+                    uiControls.elements.scoreBonusUI.innerText = '+15';
+                    uiControls.elements.scoreBonusUI.style.opacity = '1';
+                    bonusFadeTimer = 48; // ~800ms at 60fps
 
                     // Remove building and laser
                     scene.remove(building);
@@ -3124,14 +2988,11 @@
 
                     // Add score bonus for destroying wall with laser
                     score += 10;
-                    scoreDisplayUI.innerText = `SCORE: ${score}`;
 
                     // Show bonus message
-                    scoreBonusUI.innerText = '+10';
-                    scoreBonusUI.style.opacity = '1';
-                    setTimeout(() => {
-                        scoreBonusUI.style.opacity = '0';
-                    }, 800);
+                    uiControls.elements.scoreBonusUI.innerText = '+10';
+                    uiControls.elements.scoreBonusUI.style.opacity = '1';
+                    bonusFadeTimer = 48; // ~800ms at 60fps
 
                     // Remove wall and laser
                     scene.remove(wall);
@@ -3191,7 +3052,6 @@
         // Level progression (every 100 miles)
         if (newLevel > currentLevel) {
             currentLevel = newLevel;
-            levelUI.innerText = `LEVEL ${currentLevel}`;
             levelUpMessage = `LEVEL ${currentLevel}`;
             levelUpMessageTimer = 90; // Show for 1.5 seconds
 
@@ -3416,7 +3276,6 @@
                         // Boss collision - moderate damage
                         const pointsLost = 25;
                         score = Math.max(0, score - pointsLost);
-                        scoreDisplayUI.innerText = `SCORE: ${score}`;
 
                         crashMessage = `BOSS HIT -${pointsLost}`;
                         crashMessageTimer = 60;
@@ -3518,9 +3377,6 @@
         // Bonus fade timer
         if (bonusFadeTimer > 0) {
             bonusFadeTimer--;
-            if (bonusFadeTimer === 0) {
-                scoreBonusUI.style.opacity = '0';
-            }
         }
 
         // Collision Glitch FX (RED) - only during collision
@@ -3542,53 +3398,20 @@
 
         const distMiles = Math.floor(miles);
 
-        // Update miles display in top-right
-        scoreUI.innerText = `${distMiles}mi`;
-
-        // Show crash message in center
-        if (crashMessageTimer > 0) {
-            centerMessageUI.innerText = `💥 ${crashMessage} 💥`;
-            centerMessageUI.style.opacity = '1';
-        } else if (levelUpMessageTimer > 0) {
-            // Show level-up message (takes priority if both are active)
-            centerMessageUI.innerText = `⚡ ${levelUpMessage} ⚡`;
-            centerMessageUI.style.opacity = '1';
-        } else {
-            centerMessageUI.style.opacity = '0';
-        }
+        // Update UI (throttled - only on value changes)
+        updateUI({
+            score,
+            highScore,
+            currentLevel,
+            distMiles,
+            crashMessage,
+            crashMessageTimer,
+            levelUpMessage,
+            levelUpMessageTimer,
+            bonusFadeTimer,
+            elements: uiControls.elements
+        });
 
         renderer.render(scene, camera);
     }
     // Don't auto-start - wait for play button
-
-    // --- PARAMETER EDITOR CONTROLS ---
-    // Track previous orientation for auto-pause
-    let previousOrientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
-
-    window.addEventListener('resize', () => {
-        // Adjust camera for orientation changes
-        const isPortraitNow = window.innerHeight > window.innerWidth;
-        const isMobileNow = window.innerWidth < 768;
-        const currentOrientation = isPortraitNow ? 'portrait' : 'landscape';
-
-        // Auto-pause on orientation change (mobile only)
-        if (isMobileNow && currentOrientation !== previousOrientation && gameStarted && !isPaused) {
-            isPaused = true;
-            pauseButton.innerText = 'RESUME';
-        }
-        previousOrientation = currentOrientation;
-
-        if (isMobileNow) {
-            camera.fov = isPortraitNow ? 85 : 75;
-            camera.position.z = isPortraitNow ? 10 : 8;
-        }
-
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-
-        // Re-render if paused to update display immediately
-        if (isPaused && gameStarted) {
-            renderer.render(scene, camera);
-        }
-    });
