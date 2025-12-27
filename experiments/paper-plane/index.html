@@ -223,29 +223,31 @@
             #start-screen-container {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
+                grid-template-rows: auto auto auto;
                 gap: 30px;
+                row-gap: 12px;
                 max-width: 800px;
                 padding: 30px 40px;
             }
 
             #game-logo {
                 grid-column: 1;
-                grid-row: 1;
+                grid-row: 1 / 3;
                 margin-bottom: 0;
                 text-align: center;
+                align-self: center;
             }
 
             #start-screen-container > #play-button {
                 grid-column: 2;
                 grid-row: 1;
-                align-self: start;
+                align-self: end;
             }
 
             #start-screen-container > #how-to-play-button {
                 grid-column: 2;
-                grid-row: 1;
-                align-self: end;
+                grid-row: 2;
+                align-self: start;
             }
 
             #play-button, #how-to-play-button {
@@ -257,7 +259,7 @@
 
             #copyright-notice {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
                 font-size: 8px;
                 margin-top: 0;
                 line-height: 1.6;
@@ -820,16 +822,16 @@
 
             <h2>FEATURES</h2>
             <ul>
-                <li><strong>Real Flying:</strong> Your plane flies like a real one with weight and drift. Learn to control it!</li>
+                <li><strong>Real flying:</strong> Your plane flies like a real one with weight and drift. Learn to control it!</li>
                 <li><strong>Hearts:</strong> You have 4 hearts. When you lose all 4 hearts, the next crash costs you 5 points (and takes away upgrades).</li>
                 <li><strong>Shields:</strong> Buy shields (200 points) to take 2 extra hits. Find green capsules to refill your shields.</li>
-                <li><strong>Cool Crashes:</strong> When you hit buildings and walls, they break into pieces!</li>
-                <li><strong>Watch Out:</strong> Some walls are high, some are low. You have to dodge both!</li>
-                <li><strong>Boss Fights:</strong> At 150 miles (and every 100 miles after that), you'll fight giant spinning bosses. Can you beat them?</li>
+                <li><strong>Cool crashes:</strong> When you hit buildings and walls, they break into pieces!</li>
+                <li><strong>Watch out:</strong> Some walls are high, some are low. You have to dodge both!</li>
+                <li><strong>Boss fights:</strong> At 150 miles (and every 100 miles after that), you'll fight giant spinning bosses. Can you beat them?</li>
                 <li><strong>Snow:</strong> During winter, watch for special snowfall!</li>
-                <li><strong>Level Up:</strong> Every 20 miles you go up a level. The land changes every 3 levels. The game gets harder the farther you go.</li>
+                <li><strong>Level up:</strong> Every 20 miles you go up a level. The land changes every 3 levels. The game gets harder the farther you go.</li>
                 <li><strong>Upgrades:</strong> Every 25 miles, buy upgrades like thrusters, lasers, invincibility, shields, barrel rolls, different plane shapes, and more!</li>
-                <li><strong>Rings & Coins:</strong> Fly through green rings (25 points) or rare pink rings (50 points). Grab coins for 2 points each.</li>
+                <li><strong>Rings & coins:</strong> Fly through green rings (25 points) or rare pink rings (50 points). Grab coins for 2 points each.</li>
             </ul>
 
             <p>Good luck, pilot. The sky is waiting.</p>
