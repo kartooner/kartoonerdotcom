@@ -1725,6 +1725,12 @@
             duration: [20000, 30000], // 20-30 seconds - Light buildings + coins (ALWAYS shorter than pure buildings)
             canFollowItself: false,
             description: 'Light buildings + coins'
+        },
+        boss_gauntlet: {
+            intensity: 'extreme',
+            duration: [30000, 30000], // Fixed 30 seconds - INTENSE building gauntlet (replaces old rotating boss)
+            canFollowItself: false,
+            description: 'BOSS GAUNTLET - Dense buildings barrage for 30s'
         }
     };
 
@@ -1740,7 +1746,8 @@
         coins: -Infinity,
         bonus: -Infinity,
         breather: -Infinity,
-        mixed: -Infinity
+        mixed: -Infinity,
+        boss_gauntlet: -Infinity
     };
     let totalPhasesCompleted = 0;
 
@@ -1848,6 +1855,25 @@
             if (milesFlown >= 150) {
                 if (phaseName === 'mixed') weight *= 2.0; // More variety late
                 if (phaseName === 'bonus') weight *= 1.5; // More bonus stages late
+            }
+
+            // RULE 9: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
+            // Trigger at 150 miles, then every 100 miles (250, 350, 450...)
+            if (phaseName === 'boss_gauntlet') {
+                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 100 === 0)) {
+                    weight *= 1000; // Virtually guarantee boss gauntlet at milestone
+                } else {
+                    weight *= 0.01; // Extremely rare otherwise
+                }
+            }
+
+            // RULE 10: Intensity balancing for "extreme" phases (boss gauntlet)
+            if (lastIntensity === 'extreme') {
+                if (config.intensity === 'calm' || config.intensity === 'low') {
+                    weight *= 5.0; // Strongly prefer calm after extreme intensity
+                } else if (config.intensity === 'high' || config.intensity === 'extreme') {
+                    weight *= 0.05; // Avoid back-to-back extreme/high
+                }
             }
 
             weights[phaseName] = Math.max(weight, 0);
@@ -2038,7 +2064,7 @@
         return gate;
     }
 
-    // --- ROTATING BOSS (MINI-BOSS CHALLENGE) ---
+    /* --- ROTATING BOSS (MINI-BOSS CHALLENGE) --- COMMENTED OUT - NEEDS REWORK
     const bosses = [];
     let bossEncounterCount = 0; // Track number of boss encounters for rotation direction
     let bossActive = false; // Flag to prevent other spawns during boss encounter
@@ -2139,6 +2165,10 @@
 
         bosses.push(boss);
     }
+    END BOSS CODE */
+
+    // Temporary boss replacement: intense building phase
+    let bossActive = false; // Keep flag for phase system compatibility
 
     // Checkpoint UI functions
     function showCheckpointUI(milesReached) {
@@ -3110,7 +3140,7 @@
             // Check if we need to spawn a new wave when building passes camera
             if(b.position.z > 20 && b.active) {
                 // Check if we need to spawn a new wave (not during boss or low-intensity phases)
-                const canSpawnBuildings = currentPhase === 'buildings' || currentPhase === 'mixed';
+                const canSpawnBuildings = currentPhase === 'buildings' || currentPhase === 'mixed' || currentPhase === 'boss_gauntlet';
                 if (!bossActive && canSpawnBuildings && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
@@ -3126,7 +3156,10 @@
                     currentWave = wavePatterns[patternName];
                     currentWavePositions = currentWave.getPositions(); // Cache positions
                     waveProgress = 0;
-                    nextWaveDistance = b.position.z - 150; // Start new wave further ahead for better visibility
+                    // BOSS GAUNTLET: Much denser building spawns (60 units vs normal 150)
+                    nextWaveDistance = currentPhase === 'boss_gauntlet' ?
+                        b.position.z - 60 :
+                        b.position.z - 150; // Start new wave further ahead for better visibility
 
                     // If breather wave (no buildings), deactivate this instance
                     if (currentWave.buildings === 0) {
@@ -4054,11 +4087,13 @@
             }
         }
 
+        /* --- BOSS SPAWNING TRIGGER --- COMMENTED OUT - NEEDS REWORK
         // Boss spawning at 150 miles, then every 100 miles (250, 350, 450...)
         const currentMiles = Math.floor(miles);
         if (currentMiles >= 150 && (currentMiles === 150 || (currentMiles - 150) % 100 === 0) && bosses.length === 0) {
             spawnBoss();
         }
+        END BOSS SPAWNING TRIGGER */
 
         // Try to spawn shield pickup periodically if player needs it
         if (Math.random() < 0.01) { // 1% chance per frame when conditions are met
@@ -4381,6 +4416,7 @@
             ringsSpawnedThisPhase = true; // Mark rings as spawned for this phase
         }
 
+        /* --- BOSS UPDATE AND COLLISION LOGIC --- COMMENTED OUT - NEEDS REWORK
         // Boss update and collision logic
         for (let i = bosses.length - 1; i >= 0; i--) {
             const boss = bosses[i];
@@ -4472,6 +4508,7 @@
                 }
             }
         }
+        END BOSS UPDATE AND COLLISION LOGIC */
 
         // Phase transitions now handled by smart phase selection algorithm above
 
