@@ -152,7 +152,7 @@
     const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 70; // Consistent wider FOV for better spatial awareness
     const cameraZ = isMobile && isPortrait ? 10 : 8; // Pull back camera on portrait mobile
 
-    const camera = new THREE.PerspectiveCamera(cameraFOV, container.clientWidth / container.clientHeight, 0.1, 250);
+    const camera = new THREE.PerspectiveCamera(cameraFOV, container.clientWidth / container.clientHeight, 0.1, 400);
     camera.position.set(0, 2.5, cameraZ);
 
     const renderer = new THREE.WebGLRenderer({
@@ -947,55 +947,161 @@
         distantStars.push(star);
     }
 
-    // --- 6. VARIED BUILDINGS (SQUARES, RECTANGLES, PYRAMIDS) - OPTIMIZED ---
-    const buildings = [];
-    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.4 });
-
+    // --- 6. VARIED BUILDINGS (INSTANCED) - GPU OPTIMIZED ---
     // Lane-based system for building placement (5 lanes)
     const lanes = [-8, -4, 0, 4, 8]; // 5 lanes across the playing field
 
     // Different building geometries (low-poly for performance)
     const boxGeometry = new THREE.BoxGeometry(2, 5, 2);
-    const pyramidGeometry = new THREE.ConeGeometry(2, 5, 4, 1); // 4 segments, 1 height segment
+    const pyramidGeometry = new THREE.ConeGeometry(2, 5, 12, 4); // 12 radial segments, 4 height segments for better wireframe depth
     const cylinderGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 8, 1); // 8 segments, low-poly
 
-    function createBuilding() {
-        const buildingType = Math.random();
-        let geometry, height;
+    // Shared material for all building types
+    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.4 });
 
-        if (buildingType < 0.3) {
+    // InstancedMesh for each geometry type (max 20 instances each for better distribution)
+    const MAX_BUILDING_INSTANCES = 20;
+    const boxInstancedMesh = new THREE.InstancedMesh(boxGeometry, buildMat, MAX_BUILDING_INSTANCES);
+    const pyramidInstancedMesh = new THREE.InstancedMesh(pyramidGeometry, buildMat, MAX_BUILDING_INSTANCES);
+    const cylinderInstancedMesh = new THREE.InstancedMesh(cylinderGeometry, buildMat, MAX_BUILDING_INSTANCES);
+
+    scene.add(boxInstancedMesh);
+    scene.add(pyramidInstancedMesh);
+    scene.add(cylinderInstancedMesh);
+
+    // Instance management - track each instance's state
+    const buildings = []; // Array of building instance data
+    const buildingInstances = {
+        box: [],
+        pyramid: [],
+        cylinder: []
+    };
+
+    // Initialize instance pools
+    for (let i = 0; i < MAX_BUILDING_INSTANCES; i++) {
+        buildingInstances.box.push({
+            active: false,
+            matrix: new THREE.Matrix4(),
+            position: new THREE.Vector3(0, 0, -1000), // Start far off screen
+            scale: new THREE.Vector3(1, 1, 1),
+            rotation: new THREE.Euler(),
+            height: 5,
+            width: 1,
+            originalY: 0,
+            originalScale: { x: 1, y: 1, z: 1 },
+            box: new THREE.Box3(),
+            opacity: 1,
+            nearMissCredited: false,
+            geometry: 'box'
+        });
+        buildingInstances.pyramid.push({
+            active: false,
+            matrix: new THREE.Matrix4(),
+            position: new THREE.Vector3(0, 0, -1000), // Start far off screen
+            scale: new THREE.Vector3(1, 1, 1),
+            rotation: new THREE.Euler(),
+            height: 5,
+            width: 1,
+            originalY: 0,
+            originalScale: { x: 1, y: 1, z: 1 },
+            box: new THREE.Box3(),
+            opacity: 1,
+            nearMissCredited: false,
+            geometry: 'pyramid'
+        });
+        buildingInstances.cylinder.push({
+            active: false,
+            matrix: new THREE.Matrix4(),
+            position: new THREE.Vector3(0, 0, -1000), // Start far off screen
+            scale: new THREE.Vector3(1, 1, 1),
+            rotation: new THREE.Euler(),
+            height: 5,
+            width: 1,
+            originalY: 0,
+            originalScale: { x: 1, y: 1, z: 1 },
+            box: new THREE.Box3(),
+            opacity: 1,
+            nearMissCredited: false,
+            geometry: 'cylinder'
+        });
+        // Also add to buildings array for compatibility
+        buildings.push(buildingInstances.box[i]);
+        buildings.push(buildingInstances.pyramid[i]);
+        buildings.push(buildingInstances.cylinder[i]);
+
+        // Initialize matrices to position instances off-screen
+        const offScreenMatrix = new THREE.Matrix4();
+        offScreenMatrix.setPosition(0, 0, -1000);
+        boxInstancedMesh.setMatrixAt(i, offScreenMatrix);
+        pyramidInstancedMesh.setMatrixAt(i, offScreenMatrix);
+        cylinderInstancedMesh.setMatrixAt(i, offScreenMatrix);
+    }
+
+    // Set instance counts (how many instances to render)
+    boxInstancedMesh.count = MAX_BUILDING_INSTANCES;
+    pyramidInstancedMesh.count = MAX_BUILDING_INSTANCES;
+    cylinderInstancedMesh.count = MAX_BUILDING_INSTANCES;
+
+    // Mark instance matrices as needing update
+    boxInstancedMesh.instanceMatrix.needsUpdate = true;
+    pyramidInstancedMesh.instanceMatrix.needsUpdate = true;
+    cylinderInstancedMesh.instanceMatrix.needsUpdate = true;
+
+    // Reusable quaternion for matrix updates (prevents garbage collection)
+    const _tempQuaternion = new THREE.Quaternion();
+
+    // Helper to update instance matrix (optimized to reuse quaternion)
+    function updateInstanceMatrix(instance, mesh, index) {
+        _tempQuaternion.setFromEuler(instance.rotation);
+        instance.matrix.compose(instance.position, _tempQuaternion, instance.scale);
+        mesh.setMatrixAt(index, instance.matrix);
+
+        // Set flag based on mesh type (batch updates per frame)
+        if (mesh === boxInstancedMesh) boxMatricesNeedUpdate = true;
+        else if (mesh === pyramidInstancedMesh) pyramidMatricesNeedUpdate = true;
+        else if (mesh === cylinderInstancedMesh) cylinderMatricesNeedUpdate = true;
+    }
+
+    // Flags to track if matrices need updating this frame
+    let boxMatricesNeedUpdate = false;
+    let pyramidMatricesNeedUpdate = false;
+    let cylinderMatricesNeedUpdate = false;
+
+    // Helper to get available instance of specific type
+    function getAvailableInstance(type) {
+        const instances = buildingInstances[type];
+        for (let i = 0; i < instances.length; i++) {
+            if (!instances[i].active) {
+                return { instance: instances[i], index: i };
+            }
+        }
+        return null;
+    }
+
+    // Helper to create building data (returns type and properties)
+    function createBuildingData() {
+        const buildingType = Math.random();
+        let type, height;
+
+        if (buildingType < 0.25) {
             // Square building
-            geometry = boxGeometry;
+            type = 'box';
             height = Math.random() * 6 + 3; // 3-9 units tall
-        } else if (buildingType < 0.5) {
+        } else if (buildingType < 0.4) {
             // Rectangle (tall or wide)
-            geometry = boxGeometry;
+            type = 'box';
             height = Math.random() * 8 + 2; // 2-10 units tall
         } else if (buildingType < 0.7) {
-            // Pyramid
-            geometry = pyramidGeometry;
+            // Cone/Pyramid - increased spawn rate to 30%
+            type = 'pyramid';
             height = Math.random() * 5 + 3; // 3-8 units tall
         } else {
             // Cylinder (squat or tall)
-            geometry = cylinderGeometry;
+            type = 'cylinder';
             height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5; // Squat: 2-5, Tall: 5-13
         }
 
-        // Clone material so each building can fade independently
-        const b = new THREE.Mesh(geometry, buildMat.clone());
-
-        // Random scale for variety
-        const scaleX = Math.random() * 0.8 + 0.6;
-        const scaleY = height / 5; // Scale to desired height
-        const scaleZ = Math.random() * 0.8 + 0.6;
-        b.scale.set(scaleX, scaleY, scaleZ);
-
-        b.userData.box = new THREE.Box3();
-        b.userData.height = height;
-        b.userData.geometry = geometry;
-        b.userData.originalScale = { x: scaleX, y: scaleY, z: scaleZ }; // Store original scale for parallax
-
-        return b;
+        return { type, height };
     }
 
     // Seeded random number generator for procedural patterns
@@ -1022,10 +1128,10 @@
 
         for (let i = 0; i < buildings.length; i++) {
             const other = buildings[i];
-            if (other === excludeBuilding || !other.visible) continue;
+            if (other === excludeBuilding || !other.active) continue;
 
             // Calculate building bounds accounting for scale and width
-            const otherWidth = other.userData.width || 1;
+            const otherWidth = other.width || 1;
             const otherScaleX = other.scale.x;
             const thisScaleX = buildingWidth * 1.5; // Approximate scale (will be set properly later)
 
@@ -1331,20 +1437,26 @@
         }
     }
 
-    // Reduced to 5 buildings for better performance
-    for(let i=0; i<5; i++) {
-        const b = createBuilding();
+    // Initialize with some buildings - spawn across different types
+    for(let i=0; i<15; i++) {
+        const buildingData = createBuildingData();
+        const available = getAvailableInstance(buildingData.type);
+
+        if (!available) continue; // Skip if no instance available
+
+        const instance = available.instance;
+        const index = available.index;
 
         // Use lane-based positioning with separation checking
         let lanePosition;
         let validPosition = false;
-        const zPos = -150 - (i*70);
-        const buildingWidth = b.userData.width || 1;
+        const zPos = -250 - (i*50); // Spawn further ahead for better visibility
+        const buildingWidth = 1;
 
         // Try up to 8 times to find valid position
         for (let attempt = 0; attempt < 8; attempt++) {
             lanePosition = getRandomLane();
-            if (hasMinimumSeparation(lanePosition, zPos, buildingWidth, b)) {
+            if (hasMinimumSeparation(lanePosition, zPos, buildingWidth, instance)) {
                 validPosition = true;
                 break;
             }
@@ -1352,22 +1464,33 @@
 
         // Skip spawn if no valid position found
         if (!validPosition) {
-            // Don't add this building
             continue;
         }
 
-        // ConeGeometry (pyramids) has base at origin, others are centered
-        const isPyramid = b.userData.geometry === pyramidGeometry;
-        const baseY = isPyramid ? 0 : b.userData.height / 2;
-        b.position.set(
-            lanePosition,
-            baseY,
-            zPos
-        );
-        b.userData.originalY = baseY; // Store original Y for parallax scaling
+        // Set instance properties
+        instance.active = true;
+        instance.height = buildingData.height;
+        instance.width = buildingWidth;
 
-        scene.add(b);
-        buildings.push(b);
+        // Random scale for variety
+        const scaleX = Math.random() * 0.8 + 0.6;
+        const scaleY = buildingData.height / 5;
+        const scaleZ = Math.random() * 0.8 + 0.6;
+        instance.scale.set(scaleX, scaleY, scaleZ);
+        instance.originalScale = { x: scaleX, y: scaleY, z: scaleZ };
+
+        // All geometries are centered (including cones), so position at height/2 for ground level
+        const baseY = buildingData.height / 2;
+        instance.position.set(lanePosition, baseY, zPos);
+        instance.originalY = baseY;
+        instance.opacity = 1;
+        instance.nearMissCredited = false;
+
+        // Update instance matrix
+        const mesh = buildingData.type === 'box' ? boxInstancedMesh :
+                     buildingData.type === 'pyramid' ? pyramidInstancedMesh :
+                     cylinderInstancedMesh;
+        updateInstanceMatrix(instance, mesh, index);
     }
 
     // --- 5. HIGH WALLS & LOW WALLS (VERTICAL MOVEMENT) - OBJECT POOLING ---
@@ -1417,8 +1540,18 @@
     const ringPool = []; // Pre-created rings for reuse
     // Simplified ring geometry for better performance
     const ringGeometry = new THREE.TorusGeometry(3, 0.3, 6, 12);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.6 });
-    const fuchsiaRingMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.7 });
+    const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.6
+    });
+    const fuchsiaRingMat = new THREE.MeshBasicMaterial({
+        color: 0xff00ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.7
+    });
 
     // Pre-create ring pool (6 rings - enough for 2 sets of 3)
     for (let i = 0; i < 6; i++) {
@@ -1449,7 +1582,12 @@
     const shieldPickups = [];
     const shieldPickupPool = [];
     const capsuleGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
-    const capsuleMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.7 });
+    const capsuleMat = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.7
+    });
 
     // Pre-create shield pickup pool (3 pickups)
     for (let i = 0; i < 3; i++) {
@@ -1536,7 +1674,7 @@
                 pickup.position.set(
                     (Math.random() - 0.5) * 10,
                     Math.random() * 3 + 2,
-                    -120
+                    -220 // Further ahead for better visibility
                 );
                 shieldPickups.push(pickup);
             }
@@ -1770,7 +1908,7 @@
 
         boss.userData.active = true;
         boss.visible = true;
-        boss.position.set(0, 4, -120); // Spawn closer for better reaction time
+        boss.position.set(0, 4, -220); // Spawn further ahead for better visibility (Guitar Hero-style)
 
         // Consistent moderate speed - challenging but dodgeable
         const baseSpeed = 0.015;
@@ -2548,15 +2686,27 @@
                 antiCampingActive = true;
 
                 // Spawn a super tall building directly in player's lane to prevent camping
-                const antiCampBuilding = buildings.find(b => !b.visible);
-                if (antiCampBuilding) {
-                    antiCampBuilding.geometry = boxGeometry; // Use box geometry
+                const antiCampAvailable = getAvailableInstance('box');
+                if (antiCampAvailable) {
+                    const antiCampBuilding = antiCampAvailable.instance;
+                    const index = antiCampAvailable.index;
+
+                    antiCampBuilding.active = true;
+                    antiCampBuilding.geometry = 'box';
                     antiCampBuilding.position.x = lanes[playerLane]; // Player's current lane
-                    antiCampBuilding.position.y = 6; // Extra tall: reaches to Y=11 (6 + 10/2)
-                    antiCampBuilding.position.z = -120; // Spawn far ahead
                     antiCampBuilding.scale.set(1, 2, 1); // Double height: 5 * 2 = 10 units tall
-                    antiCampBuilding.visible = true;
-                    antiCampBuilding.material.opacity = 0.5;
+                    antiCampBuilding.height = 10;
+                    antiCampBuilding.width = 1;
+                    // Position at half the scaled height to keep grounded (geometry is 5 units, scaled by 2 = 10 units)
+                    const groundedY = (5 * 2) / 2; // 5 units base * 2 scale / 2 = 5
+                    antiCampBuilding.position.y = groundedY;
+                    antiCampBuilding.position.z = -200; // Spawn further ahead for better visibility
+                    antiCampBuilding.originalY = groundedY;
+                    antiCampBuilding.originalScale = { x: 1, y: 2, z: 1 };
+                    antiCampBuilding.opacity = 0.5;
+                    antiCampBuilding.nearMissCredited = false;
+
+                    updateInstanceMatrix(antiCampBuilding, boxInstancedMesh, index);
                 }
             }
         } else {
@@ -2566,18 +2716,46 @@
         }
 
         // Boundary camping detection - prevent camping outside viewport
-        // Viewport boundaries are approximately -10 to +10 on X axis
-        if (Math.abs(curX) > 9 && !antiCampingActive) {
-            // Spawn super tall building at the boundary to force player back in
-            const antiCampBuilding = buildings.find(b => !b.visible);
-            if (antiCampBuilding) {
-                antiCampBuilding.geometry = boxGeometry;
-                antiCampBuilding.position.x = curX > 0 ? 10 : -10; // At the boundary
-                antiCampBuilding.position.y = 6; // Extra tall
-                antiCampBuilding.position.z = -100; // Spawn ahead
-                antiCampBuilding.scale.set(2, 2, 2); // Extra wide and tall
-                antiCampBuilding.visible = true;
-                antiCampBuilding.material.opacity = 0.5;
+        // Viewport boundaries are approximately -10 to +10 on X axis, 0 to 10 on Y axis
+        const outOfBoundsX = Math.abs(curX) > 9;
+        const outOfBoundsY = curY > 9 || curY < -1; // Above viewport or below ground
+
+        if ((outOfBoundsX || outOfBoundsY) && !antiCampingActive) {
+            // Spawn super tall/wide building to force player back into viewport
+            const antiCampAvailable = getAvailableInstance('box');
+            if (antiCampAvailable) {
+                const antiCampBuilding = antiCampAvailable.instance;
+                const index = antiCampAvailable.index;
+
+                antiCampBuilding.active = true;
+                antiCampBuilding.geometry = 'box';
+
+                // Position based on which boundary was crossed
+                if (outOfBoundsX) {
+                    // Left/right boundary - tall vertical wall
+                    antiCampBuilding.position.x = curX > 0 ? 10 : -10;
+                    antiCampBuilding.scale.set(2, 2, 2); // Extra wide and tall
+                    antiCampBuilding.height = 10;
+                    antiCampBuilding.width = 2;
+                    const groundedY = (5 * 2) / 2;
+                    antiCampBuilding.position.y = groundedY;
+                } else {
+                    // Top/bottom boundary - wide horizontal wall spanning the lane
+                    antiCampBuilding.position.x = curX; // Directly in player's path
+                    antiCampBuilding.scale.set(3, 2, 2); // Extra wide to block escape
+                    antiCampBuilding.height = 10;
+                    antiCampBuilding.width = 3;
+                    const groundedY = curY > 9 ? 9 : 1; // At the boundary height
+                    antiCampBuilding.position.y = groundedY;
+                }
+
+                antiCampBuilding.position.z = -180; // Spawn further ahead for better visibility
+                antiCampBuilding.originalY = antiCampBuilding.position.y;
+                antiCampBuilding.originalScale = { x: antiCampBuilding.scale.x, y: antiCampBuilding.scale.y, z: antiCampBuilding.scale.z };
+                antiCampBuilding.opacity = 0.5;
+                antiCampBuilding.nearMissCredited = false;
+
+                updateInstanceMatrix(antiCampBuilding, boxInstancedMesh, index);
                 antiCampingActive = true; // Prevent multiple spawns
             }
         }
@@ -2659,14 +2837,23 @@
             currentPhase === 'breather_after_rings' ||
             currentPhase === 'walls';
 
-        buildings.forEach(b => {
+        buildings.forEach((b, idx) => {
+            if (!b.active) return; // Skip inactive instances
+
+            // Get the mesh and instance index for this building
+            const mesh = b.geometry === 'box' ? boxInstancedMesh :
+                         b.geometry === 'pyramid' ? pyramidInstancedMesh :
+                         cylinderInstancedMesh;
+            const instanceIndex = buildingInstances[b.geometry].indexOf(b);
+
             // During breather phases, only hide buildings that haven't spawned yet (far back)
             // Let already-visible buildings pass naturally to avoid jarring disappearance
             if (isBreatherPhase) {
                 if (b.position.z < -50) {
                     // Only hide buildings that are far back (not yet spawned)
-                    b.visible = false;
+                    b.active = false;
                     b.position.z = -500; // Keep them far back
+                    updateInstanceMatrix(b, mesh, instanceIndex);
                     return; // Skip rest of logic for unspawned buildings
                 }
                 // Let visible/spawned buildings continue their natural movement
@@ -2674,17 +2861,20 @@
 
             b.position.z += speed;
             // Apply altitude parallax scaling to buildings (multiply with original scale, don't replace!)
-            if (b.userData.originalScale) {
+            if (b.originalScale) {
                 b.scale.set(
-                    b.userData.originalScale.x * terrainScale,
-                    b.userData.originalScale.y * terrainScale,
-                    b.userData.originalScale.z * terrainScale
+                    b.originalScale.x * terrainScale,
+                    b.originalScale.y * terrainScale,
+                    b.originalScale.z * terrainScale
                 );
             }
             // Scale Y position to keep buildings grounded (prevent floating)
-            if (b.userData.originalY !== undefined) {
-                b.position.y = b.userData.originalY * terrainScale;
+            if (b.originalY !== undefined) {
+                b.position.y = b.originalY * terrainScale;
             }
+
+            // Update instance matrix with new position and scale
+            updateInstanceMatrix(b, mesh, instanceIndex);
 
             // Gradual fade as buildings pass camera (smoother than instant toggle)
             if(b.position.z > 10) {
@@ -2692,19 +2882,13 @@
                 const fadeStart = 10;
                 const fadeEnd = 20;
                 const fadeProgress = Math.min((b.position.z - fadeStart) / (fadeEnd - fadeStart), 1);
-                b.material.opacity = 1 - fadeProgress;
-                b.visible = true;
+                b.opacity = 1 - fadeProgress;
             } else {
-                b.material.opacity = 1;
-                b.visible = true;
+                b.opacity = 1;
             }
 
-            // Fully hide once far past camera
-            if(b.position.z > 20) {
-                b.visible = false;
-            }
-
-            if(b.position.z > 20) {
+            // Check if we need to spawn a new wave when building passes camera
+            if(b.position.z > 20 && b.active) {
                 // Check if we need to spawn a new wave (not during boss)
                 if (!bossActive && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
@@ -2721,12 +2905,13 @@
                     currentWave = wavePatterns[patternName];
                     currentWavePositions = currentWave.getPositions(); // Cache positions
                     waveProgress = 0;
-                    nextWaveDistance = b.position.z - 80; // Start new wave far back
+                    nextWaveDistance = b.position.z - 150; // Start new wave further ahead for better visibility
 
-                    // If breather wave (no buildings), push building far back
+                    // If breather wave (no buildings), deactivate this instance
                     if (currentWave.buildings === 0) {
                         b.position.z = -400;
-                        b.visible = false;
+                        b.active = false;
+                        updateInstanceMatrix(b, mesh, instanceIndex);
                         return; // Skip building spawn during breather
                     }
                 }
@@ -2734,7 +2919,8 @@
                 // Skip if no positions (breather wave)
                 if (currentWavePositions.length === 0) {
                     b.position.z = -400;
-                    b.visible = false;
+                    b.active = false;
+                    updateInstanceMatrix(b, mesh, instanceIndex);
                     return;
                 }
 
@@ -2742,230 +2928,330 @@
                 const position = currentWavePositions[waveProgress % currentWavePositions.length];
 
                 // Recreate building with new random type and scale
-                const buildingType = Math.random();
-                let geometry, height;
+                const buildingData = createBuildingData();
 
-                if (buildingType < 0.3) {
-                    // Square building
-                    geometry = boxGeometry;
-                    height = Math.random() * 6 + 3;
-                } else if (buildingType < 0.5) {
-                    // Rectangle (tall or wide)
-                    geometry = boxGeometry;
-                    height = Math.random() * 8 + 2;
-                } else if (buildingType < 0.7) {
-                    // Pyramid
-                    geometry = pyramidGeometry;
-                    height = Math.random() * 5 + 3;
-                } else {
-                    // Cylinder (squat or tall)
-                    geometry = cylinderGeometry;
-                    height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5;
+                // If geometry type changed, deactivate this instance and spawn new one
+                if (buildingData.type !== b.geometry) {
+                    b.active = false;
+                    updateInstanceMatrix(b, mesh, instanceIndex);
+
+                    // Try to get an instance of the new type
+                    const newAvailable = getAvailableInstance(buildingData.type);
+                    if (newAvailable) {
+                        const newInstance = newAvailable.instance;
+                        const newIndex = newAvailable.index;
+                        const newMesh = buildingData.type === 'box' ? boxInstancedMesh :
+                                       buildingData.type === 'pyramid' ? pyramidInstancedMesh :
+                                       cylinderInstancedMesh;
+
+                        // Setup new instance with respawn properties
+                        newInstance.active = true;
+                        newInstance.height = buildingData.height;
+
+                        // Use width from procedural generation if available, otherwise random
+                        const buildingWidth = position.width || 1;
+                        newInstance.width = buildingWidth;
+
+                        // Wide buildings (width=2) get extra X scale to span 2 lanes
+                        const baseScale = seededRandom() * 0.4 + 0.6;
+                        const scaleX = buildingWidth > 1 ? baseScale * 2.2 : baseScale;
+                        const scaleY = buildingData.height / 5;
+                        const scaleZ = seededRandom() * 0.8 + 0.6;
+                        newInstance.scale.set(scaleX, scaleY, scaleZ);
+                        newInstance.originalScale = { x: scaleX, y: scaleY, z: scaleZ };
+
+                        // Progressive difficulty: buildings spawn closer as level increases
+                        let spawnDistance = nextWaveDistance + position.offset;
+
+                        // Use lane-based positioning from wave pattern with retry logic
+                        let xPos;
+                        let validPosition = false;
+                        const maxAttempts = 8;
+
+                        // Try to find valid X position (with minimum separation)
+                        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                            const tryLane = attempt === 0 ? position.lane : Math.floor(seededRandom() * lanes.length);
+                            xPos = lanes[tryLane];
+
+                            if (hasMinimumSeparation(xPos, spawnDistance, buildingWidth, newInstance)) {
+                                validPosition = true;
+                                break;
+                            }
+                        }
+
+                        if (!validPosition) {
+                            newInstance.position.z = -500;
+                            newInstance.active = false;
+                            waveProgress++;
+                            updateInstanceMatrix(newInstance, newMesh, newIndex);
+                            return;
+                        }
+
+                        // Prevent buildings from spawning too close in overlapping lanes
+                        const minLaneSpacing = 15;
+                        const thisWidth = buildingWidth;
+                        const laneSpacing = 4;
+
+                        for (let j = 0; j < buildings.length; j++) {
+                            const other = buildings[j];
+                            if (other !== newInstance && other.active) {
+                                const otherWidth = other.width || 1;
+                                const thisLaneMin = xPos;
+                                const thisLaneMax = xPos + (thisWidth - 1) * laneSpacing;
+                                const otherLaneMin = other.position.x;
+                                const otherLaneMax = other.position.x + (otherWidth - 1) * laneSpacing;
+
+                                const lanesOverlap = thisLaneMax >= otherLaneMin - 0.5 && thisLaneMin <= otherLaneMax + 0.5;
+
+                                if (lanesOverlap) {
+                                    const zDist = Math.abs(other.position.z - spawnDistance);
+                                    if (zDist < minLaneSpacing) {
+                                        spawnDistance = other.position.z - minLaneSpacing;
+                                    }
+                                }
+                            }
+                        }
+
+                        // All geometries are centered (including cones), so position at height/2 for ground level
+                        const baseY = buildingData.height / 2;
+                        newInstance.originalY = baseY;
+                        newInstance.position.set(xPos, baseY * terrainScale, spawnDistance);
+                        newInstance.opacity = 1;
+                        newInstance.nearMissCredited = false;
+
+                        updateInstanceMatrix(newInstance, newMesh, newIndex);
+                        waveProgress++;
+                    }
+                    return;
                 }
 
-                // Update geometry (avoid disposal to prevent micro-stutters)
-                // Always update both geometry and userData to stay in sync
-                b.geometry = geometry;
-                b.userData.geometry = geometry;
+                // Same geometry type - reuse this instance
+                b.height = buildingData.height;
 
-                // Use width from procedural generation if available, otherwise random
                 const buildingWidth = position.width || 1;
-                // Wide buildings (width=2) get extra X scale to span 2 lanes
-                // Base geometry is 2 units wide, lanes are 4 units apart, so width=2 needs ~4x scale
+                b.width = buildingWidth;
+
                 const baseScale = seededRandom() * 0.4 + 0.6;
                 const scaleX = buildingWidth > 1 ? baseScale * 2.2 : baseScale;
-                const scaleY = height / 5;
+                const scaleY = buildingData.height / 5;
                 const scaleZ = seededRandom() * 0.8 + 0.6;
                 b.scale.set(scaleX, scaleY, scaleZ);
-                b.userData.height = height;
-                b.userData.width = buildingWidth;
-                b.userData.originalScale = { x: scaleX, y: scaleY, z: scaleZ }; // Update original scale for parallax
+                b.originalScale = { x: scaleX, y: scaleY, z: scaleZ };
 
-                // Progressive difficulty: buildings spawn closer as level increases
                 let spawnDistance = nextWaveDistance + position.offset;
 
-                // Use lane-based positioning from wave pattern with retry logic
                 let xPos;
                 let validPosition = false;
                 const maxAttempts = 8;
 
-                // Try to find valid X position (with minimum separation)
                 for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                    // For first attempt, use wave pattern lane; for retries, try random lanes
                     const tryLane = attempt === 0 ? position.lane : Math.floor(seededRandom() * lanes.length);
                     xPos = lanes[tryLane];
 
-                    // Check minimum X separation
                     if (hasMinimumSeparation(xPos, spawnDistance, buildingWidth, b)) {
                         validPosition = true;
                         break;
                     }
                 }
 
-                // Skip spawn if no valid position found
                 if (!validPosition) {
                     b.position.z = -500;
-                    b.visible = false;
+                    b.active = false;
                     waveProgress++;
+                    updateInstanceMatrix(b, mesh, instanceIndex);
                     return;
                 }
 
                 // Prevent buildings from spawning too close in overlapping lanes
-                const minLaneSpacing = 15; // Minimum Z distance between buildings in same lane
+                const minLaneSpacing = 15;
                 const thisWidth = buildingWidth;
-                const laneSpacing = 4; // Distance between lane centers
+                const laneSpacing = 4;
 
                 for (let j = 0; j < buildings.length; j++) {
                     const other = buildings[j];
-                    if (other !== b && other.visible) {
-                        // Calculate lane overlap accounting for width
-                        const otherWidth = other.userData.width || 1;
+                    if (other !== b && other.active) {
+                        const otherWidth = other.width || 1;
                         const thisLaneMin = xPos;
                         const thisLaneMax = xPos + (thisWidth - 1) * laneSpacing;
                         const otherLaneMin = other.position.x;
                         const otherLaneMax = other.position.x + (otherWidth - 1) * laneSpacing;
 
-                        // Check if lanes overlap
                         const lanesOverlap = thisLaneMax >= otherLaneMin - 0.5 && thisLaneMin <= otherLaneMax + 0.5;
 
                         if (lanesOverlap) {
-                            // Overlapping lanes, check Z distance
                             const zDist = Math.abs(other.position.z - spawnDistance);
                             if (zDist < minLaneSpacing) {
-                                // Too close, push this building further back
                                 spawnDistance = other.position.z - minLaneSpacing;
                             }
                         }
                     }
                 }
 
-                // ConeGeometry (pyramids) has base at origin, others are centered
-                // Pyramids need Y=0, others need Y=height/2
-                const baseY = (b.userData.geometry === pyramidGeometry) ? 0 : height / 2;
-                b.userData.originalY = baseY; // Store original Y for parallax scaling
-                b.position.set(
-                    xPos,
-                    baseY * terrainScale, // Apply parallax Y scaling immediately
-                    spawnDistance
-                );
-                b.visible = true; // Always visible when spawning (breather check happens at top)
-                b.material.opacity = 1; // Reset opacity for new spawn
+                // All geometries are centered (including cones), so position at height/2 for ground level
+                const baseY = buildingData.height / 2;
+                b.originalY = baseY;
+                b.position.set(xPos, baseY * terrainScale, spawnDistance);
+                b.active = true;
+                b.opacity = 1;
+                b.nearMissCredited = false;
 
+                updateInstanceMatrix(b, mesh, instanceIndex);
                 waveProgress++;
+
+                // Deactivate building after spawning new wave
+                b.active = false;
             }
 
-            // Only check collision if building is visible
-            if(b.visible && b.position.z < 15) {
-                // Broad-phase culling: distance check before expensive Box3 operations
-                const dx = b.position.x - curX;
-                const dy = b.position.y - curY;
-                const dz = b.position.z - 3.5;
-                const distSq = dx * dx + dy * dy + dz * dz;
-                const maxCollisionDistSq = 100; // ~10 units squared
+            // Only check collision if building is active, visible, and in reasonable range
+            // Must be: active, in front of camera (z < 15), close enough (z > -50), and visible (opacity > 0)
+            if(!b.active || b.position.z >= 15 || b.position.z < -50 || b.opacity <= 0.1) {
+                return; // Skip inactive, out-of-range, or faded buildings
+            }
 
-                // Skip if too far away for collision
-                if (distSq > maxCollisionDistSq) {
-                    return;
-                }
+            // Validate position is not NaN (sanity check)
+            if (isNaN(b.position.x) || isNaN(b.position.y) || isNaN(b.position.z)) {
+                return;
+            }
 
-                b.userData.box.setFromObject(b);
+            // Broad-phase culling: distance check before expensive Box3 operations
+            const dx = b.position.x - curX;
+            const dy = b.position.y - curY;
+            const dz = b.position.z - 3.5;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            const maxCollisionDistSq = 100; // ~10 units squared
 
-                // Make collision more forgiving - shrink all building hitboxes
-                // Reuse temp vectors to avoid garbage collection
-                b.userData.box.getSize(tempVec3_1);
-                b.userData.box.getCenter(tempVec3_2);
-                // Shrink collision box by 35% for pyramids (most forgiving), 25% for others
-                const shrinkFactor = b.geometry === pyramidGeometry ? 0.65 : 0.75;
-                tempVec3_1.multiplyScalar(shrinkFactor);
-                b.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+            // Skip if too far away for collision
+            if (distSq > maxCollisionDistSq) {
+                return;
+            }
 
-                // Track collision checks for debug metrics
-                if (DEBUG_ENABLED) debugMetrics.performance.collisionChecks++;
+            // Calculate bounding box manually for instanced mesh
+            // All geometries are centered, so half extents are the same in all directions
+            const halfWidth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.x;
+            const halfHeight = 2.5 * b.scale.y; // Geometry is 5 units tall, half is 2.5
+            const halfDepth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.z;
 
-                // Near-miss detection (close but not colliding) - optimized with squared distance
-                if (!shipBox.intersectsBox(b.userData.box) && !b.userData.nearMissCredited) {
-                    // Only check when building is in the right Z range
-                    const zDiff = b.position.z - 3.5;
-                    if (zDiff > -3 && zDiff < 3) {
-                        // Use squared distance to avoid expensive Math.sqrt
-                        const dx = b.position.x - curX;
-                        const dy = b.position.y - curY;
-                        const distSq = dx * dx + dy * dy;
+            b.box.min.set(
+                b.position.x - halfWidth,
+                b.position.y - halfHeight,
+                b.position.z - halfDepth
+            );
+            b.box.max.set(
+                b.position.x + halfWidth,
+                b.position.y + halfHeight,
+                b.position.z + halfDepth
+            );
 
-                        if (distSq < nearMissDistSq) {
-                            // Apply near-miss boost!
-                            nearMissBoost = Math.max(nearMissBoost, 0.3); // 30% speed boost
-                            b.userData.nearMissCredited = true; // Only credit once per building
-                        }
+            // Make collision more forgiving - shrink all building hitboxes
+            // Reuse temp vectors to avoid garbage collection
+            b.box.getSize(tempVec3_1);
+            b.box.getCenter(tempVec3_2);
+            // Shrink collision box by 35% for pyramids (most forgiving), 25% for others
+            const shrinkFactor = b.geometry === 'pyramid' ? 0.65 : 0.75;
+            tempVec3_1.multiplyScalar(shrinkFactor);
+            b.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+            // Track collision checks for debug metrics
+            if (DEBUG_ENABLED) debugMetrics.performance.collisionChecks++;
+
+            // Near-miss detection (close but not colliding) - optimized with squared distance
+            if (!shipBox.intersectsBox(b.box) && !b.nearMissCredited) {
+                // Only check when building is in the right Z range
+                const zDiff = b.position.z - 3.5;
+                if (zDiff > -3 && zDiff < 3) {
+                    // Use squared distance to avoid expensive Math.sqrt
+                    const dx = b.position.x - curX;
+                    const dy = b.position.y - curY;
+                    const distSq = dx * dx + dy * dy;
+
+                    if (distSq < nearMissDistSq) {
+                        // Apply near-miss boost!
+                        nearMissBoost = Math.max(nearMissBoost, 0.3); // 30% speed boost
+                        b.nearMissCredited = true; // Only credit once per building
                     }
                 }
+            }
 
-                if(shipBox.intersectsBox(b.userData.box)) {
-                    // Check grace period first
-                    if (!gracePeriodActive) {
-                        // Spawn debris chunks from building collision (pass building for realistic break pattern)
-                        spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY, b);
+            if(shipBox.intersectsBox(b.box)) {
+                // Check grace period first
+                if (!gracePeriodActive) {
+                    // Spawn debris chunks from building collision (pass building for realistic break pattern)
+                    spawnCollisionDebris(b.position.x, b.position.y, b.position.z, curX, curY, b);
 
-                        b.position.z = -120;
-                        b.visible = false;
+                    b.position.z = -120;
+                    b.active = false;
+                    updateInstanceMatrix(b, mesh, instanceIndex);
 
-                        // Invincibility: no damage, just show message
-                        if (invincibilityActive) {
-                            crashMessage = `INVINCIBLE!`;
-                            crashMessageTimer = 40;
-                        } else {
-                            // Normal collision damage
-                            collisionFlash = 0.5;
+                    // Invincibility: no damage, just show message
+                    if (invincibilityActive) {
+                        crashMessage = `INVINCIBLE!`;
+                        crashMessageTimer = 40;
+                    } else {
+                        // Normal collision damage
+                        collisionFlash = 0.5;
 
-                            // Shield mechanic: first hits damage shield, not health
-                            if (shieldActive && shieldHits < maxShieldHits) {
-                                shieldHits++;
+                        // Shield mechanic: first hits damage shield, not health
+                        if (shieldActive && shieldHits < maxShieldHits) {
+                            shieldHits++;
+                            uiControls.updateShieldBar(shieldActive, shieldHits);
+                            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                            crashMessageTimer = 50;
+
+                            if (shieldHits >= maxShieldHits) {
+                                shieldActive = false;
                                 uiControls.updateShieldBar(shieldActive, shieldHits);
-                                crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
-                                crashMessageTimer = 50;
+                                crashMessage = `SHIELD DOWN!`;
+                            }
+                        } else {
+                            // Shield down - lose health or upgrades
+                            if (currentHealth > 0) {
+                                currentHealth--;
+                                uiControls.updateHealthBar(currentHealth, maxHealth);
+                                crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
+                                crashMessageTimer = 60;
+                            }
 
-                                if (shieldHits >= maxShieldHits) {
-                                    shieldActive = false;
-                                    uiControls.updateShieldBar(shieldActive, shieldHits);
-                                    crashMessage = `SHIELD DOWN!`;
+                            // After health is depleted, lose points and upgrades
+                            if (currentHealth <= 0) {
+                                const pointsLost = 5;
+                                score = Math.max(0, score - pointsLost);
+                                crashMessage = `BONK -${pointsLost}`;
+
+                                // Lose an upgrade if available
+                                if (hasActiveUpgrades && activeUpgrades.length > 0) {
+                                    const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                    removeUpgrade(lostUpgrade);
+                                    crashMessage = `LOST UPGRADE -${pointsLost}`;
                                 }
-                            } else {
-                                // Shield down - lose health or upgrades
-                                if (currentHealth > 0) {
-                                    currentHealth--;
-                                    uiControls.updateHealthBar(currentHealth, maxHealth);
-                                    crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
-                                    crashMessageTimer = 60;
-                                }
 
-                                // After health is depleted, lose points and upgrades
-                                if (currentHealth <= 0) {
-                                    const pointsLost = 5;
-                                    score = Math.max(0, score - pointsLost);
-                                    crashMessage = `BONK -${pointsLost}`;
-
-                                    // Lose an upgrade if available
-                                    if (hasActiveUpgrades && activeUpgrades.length > 0) {
-                                        const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
-                                        removeUpgrade(lostUpgrade);
-                                        crashMessage = `LOST UPGRADE -${pointsLost}`;
-                                    }
-
-                                    // Stay at 0 hearts - only replenish at checkpoints
-                                }
+                                // Stay at 0 hearts - only replenish at checkpoints
                             }
                         }
+                    }
 
-                        // Update high score if current distance is higher
-                        const currentMiles = Math.floor(miles);
-                        if (currentMiles > highScore) {
-                            highScore = currentMiles;
-                            localStorage.setItem('paperPlaneHighScore', highScore.toString());
-                        }
+                    // Update high score if current distance is higher
+                    const currentMiles = Math.floor(miles);
+                    if (currentMiles > highScore) {
+                        highScore = currentMiles;
+                        localStorage.setItem('paperPlaneHighScore', highScore.toString());
                     }
                 }
             }
         });
+
+        // Batch instance matrix updates (prevents multiple GPU uploads per frame)
+        if (boxMatricesNeedUpdate) {
+            boxInstancedMesh.instanceMatrix.needsUpdate = true;
+            boxMatricesNeedUpdate = false;
+        }
+        if (pyramidMatricesNeedUpdate) {
+            pyramidInstancedMesh.instanceMatrix.needsUpdate = true;
+            pyramidMatricesNeedUpdate = false;
+        }
+        if (cylinderMatricesNeedUpdate) {
+            cylinderInstancedMesh.instanceMatrix.needsUpdate = true;
+            cylinderMatricesNeedUpdate = false;
+        }
 
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase (and not during boss)
@@ -3368,12 +3654,29 @@
             for (let j = buildings.length - 1; j >= 0; j--) {
                 const building = buildings[j];
 
-                // Update building collision box (pre-created during initialization)
-                building.userData.box.setFromObject(building);
+                // Skip inactive buildings or those too far away (prevents ghost collisions)
+                if (!building.active || building.position.z < -50 || building.position.z > 15) continue;
+
+                // Calculate bounding box manually for instanced mesh
+                // All geometries are centered, so half extents are the same in all directions
+                const halfWidth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.x;
+                const halfHeight = 2.5 * building.scale.y; // Geometry is 5 units tall, half is 2.5
+                const halfDepth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.z;
+
+                building.box.min.set(
+                    building.position.x - halfWidth,
+                    building.position.y - halfHeight,
+                    building.position.z - halfDepth
+                );
+                building.box.max.set(
+                    building.position.x + halfWidth,
+                    building.position.y + halfHeight,
+                    building.position.z + halfDepth
+                );
 
                 // Check laser-building collision using tempBox
                 tempBox.setFromObject(laser);
-                if (tempBox.intersectsBox(building.userData.box)) {
+                if (tempBox.intersectsBox(building.box)) {
                     // Spawn debris at building location with laser impact
                     spawnCollisionDebris(
                         building.position.x,
@@ -3393,9 +3696,16 @@
                     uiControls.elements.scoreBonusUI.style.opacity = '1';
                     bonusFadeTimer = 48; // ~800ms at 60fps
 
-                    // Remove building and laser
-                    scene.remove(building);
-                    buildings.splice(j, 1);
+                    // Deactivate building instance
+                    building.active = false;
+                    building.position.z = -500;
+                    const mesh = building.geometry === 'box' ? boxInstancedMesh :
+                                 building.geometry === 'pyramid' ? pyramidInstancedMesh :
+                                 cylinderInstancedMesh;
+                    const instanceIndex = buildingInstances[building.geometry].indexOf(building);
+                    updateInstanceMatrix(building, mesh, instanceIndex);
+
+                    // Remove laser
                     scene.remove(laser);
                     lasers.splice(i, 1);
                     laserRemoved = true;
@@ -3468,12 +3778,12 @@
                 const coinY = Math.random() < 0.5
                     ? (0.8 + Math.random() * 1.2)   // Low: 0.8-2.0
                     : (4.0 + Math.random() * 1.5);  // High: 4.0-5.5
-                const coinZ = -150 - Math.random() * 50; // Spawn 150-200 units ahead
+                const coinZ = -250 - Math.random() * 50; // Spawn 250-300 units ahead for better visibility
 
-                // Check if coin would overlap with any visible building
+                // Check if coin would overlap with any active building
                 let overlapsBuilding = false;
                 for (let b of buildings) {
-                    if (b.visible && Math.abs(b.position.z - coinZ) < 10) {
+                    if (b.active && Math.abs(b.position.z - coinZ) < 10) {
                         const dist = Math.sqrt(
                             (b.position.x - coinX) ** 2 +
                             (b.position.y - coinY) ** 2
@@ -3685,7 +3995,7 @@
                 ring.position.set(
                     (Math.random() - 0.5) * 8, // Keep them closer to center
                     Math.random() * 2 + 2,     // Mid-height
-                    -150 - (i * 50)            // Spaced further apart (50 units)
+                    -250 - (i * 50)            // Further visibility like Guitar Hero notes
                 );
                 ring.rotation.x = 0;
                 ring.rotation.y = 0;
