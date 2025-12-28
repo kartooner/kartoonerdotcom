@@ -4065,14 +4065,20 @@
             trySpawnShieldPickup();
         }
 
-        // Try to spawn wind gusts during breather/ring moments (rare)
+        // Try to spawn wind gusts during breather/ring moments (rare) OR buildings (very rare)
         const isBreatherMoment = currentPhase === 'rings' ||
+            currentPhase === 'breather' ||
             currentPhase === 'breather_before_rings' ||
             currentPhase === 'breather_after_rings';
 
-        if (isBreatherMoment && windGusts.length === 0 && Math.random() < 0.003) {
-            // Occasionally spawn 2-3 in a row (30% chance), otherwise just 1
-            const gustCount = Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1; // 30% chance for 2-3, otherwise 1
+        const isBuildingsPhase = currentPhase === 'buildings';
+
+        // Breather moments: 0.3% chance, Buildings: 0.05% chance (much rarer bonus)
+        const windGustChance = isBreatherMoment ? 0.003 : (isBuildingsPhase ? 0.0005 : 0);
+
+        if (windGusts.length === 0 && Math.random() < windGustChance) {
+            // Breather: sometimes 2-3 gusts, Buildings: always just 1 (rare bonus)
+            const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
             for (let i = 0; i < gustCount; i++) {
                 const gust = getWindGustFromPool();
@@ -4085,6 +4091,24 @@
                     );
                     windGusts.push(gust);
                 }
+            }
+        }
+
+        // Rare ring spawn during buildings phase (bonus reward)
+        if (isBuildingsPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+            // Very rare: single ring as bonus during buildings
+            const ring = getRingFromPool();
+            if (ring) {
+                // 10% chance for rare fuchsia ring
+                const isFuchsia = Math.random() < 0.1;
+                ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+                ring.position.set(
+                    (Math.random() - 0.5) * 8, // Center area
+                    Math.random() * 2 + 2,     // Mid-height
+                    -200                        // Spawn ahead
+                );
+                ring.userData.points = isFuchsia ? 50 : 25;
+                rings.push(ring);
             }
         }
 
