@@ -113,11 +113,11 @@
             owned: false,
             description: 'Shrinks your plane for tighter maneuvers'
         },
-        lasers: {
-            name: 'Lasers',
-            cost: 300,
+        ringMagnet: {
+            name: 'Ring Magnet',
+            cost: 250,
             owned: false,
-            description: 'Shooting ability for 2 minutes'
+            description: 'Auto-collect nearby rings for 90 seconds'
         },
         barrelRollUpgrade: {
             name: 'Barrel Roll',
@@ -156,7 +156,12 @@
     let invincibilityEndTime = 0;
     let invincibilityPulsePhase = 0;
 
-    // Laser timer system (lasers are time-limited like invincibility)
+    // Ring magnet timer system (time-limited ability)
+    let ringMagnetActive = false;
+    let ringMagnetEndTime = 0;
+    const ringMagnetRadius = 4.5; // Auto-collect rings within this radius
+
+    // Laser timer system (lasers are time-limited like invincibility) - DEPRECATED but keeping for compatibility
     let lasersActive = false;
     let lasersEndTime = 0;
 
@@ -2292,8 +2297,8 @@
     function purchaseAbility(abilityKey) {
         const ability = abilities[abilityKey];
 
-        // Cosmetic upgrades (color/shape) can be purchased multiple times
-        const isCosmetic = abilityKey === 'randomColor' || abilityKey === 'changeShape';
+        // Cosmetic upgrades (color/shape/size) can be purchased multiple times
+        const isCosmetic = abilityKey === 'randomColor' || abilityKey === 'changeShape' || abilityKey === 'smallPlane';
 
         // First checkpoint is free, subsequent checkpoints cost points
         const isFree = isFirstCheckpoint && !ability.owned;
@@ -2358,10 +2363,9 @@
                 // Scale plane to 0.65x size (smaller for tighter maneuvers)
                 shipGroup.scale.set(0.65, 0.65, 0.65);
                 break;
-            case 'lasers':
-                canShoot = true;
-                lasersActive = true;
-                lasersEndTime = Date.now() + 120000; // 2 minutes (120 seconds)
+            case 'ringMagnet':
+                ringMagnetActive = true;
+                ringMagnetEndTime = Date.now() + 90000; // 90 seconds
                 break;
             case 'barrelRollUpgrade':
                 // Barrel roll is now enabled (already exists in code)
@@ -2400,15 +2404,9 @@
                 // Restore normal plane size
                 shipGroup.scale.set(1.0, 1.0, 1.0);
                 break;
-            case 'lasers':
-                canShoot = false; // Disable shooting
-                lasersActive = false;
-                lasersEndTime = 0;
-                // Clean up existing lasers and enemies
-                lasers.forEach(laser => scene.remove(laser));
-                lasers.length = 0;
-                enemies.forEach(enemy => scene.remove(enemy));
-                enemies.length = 0;
+            case 'ringMagnet':
+                ringMagnetActive = false;
+                ringMagnetEndTime = 0;
                 break;
             case 'barrelRollUpgrade':
                 // Can't really disable barrel roll mid-animation,
@@ -3096,7 +3094,15 @@
             }
         }
 
-        // Check if lasers expired
+        // Check if ring magnet expired
+        if (ringMagnetActive && Date.now() >= ringMagnetEndTime) {
+            ringMagnetActive = false;
+            abilities.ringMagnet.owned = false;
+            crashMessage = 'RING MAGNET EXPIRED';
+            crashMessageTimer = 60;
+        }
+
+        // Check if lasers expired (legacy - keeping for compatibility)
         if (lasersActive && Date.now() >= lasersEndTime) {
             lasersActive = false;
             canShoot = false;
@@ -3884,14 +3890,17 @@
                 ring.rotation.z += 0.02 * deltaTime; // Spin effect
 
                 // Check if plane flies through ring - optimized with squared distance
+                // Ring magnet increases collection radius
                 const zDiff = Math.abs(ring.position.z - 3.5);
-                if (zDiff < 2) {
+                const magnetZRange = ringMagnetActive ? 5 : 2; // Extended Z range when magnet active
+                if (zDiff < magnetZRange) {
                     const dx = ring.position.x - curX;
                     const dy = ring.position.y - curY;
                     const distSq = dx * dx + dy * dy;
-                    const ringRadiusSq = 3 * 3; // 9
+                    const baseRadiusSq = 3 * 3; // 9
+                    const magnetRadiusSq = ringMagnetActive ? (ringMagnetRadius * ringMagnetRadius) : baseRadiusSq;
 
-                    if (distSq < ringRadiusSq) {
+                    if (distSq < magnetRadiusSq) {
                         ring.userData.collected = true;
                         ring.userData.collectTime = Date.now(); // Track when collected
                         const points = ring.userData.points || 25;
