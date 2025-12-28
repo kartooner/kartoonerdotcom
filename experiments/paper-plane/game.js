@@ -1867,6 +1867,12 @@
 
     // Helper: Check if all phase items collected
     function allPhaseItemsCollected() {
+        // Safety check: arrays might not be initialized yet
+        if (typeof rings === 'undefined' || typeof walls === 'undefined' ||
+            typeof coins === 'undefined' || typeof windGusts === 'undefined') {
+            return false; // Not ready for phase transitions yet
+        }
+
         switch(currentPhase) {
             case 'rings':
                 return ringsSpawnedThisPhase && rings.length === 0;
