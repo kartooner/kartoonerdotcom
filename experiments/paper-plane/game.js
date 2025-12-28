@@ -1753,7 +1753,7 @@
     let breatherSetup = false;
 
     // Smart phase selection algorithm
-    function selectNextPhase() {
+    function selectNextPhase(milesFlown = 0) {
         const lastPhase = phaseHistory[phaseHistory.length - 1] || 'none';
         const lastIntensity = lastPhase !== 'none' ? phaseConfig[lastPhase].intensity : 'medium';
 
@@ -1824,14 +1824,14 @@
             }
 
             // RULE 7: Early game adjustments (first 50 miles)
-            if (currentMiles < 50) {
+            if (milesFlown < 50) {
                 if (phaseName === 'walls') weight *= 0.5; // Fewer walls early
                 if (phaseName === 'breather') weight *= 1.5; // More breathers early
                 if (phaseName === 'bonus') weight *= 0.5; // Fewer bonus stages early
             }
 
             // RULE 8: Late game variety (150+ miles)
-            if (currentMiles >= 150) {
+            if (milesFlown >= 150) {
                 if (phaseName === 'mixed') weight *= 2.0; // More variety late
                 if (phaseName === 'bonus') weight *= 1.5; // More bonus stages late
             }
@@ -4172,8 +4172,8 @@
         const phaseComplete = (currentTime - phaseStartTime >= phaseDuration) && allPhaseItemsCollected();
 
         if (phaseComplete && !bossActive) {
-            // Select next phase using smart algorithm
-            const nextPhaseData = selectNextPhase();
+            // Select next phase using smart algorithm (pass current miles for difficulty adjustments)
+            const nextPhaseData = selectNextPhase(Math.floor(miles));
 
             currentPhase = nextPhaseData.phase;
             phaseDuration = nextPhaseData.duration;
