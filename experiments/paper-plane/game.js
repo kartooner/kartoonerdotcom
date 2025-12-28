@@ -221,50 +221,67 @@
     // Create different plane geometries
     function createDartGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Classic paper airplane - simple folded design like real paper
+        // Ballistic Dart - sharp nose, raised center spine, angled wings
         const vertices = new Float32Array([
-            // Nose
-            0.0,  0.0, -0.85,      // 0: Sharp nose point
+            // Sharp nose point
+            0.0,  0.0, -0.90,      // 0: Nose tip
 
-            // Center body spine (folded center line)
-            0.0,  0.04, -0.45,     // 1: Body front top
-            0.0,  0.04,  0.50,     // 2: Body back top
-            0.0, -0.06, -0.30,     // 3: Body front bottom
-            0.0, -0.06,  0.45,     // 4: Body back bottom
+            // Raised center spine (visible ridge on top)
+            0.0,  0.10, -0.55,     // 1: Spine front (raised)
+            0.0,  0.12, -0.20,     // 2: Spine mid-front (highest point)
+            0.0,  0.10,  0.15,     // 3: Spine mid-back
+            0.0,  0.06,  0.50,     // 4: Spine back
 
-            // Left wing (simple triangular fold from body)
-            -0.60, 0.0, -0.30,     // 5: Left wing front point
-            -0.65, 0.0,  0.50,     // 6: Left wing back point
+            // Bottom keel (V-shape underneath)
+            0.0, -0.12, -0.35,     // 5: Keel front
+            0.0, -0.15,  0.05,     // 6: Keel deepest
+            0.0, -0.10,  0.45,     // 7: Keel back
 
-            // Right wing (simple triangular fold from body)
-            0.60,  0.0, -0.30,     // 7: Right wing front point
-            0.65,  0.0,  0.50,     // 8: Right wing back point
+            // Left wing (angles DOWN from center body)
+            -0.20, 0.02, -0.45,    // 8: Left wing inner (near body)
+            -0.65, -0.10, -0.25,   // 9: Left wing outer front (angled down)
+            -0.70, -0.08,  0.50,   // 10: Left wing back tip
+
+            // Right wing (angles DOWN from center body)
+            0.20,  0.02, -0.45,    // 11: Right wing inner (near body)
+            0.65, -0.10, -0.25,    // 12: Right wing outer front (angled down)
+            0.70, -0.08,  0.50,    // 13: Right wing back tip
         ]);
 
         const indices = [
-            // Left wing top
-            0, 1, 5,    // Nose to body to wing
-            1, 2, 6,    // Body to back
-            1, 6, 5,    // Wing triangle
+            // Left wing top surface
+            0, 1, 8,       // Nose to spine to wing inner
+            1, 2, 8,       // Spine front section
+            2, 3, 8,       // Spine mid section
+            8, 3, 9,       // Wing inner to outer
+            3, 4, 9,       // Spine to wing
+            4, 10, 9,      // Wing back section
 
-            // Right wing top
-            0, 7, 1,    // Nose to wing to body
-            1, 7, 2,    // Body to back
-            2, 7, 8,    // Wing triangle
+            // Right wing top surface
+            0, 11, 1,      // Nose to wing inner to spine
+            1, 11, 2,      // Spine front section
+            2, 11, 3,      // Spine mid section
+            11, 3, 12,     // Wing inner to outer
+            3, 12, 4,      // Spine to wing
+            4, 13, 12,     // Wing back section
 
-            // Left wing bottom
-            0, 5, 3,    // Nose underside
-            3, 5, 6,    // Wing underside
-            3, 6, 4,    // Body underside
+            // Left wing bottom (keel)
+            0, 5, 8,       // Nose to keel to wing
+            5, 6, 8,       // Keel front
+            6, 9, 8,       // Keel to wing
+            6, 10, 9,      // Wing underside
+            6, 7, 10,      // Keel back
 
-            // Right wing bottom
-            0, 3, 7,    // Nose underside
-            3, 4, 7,    // Body underside
-            4, 8, 7,    // Wing underside
+            // Right wing bottom (keel)
+            0, 11, 5,      // Nose to wing to keel
+            5, 11, 6,      // Keel front
+            6, 11, 12,     // Keel to wing
+            6, 12, 13,     // Wing underside
+            6, 13, 7,      // Keel back
 
-            // Tail closure
-            2, 6, 8,    // Top back
-            4, 6, 8,    // Bottom back
+            // Tail closures
+            4, 10, 13,     // Top back wings meet
+            7, 10, 13,     // Bottom back keel
         ];
 
         geom.setIndex(indices);
