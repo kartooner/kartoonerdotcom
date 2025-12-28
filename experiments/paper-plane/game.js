@@ -2113,6 +2113,7 @@
 
         boss.userData.active = true;
         boss.visible = true;
+        boss.userData.dodged = false; // Reset dodge flag for new boss
         boss.position.set(0, 4, -220); // Spawn further ahead for better visibility (Guitar Hero-style)
 
         // Consistent moderate speed - challenging but dodgeable
@@ -4373,17 +4374,42 @@
                 const maxCollisionDistSq = 100; // ~10 units squared
 
                 // Only check Box3 intersection if within range
-                if (distSq <= maxCollisionDistSq && shipBox.intersectsBox(boss.userData.box)) {
-                    // Check grace period and invincibility
-                    if (!gracePeriodActive && !invincibilityActive) {
-                        collisionFlash = 0.5;
+                if (distSq <= maxCollisionDistSq) {
+                    // Check collision against individual blades (not the whole group)
+                    // This allows flying through gaps between blades
+                    let hitBlade = false;
 
-                        // Boss collision - moderate damage
-                        const pointsLost = 25;
-                        score = Math.max(0, score - pointsLost);
+                    // Boss has children: [0] = axle, [1-4] = blades
+                    for (let j = 1; j < boss.children.length; j++) {
+                        const blade = boss.children[j];
 
-                        crashMessage = `BOSS HIT -${pointsLost}`;
-                        crashMessageTimer = 60;
+                        // Create temporary box for this blade
+                        const bladeBox = new THREE.Box3().setFromObject(blade);
+
+                        if (shipBox.intersectsBox(bladeBox)) {
+                            hitBlade = true;
+                            break;
+                        }
+                    }
+
+                    if (hitBlade) {
+                        // Hit a blade - take damage
+                        if (!gracePeriodActive && !invincibilityActive) {
+                            collisionFlash = 0.5;
+
+                            // Boss collision - moderate damage
+                            const pointsLost = 25;
+                            score = Math.max(0, score - pointsLost);
+
+                            crashMessage = `BOSS HIT -${pointsLost}`;
+                            crashMessageTimer = 60;
+                        }
+                    } else if (boss.position.z > -5 && boss.position.z < 5 && !boss.userData.dodged) {
+                        // Flew through the gap! Reward skillful flying
+                        score += 50;
+                        levelUpMessage = 'BLADE GAP +50!';
+                        levelUpMessageTimer = 60;
+                        boss.userData.dodged = true; // Only reward once per boss
                     }
                 }
             }
