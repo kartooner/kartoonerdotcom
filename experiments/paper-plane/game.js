@@ -113,11 +113,11 @@
             owned: false,
             description: 'Shrinks your plane for tighter maneuvers'
         },
-        ringMagnet: {
-            name: 'Ring Magnet',
+        coinMagnet: {
+            name: 'Coin Magnet',
             cost: 250,
             owned: false,
-            description: 'Auto-collect nearby rings for 90 seconds'
+            description: 'Auto-collect nearby coins for 90 seconds'
         },
         barrelRollUpgrade: {
             name: 'Barrel Roll',
@@ -156,10 +156,10 @@
     let invincibilityEndTime = 0;
     let invincibilityPulsePhase = 0;
 
-    // Ring magnet timer system (time-limited ability)
-    let ringMagnetActive = false;
-    let ringMagnetEndTime = 0;
-    const ringMagnetRadius = 4.5; // Auto-collect rings within this radius
+    // Coin magnet timer system (time-limited ability)
+    let coinMagnetActive = false;
+    let coinMagnetEndTime = 0;
+    const coinMagnetRadius = 5.0; // Auto-collect coins within this radius
 
     // Laser timer system (lasers are time-limited like invincibility) - DEPRECATED but keeping for compatibility
     let lasersActive = false;
@@ -2363,9 +2363,9 @@
                 // Scale plane to 0.65x size (smaller for tighter maneuvers)
                 shipGroup.scale.set(0.65, 0.65, 0.65);
                 break;
-            case 'ringMagnet':
-                ringMagnetActive = true;
-                ringMagnetEndTime = Date.now() + 90000; // 90 seconds
+            case 'coinMagnet':
+                coinMagnetActive = true;
+                coinMagnetEndTime = Date.now() + 90000; // 90 seconds
                 break;
             case 'barrelRollUpgrade':
                 // Barrel roll is now enabled (already exists in code)
@@ -2404,9 +2404,9 @@
                 // Restore normal plane size
                 shipGroup.scale.set(1.0, 1.0, 1.0);
                 break;
-            case 'ringMagnet':
-                ringMagnetActive = false;
-                ringMagnetEndTime = 0;
+            case 'coinMagnet':
+                coinMagnetActive = false;
+                coinMagnetEndTime = 0;
                 break;
             case 'barrelRollUpgrade':
                 // Can't really disable barrel roll mid-animation,
@@ -3094,11 +3094,11 @@
             }
         }
 
-        // Check if ring magnet expired
-        if (ringMagnetActive && Date.now() >= ringMagnetEndTime) {
-            ringMagnetActive = false;
-            abilities.ringMagnet.owned = false;
-            crashMessage = 'RING MAGNET EXPIRED';
+        // Check if coin magnet expired
+        if (coinMagnetActive && Date.now() >= coinMagnetEndTime) {
+            coinMagnetActive = false;
+            abilities.coinMagnet.owned = false;
+            crashMessage = 'COIN MAGNET EXPIRED';
             crashMessageTimer = 60;
         }
 
@@ -3890,17 +3890,14 @@
                 ring.rotation.z += 0.02 * deltaTime; // Spin effect
 
                 // Check if plane flies through ring - optimized with squared distance
-                // Ring magnet increases collection radius
                 const zDiff = Math.abs(ring.position.z - 3.5);
-                const magnetZRange = ringMagnetActive ? 5 : 2; // Extended Z range when magnet active
-                if (zDiff < magnetZRange) {
+                if (zDiff < 2) {
                     const dx = ring.position.x - curX;
                     const dy = ring.position.y - curY;
                     const distSq = dx * dx + dy * dy;
-                    const baseRadiusSq = 3 * 3; // 9
-                    const magnetRadiusSq = ringMagnetActive ? (ringMagnetRadius * ringMagnetRadius) : baseRadiusSq;
+                    const ringRadiusSq = 3 * 3; // 9
 
-                    if (distSq < magnetRadiusSq) {
+                    if (distSq < ringRadiusSq) {
                         ring.userData.collected = true;
                         ring.userData.collectTime = Date.now(); // Track when collected
                         const points = ring.userData.points || 25;
@@ -4068,13 +4065,15 @@
                 coin.material.opacity = 0.6 + (sheenValue * 0.3); // Pulse between 0.6 and 0.9
 
                 // Check if plane collects coin - simple distance check
+                // Coin magnet increases collection radius
                 const dx = coin.position.x - curX;
                 const dy = coin.position.y - curY;
                 const dz = coin.position.z - 3.5;
                 const distSq = dx * dx + dy * dy + dz * dz;
-                const collectRadiusSq = 1.5 * 1.5; // Collection radius
+                const baseRadiusSq = 1.5 * 1.5; // Normal collection radius
+                const magnetRadiusSq = coinMagnetActive ? (coinMagnetRadius * coinMagnetRadius) : baseRadiusSq;
 
-                if (distSq < collectRadiusSq) {
+                if (distSq < magnetRadiusSq) {
                     coin.userData.collected = true;
                     score += 2; // 2 points per coin - small additive bonus
 
