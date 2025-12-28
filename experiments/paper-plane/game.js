@@ -49,6 +49,20 @@
     let currentHealth = 4;
     const maxHealth = 4;
 
+    // Hidden dynamic difficulty system (completely invisible to player)
+    let difficultyScalar = 1.0; // Starting scalar (0.85-1.15 range)
+    let gameStartTime = 0; // Track when game actually starts
+    const warmupDuration = 75000; // 75 seconds warm-up (60-90s range)
+    const difficultyWindow = 25000; // 25 second rolling window for metrics
+
+    // Rolling window for difficulty metrics
+    const difficultyMetrics = {
+        collisions: [], // {time, happened}
+        ringAttempts: [], // {time, success}
+        healthSamples: [], // {time, health}
+        lastHitTime: 0
+    };
+
     // Debug scaffolding (internal only - no display)
     const DEBUG_ENABLED = false; // Must remain false by default
     let debugMetrics = {
@@ -1573,6 +1587,7 @@
             ring.visible = true;
             ring.userData.collected = false;
             ring.userData.collectTime = 0;
+            ring.userData.missTracked = false; // Reset for difficulty tracking
             return ring;
         }
         return null;
@@ -2601,6 +2616,71 @@
     let lastFrameTime = 0;
     let isPaused = false;
 
+    // Update difficulty scalar based on player performance (hidden system)
+    function updateDifficultyScalar(currentTime) {
+        // Clean old metrics outside rolling window
+        const windowStart = currentTime - difficultyWindow;
+        difficultyMetrics.collisions = difficultyMetrics.collisions.filter(m => m.time > windowStart);
+        difficultyMetrics.ringAttempts = difficultyMetrics.ringAttempts.filter(m => m.time > windowStart);
+        difficultyMetrics.healthSamples = difficultyMetrics.healthSamples.filter(m => m.time > windowStart);
+
+        // Sample current health periodically
+        if (difficultyMetrics.healthSamples.length === 0 ||
+            currentTime - difficultyMetrics.healthSamples[difficultyMetrics.healthSamples.length - 1].time > 1000) {
+            difficultyMetrics.healthSamples.push({time: currentTime, health: currentHealth});
+        }
+
+        // Calculate performance factors
+        const collisionCount = difficultyMetrics.collisions.filter(m => m.happened).length;
+        const timeSinceLastHit = difficultyMetrics.lastHitTime === 0 ? difficultyWindow :
+                                 Math.min(currentTime - difficultyMetrics.lastHitTime, difficultyWindow);
+
+        const ringTotal = difficultyMetrics.ringAttempts.length;
+        const ringHits = difficultyMetrics.ringAttempts.filter(m => m.success).length;
+        const ringHitRate = ringTotal > 0 ? ringHits / ringTotal : 0.5;
+
+        const avgHealth = difficultyMetrics.healthSamples.length > 0 ?
+            difficultyMetrics.healthSamples.reduce((sum, m) => sum + m.health, 0) / difficultyMetrics.healthSamples.length :
+            maxHealth;
+
+        // Calculate target scalar
+        let targetScalar = 1.0;
+
+        // Collision penalty - ease down quickly after damage
+        if (collisionCount > 0) {
+            targetScalar -= collisionCount * 0.04; // -4% per collision in window
+        }
+
+        // Time without hits - ramp up slowly with clean play
+        if (timeSinceLastHit > 10000) { // 10+ seconds clean
+            const cleanBonus = Math.min((timeSinceLastHit - 10000) / 15000, 1.0); // Max bonus after 25s clean
+            targetScalar += cleanBonus * 0.08; // Up to +8% for sustained clean play
+        }
+
+        // Ring accuracy - reward good play
+        if (ringTotal >= 3) { // Need at least 3 attempts
+            targetScalar += (ringHitRate - 0.5) * 0.12; // -6% to +6% based on accuracy
+        }
+
+        // Health state - lower difficulty when struggling
+        const healthRatio = avgHealth / maxHealth;
+        if (healthRatio < 0.5) {
+            targetScalar -= (0.5 - healthRatio) * 0.2; // Up to -10% when low health
+        }
+
+        // Clamp to tight range
+        targetScalar = Math.max(0.85, Math.min(1.15, targetScalar));
+
+        // Smooth transition - lerp toward target (slow changes)
+        const lerpSpeed = targetScalar < difficultyScalar ? 0.15 : 0.03; // Faster easing down, slower ramping up
+        difficultyScalar += (targetScalar - difficultyScalar) * lerpSpeed;
+
+        // Update debug metrics if enabled
+        if (DEBUG_ENABLED) {
+            debugMetrics.difficultyScalar = difficultyScalar;
+        }
+    }
+
     function animate(timestamp = performance.now()) {
         const uiState = uiControls.getGameState();
         if (!uiState.gameStarted && !animationRunning) return; // Don't start until play button clicked
@@ -2609,15 +2689,19 @@
             return; // Stop animation loop when paused
         }
 
-        // Initialize lastFrameTime on first frame
+        // Initialize lastFrameTime and gameStartTime on first frame
         if (!animationRunning) {
             lastFrameTime = timestamp;
+            gameStartTime = timestamp; // Track when game actually starts
         }
         animationRunning = true;
 
         // Frame-rate independent animation
         const deltaTime = lastFrameTime === 0 ? 1 : Math.min((timestamp - lastFrameTime) / 16.67, 2);
         lastFrameTime = timestamp;
+
+        // Update difficulty scalar based on performance (hidden system)
+        updateDifficultyScalar(timestamp);
 
         // Debug metrics tracking (internal only)
         if (DEBUG_ENABLED) {
@@ -2638,10 +2722,18 @@
         requestAnimationFrame(animate);
         time += 0.01 * deltaTime;
 
+        // Warm-up phase - cap speed for first 60-90 seconds (hidden)
+        const timeSinceStart = timestamp - gameStartTime;
+        const inWarmup = timeSinceStart < warmupDuration;
+        const warmupSpeedCap = inWarmup ? 0.75 : 1.0; // 25% speed reduction during warm-up
+
         // Speed boost effect (includes near-miss boost and ring boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost + ringBoost;
-        const speed = baseSpeed * totalSpeedMultiplier * deltaTime;
+
+        // Apply difficulty scalar and warm-up cap to base speed (hidden systems)
+        const adjustedBaseSpeed = baseSpeed * difficultyScalar * warmupSpeedCap;
+        const speed = adjustedBaseSpeed * totalSpeedMultiplier * deltaTime;
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
@@ -3156,10 +3248,14 @@
                     currentWave = wavePatterns[patternName];
                     currentWavePositions = currentWave.getPositions(); // Cache positions
                     waveProgress = 0;
+
+                    // Apply difficulty scalar and warm-up to obstacle spacing (hidden system)
+                    // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
+                    const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
+
                     // BOSS GAUNTLET: Much denser building spawns (60 units vs normal 150)
-                    nextWaveDistance = currentPhase === 'boss_gauntlet' ?
-                        b.position.z - 60 :
-                        b.position.z - 150; // Start new wave further ahead for better visibility
+                    const baseDistance = currentPhase === 'boss_gauntlet' ? 60 : 150;
+                    nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
 
                     // If breather wave (no buildings), deactivate this instance
                     if (currentWave.buildings === 0) {
@@ -3455,6 +3551,10 @@
                         // Normal collision damage
                         collisionFlash = 0.5;
 
+                        // Track collision for difficulty system (hidden)
+                        difficultyMetrics.collisions.push({time: timestamp, happened: true});
+                        difficultyMetrics.lastHitTime = timestamp;
+
                         // Shield mechanic: first hits damage shield, not health
                         if (shieldActive && shieldHits < maxShieldHits) {
                             shieldHits++;
@@ -3691,6 +3791,9 @@
                         const points = ring.userData.points || 25;
                         score += points;
 
+                        // Track ring hit for difficulty system (hidden)
+                        difficultyMetrics.ringAttempts.push({time: timestamp, success: true});
+
                         // Show bonus in score display with fade effect
                         uiControls.elements.scoreBonusUI.innerText = `+${points}`;
                         uiControls.elements.scoreBonusUI.style.opacity = '1';
@@ -3705,6 +3808,12 @@
 
             // Return to pool if too far OR collected for >100ms
             if (ring.position.z > 20 || (ring.userData.collected && Date.now() - ring.userData.collectTime > 100)) {
+                // Track ring miss for difficulty system (hidden) - only if not collected
+                if (!ring.userData.collected && !ring.userData.missTracked) {
+                    difficultyMetrics.ringAttempts.push({time: timestamp, success: false});
+                    ring.userData.missTracked = true; // Track only once
+                }
+
                 ring.visible = false;
                 ring.position.z = -1000;
                 ring.material = ringMat; // Reset to green
@@ -4401,6 +4510,7 @@
                 ring.rotation.x = 0;
                 ring.rotation.y = 0;
                 ring.userData.collected = false;
+                ring.userData.missTracked = false; // For difficulty tracking
                 ring.userData.points = isFuchsia ? 50 : 25; // Track points for each ring
                 ring.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
                 scene.add(ring);
