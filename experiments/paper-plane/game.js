@@ -4071,13 +4071,13 @@
             currentPhase === 'breather_before_rings' ||
             currentPhase === 'breather_after_rings';
 
-        const isBuildingsPhase = currentPhase === 'buildings';
+        const isHighIntensityPhase = currentPhase === 'buildings' || currentPhase === 'walls';
 
-        // Breather moments: 0.3% chance, Buildings: 0.05% chance (much rarer bonus)
-        const windGustChance = isBreatherMoment ? 0.003 : (isBuildingsPhase ? 0.0005 : 0);
+        // Breather moments: 0.3% chance, High intensity (buildings/walls): 0.05% chance (rare bonus)
+        const windGustChance = isBreatherMoment ? 0.003 : (isHighIntensityPhase ? 0.0005 : 0);
 
         if (windGusts.length === 0 && Math.random() < windGustChance) {
-            // Breather: sometimes 2-3 gusts, Buildings: always just 1 (rare bonus)
+            // Breather: sometimes 2-3 gusts, High intensity: always just 1 (rare bonus)
             const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
             for (let i = 0; i < gustCount; i++) {
@@ -4094,9 +4094,9 @@
             }
         }
 
-        // Rare ring spawn during buildings phase (bonus reward)
-        if (isBuildingsPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
-            // Very rare: single ring as bonus during buildings
+        // Rare ring spawn during high intensity phases (buildings/walls) - bonus reward
+        if (isHighIntensityPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+            // Very rare: single ring as bonus during buildings or walls
             const ring = getRingFromPool();
             if (ring) {
                 // 10% chance for rare fuchsia ring
