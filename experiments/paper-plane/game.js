@@ -1682,12 +1682,210 @@
     }
 
     // Phase system for balancing building dodging and ring collection
-    let currentPhase = 'buildings'; // 'buildings', 'rings', or 'walls'
+    // Smart phase configuration with intensity-based balancing
+    const phaseConfig = {
+        buildings: {
+            intensity: 'high',
+            duration: [15000, 25000], // 15-25 seconds
+            canFollowItself: false,
+            description: 'Dodge buildings'
+        },
+        walls: {
+            intensity: 'high',
+            duration: [18000, 22000], // 18-22 seconds
+            canFollowItself: false,
+            description: 'Navigate high/low walls'
+        },
+        rings: {
+            intensity: 'low',
+            duration: [12000, 18000], // 12-18 seconds
+            canFollowItself: false,
+            description: 'Collect rings - peaceful'
+        },
+        coins: {
+            intensity: 'low',
+            duration: [15000, 20000], // 15-20 seconds
+            canFollowItself: false,
+            description: 'Collect scattered coins'
+        },
+        bonus: {
+            intensity: 'medium',
+            duration: [20000, 25000], // 20-25 seconds
+            canFollowItself: false,
+            description: 'Coin run + wind gusts'
+        },
+        breather: {
+            intensity: 'calm',
+            duration: [15000, 20000], // 15-20 seconds
+            canFollowItself: false,
+            description: 'Just flying - minimal obstacles'
+        },
+        mixed: {
+            intensity: 'medium',
+            duration: [20000, 30000], // 20-30 seconds
+            canFollowItself: false,
+            description: 'Light buildings + coins'
+        }
+    };
+
+    // Phase tracking
+    let currentPhase = 'buildings';
     let phaseStartTime = 0;
-    let phaseDuration = 15000 + Math.random() * 10000; // 15-25 seconds - varied breather moments
-    let phaseAlternator = false; // Toggle between rings and second building run
-    let ringsSpawnedThisPhase = false; // Track if rings have been spawned for current ring phase
-    let wallsSpawnedThisPhase = false; // Track if walls have been spawned for current wall phase
+    let phaseDuration = 20000;
+    let phaseHistory = []; // Last 5 phases
+    let phaseLastSeen = {
+        buildings: -Infinity,
+        walls: -Infinity,
+        rings: -Infinity,
+        coins: -Infinity,
+        bonus: -Infinity,
+        breather: -Infinity,
+        mixed: -Infinity
+    };
+    let totalPhasesCompleted = 0;
+
+    // Phase spawn flags
+    let ringsSpawnedThisPhase = false;
+    let wallsSpawnedThisPhase = false;
+    let coinsSpawnedThisPhase = false;
+    let mixedSpawnedThisPhase = false;
+    let bonusSpawnedThisPhase = false;
+    let breatherSetup = false;
+
+    // Smart phase selection algorithm
+    function selectNextPhase() {
+        const lastPhase = phaseHistory[phaseHistory.length - 1] || 'none';
+        const lastIntensity = lastPhase !== 'none' ? phaseConfig[lastPhase].intensity : 'medium';
+
+        // Calculate weights for each phase
+        let weights = {};
+
+        for (let phaseName in phaseConfig) {
+            const config = phaseConfig[phaseName];
+            let weight = 100; // Base weight
+
+            // RULE 1: Can't follow itself
+            if (!config.canFollowItself && lastPhase === phaseName) {
+                weight = 0;
+                continue;
+            }
+
+            // RULE 2: Can't be in recent history (last 3 phases)
+            if (phaseHistory.slice(-3).includes(phaseName)) {
+                weight *= 0.1; // Drastically reduce weight
+            }
+
+            // RULE 3: Intensity balancing
+            // High intensity phase → prefer low/calm
+            // Low intensity phase → can do anything
+            // Calm phase → prefer high/medium
+            if (lastIntensity === 'high') {
+                if (config.intensity === 'calm' || config.intensity === 'low') {
+                    weight *= 3.0; // Strongly prefer calm/low
+                } else if (config.intensity === 'high') {
+                    weight *= 0.3; // Discourage another high
+                }
+            } else if (lastIntensity === 'calm') {
+                if (config.intensity === 'high' || config.intensity === 'medium') {
+                    weight *= 2.0; // Prefer action after calm
+                } else if (config.intensity === 'calm') {
+                    weight *= 0.2; // Don't want back-to-back calm
+                }
+            } else if (lastIntensity === 'low') {
+                if (config.intensity === 'high') {
+                    weight *= 1.5; // Slight preference for action
+                }
+            }
+
+            // RULE 4: Time since last seen
+            // Phases not seen recently get boosted weight
+            const timeSinceLastSeen = totalPhasesCompleted - phaseLastSeen[phaseName];
+            if (timeSinceLastSeen > 5) {
+                weight *= 2.0; // Haven't seen in a while
+            } else if (timeSinceLastSeen > 3) {
+                weight *= 1.5;
+            }
+
+            // RULE 5: Bonus stages should be rare (10% base chance)
+            if (phaseName === 'bonus') {
+                weight *= 0.15; // Make rare but possible
+            }
+
+            // RULE 6: Breathers every 3-4 phases
+            if (phaseName === 'breather') {
+                const phasesSinceLastBreather = phaseHistory.slice().reverse()
+                    .findIndex(p => p === 'breather');
+
+                if (phasesSinceLastBreather >= 3 || phasesSinceLastBreather === -1) {
+                    weight *= 3.0; // It's been a while, encourage breather
+                } else if (phasesSinceLastBreather < 2) {
+                    weight *= 0.2; // Too soon for another breather
+                }
+            }
+
+            // RULE 7: Early game adjustments (first 50 miles)
+            if (currentMiles < 50) {
+                if (phaseName === 'walls') weight *= 0.5; // Fewer walls early
+                if (phaseName === 'breather') weight *= 1.5; // More breathers early
+                if (phaseName === 'bonus') weight *= 0.5; // Fewer bonus stages early
+            }
+
+            // RULE 8: Late game variety (150+ miles)
+            if (currentMiles >= 150) {
+                if (phaseName === 'mixed') weight *= 2.0; // More variety late
+                if (phaseName === 'bonus') weight *= 1.5; // More bonus stages late
+            }
+
+            weights[phaseName] = Math.max(weight, 0);
+        }
+
+        // Weighted random selection
+        const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+        let random = Math.random() * totalWeight;
+
+        for (let phaseName in weights) {
+            random -= weights[phaseName];
+            if (random <= 0) {
+                // Update tracking
+                phaseHistory.push(phaseName);
+                if (phaseHistory.length > 5) phaseHistory.shift(); // Keep last 5
+                phaseLastSeen[phaseName] = totalPhasesCompleted;
+                totalPhasesCompleted++;
+
+                // Set duration
+                const config = phaseConfig[phaseName];
+                const duration = config.duration[0] +
+                    Math.random() * (config.duration[1] - config.duration[0]);
+
+                return { phase: phaseName, duration: duration };
+            }
+        }
+
+        // Fallback (shouldn't happen)
+        return { phase: 'buildings', duration: 20000 };
+    }
+
+    // Helper: Check if all phase items collected
+    function allPhaseItemsCollected() {
+        switch(currentPhase) {
+            case 'rings':
+                return ringsSpawnedThisPhase && rings.length === 0;
+            case 'walls':
+                return wallsSpawnedThisPhase && walls.length === 0;
+            case 'coins':
+                return coinsSpawnedThisPhase && coins.length === 0;
+            case 'bonus':
+                return bonusSpawnedThisPhase && coins.length === 0 && windGusts.length === 0;
+            case 'mixed':
+                return mixedSpawnedThisPhase && buildings.every(b => !b.active || b.position.z > 20) && coins.length === 0;
+            case 'breather':
+                return breatherSetup; // Time-based only
+            case 'buildings':
+                return true; // Time-based with wave spawning
+            default:
+                return true;
+        }
+    }
 
     // --- 6.5. COINS (COLLECTIBLES) - OBJECT POOLING ---
     const coins = [];
@@ -2889,8 +3087,9 @@
 
             // Check if we need to spawn a new wave when building passes camera
             if(b.position.z > 20 && b.active) {
-                // Check if we need to spawn a new wave (not during boss)
-                if (!bossActive && (currentWave === null || waveProgress >= currentWave.buildings)) {
+                // Check if we need to spawn a new wave (not during boss or low-intensity phases)
+                const canSpawnBuildings = currentPhase === 'buildings' || currentPhase === 'mixed';
+                if (!bossActive && canSpawnBuildings && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
                     if (antiCampingActive && Math.random() < 0.5) {
@@ -3961,38 +4160,148 @@
             }
         }
 
-        // Phase system: Check if it's time to switch phases
+        // Phase system: Smart phase selection with intensity balancing
         const currentTime = Date.now();
-        if (currentTime - phaseStartTime >= phaseDuration && rings.length === 0) {
-            // Switch phase based on current phase
-            if (currentPhase === 'buildings' || currentPhase === 'buildings2') {
-                // After buildings, add breather before rings (no walls during building phase)
-                currentPhase = 'breather_before_rings';
-                phaseStartTime = currentTime;
-                phaseDuration = 1000; // 1 second breather before rings (faster action)
-            } else if (currentPhase === 'breather_before_rings') {
-                // 80% chance to spawn walls instead of going back to buildings (increased from 50%)
-                if (Math.random() < 0.80) {
-                    currentPhase = 'walls';
-                    wallsSpawnedThisPhase = false;
-                    phaseDuration = 20000;
-                    phaseStartTime = currentTime;
-                } else {
-                    // After breather, go back to buildings (rings now tied to checkpoints)
-                    currentPhase = 'buildings';
-                    phaseStartTime = currentTime;
-                    phaseDuration = 15000 + Math.random() * 10000; // 15-25 seconds - varied breather moments
-                }
-            } else if (currentPhase === 'breather_after_rings') {
-                // After rings breather, ALWAYS spawn walls (100% frequency after building sections)
-                currentPhase = 'walls';
-                wallsSpawnedThisPhase = false; // Reset flag for new wall phase
-                phaseDuration = 20000; // Walls phase lasts ~20 seconds
-                phaseStartTime = currentTime;
-            }
+        const phaseComplete = (currentTime - phaseStartTime >= phaseDuration) && allPhaseItemsCollected();
+
+        if (phaseComplete && !bossActive) {
+            // Select next phase using smart algorithm
+            const nextPhaseData = selectNextPhase();
+
+            currentPhase = nextPhaseData.phase;
+            phaseDuration = nextPhaseData.duration;
+            phaseStartTime = currentTime;
+
+            // Reset all phase flags
+            ringsSpawnedThisPhase = false;
+            wallsSpawnedThisPhase = false;
+            coinsSpawnedThisPhase = false;
+            mixedSpawnedThisPhase = false;
+            bonusSpawnedThisPhase = false;
+            breatherSetup = false;
         }
 
-        // Spawn rings during ring phase (ONLY ONCE per phase, not during boss)
+        // COINS PHASE - Spawn scattered coins
+        if (currentPhase === 'coins' && !coinsSpawnedThisPhase && !bossActive) {
+            const coinCount = Math.floor(Math.random() * 7) + 12; // 12-18 coins
+
+            for (let i = 0; i < coinCount; i++) {
+                const coin = getCoinFromPool();
+                if (coin) {
+                    const lanes = [-3, -1.5, 0, 1.5, 3];
+                    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                    const yPos = 1 + Math.random() * 5; // Various heights
+                    const zSpacing = 300 / coinCount; // Spread over distance
+
+                    coin.position.set(lane, yPos, -250 - (i * zSpacing));
+                    coins.push(coin);
+                }
+            }
+
+            // Clear buildings during coin phase
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+
+            coinsSpawnedThisPhase = true;
+        }
+
+        // BONUS PHASE - Coin run + wind gusts combo
+        if (currentPhase === 'bonus' && !bonusSpawnedThisPhase && !bossActive) {
+            // 6-8 coins in a line
+            const coinCount = Math.floor(Math.random() * 3) + 6;
+            const startZ = -250;
+            const spacing = 18;
+
+            for (let i = 0; i < coinCount; i++) {
+                const coin = getCoinFromPool();
+                if (coin) {
+                    const lanes = [-2, 0, 2];
+                    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                    coin.position.set(lane, 2 + Math.random() * 2, startZ - (i * spacing));
+                    coins.push(coin);
+                }
+            }
+
+            // 2-3 wind gusts between coins
+            const gustCount = Math.floor(Math.random() * 2) + 2;
+            for (let i = 0; i < gustCount; i++) {
+                const gust = getWindGustFromPool();
+                if (gust) {
+                    const gustZ = startZ - (coinCount * spacing * 0.3 * (i + 1));
+                    gust.position.set(0, 3, gustZ);
+                    gust.visible = true;
+                    windGusts.push(gust);
+                }
+            }
+
+            // Clear buildings during bonus phase
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+
+            bonusSpawnedThisPhase = true;
+        }
+
+        // BREATHER PHASE - Just flying with minimal obstacles
+        if (currentPhase === 'breather' && !breatherSetup && !bossActive) {
+            // Spawn 1-2 optional rings far apart
+            if (Math.random() < 0.5) {
+                const ring1 = new THREE.Mesh(ringGeometry, ringMat);
+                ring1.position.set((Math.random() - 0.5) * 8, Math.random() * 2 + 2, -180);
+                ring1.rotation.x = 0;
+                ring1.rotation.y = 0;
+                ring1.userData.collected = false;
+                ring1.userData.points = 25;
+                ring1.userData.originalScale = { x: 1, y: 1, z: 1 };
+                scene.add(ring1);
+                rings.push(ring1);
+
+                if (Math.random() < 0.3) {
+                    const ring2 = new THREE.Mesh(ringGeometry, ringMat);
+                    ring2.position.set((Math.random() - 0.5) * 8, Math.random() * 2 + 3, -280);
+                    ring2.rotation.x = 0;
+                    ring2.rotation.y = 0;
+                    ring2.userData.collected = false;
+                    ring2.userData.points = 25;
+                    ring2.userData.originalScale = { x: 1, y: 1, z: 1 };
+                    scene.add(ring2);
+                    rings.push(ring2);
+                }
+            }
+
+            // Clear all buildings for breather
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+
+            breatherSetup = true;
+        }
+
+        // MIXED PHASE - Light buildings + scattered coins
+        if (currentPhase === 'mixed' && !mixedSpawnedThisPhase && !bossActive) {
+            // Spawn 6-8 coins scattered
+            const coinCount = Math.floor(Math.random() * 3) + 6;
+            for (let i = 0; i < coinCount; i++) {
+                const coin = getCoinFromPool();
+                if (coin) {
+                    const lanes = [-3, -1.5, 0, 1.5, 3];
+                    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                    const yPos = 1 + Math.random() * 4;
+                    coin.position.set(lane, yPos, -220 - (i * 30));
+                    coins.push(coin);
+                }
+            }
+
+            // Buildings will spawn normally through wave system but at reduced density
+            // The phase flag prevents too many from spawning
+            mixedSpawnedThisPhase = true;
+        }
+
+        // RINGS PHASE - Spawn rings (ONLY ONCE per phase, not during boss)
         if (currentPhase === 'rings' && !ringsSpawnedThisPhase && !bossActive) {
             // SHORT ring runs: only 2-3 rings max
             const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
@@ -4024,14 +4333,6 @@
             });
 
             ringsSpawnedThisPhase = true; // Mark rings as spawned for this phase
-        }
-
-        // After rings are collected, add breather before buildings spawn
-        if (currentPhase === 'rings' && ringsSpawnedThisPhase && rings.length === 0) {
-            // All rings collected, switch to breather phase
-            currentPhase = 'breather_after_rings';
-            phaseStartTime = Date.now();
-            phaseDuration = 1500; // 1.5 second breather after rings (faster action)
         }
 
         // Boss update and collision logic
@@ -4101,12 +4402,7 @@
             }
         }
 
-        // After all walls are passed, transition back to buildings
-        if (currentPhase === 'walls' && wallsSpawnedThisPhase && walls.length === 0) {
-            currentPhase = 'buildings';
-            phaseStartTime = Date.now();
-            phaseDuration = 60000 + Math.random() * 60000; // 1-2 minutes
-        }
+        // Phase transitions now handled by smart phase selection algorithm above
 
         // Check grace period expiration
         if (gracePeriodActive && Date.now() >= gracePeriodEndTime) {
