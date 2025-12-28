@@ -258,50 +258,33 @@
 
     function createGliderGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Wide glider - paper airplane with broad wings
+        // Simple triangle fan glider - wide wings for gliding
         const vertices = new Float32Array([
-            // Nose
-            0.0,  0.0, -0.75,      // 0: Blunt nose
+            // 0: Nose (blunter than dart)
+            0.0,  0.0, -0.75,
 
-            // Center body (shorter body, longer wings)
-            0.0,  0.03, -0.40,     // 1: Body front top
-            0.0,  0.03,  0.45,     // 2: Body back top
-            0.0, -0.05, -0.25,     // 3: Body front bottom
-            0.0, -0.05,  0.40,     // 4: Body back bottom
+            // 1: Left wing tip (very wide, less downward angle)
+            -0.90, -0.05, 0.40,
 
-            // Left wing (very wide for gliding)
-            -0.85,  0.0, -0.20,    // 5: Left wing front point
-            -0.95,  0.0,  0.45,    // 6: Left wing back point
+            // 2: Left body edge (back)
+            -0.10, 0.03, 0.40,
 
-            // Right wing (very wide for gliding)
-            0.85,  0.0, -0.20,     // 7: Right wing front point
-            0.95,  0.0,  0.45,     // 8: Right wing back point
+            // 3: Center back (tail, slightly raised)
+            0.0, 0.08, 0.48,
+
+            // 4: Right body edge (back)
+            0.10, 0.03, 0.40,
+
+            // 5: Right wing tip (very wide, less downward angle)
+            0.90, -0.05, 0.40,
         ]);
 
+        // Triangle fan from nose (vertex 0)
         const indices = [
-            // Left wing top
-            0, 1, 5,    // Nose to body to wing
-            1, 2, 6,    // Body to back
-            1, 6, 5,    // Wing triangle
-
-            // Right wing top
-            0, 7, 1,    // Nose to wing to body
-            1, 7, 2,    // Body to back
-            2, 7, 8,    // Wing triangle
-
-            // Left wing bottom
-            0, 5, 3,    // Nose underside
-            3, 5, 6,    // Wing underside
-            3, 6, 4,    // Body underside
-
-            // Right wing bottom
-            0, 3, 7,    // Nose underside
-            3, 4, 7,    // Body underside
-            4, 8, 7,    // Wing underside
-
-            // Tail closure
-            2, 6, 8,    // Top back
-            4, 6, 8,    // Bottom back
+            0, 2, 1,  // Left wing
+            0, 3, 2,  // Left center body
+            0, 4, 3,  // Right center body
+            0, 5, 4,  // Right wing
         ];
 
         geom.setIndex(indices);
@@ -312,50 +295,33 @@
 
     function createStuntGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Stunt plane - swept-back narrow wings for aerobatics
+        // Simple triangle fan stunt plane - narrow swept-back wings
         const vertices = new Float32Array([
-            // Nose
-            0.0,  0.0, -0.70,      // 0: Pointed nose
+            // 0: Nose (sharp point)
+            0.0,  0.0, -0.70,
 
-            // Center body (longer body for stability)
-            0.0,  0.05, -0.50,     // 1: Body front top
-            0.0,  0.05,  0.55,     // 2: Body back top
-            0.0, -0.08, -0.35,     // 3: Body front bottom
-            0.0, -0.08,  0.50,     // 4: Body back bottom
+            // 1: Left wing tip (narrow, positioned toward back = swept back)
+            -0.55, -0.06, 0.25,
 
-            // Left wing (narrow, swept back)
-            -0.45, 0.0,  0.05,     // 5: Left wing front point
-            -0.55, 0.0,  0.55,     // 6: Left wing back point
+            // 2: Left body edge (back)
+            -0.14, 0.06, 0.48,
 
-            // Right wing (narrow, swept back)
-            0.45,  0.0,  0.05,     // 7: Right wing front point
-            0.55,  0.0,  0.55,     // 8: Right wing back point
+            // 3: Center back (tail, raised for aerobatic stability)
+            0.0, 0.12, 0.55,
+
+            // 4: Right body edge (back)
+            0.14, 0.06, 0.48,
+
+            // 5: Right wing tip (narrow, swept back)
+            0.55, -0.06, 0.25,
         ]);
 
+        // Triangle fan from nose (vertex 0)
         const indices = [
-            // Left wing top
-            0, 1, 5,    // Nose to body to wing
-            1, 2, 6,    // Body to back
-            1, 6, 5,    // Wing triangle
-
-            // Right wing top
-            0, 7, 1,    // Nose to wing to body
-            1, 7, 2,    // Body to back
-            2, 7, 8,    // Wing triangle
-
-            // Left wing bottom
-            0, 5, 3,    // Nose underside
-            3, 5, 6,    // Wing underside
-            3, 6, 4,    // Body underside
-
-            // Right wing bottom
-            0, 3, 7,    // Nose underside
-            3, 4, 7,    // Body underside
-            4, 8, 7,    // Wing underside
-
-            // Tail closure
-            2, 6, 8,    // Top back
-            4, 6, 8,    // Bottom back
+            0, 2, 1,  // Left wing
+            0, 3, 2,  // Left center body
+            0, 4, 3,  // Right center body
+            0, 5, 4,  // Right wing
         ];
 
         geom.setIndex(indices);
