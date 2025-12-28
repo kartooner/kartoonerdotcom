@@ -1686,43 +1686,43 @@
     const phaseConfig = {
         buildings: {
             intensity: 'high',
-            duration: [15000, 25000], // 15-25 seconds
-            canFollowItself: false,
-            description: 'Dodge buildings'
+            duration: [30000, 60000], // 30-60 seconds - CORE MECHANIC - CAN CHAIN 2-3x for 60-180s runs
+            canFollowItself: true, // BUILDINGS CAN STACK - 2-3 phases in a row for extended gameplay
+            description: 'Dodge buildings - main risk/reward gameplay'
         },
         walls: {
             intensity: 'high',
-            duration: [18000, 22000], // 18-22 seconds
+            duration: [15000, 22000], // 15-22 seconds - Quick change of pace
             canFollowItself: false,
             description: 'Navigate high/low walls'
         },
         rings: {
             intensity: 'low',
-            duration: [12000, 18000], // 12-18 seconds
+            duration: [10000, 15000], // 10-15 seconds - Quick collection moment
             canFollowItself: false,
             description: 'Collect rings - peaceful'
         },
         coins: {
             intensity: 'low',
-            duration: [15000, 20000], // 15-20 seconds
+            duration: [12000, 18000], // 12-18 seconds - Quick collection
             canFollowItself: false,
             description: 'Collect scattered coins'
         },
         bonus: {
             intensity: 'medium',
-            duration: [20000, 25000], // 20-25 seconds
+            duration: [15000, 22000], // 15-22 seconds - Special moment
             canFollowItself: false,
             description: 'Coin run + wind gusts'
         },
         breather: {
             intensity: 'calm',
-            duration: [15000, 20000], // 15-20 seconds
+            duration: [12000, 18000], // 12-18 seconds - Quick rest
             canFollowItself: false,
             description: 'Just flying - minimal obstacles'
         },
         mixed: {
             intensity: 'medium',
-            duration: [20000, 30000], // 20-30 seconds
+            duration: [20000, 30000], // 20-30 seconds - Light buildings + coins (ALWAYS shorter than pure buildings)
             canFollowItself: false,
             description: 'Light buildings + coins'
         }
@@ -1771,19 +1771,33 @@
             }
 
             // RULE 2: Can't be in recent history (last 3 phases)
-            if (phaseHistory.slice(-3).includes(phaseName)) {
+            // EXCEPTION: Buildings can chain 2-3 times, so skip this check for buildings
+            if (phaseName !== 'buildings' && phaseHistory.slice(-3).includes(phaseName)) {
                 weight *= 0.1; // Drastically reduce weight
             }
 
-            // RULE 3: Intensity balancing
-            // High intensity phase → prefer low/calm
-            // Low intensity phase → can do anything
-            // Calm phase → prefer high/medium
-            if (lastIntensity === 'high') {
+            // RULE 3: Intensity balancing with BUILDINGS CHAINING BONUS
+            // Buildings can stack 2-3 times for extended gameplay
+            if (phaseName === 'buildings' && lastPhase === 'buildings') {
+                // Count consecutive building phases
+                let consecutiveBuildings = 1;
+                for (let i = phaseHistory.length - 1; i >= 0 && phaseHistory[i] === 'buildings'; i--) {
+                    consecutiveBuildings++;
+                }
+
+                // Encourage chaining up to 3 buildings phases (90-180s of buildings)
+                if (consecutiveBuildings === 1) {
+                    weight *= 2.0; // High chance of 2nd buildings phase
+                } else if (consecutiveBuildings === 2) {
+                    weight *= 1.2; // Decent chance of 3rd buildings phase
+                } else {
+                    weight *= 0.3; // After 3rd, strongly prefer variety
+                }
+            } else if (lastIntensity === 'high' && config.intensity === 'high' && phaseName !== 'buildings') {
+                weight *= 0.3; // Discourage other high intensity after high (but not buildings)
+            } else if (lastIntensity === 'high') {
                 if (config.intensity === 'calm' || config.intensity === 'low') {
-                    weight *= 3.0; // Strongly prefer calm/low
-                } else if (config.intensity === 'high') {
-                    weight *= 0.3; // Discourage another high
+                    weight *= 3.0; // Strongly prefer calm/low after high intensity
                 }
             } else if (lastIntensity === 'calm') {
                 if (config.intensity === 'high' || config.intensity === 'medium') {
@@ -4051,14 +4065,20 @@
             trySpawnShieldPickup();
         }
 
-        // Try to spawn wind gusts during breather/ring moments (rare)
+        // Try to spawn wind gusts during breather/ring moments (rare) OR buildings (very rare)
         const isBreatherMoment = currentPhase === 'rings' ||
+            currentPhase === 'breather' ||
             currentPhase === 'breather_before_rings' ||
             currentPhase === 'breather_after_rings';
 
-        if (isBreatherMoment && windGusts.length === 0 && Math.random() < 0.003) {
-            // Occasionally spawn 2-3 in a row (30% chance), otherwise just 1
-            const gustCount = Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1; // 30% chance for 2-3, otherwise 1
+        const isHighIntensityPhase = currentPhase === 'buildings' || currentPhase === 'walls';
+
+        // Breather moments: 0.3% chance, High intensity (buildings/walls): 0.05% chance (rare bonus)
+        const windGustChance = isBreatherMoment ? 0.003 : (isHighIntensityPhase ? 0.0005 : 0);
+
+        if (windGusts.length === 0 && Math.random() < windGustChance) {
+            // Breather: sometimes 2-3 gusts, High intensity: always just 1 (rare bonus)
+            const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
             for (let i = 0; i < gustCount; i++) {
                 const gust = getWindGustFromPool();
@@ -4071,6 +4091,24 @@
                     );
                     windGusts.push(gust);
                 }
+            }
+        }
+
+        // Rare ring spawn during high intensity phases (buildings/walls) - bonus reward
+        if (isHighIntensityPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+            // Very rare: single ring as bonus during buildings or walls
+            const ring = getRingFromPool();
+            if (ring) {
+                // 10% chance for rare fuchsia ring
+                const isFuchsia = Math.random() < 0.1;
+                ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
+                ring.position.set(
+                    (Math.random() - 0.5) * 8, // Center area
+                    Math.random() * 2 + 2,     // Mid-height
+                    -200                        // Spawn ahead
+                );
+                ring.userData.points = isFuchsia ? 50 : 25;
+                rings.push(ring);
             }
         }
 
