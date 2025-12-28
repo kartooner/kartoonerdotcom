@@ -3102,10 +3102,10 @@
                 b.active = false;
             }
 
-            // Only check collision if building is active, visible, and in reasonable range
-            // Must be: active, in front of camera (z < 15), close enough (z > -50), and visible (opacity > 0)
-            if(!b.active || b.position.z >= 15 || b.position.z < -50 || b.opacity <= 0.1) {
-                return; // Skip inactive, out-of-range, or faded buildings
+            // STRICT collision validation to prevent ghost hits
+            // Only check buildings that are active, fully visible, and very close to player
+            if(!b.active) {
+                return; // Skip inactive buildings
             }
 
             // Validate position is not NaN (sanity check)
@@ -3113,12 +3113,23 @@
                 return;
             }
 
-            // Broad-phase culling: distance check before expensive Box3 operations
+            // Very tight z-range check: only buildings near the player
+            // Player is at z ≈ 3.5, so check buildings from -20 to +10
+            if(b.position.z >= 10 || b.position.z < -20) {
+                return; // Building is too far ahead or behind
+            }
+
+            // Require building to be mostly visible (opacity > 0.7)
+            if(b.opacity <= 0.7) {
+                return; // Building is too faded/transparent
+            }
+
+            // Strict distance check: only check very close buildings
             const dx = b.position.x - curX;
             const dy = b.position.y - curY;
             const dz = b.position.z - 3.5;
             const distSq = dx * dx + dy * dy + dz * dz;
-            const maxCollisionDistSq = 100; // ~10 units squared
+            const maxCollisionDistSq = 49; // ~7 units squared (much tighter)
 
             // Skip if too far away for collision
             if (distSq > maxCollisionDistSq) {
