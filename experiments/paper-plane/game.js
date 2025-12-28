@@ -1686,43 +1686,43 @@
     const phaseConfig = {
         buildings: {
             intensity: 'high',
-            duration: [30000, 45000], // 30-45 seconds - CORE MECHANIC (increased from 15-25s)
+            duration: [40000, 60000], // 40-60 seconds - CORE MECHANIC - ALWAYS LONGEST PHASE
             canFollowItself: false,
             description: 'Dodge buildings - main risk/reward gameplay'
         },
         walls: {
             intensity: 'high',
-            duration: [15000, 20000], // 15-20 seconds - Quick change of pace (reduced from 18-22s)
+            duration: [15000, 22000], // 15-22 seconds - Quick change of pace
             canFollowItself: false,
             description: 'Navigate high/low walls'
         },
         rings: {
             intensity: 'low',
-            duration: [10000, 15000], // 10-15 seconds - Quick collection moment (reduced from 12-18s)
+            duration: [10000, 15000], // 10-15 seconds - Quick collection moment
             canFollowItself: false,
             description: 'Collect rings - peaceful'
         },
         coins: {
             intensity: 'low',
-            duration: [12000, 18000], // 12-18 seconds - Quick collection (reduced from 15-20s)
+            duration: [12000, 18000], // 12-18 seconds - Quick collection
             canFollowItself: false,
             description: 'Collect scattered coins'
         },
         bonus: {
             intensity: 'medium',
-            duration: [15000, 20000], // 15-20 seconds - Special moment (reduced from 20-25s)
+            duration: [15000, 22000], // 15-22 seconds - Special moment
             canFollowItself: false,
             description: 'Coin run + wind gusts'
         },
         breather: {
             intensity: 'calm',
-            duration: [12000, 18000], // 12-18 seconds - Quick rest (reduced from 15-20s)
+            duration: [12000, 18000], // 12-18 seconds - Quick rest
             canFollowItself: false,
             description: 'Just flying - minimal obstacles'
         },
         mixed: {
             intensity: 'medium',
-            duration: [25000, 35000], // 25-35 seconds - Has buildings so can be longer (reduced from 20-30s)
+            duration: [20000, 30000], // 20-30 seconds - Light buildings + coins (ALWAYS shorter than pure buildings)
             canFollowItself: false,
             description: 'Light buildings + coins'
         }
