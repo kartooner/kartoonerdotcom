@@ -1686,43 +1686,43 @@
     const phaseConfig = {
         buildings: {
             intensity: 'high',
-            duration: [15000, 25000], // 15-25 seconds
+            duration: [30000, 45000], // 30-45 seconds - CORE MECHANIC (increased from 15-25s)
             canFollowItself: false,
-            description: 'Dodge buildings'
+            description: 'Dodge buildings - main risk/reward gameplay'
         },
         walls: {
             intensity: 'high',
-            duration: [18000, 22000], // 18-22 seconds
+            duration: [15000, 20000], // 15-20 seconds - Quick change of pace (reduced from 18-22s)
             canFollowItself: false,
             description: 'Navigate high/low walls'
         },
         rings: {
             intensity: 'low',
-            duration: [12000, 18000], // 12-18 seconds
+            duration: [10000, 15000], // 10-15 seconds - Quick collection moment (reduced from 12-18s)
             canFollowItself: false,
             description: 'Collect rings - peaceful'
         },
         coins: {
             intensity: 'low',
-            duration: [15000, 20000], // 15-20 seconds
+            duration: [12000, 18000], // 12-18 seconds - Quick collection (reduced from 15-20s)
             canFollowItself: false,
             description: 'Collect scattered coins'
         },
         bonus: {
             intensity: 'medium',
-            duration: [20000, 25000], // 20-25 seconds
+            duration: [15000, 20000], // 15-20 seconds - Special moment (reduced from 20-25s)
             canFollowItself: false,
             description: 'Coin run + wind gusts'
         },
         breather: {
             intensity: 'calm',
-            duration: [15000, 20000], // 15-20 seconds
+            duration: [12000, 18000], // 12-18 seconds - Quick rest (reduced from 15-20s)
             canFollowItself: false,
             description: 'Just flying - minimal obstacles'
         },
         mixed: {
             intensity: 'medium',
-            duration: [20000, 30000], // 20-30 seconds
+            duration: [25000, 35000], // 25-35 seconds - Has buildings so can be longer (reduced from 20-30s)
             canFollowItself: false,
             description: 'Light buildings + coins'
         }
