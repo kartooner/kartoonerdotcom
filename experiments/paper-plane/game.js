@@ -1642,8 +1642,8 @@
         return group;
     }
 
-    // Pre-create wind gust pool (2 gusts - rare)
-    for (let i = 0; i < 2; i++) {
+    // Pre-create wind gust pool (5 gusts - needed for bonus phases with 2-3 gusts)
+    for (let i = 0; i < 5; i++) {
         const gust = createWindGustGeometry();
         gust.userData.collected = false;
         gust.userData.originalScale = { x: 1, y: 1, z: 1 };
@@ -1877,7 +1877,8 @@
             case 'bonus':
                 return bonusSpawnedThisPhase && coins.length === 0 && windGusts.length === 0;
             case 'mixed':
-                return mixedSpawnedThisPhase && buildings.every(b => !b.active || b.position.z > 20) && coins.length === 0;
+                // For mixed phase, just check if coins are collected (time-based for buildings)
+                return mixedSpawnedThisPhase && coins.length === 0;
             case 'breather':
                 return breatherSetup; // Time-based only
             case 'buildings':
@@ -1906,8 +1907,8 @@
     const coinLookAtQuat = new THREE.Quaternion();
     const coinZAxis = new THREE.Vector3(0, 0, 1);
 
-    // Pre-create coin pool (20 coins - enough for scattered placement)
-    for (let i = 0; i < 20; i++) {
+    // Pre-create coin pool (30 coins - enough for bonus/coins phases with 12-18 coins)
+    for (let i = 0; i < 30; i++) {
         const coin = new THREE.Mesh(coinGeometry, coinMat.clone());
         coin.userData.collected = false;
         coin.userData.spinSpeed = 0.05; // Rotation speed
