@@ -89,7 +89,9 @@
       "Bash(move:*)",
       "Bash(cmd /c \"taskkill /F /PID 22132\")",
       "Bash(cmd /c \"taskkill /F /PID 8248\")",
-      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :8000 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")"
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -ano ^| findstr :8000 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")",
+      "Bash(npx http-server:*)",
+      "Bash(cmd /c \"taskkill /F /PID 18848\")"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- iOS-specific optimizations -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Android-specific optimizations -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#050505">
+
+    <!-- Google Font: Press Start 2P -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <title>ThreeJS: Paper Airplane</title>
+    <style>
+        :root { --bg: #050505; --neon: #00ffff; --teal: #00ced1; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            -ms-touch-action: none;
+        }
+
+        /* Force consistent scrollbar behavior across browsers */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            scrollbar-gutter: stable;
+        }
+
+        /* Spacer removed - game now fills viewport immediately */
+        .spacer { display: none; }
+
+        /* Hide content outside game container (but not scripts) */
+        #game-container ~ div {
+            display: none !important;
+        }
+
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            cursor: crosshair;
+
+            /* Mobile GPU acceleration */
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
+        }
+
+        /* Full screen optimizations - expand to fill viewport */
+        #game-container:fullscreen,
+        #game-container:-webkit-full-screen,
+        #game-container:-moz-full-screen,
+        #game-container:-ms-fullscreen {
+            max-width: 100vw;
+            max-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            /* Enhanced GPU acceleration for full screen */
+            will-change: transform, opacity;
+        }
+
+        .horizon-glow {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px; height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+            z-index: 1; pointer-events: none;
+        }
+
+        #footer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+
+        /* Play button overlay */
+        #play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        #play-overlay.hidden { display: none; }
+
+        /*
+         * CRT scanline animation inspired by CRTFilterWebGL
+         * https://github.com/Ichiaka/CRTFilterWebGL
+         * Copyright (c) 2025 Aka - MIT License
+         */
+        @keyframes scanline {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 0 4px;
+            }
+        }
+
+        @keyframes flicker {
+            0%, 100% {
+                opacity: 0.98;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        #start-screen-container {
+            border: 3px solid rgba(0, 255, 255, 0.4);
+            padding: 50px 40px 35px 40px;
+            max-width: 95vw;
+            max-height: 95vh;
+            position: relative;
+            /* CRT effects: scanlines + vignette + subtle curve */
+            background:
+                /* Animated Scanlines */
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.35),
+                    rgba(0, 0, 0, 0.35) 1px,
+                    transparent 1px,
+                    transparent 2px
+                ),
+                /* Vignette */
+                radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%),
+                rgba(0, 40, 20, 0.85);
+            background-size: 100% 4px, 100% 100%, 100% 100%;
+            animation: scanline 0.5s linear infinite, flicker 0.15s ease-in-out infinite;
+            border-radius: 24px;
+            box-shadow:
+                0 0 50px rgba(0, 255, 255, 0.2),
+                inset 0 0 80px rgba(0, 0, 0, 0.4);
+        }
+
+        #game-logo {
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+        #game-logo .plane-glyph {
+            font-size: 24px;
+            color: #00ffff;
+            margin-bottom: 12px;
+            letter-spacing: 0;
+        }
+        #game-logo .game-title {
+            font-size: 32px;
+            color: #ffffff;
+            letter-spacing: 4px;
+            margin-bottom: 0;
+            line-height: 1.3;
+            font-weight: bold;
+            /* Thick black drop shadow for retro arcade look */
+            text-shadow:
+                3px 3px 0px #000000,
+                4px 4px 0px #000000,
+                5px 5px 0px rgba(0, 0, 0, 0.6);
+        }
+        #game-logo .swoosh {
+            font-size: 14px;
+            color: #00ffff;
+            letter-spacing: 10px;
+            opacity: 0.6;
+        }
+
+        /* Mobile scaling */
+        @media (max-width: 768px) {
+            #start-screen-container {
+                max-width: calc(100vw - 40px);
+                max-height: 90vh;
+                padding: 40px 30px 30px 30px;
+                margin: 0 auto;
+            }
+            #game-logo .plane-glyph {
+                font-size: 16px;
+            }
+            #game-logo .game-title {
+                font-size: 20px;
+                letter-spacing: 2px;
+            }
+            #game-logo .swoosh {
+                font-size: 10px;
+                letter-spacing: 6px;
+            }
+            #play-button, #how-to-play-button {
+                font-size: 13px;
+                letter-spacing: 1px;
+                padding: 14px 16px;
+                margin: 7.5px 0;
+            }
+            #copyright-notice {
+                font-size: 8px;
+                margin-top: 30px;
+            }
+        }
+
+        /* Desktop two-column layout - adaptive for smaller windows */
+        @media (min-width: 600px) {
+            #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto auto;
+                gap: 50px;
+                row-gap: 0px;
+                max-width: 95vw;
+                max-height: 85vh;
+                padding: 60px 80px;
+            }
+
+            #game-logo .plane-glyph {
+                font-size: 32px;
+            }
+
+            #game-logo .game-title {
+                font-size: 42px;
+                letter-spacing: 5px;
+            }
+
+            #game-logo .swoosh {
+                font-size: 18px;
+                letter-spacing: 12px;
+            }
+
+            #play-button, #how-to-play-button {
+                font-size: 20px;
+                letter-spacing: 3px;
+                padding: 22px 32px;
+                max-width: 450px;
+            }
+
+            #game-logo {
+                grid-column: 1;
+                grid-row: 1 / 3;
+                margin-bottom: 0;
+                text-align: center;
+                align-self: center;
+            }
+
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: center;
+                margin-bottom: 7.5px;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 2;
+                align-self: center;
+                margin-top: 7.5px;
+            }
+
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 0;
+                text-align: center;
+            }
+
+            #fullscreen-hint {
+                grid-column: 1 / -1;
+                grid-row: 4;
+                margin-top: 0;
+            }
+
+            /* Checkpoint UI desktop - two column abilities */
+            #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px !important;
+            }
+
+            /* Single ability spans full width */
+            #abilities-container .ability-card:only-child {
+                grid-column: 1 / -1;
+            }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+        }
+
+        /* Tablet landscape optimizations - two column layout */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+                gap: 40px;
+                row-gap: 0px;
+                max-width: 92vw;
+                max-height: 85vh;
+                padding: 50px 60px;
+            }
+
+            #game-logo .plane-glyph {
+                font-size: 28px;
+            }
+
+            #game-logo .game-title {
+                font-size: 36px;
+                letter-spacing: 4px;
+            }
+
+            #game-logo .swoosh {
+                font-size: 16px;
+                letter-spacing: 10px;
+            }
+
+            #game-logo {
+                grid-column: 1;
+                grid-row: 1 / 3;
+                margin-bottom: 0;
+                text-align: center;
+                align-self: center;
+            }
+
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: center;
+                margin-bottom: 7.5px;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 2;
+                align-self: center;
+                margin-top: 7.5px;
+            }
+
+            #play-button, #how-to-play-button {
+                font-size: 18px;
+                letter-spacing: 2.5px;
+                padding: 20px 28px;
+                max-width: 420px;
+            }
+
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                font-size: 8px;
+                margin-top: 0;
+                line-height: 1.6;
+                text-align: center;
+            }
+
+            #fullscreen-hint {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 15px;
+            }
+
+            /* Checkpoint UI tablet landscape - two column abilities */
+            #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px !important;
+                max-height: 60vh !important;
+            }
+
+            /* Single ability spans full width */
+            #abilities-container .ability-card:only-child {
+                grid-column: 1 / -1;
+            }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+        }
+
+        /* Landscape mobile optimizations - two column layout */
+        @media (max-width: 896px) and (max-height: 500px) and (orientation: landscape) {
+            #start-screen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+                gap: 12px;
+                row-gap: 0px;
+                max-width: 90vw;
+                padding: 20px 30px;
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+
+            #game-logo {
+                grid-column: 1;
+                grid-row: 1 / 3;
+                margin-bottom: 0;
+                text-align: center;
+                align-self: center;
+            }
+
+            #game-logo .plane-glyph {
+                font-size: 18px;
+                margin-bottom: 8px;
+            }
+
+            #game-logo .game-title {
+                font-size: 18px;
+                letter-spacing: 2px;
+                line-height: 1.2;
+                margin-bottom: 0;
+            }
+
+            #game-logo .swoosh {
+                font-size: 10px;
+                letter-spacing: 6px;
+                margin-bottom: 0;
+            }
+
+            /* Buttons on right side, stacked vertically */
+            #start-screen-container > #play-button {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
+            #start-screen-container > #how-to-play-button {
+                grid-column: 2;
+                grid-row: 2;
+            }
+
+            #play-button, #how-to-play-button {
+                font-size: 13px;
+                letter-spacing: 1px;
+                padding: 12px 16px;
+                margin: 0;
+            }
+
+            /* Copyright spans both columns at bottom */
+            #copyright-notice {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                font-size: 7px;
+                margin-top: 4px;
+                line-height: 1.6;
+                text-align: center;
+            }
+
+            #fullscreen-hint {
+                display: none; /* Hide on mobile landscape */
+            }
+
+            /* Checkpoint UI landscape optimizations - two column abilities */
+            #checkpoint-overlay {
+                padding: 10px 5% !important;
+            }
+
+            #checkpoint-title {
+                font-size: 12px !important;
+                margin-bottom: 8px !important;
+            }
+
+            #checkpoint-subtitle {
+                font-size: 10px !important;
+                margin-bottom: 10px !important;
+            }
+
+            #abilities-container {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px !important;
+                max-height: 55vh !important;
+            }
+
+            /* Single ability spans full width */
+            #abilities-container .ability-card:only-child {
+                grid-column: 1 / -1;
+            }
+
+            #abilities-container .ability-button {
+                margin: 0 !important;
+            }
+
+            #skip-checkpoint {
+                margin-top: 12px !important;
+                padding: 10px 20px !important;
+                font-size: 11px !important;
+            }
+
+            #checkpoint-warning {
+                font-size: 8px !important;
+                margin-top: 6px !important;
+            }
+        }
+        #play-button, #how-to-play-button {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 18px;
+            letter-spacing: 2.5px;
+            padding: 18px 24px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        #play-button {
+            background: rgba(0, 20, 20, 0.1);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+        }
+        #play-button:hover {
+            background: rgba(0, 20, 20, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        #how-to-play-button {
+            background: rgba(128, 128, 128, 0.1);
+            border: 2px solid #888888;
+            color: #888888;
+        }
+        #how-to-play-button:hover {
+            background: rgba(128, 128, 128, 0.2);
+            box-shadow: 0 0 20px rgba(128, 128, 128, 0.3);
+        }
+
+        #copyright-notice {
+            text-align: center;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 10px;
+            color: #00ffff;
+            opacity: 0.5;
+            margin-top: 40px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        /* Instructions overlay - Atari manual style */
+        #instructions-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: none;
+            z-index: 150;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 40px 5% 200px 5%;
+            box-sizing: border-box;
+        }
+        #instructions-overlay.active { display: block; }
+        #instructions-overlay::-webkit-scrollbar {
+            width: 12px !important;
+            background: transparent;
+        }
+        #instructions-overlay::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid #00ffff;
+        }
+        #instructions-overlay::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border: 1px solid #000;
+        }
+        #instructions-overlay::-webkit-scrollbar-thumb:hover {
+            background: #00cccc;
+        }
+        #instructions-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 0;
+            color: #00ffff;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            line-height: 2;
+            font-size: 10px;
+        }
+        #instructions-container h1 {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: 3px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        #instructions-container h2 {
+            font-size: 13px;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            color: #ffffff;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 8px;
+            font-weight: bold;
+        }
+        #instructions-container p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        #instructions-container ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+        #instructions-container li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+        #instructions-container li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+        }
+        #instructions-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #00ffff;
+            text-align: center;
+            font-size: 8px;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+        #close-instructions-x {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 151;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #close-instructions-x:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Checkpoint ability selection overlay - Early 80s banking terminal style */
+        #checkpoint-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #001a1a;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+            flex-direction: column;
+            padding: 20px 5%;
+            box-sizing: border-box;
+        }
+        #checkpoint-overlay.active { display: flex; }
+        #checkpoint-title {
+            color: var(--neon);
+            font-size: 14px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.8;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            text-transform: none;
+            border: none;
+            padding: 0;
+            background: none;
+        }
+        #checkpoint-subtitle {
+            color: var(--neon);
+            font-size: 11px;
+            margin-bottom: 15px;
+            text-align: center;
+            opacity: 0.9;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+        #abilities-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 700px;
+            width: 100%;
+            padding: 0;
+            max-height: 60vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        .ability-card {
+            background: rgba(0, 20, 20, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+        }
+        .ability-card:hover {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: var(--neon);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        .ability-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: rgba(0, 255, 255, 0.2);
+        }
+        .ability-card.disabled:hover {
+            background: rgba(0, 20, 20, 0.6);
+            border-color: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .ability-inner {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ability-name {
+            color: var(--neon);
+            font-size: 15px;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .ability-description {
+            color: #66cccc;
+            font-size: 12px;
+            line-height: 1.6;
+            padding-left: 4px;
+        }
+        .ability-cost {
+            color: #00ff88;
+            font-size: 12px;
+            letter-spacing: 1.2px;
+            padding-left: 4px;
+            font-weight: bold;
+        }
+        #skip-checkpoint {
+            margin-top: 20px;
+            background: rgba(0, 20, 20, 0.6);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            color: var(--neon);
+            padding: 16px 20px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            max-width: 700px;
+            width: 90%;
+            text-align: left;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        #skip-checkpoint:hover {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: var(--neon);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        #checkpoint-warning {
+            color: #ff8800;
+            font-size: 9px;
+            margin-top: 20px;
+            text-align: center;
+            opacity: 0.7;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+
+        #pause-button:hover {
+            background: rgba(0, 40, 40, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            #game-container {
+                height: 100vh;
+                width: 100vw;
+            }
+            /* Hide fullscreen hint on mobile (no F key) */
+            #fullscreen-hint-game {
+                display: none !important;
+            }
+            #score-text {
+                font-size: 8px !important;
+            }
+            #score-display {
+                font-size: 8px !important;
+            }
+            #level-text {
+                font-size: 9px !important;
+            }
+            #health-bar {
+                font-size: 15px !important;
+                margin-top: 4px !important;
+                letter-spacing: 2px !important;
+            }
+            #shield-bar {
+                font-size: 7px !important;
+                margin-top: 3px !important;
+                letter-spacing: 1px !important;
+            }
+            #pause-button {
+                font-size: 10px !important;
+                padding: 8px 16px !important;
+                margin-bottom: 8px !important;
+            }
+            #center-message {
+                font-size: 11px !important;
+                letter-spacing: 1px !important;
+            }
+            .spacer h1 { font-size: 1.5rem; }
+            .spacer p { font-size: 0.9rem; padding: 0 20px; }
+            #param-editor {
+                display: none !important; /* Hide params editor on mobile */
+            }
+            #toggle-params {
+                display: none !important; /* Hide params button on mobile */
+            }
+
+            /* Checkpoint UI mobile optimizations */
+            #checkpoint-overlay {
+                padding: 15px 5% !important;
+            }
+            #checkpoint-title {
+                font-size: 11px !important;
+                margin-bottom: 8px !important;
+            }
+            #checkpoint-subtitle {
+                font-size: 9px !important;
+                margin-bottom: 10px !important;
+            }
+            #abilities-container {
+                max-height: 50vh !important;
+                gap: 6px !important;
+            }
+            .ability-card {
+                padding: 10px !important;
+            }
+            .ability-header {
+                font-size: 11px !important;
+                padding: 8px !important;
+            }
+            .ability-name {
+                font-size: 10px !important;
+            }
+            .ability-cost {
+                font-size: 9px !important;
+            }
+            .ability-description {
+                font-size: 8px !important;
+                padding: 6px 8px !important;
+            }
+            #skip-checkpoint {
+                margin-top: 12px !important;
+                padding: 12px 16px !important;
+                font-size: 10px !important;
+            }
+            #checkpoint-warning {
+                font-size: 8px !important;
+                margin-top: 8px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="play-overlay">
+        <div id="start-screen-container">
+            <div id="game-logo">
+                <div class="plane-glyph">»</div>
+                <div class="game-title">PAPER<br>AIRPLANE</div>
+                <div class="swoosh">~•—•~</div>
+            </div>
+            <div id="play-button">PLAY GAME</div>
+            <div id="how-to-play-button">HOW TO PLAY</div>
+            <div id="copyright-notice">
+                © 1980 Erik Sagen<br>
+                MCMLXXX
+            </div>
+            <div id="fullscreen-hint" style="display: none; font-size: 8px; color: #666; margin-top: 10px; text-align: center; opacity: 0.7;">Hit F for Full Screen</div>
+        </div>
+    </div>
+    <div id="instructions-overlay">
+        <button id="close-instructions-x">×</button>
+        <div id="instructions-container">
+            <h1>HOW TO PLAY (FLIGHT MANUAL)</h1>
+
+            <h2>WELCOME TO PAPER AIRPLANE</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="screenshot.jpeg" alt="Paper Airplane Screenshot" style="max-width: 100%; border: 2px solid #00ffff; box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);">
+            </div>
+            <p>You're a pilot on the flight of a lifetime! PAPER AIRPLANE is a game where you fly forever. Test your reflexes and see how far you can go.</p>
+
+            <p>Your job is simple: FLY. Don't crash into things. Collect rings. Earn points. Buy cool upgrades. The game never ends—only YOU decide how far you'll fly!</p>
+
+            <p>Fly through a bright neon city full of buildings, walls, and huge boss enemies. Fly through glowing rings to get points. Then spend those points at checkpoints to make your plane better. Get thrusters for speed, laser guns, invincibility, and more.</p>
+
+            <p>Every 25 miles you'll reach a checkpoint. This is your only chance to rest, fill up your hearts, and pick a new upgrade. But watch out: if you crash too much, you'll lose your upgrades. Choose smart!</p>
+
+            <h2>BASIC CONTROLS</h2>
+            <p><strong>Desktop:</strong> Move your mouse to fly the plane. You can also use arrow keys or WASD to control the plane. Click to shoot lasers (if you bought them). Double-click to do a barrel roll (if you bought it).</p>
+
+            <p><strong>Tablet/Mobile:</strong> Touch and drag your finger to steer. Tap to shoot lasers (if you bought them). Double-tap for barrel roll (if you bought it).</p>
+
+            <p><strong>How to fly:</strong> Your plane moves smoothly like a real plane. It has weight, so it drifts a little. Don't turn too hard or you might crash!</p>
+
+            <h2>DISPLAY</h2>
+            <p><strong>Full screen (Desktop):</strong> Press F to toggle full screen mode.</p>
+
+            <h2>FEATURES</h2>
+            <ul>
+                <li><strong>Real flying:</strong> Your plane flies like a real one with weight and drift. Learn to control it!</li>
+                <li><strong>Hearts:</strong> You have 4 hearts. When you lose all 4 hearts, the next crash costs you 5 points (and takes away upgrades).</li>
+                <li><strong>Shields:</strong> Buy shields (200 points) to take 2 extra hits. Find green capsules to refill your shields.</li>
+                <li><strong>Cool crashes:</strong> When you hit buildings and walls, they break into pieces!</li>
+                <li><strong>Watch out:</strong> Some walls are high, some are low. You have to dodge both!</li>
+                <li><strong>Boss fights:</strong> At 150 miles (and every 100 miles after that), you'll fight giant spinning bosses. Can you beat them?</li>
+                <li><strong>Snow:</strong> During winter, watch for special snowfall!</li>
+                <li><strong>Level up:</strong> Every 20 miles you go up a level. The land changes every 3 levels. The game gets harder the farther you go.</li>
+                <li><strong>Upgrades:</strong> Every 25 miles, buy upgrades like thrusters, lasers, invincibility, shields, barrel rolls, different plane shapes, and more!</li>
+                <li><strong>Rings & coins:</strong> Fly through green rings (25 points) or rare pink rings (50 points). Grab coins for 2 points each.</li>
+                <li><strong>Wind gusts:</strong> Rare wind gusts appear during breather moments. Fly through these swirling patterns to get a speed boost!</li>
+            </ul>
+
+            <p>Good luck, pilot. The sky is waiting.</p>
+
+            <div id="instructions-footer">
+                ARPLN-GM Rev 2<br>
+                Printed in USA
+            </div>
+        </div>
+    </div>
+    <div id="checkpoint-overlay">
+        <div id="checkpoint-title"></div>
+        <div id="checkpoint-subtitle"></div>
+        <div id="abilities-container"></div>
+        <button id="skip-checkpoint">[ ] Skip upgrade</button>
+        <div id="checkpoint-warning"></div>
+    </div>
+    <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
+        <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
+        <div id="fullscreen-hint-game" style="display: none; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 8px; color: #666; margin-top: 8px; opacity: 0.7;">Hit F for Fullscreen</div>
+    </div>
+    <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; text-align: center; line-height: 1.8;">
+        <div style="font-size: 11px; letter-spacing: 1px; font-weight: bold;">
+            <span id="level-text" style="opacity: 0.9;">LEVEL 1</span><br>
+            <div id="health-bar" style="font-size: 17px; margin-top: 6px; letter-spacing: 3px;">♥ ♥ ♥ ♥</div>
+            <div id="shield-bar" style="font-size: 9px; margin-top: 4px; letter-spacing: 2px; opacity: 0;">[ | | ]</div>
+        </div>
+    </div>
+    <div id="score-container" style="position: absolute; top: 20px; right: 20px; z-index: 10; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: bold; line-height: 1.8;">
+        <span id="score-display">SCORE: 0</span><br>
+        <span id="score-text">0mi</span><br>
+        <span id="score-bonus" style="font-size: 9px; opacity: 0; transition: opacity 0.3s;">+0</span>
+    </div>
+    <!-- Center message display for crashes and level-ups -->
+    <div id="center-message" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 15; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 14px; letter-spacing: 2px; text-align: center; font-weight: bold; opacity: 0; pointer-events: none;"></div>
+    <!-- Hidden high score element (keep for JS reference) -->
+    <span id="high-score" style="display: none;"></span>
+    <div class="horizon-glow"></div>
+    <div id="footer-canvas"></div>
+</div>
+
+<div style="max-width: 1200px; margin: 20px auto; text-align: center;">
+    <button id="how-to-play-bottom" style="display: none; background: rgba(128, 128, 128, 0.1); border: 2px solid #888888; color: #888888; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px; padding: 12px 30px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(128, 128, 128, 0.2)'; this.style.boxShadow='0 0 20px rgba(128, 128, 128, 0.3)';" onmouseout="this.style.background='rgba(128, 128, 128, 0.1)'; this.style.boxShadow='none';">HOW TO PLAY</button>
+</div>
+
+<script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module" src="./game.js"></script>
+<script data-goatcounter="https://kartooner.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

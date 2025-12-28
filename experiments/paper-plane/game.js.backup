@@ -63,9 +63,8 @@
         lastHitTime: 0
     };
 
-    // Debug mode via F3 key (Minecraft-style)
-    let DEBUG_ENABLED = false; // Toggle with F3 key
-
+    // Debug scaffolding (internal only - no display)
+    const DEBUG_ENABLED = false; // Must remain false by default
     let debugMetrics = {
         fps: 0,
         frameCount: 0,
@@ -81,71 +80,6 @@
             pooledObjects: 0
         }
     };
-
-    // Debug overlay (Minecraft-style F3 debug screen) - Press F3 to toggle
-    let debugOverlay = null;
-    function createDebugOverlay() {
-        if (debugOverlay) {
-            console.log('Debug overlay already exists');
-            return; // Already created
-        }
-        debugOverlay = document.createElement('div');
-        debugOverlay.id = 'debug-overlay';
-        debugOverlay.style.position = 'fixed';
-        debugOverlay.style.bottom = '10px';
-        debugOverlay.style.left = '10px';
-        debugOverlay.style.background = 'rgba(0, 0, 0, 0.9)';
-        debugOverlay.style.color = '#ffffff';
-        debugOverlay.style.fontFamily = "'Courier New', monospace";
-        debugOverlay.style.fontSize = '12px';
-        debugOverlay.style.padding = '10px';
-        debugOverlay.style.lineHeight = '1.6';
-        debugOverlay.style.zIndex = '999999';
-        debugOverlay.style.pointerEvents = 'none';
-        debugOverlay.style.border = '2px solid rgba(255, 255, 255, 0.5)';
-        debugOverlay.style.display = 'none';
-        debugOverlay.style.minWidth = '200px';
-        debugOverlay.innerHTML = 'Debug overlay created...';
-        // Append to game container instead of body to avoid CSS hiding
-        const gameContainer = document.getElementById('game-container');
-        if (gameContainer) {
-            gameContainer.appendChild(debugOverlay);
-        } else {
-            document.body.appendChild(debugOverlay);
-        }
-        console.log('Debug overlay created and appended');
-        console.log('Overlay element:', debugOverlay);
-        console.log('Overlay parent:', debugOverlay.parentElement);
-    }
-
-    function toggleDebugOverlay() {
-        createDebugOverlay();
-        DEBUG_ENABLED = !DEBUG_ENABLED;
-
-        console.log('Before toggle - DEBUG_ENABLED:', DEBUG_ENABLED);
-        console.log('Before toggle - display:', debugOverlay.style.display);
-
-        if (DEBUG_ENABLED) {
-            debugOverlay.style.display = 'block';
-            debugOverlay.style.visibility = 'visible';
-            debugOverlay.style.opacity = '1';
-        } else {
-            debugOverlay.style.display = 'none';
-        }
-
-        console.log('After toggle - display:', debugOverlay.style.display);
-        console.log('After toggle - visibility:', debugOverlay.style.visibility);
-        console.log('After toggle - opacity:', debugOverlay.style.opacity);
-
-        // Get computed styles to see what's actually applied
-        const computed = window.getComputedStyle(debugOverlay);
-        console.log('Computed display:', computed.display);
-        console.log('Computed visibility:', computed.visibility);
-        console.log('Computed position:', computed.position);
-        console.log('Computed zIndex:', computed.zIndex);
-        console.log('Computed bottom:', computed.bottom);
-        console.log('Computed left:', computed.left);
-    }
 
     // Upgrade loss system (risk/reward mechanic)
     let buildingHitsSinceUpgrade = 0;
@@ -611,7 +545,7 @@
     // Reuses existing ground debris geometries for performance
     const collisionDebris = [];
     const collisionDebrisPool = [];
-    const collisionDebrisCount = 15; // Reduced for 60fps on older devices
+    const collisionDebrisCount = 25; // Optimized pool of debris chunks
 
     // Pre-create collision debris pool using existing debris geometries for performance
     for (let i = 0; i < collisionDebrisCount; i++) {
@@ -952,7 +886,7 @@
     // --- 5. DISTANT BACKGROUND STARS ---
     // Distant stars for atmospheric depth - what you're flying towards
     const distantStars = [];
-    const starCount = 100; // Optimized for 60fps on older devices
+    const starCount = 150; // More stars for better visibility
 
     for (let i = 0; i < starCount; i++) {
         // Subtle mix of colors - cyan, white, light blue, pink (rare)
@@ -1409,7 +1343,7 @@
         },
         procedural: {
             buildings: -1, // Variable
-            getPositions: (currentMiles = 0) => generateProceduralWave(currentMiles) // Use new procedural system
+            getPositions: () => generateProceduralWave(miles) // Use new procedural system
         },
         // Wide building patterns - appear at higher levels
         wide_single: {
@@ -2405,7 +2339,7 @@
 
     // --- LASER & ENEMY SYSTEM ---
     const laserGeometry = new THREE.BoxGeometry(0.1, 0.1, 2);
-    const laserMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // MeshBasicMaterial doesn't support emissive
+    const laserMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, emissive: 0xff0000 });
 
     const enemyGeometry = new THREE.DodecahedronGeometry(1.5, 0);
     const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
@@ -2504,7 +2438,7 @@
         if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = true;
         if (e.key === ' ') {
             e.preventDefault();
-            if (abilities && abilities.lasers && abilities.lasers.owned) {
+            if (abilities.lasers.owned) {
                 shootLaser();
             } else {
                 speedBoostActive = true;
@@ -2513,12 +2447,6 @@
         if (e.key.toLowerCase() === 'f') {
             e.preventDefault();
             uiControls.toggleFullscreen();
-        }
-        // F3 for debug overlay (Minecraft-style)
-        if (e.key === 'F3' || e.code === 'F3') {
-            e.preventDefault();
-            console.log('F3 pressed, key:', e.key, 'code:', e.code);
-            toggleDebugOverlay();
         }
     });
 
@@ -2548,7 +2476,7 @@
             // Double click - barrel roll
             e.preventDefault();
             triggerBarrelRoll();
-        } else if (abilities && abilities.lasers && abilities.lasers.owned) {
+        } else if (abilities.lasers.owned) {
             // Single click - shoot laser
             shootLaser();
         }
@@ -2564,7 +2492,7 @@
             // Double tap - barrel roll
             e.preventDefault();
             triggerBarrelRoll();
-        } else if (abilities && abilities.lasers && abilities.lasers.owned) {
+        } else if (abilities.lasers.owned) {
             // Single tap - shoot laser
             shootLaser();
         }
@@ -3305,7 +3233,7 @@
                     }
 
                     currentWave = wavePatterns[patternName];
-                    currentWavePositions = currentWave.getPositions(Math.floor(miles)); // Cache positions
+                    currentWavePositions = currentWave.getPositions(); // Cache positions
                     waveProgress = 0;
 
                     // Apply difficulty scalar and warm-up to obstacle spacing (hidden system)
@@ -3326,7 +3254,7 @@
                 }
 
                 // Skip if no positions (breather wave)
-                if (!currentWavePositions || currentWavePositions.length === 0) {
+                if (currentWavePositions.length === 0) {
                     b.position.z = -400;
                     b.active = false;
                     updateInstanceMatrix(b, mesh, instanceIndex);
@@ -3522,16 +3450,10 @@
                 return;
             }
 
-            // CRITICAL: Only check buildings in VERY close range to player to prevent ghost hits
-            // Player is at z ≈ 3.5, so ONLY check buildings from -12 to +6 (tighter than before!)
-            if(b.position.z >= 6 || b.position.z < -12) {
-                return; // Building too far - absolutely no collision possible
-            }
-
-            // CRITICAL: Building must be in camera view (not behind or too far ahead)
-            // Prevent collisions with invisible buildings (player is at z=3.5)
-            if(b.position.z < 3.5 - 10 || b.position.z > 3.5 + 15) {
-                return; // Building not in collision zone
+            // Very tight z-range check: only buildings near the player
+            // Player is at z ≈ 3.5, so check buildings from -20 to +10
+            if(b.position.z >= 10 || b.position.z < -20) {
+                return; // Building is too far ahead or behind
             }
 
             // Require building to be mostly visible (opacity > 0.7)
@@ -4034,7 +3956,7 @@
                     spawnCoinSparkles(coin.position.x, coin.position.y, coin.position.z);
 
                     // Show bonus in score display
-                    // scoreDisplayUI.innerText = `SCORE: ${score}`; // Commented out - element doesn't exist
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
                     uiControls.elements.scoreBonusUI.innerText = `+2`;
                     uiControls.elements.scoreBonusUI.style.opacity = '1';
                     bonusFadeTimer = 60; // Show briefly
@@ -4130,7 +4052,7 @@
 
                     // Add score bonus for destroying building with laser
                     score += 15;
-                    // scoreDisplayUI.innerText = `SCORE: ${score}`; // Commented out - element doesn't exist
+                    scoreDisplayUI.innerText = `SCORE: ${score}`;
 
                     // Show bonus message
                     uiControls.elements.scoreBonusUI.innerText = '+15';
@@ -4790,27 +4712,6 @@
             bonusFadeTimer,
             elements: uiControls.elements
         });
-
-        // Update debug overlay at end of frame (all variables now defined)
-        if (DEBUG_ENABLED && debugOverlay) {
-            const fpsColor = debugMetrics.fps >= 60 ? '#00ff00' : debugMetrics.fps >= 30 ? '#ffff00' : '#ff0000';
-            debugOverlay.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 4px;">DEBUG INFO</div>
-                <div style="color: ${fpsColor}">FPS: ${debugMetrics.fps.toFixed(1)}</div>
-                <div>Frame Time: ${debugMetrics.avgFrameTime.toFixed(2)}ms</div>
-                <div style="margin-top: 4px;">Position: X${curX.toFixed(1)} Y${curY.toFixed(1)} Z3.5</div>
-                <div>Speed: ${(speed * 60).toFixed(1)} u/s</div>
-                <div>Miles: ${miles.toFixed(2)}</div>
-                <div style="margin-top: 4px;">Phase: ${currentPhase}</div>
-                <div>Difficulty: ${(difficultyScalar * 100).toFixed(0)}%</div>
-                <div style="margin-top: 4px;">Active Objects: ${debugMetrics.performance.activeObjects}</div>
-                <div>Collision Checks: ${debugMetrics.performance.collisionChecks}/frame</div>
-            `;
-            // Only log once per second to avoid spam
-            if (debugMetrics.frameCount % 60 === 0) {
-                console.log('Debug overlay updated. Display:', debugOverlay.style.display, 'DEBUG_ENABLED:', DEBUG_ENABLED);
-            }
-        }
 
         renderer.render(scene, camera);
     }
