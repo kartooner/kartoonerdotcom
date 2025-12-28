@@ -241,13 +241,13 @@
             0.15,  0.0,  0.0,      // 8: Right body mid
             0.15,  0.0,  0.50,     // 9: Right body back
 
-            // Left wing tips (extend horizontally from body)
-            -0.70, 0.0, -0.25,     // 10: Left wing front tip
-            -0.70, 0.0,  0.50,     // 11: Left wing back tip
+            // Left wing tips (angle DOWN from body)
+            -0.70, -0.12, -0.25,   // 10: Left wing front tip (angled down)
+            -0.70, -0.12,  0.50,   // 11: Left wing back tip (angled down)
 
-            // Right wing tips (extend horizontally from body)
-            0.70,  0.0, -0.25,     // 12: Right wing front tip
-            0.70,  0.0,  0.50,     // 13: Right wing back tip
+            // Right wing tips (angle DOWN from body)
+            0.70,  -0.12, -0.25,   // 12: Right wing front tip (angled down)
+            0.70,  -0.12,  0.50,   // 13: Right wing back tip (angled down)
         ]);
 
         const indices = [
