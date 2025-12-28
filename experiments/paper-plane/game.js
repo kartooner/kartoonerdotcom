@@ -1686,8 +1686,8 @@
     const phaseConfig = {
         buildings: {
             intensity: 'high',
-            duration: [40000, 60000], // 40-60 seconds - CORE MECHANIC - ALWAYS LONGEST PHASE
-            canFollowItself: false,
+            duration: [30000, 60000], // 30-60 seconds - CORE MECHANIC - CAN CHAIN 2-3x for 60-180s runs
+            canFollowItself: true, // BUILDINGS CAN STACK - 2-3 phases in a row for extended gameplay
             description: 'Dodge buildings - main risk/reward gameplay'
         },
         walls: {
@@ -1771,19 +1771,33 @@
             }
 
             // RULE 2: Can't be in recent history (last 3 phases)
-            if (phaseHistory.slice(-3).includes(phaseName)) {
+            // EXCEPTION: Buildings can chain 2-3 times, so skip this check for buildings
+            if (phaseName !== 'buildings' && phaseHistory.slice(-3).includes(phaseName)) {
                 weight *= 0.1; // Drastically reduce weight
             }
 
-            // RULE 3: Intensity balancing
-            // High intensity phase → prefer low/calm
-            // Low intensity phase → can do anything
-            // Calm phase → prefer high/medium
-            if (lastIntensity === 'high') {
+            // RULE 3: Intensity balancing with BUILDINGS CHAINING BONUS
+            // Buildings can stack 2-3 times for extended gameplay
+            if (phaseName === 'buildings' && lastPhase === 'buildings') {
+                // Count consecutive building phases
+                let consecutiveBuildings = 1;
+                for (let i = phaseHistory.length - 1; i >= 0 && phaseHistory[i] === 'buildings'; i--) {
+                    consecutiveBuildings++;
+                }
+
+                // Encourage chaining up to 3 buildings phases (90-180s of buildings)
+                if (consecutiveBuildings === 1) {
+                    weight *= 2.0; // High chance of 2nd buildings phase
+                } else if (consecutiveBuildings === 2) {
+                    weight *= 1.2; // Decent chance of 3rd buildings phase
+                } else {
+                    weight *= 0.3; // After 3rd, strongly prefer variety
+                }
+            } else if (lastIntensity === 'high' && config.intensity === 'high' && phaseName !== 'buildings') {
+                weight *= 0.3; // Discourage other high intensity after high (but not buildings)
+            } else if (lastIntensity === 'high') {
                 if (config.intensity === 'calm' || config.intensity === 'low') {
-                    weight *= 3.0; // Strongly prefer calm/low
-                } else if (config.intensity === 'high') {
-                    weight *= 0.3; // Discourage another high
+                    weight *= 3.0; // Strongly prefer calm/low after high intensity
                 }
             } else if (lastIntensity === 'calm') {
                 if (config.intensity === 'high' || config.intensity === 'medium') {
