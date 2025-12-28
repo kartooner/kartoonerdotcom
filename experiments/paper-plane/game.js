@@ -221,64 +221,33 @@
     // Create different plane geometries
     function createDartGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Paper airplane with prominent triangular center body and flat wings
+        // Simple triangle fan paper airplane (adapted from classic origami dart)
         const vertices = new Float32Array([
-            // Nose tip
-            0.0,  0.0, -0.85,      // 0: Sharp point
+            // 0: Nose (sharp point)
+            0.0,  0.0, -0.85,
 
-            // Top center ridge (peak of triangle)
-            0.0,  0.15, -0.50,     // 1: Ridge front
-            0.0,  0.15,  0.0,      // 2: Ridge mid
-            0.0,  0.12,  0.50,     // 3: Ridge back
+            // 1: Left wing tip (back, angled down)
+            -0.70, -0.08, 0.45,
 
-            // Left edge of center body (where body meets wing)
-            -0.15, 0.0, -0.40,     // 4: Left body front
-            -0.15, 0.0,  0.0,      // 5: Left body mid
-            -0.15, 0.0,  0.50,     // 6: Left body back
+            // 2: Left body edge (back, center fold)
+            -0.12, 0.05, 0.45,
 
-            // Right edge of center body (where body meets wing)
-            0.15,  0.0, -0.40,     // 7: Right body front
-            0.15,  0.0,  0.0,      // 8: Right body mid
-            0.15,  0.0,  0.50,     // 9: Right body back
+            // 3: Center back (tail, slightly raised for fold)
+            0.0, 0.10, 0.50,
 
-            // Left wing tips (angle DOWN from body)
-            -0.70, -0.12, -0.25,   // 10: Left wing front tip (angled down)
-            -0.70, -0.12,  0.50,   // 11: Left wing back tip (angled down)
+            // 4: Right body edge (back, center fold)
+            0.12, 0.05, 0.45,
 
-            // Right wing tips (angle DOWN from body)
-            0.70,  -0.12, -0.25,   // 12: Right wing front tip (angled down)
-            0.70,  -0.12,  0.50,   // 13: Right wing back tip (angled down)
+            // 5: Right wing tip (back, angled down)
+            0.70, -0.08, 0.45,
         ]);
 
+        // Triangle fan from nose (vertex 0)
         const indices = [
-            // LEFT side of center triangular body
-            0, 1, 4,       // Nose to ridge to body
-            1, 2, 5,       // Ridge mid section
-            1, 5, 4,       // Body triangle
-            2, 3, 6,       // Ridge back
-            2, 6, 5,       // Body back triangle
-
-            // RIGHT side of center triangular body
-            0, 7, 1,       // Nose to body to ridge
-            1, 7, 8,       // Ridge mid section
-            1, 8, 2,       // Body triangle
-            2, 8, 9,       // Ridge back
-            2, 9, 3,       // Body back triangle
-
-            // LEFT wing (flat, extends from body)
-            4, 5, 10,      // Wing front section
-            5, 6, 11,      // Wing back section
-            5, 11, 10,     // Wing triangle
-
-            // RIGHT wing (flat, extends from body)
-            7, 12, 8,      // Wing front section
-            8, 12, 13,     // Wing back section
-            8, 13, 9,      // Wing triangle
-
-            // Tail closures
-            3, 6, 9,       // Back center
-            6, 11, 13,     // Wing backs meet
-            6, 13, 9,      // Tail triangle
+            0, 2, 1,  // Left wing
+            0, 3, 2,  // Left center body
+            0, 4, 3,  // Right center body
+            0, 5, 4,  // Right wing
         ];
 
         geom.setIndex(indices);
