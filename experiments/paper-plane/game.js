@@ -107,6 +107,12 @@
             owned: false,
             description: 'Morphs your plane into a different primitive form'
         },
+        smallPlane: {
+            name: 'Small Plane',
+            cost: 175,
+            owned: false,
+            description: 'Shrinks your plane for tighter maneuvers'
+        },
         lasers: {
             name: 'Lasers',
             cost: 300,
@@ -189,8 +195,9 @@
 
     // --- 1. THE PAPER AIRPLANE (FACING FORWARD) ---
     const shipGroup = new THREE.Group();
+    const originalPlaneColor = 0x008080; // Original teal - never select this in random color
     const paperMat = new THREE.MeshStandardMaterial({
-        color: 0x008080,
+        color: originalPlaneColor,
         side: THREE.DoubleSide,
         metalness: 0.75,  // More reflective
         roughness: 0.35,  // Smoother for better reflections
@@ -209,59 +216,82 @@
     // Create different plane geometries
     function createDartGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Classic paper plane with visible center fold and layered wings
+        // Classic dart design - sharp nose, visible center fold, angled wings
         const vertices = new Float32Array([
-            // Nose section (sharp point)
-            0.0,  0.0, -0.85,      // 0: Nose tip (sharp point)
+            // Sharp nose point
+            0.0,  0.0, -0.9,       // 0: Nose tip
 
-            // Center fold line (visible crease down middle)
-            0.0,  0.05, -0.6,      // 1: Center fold upper (behind nose)
-            0.0,  0.05,  0.0,      // 2: Center fold mid
-            0.0,  0.05,  0.5,      // 3: Center fold back
-            0.0, -0.15,  0.0,      // 4: Bottom keel mid
-            0.0, -0.15,  0.45,     // 5: Bottom keel back
+            // Center fold ridge (raised like real folded paper)
+            0.0,  0.08, -0.65,     // 1: Center ridge front
+            0.0,  0.12, -0.3,      // 2: Center ridge mid-front
+            0.0,  0.10,  0.1,      // 3: Center ridge mid
+            0.0,  0.08,  0.5,      // 4: Center ridge back
 
-            // Left wing (folded paper layer)
-            -0.25, 0.0, -0.5,      // 6: Left wing inner front
-            -0.65, 0.15, 0.0,      // 7: Left wing mid
-            -0.7,  0.18, 0.5,      // 8: Left wing back tip
+            // Bottom keel (deep V-shape like folded paper)
+            0.0, -0.20, -0.4,      // 5: Keel front
+            0.0, -0.25,  0.0,      // 6: Keel mid
+            0.0, -0.20,  0.45,     // 7: Keel back
 
-            // Right wing (folded paper layer)
-            0.25,  0.0, -0.5,      // 9: Right wing inner front
-            0.65,  0.15, 0.0,      // 10: Right wing mid
-            0.7,   0.18, 0.5,      // 11: Right wing back tip
+            // Left wing - angled downward from center fold
+            -0.18, 0.02, -0.58,    // 8: Left wing inner front
+            -0.45, -0.02, -0.35,   // 9: Left wing outer front
+            -0.70, 0.0,   0.0,     // 10: Left wing mid
+            -0.75, 0.02,  0.45,    // 11: Left wing tip back
+
+            // Right wing - angled downward from center fold
+            0.18,  0.02, -0.58,    // 12: Right wing inner front
+            0.45, -0.02, -0.35,    // 13: Right wing outer front
+            0.70,  0.0,   0.0,     // 14: Right wing mid
+            0.75,  0.02,  0.45,    // 15: Right wing tip back
+
+            // Wing fold lines (visible creases)
+            -0.10, 0.06, -0.20,    // 16: Left inner fold
+            0.10,  0.06, -0.20,    // 17: Right inner fold
         ]);
 
         const indices = [
-            // Left side top surface (wing)
-            0, 1, 6,    // Nose to center to left inner
-            1, 7, 6,    // Center to left mid
-            1, 2, 7,    // Center fold to left mid
-            2, 3, 7,    // Center mid to back
-            3, 8, 7,    // Left wing back section
+            // Left wing top surface (with visible fold)
+            0, 1, 8,       // Nose to ridge to inner wing
+            1, 16, 8,      // Ridge to fold to inner
+            1, 2, 16,      // Ridge connection
+            2, 3, 16,      // Mid ridge to fold
+            8, 9, 10,      // Inner to outer wing
+            8, 10, 16,     // Wing fold section
+            16, 10, 3,     // Fold to wing mid
+            3, 10, 11,     // Ridge to wing tip
+            3, 11, 4,      // Back section
 
-            // Right side top surface (wing)
-            0, 9, 1,    // Nose to right inner to center
-            1, 9, 10,   // Center to right mid
-            1, 10, 2,   // Center fold to right mid
-            2, 10, 3,   // Center mid to back
-            3, 10, 11,  // Right wing back section
+            // Right wing top surface (with visible fold)
+            0, 12, 1,      // Nose to inner wing to ridge
+            1, 12, 17,     // Ridge to inner to fold
+            1, 17, 2,      // Ridge connection
+            2, 17, 3,      // Mid ridge to fold
+            12, 14, 13,    // Inner to mid to outer wing
+            12, 17, 14,    // Wing fold section
+            17, 3, 14,     // Fold to wing mid
+            3, 15, 14,     // Ridge to wing tip
+            3, 4, 15,      // Back section
 
-            // Bottom left surface (keel)
-            0, 6, 4,    // Nose to left inner to keel
-            6, 7, 4,    // Left inner to mid to keel
-            7, 8, 5,    // Left mid to back
-            7, 5, 4,    // Left keel connection
+            // Bottom keel (V-shape)
+            0, 5, 8,       // Nose to keel to left inner
+            5, 6, 8,       // Keel front to mid
+            6, 16, 8,      // Keel to fold to inner
+            8, 10, 16,     // Left keel mid section
+            16, 10, 6,     // Fold connection
+            6, 10, 11,     // Left keel back
+            6, 11, 7,      // Keel back left
 
-            // Bottom right surface (keel)
-            0, 4, 9,    // Nose to keel to right inner
-            9, 4, 10,   // Right inner to keel to mid
-            10, 4, 5,   // Right mid keel
-            10, 5, 11,  // Right back section
+            0, 12, 5,      // Nose to right inner to keel
+            5, 12, 6,      // Keel front to mid
+            6, 12, 17,     // Keel to inner to fold
+            12, 17, 14,    // Right keel mid section
+            17, 6, 14,     // Fold connection
+            6, 14, 15,     // Right keel back
+            6, 15, 7,      // Keel back right
 
-            // Tail closure
-            3, 11, 8,   // Back wing closure top
-            5, 8, 11,   // Back wing closure bottom
+            // Tail sections
+            4, 11, 15,     // Back wing closure
+            7, 11, 15,     // Tail closure
         ];
 
         geom.setIndex(indices);
@@ -272,59 +302,88 @@
 
     function createGliderGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Glider design: wider wings, shorter nose for stability
+        // Wide glider design - broad flat wings with subtle folds
         const vertices = new Float32Array([
-            // Nose section (shorter for glider)
-            0.0,  0.0, -0.7,       // 0: Nose tip
+            // Blunt nose point (aerodynamic)
+            0.0,  0.0, -0.75,      // 0: Nose tip
 
-            // Center fold line
-            0.0,  0.04, -0.5,      // 1: Center fold upper (behind nose)
-            0.0,  0.04,  0.0,      // 2: Center fold mid
-            0.0,  0.04,  0.4,      // 3: Center fold back
-            0.0, -0.12,  0.0,      // 4: Bottom keel mid
-            0.0, -0.12,  0.35,     // 5: Bottom keel back
+            // Flat center section (minimal ridge for gliding)
+            0.0,  0.06, -0.55,     // 1: Center front
+            0.0,  0.08, -0.25,     // 2: Center mid-front
+            0.0,  0.06,  0.15,     // 3: Center mid
+            0.0,  0.04,  0.50,     // 4: Center back
 
-            // Left wing (much wider for gliding)
-            -0.3,  0.0, -0.45,     // 6: Left wing inner front
-            -0.95, 0.12, 0.0,      // 7: Left wing mid (wider)
-            -1.0,  0.14, 0.45,     // 8: Left wing back tip (wider)
+            // Shallow keel (flat bottom for stability)
+            0.0, -0.14, -0.35,     // 5: Keel front
+            0.0, -0.16,  0.05,     // 6: Keel mid
+            0.0, -0.12,  0.42,     // 7: Keel back
 
-            // Right wing (much wider for gliding)
-            0.3,   0.0, -0.45,     // 9: Right wing inner front
-            0.95,  0.12, 0.0,      // 10: Right wing mid (wider)
-            1.0,   0.14, 0.45,     // 11: Right wing back tip (wider)
+            // Left wing - very wide, gentle slope
+            -0.25,  0.04, -0.52,   // 8: Left wing inner front
+            -0.55,  0.02, -0.30,   // 9: Left wing outer front
+            -0.95,  0.0,  -0.05,   // 10: Left wing mid outer
+            -1.05,  0.02,  0.25,   // 11: Left wing mid back
+            -1.10,  0.04,  0.52,   // 12: Left wing tip back
+
+            // Right wing - very wide, gentle slope
+            0.25,   0.04, -0.52,   // 13: Right wing inner front
+            0.55,   0.02, -0.30,   // 14: Right wing outer front
+            0.95,   0.0,  -0.05,   // 15: Right wing mid outer
+            1.05,   0.02,  0.25,   // 16: Right wing mid back
+            1.10,   0.04,  0.52,   // 17: Right wing tip back
+
+            // Wing creases (subtle fold lines)
+            -0.12,  0.06, -0.18,   // 18: Left inner crease
+            0.12,   0.06, -0.18,   // 19: Right inner crease
         ]);
 
         const indices = [
-            // Left side top surface (wing)
-            0, 1, 6,    // Nose to center to left inner
-            1, 7, 6,    // Center to left mid
-            1, 2, 7,    // Center fold to left mid
-            2, 3, 7,    // Center mid to back
-            3, 8, 7,    // Left wing back section
+            // Left wing top surface (wide and flat)
+            0, 1, 8,       // Nose to center to inner
+            1, 18, 8,      // Center to crease
+            1, 2, 18,      // Center forward section
+            2, 3, 18,      // Mid section
+            8, 9, 10,      // Inner to outer wing
+            8, 10, 18,     // Wing crease section
+            18, 10, 3,     // Crease to center mid
+            3, 10, 11,     // Center to mid wing
+            3, 11, 12,     // Mid to back wing
+            3, 12, 4,      // Back wing to center
 
-            // Right side top surface (wing)
-            0, 9, 1,    // Nose to right inner to center
-            1, 9, 10,   // Center to right mid
-            1, 10, 2,   // Center fold to right mid
-            2, 10, 3,   // Center mid to back
-            3, 10, 11,  // Right wing back section
+            // Right wing top surface (wide and flat)
+            0, 13, 1,      // Nose to inner to center
+            1, 13, 19,     // Center to inner to crease
+            1, 19, 2,      // Center forward section
+            2, 19, 3,      // Mid section
+            13, 15, 14,    // Inner to outer wing
+            13, 19, 15,    // Wing crease section
+            19, 3, 15,     // Crease to center mid
+            3, 16, 15,     // Center to mid wing
+            3, 17, 16,     // Mid to back wing
+            3, 4, 17,      // Back wing to center
 
-            // Bottom left surface (keel)
-            0, 6, 4,    // Nose to left inner to keel
-            6, 7, 4,    // Left inner to mid to keel
-            7, 8, 5,    // Left mid to back
-            7, 5, 4,    // Left keel connection
+            // Bottom surface (flat keel)
+            0, 5, 8,       // Nose to keel to left
+            5, 6, 8,       // Keel front section
+            6, 18, 8,      // Keel to crease
+            8, 10, 18,     // Left bottom wing
+            18, 10, 6,     // Crease connection
+            6, 10, 11,     // Left mid keel
+            6, 11, 12,     // Left back keel
+            6, 12, 7,      // Left tail
 
-            // Bottom right surface (keel)
-            0, 4, 9,    // Nose to keel to right inner
-            9, 4, 10,   // Right inner to keel to mid
-            10, 4, 5,   // Right mid keel
-            10, 5, 11,  // Right back section
+            0, 13, 5,      // Nose to right to keel
+            5, 13, 6,      // Keel front section
+            6, 13, 19,     // Keel to crease
+            13, 19, 15,    // Right bottom wing
+            19, 6, 15,     // Crease connection
+            6, 16, 15,     // Right mid keel
+            6, 17, 16,     // Right back keel
+            6, 7, 17,      // Right tail
 
             // Tail closure
-            3, 11, 8,   // Back wing closure top
-            5, 8, 11,   // Back wing closure bottom
+            4, 12, 17,     // Back wings meet
+            7, 12, 17,     // Tail point
         ];
 
         geom.setIndex(indices);
@@ -335,59 +394,88 @@
 
     function createStuntGeometry() {
         const geom = new THREE.BufferGeometry();
-        // Stunt design: higher wings, more angular for maneuverability
+        // Angular stunt design - high-set wings, sharp creases, compact body
         const vertices = new Float32Array([
-            // Nose section (shorter, blunter)
-            0.0,  0.0, -0.65,      // 0: Nose tip
+            // Blunt nose (for stability during stunts)
+            0.0,  0.0, -0.70,      // 0: Nose tip
 
-            // Center fold line (higher for stunts)
-            0.0,  0.08, -0.45,     // 1: Center fold upper (behind nose)
-            0.0,  0.08,  0.0,      // 2: Center fold mid
-            0.0,  0.08,  0.42,     // 3: Center fold back
-            0.0, -0.22,  0.0,      // 4: Bottom keel mid (deeper)
-            0.0, -0.22,  0.38,     // 5: Bottom keel back
+            // Tall center ridge (high fold for lift)
+            0.0,  0.14, -0.48,     // 1: Center ridge front
+            0.0,  0.18, -0.20,     // 2: Center ridge peak
+            0.0,  0.15,  0.12,     // 3: Center ridge mid
+            0.0,  0.10,  0.48,     // 4: Center ridge back
 
-            // Left wing (higher, boxier)
-            -0.22, 0.05, -0.42,    // 6: Left wing inner front
-            -0.6,  0.25, 0.0,      // 7: Left wing mid (higher)
-            -0.62, 0.28, 0.48,     // 8: Left wing back tip
+            // Deep keel (inverted V for stability)
+            0.0, -0.28, -0.30,     // 5: Keel front
+            0.0, -0.35,  0.05,     // 6: Keel deepest point
+            0.0, -0.26,  0.40,     // 7: Keel back
 
-            // Right wing (higher, boxier)
-            0.22,  0.05, -0.42,    // 9: Right wing inner front
-            0.6,   0.25, 0.0,      // 10: Right wing mid (higher)
-            0.62,  0.28, 0.48,     // 11: Right wing back tip
+            // Left wing - high and angular
+            -0.20, 0.08, -0.45,    // 8: Left wing inner front
+            -0.38, 0.15, -0.25,    // 9: Left wing outer front
+            -0.58, 0.28, -0.05,    // 10: Left wing mid (high)
+            -0.64, 0.32,  0.22,    // 11: Left wing mid back
+            -0.68, 0.34,  0.50,    // 12: Left wing tip
+
+            // Right wing - high and angular
+            0.20,  0.08, -0.45,    // 13: Right wing inner front
+            0.38,  0.15, -0.25,    // 14: Right wing outer front
+            0.58,  0.28, -0.05,    // 15: Right wing mid (high)
+            0.64,  0.32,  0.22,    // 16: Right wing mid back
+            0.68,  0.34,  0.50,    // 17: Right wing tip
+
+            // Sharp fold lines (visible angular creases)
+            -0.10, 0.12, -0.15,    // 18: Left wing fold
+            0.10,  0.12, -0.15,    // 19: Right wing fold
         ]);
 
         const indices = [
-            // Left side top surface (wing)
-            0, 1, 6,    // Nose to center to left inner
-            1, 7, 6,    // Center to left mid
-            1, 2, 7,    // Center fold to left mid
-            2, 3, 7,    // Center mid to back
-            3, 8, 7,    // Left wing back section
+            // Left wing top (angular segments)
+            0, 1, 8,       // Nose to ridge to inner
+            1, 18, 8,      // Ridge to fold
+            1, 2, 18,      // Ridge to peak
+            2, 3, 18,      // Peak to mid
+            8, 9, 10,      // Inner to outer wing
+            8, 10, 18,     // Wing fold section
+            18, 10, 3,     // Fold to ridge mid
+            3, 10, 11,     // Ridge to wing mid
+            3, 11, 12,     // Wing mid to tip
+            3, 12, 4,      // Tip to back ridge
 
-            // Right side top surface (wing)
-            0, 9, 1,    // Nose to right inner to center
-            1, 9, 10,   // Center to right mid
-            1, 10, 2,   // Center fold to right mid
-            2, 10, 3,   // Center mid to back
-            3, 10, 11,  // Right wing back section
+            // Right wing top (angular segments)
+            0, 13, 1,      // Nose to inner to ridge
+            1, 13, 19,     // Ridge to inner fold
+            1, 19, 2,      // Ridge to peak
+            2, 19, 3,      // Peak to mid
+            13, 15, 14,    // Inner to outer wing
+            13, 19, 15,    // Wing fold section
+            19, 3, 15,     // Fold to ridge mid
+            3, 16, 15,     // Ridge to wing mid
+            3, 17, 16,     // Wing mid to tip
+            3, 4, 17,      // Tip to back ridge
 
-            // Bottom left surface (keel)
-            0, 6, 4,    // Nose to left inner to keel
-            6, 7, 4,    // Left inner to mid to keel
-            7, 8, 5,    // Left mid to back
-            7, 5, 4,    // Left keel connection
+            // Bottom keel (deep V)
+            0, 5, 8,       // Nose to keel to left
+            5, 6, 8,       // Keel front to deep
+            6, 18, 8,      // Deep keel to fold
+            8, 10, 18,     // Left wing bottom
+            18, 10, 6,     // Fold to deep keel
+            6, 10, 11,     // Keel mid section
+            6, 11, 12,     // Keel back left
+            6, 12, 7,      // Left tail keel
 
-            // Bottom right surface (keel)
-            0, 4, 9,    // Nose to keel to right inner
-            9, 4, 10,   // Right inner to keel to mid
-            10, 4, 5,   // Right mid keel
-            10, 5, 11,  // Right back section
+            0, 13, 5,      // Nose to right to keel
+            5, 13, 6,      // Keel front to deep
+            6, 13, 19,     // Deep keel to fold
+            13, 19, 15,    // Right wing bottom
+            19, 6, 15,     // Fold to deep keel
+            6, 16, 15,     // Keel mid section
+            6, 17, 16,     // Keel back right
+            6, 7, 17,      // Right tail keel
 
-            // Tail closure
-            3, 11, 8,   // Back wing closure top
-            5, 8, 11,   // Back wing closure bottom
+            // Tail closure (angular back)
+            4, 12, 17,     // Back wings meet
+            7, 12, 17,     // Tail point
         ];
 
         geom.setIndex(indices);
@@ -2135,7 +2223,7 @@
         if (invincibilityActive) {
             invincibilityActive = false;
             invincibilityEndTime = 0;
-            paperMat.color.setHex(0x008080); // Revert to original teal
+            paperMat.color.setHex(originalPlaneColor); // Revert to original teal
             crashMessage = 'INVINCIBILITY DISABLED';
             crashMessageTimer = 60;
         }
@@ -2246,7 +2334,17 @@
                 baseSpeed = isMobile ? 0.825 : 1.0;
                 break;
             case 'randomColor':
-                const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xff8800];
+                // 8 colors - NEVER includes original teal (0x008080)
+                const colors = [
+                    0xff0000,  // Red
+                    0x00ff00,  // Green
+                    0x0000ff,  // Blue
+                    0xffff00,  // Yellow
+                    0xff00ff,  // Magenta
+                    0x00ffff,  // Cyan
+                    0xff8800,  // Orange
+                    0xff1493   // Deep Pink
+                ];
                 const randomColor = colors[Math.floor(Math.random() * colors.length)];
                 paperMat.color.setHex(randomColor);
                 break;
@@ -2255,6 +2353,10 @@
                 const planeTypes = ['dart', 'glider', 'stunt'];
                 const randomType = planeTypes[Math.floor(Math.random() * planeTypes.length)];
                 changePlaneShape(randomType);
+                break;
+            case 'smallPlane':
+                // Scale plane to 0.65x size (smaller for tighter maneuvers)
+                shipGroup.scale.set(0.65, 0.65, 0.65);
                 break;
             case 'lasers':
                 canShoot = true;
@@ -2289,10 +2391,14 @@
                 baseSpeed = isMobile ? 0.33 : 0.48; // Revert to base speed
                 break;
             case 'randomColor':
-                paperMat.color.setHex(0x008080); // Revert to original teal
+                paperMat.color.setHex(originalPlaneColor); // Revert to original teal
                 break;
             case 'changeShape':
                 changePlaneShape('dart'); // Revert to dart shape
+                break;
+            case 'smallPlane':
+                // Restore normal plane size
+                shipGroup.scale.set(1.0, 1.0, 1.0);
                 break;
             case 'lasers':
                 canShoot = false; // Disable shooting
@@ -2315,7 +2421,7 @@
             case 'invincibility':
                 invincibilityActive = false;
                 invincibilityEndTime = 0;
-                paperMat.color.setHex(0x008080); // Revert to original teal
+                paperMat.color.setHex(originalPlaneColor); // Revert to original teal
                 break;
             case 'shields':
                 shieldActive = false;
@@ -2972,7 +3078,7 @@
             // Check if invincibility expired
             if (Date.now() >= invincibilityEndTime) {
                 invincibilityActive = false;
-                paperMat.color.setHex(0x008080); // Revert to original teal
+                paperMat.color.setHex(originalPlaneColor); // Revert to original teal
             } else {
                 // Pulsate between yellow and original color
                 invincibilityPulsePhase += 0.15; // Speed of pulsing
