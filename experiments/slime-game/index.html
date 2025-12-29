@@ -61,6 +61,8 @@
   let attachedTo = 'floor', impact = 0, compression = 0;
   const keys = {};
   let lastW = 0, lastS = 0;
+  let lastFrameTime = 0;
+  const fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
@@ -74,39 +76,27 @@
 
   camera.position.set(0, 0, 12);
 
-  // --- FPS CAP CLOCK ---
-  let lastFrameTime = 0;
-  const fpsInterval = 1000 / 60;
-
   function animate(currentTime) {
     requestAnimationFrame(animate);
-
     const deltaTime = currentTime - lastFrameTime;
-    if (deltaTime < fpsInterval) return; // Skip frame if too fast
+    if (deltaTime < fpsInterval) return;
     lastFrameTime = currentTime - (deltaTime % fpsInterval);
 
     const time = currentTime * 0.001;
 
-    // 1. INPUT & COMPRESSION
-    const pDown = keys['KeyS'] || keys['ArrowDown'];
-    const pUp = keys['KeyW'] || keys['ArrowUp'];
-    const pLeft = keys['KeyA'] || keys['ArrowLeft'];
-    const pRight = keys['KeyD'] || keys['ArrowRight'];
+    const pDown = keys['KeyS'] || keys['ArrowDown'], pUp = keys['KeyW'] || keys['ArrowUp'];
+    const pLeft = keys['KeyA'] || keys['ArrowLeft'], pRight = keys['KeyD'] || keys['ArrowRight'];
 
-    let isSquashing = (attachedTo === 'floor' && pDown) ||
-            (attachedTo === 'ceiling' && pUp) ||
-            (attachedTo === 'leftWall' && pLeft) ||
-            (attachedTo === 'rightWall' && pRight);
+    let isSquashing = (attachedTo === 'floor' && pDown) || (attachedTo === 'ceiling' && pUp) ||
+            (attachedTo === 'leftWall' && pLeft) || (attachedTo === 'rightWall' && pRight);
 
-    compression = THREE.MathUtils.lerp(compression, isSquashing ? 0.8 : 0, 0.1);
+    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0, 0.12);
 
     const moveSpeed = 0.25;
     if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-      if (pLeft) slimeT.x -= moveSpeed;
-      if (pRight) slimeT.x += moveSpeed;
+      if (pLeft) slimeT.x -= moveSpeed; if (pRight) slimeT.x += moveSpeed;
     } else {
-      if (pUp) slimeT.y += moveSpeed;
-      if (pDown) slimeT.y -= moveSpeed;
+      if (pUp) slimeT.y += moveSpeed; if (pDown) slimeT.y -= moveSpeed;
     }
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
@@ -138,10 +128,24 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
+      // --- HYDROSTATIC WEIGHTED PANCAKE ---
+      let pressFactor = 0;
+      if (attachedTo === 'floor') pressFactor = THREE.MathUtils.smoothstep(-oy, -1.8, 1.0);
+      else if (attachedTo === 'ceiling') pressFactor = THREE.MathUtils.smoothstep(oy, -1.8, 1.0);
+      else if (attachedTo === 'leftWall') pressFactor = THREE.MathUtils.smoothstep(-ox, -1.8, 1.0);
+      else if (attachedTo === 'rightWall') pressFactor = THREE.MathUtils.smoothstep(ox, -1.8, 1.0);
+
+      // Vertices touching the rock ooze out MUCH wider (pressFactor)
+      // Vertices on top stay heavier and less deformed
+      const ooze = compression * pressFactor * 1.4;
+      const weightSlump = compression * (1.0 - pressFactor) * 0.4;
+
       if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-        ox *= (1 + compression * 0.4); oy *= (1 - compression * 0.5);
+        ox *= (1.0 + ooze);
+        oy *= (1.0 - compression * 0.6 + weightSlump);
       } else {
-        oy *= (1 + compression * 0.4); ox *= (1 - compression * 0.5);
+        oy *= (1.0 + ooze);
+        ox *= (1.0 - compression * 0.6 + weightSlump);
       }
 
       let gf = 0, sc = 0, sh = 0;
@@ -171,12 +175,10 @@
 
       const cF = getFloor(vX), cC = getCeil(vX);
       const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
-
-      vY = THREE.MathUtils.clamp(vY, cF, cC);
-      vX = THREE.MathUtils.clamp(vX, cWL, cWR);
+      vY = THREE.MathUtils.clamp(vY, cF, cC); vX = THREE.MathUtils.clamp(vX, cWL, cWR);
 
       let r=1, g=0, b=1, suc=0;
-      const sRange = 0.75 + compression * 0.6;
+      const sRange = 0.75 + compression * 0.8;
 
       if (attachedTo === 'floor') {
         if (vY < cF + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vY - cF, 0, sRange); r = 1 - suc; g = suc; }
