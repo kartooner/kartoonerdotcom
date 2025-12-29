@@ -1251,18 +1251,28 @@
         } else if (miles < 100) {
             // Mid: starting to cluster
             buildingCount = Math.floor(seededRandom() * 3) + 2; // 2-4 buildings
-            minSpacing = 40; // Medium spacing (was 50)
-            allowAdjacentLanes = seededRandom() < 0.5; // 50% chance adjacent (was 30%)
+            minSpacing = 40; // Medium spacing
+            allowAdjacentLanes = seededRandom() < 0.5; // 50% chance adjacent
         } else if (miles < 200) {
             // Late: dense patterns - waves stacking
-            buildingCount = Math.floor(seededRandom() * 3) + 4; // 4-6 buildings (was 3-5)
-            minSpacing = 20; // Very tight spacing (was 30)
+            buildingCount = Math.floor(seededRandom() * 3) + 4; // 4-6 buildings
+            minSpacing = 20; // Very tight spacing
             allowAdjacentLanes = true; // Can be adjacent
-        } else {
-            // VERY late: RELENTLESS waves barely giving breathing room
+        } else if (miles < 300) {
+            // VERY late (200-300): RELENTLESS waves
             buildingCount = Math.floor(seededRandom() * 4) + 5; // 5-8 buildings
             minSpacing = 15; // Extremely tight spacing
             allowAdjacentLanes = true; // Always adjacent
+        } else if (miles < 400) {
+            // EXTREME (300-400): Barely surviving
+            buildingCount = Math.floor(seededRandom() * 4) + 6; // 6-9 buildings
+            minSpacing = 12; // Insane spacing
+            allowAdjacentLanes = true; // Always adjacent
+        } else {
+            // HARROWING (400+): For absolute masters like 500+ mile runs!
+            buildingCount = Math.floor(seededRandom() * 5) + 7; // 7-11 buildings
+            minSpacing = 10; // Absolutely brutal spacing
+            allowAdjacentLanes = true; // Always adjacent - threading the needle
         }
 
         const positions = [];
@@ -2072,10 +2082,13 @@
                 let minDuration = config.duration[0];
                 let maxDuration = config.duration[1];
 
-                // LATE GAME (100+ miles): Extend buildings phase to feel relentless
-                if (phaseName === 'buildings' && milesFlown >= 100) {
-                    minDuration = 45000; // 45 seconds minimum (was 30s)
-                    maxDuration = 90000; // 90 seconds maximum (was 60s)
+                // LATE GAME: Extend buildings phase to feel relentless
+                if (phaseName === 'buildings' && milesFlown >= 300) {
+                    minDuration = 60000; // 60 seconds minimum - SUSTAINED INTENSITY
+                    maxDuration = 120000; // 120 seconds maximum (2 minutes of dodging!)
+                } else if (phaseName === 'buildings' && milesFlown >= 100) {
+                    minDuration = 45000; // 45 seconds minimum
+                    maxDuration = 90000; // 90 seconds maximum
                 } else if (phaseName === 'buildings' && milesFlown >= 50) {
                     minDuration = 40000; // 40 seconds minimum
                     maxDuration = 75000; // 75 seconds maximum
