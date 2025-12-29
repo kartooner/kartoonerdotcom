@@ -75,7 +75,6 @@
     requestAnimationFrame(animate);
     const time = performance.now() * 0.001;
 
-    // 1. COMPRESSION LOGIC (Universal)
     const pressingDown = keys['KeyS'] || keys['ArrowDown'];
     const pressingUp = keys['KeyW'] || keys['ArrowUp'];
     const pressingLeft = keys['KeyA'] || keys['ArrowLeft'];
@@ -88,7 +87,6 @@
 
     compression = THREE.MathUtils.lerp(compression, isSquashing ? 0.8 : 0, 0.1);
 
-    // 2. LOCOMOTION
     const moveSpeed = 0.25;
     if (attachedTo === 'floor' || attachedTo === 'ceiling') {
       if (pressingLeft) slimeT.x -= moveSpeed;
@@ -101,7 +99,6 @@
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
     const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
 
-    // Auto-Switch States
     if (attachedTo.includes('Wall')) {
       if (centerPos.y < fV + 1.25) attachedTo = 'floor';
       else if (centerPos.y > cV - 1.25) attachedTo = 'ceiling';
@@ -119,7 +116,6 @@
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
     impact *= 0.85;
 
-    // 3. MESH (MASS SHIFT + S-CURVE + COMPRESSION)
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
 
@@ -130,7 +126,6 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // PANCAKE DEFORMATION
       if (attachedTo === 'floor' || attachedTo === 'ceiling') {
         ox *= (1 + compression * 0.4); oy *= (1 - compression * 0.5);
       } else {
@@ -164,20 +159,22 @@
 
       const cF = getFloor(vX), cC = getCeil(vX);
       const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
-      if (vY < cF) vY = cF; if (vY > cC) vY = cC;
-      if (vX < cWL) vX = cWL; if (vX > cWR) vX = cWR;
 
-      let r=1, g=0, b=1, suc=0, pV = 0;
+      // --- SAFETY CLAMPS (PREVENTS BLACK SCREEN) ---
+      vY = THREE.MathUtils.clamp(vY, cF, cC);
+      vX = THREE.MathUtils.clamp(vX, cWL, cWR);
+
+      let r=1, g=0, b=1, suc=0;
       const sRange = 0.75 + compression * 0.6;
 
       if (attachedTo === 'floor') {
-        if (vY < cF + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vY - cF, 0, sRange); vY = THREE.MathUtils.lerp(vY, cF, suc * 0.96); r = 1 - suc; g = suc; }
+        if (vY < cF + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vY - cF, 0, sRange); r = 1 - suc; g = suc; }
       } else if (attachedTo === 'ceiling') {
-        if (vY > cC - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cC - vY, 0, sRange); vY = THREE.MathUtils.lerp(vY, cC, suc * 0.96); g = suc; b = 1 - suc; }
+        if (vY > cC - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cC - vY, 0, sRange); g = suc; b = 1 - suc; }
       } else if (attachedTo === 'leftWall') {
-        if (vX < cWL + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vX - cWL, 0, sRange); vX = THREE.MathUtils.lerp(vX, cWL, suc * 0.96); r = 1; g = suc; b = 1 - suc; }
+        if (vX < cWL + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vX - cWL, 0, sRange); r = 1; g = suc; b = 1 - suc; }
       } else if (attachedTo === 'rightWall') {
-        if (vX > cWR - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cWR - vX, 0, sRange); vX = THREE.MathUtils.lerp(vX, cWR, suc * 0.96); r = 1; g = suc; b = 1 - suc; }
+        if (vX > cWR - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cWR - vX, 0, sRange); r = 1; g = suc; b = 1 - suc; }
       }
 
       pA.array[idx] = vX - centerPos.x; pA.array[idx+1] = vY - centerPos.y; cA.setXYZ(i, r, g, b);
