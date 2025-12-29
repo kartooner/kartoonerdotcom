@@ -51,7 +51,10 @@
   const geometry = new THREE.IcosahedronGeometry(1.8, 4);
   const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.8 }));
   scene.add(blob);
-  const originals = new Float32Array(geometry.getAttribute('position').array);
+  const posAttr = geometry.getAttribute('position');
+  const originals = new Float32Array(posAttr.array);
+  const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
+  geometry.setAttribute('color', colorAttr);
 
   // --- PHYSICS & INPUT ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
@@ -119,10 +122,9 @@
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
 
-    const pA = geometry.getAttribute('position'), cA = geometry.getAttribute('color');
     const breath = Math.sin(time * 1.5) * 0.08 + Math.sin(time * 2.7) * 0.05;
 
-    for (let i = 0; i < pA.count; i++) {
+    for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
@@ -159,8 +161,6 @@
 
       const cF = getFloor(vX), cC = getCeil(vX);
       const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
-
-      // --- SAFETY CLAMPS (PREVENTS BLACK SCREEN) ---
       vY = THREE.MathUtils.clamp(vY, cF, cC);
       vX = THREE.MathUtils.clamp(vX, cWL, cWR);
 
@@ -177,9 +177,9 @@
         if (vX > cWR - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cWR - vX, 0, sRange); r = 1; g = suc; b = 1 - suc; }
       }
 
-      pA.array[idx] = vX - centerPos.x; pA.array[idx+1] = vY - centerPos.y; cA.setXYZ(i, r, g, b);
+      posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y; colorAttr.setXYZ(i, r, g, b);
     }
-    pA.needsUpdate = true; cA.needsUpdate = true;
+    posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
     blob.position.set(centerPos.x, centerPos.y, 0);
     renderer.render(scene, camera);
   }
