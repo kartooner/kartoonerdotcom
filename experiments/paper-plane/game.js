@@ -58,8 +58,8 @@
     let campingDetected = false;
     let campingTimer = 0;
     let lastCampCheckPosition = { x: 0, y: 0 };
-    const campingDetectionThreshold = 900; // 15 seconds at 60fps
-    const campingPositionThreshold = 1.5; // Movement radius to count as "camping"
+    const campingDetectionThreshold = 480; // 8 seconds at 60fps (reduced from 15s for more aggressive anti-camping)
+    const campingPositionThreshold = 1.0; // Movement radius to count as "camping" (reduced from 1.5 for stricter detection)
 
     // Hidden dynamic difficulty system (completely invisible to player)
     let difficultyScalar = 1.0; // Starting scalar (0.85-1.15 range)
@@ -1320,7 +1320,7 @@
     let playerLane = 2; // Center lane (0-4)
     let lastPlayerLane = 2;
     let timeInSameLane = 0;
-    let campingThreshold = 4000; // 4 seconds
+    let campingThreshold = 2000; // 2 seconds (reduced from 4s for more aggressive anti-camping)
     let antiCampingActive = false;
 
     // Helper function to determine which lane the player is in
@@ -1600,6 +1600,85 @@
             return wall;
         }
         return null;
+    }
+
+    // --- BARRIER WALLS (STAR FOX STYLE - FULL COVERAGE WITH GAPS) ---
+    const barrierWalls = [];
+    const barrierWallPool = []; // Pool of barrier segments
+    const barrierMat = new THREE.MeshBasicMaterial({
+        color: 0xff0088,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.6
+    });
+
+    // Create vertical barrier segments (these stack to create full coverage)
+    // Each barrier is 2 units tall, we need 3-4 to cover 0-8 range
+    const barrierSegmentGeometry = new THREE.BoxGeometry(30, 2, 0.8); // Wide, medium height, thin
+
+    // Pre-create barrier segment pool (24 segments - enough for 4 complete barriers with 6 segments each)
+    for (let i = 0; i < 24; i++) {
+        const barrier = new THREE.Mesh(barrierSegmentGeometry, barrierMat);
+        barrier.userData.box = new THREE.Box3();
+        barrier.userData.originalScale = { x: 1, y: 1, z: 1 };
+        barrier.userData.type = 'barrier_segment';
+        barrier.visible = false;
+        barrier.position.z = -1000;
+        scene.add(barrier);
+        barrierWallPool.push(barrier);
+    }
+
+    // Spawn a complete barrier wall with gaps (Star Fox style)
+    // gapConfig: array of gap positions, e.g. [{y: 2.5, height: 2.5}] for one gap
+    function spawnBarrierWithGaps(zPos, gapConfig) {
+        const fullHeight = 8; // Cover from y=0 to y=8
+        const segmentHeight = 2; // Each barrier segment is 2 units tall
+        const usedSegments = [];
+
+        // Calculate which vertical positions need barriers (skip gaps)
+        const positions = [];
+        for (let y = 1; y < fullHeight; y += segmentHeight) {
+            let isInGap = false;
+            for (const gap of gapConfig) {
+                if (y >= gap.y && y < gap.y + gap.height) {
+                    isInGap = true;
+                    break;
+                }
+            }
+            if (!isInGap) {
+                positions.push(y);
+            }
+        }
+
+        // Spawn barrier segments at calculated positions
+        for (const yPos of positions) {
+            const segment = barrierWallPool.find(b => !b.visible);
+            if (segment) {
+                segment.visible = true;
+                segment.position.set(0, yPos, zPos);
+                segment.userData.originalY = yPos;
+                usedSegments.push(segment);
+            }
+        }
+
+        return usedSegments;
+    }
+
+    // Get predefined barrier configurations (Star Fox style patterns)
+    function getBarrierConfig() {
+        const configs = [
+            // Single center gap
+            [{ y: 3, height: 2.5 }],
+            // Top gap only
+            [{ y: 6, height: 2.5 }],
+            // Bottom gap only
+            [{ y: 0.5, height: 2.5 }],
+            // Two gaps (top and bottom)
+            [{ y: 0.5, height: 1.8 }, { y: 6, height: 2 }],
+            // Two gaps (diagonal)
+            [{ y: 1.5, height: 2 }, { y: 5, height: 2.5 }],
+        ];
+        return configs[Math.floor(Math.random() * configs.length)];
     }
 
     // --- 6. BONUS RINGS (RARE) - OBJECT POOLING ---
@@ -3286,9 +3365,13 @@
         });
 
         // Controls with momentum (varies by plane type)
-        const smoothing = planeStats[currentPlaneType].smoothing;
-        curX += (targetX - curX) * smoothing;
-        curY += (targetY - curY) * smoothing;
+        // Speed-adaptive smoothing: increase smoothing at high speeds to reduce jittery movement
+        const baseSmoothing = planeStats[currentPlaneType].smoothing;
+        const currentSpeedRatio = totalSpeedMultiplier; // Includes boost effects
+        // At 2x speed (boost), use 40% more smoothing for smoother control
+        const adaptiveSmoothing = Math.min(baseSmoothing * (1.0 + (currentSpeedRatio - 1.0) * 0.4), 0.25);
+        curX += (targetX - curX) * adaptiveSmoothing;
+        curY += (targetY - curY) * adaptiveSmoothing;
 
         // Position-based camping detection (hovering in one spot)
         const distFromLastCheck = Math.sqrt(
@@ -3538,7 +3621,7 @@
                 if (!bossActive && canSpawnBuildings && !hasActiveBoost && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
-                    if (antiCampingActive && Math.random() < 0.5) {
+                    if (antiCampingActive) {
                         patternName = 'antiCamping';
                         antiCampingActive = false; // Reset after spawning punishment
                         timeInSameLane = 0; // Reset timer
@@ -3555,8 +3638,9 @@
                     // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
                     const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
 
-                    // BOSS GAUNTLET: Much denser building spawns (60 units vs normal 150)
-                    const baseDistance = currentPhase === 'boss_gauntlet' ? 60 : 150;
+                    // BOSS GAUNTLET: Much denser building spawns (40 units vs normal 90)
+                    // Reduced spawn distance to make dodging more prevalent (was 150, now 90)
+                    const baseDistance = currentPhase === 'boss_gauntlet' ? 40 : 90;
                     nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
 
                     // If breather wave (no buildings), deactivate this instance
@@ -3922,24 +4006,38 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase (and not during boss)
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase && !bossActive) {
-            // Spawn 3-5 wall "sets" - sometimes single, sometimes both high+low
-            const wallSetCount = Math.floor(Math.random() * 3) + 3; // 3-5 sets
+            // 30% chance to spawn Star Fox style barrier instead of normal walls
+            const spawnBarrier = Math.random() < 0.3;
 
-            for (let i = 0; i < wallSetCount; i++) {
-                const zPos = -200 - (i * 70); // Wider spacing for better visibility
-                const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+            if (spawnBarrier) {
+                // Spawn 2-3 barrier walls with gaps (Star Fox style)
+                const barrierCount = Math.floor(Math.random() * 2) + 2; // 2-3 barriers
+                for (let i = 0; i < barrierCount; i++) {
+                    const zPos = -180 - (i * 90); // Space them out
+                    const gapConfig = getBarrierConfig();
+                    const segments = spawnBarrierWithGaps(zPos, gapConfig);
+                    barrierWalls.push(...segments);
+                }
+            } else {
+                // Spawn normal 3-5 wall "sets" - sometimes single, sometimes both high+low
+                const wallSetCount = Math.floor(Math.random() * 3) + 3; // 3-5 sets
 
-                if (bothWalls) {
-                    // Spawn BOTH high and low from pool - player must stay centered
-                    const highWall = getWallFromPool('high', zPos);
-                    const lowWall = getWallFromPool('low', zPos);
-                    if (highWall) walls.push(highWall);
-                    if (lowWall) walls.push(lowWall);
-                } else {
-                    // Spawn single wall from pool (50/50 high or low)
-                    const wallType = Math.random() < 0.5 ? 'high' : 'low';
-                    const wall = getWallFromPool(wallType, zPos);
-                    if (wall) walls.push(wall);
+                for (let i = 0; i < wallSetCount; i++) {
+                    const zPos = -200 - (i * 70); // Wider spacing for better visibility
+                    const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+
+                    if (bothWalls) {
+                        // Spawn BOTH high and low from pool - player must stay centered
+                        const highWall = getWallFromPool('high', zPos);
+                        const lowWall = getWallFromPool('low', zPos);
+                        if (highWall) walls.push(highWall);
+                        if (lowWall) walls.push(lowWall);
+                    } else {
+                        // Spawn single wall from pool (50/50 high or low)
+                        const wallType = Math.random() < 0.5 ? 'high' : 'low';
+                        const wall = getWallFromPool(wallType, zPos);
+                        if (wall) walls.push(wall);
+                    }
                 }
             }
 
@@ -3950,6 +4048,17 @@
             });
 
             wallsSpawnedThisPhase = true;
+        }
+
+        // Spawn barrier walls occasionally during buildings/mixed phases for added challenge
+        if ((currentPhase === 'buildings' || currentPhase === 'mixed') && !bossActive) {
+            // 5% chance per frame to spawn a barrier (creates occasional Star Fox moments)
+            if (Math.random() < 0.0005 * deltaTime) {
+                const zPos = -250; // Spawn far ahead for visibility
+                const gapConfig = getBarrierConfig();
+                const segments = spawnBarrierWithGaps(zPos, gapConfig);
+                barrierWalls.push(...segments);
+            }
         }
 
         // Optimized wall loop - iterate backwards to safely remove items
@@ -4050,6 +4159,100 @@
                         }
 
                         break; // Exit loop after collision
+                    }
+                }
+            }
+        }
+
+        // Barrier wall update and collision (Star Fox style - full coverage with gaps)
+        for (let i = barrierWalls.length - 1; i >= 0; i--) {
+            const barrier = barrierWalls[i];
+            barrier.position.z += speed;
+
+            // Apply altitude parallax scaling
+            if (barrier.userData.originalScale) {
+                barrier.scale.set(
+                    barrier.userData.originalScale.x * terrainScale,
+                    barrier.userData.originalScale.y * terrainScale,
+                    barrier.userData.originalScale.z * terrainScale
+                );
+            }
+            if (barrier.userData.originalY !== undefined) {
+                barrier.position.y = barrier.userData.originalY * terrainScale;
+            }
+
+            // Return barrier to pool when it passes the player
+            if (barrier.position.z > 20) {
+                barrier.visible = false;
+                barrier.position.z = -1000;
+                barrierWalls.splice(i, 1);
+                continue;
+            }
+
+            // Collision detection when barrier is close
+            if (barrier.position.z > -20 && barrier.position.z < 15) {
+                const dx = barrier.position.x - curX;
+                const dy = barrier.position.y - curY;
+                const dz = barrier.position.z - 3.5;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const maxCollisionDistSq = 100;
+
+                if (distSq > maxCollisionDistSq) {
+                    continue;
+                }
+
+                barrier.userData.box.setFromObject(barrier);
+
+                // Forgiving hitbox - shrink by 15%
+                barrier.userData.box.getSize(tempVec3_1);
+                barrier.userData.box.getCenter(tempVec3_2);
+                tempVec3_1.multiplyScalar(0.85);
+                barrier.userData.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+
+                if (shipBox.intersectsBox(barrier.userData.box)) {
+                    if (!gracePeriodActive) {
+                        spawnCollisionDebris(barrier.position.x, barrier.position.y, barrier.position.z, curX, curY);
+
+                        barrier.visible = false;
+                        barrier.position.z = -1000;
+                        barrierWalls.splice(i, 1);
+
+                        if (invincibilityActive) {
+                            crashMessage = `INVINCIBLE!`;
+                            crashMessageTimer = 40;
+                        } else {
+                            collisionFlash = 0.5;
+
+                            if (shieldActive && shieldHits < maxShieldHits) {
+                                shieldHits++;
+                                uiControls.updateShieldBar(shieldActive, shieldHits);
+                                crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+                                crashMessageTimer = 50;
+
+                                if (shieldHits >= maxShieldHits) {
+                                    shieldActive = false;
+                                    uiControls.updateShieldBar(shieldActive, shieldHits);
+                                    crashMessage = `SHIELD DOWN!`;
+                                }
+                            } else {
+                                if (currentHealth > 0) {
+                                    currentHealth--;
+                                    uiControls.updateHealthBar(currentHealth, maxHealth);
+                                    crashMessage = currentHealth > 0 ? `CRASH! ${currentHealth}♥` : 'CRASH!';
+                                    crashMessageTimer = 50;
+
+                                    activateGracePeriod();
+
+                                    if (currentHealth === 0) {
+                                        handleDeath();
+                                    }
+                                }
+                            }
+
+                            trackCollision(timestamp);
+                        }
+
+                        break;
                     }
                 }
             }
@@ -4432,6 +4635,53 @@
             }
 
             if (laserRemoved) break; // Exit laser loop iteration
+        }
+
+        // Laser-barrier collision detection (Star Fox style)
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            const laser = lasers[i];
+            let laserRemoved = false;
+
+            // Check collision with each barrier segment
+            for (let j = barrierWalls.length - 1; j >= 0; j--) {
+                const barrier = barrierWalls[j];
+
+                // Update barrier collision box
+                barrier.userData.box.setFromObject(barrier);
+
+                // Check laser-barrier collision
+                tempBox.setFromObject(laser);
+                if (tempBox.intersectsBox(barrier.userData.box)) {
+                    // Spawn debris at barrier location
+                    spawnCollisionDebris(
+                        barrier.position.x,
+                        barrier.position.y,
+                        barrier.position.z,
+                        laser.position.x,
+                        laser.position.y,
+                        null
+                    );
+
+                    // Add score bonus for destroying barrier with laser
+                    score += 12;
+
+                    // Show bonus message
+                    uiControls.elements.scoreBonusUI.innerText = '+12';
+                    uiControls.elements.scoreBonusUI.style.opacity = '1';
+                    bonusFadeTimer = 48;
+
+                    // Remove barrier segment and laser
+                    barrier.visible = false;
+                    barrier.position.z = -1000;
+                    barrierWalls.splice(j, 1);
+                    scene.remove(laser);
+                    lasers.splice(i, 1);
+                    laserRemoved = true;
+                    break;
+                }
+            }
+
+            if (laserRemoved) break;
         }
 
         // Enemy system removed - lasers now destroy buildings/walls instead
