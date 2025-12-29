@@ -56,9 +56,10 @@
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  // --- PHYSICS & INPUT ---
+  // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
-  let attachedTo = 'floor', impact = 0, compression = 0;
+  let currentBias = -1; // -1 for floor, 1 for ceiling
+  let impact = 0, compression = 0;
   const keys = {};
   let lastW = 0, lastS = 0;
   let lastFrameTime = 0;
@@ -67,8 +68,8 @@
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     const now = performance.now();
-    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { attachedTo = 'ceiling'; impact = 1.4; }
-    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { attachedTo = 'floor'; impact = 1.4; }
+    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; impact = 1.4; }
+    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; impact = 1.4; }
     lastW = (e.code === 'KeyW' || e.code === 'ArrowUp') ? now : lastW;
     lastS = (e.code === 'KeyS' || e.code === 'ArrowDown') ? now : lastS;
   });
@@ -86,37 +87,30 @@
     const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'];
     const pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
 
+    // 1. LOCOMOTION & BI-POLAR VACUUM
     const moveSpeed = 0.22;
-    // Integrated Locomotion: Allows 360 movement near corners
     slimeT.x += (pR ? moveSpeed : 0) - (pL ? moveSpeed : 0);
-    slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
     const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
 
-    // CORNER STICKINESS: Determine active surface based on proximity + input
-    const distL = Math.abs(centerPos.x - lW), distR = Math.abs(centerPos.x - rW);
-    const distF = Math.abs(centerPos.y - fV), distC = Math.abs(centerPos.y - cV);
+    // Apply Vacuum Pull based on Bias
+    slimeT.y += (currentBias * 0.4);
 
-    // Adaptive state switching
-    if (distF < 1.5) attachedTo = 'floor';
-    else if (distC < 1.5) attachedTo = 'ceiling';
-    else if (distL < 1.5) attachedTo = 'leftWall';
-    else if (distR < 1.5) attachedTo = 'rightWall';
-
-    // Target blending for smooth corners
-    let tX = slimeT.x, tY = slimeT.y;
-    tX = THREE.MathUtils.clamp(tX, lW + 1.1, rW - 1.1);
-    tY = THREE.MathUtils.clamp(tY, fV + 1.1, cV - 1.1);
+    let tX = THREE.MathUtils.clamp(slimeT.x, lW + 1.1, rW - 1.1);
+    let tY = THREE.MathUtils.clamp(slimeT.y, fV + 1.1, cV - 1.1);
+    slimeT.y = tY; // Lock target to cave bounds
 
     let oX = centerPos.x, oY = centerPos.y;
     centerPos.x = THREE.MathUtils.lerp(centerPos.x, tX, 0.2);
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, tY, 0.2);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
 
-    // Compression builds when pushing into any surface
-    let isSquashing = (distF < 1.3 && pD) || (distC < 1.3 && pU) || (distL < 1.3 && pL) || (distR < 1.3 && pR);
-    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0, 0.12);
+    // Compression - Increased when nearing vacuum surface
+    const distF = Math.abs(centerPos.y - fV), distC = Math.abs(centerPos.y - cV);
+    const distL = Math.abs(centerPos.x - lW), distR = Math.abs(centerPos.x - rW);
+    let isSquashing = (distF < 1.4 && currentBias === -1) || (distC < 1.4 && currentBias === 1) || (distL < 1.3 && pL) || (distR < 1.3 && pR);
+    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0.2, 0.1);
     impact *= 0.85;
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
@@ -128,20 +122,16 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // MULTI-SURFACE SQUEEZE: Wedges into the corner
-      let squashX = (distL < 1.5 && pL && ox < 0) || (distR < 1.5 && pR && ox > 0) ? compression * 0.6 : 0;
-      let squashY = (distF < 1.5 && pD && oy < 0) || (distC < 1.5 && pU && oy > 0) ? compression * 0.6 : 0;
-
-      ox *= (1.0 - squashX);
-      oy *= (1.0 - squashY);
-      // Volume conservation: expand non-squashed axes
-      if (squashX > 0 && squashY === 0) oy *= (1.0 + compression * 0.4);
-      if (squashY > 0 && squashX === 0) ox *= (1.0 + compression * 0.4);
+      // Vacuum Pancake Logic
+      let sqX = (distL < 1.8 && ox < 0) || (distR < 1.8 && ox > 0) ? compression * 0.6 : 0;
+      let sqY = (distF < 1.8 && oy < 0) || (distC < 1.8 && oy > 0) ? compression * 0.6 : 0;
+      ox *= (1.0 - sqX); oy *= (1.0 - sqY);
 
       let gf = 0, sc = 0;
-      // Organic breathing on the "Free" side
-      if (oy > 0.2 && distF < 1.5) { gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
-      else if (oy < -0.2 && distC < 1.5) { gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
+      // Identify the "Face" (the side being sucked) vs "Back" (the side breathing)
+      const isCeilFace = currentBias === 1;
+      if (oy > 0.1 && !isCeilFace) { gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
+      else if (oy < -0.1 && isCeilFace) { gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
 
       if (gf > 0) {
         const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
@@ -149,16 +139,16 @@
       }
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-      const sq = impact * 0.7 * (attachedTo === 'floor' ? -1 : 1);
+      const sq = impact * 0.7 * (centerPos.y < 0 ? -1 : 1);
       vY += (centerPos.vy * 0.7 + sq) * oy; vX -= (centerPos.vy * 0.7 + sq) * 0.35 * ox;
 
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
       vY = THREE.MathUtils.clamp(vY, curF, curC); vX = THREE.MathUtils.clamp(vX, curL, curR);
 
-      // TRUE ADHESION: Green glow on any surface contact
+      // VACUUM ADHESION
       let r=1, g=0, b=1, sF=0, sC=0, sL=0, sR=0;
-      const sRange = 0.8 + compression * 0.6;
+      const sRange = 1.1 + compression * 0.8;
 
       if (vY < curF + sRange) sF = 1 - THREE.MathUtils.smoothstep(vY - curF, 0, sRange);
       if (vY > curC - sRange) sC = 1 - THREE.MathUtils.smoothstep(curC - vY, 0, sRange);
@@ -168,11 +158,10 @@
       const totalSuc = Math.max(sF, sC, sL, sR);
       if (totalSuc > 0) {
         r = 1 - totalSuc; g = totalSuc; b = 1 - (sC || sL ? totalSuc : 0);
-        // Sticky "smear" toward the surface
-        if (sF > 0) vY = THREE.MathUtils.lerp(vY, curF, sF * 0.8);
-        if (sC > 0) vY = THREE.MathUtils.lerp(vY, curC, sC * 0.8);
-        if (sL > 0) vX = THREE.MathUtils.lerp(vX, curL, sL * 0.8);
-        if (sR > 0) vX = THREE.MathUtils.lerp(vX, curR, sR * 0.8);
+        if (sF > 0) vY = THREE.MathUtils.lerp(vY, curF, sF * 0.9);
+        if (sC > 0) vY = THREE.MathUtils.lerp(vY, curC, sC * 0.9);
+        if (sL > 0) vX = THREE.MathUtils.lerp(vX, curL, sL * 0.9);
+        if (sR > 0) vX = THREE.MathUtils.lerp(vX, curR, sR * 0.9);
       }
 
       posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y; colorAttr.setXYZ(i, r, g, b);
