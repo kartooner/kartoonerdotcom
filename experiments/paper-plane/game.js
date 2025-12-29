@@ -1882,9 +1882,13 @@
     };
 
     // Phase tracking
-    let currentPhase = 'buildings';
+    // NOTE: For future seeding feature - seeded runs should ALWAYS follow:
+    // 1. Short breather (5s) for orientation
+    // 2. Dense buildings phase for immediate engagement
+    // This pattern is now enforced for all runs via RULE 7 in selectNextPhase()
+    let currentPhase = 'breather'; // Start with short breather for orientation
     let phaseStartTime = 0;
-    let phaseDuration = 20000;
+    let phaseDuration = 5000; // Initial 5-second breather
     let phaseHistory = []; // Last 5 phases
     let phaseLastSeen = {
         buildings: -Infinity,
@@ -1991,20 +1995,32 @@
                 }
             }
 
-            // RULE 7: Early game adjustments (first 50 miles)
+            // RULE 7: First phase after initial breather MUST be buildings
+            // This ensures players get core gameplay immediately after orientation
+            const isFirstRealPhase = phaseHistory.length === 0 ||
+                                    (phaseHistory.length === 1 && phaseHistory[0] === 'breather');
+            if (isFirstRealPhase) {
+                if (phaseName === 'buildings') {
+                    weight *= 1000; // Virtually guarantee buildings as first phase
+                } else if (phaseName !== 'breather') {
+                    weight *= 0.01; // Eliminate other phases
+                }
+            }
+
+            // RULE 8: Early game adjustments (first 50 miles)
             if (milesFlown < 50) {
                 if (phaseName === 'walls') weight *= 0.5; // Fewer walls early
-                if (phaseName === 'breather') weight *= 1.5; // More breathers early
+                if (phaseName === 'breather') weight *= 0.3; // Fewer breathers early (already had initial one)
                 if (phaseName === 'bonus') weight *= 0.5; // Fewer bonus stages early
             }
 
-            // RULE 8: Late game variety (150+ miles)
+            // RULE 9: Late game variety (150+ miles)
             if (milesFlown >= 150) {
                 if (phaseName === 'mixed') weight *= 2.0; // More variety late
                 if (phaseName === 'bonus') weight *= 1.5; // More bonus stages late
             }
 
-            // RULE 9: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
+            // RULE 10: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
             // Trigger at 150 miles, then every 100 miles (250, 350, 450...)
             if (phaseName === 'boss_gauntlet') {
                 if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 100 === 0)) {
@@ -2014,7 +2030,7 @@
                 }
             }
 
-            // RULE 10: Intensity balancing for "extreme" phases (boss gauntlet)
+            // RULE 11: Intensity balancing for "extreme" phases (boss gauntlet)
             if (lastIntensity === 'extreme') {
                 if (config.intensity === 'calm' || config.intensity === 'low') {
                     weight *= 5.0; // Strongly prefer calm after extreme intensity
@@ -2382,6 +2398,19 @@
         gameStartTime = 0;
         phaseStartTime = Date.now();
         lastFrameTime = null;
+
+        // Reset phase system for fresh start
+        currentPhase = 'breather'; // Start with short breather
+        phaseDuration = 5000; // 5 seconds to get oriented
+        phaseHistory = [];
+        totalPhasesCompleted = 0;
+        // Reset phase spawn flags
+        ringsSpawnedThisPhase = false;
+        wallsSpawnedThisPhase = false;
+        coinsSpawnedThisPhase = false;
+        mixedSpawnedThisPhase = false;
+        bonusSpawnedThisPhase = false;
+        breatherSetup = false;
 
         // Reset player position and movement
         shipGroup.position.x = 0;
