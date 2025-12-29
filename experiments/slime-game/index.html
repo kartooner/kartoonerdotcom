@@ -55,22 +55,20 @@
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  // --- PHYSICS & INPUT ---
+  // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
   let pressInten = 0, impact = 0;
   const keys = {}, fpsInterval = 1000 / 60;
 
-  const onDown = (code) => {
-    keys[code] = true;
+  window.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
     const now = performance.now();
-    if((code === 'KeyW' || code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; impact = 1.6; slimeT.y = 5; }
-    if((code === 'KeyS' || code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; impact = 1.6; slimeT.y = -5; }
-    if(code === 'KeyW' || code === 'ArrowUp') lastW = now;
-    if(code === 'KeyS' || code === 'ArrowDown') lastS = now;
-  };
-
-  window.addEventListener('keydown', (e) => onDown(e.code));
+    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; impact = 1.6; slimeT.y = 5; }
+    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; impact = 1.6; slimeT.y = -5; }
+    lastW = (e.code === 'KeyW' || e.code === 'ArrowUp') ? now : lastW;
+    lastS = (e.code === 'KeyS' || e.code === 'ArrowDown') ? now : lastS;
+  });
   window.addEventListener('keyup', (e) => keys[e.code] = false);
 
   camera.position.set(0, 0, 12);
@@ -87,22 +85,21 @@
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+    const nearWall = Math.abs(centerPos.x - lW_c) < 1.6 || Math.abs(centerPos.x - rW_c) < 1.6;
 
-    // CORNER LOGIC: If wedged, W/S should move the target along the wall.
-    const nearWall = Math.abs(centerPos.x - lW_c) < 1.5 || Math.abs(centerPos.x - rW_c) < 1.5;
+    // 1. DYNAMIC COMPRESSION (Inhibited by velocity)
+    const speed = Math.sqrt(centerPos.vx * centerPos.vx + centerPos.vy * centerPos.vy);
+    const stillness = THREE.MathUtils.smoothstep(speed, 0.4, 0.02); // 1.0 when still, 0.0 when fast
+
+    const isHoldingSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU) || (nearWall && (pL || pR));
+    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingSurface ? stillness : 0.0, 0.12);
+
+    // 2. LOCOMOTION
     const moveSpeed = 0.22;
-
-    // X Locomotion
     slimeT.x += (pR ? moveSpeed : 0) - (pL ? moveSpeed : 0);
+    if (nearWall) slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
+    else slimeT.y += (currentBias * 0.45);
 
-    // Y Locomotion: Manual Vertical crawl overrides vacuum if a wall is present
-    if (nearWall) {
-      slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
-    } else {
-      slimeT.y += (currentBias * 0.45); // Standard Vacuum drift
-    }
-
-    // Constraints
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
 
@@ -110,10 +107,6 @@
     centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.15);
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
-
-    const isHoldingIntoSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU) || (nearWall && (pL || pR));
-    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingIntoSurface ? 1.0 : 0.0, 0.1);
-    impact *= 0.82;
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
@@ -124,49 +117,33 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // 1. WEIGHTED SETTLEMENT
-      const settleFactor = pressInten * 0.5;
-      if (currentBias === -1) {
-        if (oy > 0) oy -= (settleFactor * 0.4); else ox *= (1.0 + settleFactor * 0.6);
-      } else {
-        if (oy < 0) oy += (settleFactor * 0.4); else ox *= (1.0 + settleFactor * 0.6);
-      }
-      oy += (currentBias * -0.3); // Vacuum sag
+      // 3. GLOBAL SQUEEZE (Disabled during fast roll)
+      const hSquash = 1.0 - (pressInten * 0.6);
+      const wExpand = 1.0 + (pressInten * 0.5);
+      oy *= hSquash; ox *= wExpand;
+      if (currentBias === -1) oy -= (pressInten * 0.5); else oy += (pressInten * 0.5);
 
-      // 2. BREATHING (Free side)
-      let gf = 0;
-      if (currentBias === -1 && oy > 0.1) gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
-      else if (currentBias === 1 && oy < -0.1) gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
-
-      if (gf > 0) {
-        const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
-        const bP = breath * (1.0 - pressInten * 0.5);
-        ox += (ox/d) * gf * bP; oy += (oy/d) * gf * bP;
-      }
+      // 4. MASS SHIFT (Active when rolling)
+      const rollShift = (1.0 - stillness); // High when moving fast
+      ox += centerPos.vx * 2.5 * rollShift * (oy > 0 ? 1 : 0.2);
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-      vY += impact * 0.8 * (currentBias === -1 ? -1 : 1) * oy;
-
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
 
-      // 3. SEEPAGE
+      // 5. SEEPAGE (Matches ridges)
       let r=1, g=0, b=1, suc=0;
-      const seepageRange = 0.9 + (pressInten * 1.0);
+      const seepageRange = 0.9 + (pressInten * 1.2);
 
-      if (vY < curF + seepageRange && currentBias === -1) {
+      if (currentBias === -1 && vY < curF + seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
         vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99);
         r = 1 - (suc * 0.8); g = suc; b = 1 - (suc * 0.3);
-      } else if (vY > curC - seepageRange && currentBias === 1) {
+      } else if (currentBias === 1 && vY > curC - seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
         vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99);
         r = 1 - (suc * 0.3); g = suc; b = 1 - (suc * 0.8);
       }
-
-      // Wall sticks
-      if (vX < curL + 0.9) { let s=1-THREE.MathUtils.smoothstep(vX-curL,0,0.9); vX=THREE.MathUtils.lerp(vX,curL,s*0.9); g=Math.max(g,s); }
-      if (vX > curR - 0.9) { let s=1-THREE.MathUtils.smoothstep(curR-vX,0,0.9); vX=THREE.MathUtils.lerp(vX,curR,s*0.9); g=Math.max(g,s); }
 
       vY = THREE.MathUtils.clamp(vY, curF, curC);
       vX = THREE.MathUtils.clamp(vX, curL, curR);
