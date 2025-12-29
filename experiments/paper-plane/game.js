@@ -3855,8 +3855,9 @@
                     return;
                 }
 
-                // Get position from cached wave positions
-                const position = currentWavePositions[waveProgress % currentWavePositions.length];
+                // SPAWN ALL REMAINING BUILDINGS IN WAVE (Star Wars speeder bike style!)
+                while (waveProgress < currentWave.buildings && waveProgress < currentWavePositions.length) {
+                    const position = currentWavePositions[waveProgress];
 
                 // Recreate building with new random type and scale
                 const buildingData = createBuildingData();
@@ -4028,9 +4029,13 @@
 
                 updateInstanceMatrix(b, mesh, instanceIndex);
                 waveProgress++;
+            }
+            } // End while loop - all buildings in wave spawned
 
-                // Deactivate building after spawning new wave
-                b.active = false;
+            // Deactivate the trigger building after spawning entire wave
+            b.active = false;
+            updateInstanceMatrix(b, mesh, instanceIndex);
+            return; // Done spawning this wave
             }
 
             // STRICT collision validation to prevent ghost hits
