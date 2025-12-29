@@ -1244,20 +1244,35 @@
         let allowAdjacentLanes; // Can buildings be in adjacent lanes?
 
         if (miles < 50) {
-            // Early: very sparse, one building per area
+            // Early: sparse for learning (but using wave patterns instead)
             buildingCount = Math.floor(seededRandom() * 2) + 1; // 1-2 buildings
             minSpacing = 80; // Wide spacing
             allowAdjacentLanes = false; // Never adjacent
-        } else if (miles < 150) {
+        } else if (miles < 100) {
             // Mid: starting to cluster
             buildingCount = Math.floor(seededRandom() * 3) + 2; // 2-4 buildings
-            minSpacing = 50; // Medium spacing
-            allowAdjacentLanes = seededRandom() < 0.3; // 30% chance adjacent
-        } else {
-            // Late: dense patterns with gaps
-            buildingCount = Math.floor(seededRandom() * 3) + 3; // 3-5 buildings
-            minSpacing = 30; // Tight spacing
+            minSpacing = 40; // Medium spacing
+            allowAdjacentLanes = seededRandom() < 0.5; // 50% chance adjacent
+        } else if (miles < 200) {
+            // Late: dense patterns - waves stacking
+            buildingCount = Math.floor(seededRandom() * 3) + 4; // 4-6 buildings
+            minSpacing = 20; // Very tight spacing
             allowAdjacentLanes = true; // Can be adjacent
+        } else if (miles < 300) {
+            // VERY late (200-300): RELENTLESS waves
+            buildingCount = Math.floor(seededRandom() * 4) + 5; // 5-8 buildings
+            minSpacing = 15; // Extremely tight spacing
+            allowAdjacentLanes = true; // Always adjacent
+        } else if (miles < 400) {
+            // EXTREME (300-400): Barely surviving
+            buildingCount = Math.floor(seededRandom() * 4) + 6; // 6-9 buildings
+            minSpacing = 12; // Insane spacing
+            allowAdjacentLanes = true; // Always adjacent
+        } else {
+            // HARROWING (400+): For absolute masters like 500+ mile runs!
+            buildingCount = Math.floor(seededRandom() * 5) + 7; // 7-11 buildings
+            minSpacing = 10; // Absolutely brutal spacing
+            allowAdjacentLanes = true; // Always adjacent - threading the needle
         }
 
         const positions = [];
@@ -1362,7 +1377,7 @@
                 while (lane2 === lane1) lane2 = Math.floor(seededRandom() * 5);
                 return [
                     { lane: lane1, offset: 0, width: 1 },
-                    { lane: lane2, offset: -60, width: 1 } // Wide spacing
+                    { lane: lane2, offset: -30, width: 1 } // Tighter spacing (was -60)
                 ];
             }
         },
@@ -1374,7 +1389,7 @@
                 const shuffled = allLanes.sort(() => 0.5 - seededRandom());
                 return shuffled.slice(0, 3).map((lane, i) => ({
                     lane,
-                    offset: i * -40,
+                    offset: i * -25, // Tighter spacing (was -40)
                     width: 1
                 }));
             }
@@ -1412,14 +1427,14 @@
         staircase: {
             buildings: 3,
             getPositions: () => {
-                // Gentler staircase - only 3 buildings
+                // Staircase pattern forcing serpentine movement
                 const direction = seededRandom() < 0.5 ? 1 : -1;
                 const startLane = direction > 0 ? 0 : 4;
                 const positions = [];
                 for (let i = 0; i < 3; i++) {
                     positions.push({
                         lane: startLane + (i * direction),
-                        offset: i * -40, // More spacing
+                        offset: i * -25, // Tighter spacing (was -40)
                         width: 1
                     });
                 }
@@ -1482,19 +1497,26 @@
         // Use procedural generation for most patterns
         // Keep some classic patterns for variety
         if (level <= 2) {
-            // Early levels: mostly procedural (sparse)
-            if (rand < 0.30) return 'breather'; // 30% breather
-            return 'procedural'; // 70% procedural (will be sparse)
+            // Early levels: DENSE multi-building patterns to force active dodging
+            // Pattern examples: 2 on left, 1 left + 1 right, 1 middle + 1 behind, etc.
+            if (rand < 0.25) return 'double';      // 25% two buildings forcing movement
+            if (rand < 0.50) return 'triple';      // 25% three buildings
+            if (rand < 0.70) return 'gentle_wall'; // 20% gentle wall (3 buildings, 2 lanes open)
+            if (rand < 0.85) return 'staircase';   // 15% staircase pattern
+            return 'wall'; // 15% wall (4 buildings, 1 lane open)
         } else if (level <= 5) {
-            // Mid levels: mix of procedural and classic
-            if (rand < 0.15) return 'breather'; // 15% breather
-            if (rand < 0.30) return 'single';   // 15% single
-            if (rand < 0.45) return 'double';   // 15% double
-            return 'procedural'; // 55% procedural
+            // Mid levels: MORE dense patterns, less breathers
+            if (rand < 0.05) return 'breather';    // 5% breather (reduced from 15%)
+            if (rand < 0.20) return 'triple';      // 15% triple
+            if (rand < 0.35) return 'gentle_wall'; // 15% gentle wall
+            if (rand < 0.50) return 'wall';        // 15% wall (4 buildings)
+            if (rand < 0.65) return 'staircase';   // 15% staircase
+            if (rand < 0.80) return 'double';      // 15% double
+            return 'procedural'; // 20% procedural (reduced from 55%)
         } else {
-            // Late levels: mostly procedural (dense) + wide building variants
-            if (rand < 0.08) return 'breather';         // 8% breather
-            if (rand < 0.16) return 'wall';             // 8% wall
+            // Late levels: VERY dense + wide building variants
+            if (rand < 0.05) return 'breather';         // 5% breather (reduced from 8%)
+            if (rand < 0.15) return 'wall';             // 10% wall
             if (rand < 0.24) return 'staircase';        // 8% staircase
             if (rand < 0.32) return 'wide_single';      // 8% wide single
             if (rand < 0.40) return 'wide_gap_regular'; // 8% wide + gap + regular
@@ -2055,10 +2077,36 @@
                 phaseLastSeen[phaseName] = totalPhasesCompleted;
                 totalPhasesCompleted++;
 
-                // Set duration
+                // Set duration (extend buildings phase for late game to create relentless feeling)
                 const config = phaseConfig[phaseName];
-                const duration = config.duration[0] +
-                    Math.random() * (config.duration[1] - config.duration[0]);
+                let minDuration = config.duration[0];
+                let maxDuration = config.duration[1];
+
+                // LATE GAME: Extend buildings phase - 6-8 phases worth at ultra-late
+                if (phaseName === 'buildings' && milesFlown >= 500) {
+                    minDuration = 240000; // 4 minutes minimum - MARATHON GAUNTLET
+                    maxDuration = 420000; // 7 minutes maximum - 6-8 phases worth!
+                } else if (phaseName === 'buildings' && milesFlown >= 400) {
+                    minDuration = 180000; // 3 minutes minimum
+                    maxDuration = 300000; // 5 minutes maximum
+                } else if (phaseName === 'buildings' && milesFlown >= 300) {
+                    minDuration = 120000; // 2 minutes minimum
+                    maxDuration = 180000; // 3 minutes maximum
+                } else if (phaseName === 'buildings' && milesFlown >= 100) {
+                    minDuration = 45000; // 45 seconds minimum
+                    maxDuration = 90000; // 90 seconds maximum
+                } else if (phaseName === 'buildings' && milesFlown >= 50) {
+                    minDuration = 40000; // 40 seconds minimum
+                    maxDuration = 75000; // 75 seconds maximum
+                }
+
+                // Shorten breathers at ultra-late game - make relief brief
+                if ((phaseName === 'breather' || phaseName === 'rings') && milesFlown >= 400) {
+                    minDuration = 8000; // 8 seconds (reduced from default)
+                    maxDuration = 12000; // 12 seconds - brief relief before back to hell
+                }
+
+                const duration = minDuration + Math.random() * (maxDuration - minDuration);
 
                 return { phase: phaseName, duration: duration };
             }
@@ -3707,9 +3755,9 @@
                     // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
                     const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
 
-                    // BOSS GAUNTLET: Much denser building spawns (40 units vs normal 90)
-                    // Reduced spawn distance to make dodging more prevalent (was 150, now 90)
-                    const baseDistance = currentPhase === 'boss_gauntlet' ? 40 : 90;
+                    // BOSS GAUNTLET: Much denser building spawns (30 units vs normal 60)
+                    // Reduced spawn distance to make dodging constantly engaging (was 150, then 90, now 60)
+                    const baseDistance = currentPhase === 'boss_gauntlet' ? 30 : 60;
                     nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
 
                     // If breather wave (no buildings), deactivate this instance
