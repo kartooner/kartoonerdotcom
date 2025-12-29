@@ -2082,16 +2082,28 @@
                 let minDuration = config.duration[0];
                 let maxDuration = config.duration[1];
 
-                // LATE GAME: Extend buildings phase to feel relentless
-                if (phaseName === 'buildings' && milesFlown >= 300) {
-                    minDuration = 60000; // 60 seconds minimum - SUSTAINED INTENSITY
-                    maxDuration = 120000; // 120 seconds maximum (2 minutes of dodging!)
+                // LATE GAME: Extend buildings phase - 6-8 phases worth at ultra-late
+                if (phaseName === 'buildings' && milesFlown >= 500) {
+                    minDuration = 240000; // 4 minutes minimum - MARATHON GAUNTLET
+                    maxDuration = 420000; // 7 minutes maximum - 6-8 phases worth!
+                } else if (phaseName === 'buildings' && milesFlown >= 400) {
+                    minDuration = 180000; // 3 minutes minimum
+                    maxDuration = 300000; // 5 minutes maximum
+                } else if (phaseName === 'buildings' && milesFlown >= 300) {
+                    minDuration = 120000; // 2 minutes minimum
+                    maxDuration = 180000; // 3 minutes maximum
                 } else if (phaseName === 'buildings' && milesFlown >= 100) {
                     minDuration = 45000; // 45 seconds minimum
                     maxDuration = 90000; // 90 seconds maximum
                 } else if (phaseName === 'buildings' && milesFlown >= 50) {
                     minDuration = 40000; // 40 seconds minimum
                     maxDuration = 75000; // 75 seconds maximum
+                }
+
+                // Shorten breathers at ultra-late game - make relief brief
+                if ((phaseName === 'breather' || phaseName === 'rings') && milesFlown >= 400) {
+                    minDuration = 8000; // 8 seconds (reduced from default)
+                    maxDuration = 12000; // 12 seconds - brief relief before back to hell
                 }
 
                 const duration = minDuration + Math.random() * (maxDuration - minDuration);
