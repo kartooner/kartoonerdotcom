@@ -87,17 +87,14 @@
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
     const nearWall = Math.abs(centerPos.x - lW_c) < 1.6 || Math.abs(centerPos.x - rW_c) < 1.6;
 
-    // 1. DYNAMIC COMPRESSION (Inhibited by velocity)
     const speed = Math.sqrt(centerPos.vx * centerPos.vx + centerPos.vy * centerPos.vy);
-    const stillness = THREE.MathUtils.smoothstep(speed, 0.4, 0.02); // 1.0 when still, 0.0 when fast
+    const stillness = THREE.MathUtils.smoothstep(speed, 0.4, 0.05);
 
     const isHoldingSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU) || (nearWall && (pL || pR));
     pressInten = THREE.MathUtils.lerp(pressInten, isHoldingSurface ? stillness : 0.0, 0.12);
 
-    // 2. LOCOMOTION
-    const moveSpeed = 0.22;
-    slimeT.x += (pR ? moveSpeed : 0) - (pL ? moveSpeed : 0);
-    if (nearWall) slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
+    slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
+    if (nearWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
     else slimeT.y += (currentBias * 0.45);
 
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
@@ -111,38 +108,59 @@
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
 
-    const breath = Math.sin(time * 1.8) * 0.12 + Math.sin(time * 2.8) * 0.06;
+    const breath = Math.sin(time * 1.6) * 0.14 + Math.sin(time * 2.4) * 0.06;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // 3. GLOBAL SQUEEZE (Disabled during fast roll)
-      const hSquash = 1.0 - (pressInten * 0.6);
-      const wExpand = 1.0 + (pressInten * 0.5);
-      oy *= hSquash; ox *= wExpand;
-      if (currentBias === -1) oy -= (pressInten * 0.5); else oy += (pressInten * 0.5);
+      // --- 1. ASYMMETRIC SLOSH (Left Sketch) ---
+      // Pushes mass to the front and creates trailing "tail"
+      const moveMag = centerPos.vx * 3.5;
+      const weightDir = oy > 0 ? 1.0 : 0.3; // Top moves more than base
+      ox += moveMag * weightDir * (1.0 - pressInten);
 
-      // 4. MASS SHIFT (Active when rolling)
-      const rollShift = (1.0 - stillness); // High when moving fast
-      ox += centerPos.vx * 2.5 * rollShift * (oy > 0 ? 1 : 0.2);
+      // --- 2. WEIGHTED SETTLEMENT (Right Sketch) ---
+      // Bottom spreads wide, Top slumps gently
+      const settleX = 1.0 + (pressInten * 0.7);
+      const settleY = 1.0 - (pressInten * 0.45);
+
+      if (currentBias === -1) { // On Floor
+        if (oy < 0) ox *= settleX; // Wider base
+        else oy *= settleY; // Lower top
+      } else { // On Ceiling
+        if (oy > 0) ox *= settleX;
+        else oy *= settleY;
+      }
+      oy += (currentBias * -0.3); // Constant vacuum pull
+
+      // --- 3. ORGANIC UNDULATION (Restored) ---
+      let gf = 0;
+      if (currentBias === -1 && oy > 0.1) gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
+      else if (currentBias === 1 && oy < -0.1) gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
+
+      if (gf > 0) {
+        const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
+        const bP = breath * (1.0 - pressInten * 0.7);
+        ox += (ox/d) * gf * bP; oy += (oy/d) * gf * bP;
+      }
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
 
-      // 5. SEEPAGE (Matches ridges)
+      // --- 4. RIDGE SEEPAGE ---
       let r=1, g=0, b=1, suc=0;
-      const seepageRange = 0.9 + (pressInten * 1.2);
+      const seepageRange = 0.95 + (pressInten * 1.1);
 
       if (currentBias === -1 && vY < curF + seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
         vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99);
-        r = 1 - (suc * 0.8); g = suc; b = 1 - (suc * 0.3);
+        r = 1 - (suc * 0.85); g = suc; b = 1 - (suc * 0.2);
       } else if (currentBias === 1 && vY > curC - seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
         vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99);
-        r = 1 - (suc * 0.3); g = suc; b = 1 - (suc * 0.8);
+        r = 1 - (suc * 0.2); g = suc; b = 1 - (suc * 0.85);
       }
 
       vY = THREE.MathUtils.clamp(vY, curF, curC);
