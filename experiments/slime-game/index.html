@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Rock & Zoom Build</title>
+  <title>Slime - Physics & Wedge Restored</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
   </style>
@@ -22,21 +22,14 @@
   document.body.appendChild(renderer.domElement);
 
   // --- WORLD MATH ---
-  const worldBounds = 25, ribbonW = 5.0;
+  const worldBounds = 30;
   const getNoise = (v, f, a) => Math.sin(v * f) * a + Math.sin(v * f * 2.2) * (a * 0.4);
-
-  const getFloor = (x) => {
-    let base = -4.5 + getNoise(x, 2.0, 0.2);
-    // The Rock at X = 8
-    const rockDist = Math.abs(x - 8);
-    if (rockDist < 3.0) base += Math.cos((rockDist / 3.0) * Math.PI / 2) * 2.8 + getNoise(x, 8, 0.15);
-    return base;
-  };
+  const getFloor = (x) => -4.5 + getNoise(x, 2.0, 0.2);
   const getCeil = (x) => 4.5 - getNoise(x, 2.5, 0.2);
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
   const createRibbon = (getVal, color) => {
-    const geo = new THREE.PlaneGeometry(worldBounds * 3, ribbonW, 250, 3);
+    const geo = new THREE.PlaneGeometry(worldBounds * 3, 5, 250, 3);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
@@ -46,7 +39,7 @@
   createRibbon(getCeil, 0xffff00);
 
   const createJagWall = (xPos) => {
-    const geo = new THREE.PlaneGeometry(ribbonW, 15, 1, 50);
+    const geo = new THREE.PlaneGeometry(5, 15, 1, 50);
     geo.rotateY(Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
@@ -54,11 +47,18 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  // --- ABSORBABLE NODES ---
+  // --- ROLLING BOULDER ---
+  const boulderRadius = 1.2;
+  const boulderGeo = new THREE.IcosahedronGeometry(boulderRadius, 2);
+  const boulder = new THREE.Mesh(boulderGeo, new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true }));
+  let bPhys = { x: 12, y: 0, vx: 0, rot: 0 };
+  scene.add(boulder);
+
+  // --- NODES ---
   const nodes = [];
   const nodeGeo = new THREE.IcosahedronGeometry(0.4, 2);
   for (let i = 0; i < 20; i++) {
-    const n = new THREE.Mesh(nodeGeo, new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
+    const n = new THREE.Mesh(nodeGeo.clone(), new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
     const x = (Math.random() - 0.5) * worldBounds * 2.2;
     const y = Math.random() > 0.5 ? getFloor(x) + 0.6 : getCeil(x) - 0.6;
     n.position.set(x, y, 0);
@@ -77,39 +77,48 @@
   // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
-  let pressInten = 0, impact = 0, fusionInten = 0;
+  let pressInten = 0, fusionInten = 0;
   const keys = {}, fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     const now = performance.now();
-    if((e.code==='KeyW'||e.code==='ArrowUp') && now-lastW < 250) { currentBias=1; impact=1.6; slimeT.y=5; }
-    if((e.code==='KeyS'||e.code==='ArrowDown') && now-lastS < 250) { currentBias=-1; impact=1.6; slimeT.y=-5; }
-    if(e.code==='KeyW'||e.code==='ArrowUp') lastW=now;
-    if(e.code==='KeyS'||e.code==='ArrowDown') lastS=now;
+    if((e.code==='KeyW'||e.code==='ArrowUp') && now-lastW < 250) { currentBias=1; slimeT.y=5; }
+    if((e.code==='KeyS'||e.code==='ArrowDown') && now-lastS < 250) { currentBias=-1; slimeT.y=-5; }
+    lastW = (e.code==='KeyW'||e.code==='ArrowUp') ? now : lastW;
+    lastS = (e.code==='KeyS'||e.code==='ArrowDown') ? now : lastS;
   });
   window.addEventListener('keyup', (e) => keys[e.code] = false);
 
-  camera.position.z = 18; // ZOOMED OUT
+  camera.position.z = 18;
 
   function animate(currentTime) {
     requestAnimationFrame(animate);
     const deltaTime = currentTime - lastFrameTime;
     if (deltaTime < fpsInterval) return;
     lastFrameTime = currentTime - (deltaTime % fpsInterval);
-
     const time = currentTime * 0.001;
+
     const pD=keys['KeyS']||keys['ArrowDown'], pU=keys['KeyW']||keys['ArrowUp'], pL=keys['KeyA']||keys['ArrowLeft'], pR=keys['KeyD']||keys['ArrowRight'];
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+
+    // WEDGE CHECK
     const nearWall = Math.abs(centerPos.x - lW_c) < 2.0 || Math.abs(centerPos.x - rW_c) < 2.0;
 
-    pressInten = THREE.MathUtils.lerp(pressInten, ((currentBias === -1 && pD) || (currentBias === 1 && pU)) ? 0.65 : 0.0, 0.12);
+    // VOLUME GUARD: Resistance caps at 0.65 to prevent flattening
+    const targetPress = ((currentBias === -1 && pD) || (currentBias === 1 && pU)) ? 0.65 : 0.0;
+    pressInten = THREE.MathUtils.lerp(pressInten, targetPress, 0.12);
 
     slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
-    if (nearWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
-    else slimeT.y += (currentBias * 0.45);
+
+    // CONTEXT CLIMBING
+    if (nearWall) {
+      slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
+    } else {
+      slimeT.y += (currentBias * 0.45);
+    }
 
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
@@ -119,54 +128,66 @@
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
 
+    // BOULDER PHYSICS
+    const dToB = Math.abs(centerPos.x - bPhys.x);
+    if (dToB < 2.5 && Math.abs(centerPos.y - bPhys.y) < 2.0) {
+      bPhys.vx += (centerPos.x > bPhys.x ? -0.05 : 0.05);
+    }
+    bPhys.vx *= 0.95;
+    bPhys.x += bPhys.vx;
+    bPhys.y = getFloor(bPhys.x) + boulderRadius;
+    bPhys.rot -= bPhys.vx;
+    boulder.position.set(bPhys.x, bPhys.y, 0);
+    boulder.rotation.z = bPhys.rot;
+
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.1);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.5, 0.05);
 
+    // SLURP ABSORPTION
     nodes.forEach(n => {
       if (n.visible) {
-        const d = n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0));
+        const vec = new THREE.Vector3(centerPos.x, centerPos.y, 0).sub(n.position);
+        const d = vec.length();
         if (d < 3.5) {
-          n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2);
-          n.scale.multiplyScalar(0.85);
-          if (d < 0.5) { n.visible = false; fusionInten = 1.0; }
-        }
+          n.position.add(vec.clone().multiplyScalar(0.18));
+          n.lookAt(centerPos.x, centerPos.y, 0);
+          n.scale.set(0.5, 0.5, 1.0 + (3.5 - d));
+          if (d < 0.6) { n.visible = false; fusionInten = 1.0; }
+        } else { n.rotation.y += 0.02; }
       }
     });
     fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.05);
 
     const breath = Math.sin(time * 1.6) * 0.12 + Math.sin(time * 2.4) * 0.06;
-    impact *= 0.82;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
-      const vPos = (oy + 1.8) / 3.6;
+      const vP = (oy + 1.8) / 3.6;
 
-      ox += centerPos.vx * 4.5 * vPos * 0.8 * (1.0 - pressInten);
-      const t = currentBias === -1 ? (1.0 - vPos) : vPos;
+      ox += centerPos.vx * 4.5 * vP * 0.8 * (1.0 - pressInten);
+      const t = currentBias === -1 ? (1.0 - vP) : vP;
       oy *= (1.0 - pressInten * 0.5);
-      ox *= (1.0 + (pressInten * 1.0 * Math.pow(t, 1.8)));
+      ox *= (1.0 + (pressInten * 0.9 * Math.pow(t, 1.8)));
       oy += (currentBias * -0.3) + (pressInten * currentBias * 0.3);
 
-      if ((currentBias === -1 && oy > 0.1) || (currentBias === 1 && oy < -0.1)) {
+      if (Math.abs(oy) > 0.1) {
         const gf = THREE.MathUtils.smoothstep(Math.abs(oy), 0.1, 1.8);
         const bP = breath * (1.0 - pressInten * 0.85);
         ox += (ox/1.8) * gf * bP; oy += (oy/1.8) * gf * bP;
       }
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-      vY += impact * 0.8 * (currentBias === -1 ? -1 : 1) * oy;
-
       const curF = getFloor(vX), curC = getCeil(vX);
-      const seepageRange = 1.1 + (pressInten * 1.3);
+      const seepage = 1.1 + (pressInten * 1.3);
 
       let r=1, g=0, b=1, suc=0;
-      if (currentBias === -1 && vY < curF + seepageRange) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
+      if (currentBias === -1 && vY < curF + seepage) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepage);
         vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99);
         r = 1 - (suc * 0.85); g = suc; b = 1 - (suc * 0.2);
-      } else if (currentBias === 1 && vY > curC - seepageRange) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
+      } else if (currentBias === 1 && vY > curC - seepage) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepage);
         vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99);
         r = 1 - (suc * 0.2); g = suc; b = 1 - (suc * 0.85);
       }
