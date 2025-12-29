@@ -21,7 +21,7 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // --- WORLD MATH ---
+  // --- WORLD ---
   const worldBounds = 20, ribbonW = 5.0;
   const getNoise = (v, f, a) => Math.sin(v * f) * a + Math.sin(v * f * 2.2) * (a * 0.4);
   const getFloor = (x) => -3.5 + (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.3 : 0) + getNoise(x, 2.5, 0.15);
@@ -55,10 +55,10 @@
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  // --- PHYSICS & INPUT ---
+  // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
-  let pressInten = 0; // The subtle game feel variable
+  let pressInten = 0;
   const keys = {}, fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
@@ -83,7 +83,6 @@
     const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'];
     const pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
 
-    // Subtle intensity build-up for the "hold"
     const isHoldingIntoSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU);
     pressInten = THREE.MathUtils.lerp(pressInten, isHoldingIntoSurface ? 1.0 : 0.0, 0.1);
 
@@ -101,42 +100,59 @@
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
 
+    // Complex biological rhythm
+    const undulate = Math.sin(time * 1.8) * 0.12 + Math.sin(time * 2.8) * 0.06;
+
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // --- WEIGHTED SETTLEMENT PHYSICS ---
-      // Subtle Y-bias based on vacuum side
+      // 1. WEIGHTED SETTLEMENT
       const biasShift = currentBias * -0.25;
       const settleFactor = pressInten * 0.45;
 
-      // Top slumps down slightly, Bottom expands horizontally
-      if (currentBias === -1) { // Floor
-        if (oy > 0) oy -= (settleFactor * 0.5); // Top slump
-        else ox *= (1.0 + settleFactor * 0.6); // Bottom spread
-      } else { // Ceiling
-        if (oy < 0) oy += (settleFactor * 0.5); // Bottom slump
-        else ox *= (1.0 + settleFactor * 0.6); // Top spread
+      if (currentBias === -1) {
+        if (oy > 0) oy -= (settleFactor * 0.5);
+        else ox *= (1.0 + settleFactor * 0.6);
+      } else {
+        if (oy < 0) oy += (settleFactor * 0.5);
+        else ox *= (1.0 + settleFactor * 0.6);
       }
 
       oy += biasShift;
+
+      // 2. ORGANIC UNDULATION (The "Breath")
+      // Only undulate the side NOT touching the surface
+      let gf = 0;
+      if (currentBias === -1 && oy > 0.1) {
+        gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
+      } else if (currentBias === 1 && oy < -0.1) {
+        gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
+      }
+
+      if (gf > 0) {
+        const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
+        // Undulation is suppressed when pressing hard (ooze overrides breath)
+        const breathPower = undulate * (1.0 - pressInten * 0.5);
+        ox += (ox/d) * gf * breathPower;
+        oy += (oy/d) * gf * breathPower;
+      }
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
 
-      // --- SEEPAGE & RIDGE ADHESION ---
+      // 3. SEEPAGE & RIDGE ADHESION
       let r=1, g=0, b=1, suc=0;
-      // Range expands subtly when pressing
       const seepageRange = 0.85 + (pressInten * 0.9);
 
       if (currentBias === -1 && vY < curF + seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
-        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99); // Lock into ridges
+        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99);
         r = 1 - (suc * 0.8); g = suc; b = 1 - (suc * 0.3);
       } else if (currentBias === 1 && vY > curC - seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
-        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99); // Lock into ridges
+        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99);
         r = 1 - (suc * 0.3); g = suc; b = 1 - (suc * 0.8);
       }
 
