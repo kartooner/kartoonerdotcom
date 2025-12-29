@@ -2103,6 +2103,15 @@
                 }
             }
 
+            // RULE 12: First 10-15 miles ONLY breathers and buildings
+            // This creates a focused onboarding experience where players learn the core dodging mechanic
+            // Rings, coins, wind, walls, and mixed phases are introduced AFTER mile 15
+            if (milesFlown < 15) {
+                if (phaseName !== 'breather' && phaseName !== 'buildings') {
+                    weight = 0; // Eliminate all non-core phases in first 15 miles
+                }
+            }
+
             weights[phaseName] = Math.max(weight, 0);
         }
 
@@ -3801,18 +3810,19 @@
                     // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
                     const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
 
-                    // EARLY GAME (0-20 miles): Very tight spacing to force constant dodging
-                    // MID/LATE GAME: Progressive tightening based on miles
-                    // BOSS GAUNTLET: Tightest spacing
+                    // WAVE SPACING: How close waves spawn to each other
+                    // Early game needs RAPID waves to create constant dodging action
                     let baseDistance;
                     if (currentPhase === 'boss_gauntlet') {
                         baseDistance = 30; // Boss gauntlet - extremely tight
+                    } else if (miles < 10) {
+                        baseDistance = 20; // EARLY GAME (0-10mi) - RAPID waves for onboarding
                     } else if (miles < 20) {
-                        baseDistance = 35; // EARLY GAME - tight to establish dodging as core mechanic
+                        baseDistance = 25; // Early (10-20mi) - still quick
                     } else if (miles < 50) {
-                        baseDistance = 45; // Early-mid transition
+                        baseDistance = 35; // Early-mid transition
                     } else {
-                        baseDistance = 60; // Normal late game spacing
+                        baseDistance = 50; // Normal late game spacing
                     }
                     nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
 
@@ -4022,21 +4032,17 @@
                 return;
             }
 
-            // CRITICAL: Only check buildings in VERY close range to player to prevent ghost hits
-            // Player is at z ≈ 3.5, so ONLY check buildings from -12 to +6 (tighter than before!)
-            if(b.position.z >= 6 || b.position.z < -12) {
-                return; // Building too far - absolutely no collision possible
+            // CRITICAL: Only check buildings in collision zone around player
+            // Player is at z ≈ 3.5, so check buildings from -8 to +4 (tight range to prevent ghost hits)
+            // This prevents collisions with buildings that are too far behind or ahead
+            if(b.position.z > 4 || b.position.z < -8) {
+                return; // Building outside collision zone
             }
 
-            // CRITICAL: Building must be in camera view (not behind or too far ahead)
-            // Prevent collisions with invisible buildings (player is at z=3.5)
-            if(b.position.z < 3.5 - 10 || b.position.z > 3.5 + 15) {
-                return; // Building not in collision zone
-            }
-
-            // Require building to be mostly visible (opacity > 0.7)
-            if(b.opacity <= 0.7) {
-                return; // Building is too faded/transparent
+            // Require building to be fully visible (opacity must be near 1.0)
+            // Buildings fade starting at z=10, so this ensures no ghost hits from fading buildings
+            if(b.opacity < 0.95) {
+                return; // Building is fading or not fully visible
             }
 
             // Strict distance check: only check very close buildings
