@@ -33,7 +33,7 @@
     geo.rotateX(-Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
-    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.1 })));
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.12 })));
   };
   createRibbon(getFloor, 0x00ffff);
   createRibbon(getCeil, 0xffff00);
@@ -43,32 +43,29 @@
     geo.rotateY(Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
-    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.15 })));
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.18 })));
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
   // --- SLIME ---
-  const geometry = new THREE.IcosahedronGeometry(1.8, 5); // Increased resolution for ridge-matching
-  const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.8 }));
+  const geometry = new THREE.IcosahedronGeometry(1.8, 5);
+  const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.85 }));
   scene.add(blob);
-  const posAttr = geometry.getAttribute('position');
-  const originals = new Float32Array(posAttr.array);
+  const posAttr = geometry.getAttribute('position'), originals = new Float32Array(posAttr.array);
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  // --- PHYSICS ---
+  // --- PHYSICS & INPUT ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
-  let currentBias = -1;
-  let impact = 0, compression = 0;
-  const keys = {};
-  let lastW = 0, lastS = 0, lastFrameTime = 0;
-  const fpsInterval = 1000 / 60;
+  let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
+  let pressInten = 0; // The subtle game feel variable
+  const keys = {}, fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     const now = performance.now();
-    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; impact = 1.4; }
-    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; impact = 1.4; }
+    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) currentBias = 1;
+    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) currentBias = -1;
     lastW = (e.code === 'KeyW' || e.code === 'ArrowUp') ? now : lastW;
     lastS = (e.code === 'KeyS' || e.code === 'ArrowDown') ? now : lastS;
   });
@@ -86,78 +83,72 @@
     const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'];
     const pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
 
-    const moveSpeed = 0.22;
+    // Subtle intensity build-up for the "hold"
+    const isHoldingIntoSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU);
+    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingIntoSurface ? 1.0 : 0.0, 0.1);
+
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
     const onWall = Math.abs(centerPos.x - lW_c) < 1.4 || Math.abs(centerPos.x - rW_c) < 1.4;
 
-    slimeT.x += (pR ? moveSpeed : 0) - (pL ? moveSpeed : 0);
-    const vacuumPower = onWall ? 0.06 : 0.45;
-    slimeT.y += (currentBias * vacuumPower);
-    if (onWall) slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
+    slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
+    slimeT.y += (currentBias * (onWall ? 0.06 : 0.45));
+    if (onWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
 
-    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
-    slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
-
-    let oX = centerPos.x, oY = centerPos.y;
-    centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.15);
-    centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
-    centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
-
-    let isSquashing = (Math.abs(centerPos.y - fV_c) < 1.4 && pD) || (Math.abs(centerPos.y - cV_c) < 1.4 && pU);
-    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0.1, 0.12);
-    impact *= 0.85;
+    centerPos.x = THREE.MathUtils.lerp(centerPos.x, THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1), 0.15);
+    centerPos.y = THREE.MathUtils.lerp(centerPos.y, THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1), 0.15);
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
-
-    const breath = Math.sin(time * 1.5) * 0.08 + Math.sin(time * 2.7) * 0.05;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // 1. DYNAMIC SQUASH & MASS BIAS
-      // Apply a constant "weighted push" toward the current bias
-      const weightBias = currentBias * -0.4;
-      oy += weightBias;
+      // --- WEIGHTED SETTLEMENT PHYSICS ---
+      // Subtle Y-bias based on vacuum side
+      const biasShift = currentBias * -0.25;
+      const settleFactor = pressInten * 0.45;
 
-      // If compression is active, spread more
-      const squeezeRange = 0.9 + compression * 0.9;
-      if (currentBias === -1 && oy < 0) oy *= (1.0 - compression * 0.6); // Flatten bottom
-      if (currentBias === 1 && oy > 0) oy *= (1.0 - compression * 0.6); // Flatten top
+      // Top slumps down slightly, Bottom expands horizontally
+      if (currentBias === -1) { // Floor
+        if (oy > 0) oy -= (settleFactor * 0.5); // Top slump
+        else ox *= (1.0 + settleFactor * 0.6); // Bottom spread
+      } else { // Ceiling
+        if (oy < 0) oy += (settleFactor * 0.5); // Bottom slump
+        else ox *= (1.0 + settleFactor * 0.6); // Top spread
+      }
+
+      oy += biasShift;
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-
-      // 2. SURFACE RIDGE CONFORMITY
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
 
-      // 3. ADHESION & "POURING" INTO TEXTURE
+      // --- SEEPAGE & RIDGE ADHESION ---
       let r=1, g=0, b=1, suc=0;
+      // Range expands subtly when pressing
+      const seepageRange = 0.85 + (pressInten * 0.9);
 
-      if (currentBias === -1) { // FLOOR MODE
-        if (vY < curF + squeezeRange) {
-          suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, squeezeRange);
-          vY = THREE.MathUtils.lerp(vY, curF, suc * 0.98); // Seep into ridges
-          r = 1 - suc; g = suc;
-        }
-      } else { // CEILING MODE
-        if (vY > curC - squeezeRange) {
-          suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, squeezeRange);
-          vY = THREE.MathUtils.lerp(vY, curC, suc * 0.98); // Seep into ridges
-          g = suc; b = 1 - suc;
-        }
+      if (currentBias === -1 && vY < curF + seepageRange) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
+        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99); // Lock into ridges
+        r = 1 - (suc * 0.8); g = suc; b = 1 - (suc * 0.3);
+      } else if (currentBias === 1 && vY > curC - seepageRange) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
+        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99); // Lock into ridges
+        r = 1 - (suc * 0.3); g = suc; b = 1 - (suc * 0.8);
       }
 
       // Standard wall sticking
-      if (vX < curL + 0.8) { let s=1-THREE.MathUtils.smoothstep(vX-curL,0,0.8); vX=THREE.MathUtils.lerp(vX,curL,s*0.9); g=Math.max(g,s); }
-      if (vX > curR - 0.8) { let s=1-THREE.MathUtils.smoothstep(curR-vX,0,0.8); vX=THREE.MathUtils.lerp(vX,curR,s*0.9); g=Math.max(g,s); }
+      if (vX < curL + 0.9) { let s=1-THREE.MathUtils.smoothstep(vX-curL,0,0.9); vX=THREE.MathUtils.lerp(vX,curL,s*0.9); g=Math.max(g,s); }
+      if (vX > curR - 0.9) { let s=1-THREE.MathUtils.smoothstep(curR-vX,0,0.9); vX=THREE.MathUtils.lerp(vX,curR,s*0.9); g=Math.max(g,s); }
 
       vY = THREE.MathUtils.clamp(vY, curF, curC);
       vX = THREE.MathUtils.clamp(vX, curL, curR);
 
-      posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y; colorAttr.setXYZ(i, r, g, b);
+      posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y;
+      colorAttr.setXYZ(i, r, g, b);
     }
     posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
     blob.position.set(centerPos.x, centerPos.y, 0);
