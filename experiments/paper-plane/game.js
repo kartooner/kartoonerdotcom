@@ -1244,20 +1244,25 @@
         let allowAdjacentLanes; // Can buildings be in adjacent lanes?
 
         if (miles < 50) {
-            // Early: very sparse, one building per area
+            // Early: sparse for learning (but using wave patterns instead)
             buildingCount = Math.floor(seededRandom() * 2) + 1; // 1-2 buildings
             minSpacing = 80; // Wide spacing
             allowAdjacentLanes = false; // Never adjacent
-        } else if (miles < 150) {
+        } else if (miles < 100) {
             // Mid: starting to cluster
             buildingCount = Math.floor(seededRandom() * 3) + 2; // 2-4 buildings
-            minSpacing = 50; // Medium spacing
-            allowAdjacentLanes = seededRandom() < 0.3; // 30% chance adjacent
-        } else {
-            // Late: dense patterns with gaps
-            buildingCount = Math.floor(seededRandom() * 3) + 3; // 3-5 buildings
-            minSpacing = 30; // Tight spacing
+            minSpacing = 40; // Medium spacing (was 50)
+            allowAdjacentLanes = seededRandom() < 0.5; // 50% chance adjacent (was 30%)
+        } else if (miles < 200) {
+            // Late: dense patterns - waves stacking
+            buildingCount = Math.floor(seededRandom() * 3) + 4; // 4-6 buildings (was 3-5)
+            minSpacing = 20; // Very tight spacing (was 30)
             allowAdjacentLanes = true; // Can be adjacent
+        } else {
+            // VERY late: RELENTLESS waves barely giving breathing room
+            buildingCount = Math.floor(seededRandom() * 4) + 5; // 5-8 buildings
+            minSpacing = 15; // Extremely tight spacing
+            allowAdjacentLanes = true; // Always adjacent
         }
 
         const positions = [];
@@ -2062,10 +2067,21 @@
                 phaseLastSeen[phaseName] = totalPhasesCompleted;
                 totalPhasesCompleted++;
 
-                // Set duration
+                // Set duration (extend buildings phase for late game to create relentless feeling)
                 const config = phaseConfig[phaseName];
-                const duration = config.duration[0] +
-                    Math.random() * (config.duration[1] - config.duration[0]);
+                let minDuration = config.duration[0];
+                let maxDuration = config.duration[1];
+
+                // LATE GAME (100+ miles): Extend buildings phase to feel relentless
+                if (phaseName === 'buildings' && milesFlown >= 100) {
+                    minDuration = 45000; // 45 seconds minimum (was 30s)
+                    maxDuration = 90000; // 90 seconds maximum (was 60s)
+                } else if (phaseName === 'buildings' && milesFlown >= 50) {
+                    minDuration = 40000; // 40 seconds minimum
+                    maxDuration = 75000; // 75 seconds maximum
+                }
+
+                const duration = minDuration + Math.random() * (maxDuration - minDuration);
 
                 return { phase: phaseName, duration: duration };
             }
