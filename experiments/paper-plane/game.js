@@ -1540,21 +1540,26 @@
         if (level <= 2) {
             // Early levels: DENSE simultaneous patterns forcing constant left-right movement
             // Patterns spawn multiple buildings at SAME depth so you must weave between them
-            if (rand < 0.20) return 'double_simultaneous';  // 20% two buildings side-by-side
-            if (rand < 0.40) return 'triple_simultaneous';  // 20% three buildings simultaneous
-            if (rand < 0.55) return 'quad_simultaneous';    // 15% four buildings simultaneous
-            if (rand < 0.70) return 'gentle_wall';          // 15% gentle wall (3 buildings at same Z)
-            if (rand < 0.85) return 'staircase';            // 15% staircase
-            return 'wall'; // 15% wall (4 buildings, 1 lane open)
+            // Include wide building variants to avoid clipping
+            if (rand < 0.15) return 'double_simultaneous';  // 15% two buildings side-by-side
+            if (rand < 0.30) return 'triple_simultaneous';  // 15% three buildings simultaneous
+            if (rand < 0.42) return 'quad_simultaneous';    // 12% four buildings simultaneous
+            if (rand < 0.54) return 'gentle_wall';          // 12% gentle wall (3 buildings at same Z)
+            if (rand < 0.66) return 'staircase';            // 12% staircase
+            if (rand < 0.78) return 'wall';                 // 12% wall (4 buildings, 1 lane open)
+            if (rand < 0.88) return 'wide_single';          // 10% wide single (2-lane building)
+            return 'wide_gap_regular'; // 12% wide + gap (avoids clipping)
         } else if (level <= 5) {
-            // Mid levels: MORE dense patterns, less breathers
-            if (rand < 0.05) return 'breather';    // 5% breather (reduced from 15%)
-            if (rand < 0.20) return 'triple';      // 15% triple
-            if (rand < 0.35) return 'gentle_wall'; // 15% gentle wall
-            if (rand < 0.50) return 'wall';        // 15% wall (4 buildings)
-            if (rand < 0.65) return 'staircase';   // 15% staircase
-            if (rand < 0.80) return 'double';      // 15% double
-            return 'procedural'; // 20% procedural (reduced from 55%)
+            // Mid levels: MORE dense patterns, less breathers, include wide variants
+            if (rand < 0.05) return 'breather';         // 5% breather
+            if (rand < 0.17) return 'triple';           // 12% triple
+            if (rand < 0.29) return 'gentle_wall';      // 12% gentle wall
+            if (rand < 0.41) return 'wall';             // 12% wall
+            if (rand < 0.53) return 'staircase';        // 12% staircase
+            if (rand < 0.63) return 'double';           // 10% double
+            if (rand < 0.73) return 'wide_single';      // 10% wide single
+            if (rand < 0.83) return 'wide_gap_regular'; // 10% wide + gap
+            return 'procedural'; // 17% procedural
         } else {
             // Late levels: VERY dense + wide building variants
             if (rand < 0.05) return 'breather';         // 5% breather (reduced from 8%)
