@@ -58,16 +58,16 @@
   // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
-  let pressInten = 0, impact = 0;
+  let pressInten = 0;
   const keys = {}, fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     const now = performance.now();
-    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; impact = 1.6; slimeT.y = 5; }
-    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; impact = 1.6; slimeT.y = -5; }
-    lastW = (e.code === 'KeyW' || e.code === 'ArrowUp') ? now : lastW;
-    lastS = (e.code === 'KeyS' || e.code === 'ArrowDown') ? now : lastS;
+    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { currentBias = 1; slimeT.y = 5; }
+    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { currentBias = -1; slimeT.y = -5; }
+    if(e.code === 'KeyW' || e.code === 'ArrowUp') lastW = now;
+    if(e.code === 'KeyS' || e.code === 'ArrowDown') lastS = now;
   });
   window.addEventListener('keyup', (e) => keys[e.code] = false);
 
@@ -85,13 +85,10 @@
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+
     const nearWall = Math.abs(centerPos.x - lW_c) < 1.6 || Math.abs(centerPos.x - rW_c) < 1.6;
-
-    const speed = Math.sqrt(centerPos.vx * centerPos.vx + centerPos.vy * centerPos.vy);
-    const stillness = THREE.MathUtils.smoothstep(speed, 0.4, 0.05);
-
     const isHoldingSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU) || (nearWall && (pL || pR));
-    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingSurface ? stillness : 0.0, 0.12);
+    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingSurface ? 1.0 : 0.0, 0.15);
 
     slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
     if (nearWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
@@ -105,39 +102,31 @@
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
 
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
-
-    const breath = Math.sin(time * 1.6) * 0.14 + Math.sin(time * 2.4) * 0.06;
+    const breath = Math.sin(time * 1.6) * 0.12 + Math.sin(time * 2.4) * 0.06;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // --- 1. ASYMMETRIC SLOSH (Left Sketch) ---
-      // Pushes mass to the front and creates trailing "tail"
-      const moveMag = centerPos.vx * 3.5;
-      const weightDir = oy > 0 ? 1.0 : 0.3; // Top moves more than base
-      ox += moveMag * weightDir * (1.0 - pressInten);
+      // ASYMMETRIC SLOSH
+      const moveVel = centerPos.vx * 4.5;
+      const verticalWeight = (oy + 1.8) / 3.6;
+      ox += moveVel * verticalWeight * 0.8 * (1.0 - pressInten);
 
-      // --- 2. WEIGHTED SETTLEMENT (Right Sketch) ---
-      // Bottom spreads wide, Top slumps gently
-      const settleX = 1.0 + (pressInten * 0.7);
-      const settleY = 1.0 - (pressInten * 0.45);
-
-      if (currentBias === -1) { // On Floor
-        if (oy < 0) ox *= settleX; // Wider base
-        else oy *= settleY; // Lower top
-      } else { // On Ceiling
-        if (oy > 0) ox *= settleX;
-        else oy *= settleY;
+      // WEIGHTED SETTLEMENT
+      const settleX = 1.0 + (pressInten * 0.8);
+      const settleY = 1.0 - (pressInten * 0.5);
+      if (currentBias === -1) {
+        if (oy < 0) ox *= settleX; else oy *= settleY;
+      } else {
+        if (oy > 0) ox *= settleX; else oy *= settleY;
       }
-      oy += (currentBias * -0.3); // Constant vacuum pull
+      oy += (currentBias * -0.3);
 
-      // --- 3. ORGANIC UNDULATION (Restored) ---
+      // UNDULATION
       let gf = 0;
-      if (currentBias === -1 && oy > 0.1) gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
-      else if (currentBias === 1 && oy < -0.1) gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
+      if (currentBias === -1 && oy > 0.2) gf = THREE.MathUtils.smoothstep(oy, 0.2, 1.8);
+      else if (currentBias === 1 && oy < -0.2) gf = THREE.MathUtils.smoothstep(-oy, 0.2, 1.8);
 
       if (gf > 0) {
         const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
@@ -146,20 +135,25 @@
       }
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
+
+      // PREDICTIVE RIDGE CONFORMITY
       const curF = getFloor(vX), curC = getCeil(vX);
       const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
 
-      // --- 4. RIDGE SEEPAGE ---
       let r=1, g=0, b=1, suc=0;
-      const seepageRange = 0.95 + (pressInten * 1.1);
+      // Range is slightly broader to "catch" fast movement
+      const seepageRange = 1.1 + (pressInten * 1.2);
 
       if (currentBias === -1 && vY < curF + seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
-        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.99);
+        // Stronger lerp during squeeze to prevent "floating"
+        const stickyFactor = pressInten > 0.5 ? 0.99 : 0.95;
+        vY = THREE.MathUtils.lerp(vY, curF, suc * stickyFactor);
         r = 1 - (suc * 0.85); g = suc; b = 1 - (suc * 0.2);
       } else if (currentBias === 1 && vY > curC - seepageRange) {
         suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepageRange);
-        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.99);
+        const stickyFactor = pressInten > 0.5 ? 0.99 : 0.95;
+        vY = THREE.MathUtils.lerp(vY, curC, suc * stickyFactor);
         r = 1 - (suc * 0.2); g = suc; b = 1 - (suc * 0.85);
       }
 
