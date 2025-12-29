@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Wedge & Boulder Fix</title>
+  <title>Slime - Hyper Squish Build</title>
   <style> body { margin: 0; background: #000; overflow: hidden; touch-action: none; } </style>
 </head>
 <body>
@@ -43,14 +43,13 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  // --- CRAGGY BOULDER ---
+  // --- BOULDER ---
   const bRad = 1.1;
   const bGeo = new THREE.IcosahedronGeometry(bRad, 3);
   const bPAttr = bGeo.getAttribute('position');
   for(let i = 0; i < bPAttr.count; i++) {
     const v = new THREE.Vector3().fromBufferAttribute(bPAttr, i);
-    const noise = (Math.sin(v.x * 6) + Math.cos(v.y * 6) + Math.sin(v.z * 6)) * 0.22;
-    v.addScaledVector(v.normalize(), noise);
+    v.addScaledVector(v.normalize(), (Math.sin(v.x * 6) + Math.cos(v.y * 6)) * 0.2);
     bPAttr.setXYZ(i, v.x, v.y, v.z);
   }
   const boulder = new THREE.Mesh(bGeo, new THREE.MeshBasicMaterial({ color: 0x666666, wireframe: true }));
@@ -61,9 +60,9 @@
   const nodes = [];
   const nGeo = new THREE.IcosahedronGeometry(0.5, 2);
   for (let i = 0; i < 20; i++) {
-    let x, y;
-    do { x = (Math.random() - 0.5) * (worldBounds * 2.5); y = (Math.random()-0.5)*8; }
-    while (Math.abs(x) < 10 || Math.abs(x) > worldBounds);
+    let x = (Math.random() - 0.5) * (worldBounds * 2.5);
+    let y = (Math.random() - 0.5) * 8;
+    if (Math.abs(x) < 8) x += 10 * (x < 0 ? -1 : 1);
     const n = new THREE.Mesh(nGeo, new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
     n.position.set(x, y, 0); scene.add(n); nodes.push(n);
   }
@@ -79,7 +78,7 @@
   // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastTime = performance.now();
-  let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, fusionInten = 0;
+  let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, fusionInten = 0, pressInten = 0;
   const keys = {};
 
   window.addEventListener('keydown', (e) => {
@@ -101,11 +100,11 @@
     const time = now * 0.001;
     const pL=keys['KeyA']||keys['ArrowLeft'], pR=keys['KeyD']||keys['ArrowRight'], pU=keys['KeyW']||keys['ArrowUp'], pD=keys['KeyS']||keys['ArrowDown'];
 
-    // Bounds
+    // Environment
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
     const distL = Math.abs(centerPos.x - lW_c), distR = Math.abs(centerPos.x - rW_c);
-    const onWall = distL < 1.8 || distR < 1.8;
+    const onWall = distL < 2.0 || distR < 2.0;
 
     // Boulder
     const distB = Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2));
@@ -117,8 +116,11 @@
     bPhys.y = getFloor(bPhys.x) + bRad;
     boulder.position.set(bPhys.x, bPhys.y, 0); boulder.rotation.z -= bPhys.vx;
 
-    // Move
+    // Movement & Interaction-Press
     const moveAmt = 0.22 * dt;
+    const isPressing = (currentBias === -1 && pD) || (currentBias === 1 && pU);
+    pressInten = THREE.MathUtils.lerp(pressInten, isPressing ? 1.0 : 0.0, 0.15 * dt);
+
     slimeT.x += (pR ? moveAmt : 0) - (pL ? moveAmt : 0);
     if(onWall || distB < 2.5) slimeT.y += (pU ? moveAmt : 0) - (pD ? moveAmt : 0);
     else slimeT.y += (currentBias * 0.42 * dt);
@@ -154,20 +156,24 @@
       let ox = originals[idx] * (1.0 + globalBreath), oy = originals[idx+1] * (1.0 + globalBreath);
       const vPy = (oy + 1.8) / 3.6, vPx = (ox + 1.8) / 3.6;
 
-      // CORNER WEDGE & WALL LOGIC
-      if (distL < 2.0) { // Left Wall Suction
+      // BASE HEAVY DOME + HYPER SQUISH
+      const squash = 0.65 - (pressInten * 0.08); // Extra 8% squish on key press
+      const t = currentBias === -1 ? (1.0 - vPy) : vPy;
+      oy *= squash;
+      ox *= (1.0 + (1.1 + pressInten * 0.3) * Math.pow(t, 1.8)); // Base expands more
+      oy += (currentBias * -0.3);
+
+      // CORNER WEDGE
+      if (distL < 2.0) {
         const factor = THREE.MathUtils.smoothstep(distL, 1.1, 2.0);
         ox *= (0.6 + 0.4 * factor);
         oy *= (1.0 + 1.1 * (1.0-vPx) * (1.0-factor));
         ox -= (0.4 * (1.0-factor));
-      } else if (distR < 2.0) { // Right Wall Suction
+      } else if (distR < 2.0) {
         const factor = THREE.MathUtils.smoothstep(distR, 1.1, 2.0);
         ox *= (0.6 + 0.4 * factor);
         oy *= (1.0 + 1.1 * vPx * (1.0-factor));
         ox += (0.4 * (1.0-factor));
-      } else { // Floor Dome
-        const t = currentBias === -1 ? (1.0 - vPy) : vPy;
-        oy *= 0.65; ox *= (1.0 + 1.1 * Math.pow(t, 1.8)); oy += (currentBias * -0.3);
       }
 
       ox += jelloX * Math.pow(vPy, 1.4); oy += jelloY * Math.pow(vPx, 1.4);
@@ -181,17 +187,17 @@
 
       const curF = getFloor(vX), curC = getCeil(vX);
       const wallL = -worldBounds + getWallJag(vY), wallR = worldBounds - getWallJag(vY);
-      let r=1, g=0, b=1, suc=0;
+      let r=1, g=0, b=1, suc=0, seepDist = 1.2 + (pressInten * 0.4);
 
       if (Math.abs(vX - wallL) < 1.3 || Math.abs(vX - wallR) < 1.3) {
         suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX - wallL), Math.abs(vX - wallR)), 0, 1.3);
         r = 1 - suc; g = suc; b = 1 - suc * 0.5;
-      } else if (currentBias === -1 && vY < curF + 1.2) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, 1.2);
+      } else if (currentBias === -1 && vY < curF + seepDist) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepDist);
         vY = THREE.MathUtils.lerp(vY, curF, suc * 0.98);
         r = 1 - suc * 0.8; g = suc; b = 1 - suc * 0.2;
-      } else if (currentBias === 1 && vY > curC - 1.2) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, 1.2);
+      } else if (currentBias === 1 && vY > curC - seepDist) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seepDist);
         vY = THREE.MathUtils.lerp(vY, curC, suc * 0.98);
         r = 1 - suc * 0.2; g = suc; b = 1 - suc * 0.8;
       }
