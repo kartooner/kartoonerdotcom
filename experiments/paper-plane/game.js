@@ -1377,8 +1377,49 @@
                 while (lane2 === lane1) lane2 = Math.floor(seededRandom() * 5);
                 return [
                     { lane: lane1, offset: 0, width: 1 },
-                    { lane: lane2, offset: -30, width: 1 } // Tighter spacing (was -60)
+                    { lane: lane2, offset: -20, width: 1 } // Quick follow-up (was -30)
                 ];
+            }
+        },
+        // EARLY GAME DENSE PATTERNS - multiple buildings at same Z position
+        double_simultaneous: {
+            buildings: 2,
+            getPositions: () => {
+                // 2 buildings at SAME depth forcing left/right dodge
+                const lane1 = Math.floor(seededRandom() * 2); // Lane 0 or 1 (left side)
+                const lane2 = 3 + Math.floor(seededRandom() * 2); // Lane 3 or 4 (right side)
+                return [
+                    { lane: lane1, offset: 0, width: 1 },
+                    { lane: lane2, offset: 0, width: 1 } // SAME Z - forces center navigation
+                ];
+            }
+        },
+        triple_simultaneous: {
+            buildings: 3,
+            getPositions: () => {
+                // 3 buildings at same depth - leaves 2 lanes open
+                const allLanes = [0, 1, 2, 3, 4];
+                const shuffled = allLanes.sort(() => 0.5 - seededRandom());
+                const selectedLanes = shuffled.slice(0, 3);
+                return selectedLanes.map(lane => ({
+                    lane,
+                    offset: 0, // ALL at same Z position
+                    width: 1
+                }));
+            }
+        },
+        quad_simultaneous: {
+            buildings: 4,
+            getPositions: () => {
+                // 4 buildings at same depth - leaves 1 lane open
+                const openLane = Math.floor(seededRandom() * 5);
+                const positions = [];
+                for (let i = 0; i < 5; i++) {
+                    if (i !== openLane) {
+                        positions.push({ lane: i, offset: 0, width: 1 });
+                    }
+                }
+                return positions;
             }
         },
         triple: {
@@ -1497,12 +1538,13 @@
         // Use procedural generation for most patterns
         // Keep some classic patterns for variety
         if (level <= 2) {
-            // Early levels: DENSE multi-building patterns to force active dodging
-            // Pattern examples: 2 on left, 1 left + 1 right, 1 middle + 1 behind, etc.
-            if (rand < 0.25) return 'double';      // 25% two buildings forcing movement
-            if (rand < 0.50) return 'triple';      // 25% three buildings
-            if (rand < 0.70) return 'gentle_wall'; // 20% gentle wall (3 buildings, 2 lanes open)
-            if (rand < 0.85) return 'staircase';   // 15% staircase pattern
+            // Early levels: DENSE simultaneous patterns forcing constant left-right movement
+            // Patterns spawn multiple buildings at SAME depth so you must weave between them
+            if (rand < 0.20) return 'double_simultaneous';  // 20% two buildings side-by-side
+            if (rand < 0.40) return 'triple_simultaneous';  // 20% three buildings simultaneous
+            if (rand < 0.55) return 'quad_simultaneous';    // 15% four buildings simultaneous
+            if (rand < 0.70) return 'gentle_wall';          // 15% gentle wall (3 buildings at same Z)
+            if (rand < 0.85) return 'staircase';            // 15% staircase
             return 'wall'; // 15% wall (4 buildings, 1 lane open)
         } else if (level <= 5) {
             // Mid levels: MORE dense patterns, less breathers
@@ -3755,9 +3797,19 @@
                     // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
                     const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
 
-                    // BOSS GAUNTLET: Much denser building spawns (30 units vs normal 60)
-                    // Reduced spawn distance to make dodging constantly engaging (was 150, then 90, now 60)
-                    const baseDistance = currentPhase === 'boss_gauntlet' ? 30 : 60;
+                    // EARLY GAME (0-20 miles): Very tight spacing to force constant dodging
+                    // MID/LATE GAME: Progressive tightening based on miles
+                    // BOSS GAUNTLET: Tightest spacing
+                    let baseDistance;
+                    if (currentPhase === 'boss_gauntlet') {
+                        baseDistance = 30; // Boss gauntlet - extremely tight
+                    } else if (miles < 20) {
+                        baseDistance = 35; // EARLY GAME - tight to establish dodging as core mechanic
+                    } else if (miles < 50) {
+                        baseDistance = 45; // Early-mid transition
+                    } else {
+                        baseDistance = 60; // Normal late game spacing
+                    }
                     nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
 
                     // If breather wave (no buildings), deactivate this instance
