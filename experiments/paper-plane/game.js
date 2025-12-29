@@ -32,7 +32,7 @@
     let bonusFadeTimer = 0; // Timer for fading bonus display
 
     // Checkpoint system
-    let nextCheckpoint = 20 + Math.floor(Math.random() * 11); // First checkpoint at 20-30 miles (random)
+    let nextCheckpoint = 25; // First checkpoint at 25 miles (gives clean 10-mile onboarding)
     let checkpointActive = false;
     let ringsSpawnedForCheckpoint = false; // Track if rings spawned before this checkpoint
     let isFirstCheckpoint = true; // First checkpoint gives free upgrade
@@ -1540,21 +1540,26 @@
         if (level <= 2) {
             // Early levels: DENSE simultaneous patterns forcing constant left-right movement
             // Patterns spawn multiple buildings at SAME depth so you must weave between them
-            if (rand < 0.20) return 'double_simultaneous';  // 20% two buildings side-by-side
-            if (rand < 0.40) return 'triple_simultaneous';  // 20% three buildings simultaneous
-            if (rand < 0.55) return 'quad_simultaneous';    // 15% four buildings simultaneous
-            if (rand < 0.70) return 'gentle_wall';          // 15% gentle wall (3 buildings at same Z)
-            if (rand < 0.85) return 'staircase';            // 15% staircase
-            return 'wall'; // 15% wall (4 buildings, 1 lane open)
+            // Include wide building variants to avoid clipping
+            if (rand < 0.15) return 'double_simultaneous';  // 15% two buildings side-by-side
+            if (rand < 0.30) return 'triple_simultaneous';  // 15% three buildings simultaneous
+            if (rand < 0.42) return 'quad_simultaneous';    // 12% four buildings simultaneous
+            if (rand < 0.54) return 'gentle_wall';          // 12% gentle wall (3 buildings at same Z)
+            if (rand < 0.66) return 'staircase';            // 12% staircase
+            if (rand < 0.78) return 'wall';                 // 12% wall (4 buildings, 1 lane open)
+            if (rand < 0.88) return 'wide_single';          // 10% wide single (2-lane building)
+            return 'wide_gap_regular'; // 12% wide + gap (avoids clipping)
         } else if (level <= 5) {
-            // Mid levels: MORE dense patterns, less breathers
-            if (rand < 0.05) return 'breather';    // 5% breather (reduced from 15%)
-            if (rand < 0.20) return 'triple';      // 15% triple
-            if (rand < 0.35) return 'gentle_wall'; // 15% gentle wall
-            if (rand < 0.50) return 'wall';        // 15% wall (4 buildings)
-            if (rand < 0.65) return 'staircase';   // 15% staircase
-            if (rand < 0.80) return 'double';      // 15% double
-            return 'procedural'; // 20% procedural (reduced from 55%)
+            // Mid levels: MORE dense patterns, less breathers, include wide variants
+            if (rand < 0.05) return 'breather';         // 5% breather
+            if (rand < 0.17) return 'triple';           // 12% triple
+            if (rand < 0.29) return 'gentle_wall';      // 12% gentle wall
+            if (rand < 0.41) return 'wall';             // 12% wall
+            if (rand < 0.53) return 'staircase';        // 12% staircase
+            if (rand < 0.63) return 'double';           // 10% double
+            if (rand < 0.73) return 'wide_single';      // 10% wide single
+            if (rand < 0.83) return 'wide_gap_regular'; // 10% wide + gap
+            return 'procedural'; // 17% procedural
         } else {
             // Late levels: VERY dense + wide building variants
             if (rand < 0.05) return 'breather';         // 5% breather (reduced from 8%)
@@ -1939,9 +1944,9 @@
         },
         boss_gauntlet: {
             intensity: 'extreme',
-            duration: [30000, 30000], // Fixed 30 seconds - INTENSE building gauntlet (replaces old rotating boss)
+            duration: [60000, 90000], // 60-90 seconds - NEARLY UNSUSTAINABLE gauntlet
             canFollowItself: false,
-            description: 'BOSS GAUNTLET - Dense buildings barrage for 30s'
+            description: 'BOSS GAUNTLET - Relentless buildings barrage, nearly unsustainable'
         }
     };
 
@@ -2085,9 +2090,10 @@
             }
 
             // RULE 10: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
-            // Trigger at 150 miles, then every 100 miles (250, 350, 450...)
+            // Trigger at 150 miles, then every 150 miles (300, 450, 600...)
+            // Boss gauntlet is EXTREME - nearly unsustainable density, constant dodging
             if (phaseName === 'boss_gauntlet') {
-                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 100 === 0)) {
+                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 150 === 0)) {
                     weight *= 1000; // Virtually guarantee boss gauntlet at milestone
                 } else {
                     weight *= 0.01; // Extremely rare otherwise
@@ -2103,7 +2109,7 @@
                 }
             }
 
-            // RULE 12: First 10-15 miles ONLY breathers and buildings
+            // RULE 12: First 15 miles ONLY breathers and buildings
             // This creates a focused onboarding experience where players learn the core dodging mechanic
             // Rings, coins, wind, walls, and mixed phases are introduced AFTER mile 15
             if (milesFlown < 15) {
@@ -2572,7 +2578,7 @@
         currentLives = maxLives;
         checkpointHistory = [];
         currentLevel = 1;
-        nextCheckpoint = 20 + Math.floor(Math.random() * 11);
+        nextCheckpoint = 25; // First checkpoint at 25 miles
         isFirstCheckpoint = true;
 
         // Reset difficulty and timing
@@ -3797,6 +3803,12 @@
                         patternName = 'antiCamping';
                         antiCampingActive = false; // Reset after spawning punishment
                         timeInSameLane = 0; // Reset timer
+                    } else if (currentPhase === 'boss_gauntlet') {
+                        // BOSS GAUNTLET: Force only the most intense patterns with very little gaps
+                        // Nearly unsustainable - constant dodging with minimal safe spaces
+                        // Use wide building variants to avoid clipping while maintaining intensity
+                        const bossPatterns = ['quad_simultaneous', 'wall', 'procedural', 'triple_simultaneous', 'double_wide', 'wide_sandwich', 'wide_gap_regular'];
+                        patternName = bossPatterns[Math.floor(seededRandom() * bossPatterns.length)];
                     } else {
                         // Normal wave pattern selection
                         patternName = getWavePattern(levelDifficulty);
@@ -3814,7 +3826,7 @@
                     // Early game needs RAPID waves to create constant dodging action
                     let baseDistance;
                     if (currentPhase === 'boss_gauntlet') {
-                        baseDistance = 30; // Boss gauntlet - extremely tight
+                        baseDistance = 12; // Boss gauntlet - RELENTLESS, nearly unsustainable
                     } else if (miles < 10) {
                         baseDistance = 20; // EARLY GAME (0-10mi) - RAPID waves for onboarding
                     } else if (miles < 20) {
@@ -4868,7 +4880,8 @@
 
         // Spawn coins randomly in the environment (not too many at once)
         // Don't spawn during boss encounters
-        if (Math.random() < 0.001 && coins.length < 6 && !bossActive) {
+        // RESTRICTION: No coins before mile 15 (early game onboarding)
+        if (miles >= 15 && Math.random() < 0.001 && coins.length < 6 && !bossActive) {
             const coin = getCoinFromPool();
             if (coin) {
                 // X position: Only spawn in center 3 lanes (-4, 0, 4)
@@ -4923,6 +4936,7 @@
         }
 
         // Try to spawn wind gusts during breather/ring moments (rare) OR buildings (very rare)
+        // RESTRICTION: No wind gusts before mile 15 (early game onboarding)
         const isBreatherMoment = currentPhase === 'rings' ||
             currentPhase === 'breather' ||
             currentPhase === 'breather_before_rings' ||
@@ -4933,7 +4947,8 @@
         // Breather moments: 0.3% chance, High intensity (buildings/walls): 0.05% chance (rare bonus)
         const windGustChance = isBreatherMoment ? 0.003 : (isHighIntensityPhase ? 0.0005 : 0);
 
-        if (windGusts.length === 0 && Math.random() < windGustChance) {
+        // Only spawn wind gusts after mile 15 AND if chance triggers
+        if (miles >= 15 && windGusts.length === 0 && Math.random() < windGustChance) {
             // Breather: sometimes 2-3 gusts, High intensity: always just 1 (rare bonus)
             const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
@@ -4955,8 +4970,9 @@
         }
 
         // Rare ring spawn during WALL phase only (not buildings) - bonus reward
+        // RESTRICTION: No rings before mile 15 (early game onboarding)
         const isWallPhase = currentPhase === 'walls';
-        if (isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+        if (miles >= 15 && isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
             // Very rare: single ring as bonus during walls
             const ring = getRingFromPool();
             if (ring) {
@@ -5036,8 +5052,8 @@
                 gate.userData.passed = true;
                 showCheckpointUI(Math.floor(miles));
 
-                // Variable checkpoint distances for replayability (20-30 miles)
-                const checkpointDistance = 20 + Math.floor(Math.random() * 11);
+                // Consistent checkpoint distances every 25 miles
+                const checkpointDistance = 25;
                 nextCheckpoint += checkpointDistance;
                 ringsSpawnedForCheckpoint = false; // Reset for next checkpoint
 
