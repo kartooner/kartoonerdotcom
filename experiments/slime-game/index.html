@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime test</title>
+  <title>Slime test - Rock Obstacle</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
   </style>
@@ -21,15 +21,23 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // --- WORLD ---
-  const worldBounds = 20, ribbonW = 5.0;
+  // --- WORLD MATH ---
+  const worldBounds = 25, ribbonW = 5.0;
   const getNoise = (v, f, a) => Math.sin(v * f) * a + Math.sin(v * f * 2.2) * (a * 0.4);
-  const getFloor = (x) => -3.5 + (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.3 : 0) + getNoise(x, 2.5, 0.15);
+
+  // Added a specific bump for the "Rock" at x = 10
+  const getFloor = (x) => {
+    let base = -3.5 + (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.3 : 0) + getNoise(x, 2.5, 0.15);
+    // The Rock Obstacle
+    const rockDist = Math.abs(x - 10);
+    if (rockDist < 2.5) base += Math.cos((rockDist / 2.5) * Math.PI / 2) * 2.5 + getNoise(x, 10, 0.2);
+    return base;
+  };
   const getCeil = (x) => 2.5 - (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.1 : 0) + getNoise(x, 3.0, 0.2);
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
   const createRibbon = (getVal, color) => {
-    const geo = new THREE.PlaneGeometry(worldBounds * 3, ribbonW, 160, 3);
+    const geo = new THREE.PlaneGeometry(worldBounds * 3, ribbonW, 200, 3);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
@@ -38,15 +46,14 @@
   createRibbon(getFloor, 0x00ffff);
   createRibbon(getCeil, 0xffff00);
 
-  // --- NODES (COLLECTIBLES) ---
+  // --- NODES ---
   const nodes = [];
   const nodeGeo = new THREE.IcosahedronGeometry(0.4, 1);
   const nodeMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true });
   for (let i = 0; i < 15; i++) {
-    const n = new THREE.Mesh(nodeGeo, nodeMat.clone());
-    const x = (Math.random() - 0.5) * worldBounds * 2;
-    const isFloor = Math.random() > 0.5;
-    const y = isFloor ? getFloor(x) + 0.5 : getCeil(x) - 0.5;
+    const n = new THREE.Mesh(nodeGeo, nodeMat);
+    const x = (Math.random() - 0.5) * worldBounds * 1.5;
+    const y = Math.random() > 0.5 ? getFloor(x) + 0.5 : getCeil(x) - 0.5;
     n.position.set(x, y, 0);
     scene.add(n);
     nodes.push(n);
@@ -101,18 +108,12 @@
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
 
-    // --- STEADY CAMERA FOLLOW ---
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.1);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y, 0.05);
-    // No Rotation or Offset LookAt
 
-    // --- NODE COLLECTION ---
     nodes.forEach(n => {
-      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 2.0) {
-        n.visible = false;
-      }
-      n.rotation.y += 0.05;
-      n.scale.setScalar(1 + Math.sin(time * 5) * 0.2);
+      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 2.0) n.visible = false;
+      n.rotation.y += 0.02;
     });
 
     const breath = Math.sin(time * 1.6) * 0.12 + Math.sin(time * 2.4) * 0.06;
@@ -156,7 +157,7 @@
         colorAttr.setXYZ(i, 1, 0, 1);
       }
 
-      posAttr.array[idx] = THREE.MathUtils.clamp(vX, vX-5, vX+5) - centerPos.x;
+      posAttr.array[idx] = vX - centerPos.x;
       posAttr.array[idx+1] = THREE.MathUtils.clamp(vY, curF, curC) - centerPos.y;
     }
     posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
