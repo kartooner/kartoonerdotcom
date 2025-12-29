@@ -1939,9 +1939,9 @@
         },
         boss_gauntlet: {
             intensity: 'extreme',
-            duration: [30000, 30000], // Fixed 30 seconds - INTENSE building gauntlet (replaces old rotating boss)
+            duration: [60000, 90000], // 60-90 seconds - NEARLY UNSUSTAINABLE gauntlet
             canFollowItself: false,
-            description: 'BOSS GAUNTLET - Dense buildings barrage for 30s'
+            description: 'BOSS GAUNTLET - Relentless buildings barrage, nearly unsustainable'
         }
     };
 
@@ -2085,9 +2085,10 @@
             }
 
             // RULE 10: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
-            // Trigger at 150 miles, then every 100 miles (250, 350, 450...)
+            // Trigger at 150 miles, then every 150 miles (300, 450, 600...)
+            // Boss gauntlet is EXTREME - nearly unsustainable density, constant dodging
             if (phaseName === 'boss_gauntlet') {
-                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 100 === 0)) {
+                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 150 === 0)) {
                     weight *= 1000; // Virtually guarantee boss gauntlet at milestone
                 } else {
                     weight *= 0.01; // Extremely rare otherwise
@@ -3797,6 +3798,11 @@
                         patternName = 'antiCamping';
                         antiCampingActive = false; // Reset after spawning punishment
                         timeInSameLane = 0; // Reset timer
+                    } else if (currentPhase === 'boss_gauntlet') {
+                        // BOSS GAUNTLET: Force only the most intense patterns with very little gaps
+                        // Nearly unsustainable - constant dodging with minimal safe spaces
+                        const bossPatterns = ['quad_simultaneous', 'wall', 'procedural', 'triple_simultaneous', 'double_wide'];
+                        patternName = bossPatterns[Math.floor(seededRandom() * bossPatterns.length)];
                     } else {
                         // Normal wave pattern selection
                         patternName = getWavePattern(levelDifficulty);
@@ -3814,7 +3820,7 @@
                     // Early game needs RAPID waves to create constant dodging action
                     let baseDistance;
                     if (currentPhase === 'boss_gauntlet') {
-                        baseDistance = 30; // Boss gauntlet - extremely tight
+                        baseDistance = 12; // Boss gauntlet - RELENTLESS, nearly unsustainable
                     } else if (miles < 10) {
                         baseDistance = 20; // EARLY GAME (0-10mi) - RAPID waves for onboarding
                     } else if (miles < 20) {
