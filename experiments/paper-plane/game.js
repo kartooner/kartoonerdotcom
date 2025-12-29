@@ -2124,7 +2124,7 @@
                 let minDuration = config.duration[0];
                 let maxDuration = config.duration[1];
 
-                // LATE GAME: Extend buildings phase - 6-8 phases worth at ultra-late
+                // PHASE DURATION SCALING: Buildings phase duration increases with miles
                 if (phaseName === 'buildings' && milesFlown >= 500) {
                     minDuration = 240000; // 4 minutes minimum - MARATHON GAUNTLET
                     maxDuration = 420000; // 7 minutes maximum - 6-8 phases worth!
@@ -2140,6 +2140,10 @@
                 } else if (phaseName === 'buildings' && milesFlown >= 50) {
                     minDuration = 40000; // 40 seconds minimum
                     maxDuration = 75000; // 75 seconds maximum
+                } else if (phaseName === 'buildings' && milesFlown < 20) {
+                    // EARLY GAME ONBOARDING: Long first buildings phase to teach dodging
+                    minDuration = 60000; // 1 minute minimum
+                    maxDuration = 120000; // 2 minutes maximum - establish "this is the game"
                 }
 
                 // Shorten breathers at ultra-late game - make relief brief
