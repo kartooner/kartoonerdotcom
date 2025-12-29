@@ -3531,7 +3531,11 @@
             if(b.position.z > 20 && b.active) {
                 // Check if we need to spawn a new wave (not during boss or low-intensity phases)
                 const canSpawnBuildings = currentPhase === 'buildings' || currentPhase === 'mixed' || currentPhase === 'boss_gauntlet';
-                if (!bossActive && canSpawnBuildings && (currentWave === null || waveProgress >= currentWave.buildings)) {
+
+                // Don't spawn buildings during active boosts to prevent unfair collisions
+                const hasActiveBoost = speedBoostActive || nearMissBoost > 0 || ringBoost > 0;
+
+                if (!bossActive && canSpawnBuildings && !hasActiveBoost && (currentWave === null || waveProgress >= currentWave.buildings)) {
                     // Anti-camping: Force spawn in player's lane if they're camping
                     let patternName;
                     if (antiCampingActive && Math.random() < 0.5) {
