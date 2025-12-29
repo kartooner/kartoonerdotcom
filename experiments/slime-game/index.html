@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Physics & Wedge Restored</title>
+  <title>Slime - Safe Zone Build</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
   </style>
@@ -47,20 +47,32 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  // --- ROLLING BOULDER ---
-  const boulderRadius = 1.2;
-  const boulderGeo = new THREE.IcosahedronGeometry(boulderRadius, 2);
-  const boulder = new THREE.Mesh(boulderGeo, new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true }));
+  // --- ORGANIC BOULDER ---
+  const boulderRadius = 1.3;
+  const boulderGeo = new THREE.IcosahedronGeometry(boulderRadius, 3);
+  const bPos = boulderGeo.getAttribute('position');
+  for(let i = 0; i < bPos.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(bPos, i);
+    const noise = (Math.sin(v.x * 4) + Math.cos(v.y * 4) + Math.sin(v.z * 4)) * 0.15;
+    v.addScaledVector(v.normalize(), noise);
+    bPos.setXYZ(i, v.x, v.y, v.z);
+  }
+  const boulder = new THREE.Mesh(boulderGeo, new THREE.MeshBasicMaterial({ color: 0x666666, wireframe: true }));
   let bPhys = { x: 12, y: 0, vx: 0, rot: 0 };
   scene.add(boulder);
 
-  // --- NODES ---
+  // --- NODES WITH SAFE ZONE ---
   const nodes = [];
-  const nodeGeo = new THREE.IcosahedronGeometry(0.4, 2);
+  const nodeGeo = new THREE.IcosahedronGeometry(0.4, 3);
   for (let i = 0; i < 20; i++) {
+    let x, y, distToStart;
+    do {
+      x = (Math.random() - 0.5) * worldBounds * 2.2;
+      y = Math.random() > 0.5 ? getFloor(x) + 0.6 : getCeil(x) - 0.6;
+      distToStart = Math.sqrt(x*x + y*y);
+    } while (distToStart < 7.0); // The 7-unit Safe Zone
+
     const n = new THREE.Mesh(nodeGeo.clone(), new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
-    const x = (Math.random() - 0.5) * worldBounds * 2.2;
-    const y = Math.random() > 0.5 ? getFloor(x) + 0.6 : getCeil(x) - 0.6;
     n.position.set(x, y, 0);
     scene.add(n);
     nodes.push(n);
@@ -103,22 +115,14 @@
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+    const nearWall = Math.abs(centerPos.x - lW_c) < 2.2 || Math.abs(centerPos.x - rW_c) < 2.2;
 
-    // WEDGE CHECK
-    const nearWall = Math.abs(centerPos.x - lW_c) < 2.0 || Math.abs(centerPos.x - rW_c) < 2.0;
-
-    // VOLUME GUARD: Resistance caps at 0.65 to prevent flattening
     const targetPress = ((currentBias === -1 && pD) || (currentBias === 1 && pU)) ? 0.65 : 0.0;
     pressInten = THREE.MathUtils.lerp(pressInten, targetPress, 0.12);
 
     slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
-
-    // CONTEXT CLIMBING
-    if (nearWall) {
-      slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
-    } else {
-      slimeT.y += (currentBias * 0.45);
-    }
+    if (nearWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
+    else slimeT.y += (currentBias * 0.45);
 
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
@@ -128,32 +132,37 @@
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
 
-    // BOULDER PHYSICS
+    // --- BOULDER ---
     const dToB = Math.abs(centerPos.x - bPhys.x);
-    if (dToB < 2.5 && Math.abs(centerPos.y - bPhys.y) < 2.0) {
-      bPhys.vx += (centerPos.x > bPhys.x ? -0.05 : 0.05);
+    if (dToB < 2.6 && Math.abs(centerPos.y - bPhys.y) < 2.0) {
+      bPhys.vx += (centerPos.x > bPhys.x ? -0.07 : 0.07);
     }
-    bPhys.vx *= 0.95;
+    bPhys.vx *= 0.94;
     bPhys.x += bPhys.vx;
+    const bWallL = -worldBounds + getWallJag(bPhys.y) + boulderRadius;
+    const bWallR = worldBounds - getWallJag(bPhys.y) - boulderRadius;
+    if (bPhys.x < bWallL) { bPhys.x = bWallL; bPhys.vx *= -0.2; }
+    if (bPhys.x > bWallR) { bPhys.x = bWallR; bPhys.vx *= -0.2; }
     bPhys.y = getFloor(bPhys.x) + boulderRadius;
-    bPhys.rot -= bPhys.vx;
+    bPhys.rot -= bPhys.vx * 0.8;
     boulder.position.set(bPhys.x, bPhys.y, 0);
     boulder.rotation.z = bPhys.rot;
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.1);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.5, 0.05);
 
-    // SLURP ABSORPTION
+    // --- LIQUID SLURP SIPHON ---
     nodes.forEach(n => {
       if (n.visible) {
         const vec = new THREE.Vector3(centerPos.x, centerPos.y, 0).sub(n.position);
         const d = vec.length();
-        if (d < 3.5) {
-          n.position.add(vec.clone().multiplyScalar(0.18));
+        if (d < 4.2) {
+          n.position.add(vec.clone().multiplyScalar(0.22));
           n.lookAt(centerPos.x, centerPos.y, 0);
-          n.scale.set(0.5, 0.5, 1.0 + (3.5 - d));
-          if (d < 0.6) { n.visible = false; fusionInten = 1.0; }
-        } else { n.rotation.y += 0.02; }
+          const stretch = THREE.MathUtils.mapLinear(d, 0.4, 4.2, 12.0, 1.0);
+          n.scale.set(1/Math.sqrt(stretch), 1/Math.sqrt(stretch), stretch);
+          if (d < 0.7) { n.visible = false; fusionInten = 1.0; }
+        } else { n.rotation.y += 0.02; n.scale.set(1,1,1); }
       }
     });
     fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.05);
@@ -164,11 +173,10 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
       const vP = (oy + 1.8) / 3.6;
-
       ox += centerPos.vx * 4.5 * vP * 0.8 * (1.0 - pressInten);
       const t = currentBias === -1 ? (1.0 - vP) : vP;
       oy *= (1.0 - pressInten * 0.5);
-      ox *= (1.0 + (pressInten * 0.9 * Math.pow(t, 1.8)));
+      ox *= (1.0 + (pressInten * 1.1 * Math.pow(t, 1.8)));
       oy += (currentBias * -0.3) + (pressInten * currentBias * 0.3);
 
       if (Math.abs(oy) > 0.1) {
