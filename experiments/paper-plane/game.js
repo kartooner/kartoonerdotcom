@@ -1230,102 +1230,67 @@
     let nextWaveDistance = -200;
     let spawnedBuildings = []; // Track spawned buildings for collision detection
 
-    // Procedural building generator with collision detection
+    // Algorithmic cluster generator - creates random dense patterns
+    // Generates grid-based patterns from overhead view:
+    // BBNNN  (row 1 at Z offset 0)
+    // NNNBN  (row 2 at Z offset -5)
+    // BNBNB  (row 3 at Z offset -10)
+    // Where B=building, N=gap (no building)
     function generateProceduralWave(miles) {
-        // Difficulty progression based on miles
-        const difficulty = Math.min(miles / 50, 5); // 0-5 difficulty scale
-
-        // Early game (0-50mi): 1-2 buildings, sparse
-        // Mid game (50-150mi): 2-4 buildings, getting denser
-        // Late game (150+mi): 3-5 buildings with intentional gaps
-
-        let buildingCount;
-        let minSpacing; // Minimum space between buildings
-        let allowAdjacentLanes; // Can buildings be in adjacent lanes?
-
-        if (miles < 50) {
-            // Early: sparse for learning (but using wave patterns instead)
-            buildingCount = Math.floor(seededRandom() * 2) + 1; // 1-2 buildings
-            minSpacing = 80; // Wide spacing
-            allowAdjacentLanes = false; // Never adjacent
-        } else if (miles < 100) {
-            // Mid: starting to cluster
-            buildingCount = Math.floor(seededRandom() * 3) + 2; // 2-4 buildings
-            minSpacing = 40; // Medium spacing
-            allowAdjacentLanes = seededRandom() < 0.5; // 50% chance adjacent
-        } else if (miles < 200) {
-            // Late: dense patterns - waves stacking
-            buildingCount = Math.floor(seededRandom() * 3) + 4; // 4-6 buildings
-            minSpacing = 20; // Very tight spacing
-            allowAdjacentLanes = true; // Can be adjacent
-        } else if (miles < 300) {
-            // VERY late (200-300): RELENTLESS waves
-            buildingCount = Math.floor(seededRandom() * 4) + 5; // 5-8 buildings
-            minSpacing = 15; // Extremely tight spacing
-            allowAdjacentLanes = true; // Always adjacent
-        } else if (miles < 400) {
-            // EXTREME (300-400): Barely surviving
-            buildingCount = Math.floor(seededRandom() * 4) + 6; // 6-9 buildings
-            minSpacing = 12; // Insane spacing
-            allowAdjacentLanes = true; // Always adjacent
-        } else {
-            // HARROWING (400+): For absolute masters like 500+ mile runs!
-            buildingCount = Math.floor(seededRandom() * 5) + 7; // 7-11 buildings
-            minSpacing = 10; // Absolutely brutal spacing
-            allowAdjacentLanes = true; // Always adjacent - threading the needle
-        }
-
         const positions = [];
-        spawnedBuildings = []; // Reset tracking
+        const lanes = 5; // 5 lanes (columns)
 
-        for (let i = 0; i < buildingCount; i++) {
-            let attempts = 0;
-            let validPosition = null;
+        // Determine cluster parameters based on difficulty
+        let rows, density, rowSpacing;
+        if (miles < 50) {
+            rows = 3 + Math.floor(seededRandom() * 2); // 3-4 rows
+            density = 0.30; // 30% chance per cell
+            rowSpacing = 8; // 8 units between rows
+        } else if (miles < 150) {
+            rows = 4 + Math.floor(seededRandom() * 2); // 4-5 rows
+            density = 0.40; // 40% chance per cell
+            rowSpacing = 6; // 6 units between rows
+        } else if (miles < 300) {
+            rows = 5 + Math.floor(seededRandom() * 2); // 5-6 rows
+            density = 0.50; // 50% chance per cell
+            rowSpacing = 5; // 5 units between rows
+        } else {
+            rows = 6 + Math.floor(seededRandom() * 3); // 6-8 rows
+            density = 0.60; // 60% chance per cell
+            rowSpacing = 4; // 4 units between rows - super dense!
+        }
 
-            while (attempts < 10 && !validPosition) {
-                const lane = Math.floor(seededRandom() * 5);
-                const offset = -Math.floor(seededRandom() * 100) - 50; // Random Z offset
-                const width = seededRandom() < 0.7 ? 1 : (seededRandom() < 0.5 ? 1.5 : 2); // Varied widths
+        // Generate cluster grid (overhead view)
+        for (let row = 0; row < rows; row++) {
+            const zOffset = row * -rowSpacing; // Each row pushed back in Z
 
-                // Check collision with existing buildings
-                let collides = false;
+            // Ensure at least one gap per row (don't block all 5 lanes)
+            const forcedGapLane = Math.floor(seededRandom() * lanes);
 
-                for (const existing of spawnedBuildings) {
-                    const zDist = Math.abs(existing.offset - offset);
-                    const laneDist = Math.abs(existing.lane - lane);
+            for (let lane = 0; lane < lanes; lane++) {
+                // Skip forced gap
+                if (lane === forcedGapLane) continue;
 
-                    // Too close in Z axis
-                    if (zDist < minSpacing) {
-                        collides = true;
-                        break;
-                    }
+                // Random chance to place building
+                if (seededRandom() < density) {
+                    // Occasional wide building (2 lanes)
+                    const isWide = seededRandom() < 0.15 && lane < 3; // 15% chance, only lanes 0-3
+                    positions.push({
+                        lane: lane,
+                        offset: zOffset,
+                        width: isWide ? 2 : 1
+                    });
 
-                    // Too close in lanes (if not allowing adjacent)
-                    if (!allowAdjacentLanes && laneDist <= 1 && zDist < 100) {
-                        collides = true;
-                        break;
-                    }
+                    // Skip next lane if wide building
+                    if (isWide) lane++;
                 }
-
-                if (!collides) {
-                    validPosition = { lane, offset, width };
-                    spawnedBuildings.push({ lane, offset, width });
-                }
-
-                attempts++;
-            }
-
-            if (validPosition) {
-                positions.push(validPosition);
             }
         }
 
-        // Always ensure at least one gap (don't block all lanes)
-        const occupiedLanes = positions.map(p => p.lane);
-        if (occupiedLanes.length >= 4) {
-            // Remove one random building to create a gap
-            const removeIndex = Math.floor(seededRandom() * positions.length);
-            positions.splice(removeIndex, 1);
+        // Ensure at least 2 buildings in cluster
+        if (positions.length < 2) {
+            positions.push({ lane: Math.floor(seededRandom() * 5), offset: 0, width: 1 });
+            positions.push({ lane: Math.floor(seededRandom() * 5), offset: -rowSpacing, width: 1 });
         }
 
         return positions;
