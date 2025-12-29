@@ -29,7 +29,7 @@
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
   const createRibbon = (getVal, color) => {
-    const geo = new THREE.PlaneGeometry(worldBounds * 3, ribbonW, 180, 3);
+    const geo = new THREE.PlaneGeometry(worldBounds * 3, ribbonW, 160, 3);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
@@ -43,7 +43,7 @@
     geo.rotateY(Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
-    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.1 })));
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.15 })));
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
@@ -55,28 +55,19 @@
 
   // --- PHYSICS & INPUT ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
-  let attachedTo = 'floor', impact = 0;
+  let attachedTo = 'floor', impact = 0, compression = 0;
   const keys = {};
   let lastW = 0, lastS = 0;
-  const tapThreshold = 250;
 
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     const now = performance.now();
-    if(e.code === 'KeyW' || e.code === 'ArrowUp') {
-      if(now - lastW < tapThreshold) { attachedTo = 'ceiling'; impact = 1.4; }
-      lastW = now;
-    }
-    if(e.code === 'KeyS' || e.code === 'ArrowDown') {
-      if(now - lastS < tapThreshold) { attachedTo = 'floor'; impact = 1.4; }
-      lastS = now;
-    }
+    if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { attachedTo = 'ceiling'; impact = 1.4; }
+    if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { attachedTo = 'floor'; impact = 1.4; }
+    if(e.code === 'KeyW' || e.code === 'ArrowUp') lastW = now;
+    if(e.code === 'KeyS' || e.code === 'ArrowDown') lastS = now;
   });
   window.addEventListener('keyup', (e) => keys[e.code] = false);
-  window.addEventListener('dblclick', () => {
-    attachedTo = (attachedTo === 'floor' || attachedTo.includes('Wall')) ? 'ceiling' : 'floor';
-    impact = 1.4;
-  });
 
   camera.position.set(0, 0, 12);
 
@@ -84,18 +75,33 @@
     requestAnimationFrame(animate);
     const time = performance.now() * 0.001;
 
+    // 1. COMPRESSION LOGIC (Universal)
+    const pressingDown = keys['KeyS'] || keys['ArrowDown'];
+    const pressingUp = keys['KeyW'] || keys['ArrowUp'];
+    const pressingLeft = keys['KeyA'] || keys['ArrowLeft'];
+    const pressingRight = keys['KeyD'] || keys['ArrowRight'];
+
+    let isSquashing = (attachedTo === 'floor' && pressingDown) ||
+            (attachedTo === 'ceiling' && pressingUp) ||
+            (attachedTo === 'leftWall' && pressingLeft) ||
+            (attachedTo === 'rightWall' && pressingRight);
+
+    compression = THREE.MathUtils.lerp(compression, isSquashing ? 0.8 : 0, 0.1);
+
+    // 2. LOCOMOTION
     const moveSpeed = 0.25;
     if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-      if (keys['KeyA'] || keys['ArrowLeft']) slimeT.x -= moveSpeed;
-      if (keys['KeyD'] || keys['ArrowRight']) slimeT.x += moveSpeed;
+      if (pressingLeft) slimeT.x -= moveSpeed;
+      if (pressingRight) slimeT.x += moveSpeed;
     } else {
-      if (keys['KeyW'] || keys['ArrowUp']) slimeT.y += moveSpeed;
-      if (keys['KeyS'] || keys['ArrowDown']) slimeT.y -= moveSpeed;
+      if (pressingUp) slimeT.y += moveSpeed;
+      if (pressingDown) slimeT.y -= moveSpeed;
     }
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
     const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
 
+    // Auto-Switch States
     if (attachedTo.includes('Wall')) {
       if (centerPos.y < fV + 1.25) attachedTo = 'floor';
       else if (centerPos.y > cV - 1.25) attachedTo = 'ceiling';
@@ -107,11 +113,13 @@
     let oX = centerPos.x, oY = centerPos.y;
     const targetX = attachedTo === 'leftWall' ? lW + 1.1 : (attachedTo === 'rightWall' ? rW - 1.1 : slimeT.x);
     const targetY = attachedTo === 'floor' ? fV + 1.1 : (attachedTo === 'ceiling' ? cV - 1.1 : slimeT.y);
+
     centerPos.x = THREE.MathUtils.lerp(centerPos.x, THREE.MathUtils.clamp(targetX, lW+1.1, rW-1.1), 0.3);
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, THREE.MathUtils.clamp(targetY, fV+1.1, cV-1.1), 0.3);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
     impact *= 0.85;
 
+    // 3. MESH (MASS SHIFT + S-CURVE + COMPRESSION)
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.15, 0.05);
 
@@ -121,8 +129,15 @@
     for (let i = 0; i < pA.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
-      let gf = 0, sc = 0, sh = 0;
 
+      // PANCAKE DEFORMATION
+      if (attachedTo === 'floor' || attachedTo === 'ceiling') {
+        ox *= (1 + compression * 0.4); oy *= (1 - compression * 0.5);
+      } else {
+        oy *= (1 + compression * 0.4); ox *= (1 - compression * 0.5);
+      }
+
+      let gf = 0, sc = 0, sh = 0;
       if (attachedTo === 'floor' && oy > 0.1) {
         gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
         sc = Math.sin(ox * 1.5 + time) * 0.22;
@@ -138,7 +153,7 @@
       }
 
       if (gf > 0) {
-        const d = Math.sqrt(ox*ox + oy*oy);
+        const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
         if (attachedTo.includes('Wall')) oy += sh; else ox += sh;
         ox += (ox/d) * gf * (breath + sc); oy += (oy/d) * gf * (breath + sc);
       }
@@ -148,38 +163,21 @@
       vY += (centerPos.vy * 0.7 + sq) * oy; vX -= (centerPos.vy * 0.7 + sq) * 0.35 * ox;
 
       const cF = getFloor(vX), cC = getCeil(vX);
-      const cLW = -worldBounds + getWallJag(vY), cRW = worldBounds - getWallJag(vY);
+      const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
       if (vY < cF) vY = cF; if (vY > cC) vY = cC;
-      if (vX < cLW) vX = cLW; if (vX > cRW) vX = cRW;
+      if (vX < cWL) vX = cWL; if (vX > cWR) vX = cWR;
 
-      // --- MULTI-AXIS ADHESION HIGHLIGHT ---
-      let r=1, g=0, b=1, suc=0;
-      let pV = 0;
+      let r=1, g=0, b=1, suc=0, pV = 0;
+      const sRange = 0.75 + compression * 0.6;
 
       if (attachedTo === 'floor') {
-        pV = cF;
-        if (vY < pV + 0.75) {
-          suc = 1 - THREE.MathUtils.smoothstep(vY - pV, 0, 0.75);
-          vY = THREE.MathUtils.lerp(vY, pV, suc * 0.96); r = 1 - suc; g = suc;
-        }
+        if (vY < cF + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vY - cF, 0, sRange); vY = THREE.MathUtils.lerp(vY, cF, suc * 0.96); r = 1 - suc; g = suc; }
       } else if (attachedTo === 'ceiling') {
-        pV = cC;
-        if (vY > pV - 0.75) {
-          suc = 1 - THREE.MathUtils.smoothstep(pV - vY, 0, 0.75);
-          vY = THREE.MathUtils.lerp(vY, pV, suc * 0.96); g = suc; b = 1 - suc;
-        }
+        if (vY > cC - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cC - vY, 0, sRange); vY = THREE.MathUtils.lerp(vY, cC, suc * 0.96); g = suc; b = 1 - suc; }
       } else if (attachedTo === 'leftWall') {
-        pV = cLW;
-        if (vX < pV + 0.75) {
-          suc = 1 - THREE.MathUtils.smoothstep(vX - pV, 0, 0.75);
-          vX = THREE.MathUtils.lerp(vX, pV, suc * 0.96); r = 1; g = suc; b = 1 - suc;
-        }
+        if (vX < cWL + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vX - cWL, 0, sRange); vX = THREE.MathUtils.lerp(vX, cWL, suc * 0.96); r = 1; g = suc; b = 1 - suc; }
       } else if (attachedTo === 'rightWall') {
-        pV = cRW;
-        if (vX > pV - 0.75) {
-          suc = 1 - THREE.MathUtils.smoothstep(pV - vX, 0, 0.75);
-          vX = THREE.MathUtils.lerp(vX, pV, suc * 0.96); r = 1; g = suc; b = 1 - suc;
-        }
+        if (vX > cWR - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cWR - vX, 0, sRange); vX = THREE.MathUtils.lerp(vX, cWR, suc * 0.96); r = 1; g = suc; b = 1 - suc; }
       }
 
       pA.array[idx] = vX - centerPos.x; pA.array[idx+1] = vY - centerPos.y; cA.setXYZ(i, r, g, b);
