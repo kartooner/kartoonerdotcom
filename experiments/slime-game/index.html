@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Surface Tension Fillet</title>
+  <title>Slime - Mirrored Ceiling Physics</title>
   <style> body { margin: 0; background: #000; overflow: hidden; touch-action: none; } </style>
 </head>
 <body>
@@ -43,21 +43,25 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  // --- BOULDER ---
+  // --- RIGID JAGGED BOULDER ---
   const bRad = 1.1;
-  const bGeo = new THREE.IcosahedronGeometry(bRad, 3);
-  const boulder = new THREE.Mesh(bGeo, new THREE.MeshBasicMaterial({ color: 0x666666, wireframe: true }));
-  let bPhys = { x: 12, y: 0, vx: 0 };
-  scene.add(boulder);
+  const bGeo = new THREE.IcosahedronGeometry(bRad, 1);
+  const bPAttr = bGeo.getAttribute('position');
+  for(let i = 0; i < bPAttr.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(bPAttr, i);
+    const sharp = Math.floor(Math.sin(v.x * 12) * 5) / 5;
+    v.addScaledVector(v.normalize(), sharp * 0.25);
+    bPAttr.setXYZ(i, v.x, v.y, v.z);
+  }
+  bGeo.computeVertexNormals();
+  const boulder = new THREE.Mesh(bGeo, new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
+  let bPhys = { x: 12, y: 0, vx: 0 }; scene.add(boulder);
 
   // --- ORBS ---
   const nodes = [];
-  const nGeo = new THREE.IcosahedronGeometry(0.5, 2);
   for (let i = 0; i < 20; i++) {
-    let x = (Math.random() - 0.5) * (worldBounds * 2.5);
-    if (Math.abs(x) < 8) x += 10 * (x < 0 ? -1 : 1);
-    const n = new THREE.Mesh(nGeo, new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
-    n.position.set(x, (Math.random()-0.5)*8, 0); scene.add(n); nodes.push(n);
+    const n = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
+    n.position.set((Math.random()-0.5)*55, (Math.random()-0.5)*7, 0); scene.add(n); nodes.push(n);
   }
 
   // --- SLIME ---
@@ -70,21 +74,26 @@
 
   // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
-  let currentBias = -1, lastW = 0, lastS = 0, lastTime = performance.now();
+  let currentBias = -1, lastTime = performance.now();
   let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, fusionInten = 0, pressInten = 0;
   const keys = {};
 
-  window.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    const now = performance.now();
-    if((e.code==='KeyW'||e.code==='ArrowUp') && now - lastW < 250) { currentBias=1; slimeT.y=5; }
-    if((e.code==='KeyS'||e.code==='ArrowDown') && now - lastS < 250) { currentBias=-1; slimeT.y=-5; }
-    lastW = (e.code==='KeyW'||e.code==='ArrowUp') ? now : lastW;
-    lastS = (e.code==='KeyS'||e.code==='ArrowDown') ? now : lastS;
+  // Mobile Gesture Support
+  let touchYStart = 0;
+  window.addEventListener('touchstart', e => { touchYStart = e.touches[0].clientY; });
+  window.addEventListener('touchend', e => {
+    let delta = touchYStart - e.changedTouches[0].clientY;
+    if (Math.abs(delta) > 30) currentBias = delta > 0 ? 1 : -1;
   });
-  window.addEventListener('keyup', (e) => keys[e.code] = false);
 
-  camera.position.z = 22;
+  window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if(e.code==='KeyW'||e.code==='ArrowUp') currentBias=1;
+    if(e.code==='KeyS'||e.code==='ArrowDown') currentBias=-1;
+  });
+  window.addEventListener('keyup', e => keys[e.code] = false);
+
+  camera.position.z = 25;
 
   function animate(now) {
     requestAnimationFrame(animate);
@@ -95,21 +104,25 @@
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
     const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
-    const distL = Math.abs(centerPos.x - lW_c), distR = Math.abs(centerPos.x - rW_c);
-    const onWall = distL < 2.2 || distR < 2.2;
 
-    if (Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2)) < 2.5) bPhys.vx += (centerPos.x > bPhys.x ? -0.06 : 0.06) * dt;
+    // Boulder Constraint
+    if (Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2)) < 2.4) bPhys.vx += (centerPos.x > bPhys.x ? -0.07 : 0.07) * dt;
     bPhys.vx *= Math.pow(0.92, dt); bPhys.x += bPhys.vx;
+    const wallBL = -worldBounds + getWallJag(bPhys.y) + 1.2, wallBR = worldBounds - getWallJag(bPhys.y) - 1.2;
+    bPhys.x = THREE.MathUtils.clamp(bPhys.x, wallBL, wallBR);
     bPhys.y = getFloor(bPhys.x) + bRad;
     boulder.position.set(bPhys.x, bPhys.y, 0);
 
-    const isPressing = (currentBias === -1 && pD) || (currentBias === 1 && pU);
-    pressInten = THREE.MathUtils.lerp(pressInten, isPressing ? 1.0 : 0.0, 0.1 * dt);
+    // Press Intensity logic
+    const pressing = (currentBias === -1 && pD) || (currentBias === 1 && pU);
+    pressInten = THREE.MathUtils.lerp(pressInten, pressing ? 1.0 : 0.0, 0.15 * dt);
 
+    // Movement
     const moveAmt = 0.22 * dt;
     slimeT.x += (pR ? moveAmt : 0) - (pL ? moveAmt : 0);
-    if(onWall || Math.abs(centerPos.x - bPhys.x) < 2.5) slimeT.y += (pU ? moveAmt : 0) - (pD ? moveAmt : 0);
-    else slimeT.y += (currentBias * 0.42 * dt);
+    const distL = Math.abs(centerPos.x - lW_c), distR = Math.abs(centerPos.x - rW_c);
+    if (distL < 2.5 || distR < 2.5 || Math.abs(centerPos.x - bPhys.x) < 2.5) slimeT.y += (pU ? moveAmt : 0) - (pD ? moveAmt : 0);
+    else slimeT.y += (currentBias * 0.45 * dt);
 
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
@@ -119,50 +132,51 @@
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15 * dt);
     centerPos.vx = centerPos.x - oldX; centerPos.vy = centerPos.y - oldY;
 
-    jelloVelX = (jelloVelX + (-centerPos.vx * 12 - jelloX) * 0.15) * 0.8;
-    jelloX += jelloVelX * dt;
-    jelloVelY = (jelloVelY + (-centerPos.vy * 12 - jelloY) * 0.15) * 0.8;
-    jelloY += jelloVelY * dt;
+    jelloVelX = (jelloVelX + (-centerPos.vx * 12 - jelloX) * 0.15) * 0.8; jelloX += jelloVelX * dt;
+    jelloVelY = (jelloVelY + (-centerPos.vy * 12 - jelloY) * 0.15) * 0.8; jelloY += jelloVelY * dt;
 
     nodes.forEach(n => {
-      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 3.5) {
+      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 3.2) {
         n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2 * dt);
         if (n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 0.9) { n.visible = false; fusionInten = 1.0; }
       }
     });
     fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.06 * dt);
-
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.08 * dt);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.3, 0.05 * dt);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.25, 0.05 * dt);
 
-    const breath = Math.sin(time * 2.5) * 0.08;
+    const breath = Math.sin(time * 2.5) * 0.06;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
-      let ox = originals[idx] * (1.0 + breath), oy = originals[idx+1] * (1.0 + breath);
+      let ox = originals[idx], oy = originals[idx+1];
       const vPy = (oy + 1.8) / 3.6, vPx = (ox + 1.8) / 3.6;
 
-      // DEFORMATION - Baseline Dome
-      const squash = 0.65 - (pressInten * 0.08);
-      const t = currentBias === -1 ? (1.0 - vPy) : vPy;
+      // 1. MIRRORED PANCAKE LOGIC
+      const squash = 0.62 - (pressInten * 0.12);
+      const t = currentBias === -1 ? (1.0 - vPy) : vPy; // t=0 is the contact surface
       oy *= squash;
-      ox *= (1.0 + (1.1 + pressInten * 0.3) * Math.pow(t, 1.8));
-      oy += (currentBias * -0.3);
+      ox *= (1.0 + (1.1 + pressInten * 0.4) * Math.pow(t, 1.8));
+      oy += (currentBias * -0.35); // Pull toward bias surface
 
-      // SURFACE TENSION FILLET (Improved Wedge)
-      // We use a "Radial Push" when near both floor and wall to create a curve
-      if (distL < 2.5 || distR < 2.5) {
-        const wallDist = Math.min(distL, distR);
-        const cornerFactor = THREE.MathUtils.smoothstep(wallDist, 1.0, 2.5);
-        // Soften the X-flattening to keep volume in corners
-        ox *= THREE.MathUtils.lerp(0.85, 1.0, cornerFactor);
-        // Pull mass toward the wall gently
-        ox += (distL < 2.5 ? -0.2 : 0.2) * (1.0 - cornerFactor);
+      // 2. CORNER WEDGE / WALL SUCTION
+      const xW = ox + centerPos.x;
+      const dWL = Math.abs(xW - lW_c), dWR = Math.abs(xW - rW_c);
+      const wallProx = Math.min(dWL, dWR);
+      if (wallProx < 2.5) {
+        const factor = THREE.MathUtils.smoothstep(wallProx, 0.4, 2.5);
+        ox *= (0.75 + 0.25 * factor);
+        oy *= (1.0 + 0.6 * (1.0 - factor));
+        ox += (dWL < dWR ? -0.3 : 0.3) * (1.0 - factor);
       }
 
+      // 3. INTERNAL BREATH + JELLO
       ox += jelloX * Math.pow(vPy, 1.4); oy += jelloY * Math.pow(vPx, 1.4);
+      const bScale = 1.0 + breath; ox *= bScale; oy *= bScale;
 
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
+
+      // 4. BOULDER
       const dB = Math.sqrt(Math.pow(vX-bPhys.x, 2) + Math.pow(vY-bPhys.y, 2));
       if (dB < bRad + 0.3) {
         const ang = Math.atan2(vY-bPhys.y, vX-bPhys.x);
@@ -171,16 +185,21 @@
 
       const curF = getFloor(vX), curC = getCeil(vX);
       const wallL = -worldBounds + getWallJag(vY), wallR = worldBounds - getWallJag(vY);
-      let r=1, g=0, b=1, suc=0, seep = 1.2 + (pressInten * 0.4);
+      let r=1, g=0, b=1, suc=0, seep = 1.3 + (pressInten * 0.6);
 
-      // Smooth highlight distribution
-      if (Math.abs(vX - wallL) < 1.4 || Math.abs(vX - wallR) < 1.4) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wallL), Math.abs(vX-wallR)), 0, 1.4);
-        r = 1 - suc; g = suc; b = 1 - suc * 0.5;
-      } else if (currentBias === -1 && vY < curF + seep) {
+      // MIRRORED SEEPAGE (Floor/Ceiling/Walls)
+      if (vX < wallL + seep || vX > wallR - seep) { // Wall
+        suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wallL), Math.abs(vX-wallR)), 0, seep);
+        vX = THREE.MathUtils.lerp(vX, (Math.abs(vX-wallL) < Math.abs(vX-wallR) ? wallL : wallR), suc * 0.95);
+        r = 1-suc; g = suc; b = 1-suc*0.5;
+      } else if (currentBias === -1 && vY < curF + seep) { // Floor
         suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seep);
-        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.95);
-        r = 1 - suc * 0.8; g = suc; b = 1 - suc * 0.2;
+        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.96);
+        r = 1-suc*0.8; g = suc; b = 1-suc*0.2;
+      } else if (currentBias === 1 && vY > curC - seep) { // Ceiling
+        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seep);
+        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.96);
+        r = 1-suc*0.2; g = suc; b = 1-suc*0.8;
       }
 
       const flash = fusionInten * (0.8 + Math.sin(i * 0.2 + time * 10) * 0.2);
