@@ -74,29 +74,39 @@
 
   camera.position.set(0, 0, 12);
 
-  function animate() {
+  // --- FPS CAP CLOCK ---
+  let lastFrameTime = 0;
+  const fpsInterval = 1000 / 60;
+
+  function animate(currentTime) {
     requestAnimationFrame(animate);
-    const time = performance.now() * 0.001;
 
-    const pressingDown = keys['KeyS'] || keys['ArrowDown'];
-    const pressingUp = keys['KeyW'] || keys['ArrowUp'];
-    const pressingLeft = keys['KeyA'] || keys['ArrowLeft'];
-    const pressingRight = keys['KeyD'] || keys['ArrowRight'];
+    const deltaTime = currentTime - lastFrameTime;
+    if (deltaTime < fpsInterval) return; // Skip frame if too fast
+    lastFrameTime = currentTime - (deltaTime % fpsInterval);
 
-    let isSquashing = (attachedTo === 'floor' && pressingDown) ||
-            (attachedTo === 'ceiling' && pressingUp) ||
-            (attachedTo === 'leftWall' && pressingLeft) ||
-            (attachedTo === 'rightWall' && pressingRight);
+    const time = currentTime * 0.001;
+
+    // 1. INPUT & COMPRESSION
+    const pDown = keys['KeyS'] || keys['ArrowDown'];
+    const pUp = keys['KeyW'] || keys['ArrowUp'];
+    const pLeft = keys['KeyA'] || keys['ArrowLeft'];
+    const pRight = keys['KeyD'] || keys['ArrowRight'];
+
+    let isSquashing = (attachedTo === 'floor' && pDown) ||
+            (attachedTo === 'ceiling' && pUp) ||
+            (attachedTo === 'leftWall' && pLeft) ||
+            (attachedTo === 'rightWall' && pRight);
 
     compression = THREE.MathUtils.lerp(compression, isSquashing ? 0.8 : 0, 0.1);
 
     const moveSpeed = 0.25;
     if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-      if (pressingLeft) slimeT.x -= moveSpeed;
-      if (pressingRight) slimeT.x += moveSpeed;
+      if (pLeft) slimeT.x -= moveSpeed;
+      if (pRight) slimeT.x += moveSpeed;
     } else {
-      if (pressingUp) slimeT.y += moveSpeed;
-      if (pressingDown) slimeT.y -= moveSpeed;
+      if (pUp) slimeT.y += moveSpeed;
+      if (pDown) slimeT.y -= moveSpeed;
     }
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
@@ -161,6 +171,7 @@
 
       const cF = getFloor(vX), cC = getCeil(vX);
       const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
+
       vY = THREE.MathUtils.clamp(vY, cF, cC);
       vX = THREE.MathUtils.clamp(vX, cWL, cWR);
 
@@ -183,7 +194,7 @@
     blob.position.set(centerPos.x, centerPos.y, 0);
     renderer.render(scene, camera);
   }
-  animate();
+  animate(0);
 </script>
 </body>
 </html>
