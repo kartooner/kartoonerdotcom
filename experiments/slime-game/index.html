@@ -69,8 +69,8 @@
     const now = performance.now();
     if((e.code === 'KeyW' || e.code === 'ArrowUp') && now - lastW < 250) { attachedTo = 'ceiling'; impact = 1.4; }
     if((e.code === 'KeyS' || e.code === 'ArrowDown') && now - lastS < 250) { attachedTo = 'floor'; impact = 1.4; }
-    if(e.code === 'KeyW' || e.code === 'ArrowUp') lastW = now;
-    if(e.code === 'KeyS' || e.code === 'ArrowDown') lastS = now;
+    lastW = (e.code === 'KeyW' || e.code === 'ArrowUp') ? now : lastW;
+    lastS = (e.code === 'KeyS' || e.code === 'ArrowDown') ? now : lastS;
   });
   window.addEventListener('keyup', (e) => keys[e.code] = false);
 
@@ -83,40 +83,40 @@
     lastFrameTime = currentTime - (deltaTime % fpsInterval);
 
     const time = currentTime * 0.001;
+    const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'];
+    const pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
 
-    const pDown = keys['KeyS'] || keys['ArrowDown'], pUp = keys['KeyW'] || keys['ArrowUp'];
-    const pLeft = keys['KeyA'] || keys['ArrowLeft'], pRight = keys['KeyD'] || keys['ArrowRight'];
-
-    let isSquashing = (attachedTo === 'floor' && pDown) || (attachedTo === 'ceiling' && pUp) ||
-            (attachedTo === 'leftWall' && pLeft) || (attachedTo === 'rightWall' && pRight);
-
-    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0, 0.12);
-
-    const moveSpeed = 0.25;
-    if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-      if (pLeft) slimeT.x -= moveSpeed; if (pRight) slimeT.x += moveSpeed;
-    } else {
-      if (pUp) slimeT.y += moveSpeed; if (pDown) slimeT.y -= moveSpeed;
-    }
+    const moveSpeed = 0.22;
+    // Integrated Locomotion: Allows 360 movement near corners
+    slimeT.x += (pR ? moveSpeed : 0) - (pL ? moveSpeed : 0);
+    slimeT.y += (pU ? moveSpeed : 0) - (pD ? moveSpeed : 0);
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
     const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
 
-    if (attachedTo.includes('Wall')) {
-      if (centerPos.y < fV + 1.25) attachedTo = 'floor';
-      else if (centerPos.y > cV - 1.25) attachedTo = 'ceiling';
-    } else {
-      if (centerPos.x < lW + 1.2) attachedTo = 'leftWall';
-      else if (centerPos.x > rW - 1.2) attachedTo = 'rightWall';
-    }
+    // CORNER STICKINESS: Determine active surface based on proximity + input
+    const distL = Math.abs(centerPos.x - lW), distR = Math.abs(centerPos.x - rW);
+    const distF = Math.abs(centerPos.y - fV), distC = Math.abs(centerPos.y - cV);
+
+    // Adaptive state switching
+    if (distF < 1.5) attachedTo = 'floor';
+    else if (distC < 1.5) attachedTo = 'ceiling';
+    else if (distL < 1.5) attachedTo = 'leftWall';
+    else if (distR < 1.5) attachedTo = 'rightWall';
+
+    // Target blending for smooth corners
+    let tX = slimeT.x, tY = slimeT.y;
+    tX = THREE.MathUtils.clamp(tX, lW + 1.1, rW - 1.1);
+    tY = THREE.MathUtils.clamp(tY, fV + 1.1, cV - 1.1);
 
     let oX = centerPos.x, oY = centerPos.y;
-    const targetX = attachedTo === 'leftWall' ? lW + 1.1 : (attachedTo === 'rightWall' ? rW - 1.1 : slimeT.x);
-    const targetY = attachedTo === 'floor' ? fV + 1.1 : (attachedTo === 'ceiling' ? cV - 1.1 : slimeT.y);
-
-    centerPos.x = THREE.MathUtils.lerp(centerPos.x, THREE.MathUtils.clamp(targetX, lW+1.1, rW-1.1), 0.3);
-    centerPos.y = THREE.MathUtils.lerp(centerPos.y, THREE.MathUtils.clamp(targetY, fV+1.1, cV-1.1), 0.3);
+    centerPos.x = THREE.MathUtils.lerp(centerPos.x, tX, 0.2);
+    centerPos.y = THREE.MathUtils.lerp(centerPos.y, tY, 0.2);
     centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
+
+    // Compression builds when pushing into any surface
+    let isSquashing = (distF < 1.3 && pD) || (distC < 1.3 && pU) || (distL < 1.3 && pL) || (distR < 1.3 && pR);
+    compression = THREE.MathUtils.lerp(compression, isSquashing ? 1.0 : 0, 0.12);
     impact *= 0.85;
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05);
@@ -128,44 +128,23 @@
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
 
-      // --- HYDROSTATIC WEIGHTED PANCAKE ---
-      let pressFactor = 0;
-      if (attachedTo === 'floor') pressFactor = THREE.MathUtils.smoothstep(-oy, -1.8, 1.0);
-      else if (attachedTo === 'ceiling') pressFactor = THREE.MathUtils.smoothstep(oy, -1.8, 1.0);
-      else if (attachedTo === 'leftWall') pressFactor = THREE.MathUtils.smoothstep(-ox, -1.8, 1.0);
-      else if (attachedTo === 'rightWall') pressFactor = THREE.MathUtils.smoothstep(ox, -1.8, 1.0);
+      // MULTI-SURFACE SQUEEZE: Wedges into the corner
+      let squashX = (distL < 1.5 && pL && ox < 0) || (distR < 1.5 && pR && ox > 0) ? compression * 0.6 : 0;
+      let squashY = (distF < 1.5 && pD && oy < 0) || (distC < 1.5 && pU && oy > 0) ? compression * 0.6 : 0;
 
-      // Vertices touching the rock ooze out MUCH wider (pressFactor)
-      // Vertices on top stay heavier and less deformed
-      const ooze = compression * pressFactor * 1.4;
-      const weightSlump = compression * (1.0 - pressFactor) * 0.4;
+      ox *= (1.0 - squashX);
+      oy *= (1.0 - squashY);
+      // Volume conservation: expand non-squashed axes
+      if (squashX > 0 && squashY === 0) oy *= (1.0 + compression * 0.4);
+      if (squashY > 0 && squashX === 0) ox *= (1.0 + compression * 0.4);
 
-      if (attachedTo === 'floor' || attachedTo === 'ceiling') {
-        ox *= (1.0 + ooze);
-        oy *= (1.0 - compression * 0.6 + weightSlump);
-      } else {
-        oy *= (1.0 + ooze);
-        ox *= (1.0 - compression * 0.6 + weightSlump);
-      }
-
-      let gf = 0, sc = 0, sh = 0;
-      if (attachedTo === 'floor' && oy > 0.1) {
-        gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
-        sc = Math.sin(ox * 1.5 + time) * 0.22;
-        sh = centerPos.vx * 2.8 * gf;
-      } else if (attachedTo === 'ceiling' && oy < -0.1) {
-        gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
-        sc = Math.sin(ox * 1.5 + time) * 0.22;
-        sh = centerPos.vx * 2.8 * gf;
-      } else if (attachedTo.includes('Wall')) {
-        gf = (attachedTo === 'leftWall' ? ox > 0.1 : ox < -0.1) ? THREE.MathUtils.smoothstep(Math.abs(ox), 0.1, 1.8) : 0;
-        sc = Math.sin(oy * 1.5 + time) * 0.22;
-        sh = centerPos.vy * 2.8 * gf;
-      }
+      let gf = 0, sc = 0;
+      // Organic breathing on the "Free" side
+      if (oy > 0.2 && distF < 1.5) { gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
+      else if (oy < -0.2 && distC < 1.5) { gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8); sc = Math.sin(ox * 1.5 + time) * 0.22; }
 
       if (gf > 0) {
         const d = Math.max(0.1, Math.sqrt(ox*ox + oy*oy));
-        if (attachedTo.includes('Wall')) oy += sh; else ox += sh;
         ox += (ox/d) * gf * (breath + sc); oy += (oy/d) * gf * (breath + sc);
       }
 
@@ -173,21 +152,27 @@
       const sq = impact * 0.7 * (attachedTo === 'floor' ? -1 : 1);
       vY += (centerPos.vy * 0.7 + sq) * oy; vX -= (centerPos.vy * 0.7 + sq) * 0.35 * ox;
 
-      const cF = getFloor(vX), cC = getCeil(vX);
-      const cWL = -worldBounds + getWallJag(vY), cWR = worldBounds - getWallJag(vY);
-      vY = THREE.MathUtils.clamp(vY, cF, cC); vX = THREE.MathUtils.clamp(vX, cWL, cWR);
+      const curF = getFloor(vX), curC = getCeil(vX);
+      const curL = -worldBounds + getWallJag(vY), curR = worldBounds - getWallJag(vY);
+      vY = THREE.MathUtils.clamp(vY, curF, curC); vX = THREE.MathUtils.clamp(vX, curL, curR);
 
-      let r=1, g=0, b=1, suc=0;
-      const sRange = 0.75 + compression * 0.8;
+      // TRUE ADHESION: Green glow on any surface contact
+      let r=1, g=0, b=1, sF=0, sC=0, sL=0, sR=0;
+      const sRange = 0.8 + compression * 0.6;
 
-      if (attachedTo === 'floor') {
-        if (vY < cF + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vY - cF, 0, sRange); r = 1 - suc; g = suc; }
-      } else if (attachedTo === 'ceiling') {
-        if (vY > cC - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cC - vY, 0, sRange); g = suc; b = 1 - suc; }
-      } else if (attachedTo === 'leftWall') {
-        if (vX < cWL + sRange) { suc = 1 - THREE.MathUtils.smoothstep(vX - cWL, 0, sRange); r = 1; g = suc; b = 1 - suc; }
-      } else if (attachedTo === 'rightWall') {
-        if (vX > cWR - sRange) { suc = 1 - THREE.MathUtils.smoothstep(cWR - vX, 0, sRange); r = 1; g = suc; b = 1 - suc; }
+      if (vY < curF + sRange) sF = 1 - THREE.MathUtils.smoothstep(vY - curF, 0, sRange);
+      if (vY > curC - sRange) sC = 1 - THREE.MathUtils.smoothstep(curC - vY, 0, sRange);
+      if (vX < curL + sRange) sL = 1 - THREE.MathUtils.smoothstep(vX - curL, 0, sRange);
+      if (vX > curR - sRange) sR = 1 - THREE.MathUtils.smoothstep(curR - vX, 0, sRange);
+
+      const totalSuc = Math.max(sF, sC, sL, sR);
+      if (totalSuc > 0) {
+        r = 1 - totalSuc; g = totalSuc; b = 1 - (sC || sL ? totalSuc : 0);
+        // Sticky "smear" toward the surface
+        if (sF > 0) vY = THREE.MathUtils.lerp(vY, curF, sF * 0.8);
+        if (sC > 0) vY = THREE.MathUtils.lerp(vY, curC, sC * 0.8);
+        if (sL > 0) vX = THREE.MathUtils.lerp(vX, curL, sL * 0.8);
+        if (sR > 0) vX = THREE.MathUtils.lerp(vX, curR, sR * 0.8);
       }
 
       posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y; colorAttr.setXYZ(i, r, g, b);
