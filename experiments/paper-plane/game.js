@@ -1882,9 +1882,13 @@
     };
 
     // Phase tracking
-    let currentPhase = 'buildings';
+    // NOTE: For future seeding feature - seeded runs should ALWAYS follow:
+    // 1. Short breather (5s) for orientation
+    // 2. Dense buildings phase for immediate engagement
+    // This pattern is now enforced for all runs via RULE 7 in selectNextPhase()
+    let currentPhase = 'breather'; // Start with short breather for orientation
     let phaseStartTime = 0;
-    let phaseDuration = 20000;
+    let phaseDuration = 5000; // Initial 5-second breather
     let phaseHistory = []; // Last 5 phases
     let phaseLastSeen = {
         buildings: -Infinity,
@@ -1991,20 +1995,32 @@
                 }
             }
 
-            // RULE 7: Early game adjustments (first 50 miles)
+            // RULE 7: First phase after initial breather MUST be buildings
+            // This ensures players get core gameplay immediately after orientation
+            const isFirstRealPhase = phaseHistory.length === 0 ||
+                                    (phaseHistory.length === 1 && phaseHistory[0] === 'breather');
+            if (isFirstRealPhase) {
+                if (phaseName === 'buildings') {
+                    weight *= 1000; // Virtually guarantee buildings as first phase
+                } else if (phaseName !== 'breather') {
+                    weight *= 0.01; // Eliminate other phases
+                }
+            }
+
+            // RULE 8: Early game adjustments (first 50 miles)
             if (milesFlown < 50) {
                 if (phaseName === 'walls') weight *= 0.5; // Fewer walls early
-                if (phaseName === 'breather') weight *= 1.5; // More breathers early
+                if (phaseName === 'breather') weight *= 0.3; // Fewer breathers early (already had initial one)
                 if (phaseName === 'bonus') weight *= 0.5; // Fewer bonus stages early
             }
 
-            // RULE 8: Late game variety (150+ miles)
+            // RULE 9: Late game variety (150+ miles)
             if (milesFlown >= 150) {
                 if (phaseName === 'mixed') weight *= 2.0; // More variety late
                 if (phaseName === 'bonus') weight *= 1.5; // More bonus stages late
             }
 
-            // RULE 9: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
+            // RULE 10: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
             // Trigger at 150 miles, then every 100 miles (250, 350, 450...)
             if (phaseName === 'boss_gauntlet') {
                 if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 100 === 0)) {
@@ -2014,7 +2030,7 @@
                 }
             }
 
-            // RULE 10: Intensity balancing for "extreme" phases (boss gauntlet)
+            // RULE 11: Intensity balancing for "extreme" phases (boss gauntlet)
             if (lastIntensity === 'extreme') {
                 if (config.intensity === 'calm' || config.intensity === 'low') {
                     weight *= 5.0; // Strongly prefer calm after extreme intensity
@@ -2122,6 +2138,85 @@
             return coin;
         }
         return null;
+    }
+
+    // --- SPATIAL OVERLAP PREVENTION ---
+    // Universal function to check if a position is clear of all other game objects
+    // Prevents "monster spawns" where multiple objects overlap (rings + buildings + coins + wind)
+    function isPositionClear(x, y, z, minDistance = 6) {
+        // Check against buildings
+        for (const building of buildings) {
+            if (!building.active) continue;
+            const dx = building.position.x - x;
+            const dy = building.position.y - y;
+            const dz = building.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to building
+            }
+        }
+
+        // Check against rings
+        for (const ring of rings) {
+            if (!ring.visible) continue;
+            const dx = ring.position.x - x;
+            const dy = ring.position.y - y;
+            const dz = ring.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to ring
+            }
+        }
+
+        // Check against coins
+        for (const coin of coins) {
+            if (!coin.visible) continue;
+            const dx = coin.position.x - x;
+            const dy = coin.position.y - y;
+            const dz = coin.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to coin
+            }
+        }
+
+        // Check against wind gusts
+        for (const gust of windGusts) {
+            if (!gust.visible) continue;
+            const dx = gust.position.x - x;
+            const dy = gust.position.y - y;
+            const dz = gust.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to wind gust
+            }
+        }
+
+        // Check against walls
+        for (const wall of walls) {
+            if (!wall.visible) continue;
+            const dx = wall.position.x - x;
+            const dy = wall.position.y - y;
+            const dz = wall.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to wall
+            }
+        }
+
+        // Check against barrier walls
+        for (const barrier of barrierWalls) {
+            if (!barrier.visible) continue;
+            const dx = barrier.position.x - x;
+            const dy = barrier.position.y - y;
+            const dz = barrier.position.z - z;
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < minDistance * minDistance) {
+                return false; // Too close to barrier
+            }
+        }
+
+        return true; // Position is clear
     }
 
     // --- COIN SPARKLE PARTICLES ---
@@ -2382,6 +2477,19 @@
         gameStartTime = 0;
         phaseStartTime = Date.now();
         lastFrameTime = null;
+
+        // Reset phase system for fresh start
+        currentPhase = 'breather'; // Start with short breather
+        phaseDuration = 5000; // 5 seconds to get oriented
+        phaseHistory = [];
+        totalPhasesCompleted = 0;
+        // Reset phase spawn flags
+        ringsSpawnedThisPhase = false;
+        wallsSpawnedThisPhase = false;
+        coinsSpawnedThisPhase = false;
+        mixedSpawnedThisPhase = false;
+        bonusSpawnedThisPhase = false;
+        breatherSetup = false;
 
         // Reset player position and movement
         shipGroup.position.x = 0;
@@ -4664,22 +4772,8 @@
                 const coinZ = -250 - Math.random() * 50; // Spawn 250-300 units ahead for better visibility
 
                 // Check if coin would overlap with any active building
-                let overlapsBuilding = false;
-                for (let b of buildings) {
-                    if (b.active && Math.abs(b.position.z - coinZ) < 10) {
-                        const dist = Math.sqrt(
-                            (b.position.x - coinX) ** 2 +
-                            (b.position.y - coinY) ** 2
-                        );
-                        if (dist < 4) { // Too close to building
-                            overlapsBuilding = true;
-                            break;
-                        }
-                    }
-                }
-
-                // Only spawn if not overlapping
-                if (!overlapsBuilding) {
+                // Check if position is clear of all objects (buildings, rings, wind, etc.)
+                if (isPositionClear(coinX, coinY, coinZ, 5)) {
                     coin.position.set(coinX, coinY, coinZ);
                     coin.rotation.y = Math.random() * Math.PI * 2; // Random initial rotation
                     coins.push(coin);
@@ -4737,12 +4831,15 @@
                 const gust = getWindGustFromPool();
                 if (gust) {
                     // Spawn in safe lane, mid-height, spaced apart
-                    gust.position.set(
-                        (Math.random() - 0.5) * 6, // Center lanes
-                        Math.random() * 2 + 2.5,   // Mid-height
-                        -120 - (i * 60)             // Spaced 60 units apart
-                    );
-                    windGusts.push(gust);
+                    const gustX = (Math.random() - 0.5) * 6;
+                    const gustY = Math.random() * 2 + 2.5;
+                    const gustZ = -120 - (i * 60);
+
+                    // Only spawn if position is clear
+                    if (isPositionClear(gustX, gustY, gustZ, 6)) {
+                        gust.position.set(gustX, gustY, gustZ);
+                        windGusts.push(gust);
+                    }
                 }
             }
         }
@@ -4756,13 +4853,17 @@
                 // 10% chance for rare fuchsia ring
                 const isFuchsia = Math.random() < 0.1;
                 ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
-                ring.position.set(
-                    (Math.random() - 0.5) * 8, // Center area
-                    Math.random() * 2 + 2,     // Mid-height
-                    -200                        // Spawn ahead
-                );
-                ring.userData.points = isFuchsia ? 50 : 25;
-                rings.push(ring);
+
+                const ringX = (Math.random() - 0.5) * 8;
+                const ringY = Math.random() * 2 + 2;
+                const ringZ = -200;
+
+                // Only spawn if position is clear
+                if (isPositionClear(ringX, ringY, ringZ, 6)) {
+                    ring.position.set(ringX, ringY, ringZ);
+                    ring.userData.points = isFuchsia ? 50 : 25;
+                    rings.push(ring);
+                }
             }
         }
 
@@ -4780,13 +4881,17 @@
 
                 if (ring) {
                     ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
-                    ring.position.set(
-                        (Math.random() - 0.5) * 8, // Keep them closer to center
-                        Math.random() * 2 + 2,     // Mid-height
-                        -150 - (i * 50)            // Spaced apart (50 units)
-                    );
-                    ring.userData.points = isFuchsia ? 50 : 25;
-                    rings.push(ring);
+
+                    const ringX = (Math.random() - 0.5) * 8;
+                    const ringY = Math.random() * 2 + 2;
+                    const ringZ = -150 - (i * 50);
+
+                    // Only spawn if position is clear
+                    if (isPositionClear(ringX, ringY, ringZ, 6)) {
+                        ring.position.set(ringX, ringY, ringZ);
+                        ring.userData.points = isFuchsia ? 50 : 25;
+                        rings.push(ring);
+                    }
                 }
             }
 
@@ -5006,8 +5111,13 @@
                     const lanes = [-3, -1.5, 0, 1.5, 3];
                     const lane = lanes[Math.floor(Math.random() * lanes.length)];
                     const yPos = 1 + Math.random() * 4;
-                    coin.position.set(lane, yPos, -220 - (i * 30));
-                    coins.push(coin);
+                    const coinZ = -220 - (i * 30);
+
+                    // CRITICAL: Check for overlaps since buildings also spawn in this phase
+                    if (isPositionClear(lane, yPos, coinZ, 5)) {
+                        coin.position.set(lane, yPos, coinZ);
+                        coins.push(coin);
+                    }
                 }
             }
 
@@ -5027,19 +5137,22 @@
                 const material = isFuchsia ? fuchsiaRingMat : ringMat;
                 const ring = new THREE.Mesh(ringGeometry, material);
 
-                ring.position.set(
-                    (Math.random() - 0.5) * 8, // Keep them closer to center
-                    Math.random() * 2 + 2,     // Mid-height
-                    -250 - (i * 50)            // Further visibility like Guitar Hero notes
-                );
-                ring.rotation.x = 0;
-                ring.rotation.y = 0;
-                ring.userData.collected = false;
-                ring.userData.missTracked = false; // For difficulty tracking
-                ring.userData.points = isFuchsia ? 50 : 25; // Track points for each ring
-                ring.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
-                scene.add(ring);
-                rings.push(ring);
+                const ringX = (Math.random() - 0.5) * 8;
+                const ringY = Math.random() * 2 + 2;
+                const ringZ = -250 - (i * 50);
+
+                // Check for overlaps before spawning
+                if (isPositionClear(ringX, ringY, ringZ, 6)) {
+                    ring.position.set(ringX, ringY, ringZ);
+                    ring.rotation.x = 0;
+                    ring.rotation.y = 0;
+                    ring.userData.collected = false;
+                    ring.userData.missTracked = false; // For difficulty tracking
+                    ring.userData.points = isFuchsia ? 50 : 25; // Track points for each ring
+                    ring.userData.originalScale = { x: 1, y: 1, z: 1 }; // Store for parallax
+                    scene.add(ring);
+                    rings.push(ring);
+                }
             }
 
             // Clear all buildings to create a building-free corridor
