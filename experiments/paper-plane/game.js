@@ -2103,12 +2103,12 @@
                 }
             }
 
-            // RULE 12: First 10 miles ONLY breathers and buildings
+            // RULE 12: First 15 miles ONLY breathers and buildings
             // This creates a focused onboarding experience where players learn the core dodging mechanic
-            // Rings, coins, wind, walls, and mixed phases are introduced AFTER mile 10
-            if (milesFlown < 10) {
+            // Rings, coins, wind, walls, and mixed phases are introduced AFTER mile 15
+            if (milesFlown < 15) {
                 if (phaseName !== 'breather' && phaseName !== 'buildings') {
-                    weight = 0; // Eliminate all non-core phases in first 10 miles
+                    weight = 0; // Eliminate all non-core phases in first 15 miles
                 }
             }
 
@@ -4868,8 +4868,8 @@
 
         // Spawn coins randomly in the environment (not too many at once)
         // Don't spawn during boss encounters
-        // RESTRICTION: No coins before mile 10 (early game onboarding)
-        if (miles >= 10 && Math.random() < 0.001 && coins.length < 6 && !bossActive) {
+        // RESTRICTION: No coins before mile 15 (early game onboarding)
+        if (miles >= 15 && Math.random() < 0.001 && coins.length < 6 && !bossActive) {
             const coin = getCoinFromPool();
             if (coin) {
                 // X position: Only spawn in center 3 lanes (-4, 0, 4)
@@ -4924,7 +4924,7 @@
         }
 
         // Try to spawn wind gusts during breather/ring moments (rare) OR buildings (very rare)
-        // RESTRICTION: No wind gusts before mile 10 (early game onboarding)
+        // RESTRICTION: No wind gusts before mile 15 (early game onboarding)
         const isBreatherMoment = currentPhase === 'rings' ||
             currentPhase === 'breather' ||
             currentPhase === 'breather_before_rings' ||
@@ -4935,8 +4935,8 @@
         // Breather moments: 0.3% chance, High intensity (buildings/walls): 0.05% chance (rare bonus)
         const windGustChance = isBreatherMoment ? 0.003 : (isHighIntensityPhase ? 0.0005 : 0);
 
-        // Only spawn wind gusts after mile 10 AND if chance triggers
-        if (miles >= 10 && windGusts.length === 0 && Math.random() < windGustChance) {
+        // Only spawn wind gusts after mile 15 AND if chance triggers
+        if (miles >= 15 && windGusts.length === 0 && Math.random() < windGustChance) {
             // Breather: sometimes 2-3 gusts, High intensity: always just 1 (rare bonus)
             const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
@@ -4958,9 +4958,9 @@
         }
 
         // Rare ring spawn during WALL phase only (not buildings) - bonus reward
-        // RESTRICTION: No rings before mile 10 (early game onboarding)
+        // RESTRICTION: No rings before mile 15 (early game onboarding)
         const isWallPhase = currentPhase === 'walls';
-        if (miles >= 10 && isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+        if (miles >= 15 && isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
             // Very rare: single ring as bonus during walls
             const ring = getRingFromPool();
             if (ring) {
