@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime test - Rock Obstacle</title>
+  <title>Slime test - Volume Guard</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
   </style>
@@ -24,11 +24,8 @@
   // --- WORLD MATH ---
   const worldBounds = 25, ribbonW = 5.0;
   const getNoise = (v, f, a) => Math.sin(v * f) * a + Math.sin(v * f * 2.2) * (a * 0.4);
-
-  // Added a specific bump for the "Rock" at x = 10
   const getFloor = (x) => {
     let base = -3.5 + (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.3 : 0) + getNoise(x, 2.5, 0.15);
-    // The Rock Obstacle
     const rockDist = Math.abs(x - 10);
     if (rockDist < 2.5) base += Math.cos((rockDist / 2.5) * Math.PI / 2) * 2.5 + getNoise(x, 10, 0.2);
     return base;
@@ -46,15 +43,25 @@
   createRibbon(getFloor, 0x00ffff);
   createRibbon(getCeil, 0xffff00);
 
+  const createJagWall = (xPos) => {
+    const geo = new THREE.PlaneGeometry(ribbonW, 12, 1, 40);
+    geo.rotateY(Math.PI / 2);
+    const pos = geo.getAttribute('position');
+    for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.18 })));
+  };
+  createJagWall(-worldBounds); createJagWall(worldBounds);
+
   // --- NODES ---
   const nodes = [];
-  const nodeGeo = new THREE.IcosahedronGeometry(0.4, 1);
+  const nodeGeo = new THREE.IcosahedronGeometry(0.4, 2);
   const nodeMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true });
-  for (let i = 0; i < 15; i++) {
-    const n = new THREE.Mesh(nodeGeo, nodeMat);
-    const x = (Math.random() - 0.5) * worldBounds * 1.5;
+  for (let i = 0; i < 20; i++) {
+    const n = new THREE.Mesh(nodeGeo, nodeMat.clone());
+    const x = (Math.random() - 0.5) * worldBounds * 2.2;
     const y = Math.random() > 0.5 ? getFloor(x) + 0.5 : getCeil(x) - 0.5;
     n.position.set(x, y, 0);
+    n.userData = { originalY: y, absorbed: false };
     scene.add(n);
     nodes.push(n);
   }
@@ -70,7 +77,7 @@
   // --- PHYSICS ---
   let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastW = 0, lastS = 0, lastFrameTime = 0;
-  let pressInten = 0, impact = 0;
+  let pressInten = 0, impact = 0, absorbPulse = 0;
   const keys = {}, fpsInterval = 1000 / 60;
 
   window.addEventListener('keydown', (e) => {
@@ -92,15 +99,21 @@
     lastFrameTime = currentTime - (deltaTime % fpsInterval);
 
     const time = currentTime * 0.001;
-    const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'];
-    const pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
+    const pD = keys['KeyS'] || keys['ArrowDown'], pU = keys['KeyW'] || keys['ArrowUp'], pL = keys['KeyA'] || keys['ArrowLeft'], pR = keys['KeyD'] || keys['ArrowRight'];
 
     const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
-    const isHoldingSurface = (currentBias === -1 && pD) || (currentBias === 1 && pU);
-    pressInten = THREE.MathUtils.lerp(pressInten, isHoldingSurface ? 0.75 : 0.0, 0.12);
+    const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+    const nearWall = Math.abs(centerPos.x - lW_c) < 1.6 || Math.abs(centerPos.x - rW_c) < 1.6;
+
+    // VOLUME GUARD: Resistance stops flattening at 65% depth
+    const targetPress = ((currentBias === -1 && pD) || (currentBias === 1 && pU)) ? 0.65 : 0.0;
+    pressInten = THREE.MathUtils.lerp(pressInten, targetPress, 0.15);
 
     slimeT.x += (pR ? 0.22 : 0) - (pL ? 0.22 : 0);
-    slimeT.y += (currentBias * 0.45);
+    slimeT.y += (currentBias * (nearWall ? 0.1 : 0.45));
+    if (nearWall) slimeT.y += (pU ? 0.22 : 0) - (pD ? 0.22 : 0);
+
+    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
 
     let oX = centerPos.x, oY = centerPos.y;
@@ -112,9 +125,16 @@
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y, 0.05);
 
     nodes.forEach(n => {
-      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 2.0) n.visible = false;
-      n.rotation.y += 0.02;
+      if (n.visible) {
+        const dist = n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0));
+        if (dist < 3.0) {
+          n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2);
+          n.scale.multiplyScalar(0.85);
+          if (dist < 0.4) { n.visible = false; absorbPulse = 0.5; }
+        }
+      }
     });
+    absorbPulse = THREE.MathUtils.lerp(absorbPulse, 0, 0.1);
 
     const breath = Math.sin(time * 1.6) * 0.12 + Math.sin(time * 2.4) * 0.06;
     impact *= 0.82;
@@ -124,12 +144,16 @@
       let ox = originals[idx], oy = originals[idx+1];
       const verticalPos = (oy + 1.8) / 3.6;
 
+      // Motion inertia
       ox += centerPos.vx * 4.5 * verticalPos * 0.8 * (1.0 - pressInten);
+
+      // Volume Guarded Squash
       const t = currentBias === -1 ? (1.0 - verticalPos) : verticalPos;
-      oy *= (1.0 - pressInten * 0.5);
-      ox *= 1.0 + (pressInten * 0.9 * Math.pow(t, 1.6));
+      oy *= (1.0 - pressInten * 0.5); // Fixed floor for height
+      ox *= (1.0 + absorbPulse) * (1.0 + (pressInten * 1.0 * Math.pow(t, 1.8)));
       oy += (currentBias * -0.3) + (pressInten * currentBias * 0.3);
 
+      // Undulation
       let gf = 0;
       if (currentBias === -1 && oy > 0.1) gf = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
       else if (currentBias === 1 && oy < -0.1) gf = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
@@ -143,7 +167,7 @@
       vY += impact * 0.8 * (currentBias === -1 ? -1 : 1) * oy;
 
       const curF = getFloor(vX), curC = getCeil(vX);
-      const seepageRange = 1.0 + (pressInten * 1.3);
+      const seepageRange = 1.1 + (pressInten * 1.3);
 
       if (currentBias === -1 && vY < curF + seepageRange) {
         const suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seepageRange);
