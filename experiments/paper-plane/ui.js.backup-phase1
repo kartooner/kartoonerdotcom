@@ -17,7 +17,6 @@ let lastScore = null;
 let lastHighScore = null;
 let lastLevel = null;
 let lastHealth = null;
-let lastLives = null;
 let lastShieldState = null;
 let lastShieldHits = null;
 let lastDistMiles = null;
@@ -45,7 +44,6 @@ export function initUI(callbacks) {
     const highScoreUI = document.getElementById('high-score');
     const levelUI = document.getElementById('level-text');
     const healthBarUI = document.getElementById('health-bar');
-    const livesDisplayUI = document.getElementById('lives-display');
     const shieldBarUI = document.getElementById('shield-bar');
     const scoreDisplayUI = document.getElementById('score-display');
     const scoreBonusUI = document.getElementById('score-bonus');
@@ -60,25 +58,10 @@ export function initUI(callbacks) {
     const instructionsOverlay = document.getElementById('instructions-overlay');
     const closeInstructionsX = document.getElementById('close-instructions-x');
     const checkpointOverlay = document.getElementById('checkpoint-overlay');
-    const pauseOverlay = document.getElementById('pause-overlay');
-    const pauseTitle = document.getElementById('pause-title');
-    const gameoverStats = document.getElementById('gameover-stats');
-    const resumeButton = document.getElementById('resume-button');
-    const pauseRetryButton = document.getElementById('pause-retry-button');
-    const pauseQuitButton = document.getElementById('pause-quit-button');
 
     // Play button functionality
     playButton.addEventListener('click', (e) => {
         e.stopPropagation();
-
-        // Reset pause state (in case we quit from a paused game)
-        isPaused = false;
-
-        // If starting fresh (after quit or initial load), reset the game
-        if (!gameStarted && window.resetAndStartNewRun) {
-            window.resetAndStartNewRun();
-        }
-
         gameStarted = true;
         playOverlay.classList.add('hidden');
         pauseButton.style.display = 'block';
@@ -118,52 +101,12 @@ export function initUI(callbacks) {
     }
     closeInstructionsX.addEventListener('click', closeInstructionsHandler);
 
-    // Pause button functionality - Show pause menu
+    // Pause button functionality
     pauseButton.addEventListener('click', () => {
-        isPaused = true;
-        onPauseClick(true);
-        // Use the showPauseMenu function below
-        setTimeout(() => {
-            pauseTitle.innerText = 'PAUSED';
-            resumeButton.style.display = 'block';
-            gameoverStats.style.display = 'none';
-            pauseOverlay.style.display = 'flex';
-        }, 0);
+        isPaused = !isPaused;
+        pauseButton.innerText = isPaused ? 'RESUME' : 'PAUSE';
+        onPauseClick(isPaused);
     });
-
-    // Pause menu button functionality
-    resumeButton.addEventListener('click', () => {
-        isPaused = false;
-        pauseOverlay.style.display = 'none';
-        onPauseClick(false);
-    });
-
-    pauseRetryButton.addEventListener('click', () => {
-        pauseOverlay.style.display = 'none';
-        isPaused = false;
-        // Unpause the game engine
-        onPauseClick(false);
-        // Start new run without going to menu (this handles animation restart)
-        if (window.resetAndStartNewRun) {
-            window.resetAndStartNewRun();
-        }
-    });
-
-    pauseQuitButton.addEventListener('click', () => {
-        // Hide pause/game over overlay
-        pauseOverlay.style.display = 'none';
-        gameoverStats.style.display = 'none';
-
-        // Show start screen
-        playOverlay.classList.remove('hidden');
-        gameStarted = false;
-        isPaused = true; // Keep paused so game stays frozen in background
-        pauseButton.style.display = 'none';
-
-        // Call pause handler to ensure game is paused
-        onPauseClick(true);
-    });
-
 
     // Skip checkpoint button
     document.getElementById('skip-checkpoint').addEventListener('click', () => {
@@ -307,22 +250,6 @@ export function initUI(callbacks) {
             healthBarUI.innerText = hearts.join(' ');
         },
 
-        updateLivesDisplay: (currentLives, maxLives) => {
-            // Only update if changed
-            if (lastLives === currentLives) return;
-            lastLives = currentLives;
-
-            const lives = [];
-            for (let i = 0; i < maxLives; i++) {
-                if (i < currentLives) {
-                    lives.push('●');
-                } else {
-                    lives.push('○');
-                }
-            }
-            livesDisplayUI.innerText = 'LIVES: ' + lives.join('');
-        },
-
         updateShieldBar: (shieldActive, shieldHits) => {
             // Only update if changed
             if (lastShieldState === shieldActive && lastShieldHits === shieldHits) return;
@@ -349,31 +276,6 @@ export function initUI(callbacks) {
 
         closeCheckpointUI: () => {
             closeCheckpointUI();
-        },
-
-        showGameOver: (distance, score, best) => {
-            // Use pause menu but hide Resume button and show stats
-            pauseTitle.innerText = 'GAME OVER';
-            resumeButton.style.display = 'none';
-
-            // Show stats
-            const distMiles = Math.floor(distance / 5280);
-            gameoverStats.innerHTML = `
-                DISTANCE: ${distMiles}mi<br>
-                SCORE: ${score}<br>
-                BEST: ${best}mi
-            `;
-            gameoverStats.style.display = 'block';
-
-            pauseOverlay.style.display = 'flex';
-        },
-
-        showPauseMenu: () => {
-            // Show pause menu with Resume button, hide stats
-            pauseTitle.innerText = 'PAUSED';
-            resumeButton.style.display = 'block';
-            gameoverStats.style.display = 'none';
-            pauseOverlay.style.display = 'flex';
         },
 
         toggleFullscreen: () => {

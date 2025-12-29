@@ -49,18 +49,6 @@
     let currentHealth = 4;
     const maxHealth = 4;
 
-    // Lives system (3 lives per run)
-    let currentLives = 3;
-    const maxLives = 3;
-    let checkpointHistory = []; // Track last 3 checkpoints for regression
-
-    // Anti-camping detection (prevent staying in one spot)
-    let campingDetected = false;
-    let campingTimer = 0;
-    let lastCampCheckPosition = { x: 0, y: 0 };
-    const campingDetectionThreshold = 900; // 15 seconds at 60fps
-    const campingPositionThreshold = 1.5; // Movement radius to count as "camping"
-
     // Hidden dynamic difficulty system (completely invisible to player)
     let difficultyScalar = 1.0; // Starting scalar (0.85-1.15 range)
     let gameStartTime = 0; // Track when game actually starts
@@ -787,13 +775,6 @@
             chunk.visible = true;
             chunk.userData.onGround = false;
             chunk.userData.lifetime = 0;
-
-            // Set debris color based on structure type
-            if (isWall) {
-                chunk.material.color.setHex(0xff00ff); // Purple for walls
-            } else {
-                chunk.material.color.setHex(0x00ffff); // Cyan for buildings
-            }
 
             // Varied chunk sizes (mix of small and large)
             const sizeType = Math.random();
@@ -2238,151 +2219,10 @@
     // Temporary boss replacement: intense building phase
     let bossActive = false; // Keep flag for phase system compatibility
 
-    // Death and respawn handler
-    function handleDeath() {
-        // Lose a life
-        currentLives--;
-        uiControls.updateLivesDisplay(currentLives, maxLives);
-
-        if (currentLives > 0) {
-            // Still have lives - respawn at current position with 1 heart
-            crashMessage = `LIFE LOST! ${currentLives} REMAINING`;
-            crashMessageTimer = 120; // Show for 2 seconds
-
-            // Respawn after brief delay
-            setTimeout(() => {
-                // No hearts on respawn - must reach checkpoint to refill
-                currentHealth = 0;
-                uiControls.updateHealthBar(currentHealth, maxHealth);
-
-                // Reset ship position to center
-                shipGroup.position.x = 0;
-                shipGroup.position.y = 0;
-                targetX = 0;
-                targetY = 2.5;
-
-                // Activate grace period to give player time to reach checkpoint
-                gracePeriodActive = true;
-                gracePeriodEndTime = Date.now() + 5000; // 5 seconds grace period
-
-                crashMessage = `NO HEARTS! FIND CHECKPOINT!`;
-                crashMessageTimer = 90;
-            }, 1000); // 1 second delay
-        } else {
-            // Game Over - no lives left
-            triggerGameOver();
-        }
-    }
-
-    function triggerGameOver() {
-        // Stop the game completely
-        animationRunning = false;
-        isPaused = true;
-
-        // Show Game Over overlay with stats after a brief delay
-        setTimeout(() => {
-            uiControls.showGameOver(distance, score, highScore);
-        }, 500);
-    }
-
-    // Reset game state and start new run (for RETRY button)
-    window.resetAndStartNewRun = function() {
-        // Reset core game state
-        score = 0;
-        distance = 0;
-        time = 0;
-        currentHealth = maxHealth;
-        currentLives = maxLives;
-        checkpointHistory = [];
-        currentLevel = 1;
-        nextCheckpoint = 20 + Math.floor(Math.random() * 11);
-        isFirstCheckpoint = true;
-
-        // Reset difficulty and timing
-        difficultyScalar = 1.0;
-        gameStartTime = 0;
-        phaseStartTime = Date.now();
-        lastFrameTime = null;
-
-        // Reset player position and movement
-        shipGroup.position.x = 0;
-        shipGroup.position.y = 0;
-        curX = 0;
-        curY = 0;
-        targetX = 0;
-        targetY = 2.5;
-        prevX = 0;
-        prevY = 2.5;
-        velocityX = 0;
-        velocityY = 0;
-
-        // Reset shields and grace period
-        shieldActive = false;
-        shieldHits = 0;
-        gracePeriodActive = false;
-        speedBoostActive = false;
-
-        // Reset boost effects
-        nearMissBoost = 0;
-        ringBoost = 0;
-
-        // Reset camping detection
-        campingDetected = false;
-        campingTimer = 0;
-        lastCampCheckPosition = { x: 0, y: 0 };
-        playerLane = 2;
-        lastPlayerLane = 2;
-        timeInSameLane = 0;
-        antiCampingActive = false;
-
-        // Clear all game objects
-        buildings.forEach(b => {
-            b.position.z = -1000;
-            b.active = false;
-        });
-        walls.forEach(w => scene.remove(w));
-        walls.length = 0;
-        rings.forEach(r => scene.remove(r));
-        rings.length = 0;
-        gates.forEach(g => scene.remove(g));
-        gates.length = 0;
-
-        // Clear debris chunks
-        collisionDebris.forEach(chunk => {
-            chunk.visible = false;
-            chunk.userData.active = false;
-            chunk.position.set(0, 0, -1000);
-        });
-        collisionDebris.length = 0;
-
-        // Update UI
-        uiControls.updateHealthBar(currentHealth, maxHealth);
-        uiControls.updateLivesDisplay(currentLives, maxLives);
-        uiControls.updateShieldBar(shieldActive, shieldHits);
-
-        // Clear messages
-        crashMessage = '';
-        crashMessageTimer = 0;
-        levelUpMessage = '';
-        levelUpMessageTimer = 0;
-
-        // Restart game - NOT paused
-        isPaused = false;
-        animationRunning = true;
-        checkpointActive = false;
-        animate();
-    };
-
     // Checkpoint UI functions
     function showCheckpointUI(milesReached) {
         checkpointActive = true;
         isPaused = true;
-
-        // Track checkpoint in history for regression (keep last 3)
-        checkpointHistory.push(Math.floor(milesReached));
-        if (checkpointHistory.length > 3) {
-            checkpointHistory.shift(); // Remove oldest
-        }
 
         // Replenish health at checkpoint
         currentHealth = maxHealth;
@@ -2674,14 +2514,6 @@
             e.preventDefault();
             uiControls.toggleFullscreen();
         }
-        // ESC to pause/unpause
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            if (animationRunning && !checkpointActive) {
-                // Trigger pause menu
-                document.getElementById('pause-button').click();
-            }
-        }
         // F3 for debug overlay (Minecraft-style)
         if (e.key === 'F3' || e.code === 'F3') {
             e.preventDefault();
@@ -2697,25 +2529,6 @@
         if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') keys.down = false;
         if (e.key === ' ') speedBoostActive = false;
     });
-
-    // Fullscreen change handler - pause game when exiting fullscreen
-    const handleFullscreenChange = () => {
-        const isFullscreen = !!(document.fullscreenElement ||
-                               document.webkitFullscreenElement ||
-                               document.mozFullScreenElement ||
-                               document.msFullscreenElement);
-
-        // If we just exited fullscreen and game is running, pause it
-        if (!isFullscreen && animationRunning && !isPaused && !checkpointActive) {
-            document.getElementById('pause-button').click();
-        }
-    };
-
-    // Listen for all fullscreen change events (cross-browser)
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 
     // BARREL ROLL - Double click/tap (requires upgrade)
     const triggerBarrelRoll = () => {
@@ -2787,7 +2600,6 @@
         onPlayClick: () => {
             phaseStartTime = Date.now();
             uiControls.updateHealthBar(currentHealth, maxHealth);
-            uiControls.updateLivesDisplay(currentLives, maxLives);
             uiControls.updateShieldBar(shieldActive, shieldHits);
             if (!animationRunning) {
                 animate();
@@ -2844,8 +2656,7 @@
             shadowMesh.visible = !isFullscreen;
 
             const uiState = uiControls.getGameState();
-            // Re-render on resize if paused (including start screen background)
-            if (!animationRunning || uiState.isPaused) {
+            if (uiState.isPaused && uiState.gameStarted) {
                 renderer.render(scene, camera);
             }
         },
@@ -2922,12 +2733,9 @@
     }
 
     function animate(timestamp = performance.now()) {
-        // Stop immediately if animation should not be running
-        if (!animationRunning && isPaused) return;
-
         const uiState = uiControls.getGameState();
         if (!uiState.gameStarted && !animationRunning) return; // Don't start until play button clicked
-        if (uiState.isPaused || isPaused) {
+        if (uiState.isPaused) {
             animationRunning = false;
             return; // Stop animation loop when paused
         }
@@ -2968,22 +2776,7 @@
         // Warm-up phase - cap speed for first 60-90 seconds (hidden)
         const timeSinceStart = timestamp - gameStartTime;
         const inWarmup = timeSinceStart < warmupDuration;
-
-        // Smooth transition out of warmup over 2 seconds (instead of instant jump)
-        const transitionDuration = 2000; // 2 seconds
-        const transitionStart = warmupDuration;
-        const transitionEnd = warmupDuration + transitionDuration;
-
-        let warmupSpeedCap;
-        if (timeSinceStart < transitionStart) {
-            warmupSpeedCap = 0.75; // Still in warmup
-        } else if (timeSinceStart < transitionEnd) {
-            // Smooth interpolation from 0.75 to 1.0
-            const transitionProgress = (timeSinceStart - transitionStart) / transitionDuration;
-            warmupSpeedCap = 0.75 + (0.25 * transitionProgress);
-        } else {
-            warmupSpeedCap = 1.0; // Full speed
-        }
+        const warmupSpeedCap = inWarmup ? 0.75 : 1.0; // 25% speed reduction during warm-up
 
         // Speed boost effect (includes near-miss boost and ring boost) with deltaTime
         const speedBoostMultiplier = speedBoostActive ? 2.5 : 1.0;
@@ -2991,11 +2784,7 @@
 
         // Apply difficulty scalar and warm-up cap to base speed (hidden systems)
         const adjustedBaseSpeed = baseSpeed * difficultyScalar * warmupSpeedCap;
-        let speed = adjustedBaseSpeed * totalSpeedMultiplier * deltaTime;
-
-        // Enforce minimum forward speed (prevent game from stopping)
-        const minSpeed = (isMobile ? 0.2 : 0.3) * deltaTime;
-        speed = Math.max(speed, minSpeed);
+        const speed = adjustedBaseSpeed * totalSpeedMultiplier * deltaTime;
 
         // Decay near-miss boost over time (frame-rate independent)
         if (nearMissBoost > 0) {
@@ -3289,34 +3078,6 @@
         const smoothing = planeStats[currentPlaneType].smoothing;
         curX += (targetX - curX) * smoothing;
         curY += (targetY - curY) * smoothing;
-
-        // Position-based camping detection (hovering in one spot)
-        const distFromLastCheck = Math.sqrt(
-            Math.pow(curX - lastCampCheckPosition.x, 2) +
-            Math.pow(curY - lastCampCheckPosition.y, 2)
-        );
-
-        if (distFromLastCheck < campingPositionThreshold) {
-            campingTimer++;
-            if (campingTimer > campingDetectionThreshold && !campingDetected) {
-                campingDetected = true;
-
-                // Spawn alternating wall pattern to force movement
-                // Create 2 wall sets that alternate high/low to push player to move
-                for (let i = 0; i < 2; i++) {
-                    const zPos = -150 - (i * 60);
-                    const wallType = i % 2 === 0 ? 'high' : 'low';
-                    const wall = getWallFromPool(wallType, zPos);
-                    if (wall) walls.push(wall);
-                }
-            }
-        } else {
-            // Player moved significantly - reset
-            campingTimer = 0;
-            campingDetected = false;
-            lastCampCheckPosition.x = curX;
-            lastCampCheckPosition.y = curY;
-        }
 
         // Anti-camping detection (backend only, no message)
         playerLane = getPlayerLane(curX);
@@ -3878,15 +3639,22 @@
                                 uiControls.updateHealthBar(currentHealth, maxHealth);
                                 crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                 crashMessageTimer = 60;
-
-                                // Activate brief grace period to prevent rapid successive hits
-                                gracePeriodActive = true;
-                                gracePeriodEndTime = Date.now() + 500; // 0.5 second grace
                             }
 
-                            // After health is depleted, trigger death
+                            // After health is depleted, lose points and upgrades
                             if (currentHealth <= 0) {
-                                handleDeath();
+                                const pointsLost = 5;
+                                score = Math.max(0, score - pointsLost);
+                                crashMessage = `BONK -${pointsLost}`;
+
+                                // Lose an upgrade if available
+                                if (hasActiveUpgrades && activeUpgrades.length > 0) {
+                                    const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                    removeUpgrade(lostUpgrade);
+                                    crashMessage = `LOST UPGRADE -${pointsLost}`;
+                                }
+
+                                // Stay at 0 hearts - only replenish at checkpoints
                             }
                         }
                     }
@@ -3918,12 +3686,12 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase (and not during boss)
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase && !bossActive) {
-            // Spawn 3-5 wall "sets" - sometimes single, sometimes both high+low
-            const wallSetCount = Math.floor(Math.random() * 3) + 3; // 3-5 sets
+            // Spawn 6-8 wall "sets" - sometimes single, sometimes both high+low
+            const wallSetCount = Math.floor(Math.random() * 3) + 6; // 6-8 sets (increased from 3-4)
 
             for (let i = 0; i < wallSetCount; i++) {
-                const zPos = -200 - (i * 70); // Wider spacing for better visibility
-                const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+                const zPos = -200 - (i * 60); // Very far for visibility, spaced 60 units apart (tighter than before)
+                const bothWalls = Math.random() < 0.60; // 60% chance for both high AND low walls (increased from 40%)
 
                 if (bothWalls) {
                     // Spawn BOTH high and low from pool - player must stay centered
@@ -4032,20 +3800,25 @@
                                     uiControls.updateHealthBar(currentHealth, maxHealth);
                                     crashMessage = `HIT! ${currentHealth} HEARTS LEFT`;
                                     crashMessageTimer = 50;
-
-                                    // Activate brief grace period to prevent rapid successive hits
-                                    gracePeriodActive = true;
-                                    gracePeriodEndTime = Date.now() + 500; // 0.5 second grace
                                 }
 
-                                // After health is depleted, trigger death
+                                // After health is depleted, lose points and upgrades
                                 if (currentHealth <= 0) {
-                                    handleDeath();
+                                    const pointsLost = 5;
+                                    score = Math.max(0, score - pointsLost);
+                                    crashMessage = `BONK -${pointsLost}`;
+
+                                    // Lose an upgrade if available
+                                    if (hasActiveUpgrades && activeUpgrades.length > 0) {
+                                        const lostUpgrade = activeUpgrades[activeUpgrades.length - 1];
+                                        removeUpgrade(lostUpgrade);
+                                        crashMessage = `LOST UPGRADE -${pointsLost}`;
+                                    }
+
+                                    // Stay at 0 hearts - only replenish at checkpoints
                                 }
                             }
                         }
-
-                        break; // Exit loop after collision
                     }
                 }
             }
@@ -4532,10 +4305,9 @@
             }
         }
 
-        // Rare ring spawn during WALL phase only (not buildings) - bonus reward
-        const isWallPhase = currentPhase === 'walls';
-        if (isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
-            // Very rare: single ring as bonus during walls
+        // Rare ring spawn during high intensity phases (buildings/walls) - bonus reward
+        if (isHighIntensityPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+            // Very rare: single ring as bonus during buildings or walls
             const ring = getRingFromPool();
             if (ring) {
                 // 10% chance for rare fuchsia ring
@@ -4554,9 +4326,8 @@
         // Ring spawning before checkpoints - spawn 5 miles before each checkpoint (not during boss)
         const milesUntilCheckpoint = nextCheckpoint - miles;
         if (milesUntilCheckpoint <= 5 && milesUntilCheckpoint > 0 && !ringsSpawnedForCheckpoint && rings.length === 0 && !bossActive) {
-            // During building phases: only 1 ring. Other phases: 2-3 rings
-            const isBuildingPhase = currentPhase === 'buildings' || currentPhase === 'boss_gauntlet';
-            const ringCount = isBuildingPhase ? 1 : (Math.floor(Math.random() * 2) + 2); // 1 ring for buildings, 2-3 for others
+            // Spawn 2-3 rings before the checkpoint for risk/reward gameplay
+            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
 
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
@@ -4604,7 +4375,7 @@
             // Check if player passed through gate
             if (Math.abs(gate.position.z - 3.5) < 3 && !gate.userData.passed) {
                 gate.userData.passed = true;
-                showCheckpointUI(Math.floor(miles));
+                showCheckpointUI(Math.floor(nextCheckpoint));
 
                 // Variable checkpoint distances for replayability (20-30 miles)
                 const checkpointDistance = 20 + Math.floor(Math.random() * 11);
@@ -4758,25 +4529,11 @@
                 }
             }
 
-            // Clear ALL obstacles for breather (buildings, walls, coins)
+            // Clear all buildings for breather
             buildings.forEach(b => {
                 b.position.z = -500;
                 b.visible = false;
             });
-
-            // Clear walls
-            walls.forEach(w => {
-                w.visible = false;
-                w.position.z = -1000;
-            });
-            walls.length = 0;
-
-            // Clear coins
-            coins.forEach(c => {
-                c.visible = false;
-                c.position.z = -1000;
-            });
-            coins.length = 0;
 
             breatherSetup = true;
         }
@@ -5057,6 +4814,4 @@
 
         renderer.render(scene, camera);
     }
-
-    // Render initial frozen frame for start screen background
-    renderer.render(scene, camera);
+    // Don't auto-start - wait for play button
