@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GRIDCLIMBER // MASS_SHIFT</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; touch-action: none; }
+    #ui {
+      position: absolute; top: 30px; width: 100%; text-align: center;
+      color: #ff00ff; font-family: monospace; letter-spacing: 3px;
+      pointer-events: none; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+<div id="ui">Inertial Mass Shift // Slosh Physics</div>
+<script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+  import * as THREE from 'three';
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // --- WORLD MATH ---
+  const worldBounds = 20, ribbonW = 4.0;
+  const getNoise = (v, f, a) => Math.sin(v * f) * a + Math.sin(v * f * 2.2) * (a * 0.4);
+  const getFloor = (x) => -3.5 + (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.3 : 0) + getNoise(x, 2.5, 0.15);
+  const getCeil = (x) => 2.5 - (Math.abs(x - 4) < 5 ? Math.cos((Math.abs(x - 4) / 5) * Math.PI / 2) * 2.1 : 0) + getNoise(x, 3.0, 0.2);
+  const getWallJag = (y) => getNoise(y, 3.5, 0.3);
+
+  const createRibbon = (getVal, color) => {
+    const geo = new THREE.PlaneGeometry(worldBounds * 2.2, ribbonW, 160, 3);
+    geo.rotateX(-Math.PI / 2);
+    const pos = geo.getAttribute('position');
+    for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.12 })));
+  };
+  createRibbon(getFloor, 0x00ffff);
+  createRibbon(getCeil, 0xffff00);
+
+  const createJaggedWall = (xPos) => {
+    const geo = new THREE.PlaneGeometry(ribbonW, 12, 3, 40);
+    geo.rotateY(Math.PI / 2);
+    const pos = geo.getAttribute('position');
+    for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xaa4444, wireframe: true, transparent: true, opacity: 0.2 })));
+  };
+  createJaggedWall(-worldBounds); createJaggedWall(worldBounds);
+
+  // --- CAVE VINES ---
+  const vines = [];
+  [-12, -6, 0, 6, 12].forEach(x => {
+    const segments = [];
+    for(let i=0; i<15; i++) {
+      segments.push({ pos: new THREE.Vector3(x, getCeil(x) - i*0.35, 0.5), old: new THREE.Vector3(x, getCeil(x) - i*0.35, 0.5) });
+    }
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(segments.map(s => s.pos)), new THREE.LineBasicMaterial({ color: 0x44aa44 }));
+    scene.add(line);
+    vines.push({ x, line, segments });
+  });
+
+  // --- THE SLIME ---
+  const geometry = new THREE.IcosahedronGeometry(1.8, 4);
+  const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.8 }));
+  scene.add(blob);
+  const posAttr = geometry.getAttribute('position'), originals = new Float32Array(posAttr.array);
+  const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
+  geometry.setAttribute('color', colorAttr);
+
+  // --- PHYSICS ---
+  let centerPos = { x: -14, y: 0, vx: 0, vy: 0 }, slimeT = { x: -14, y: 0 };
+  let isDrag = false, tAnch = {x:0,y:0}, sAnch = {x:0,y:0}, attachedTo = 'floor', impact = 0;
+  const yH = [0,0,0,0], xH = [0,0,0,0];
+
+  const onStart = (x, y) => {
+    isDrag = true;
+    tAnch.x = (x / window.innerWidth - 0.5) * 18; tAnch.y = (y / window.innerHeight - 0.5) * -7;
+    sAnch.x = centerPos.x; sAnch.y = centerPos.y;
+    yH.fill(tAnch.y); xH.fill(tAnch.x);
+  };
+  const onMove = (x, y) => {
+    if (!isDrag) return;
+    const cX = (x / window.innerWidth - 0.5) * 18, cY = (y / window.innerHeight - 0.5) * -7;
+    slimeT.x = sAnch.x + (cX - tAnch.x); slimeT.y = sAnch.y + (cY - tAnch.y);
+    yH.shift(); yH.push(cY); xH.shift(); xH.push(cX);
+  };
+
+  window.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+  window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup', () => isDrag = false);
+  window.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX, e.touches[0].clientY));
+  window.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX, e.touches[0].clientY));
+  window.addEventListener('touchend', () => isDrag = false);
+
+  camera.position.set(0, 2, 9.2);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = performance.now() * 0.001;
+
+    const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
+    const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
+    const dy = yH[3] - yH[0], dx = xH[3] - xH[0];
+
+    if (isDrag) {
+      if (Math.abs(dy) > 0.85 && Math.abs(dy) > Math.abs(dx)) { attachedTo = dy > 0 ? 'ceiling' : 'floor'; impact = 1.2; yH.fill(yH[3]); }
+      if (Math.abs(dx) > 0.85 && Math.abs(dx) > Math.abs(dy)) {
+        if (attachedTo.includes('Wall') && Math.abs(dx) > 0.5) attachedTo = 'floor';
+      }
+    }
+    if (attachedTo.includes('Wall')) {
+      if (centerPos.y < fV + 1.25) attachedTo = 'floor';
+      if (centerPos.y > cV - 1.25) attachedTo = 'ceiling';
+    } else {
+      if (centerPos.x < lW + 1.2) attachedTo = 'leftWall';
+      if (centerPos.x > rW - 1.2) attachedTo = 'rightWall';
+    }
+
+    let oX = centerPos.x, oY = centerPos.y;
+    const targetX = attachedTo === 'leftWall' ? lW + 1.1 : (attachedTo === 'rightWall' ? rW - 1.1 : slimeT.x);
+    const targetY = attachedTo === 'floor' ? fV + 1.1 : (attachedTo === 'ceiling' ? cV - 1.1 : slimeT.y);
+    centerPos.x = THREE.MathUtils.lerp(centerPos.x, THREE.MathUtils.clamp(targetX, lW+1.1, rW-1.1), 0.35);
+    centerPos.y = THREE.MathUtils.lerp(centerPos.y, THREE.MathUtils.clamp(targetY, fV+1.1, cV-1.1), 0.35);
+    centerPos.vx = centerPos.x - oX; centerPos.vy = centerPos.y - oY;
+    impact *= 0.82;
+
+    // VINES
+    vines.forEach(v => {
+      v.segments[0].pos.set(v.x, getCeil(v.x), 0.5);
+      for(let i=1; i<v.segments.length; i++) {
+        const s = v.segments[i], d = s.pos.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0.5));
+        const vel = s.pos.clone().sub(s.old).multiplyScalar(d < 2.0 ? 0.5 : 0.95);
+        s.old.copy(s.pos); s.pos.add(vel); s.pos.y -= 0.005;
+        if (d < 1.9) {
+          const toS = s.pos.clone().sub(new THREE.Vector3(centerPos.x, centerPos.y, 0.5)).normalize();
+          s.pos.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0.5).add(toS.multiplyScalar(1.9)), 0.2);
+          s.pos.x += centerPos.vx * 0.15;
+        }
+      }
+      for(let i=1; i<v.segments.length; i++) {
+        const s1 = v.segments[i-1], s2 = v.segments[i], diff = s2.pos.clone().sub(s1.pos), len = diff.length();
+        s2.pos.sub(diff.multiplyScalar((len - 0.35) / len));
+      }
+      v.line.geometry.setFromPoints(v.segments.map(seg => seg.pos));
+    });
+
+    // MESH (MASS SHIFT + S-CURVE)
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.08);
+    const pA = geometry.getAttribute('position'), cA = geometry.getAttribute('color');
+    const breath = Math.sin(time * 1.5) * 0.08 + Math.sin(time * 2.7) * 0.05;
+
+    for (let i = 0; i < pA.count; i++) {
+      const idx = i * 3;
+      let ox = originals[idx], oy = originals[idx+1];
+
+      let globFactor = 0, sCurve = 0, shiftFactor = 0;
+
+      // Identify free side and calculate slosh
+      if (attachedTo === 'floor' && oy > 0.1) {
+        globFactor = THREE.MathUtils.smoothstep(oy, 0.1, 1.8);
+        sCurve = Math.sin(ox * 1.5 + time) * 0.2;
+        shiftFactor = centerPos.vx * 2.5 * globFactor; // Horiz shift
+      } else if (attachedTo === 'ceiling' && oy < -0.1) {
+        globFactor = THREE.MathUtils.smoothstep(-oy, 0.1, 1.8);
+        sCurve = Math.sin(ox * 1.5 + time) * 0.2;
+        shiftFactor = centerPos.vx * 2.5 * globFactor;
+      } else if (attachedTo.includes('Wall')) {
+        globFactor = (attachedTo === 'leftWall') ? THREE.MathUtils.smoothstep(ox, 0.1, 1.8) : THREE.MathUtils.smoothstep(-ox, 0.1, 1.8);
+        sCurve = Math.sin(oy * 1.5 + time) * 0.2;
+        shiftFactor = centerPos.vy * 2.5 * globFactor; // Vert shift on walls
+      }
+
+      if (globFactor > 0) {
+        const dist = Math.sqrt(ox*ox + oy*oy);
+        // Add shiftFactor to the local X/Y to pool the mass
+        if (attachedTo.includes('floor') || attachedTo.includes('ceiling')) {
+          ox += shiftFactor;
+        } else {
+          oy += shiftFactor;
+        }
+        ox += (ox/dist) * globFactor * (breath + sCurve);
+        oy += (oy/dist) * globFactor * (breath + sCurve);
+      }
+
+      let vX = ox + centerPos.x, vY = oy + centerPos.y;
+      const sq = impact * 0.6 * (attachedTo === 'floor' ? -1 : 1);
+      vY += (centerPos.vy * 0.7 + sq) * oy;
+      vX -= (centerPos.vy * 0.7 + sq) * 0.35 * ox;
+
+      const cFT = getFloor(vX), cCT = getCeil(vX);
+      if (vY < cFT) vY = cFT; if (vY > cCT) vY = cCT;
+      let r=1, g=0, b=1, suc=0, pV = (attachedTo==='floor'?cFT:cCT);
+      if (attachedTo==='floor' && vY < pV+0.7) { suc=1-THREE.MathUtils.smoothstep(vY-pV,0,0.7); vY=THREE.MathUtils.lerp(vY,pV,suc*0.96); r=1-suc; g=suc; }
+      else if (attachedTo==='ceiling' && vY > pV-0.7) { suc=1-THREE.MathUtils.smoothstep(pV-vY,0,0.7); vY=THREE.MathUtils.lerp(vY,pV,suc*0.96); g=suc; b=1-suc; }
+      pA.array[idx] = vX - centerPos.x; pA.array[idx+1] = vY - centerPos.y; cA.setXYZ(i, r, g, b);
+    }
+    pA.needsUpdate = true; cA.needsUpdate = true;
+    blob.position.set(centerPos.x, centerPos.y, 0);
+    renderer.render(scene, camera);
+  }
+  animate();
+</script>
+</body>
+</html>
