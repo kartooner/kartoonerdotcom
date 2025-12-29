@@ -2701,7 +2701,9 @@
 
     const handleMove = (x, y) => {
         const rect = container.getBoundingClientRect();
-        targetX = (((x - rect.left) / rect.width) * 2 - 1) * (isMobile ? 8 : 10);
+        // Constrain to lane boundaries (-8 to +8) for both mobile and desktop
+        // This prevents escaping outside viewport to avoid obstacles
+        targetX = (((x - rect.left) / rect.width) * 2 - 1) * 8;
         targetY = 2.5 + (-((y - rect.top) / rect.height) * 2 + 1) * (isMobile ? 2.5 : 3);
     };
 
@@ -3104,8 +3106,8 @@
         if (keys.up) targetY += keyboardSpeed * 0.67;
         if (keys.down) targetY -= keyboardSpeed * 0.67;
 
-        // Clamp targets
-        targetX = Math.max(-10, Math.min(10, targetX));
+        // Clamp targets to viewport bounds (match lane boundaries)
+        targetX = Math.max(-8, Math.min(8, targetX));
         targetY = Math.max(0.5, Math.min(5.5, targetY));
 
         // Terrain treadmill (simplified - no fade to prevent flashing)
@@ -3438,50 +3440,9 @@
             lastPlayerLane = playerLane;
         }
 
-        // Boundary camping detection - prevent camping outside viewport
-        // Viewport boundaries are approximately -10 to +10 on X axis, 0 to 10 on Y axis
-        const outOfBoundsX = Math.abs(curX) > 9;
-        const outOfBoundsY = curY > 9 || curY < -1; // Above viewport or below ground
-
-        if ((outOfBoundsX || outOfBoundsY) && !antiCampingActive) {
-            // Spawn super tall/wide building to force player back into viewport
-            const antiCampAvailable = getAvailableInstance('box');
-            if (antiCampAvailable) {
-                const antiCampBuilding = antiCampAvailable.instance;
-                const index = antiCampAvailable.index;
-
-                antiCampBuilding.active = true;
-                antiCampBuilding.geometry = 'box';
-
-                // Position based on which boundary was crossed
-                if (outOfBoundsX) {
-                    // Left/right boundary - tall vertical wall
-                    antiCampBuilding.position.x = curX > 0 ? 10 : -10;
-                    antiCampBuilding.scale.set(2, 2, 2); // Extra wide and tall
-                    antiCampBuilding.height = 10;
-                    antiCampBuilding.width = 2;
-                    const groundedY = (5 * 2) / 2;
-                    antiCampBuilding.position.y = groundedY;
-                } else {
-                    // Top/bottom boundary - wide horizontal wall spanning the lane
-                    antiCampBuilding.position.x = curX; // Directly in player's path
-                    antiCampBuilding.scale.set(3, 2, 2); // Extra wide to block escape
-                    antiCampBuilding.height = 10;
-                    antiCampBuilding.width = 3;
-                    const groundedY = curY > 9 ? 9 : 1; // At the boundary height
-                    antiCampBuilding.position.y = groundedY;
-                }
-
-                antiCampBuilding.position.z = -180; // Spawn further ahead for better visibility
-                antiCampBuilding.originalY = antiCampBuilding.position.y;
-                antiCampBuilding.originalScale = { x: antiCampBuilding.scale.x, y: antiCampBuilding.scale.y, z: antiCampBuilding.scale.z };
-                antiCampBuilding.opacity = 0.5;
-                antiCampBuilding.nearMissCredited = false;
-
-                updateInstanceMatrix(antiCampBuilding, boxInstancedMesh, index);
-                antiCampingActive = true; // Prevent multiple spawns
-            }
-        }
+        // Boundary camping detection removed - players are now hard-constrained to viewport
+        // X: -8 to +8 (lane boundaries), Y: 0.5 to 5.5
+        // No need to spawn anti-camping obstacles at boundaries
 
         // Calculate velocity for physics-based banking
         velocityX = curX - prevX;
