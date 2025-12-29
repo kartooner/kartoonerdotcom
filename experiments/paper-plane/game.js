@@ -3801,7 +3801,8 @@
                     } else if (currentPhase === 'boss_gauntlet') {
                         // BOSS GAUNTLET: Force only the most intense patterns with very little gaps
                         // Nearly unsustainable - constant dodging with minimal safe spaces
-                        const bossPatterns = ['quad_simultaneous', 'wall', 'procedural', 'triple_simultaneous', 'double_wide'];
+                        // Use wide building variants to avoid clipping while maintaining intensity
+                        const bossPatterns = ['quad_simultaneous', 'wall', 'procedural', 'triple_simultaneous', 'double_wide', 'wide_sandwich', 'wide_gap_regular'];
                         patternName = bossPatterns[Math.floor(seededRandom() * bossPatterns.length)];
                     } else {
                         // Normal wave pattern selection
