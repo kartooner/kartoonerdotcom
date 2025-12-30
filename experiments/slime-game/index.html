@@ -71,9 +71,9 @@
   let touchIdMove = null, touchIdJump = null, startYJump = 0;
   window.addEventListener('touchstart', e => {
     for(let t of e.changedTouches) {
-      if (t.clientX < window.innerWidth / 2 && touchIdMove === null) {
+      if (t.clientY > window.innerHeight * 0.6 && touchIdMove === null) {
         touchIdMove = t.identifier;
-        // Position joystick at touch location
+        // Position joystick at touch location in bottom area
         joyBg.style.left = (t.clientX - 50) + 'px';
         joyBg.style.top = (t.clientY - 50) + 'px';
         joyBg.style.display = 'block';
