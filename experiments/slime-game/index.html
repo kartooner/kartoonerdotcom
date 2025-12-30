@@ -3,17 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime game v7.08</title>
+  <title>Slime game v7.09</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
-    #ui { position: absolute; top: env(safe-area-inset-top, 20px); left: 20px; color: #00ff88; font-size: 24px; pointer-events: none; text-shadow: 2px 2px #000; z-index: 10; }
     #joy-bg { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(0,255,136,0.05); border: 2px solid rgba(0,255,136,0.2); border-radius: 50%; pointer-events: none; display: none; z-index: 20; }
     #joy-stick { position: absolute; width: 40px; height: 40px; background: rgba(0,255,136,0.4); border-radius: 50%; top: 30px; left: 30px; }
+    #grab-btn { position: absolute; bottom: 50px; right: 20px; width: 70px; height: 70px; background: rgba(0,255,136,0.15); border: 3px solid rgba(0,255,136,0.4); border-radius: 50%; display: none; z-index: 20; font-size: 11px; color: rgba(0,255,136,0.9); font-weight: bold; text-align: center; line-height: 64px; user-select: none; }
+    #grab-btn.active { background: rgba(0,255,136,0.4); border-color: rgba(0,255,136,0.8); }
+    @media (max-width: 768px), (pointer: coarse) {
+      #grab-btn { display: block; }
+    }
+    #controls { position: absolute; top: 15px; left: 15px; right: 15px; background: rgba(0,0,0,0.7); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 12px 16px; color: rgba(0,255,136,0.8); font-size: 12px; line-height: 1.6; pointer-events: none; z-index: 10; }
+    #controls .control-item { margin: 4px 0; }
+    #controls .control-label { color: rgba(0,255,136,1); font-weight: bold; }
+    .desktop-controls { display: block; }
+    .mobile-controls { display: none; }
+    @media (max-width: 768px), (pointer: coarse) {
+      .desktop-controls { display: none; }
+      .mobile-controls { display: block; }
+    }
+    @media (max-width: 480px) {
+      #controls { padding: 10px 12px; font-size: 11px; }
+    }
+    @media (max-width: 360px) {
+      #controls { padding: 8px 10px; font-size: 10px; }
+      #controls .control-item { margin: 2px 0; }
+    }
   </style>
 </head>
 <body>
-<div id="ui">Energy: 0</div>
 <div id="joy-bg"><div id="joy-stick"></div></div>
+<div id="grab-btn">GRAB</div>
+
+<div id="controls">
+  <div class="desktop-controls">
+    <div class="control-item"><span class="control-label">Movement:</span> WASD + Arrow keys</div>
+    <div class="control-item"><span class="control-label">Flip:</span> Double-tap direction</div>
+    <div class="control-item"><span class="control-label">Grab box:</span> SPACE</div>
+  </div>
+  <div class="mobile-controls">
+    <div class="control-item"><span class="control-label">Movement:</span> Virtual joystick</div>
+    <div class="control-item"><span class="control-label">Flip:</span> Swipe up or down</div>
+    <div class="control-item"><span class="control-label">Grab box:</span> GRAB button</div>
+  </div>
+</div>
 
 <script type="importmap"> { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } } </script>
 <script type="module">
@@ -33,6 +66,17 @@
   const getCeil = (x) => 4.5 - getNoise(x, 2.5, 0.2) - getPinch(x);
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
+  // Randomize biome sections
+  const biomes = [];
+  const biomeTypes = ['ferns', 'vines', 'none'];
+  const sectionCount = 8;
+
+  for (let i = 0; i < sectionCount; i++) {
+    const xStart = (i - sectionCount/2) * 12;
+    const biomeType = biomeTypes[Math.floor(Math.random() * biomeTypes.length)];
+    biomes.push({ xStart, xEnd: xStart + 12, type: biomeType });
+  }
+
   const createRibbon = (getVal, color) => {
     const geo = new THREE.PlaneGeometry(worldBounds * 3, 5, 250, 3);
     geo.rotateX(-Math.PI / 2);
@@ -51,8 +95,101 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }));
-  let bPhys = { x: 12, y: 0, vx: 0, rot: 0 }; scene.add(ball);
+  // Add reactive decorations based on biomes
+  const ferns = [];
+  const vines = [];
+
+  for (let biome of biomes) {
+    if (biome.type === 'ferns') {
+      // Fern plants with stem and leaves
+      for (let j = 0; j < 3; j++) {
+        let fernX = biome.xStart + Math.random() * 10;
+        const fernY = getFloor(fernX);
+
+        // Clamp to cave bounds (stay away from walls)
+        const wallPadding = 2.0;
+        const leftWall = -worldBounds + getWallJag(fernY) + wallPadding;
+        const rightWall = worldBounds - getWallJag(fernY) - wallPadding;
+        fernX = THREE.MathUtils.clamp(fernX, leftWall, rightWall);
+
+        // Create fern group
+        const fernGroup = new THREE.Group();
+
+        // Stem (vertical line)
+        const stemGeo = new THREE.BufferGeometry();
+        const stemVerts = new Float32Array([0, 0, 0, 0, 1.2, 0]);
+        stemGeo.setAttribute('position', new THREE.BufferAttribute(stemVerts, 3));
+        const stem = new THREE.Line(stemGeo, new THREE.LineBasicMaterial({ color: 0x00aa33 }));
+        fernGroup.add(stem);
+
+        // Leaves (small triangular fronds on sides)
+        for (let k = 0; k < 5; k++) {
+          const leafY = 0.3 + k * 0.2;
+          const leafSize = 0.3 - k * 0.04;
+          const side = k % 2 === 0 ? 1 : -1;
+
+          const leafGeo = new THREE.BufferGeometry();
+          const leafVerts = new Float32Array([
+            0, leafY, 0,
+            side * leafSize, leafY + leafSize * 0.3, 0,
+            0, leafY + leafSize * 0.6, 0
+          ]);
+          leafGeo.setAttribute('position', new THREE.BufferAttribute(leafVerts, 3));
+          const leaf = new THREE.Line(leafGeo, new THREE.LineBasicMaterial({ color: 0x00ff66 }));
+          fernGroup.add(leaf);
+        }
+
+        fernGroup.position.set(fernX, fernY, 0);
+        fernGroup.userData = { baseX: fernX, baseY: fernY, swayAmount: 0, swayVel: 0 };
+        scene.add(fernGroup);
+        ferns.push(fernGroup);
+      }
+    } else if (biome.type === 'vines') {
+      // Rope-like vines with physics segments
+      for (let j = 0; j < 3; j++) {
+        let vineX = biome.xStart + Math.random() * 10;
+        const ceilY = getCeil(vineX);
+
+        // Clamp to cave bounds (stay away from walls)
+        const wallPadding = 2.0;
+        const leftWall = -worldBounds + getWallJag(ceilY) + wallPadding;
+        const rightWall = worldBounds - getWallJag(ceilY) - wallPadding;
+        vineX = THREE.MathUtils.clamp(vineX, leftWall, rightWall);
+
+        // Create vine as chain of segments
+        const vineSegments = [];
+        const segmentCount = 6;
+        const segmentLength = 0.35;
+
+        for (let k = 0; k < segmentCount; k++) {
+          const segGeo = new THREE.CylinderGeometry(0.08, 0.08, segmentLength, 4);
+          const segment = new THREE.Mesh(segGeo, new THREE.MeshBasicMaterial({ color: 0x228822, wireframe: true }));
+          segment.userData = {
+            index: k,
+            x: vineX,
+            y: ceilY - k * segmentLength,
+            vx: 0,
+            vy: 0,
+            isTop: k === 0
+          };
+          segment.position.set(segment.userData.x, segment.userData.y, 0);
+          scene.add(segment);
+          vineSegments.push(segment);
+        }
+
+        vines.push({ segments: vineSegments, baseX: vineX, ceilY: ceilY });
+      }
+    }
+  }
+
+  // Single grabbable box
+  const boxSize = 2.0;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(boxSize, boxSize, boxSize), new THREE.MeshBasicMaterial({ color: 0xff6600, wireframe: true }));
+  const boxX = 5;
+  const boxY = getFloor(boxX) + boxSize / 2;
+  box.position.set(boxX, boxY, 0);
+  box.userData = { x: boxX, y: boxY, size: boxSize, vx: 0, vy: 0 };
+  scene.add(box);
 
   const slimeRadius = 1.2;
   const geometry = new THREE.IcosahedronGeometry(slimeRadius, 5);
@@ -64,11 +201,22 @@
 
   let centerPos = { x: -20, y: 0 }, slimeT = { x: -20, y: 0 };
   let currentBias = -1, lastTime = performance.now(), gravityTimer = 0;
-  const inputs = { left: false, right: false, up: false, down: false };
+  const inputs = { left: false, right: false, up: false, down: false, grab: false };
+  let boxGrabbed = false;
+  let boxGrabOffset = { x: 0, y: 0 };
 
   // Mobile Handlers
   const joyBg = document.getElementById('joy-bg'), joyStick = document.getElementById('joy-stick');
+  const grabBtn = document.getElementById('grab-btn');
   let touchIdMove = null, touchIdJump = null, startYJump = 0;
+
+  // Grab button handlers
+  grabBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    inputs.grab = !inputs.grab; // Toggle grab
+    grabBtn.classList.toggle('active', inputs.grab);
+  });
+
   window.addEventListener('touchstart', e => {
     for(let t of e.changedTouches) {
       if (t.clientY > window.innerHeight * 0.6 && touchIdMove === null) {
@@ -80,7 +228,10 @@
         // Reset stick to center
         joyStick.style.left = '30px';
         joyStick.style.top = '30px';
-      } else if (touchIdJump === null) { touchIdJump = t.identifier; startYJump = t.clientY; }
+      } else if (touchIdJump === null) {
+        touchIdJump = t.identifier;
+        startYJump = t.clientY;
+      }
     }
   }, { passive: false });
   window.addEventListener('touchmove', e => {
@@ -99,7 +250,11 @@
   }, { passive: false });
   window.addEventListener('touchend', e => {
     for(let t of e.changedTouches) {
-      if (t.identifier === touchIdMove) { touchIdMove = null; joyBg.style.display = 'none'; inputs.left = inputs.right = inputs.up = inputs.down = false; }
+      if (t.identifier === touchIdMove) {
+        touchIdMove = null;
+        joyBg.style.display = 'none';
+        inputs.left = inputs.right = inputs.up = inputs.down = false;
+      }
       else if (t.identifier === touchIdJump) {
         const diffY = startYJump - t.clientY;
         if (Math.abs(diffY) > 30) { if (diffY > 0) tryFlip(1); else tryFlip(-1); }
@@ -113,12 +268,14 @@
     if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = true;
     if (e.code === 'KeyW' || e.code === 'ArrowUp') { inputs.up = true; tryFlip(1); }
     if (e.code === 'KeyS' || e.code === 'ArrowDown') { inputs.down = true; tryFlip(-1); }
+    if (e.code === 'Space') { e.preventDefault(); inputs.grab = true; }
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = false;
     if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = false;
     if (e.code === 'KeyW' || e.code === 'ArrowUp') inputs.up = false;
     if (e.code === 'KeyS' || e.code === 'ArrowDown') inputs.down = false;
+    if (e.code === 'Space') inputs.grab = false;
   });
 
   function tryFlip(b) { if (Date.now() - gravityTimer > 350) { currentBias = b; gravityTimer = Date.now(); } }
@@ -141,19 +298,204 @@
     if (currentBias === 0) slimeT.y += (inputs.up ? moveAmt : 0) - (inputs.down ? moveAmt : 0);
     else slimeT.y += (currentBias * 0.42 * dt);
 
+    // Box grab & drag mechanic
+    const dToBox = Math.sqrt(Math.pow(centerPos.x - box.userData.x, 2) + Math.pow(centerPos.y - box.userData.y, 2));
+    const halfBox = box.userData.size / 2;
+
+    if (inputs.grab && !boxGrabbed && dToBox < slimeRadius + halfBox + 0.8) {
+      // Grab the box - store the offset from slime to box
+      boxGrabbed = true;
+      boxGrabOffset.x = box.userData.x - centerPos.x;
+      boxGrabOffset.y = box.userData.y - centerPos.y;
+    } else if (!inputs.grab && boxGrabbed) {
+      // Release the box - gentle horizontal throw, let gravity handle vertical
+      boxGrabbed = false;
+      const horizontalVel = (slimeT.x - centerPos.x) * 1.2; // Reduced throw force
+      box.userData.vx = horizontalVel;
+      box.userData.vy = 0; // Don't throw vertically, just drop naturally
+    }
+
+    if (boxGrabbed) {
+      // Drag box with slime, positioning based on current surface
+      const grabDist = slimeRadius + halfBox + 0.3;
+
+      if (currentBias === -1) {
+        // On floor - box above slime
+        box.userData.x = centerPos.x;
+        box.userData.y = centerPos.y + grabDist;
+      } else if (currentBias === 1) {
+        // On ceiling - box below slime
+        box.userData.x = centerPos.x;
+        box.userData.y = centerPos.y - grabDist;
+      } else {
+        // On wall - box on opposite side (heaving it along)
+        const onLeftWall = Math.abs(centerPos.x - lW) < (slimeRadius + 0.6);
+        const onRightWall = Math.abs(centerPos.x - rW) < (slimeRadius + 0.6);
+
+        if (onLeftWall) {
+          // On left wall - box to the right
+          box.userData.x = centerPos.x + grabDist;
+        } else if (onRightWall) {
+          // On right wall - box to the left
+          box.userData.x = centerPos.x - grabDist;
+        } else {
+          // Fallback to stored offset direction
+          const sideOffset = Math.sign(boxGrabOffset.x) * grabDist;
+          box.userData.x = centerPos.x + sideOffset;
+        }
+        box.userData.y = centerPos.y;
+      }
+
+      // Auto-drop box if trying to carry through squeeze zone
+      const squeezeZoneRadius = 4.0;
+      if (Math.abs(box.userData.x) < squeezeZoneRadius) {
+        // Drop the box at the edge and push it away from squeeze!
+        boxGrabbed = false;
+        inputs.grab = false;
+        grabBtn.classList.remove('active');
+
+        // Position at edge of squeeze zone
+        box.userData.x = box.userData.x > 0 ? squeezeZoneRadius : -squeezeZoneRadius;
+
+        // Give it velocity to roll away from squeeze
+        box.userData.vx = box.userData.x > 0 ? 0.3 : -0.3;
+        box.userData.vy = 0;
+
+        box.position.set(box.userData.x, box.userData.y, 0);
+      } else {
+        box.userData.vx = 0;
+        box.userData.vy = 0;
+        box.position.set(box.userData.x, box.userData.y, 0);
+      }
+    } else {
+      // Box physics when not grabbed
+      const bFv = getFloor(box.userData.x);
+
+      // Simple gravity when not grabbed
+      if (box.userData.y > bFv + halfBox + 0.1) {
+        box.userData.vy -= 0.03 * dt; // Gravity
+      } else {
+        box.userData.y = bFv + halfBox;
+        box.userData.vy = 0;
+        box.userData.vx *= Math.pow(0.88, dt); // Friction
+      }
+
+      // Apply velocity
+      box.userData.x += box.userData.vx * dt;
+      box.userData.y += box.userData.vy * dt;
+
+      // Clamp to world bounds
+      const bLw = -worldBounds + getWallJag(box.userData.y) + halfBox;
+      const bRw = worldBounds - getWallJag(box.userData.y) - halfBox;
+      box.userData.x = THREE.MathUtils.clamp(box.userData.x, bLw, bRw);
+
+      // Prevent box from entering squeeze zone (creates puzzle element!)
+      const squeezeZoneRadius = 4.0;
+      if (Math.abs(box.userData.x) < squeezeZoneRadius) {
+        // Push box out of squeeze zone
+        box.userData.x = box.userData.x > 0 ? squeezeZoneRadius : -squeezeZoneRadius;
+        box.userData.vx = 0; // Stop horizontal movement when blocked
+      }
+
+      box.position.set(box.userData.x, box.userData.y, 0);
+      box.rotation.z += box.userData.vx * 0.3;
+
+      // Push box when slime rolls into it
+      if (dToBox < slimeRadius + halfBox) {
+        const pushStrength = 0.08 * dt;
+        const pushX = (centerPos.x - box.userData.x) * pushStrength;
+        const pushY = (centerPos.y - box.userData.y) * pushStrength;
+
+        // Slime pushes box based on movement direction
+        const slimeVelX = slimeT.x - centerPos.x;
+        const isMovingIntoBox = (slimeVelX > 0 && pushX < 0) || (slimeVelX < 0 && pushX > 0);
+
+        if (isMovingIntoBox && Math.abs(slimeVelX) > 0.02) {
+          // Push the box in movement direction (gentle nudge)
+          box.userData.vx += slimeVelX * 0.15;
+        } else {
+          // Normal climbing - push slime away from box
+          slimeT.x += pushX;
+          slimeT.y += pushY;
+        }
+      }
+    }
+
     slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW + 0.6, rW - 0.6);
     slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV + 0.6, cV - 0.6);
     centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.15 * dt);
     centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15 * dt);
 
-    // Ball
-    const dToB = Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2));
-    if (dToB < (slimeRadius + 1.3)) bPhys.vx += (centerPos.x > bPhys.x ? -0.15 : 0.15) * dt;
-    bPhys.vx *= Math.pow(0.94, dt); bPhys.x += bPhys.vx;
-    const bWallL = -worldBounds + getWallJag(bPhys.y) + 1.1, bWallR = worldBounds - getWallJag(bPhys.y) - 1.1;
-    if (bPhys.x < bWallL || bPhys.x > bWallR) bPhys.vx *= -1;
-    bPhys.x = THREE.MathUtils.clamp(bPhys.x, bWallL, bWallR); bPhys.y = getFloor(bPhys.x) + 1.1;
-    ball.position.set(bPhys.x, bPhys.y, 0); ball.rotation.z -= bPhys.vx * 0.8;
+    // Reactive fern plants - natural spring physics
+    for (let fern of ferns) {
+      const distToFern = Math.sqrt(Math.pow(centerPos.x - fern.userData.baseX, 2) + Math.pow(centerPos.y - fern.userData.baseY, 2));
+
+      if (distToFern < 2.5) {
+        const swayDir = (centerPos.x - fern.userData.baseX) > 0 ? 1 : -1;
+        const pushForce = (2.5 - distToFern) * 0.015;
+        fern.userData.swayVel += swayDir * pushForce;
+      }
+
+      // Spring physics back to neutral
+      fern.userData.swayVel += -fern.userData.swayAmount * 0.08 * dt; // Spring force
+      fern.userData.swayVel *= Math.pow(0.92, dt); // Damping
+      fern.userData.swayAmount += fern.userData.swayVel;
+
+      fern.rotation.z = fern.userData.swayAmount;
+    }
+
+    // Rope-like vine physics - constrained chain segments
+    for (let vine of vines) {
+      for (let i = 0; i < vine.segments.length; i++) {
+        const seg = vine.segments[i];
+
+        if (seg.userData.isTop) {
+          // Top segment fixed to ceiling
+          seg.userData.x = vine.baseX;
+          seg.userData.y = vine.ceilY;
+        } else {
+          // Check distance to slime - apply force if close
+          const distToSeg = Math.sqrt(Math.pow(centerPos.x - seg.userData.x, 2) + Math.pow(centerPos.y - seg.userData.y, 2));
+          if (distToSeg < 2.0) {
+            const pushForce = (2.0 - distToSeg) * 0.008;
+            seg.userData.vx += (seg.userData.x - centerPos.x) * pushForce;
+          }
+
+          // Gravity
+          seg.userData.vy -= 0.005 * dt;
+
+          // Apply velocity
+          seg.userData.x += seg.userData.vx;
+          seg.userData.y += seg.userData.vy;
+
+          // Constrain to segment above
+          const parentSeg = vine.segments[i - 1];
+          const dx = seg.userData.x - parentSeg.userData.x;
+          const dy = seg.userData.y - parentSeg.userData.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const segmentLength = 0.35;
+
+          if (dist > segmentLength) {
+            const diff = (dist - segmentLength) / dist;
+            seg.userData.x -= dx * diff;
+            seg.userData.y -= dy * diff;
+          }
+
+          // Damping
+          seg.userData.vx *= Math.pow(0.95, dt);
+          seg.userData.vy *= Math.pow(0.95, dt);
+        }
+
+        seg.position.set(seg.userData.x, seg.userData.y, 0);
+
+        // Rotate segment to point toward parent
+        if (i > 0) {
+          const parent = vine.segments[i - 1];
+          const angle = Math.atan2(parent.userData.x - seg.userData.x, parent.userData.y - seg.userData.y);
+          seg.rotation.z = angle;
+        }
+      }
+    }
 
     const breathe = Math.sin(now * 0.003) * 0.04;
     for (let i = 0; i < posAttr.count; i++) {
@@ -203,6 +545,10 @@
     posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
     blob.position.set(centerPos.x, centerPos.y, 0);
     camera.position.set(THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05 * dt), THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.2, 0.05 * dt), 25);
+
+    // Update grab button text
+    grabBtn.textContent = boxGrabbed ? 'DROP' : 'GRAB';
+
     renderer.render(scene, camera);
   }
   animate(performance.now());

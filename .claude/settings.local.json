@@ -94,7 +94,8 @@
       "Bash(cmd /c \"taskkill /F /PID 18848\")",
       "Bash(cmd /c \"taskkill /F /PID 12412\")",
       "Bash(cmd /c \"taskkill /F /PID 12328\")",
-      "Bash(cmd /c \"for /f \"tokens=5\" %a in \\(''netstat -ano ^| findstr :8000 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")"
+      "Bash(cmd /c \"for /f \"tokens=5\" %a in \\(''netstat -ano ^| findstr :8000 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"taskkill /F /PID 2748\")"
     ],
     "deny": [],
     "ask": []
