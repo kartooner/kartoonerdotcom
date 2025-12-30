@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Mobile Precision Climb</title>
+  <title>Slime game v7.03</title>
   <style>
     body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
     #ui { position: absolute; top: env(safe-area-inset-top, 20px); left: 20px; color: #00ff88; font-size: 24px; pointer-events: none; text-shadow: 2px 2px #000; z-index: 10; }
@@ -23,13 +23,14 @@
   document.body.appendChild(renderer.domElement);
 
   const worldBounds = 30;
+  const getPinch = (x) => 3.9 * Math.exp(-(x * x) / (5.5 * 5.5));
   const getNoise = (x, f, a) => Math.sin(x * f) * a + Math.sin(x * f * 2.2) * (a * 0.4);
-  const getFloor = (x) => -4.5 + getNoise(x, 2.0, 0.2);
-  const getCeil = (x) => 4.5 - getNoise(x, 2.5, 0.2);
+  const getFloor = (x) => -4.5 + getNoise(x, 2.0, 0.2) + getPinch(x);
+  const getCeil = (x) => 4.5 - getNoise(x, 2.5, 0.2) - getPinch(x);
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
   const createRibbon = (getVal, color) => {
-    const geo = new THREE.PlaneGeometry(worldBounds * 3, 5, 200, 3);
+    const geo = new THREE.PlaneGeometry(worldBounds * 3, 5, 250, 3);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
@@ -38,7 +39,7 @@
   createRibbon(getFloor, 0x00ffff); createRibbon(getCeil, 0xffff00);
 
   const createJagWall = (xPos) => {
-    const geo = new THREE.PlaneGeometry(5, 9.2, 1, 40);
+    const geo = new THREE.PlaneGeometry(5, 12, 1, 60);
     geo.rotateY(Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
@@ -46,69 +47,30 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  const boulder = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
-  let bPhys = { x: 12, y: 0, vx: 0 }; scene.add(boulder);
+  // Ball - Restored Logic
+  const ballRadius = 1.1;
+  const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(ballRadius, 1), new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true }));
+  let bPhys = { x: 12, y: 0, vx: 0, rot: 0 }; scene.add(ball);
 
-  const nodes = [];
-  let score = 0;
-  for (let i = 0; i < 20; i++) {
-    const n = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
-    n.position.set((Math.random()-0.5)*55, (Math.random()-0.5)*7, 0); scene.add(n); nodes.push(n);
-  }
-
-  const geometry = new THREE.IcosahedronGeometry(1.8, 5);
+  // Slime
+  const slimeRadius = 1.2;
+  const geometry = new THREE.IcosahedronGeometry(slimeRadius, 5);
   const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.85 }));
   scene.add(blob);
   const posAttr = geometry.getAttribute('position'), originals = new Float32Array(posAttr.array);
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  let centerPos = { x: 0, y: 0 }, slimeT = { x: 0, y: 0 };
+  let centerPos = { x: -20, y: 0 }, slimeT = { x: -20, y: 0 };
   let currentBias = -1, lastTime = performance.now();
-  let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, pressInten = 0, walkSquash = 0, fusionInten = 0;
-
+  let gravityTimer = 0;
   const inputs = { left: false, right: false, up: false, down: false };
-  let isMobile = false;
 
-  // --- MOBILE TOUCH WITH JUMP OVERRIDE ---
-  window.addEventListener('touchstart', (e) => {
-    isMobile = true;
-    e.preventDefault();
-    const py = e.touches[0].clientY / window.innerHeight;
-    const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
-    if (Math.abs(centerPos.x - lW) > 3 && Math.abs(centerPos.x - rW) > 3) {
-      if (py < 0.25) currentBias = 1;
-      if (py > 0.75) currentBias = -1;
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    inputs.left = inputs.right = inputs.up = inputs.down = false;
-    for (let t of e.touches) {
-      const px = t.clientX / window.innerWidth;
-      const py = t.clientY / window.innerHeight;
-      if (px < 0.45) inputs.left = true;
-      if (px > 0.55) inputs.right = true;
-      if (py < 0.4) inputs.up = true;
-      if (py > 0.6) inputs.down = true;
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchend', () => { inputs.left = inputs.right = inputs.up = inputs.down = false; });
-
-  // --- DESKTOP KEYBOARD ---
   window.addEventListener('keydown', e => {
-    isMobile = false;
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = true;
     if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = true;
     if (e.code === 'KeyW' || e.code === 'ArrowUp') inputs.up = true;
     if (e.code === 'KeyS' || e.code === 'ArrowDown') inputs.down = true;
-    const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
-    if (Math.abs(centerPos.x - lW) > 3 && Math.abs(centerPos.x - rW) > 3) {
-      if (e.code === 'KeyW' || e.code === 'ArrowUp') currentBias = 1;
-      if (e.code === 'KeyS' || e.code === 'ArrowDown') currentBias = -1;
-    }
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = false;
@@ -124,91 +86,105 @@
 
     const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
     const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
-    const distL = Math.abs(centerPos.x - lW), distR = Math.abs(centerPos.x - rW);
-    const onWall = distL < 2.2 || distR < 2.2;
+    const onWall = Math.abs(centerPos.x - lW) < (slimeRadius + 0.6) || Math.abs(centerPos.x - rW) < (slimeRadius + 0.6);
 
     if (onWall) {
-      if (Math.abs(centerPos.y - fV) < 1.0) currentBias = -1;
-      else if (Math.abs(centerPos.y - cV) < 1.0) currentBias = 1;
+      if (Math.abs(centerPos.y - fV) < 0.6) currentBias = -1;
+      else if (Math.abs(centerPos.y - cV) < 0.6) currentBias = 1;
       else currentBias = 0;
-    }
-
-    // Boulder
-    const distToB = Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2));
-    if (distToB < 2.4) bPhys.vx += (centerPos.x > bPhys.x ? -0.07 : 0.07) * dt;
-    bPhys.vx *= Math.pow(0.92, dt); bPhys.x += bPhys.vx;
-    bPhys.y = getFloor(bPhys.x) + 1.1;
-    boulder.position.set(bPhys.x, bPhys.y, 0);
-
-    // SMUSH LOGIC: Disabled on mobile to prevent slinking
-    const manualSmush = !isMobile && ((currentBias === -1 && inputs.down) || (currentBias === 1 && inputs.up) || (onWall && (inputs.left || inputs.right)));
-    pressInten = THREE.MathUtils.lerp(pressInten, manualSmush ? 0.7 : 0.0, 0.12 * dt);
-    walkSquash = THREE.MathUtils.lerp(walkSquash, (inputs.left||inputs.right) ? 0.6 : 0.0, 0.1 * dt);
+    } else if (currentBias === 0) currentBias = centerPos.y > 0 ? 1 : -1;
 
     const moveAmt = 0.22 * dt;
     slimeT.x += (inputs.right ? moveAmt : 0) - (inputs.left ? moveAmt : 0);
-    if (onWall) slimeT.y += (inputs.up ? moveAmt : 0) - (inputs.down ? moveAmt : 0);
-    else slimeT.y += (currentBias * 0.42 * dt);
+    if (currentBias === 0) {
+      slimeT.y += (inputs.up ? moveAmt : 0) - (inputs.down ? moveAmt : 0);
+    } else {
+      slimeT.y += (currentBias * 0.42 * dt);
+      if (inputs.up && Date.now() - gravityTimer > 350) { currentBias = 1; gravityTimer = Date.now(); }
+      if (inputs.down && Date.now() - gravityTimer > 350) { currentBias = -1; gravityTimer = Date.now(); }
+    }
+    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW + 0.6, rW - 0.6);
+    slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV + 0.6, cV - 0.6);
 
-    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW + 1.1, rW - 1.1);
-    slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV + 1.1, cV - 1.1);
+    centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.15 * dt);
+    centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15 * dt);
 
-    let oldX = centerPos.x, oldY = centerPos.y;
-    centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.12 * dt);
-    centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.12 * dt);
+    // v7.03 Ball Logic Deep Fix
+    const dToB = Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2));
+    if (dToB < (slimeRadius + ballRadius + 0.2)) {
+      bPhys.vx += (centerPos.x > bPhys.x ? -0.15 : 0.15) * dt;
+    }
+    bPhys.vx *= Math.pow(0.94, dt);
+    bPhys.x += bPhys.vx;
+    // Ball wall collision check
+    const bWallL = -worldBounds + getWallJag(bPhys.y) + ballRadius;
+    const bWallR = worldBounds - getWallJag(bPhys.y) - ballRadius;
+    if (bPhys.x < bWallL || bPhys.x > bWallR) bPhys.vx *= -1;
+    bPhys.x = THREE.MathUtils.clamp(bPhys.x, bWallL, bWallR);
+    bPhys.y = getFloor(bPhys.x) + ballRadius;
+    ball.position.set(bPhys.x, bPhys.y, 0);
+    ball.rotation.z -= bPhys.vx * 0.8;
 
-    jelloVelX = (jelloVelX + (-(centerPos.x - oldX) * 11 - jelloX) * 0.1) * 0.85; jelloX += jelloVelX * dt;
-    jelloVelY = (jelloVelY + (-(centerPos.y - oldY) * 11 - jelloY) * 0.1) * 0.85; jelloY += jelloVelY * dt;
-
-    nodes.forEach(n => {
-      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 3) {
-        n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2);
-        if (n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 0.8) { n.visible = false; score++; document.getElementById('ui').innerText = `Energy: ${score}`; fusionInten = 1; }
-      }
-    });
-    fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.05);
+    const breathe = Math.sin(now * 0.003) * 0.04;
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
-      let ox = originals[idx], oy = originals[idx+1];
-      const vPy = (oy + 1.8) / 3.6, vPx = (ox + 1.8) / 3.6;
-      const squash = 0.58 - (pressInten * 0.1) - (walkSquash * 0.06);
-      const dW = Math.min(Math.abs(ox + centerPos.x - lW), Math.abs(ox + centerPos.x - rW));
-      const wrapW = 1.0 - THREE.MathUtils.smoothstep(dW, 0.0, 1.8);
-      const slurp = Math.sin(wrapW * Math.PI);
-      const wallPinch = THREE.MathUtils.lerp(1.0, 0.55, wrapW * (1.0 - slurp * 0.5));
-      const tW = (distL < distR) ? (1.0 - vPx) : vPx;
-      const oxW = (ox * wallPinch) * squash + (distL < distR ? -0.42 : 0.42);
-      const oyW = oy * (1.3 + (1.4 + pressInten * 0.6 + walkSquash * 0.5) * Math.pow(tW, 1.8));
-      const tF = (centerPos.y > 0 ? vPy : (1.0 - vPy));
-      const oyF = oy * squash + (centerPos.y > 0 ? 0.38 : -0.38);
-      const oxF = ox * (1.1 + (1.2 + pressInten * 0.5 + walkSquash * 0.4) * Math.pow(tF, 1.8));
+      let ox = originals[idx], oy = originals[idx+1], oz = originals[idx+2];
+      const vPy = (oy + slimeRadius) / (slimeRadius * 2);
+
+      const tF = (currentBias === 1 ? (1.0 - vPy) : vPy);
+      const baseWide = THREE.MathUtils.lerp(1.2, 0.8, tF);
+      const squash = (0.95 + breathe) * baseWide;
+
+      const distL_v = Math.abs(ox + centerPos.x - lW), distR_v = Math.abs(ox + centerPos.x - rW);
+      const dW = Math.min(distL_v, distR_v);
+      const wrapW = 1.0 - THREE.MathUtils.smoothstep(dW, 0.0, slimeRadius * 1.4);
+
+      const oyF = oy * squash + (currentBias === 1 ? 0.2 : -0.2);
+      const oxF = ox * (1.1 + (0.7) * Math.pow(tF, 2.0));
+      const vPx = (ox + slimeRadius) / (slimeRadius * 2);
+      const tW = (distL_v < distR_v) ? (1.0 - vPx) : vPx;
+      const oxW = ox * squash + (distL_v < distR_v ? -0.2 : 0.2);
+      const oyW = oy * (1.1 + (0.7) * Math.pow(tW, 2.0));
+
       ox = THREE.MathUtils.lerp(oxF, oxW, wrapW); oy = THREE.MathUtils.lerp(oyF, oyW, wrapW);
-      ox += jelloX * Math.pow(vPy, 1.4); oy += jelloY * Math.pow(vPx, 1.4);
+
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-      let seep = 1.8 + (pressInten * 1.5), curF_v = getFloor(vX), curC_v = getCeil(vX);
+      let curF_v = getFloor(vX), curC_v = getCeil(vX);
       const wL_v = -worldBounds + getWallJag(vY), wR_v = worldBounds - getWallJag(vY);
-      let suc = 0;
-      if (vX < wL_v + seep || vX > wR_v - seep) {
-        suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wL_v), Math.abs(vX-wR_v)), 0, seep);
-        vX = THREE.MathUtils.lerp(vX, (Math.abs(vX-wL_v) < Math.abs(vX-wR_v) ? wL_v : wR_v), suc * 0.99);
-      }
+
+      let sF = 1.0 - THREE.MathUtils.smoothstep(vY - curF_v, 0, slimeRadius * 1.2);
+      let sC = 1.0 - THREE.MathUtils.smoothstep(curC_v - vY, 0, slimeRadius * 1.2);
+      let sW = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wL_v), Math.abs(vX-wR_v)), 0, slimeRadius * 1.2);
+
       if (vY < curF_v) vY = curF_v; if (vY > curC_v) vY = curC_v;
-      if (vY < curF_v + seep) {
-        let s = 1.0 - THREE.MathUtils.smoothstep(vY - curF_v, 0, seep);
-        suc = Math.max(suc, s); vY = THREE.MathUtils.lerp(vY, curF_v, s * 0.99);
-      } else if (vY > curC_v - seep) {
-        let s = 1.0 - THREE.MathUtils.smoothstep(curC_v - vY, 0, seep);
-        suc = Math.max(suc, s); vY = THREE.MathUtils.lerp(vY, curC_v, s * 0.99);
-      }
+      if (vX < wL_v) vX = wL_v; if (vX > wR_v) vX = wR_v;
+
+      vY = THREE.MathUtils.lerp(vY, curF_v, sF * 0.98);
+      vY = THREE.MathUtils.lerp(vY, curC_v, sC * 0.98);
+      vX = THREE.MathUtils.lerp(vX, (Math.abs(vX-wL_v) < Math.abs(vX-wR_v) ? wL_v : wR_v), sW * 0.98);
+
       posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y;
-      const r = THREE.MathUtils.lerp(1.0, 0.2, suc), g = THREE.MathUtils.lerp(0.2, 1.0, suc), b = THREE.MathUtils.lerp(0.8, 0.4, suc);
-      colorAttr.setXYZ(i, r + fusionInten * 0.4, g, b);
+
+      // v7.03 BLOOM GLINT (Ultra wet look)
+      const humpTop = (currentBias === 1) ? -1.2 : 1.2;
+      const distToLight = Math.sqrt(ox*ox + Math.pow(oy - humpTop, 2) + oz*oz);
+      const glint = Math.pow(1.0 - THREE.MathUtils.smoothstep(distToLight, 0, 0.8), 6.0) * 1.5;
+
+      const activeSuc = (currentBias === 1) ? sC : (currentBias === 0 ? sW : sF);
+      const baseR = THREE.MathUtils.lerp(1.0, 0.2, activeSuc);
+      const baseG = THREE.MathUtils.lerp(0.2, 1.0, sC + sF + sW);
+      const baseB = THREE.MathUtils.lerp(0.8, 0.4, activeSuc);
+
+      colorAttr.setXYZ(i,
+              THREE.MathUtils.clamp(baseR + glint, 0, 1.2),
+              THREE.MathUtils.clamp(baseG + glint, 0, 1.2),
+              THREE.MathUtils.clamp(baseB + glint, 0, 1.2)
+      );
     }
     posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
     blob.position.set(centerPos.x, centerPos.y, 0);
-    const zoom = window.innerWidth < window.innerHeight ? 32 : 25;
-    camera.position.set(THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05 * dt), THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.3, 0.05 * dt), zoom);
+    camera.position.set(THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05 * dt), THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.2, 0.05 * dt), 25);
     renderer.render(scene, camera);
   }
   animate(performance.now());
