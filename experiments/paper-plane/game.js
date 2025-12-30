@@ -244,15 +244,14 @@
     let lasersEndTime = 0;
 
     const scene = new THREE.Scene();
-    // Simpler fog for better performance
-    // Dark CRT green background so ground shadow is visible
-    const bgColor = 0x000f00; // Very dark green (nearly black)
+    // Nearly black background - dark enough to see shadow but not pure black
+    const bgColor = 0x000a0a; // Very dark teal (darker than menus, but shadow still visible)
     scene.background = new THREE.Color(bgColor);
-    scene.fog = new THREE.Fog(bgColor, 15, 45);
+    scene.fog = new THREE.Fog(bgColor, 60, 120); // Very aggressive fog - only see closest set clearly, next barely
 
     // Adjust FOV and camera position based on device and orientation
     const isPortrait = window.innerHeight > window.innerWidth;
-    const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 70; // Consistent wider FOV for better spatial awareness
+    const cameraFOV = isMobile ? (isPortrait ? 85 : 75) : 75; // Wider FOV (70→75) for better spatial awareness and full lateral view
     const cameraZ = isMobile && isPortrait ? 10 : 8; // Pull back camera on portrait mobile
 
     const camera = new THREE.PerspectiveCamera(cameraFOV, container.clientWidth / container.clientHeight, 0.1, 400);
@@ -492,7 +491,7 @@
     const groundShadowMat = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
-        opacity: 0.4,
+        opacity: 0.7, // Increased from 0.4 to make shadow more visible on brighter background
         depthWrite: false // Prevent z-fighting with terrain
     });
     const groundShadow = new THREE.Mesh(groundShadowGeom, groundShadowMat);
@@ -1153,19 +1152,19 @@
         if (buildingType < 0.25) {
             // Square building
             type = 'box';
-            height = Math.random() * 6 + 3; // 3-9 units tall
+            height = Math.random() * 6 + 5; // 5-11 units tall (increased from 3-9)
         } else if (buildingType < 0.4) {
             // Rectangle (tall or wide)
             type = 'box';
-            height = Math.random() * 8 + 2; // 2-10 units tall
+            height = Math.random() * 8 + 5; // 5-13 units tall (increased from 2-10)
         } else if (buildingType < 0.7) {
             // Cone/Pyramid - increased spawn rate to 30%
             type = 'pyramid';
-            height = Math.random() * 5 + 3; // 3-8 units tall
+            height = Math.random() * 5 + 5; // 5-10 units tall (increased from 3-8)
         } else {
             // Cylinder (squat or tall)
             type = 'cylinder';
-            height = Math.random() < 0.5 ? Math.random() * 3 + 2 : Math.random() * 8 + 5; // Squat: 2-5, Tall: 5-13
+            height = Math.random() < 0.5 ? Math.random() * 3 + 5 : Math.random() * 8 + 8; // Squat: 5-8, Tall: 8-16 (increased)
         }
 
         return { type, height };
@@ -1557,6 +1556,71 @@
                     { lane: 1, offset: -15, width: 1 }
                 ];
             }
+        },
+        // MIXED GEOMETRY PATTERNS - Variety with different building types
+        mixed_cone_box: {
+            buildings: 2,
+            getPositions: () => {
+                // Box on one side, pyramid/cone on the other - b(r)xxxb(c)
+                const boxLane = Math.floor(seededRandom() * 2); // 0 or 1 (left side)
+                const coneLane = 3 + Math.floor(seededRandom() * 2); // 3 or 4 (right side)
+                return [
+                    { lane: boxLane, offset: 0, width: 1, type: 'box' },
+                    { lane: coneLane, offset: 0, width: 1, type: 'pyramid' }
+                ];
+            }
+        },
+        mixed_cone_gap_box: {
+            buildings: 2,
+            getPositions: () => {
+                // Box, gap, pyramid - b(r)xxb(c)x or similar
+                const lanes = [0, 1, 2, 3, 4];
+                const shuffled = lanes.sort(() => 0.5 - seededRandom());
+                return [
+                    { lane: shuffled[0], offset: 0, width: 1, type: 'box' },
+                    { lane: shuffled[1], offset: 0, width: 1, type: 'pyramid' }
+                ];
+            }
+        },
+        cone_solo: {
+            buildings: 1,
+            getPositions: () => {
+                // Just a pyramid - b(c)xxxx
+                return [{ lane: Math.floor(seededRandom() * 5), offset: 0, width: 1, type: 'pyramid' }];
+            }
+        },
+        cylinder_solo: {
+            buildings: 1,
+            getPositions: () => {
+                // Just a cylinder for variety
+                return [{ lane: Math.floor(seededRandom() * 5), offset: 0, width: 1, type: 'cylinder' }];
+            }
+        },
+        mixed_variety: {
+            buildings: 3,
+            getPositions: () => {
+                // Mix of all three types
+                const types = ['box', 'pyramid', 'cylinder'];
+                const lanes = [0, 1, 2, 3, 4];
+                const shuffled = lanes.sort(() => 0.5 - seededRandom());
+                return [
+                    { lane: shuffled[0], offset: 0, width: 1, type: types[0] },
+                    { lane: shuffled[1], offset: 0, width: 1, type: types[1] },
+                    { lane: shuffled[2], offset: 0, width: 1, type: types[2] }
+                ];
+            }
+        },
+        mixed_cylinders: {
+            buildings: 2,
+            getPositions: () => {
+                // Two cylinders spread out
+                const lane1 = Math.floor(seededRandom() * 2); // Left side
+                const lane2 = 3 + Math.floor(seededRandom() * 2); // Right side
+                return [
+                    { lane: lane1, offset: 0, width: 1, type: 'cylinder' },
+                    { lane: lane2, offset: 0, width: 1, type: 'cylinder' }
+                ];
+            }
         }
     };
 
@@ -1569,38 +1633,50 @@
         if (level <= 2) {
             // Early levels: CLUSTER PATTERNS that feel like random dense obstacles
             // Mix clusters with simultaneous patterns for variety
-            if (rand < 0.15) return 'cluster_left';         // 15% left cluster
-            if (rand < 0.30) return 'cluster_right';        // 15% right cluster
-            if (rand < 0.43) return 'cluster_center';       // 13% center cluster
-            if (rand < 0.55) return 'cluster_scattered';    // 12% scattered cluster
-            if (rand < 0.65) return 'double_simultaneous';  // 10% two simultaneous
-            if (rand < 0.75) return 'triple_simultaneous';  // 10% three simultaneous
-            if (rand < 0.85) return 'quad_simultaneous';    // 10% four simultaneous
-            if (rand < 0.93) return 'wide_single';          // 8% wide single
-            return 'wide_gap_regular'; // 7% wide + gap
+            if (rand < 0.12) return 'cluster_left';         // 12% left cluster
+            if (rand < 0.24) return 'cluster_right';        // 12% right cluster
+            if (rand < 0.35) return 'cluster_center';       // 11% center cluster
+            if (rand < 0.45) return 'cluster_scattered';    // 10% scattered cluster
+            if (rand < 0.53) return 'double_simultaneous';  // 8% two simultaneous
+            if (rand < 0.61) return 'triple_simultaneous';  // 8% three simultaneous
+            if (rand < 0.68) return 'quad_simultaneous';    // 7% four simultaneous
+            if (rand < 0.74) return 'wide_single';          // 6% wide single
+            if (rand < 0.80) return 'mixed_cone_box';       // 6% cone + box
+            if (rand < 0.85) return 'cone_solo';            // 5% solo cone
+            if (rand < 0.90) return 'cylinder_solo';        // 5% solo cylinder
+            if (rand < 0.95) return 'mixed_variety';        // 5% mixed types
+            return 'wide_gap_regular'; // 5% wide + gap
         } else if (level <= 5) {
             // Mid levels: Mix clusters with classic patterns
             if (rand < 0.05) return 'breather';         // 5% breather
-            if (rand < 0.17) return 'cluster_left';     // 12% left cluster
-            if (rand < 0.29) return 'cluster_right';    // 12% right cluster
-            if (rand < 0.41) return 'cluster_center';   // 12% center cluster
-            if (rand < 0.52) return 'wall';             // 11% wall
-            if (rand < 0.63) return 'staircase';        // 11% staircase
-            if (rand < 0.73) return 'wide_single';      // 10% wide single
-            if (rand < 0.83) return 'wide_gap_regular'; // 10% wide + gap
-            return 'procedural'; // 17% procedural
+            if (rand < 0.14) return 'cluster_left';     // 9% left cluster
+            if (rand < 0.23) return 'cluster_right';    // 9% right cluster
+            if (rand < 0.32) return 'cluster_center';   // 9% center cluster
+            if (rand < 0.41) return 'wall';             // 9% wall
+            if (rand < 0.50) return 'staircase';        // 9% staircase
+            if (rand < 0.58) return 'wide_single';      // 8% wide single
+            if (rand < 0.66) return 'wide_gap_regular'; // 8% wide + gap
+            if (rand < 0.73) return 'mixed_cone_box';   // 7% cone + box
+            if (rand < 0.79) return 'mixed_variety';    // 6% mixed types
+            if (rand < 0.84) return 'cone_solo';        // 5% solo cone
+            if (rand < 0.89) return 'mixed_cylinders';  // 5% cylinders
+            return 'procedural'; // 11% procedural
         } else {
-            // Late levels: Dense clusters + procedural chaos
+            // Late levels: Dense clusters + procedural chaos + geometry variety
             if (rand < 0.05) return 'breather';         // 5% breather
-            if (rand < 0.15) return 'cluster_dense';    // 10% super dense cluster
-            if (rand < 0.25) return 'cluster_scattered'; // 10% scattered cluster
-            if (rand < 0.33) return 'cluster_center';   // 8% center cluster
-            if (rand < 0.41) return 'wall';             // 8% wall
-            if (rand < 0.48) return 'wide_single';      // 7% wide single
-            if (rand < 0.55) return 'wide_gap_regular'; // 7% wide + gap
-            if (rand < 0.61) return 'wide_sandwich';    // 6% wide sandwich
-            if (rand < 0.65) return 'double_wide';      // 4% double wide
-            return 'procedural'; // 35% procedural
+            if (rand < 0.13) return 'cluster_dense';    // 8% super dense cluster
+            if (rand < 0.21) return 'cluster_scattered'; // 8% scattered cluster
+            if (rand < 0.28) return 'cluster_center';   // 7% center cluster
+            if (rand < 0.35) return 'wall';             // 7% wall
+            if (rand < 0.41) return 'wide_single';      // 6% wide single
+            if (rand < 0.47) return 'wide_gap_regular'; // 6% wide + gap
+            if (rand < 0.52) return 'wide_sandwich';    // 5% wide sandwich
+            if (rand < 0.56) return 'double_wide';      // 4% double wide
+            if (rand < 0.62) return 'mixed_variety';    // 6% mixed types
+            if (rand < 0.67) return 'mixed_cone_box';   // 5% cone + box
+            if (rand < 0.72) return 'mixed_cylinders';  // 5% cylinders
+            if (rand < 0.76) return 'cone_solo';        // 4% solo cone
+            return 'procedural'; // 24% procedural
         }
     }
 
@@ -1986,9 +2062,9 @@
     // 1. Short breather (5s) for orientation
     // 2. Dense buildings phase for immediate engagement
     // This pattern is now enforced for all runs via RULE 7 in selectNextPhase()
-    let currentPhase = 'breather'; // Start with short breather for orientation
+    let currentPhase = 'buildings'; // Start immediately with buildings - core gameplay!
     let phaseStartTime = 0;
-    let phaseDuration = 5000; // Initial 5-second breather
+    let phaseDuration = 60000; // Initial 60-second buildings phase - plenty of dodging!
     let phaseHistory = []; // Last 5 phases
     let phaseLastSeen = {
         buildings: -Infinity,
@@ -2034,39 +2110,36 @@
                 weight *= 0.1; // Drastically reduce weight
             }
 
-            // RULE 3: Intensity balancing with BUILDINGS CHAINING BONUS
-            // Buildings can stack 2-3 times for extended gameplay
-            if (phaseName === 'buildings' && lastPhase === 'buildings') {
-                // Count consecutive building phases
+            // RULE 3: HEAVILY FAVOR BUILDINGS - Core gameplay is building dodging!
+            // Buildings should be 70-80% of gameplay
+            if (phaseName === 'buildings') {
+                weight *= 5.0; // MASSIVELY favor buildings phase
+
+                // Allow buildings to chain many times
                 let consecutiveBuildings = 1;
                 for (let i = phaseHistory.length - 1; i >= 0 && phaseHistory[i] === 'buildings'; i--) {
                     consecutiveBuildings++;
                 }
 
-                // Encourage chaining up to 3 buildings phases (90-180s of buildings)
-                if (consecutiveBuildings === 1) {
-                    weight *= 2.0; // High chance of 2nd buildings phase
-                } else if (consecutiveBuildings === 2) {
-                    weight *= 1.2; // Decent chance of 3rd buildings phase
+                // Encourage long chains of building phases (5-8 phases = 300-480s)
+                if (consecutiveBuildings < 8) {
+                    weight *= 1.5; // Keep building phases going
                 } else {
-                    weight *= 0.3; // After 3rd, strongly prefer variety
+                    weight *= 0.5; // After 8 phases, allow variety
                 }
-            } else if (lastIntensity === 'high' && config.intensity === 'high' && phaseName !== 'buildings') {
-                weight *= 0.3; // Discourage other high intensity after high (but not buildings)
-            } else if (lastIntensity === 'high') {
-                if (config.intensity === 'calm' || config.intensity === 'low') {
-                    weight *= 3.0; // Strongly prefer calm/low after high intensity
-                }
-            } else if (lastIntensity === 'calm') {
-                if (config.intensity === 'high' || config.intensity === 'medium') {
-                    weight *= 2.0; // Prefer action after calm
-                } else if (config.intensity === 'calm') {
-                    weight *= 0.2; // Don't want back-to-back calm
-                }
-            } else if (lastIntensity === 'low') {
-                if (config.intensity === 'high') {
-                    weight *= 1.5; // Slight preference for action
-                }
+            } else if (phaseName === 'mixed') {
+                weight *= 2.0; // Mixed has buildings too, so boost it
+            } else if (phaseName === 'rings') {
+                // Rings should appear more often than other bonus phases
+                weight *= 0.5; // More frequent than other phases for score/upgrades
+            } else {
+                // Drastically reduce weight of non-building phases
+                weight *= 0.15; // Other phases are rare bonus content
+            }
+
+            // Further reduce calm/low intensity phases
+            if (config.intensity === 'calm' || config.intensity === 'low') {
+                weight *= 0.3; // Make breathers/calm phases rare
             }
 
             // RULE 4: Time since last seen
@@ -2619,7 +2692,7 @@
         lastFrameTime = null;
 
         // Reset phase system for fresh start
-        currentPhase = 'breather'; // Start with short breather
+        currentPhase = 'buildings'; // Start immediately with buildings
         phaseDuration = 5000; // 5 seconds to get oriented
         phaseHistory = [];
         totalPhasesCompleted = 0;
@@ -2646,7 +2719,8 @@
         // Reset shields and grace period
         shieldActive = false;
         shieldHits = 0;
-        gracePeriodActive = false;
+        gracePeriodActive = true; // Start with grace period
+        gracePeriodEndTime = Date.now() + 3000; // 3 seconds to get oriented
         speedBoostActive = false;
 
         // Reset boost effects
@@ -3006,7 +3080,10 @@
         // ESC to pause/unpause
         if (e.key === 'Escape') {
             e.preventDefault();
-            if (animationRunning && !checkpointActive) {
+            if (isPaused && !checkpointActive) {
+                // Resume if already paused
+                document.getElementById('resume-button').click();
+            } else if (animationRunning && !checkpointActive) {
                 // Trigger pause menu
                 document.getElementById('pause-button').click();
             }
@@ -3155,6 +3232,9 @@
             if (isMobileNow) {
                 camera.fov = isPortraitNow ? 85 : 75;
                 camera.position.z = isPortraitNow ? 10 : 8;
+            } else {
+                camera.fov = 75; // Desktop - wider FOV for better lateral visibility
+                camera.position.z = 8;
             }
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
@@ -3186,12 +3266,17 @@
     let isPaused = false;
 
     // Update difficulty scalar based on player performance (hidden system)
+    let lastMetricsCleanup = 0;
     function updateDifficultyScalar(currentTime) {
-        // Clean old metrics outside rolling window
         const windowStart = currentTime - difficultyWindow;
-        difficultyMetrics.collisions = difficultyMetrics.collisions.filter(m => m.time > windowStart);
-        difficultyMetrics.ringAttempts = difficultyMetrics.ringAttempts.filter(m => m.time > windowStart);
-        difficultyMetrics.healthSamples = difficultyMetrics.healthSamples.filter(m => m.time > windowStart);
+
+        // Clean old metrics only once per second (performance optimization)
+        if (currentTime - lastMetricsCleanup > 1000) {
+            difficultyMetrics.collisions = difficultyMetrics.collisions.filter(m => m.time > windowStart);
+            difficultyMetrics.ringAttempts = difficultyMetrics.ringAttempts.filter(m => m.time > windowStart);
+            difficultyMetrics.healthSamples = difficultyMetrics.healthSamples.filter(m => m.time > windowStart);
+            lastMetricsCleanup = currentTime;
+        }
 
         // Sample current health periodically
         if (difficultyMetrics.healthSamples.length === 0 ||
@@ -3199,18 +3284,36 @@
             difficultyMetrics.healthSamples.push({time: currentTime, health: currentHealth});
         }
 
-        // Calculate performance factors
-        const collisionCount = difficultyMetrics.collisions.filter(m => m.happened).length;
+        // Calculate performance factors - count without allocating new arrays
+        let collisionCount = 0;
+        for (let i = 0; i < difficultyMetrics.collisions.length; i++) {
+            if (difficultyMetrics.collisions[i].happened && difficultyMetrics.collisions[i].time > windowStart) {
+                collisionCount++;
+            }
+        }
+
         const timeSinceLastHit = difficultyMetrics.lastHitTime === 0 ? difficultyWindow :
                                  Math.min(currentTime - difficultyMetrics.lastHitTime, difficultyWindow);
 
-        const ringTotal = difficultyMetrics.ringAttempts.length;
-        const ringHits = difficultyMetrics.ringAttempts.filter(m => m.success).length;
+        let ringTotal = 0;
+        let ringHits = 0;
+        for (let i = 0; i < difficultyMetrics.ringAttempts.length; i++) {
+            if (difficultyMetrics.ringAttempts[i].time > windowStart) {
+                ringTotal++;
+                if (difficultyMetrics.ringAttempts[i].success) ringHits++;
+            }
+        }
         const ringHitRate = ringTotal > 0 ? ringHits / ringTotal : 0.5;
 
-        const avgHealth = difficultyMetrics.healthSamples.length > 0 ?
-            difficultyMetrics.healthSamples.reduce((sum, m) => sum + m.health, 0) / difficultyMetrics.healthSamples.length :
-            maxHealth;
+        let healthSum = 0;
+        let healthCount = 0;
+        for (let i = 0; i < difficultyMetrics.healthSamples.length; i++) {
+            if (difficultyMetrics.healthSamples[i].time > windowStart) {
+                healthSum += difficultyMetrics.healthSamples[i].health;
+                healthCount++;
+            }
+        }
+        const avgHealth = healthCount > 0 ? healthSum / healthCount : maxHealth;
 
         // Calculate target scalar
         let targetScalar = 1.0;
@@ -3268,8 +3371,19 @@
         }
         animationRunning = true;
 
+        // FPS LIMITER: Cap at 60fps on mobile only, allow higher refresh rates on desktop
+        const elapsed = timestamp - lastFrameTime;
+
+        // Mobile: enforce 60fps cap to prevent battery drain
+        if (isMobile && elapsed < 16.67) {
+            requestAnimationFrame(animate); // Too early, skip this frame
+            return;
+        }
+
         // Frame-rate independent animation
-        const deltaTime = lastFrameTime === 0 ? 1 : Math.min((timestamp - lastFrameTime) / 16.67, 2);
+        // Mobile: capped at 60fps (16.67ms), Desktop: runs at native refresh rate (90/120/144Hz)
+        // deltaTime of 1.0 = 60fps baseline for physics calculations
+        const deltaTime = Math.min(elapsed / 16.67, 2.0); // Allow up to 120fps on desktop
         lastFrameTime = timestamp;
 
         // Update difficulty scalar based on performance (hidden system)
@@ -3420,24 +3534,27 @@
 
             if (!chunk.userData.onGround) {
                 // AIRBORNE PHASE: Apply physics until chunk hits ground
-                chunk.position.add(chunk.userData.velocity);
+                // Apply velocity with deltaTime for frame-rate independence
+                chunk.position.x += chunk.userData.velocity.x * deltaTime;
+                chunk.position.y += chunk.userData.velocity.y * deltaTime;
+                chunk.position.z += chunk.userData.velocity.z * deltaTime;
 
-                // Strong downward pull (like magnetism to ground)
-                chunk.userData.velocity.y -= 0.025; // Stronger gravity - pulls chunks down fast
+                // Strong downward pull (like magnetism to ground) - frame-rate independent
+                chunk.userData.velocity.y -= 0.025 * deltaTime;
 
                 // Dynamic tumbling with wobble (erratic realistic spin)
-                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed;
-                const wobbleX = Math.sin(chunk.userData.wobblePhase) * 0.02;
-                const wobbleY = Math.cos(chunk.userData.wobblePhase * 1.3) * 0.02;
-                const wobbleZ = Math.sin(chunk.userData.wobblePhase * 0.7) * 0.02;
+                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * deltaTime;
+                const wobbleX = Math.sin(chunk.userData.wobblePhase) * 0.02 * deltaTime;
+                const wobbleY = Math.cos(chunk.userData.wobblePhase * 1.3) * 0.02 * deltaTime;
+                const wobbleZ = Math.sin(chunk.userData.wobblePhase * 0.7) * 0.02 * deltaTime;
 
                 // Apply multi-axis rotation with wobble for realistic tumbling
-                chunk.rotation.x += chunk.userData.rotationVelocity.x + wobbleX;
-                chunk.rotation.y += chunk.userData.rotationVelocity.y + wobbleY;
-                chunk.rotation.z += chunk.userData.rotationVelocity.z + wobbleZ;
+                chunk.rotation.x += (chunk.userData.rotationVelocity.x + wobbleX) * deltaTime;
+                chunk.rotation.y += (chunk.userData.rotationVelocity.y + wobbleY) * deltaTime;
+                chunk.rotation.z += (chunk.userData.rotationVelocity.z + wobbleZ) * deltaTime;
 
                 // Air resistance - slight slowdown of rotation while airborne
-                chunk.userData.rotationVelocity.multiplyScalar(0.995);
+                chunk.userData.rotationVelocity.multiplyScalar(Math.pow(0.995, deltaTime));
 
                 // Check if chunk hit the ground
                 if (chunk.position.y <= 0.3) {
@@ -3465,13 +3582,13 @@
             } else {
                 // GROUND PHASE: Dramatic skidding and tumbling on landscape (no bouncing)
 
-                // Apply velocities (no Y movement - stays on ground)
-                chunk.position.x += chunk.userData.velocity.x;
-                chunk.position.z += chunk.userData.velocity.z;
+                // Apply velocities (no Y movement - stays on ground) - frame-rate independent
+                chunk.position.x += chunk.userData.velocity.x * deltaTime;
+                chunk.position.z += chunk.userData.velocity.z * deltaTime;
                 chunk.position.y = 0.3; // FORCE to ground level (no bouncing)
 
                 // VARIED tumbling based on chunk's unique characteristics
-                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.7;
+                chunk.userData.wobblePhase += chunk.userData.wobbleSpeed * 0.7 * deltaTime;
                 const wobbleBase = 0.03 * chunk.userData.wobbleIntensity; // Unique wobble strength
 
                 // Different skid patterns create variety
@@ -3493,19 +3610,19 @@
                     groundWobbleZ = Math.sin(chunk.userData.wobblePhase * 0.3) * wobbleBase * 0.4;
                 }
 
-                // Enhanced ground tumbling with variety
-                chunk.rotation.x += chunk.userData.rotationVelocity.x + groundWobbleX;
-                chunk.rotation.y += chunk.userData.rotationVelocity.y + groundWobbleY;
-                chunk.rotation.z += chunk.userData.rotationVelocity.z + groundWobbleZ;
+                // Enhanced ground tumbling with variety - frame-rate independent
+                chunk.rotation.x += (chunk.userData.rotationVelocity.x + groundWobbleX) * deltaTime;
+                chunk.rotation.y += (chunk.userData.rotationVelocity.y + groundWobbleY) * deltaTime;
+                chunk.rotation.z += (chunk.userData.rotationVelocity.z + groundWobbleZ) * deltaTime;
 
-                // VARIED friction and rotation decay per chunk (unique behavior)
-                chunk.userData.velocity.x *= chunk.userData.frictionFactor;
-                chunk.userData.velocity.z *= chunk.userData.frictionFactor;
-                chunk.userData.rotationVelocity.multiplyScalar(chunk.userData.rotationDecay);
+                // VARIED friction and rotation decay per chunk (unique behavior) - frame-rate independent
+                chunk.userData.velocity.x *= Math.pow(chunk.userData.frictionFactor, deltaTime);
+                chunk.userData.velocity.z *= Math.pow(chunk.userData.frictionFactor, deltaTime);
+                chunk.userData.rotationVelocity.multiplyScalar(Math.pow(chunk.userData.rotationDecay, deltaTime));
 
-                // Realistic breakage: pieces get smaller as they skid/tumble (hitting ground)
+                // Realistic breakage: pieces get smaller as they skid/tumble (hitting ground) - frame-rate independent
                 const currentScale = chunk.scale.x;
-                const shrinkRate = 0.988; // Faster shrinking (more dramatic)
+                const shrinkRate = Math.pow(0.988, deltaTime); // Faster shrinking (more dramatic)
                 const newScale = currentScale * shrinkRate;
                 chunk.scale.set(newScale, newScale, newScale);
             }
@@ -3715,8 +3832,8 @@
         const altitudeScale = 1.5 - ((curY - 0.5) * 0.2); // Shrinks as plane goes up
         const shadowScale = baseShadowSize * altitudeScale;
         groundShadow.scale.set(shadowScale, shadowScale, 1);
-        // Opacity: fade out when higher (max 0.4 at ground level, min 0.1 at max altitude)
-        groundShadowMat.opacity = Math.max(0.1, 0.5 - ((curY - 0.5) * 0.08));
+        // Opacity: fade out when higher (max 0.7 at ground level, min 0.3 at max altitude) - darker for visibility
+        groundShadowMat.opacity = Math.max(0.3, 0.7 - ((curY - 0.5) * 0.08));
 
         // Terrain altitude scaling - bidirectional parallax effect for game feel
         // Fly UP: terrain scales down (appears further away)
@@ -3769,6 +3886,63 @@
             currentPhase === 'breather_after_rings' ||
             currentPhase === 'walls';
 
+        // CONTINUOUS BUILDING SPAWNING - seed at start and fill the view with buildings
+        // Count active buildings without allocating a new array (performance optimization)
+        let activeBuildingCount = 0;
+        for (let i = 0; i < buildings.length; i++) {
+            if (buildings[i].active) activeBuildingCount++;
+        }
+        const canSpawnBuildings = currentPhase === 'buildings' || currentPhase === 'mixed';
+
+        // Wait 2 seconds before spawning buildings (free flight orientation period)
+        const timeSinceGameStart = timestamp - gameStartTime;
+        const orientationPeriodOver = timeSinceGameStart > 2000; // 2 seconds
+
+        if (activeBuildingCount < 10 && canSpawnBuildings && !bossActive && orientationPeriodOver) {
+            // Spawn multiple waves to fill the view (spawn 5-6 distinct pattern sets)
+            for (let waveNum = 0; waveNum < 6; waveNum++) {
+                const patternName = getWavePattern(levelDifficulty);
+                const wave = wavePatterns[patternName];
+                const positions = wave.getPositions(Math.floor(miles));
+                const baseZ = -120 - (waveNum * 45); // Clear separation: -120, -165, -210, -255, -300, -345
+
+                // Spawn ALL buildings in this wave
+                for (let i = 0; i < positions.length; i++) {
+                    const position = positions[i];
+                    // Use geometry type from position, or default to box
+                    const geometryType = position.type || 'box';
+                    const available = getAvailableInstance(geometryType);
+                    if (available) {
+                        const instance = available.instance;
+                        const index = available.index;
+                        const zPos = baseZ + (position.offset || 0);
+
+                        // Use random height for variety (5-11 units to match createBuildingData)
+                        const randomHeight = Math.random() * 6 + 5; // 5-11 units
+                        const scaleY = randomHeight / 5; // Base geometry is 5 units
+                        const baseY = randomHeight / 2; // Center at half-height for ground attachment
+
+                        instance.active = true;
+                        instance.position.set(lanes[position.lane], baseY, zPos);
+                        instance.scale.set(0.8, scaleY, 0.8);
+                        instance.originalScale = { x: 0.8, y: scaleY, z: 0.8 };
+                        instance.originalY = baseY;
+                        instance.opacity = 1;
+                        instance.nearMissCredited = false;
+                        instance.width = position.width || 1;
+                        instance.height = randomHeight;
+                        instance.geometry = geometryType;
+
+                        // Get the correct mesh for this geometry type
+                        const mesh = geometryType === 'box' ? boxInstancedMesh :
+                                   geometryType === 'pyramid' ? pyramidInstancedMesh :
+                                   cylinderInstancedMesh;
+                        updateInstanceMatrix(instance, mesh, index);
+                    }
+                }
+            }
+        }
+
         buildings.forEach((b, idx) => {
             if (!b.active) return; // Skip inactive instances
 
@@ -3785,6 +3959,8 @@
                     // Only hide buildings that are far back (not yet spawned)
                     b.active = false;
                     b.position.z = -500; // Keep them far back
+                    b.scale.set(0, 0, 0); // Scale to zero to ensure invisibility
+                    b.originalScale = null; // Clear original scale to prevent restoration
                     updateInstanceMatrix(b, mesh, instanceIndex);
                     return; // Skip rest of logic for unspawned buildings
                 }
@@ -3817,6 +3993,17 @@
                 b.opacity = 1 - fadeProgress;
             } else {
                 b.opacity = 1;
+            }
+
+            // Deactivate buildings that have passed way beyond camera (cleanup to prevent sticking)
+            if(b.position.z > 30 && b.active) {
+                b.active = false;
+                b.position.z = -500; // Move far back
+                b.scale.set(0, 0, 0); // Scale to zero to ensure invisibility
+                b.originalScale = null; // Clear original scale to prevent restoration
+                b.opacity = 0; // Set opacity to 0
+                updateInstanceMatrix(b, mesh, instanceIndex);
+                return; // Skip rest of logic for this building
             }
 
             // Check if we need to spawn a new wave when building passes camera
@@ -3857,25 +4044,29 @@
                     const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
 
                     // WAVE SPACING: How close waves spawn to each other
-                    // Early game needs RAPID waves to create constant dodging action
+                    // AGGRESSIVE spawn rates for constant action - no more empty gaps
                     let baseDistance;
                     if (currentPhase === 'boss_gauntlet') {
-                        baseDistance = 12; // Boss gauntlet - RELENTLESS, nearly unsustainable
+                        baseDistance = 8; // Boss gauntlet - RELENTLESS (reduced from 10)
                     } else if (miles < 10) {
-                        baseDistance = 20; // EARLY GAME (0-10mi) - RAPID waves for onboarding
+                        baseDistance = 8; // EARLY GAME (0-10mi) - CONSTANT waves (reduced from 12)
                     } else if (miles < 20) {
-                        baseDistance = 25; // Early (10-20mi) - still quick
+                        baseDistance = 10; // Early (10-20mi) - still very dense (reduced from 15)
                     } else if (miles < 50) {
-                        baseDistance = 35; // Early-mid transition
+                        baseDistance = 14; // Early-mid transition (reduced from 20)
                     } else {
-                        baseDistance = 50; // Normal late game spacing
+                        baseDistance = 20; // Normal late game spacing (reduced from 28)
                     }
-                    nextWaveDistance = b.position.z - (baseDistance * spacingMultiplier);
+                    // Spawn buildings FAR ahead so player can see them coming
+                    // Base spawn at -150, then add spacing for subsequent waves
+                    nextWaveDistance = -150 - (baseDistance * spacingMultiplier);
 
                     // If breather wave (no buildings), deactivate this instance
                     if (currentWave.buildings === 0) {
                         b.position.z = -400;
                         b.active = false;
+                        b.scale.set(0, 0, 0); // Scale to zero to ensure invisibility
+                        b.originalScale = null; // Clear original scale to prevent restoration
                         updateInstanceMatrix(b, mesh, instanceIndex);
                         return; // Skip building spawn during breather
                     }
@@ -3885,6 +4076,8 @@
                 if (!currentWavePositions || currentWavePositions.length === 0) {
                     b.position.z = -400;
                     b.active = false;
+                    b.scale.set(0, 0, 0); // Scale to zero to ensure invisibility
+                    b.originalScale = null; // Clear original scale to prevent restoration
                     updateInstanceMatrix(b, mesh, instanceIndex);
                     return;
                 }
@@ -3892,8 +4085,10 @@
                 // Get position from cached wave positions
                 const position = currentWavePositions[waveProgress % currentWavePositions.length];
 
-                // Recreate building with new random type and scale
-                const buildingData = createBuildingData();
+                // Use building type from position if specified, otherwise random
+                const buildingData = position.type ?
+                    { type: position.type, height: Math.random() * 6 + 5 } : // Use specified type with random height
+                    createBuildingData(); // Random type and height
 
                 // If geometry type changed, deactivate this instance and spawn new one
                 if (buildingData.type !== b.geometry) {
@@ -4062,9 +4257,6 @@
 
                 updateInstanceMatrix(b, mesh, instanceIndex);
                 waveProgress++;
-
-                // Deactivate building after spawning new wave
-                b.active = false;
             }
 
             // STRICT collision validation to prevent ghost hits
@@ -4073,22 +4265,27 @@
                 return; // Skip inactive buildings
             }
 
+            // Skip buildings that have been scaled to zero (cleanup state)
+            if(b.scale.x === 0 || b.scale.y === 0 || b.scale.z === 0) {
+                return; // Building has been hidden by scaling to zero
+            }
+
             // Validate position is not NaN (sanity check)
             if (isNaN(b.position.x) || isNaN(b.position.y) || isNaN(b.position.z)) {
                 return;
             }
 
-            // CRITICAL: Only check buildings in collision zone around player
-            // Player is at z ≈ 3.5, so check buildings from -8 to +4 (tight range to prevent ghost hits)
-            // This prevents collisions with buildings that are too far behind or ahead
-            if(b.position.z > 4 || b.position.z < -8) {
-                return; // Building outside collision zone
+            // Require building to be fully visible FIRST (opacity must be 1.0)
+            // Buildings fade starting at z=10, so this ensures no ghost hits from fading buildings
+            if(b.opacity < 1.0) {
+                return; // Building is fading or not fully visible - NO COLLISION
             }
 
-            // Require building to be fully visible (opacity must be near 1.0)
-            // Buildings fade starting at z=10, so this ensures no ghost hits from fading buildings
-            if(b.opacity < 0.95) {
-                return; // Building is fading or not fully visible
+            // CRITICAL: Only check buildings in collision zone around player
+            // Player is at z ≈ 3.5, so check buildings from -20 to +15 (same as walls for consistency)
+            // This prevents collisions with buildings that are too far behind or ahead
+            if(b.position.z > 15 || b.position.z < -20) {
+                return; // Building outside collision zone
             }
 
             // Strict distance check: only check very close buildings
@@ -4096,7 +4293,7 @@
             const dy = b.position.y - curY;
             const dz = b.position.z - 3.5;
             const distSq = dx * dx + dy * dy + dz * dz;
-            const maxCollisionDistSq = 49; // ~7 units squared (much tighter)
+            const maxCollisionDistSq = 400; // 20 units (increased from 49 to account for full lane width of 16 units)
 
             // Skip if too far away for collision
             if (distSq > maxCollisionDistSq) {
@@ -4120,12 +4317,12 @@
                 b.position.z + halfDepth
             );
 
-            // Make collision more forgiving - shrink all building hitboxes
+            // Make collision more forgiving - shrink all building hitboxes significantly
             // Reuse temp vectors to avoid garbage collection
             b.box.getSize(tempVec3_1);
             b.box.getCenter(tempVec3_2);
-            // Shrink collision box by 35% for pyramids (most forgiving), 25% for others
-            const shrinkFactor = b.geometry === 'pyramid' ? 0.65 : 0.75;
+            // Shrink collision box by 40% for pyramids, 30% for others (more forgiving)
+            const shrinkFactor = b.geometry === 'pyramid' ? 0.60 : 0.70;
             tempVec3_1.multiplyScalar(shrinkFactor);
             b.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
 
@@ -4231,6 +4428,20 @@
         // High/Low Wall update and collision logic
         // Only spawn walls during the 'walls' phase (and not during boss)
         if (currentPhase === 'walls' && !wallsSpawnedThisPhase && !bossActive) {
+            // Clear any old walls first to prevent overlap
+            walls.forEach(w => {
+                w.visible = false;
+                w.position.z = -1000;
+            });
+            walls.length = 0; // Clear the array
+
+            // Clear barrier walls too
+            barrierWalls.forEach(b => {
+                b.visible = false;
+                b.position.z = -1000;
+            });
+            barrierWalls.length = 0;
+
             // 30% chance to spawn Star Fox style barrier instead of normal walls
             const spawnBarrier = Math.random() < 0.3;
 
@@ -4246,22 +4457,29 @@
             } else {
                 // Spawn normal 3-5 wall "sets" - sometimes single, sometimes both high+low
                 const wallSetCount = Math.floor(Math.random() * 3) + 3; // 3-5 sets
+                let lastWasBoth = false; // Track if last wall was a high+low pair to prevent stacking
 
                 for (let i = 0; i < wallSetCount; i++) {
-                    const zPos = -200 - (i * 70); // Wider spacing for better visibility
-                    const bothWalls = Math.random() < 0.40; // 40% chance for both high AND low walls
+                    const zPos = -200 - (i * 90); // Wider spacing to prevent overlap (increased from 70)
 
-                    if (bothWalls) {
+                    // Prevent consecutive high+low pairs (impossible to clear)
+                    // Only allow bothWalls if the last set was NOT bothWalls
+                    const canBeBoth = !lastWasBoth && Math.random() < 0.15; // Reduced from 25% to 15%
+
+                    if (canBeBoth) {
                         // Spawn BOTH high and low from pool - player must stay centered
-                        const highWall = getWallFromPool('high', zPos);
+                        // Ensure gap is large enough by adjusting high wall position slightly higher
+                        const highWall = getWallFromPool('high', zPos, 5.3); // Slightly higher (was 5)
                         const lowWall = getWallFromPool('low', zPos);
                         if (highWall) walls.push(highWall);
                         if (lowWall) walls.push(lowWall);
+                        lastWasBoth = true; // Mark that we spawned both
                     } else {
                         // Spawn single wall from pool (50/50 high or low)
                         const wallType = Math.random() < 0.5 ? 'high' : 'low';
                         const wall = getWallFromPool(wallType, zPos);
                         if (wall) walls.push(wall);
+                        lastWasBoth = false; // Reset the flag
                     }
                 }
             }
@@ -5006,7 +5224,7 @@
         // Rare ring spawn during WALL phase only (not buildings) - bonus reward
         // RESTRICTION: No rings before mile 15 (early game onboarding)
         const isWallPhase = currentPhase === 'walls';
-        if (miles >= 15 && isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.0008) {
+        if (miles >= 15 && isWallPhase && rings.length === 0 && !bossActive && Math.random() < 0.004) {
             // Very rare: single ring as bonus during walls
             const ring = getRingFromPool();
             if (ring) {
@@ -5042,8 +5260,8 @@
                 if (ring) {
                     ring.material = isFuchsia ? fuchsiaRingMat : ringMat;
 
-                    const ringX = (Math.random() - 0.5) * 8;
-                    const ringY = Math.random() * 2 + 2;
+                    const ringX = (Math.random() - 0.5) * 16; // Full width -8 to +8 (was * 8 = -4 to +4)
+                    const ringY = Math.random() * 3 + 1.5; // Full height 1.5 to 4.5 (was 2 to 4)
                     const ringZ = -150 - (i * 50);
 
                     // Only spawn if position is clear
@@ -5154,7 +5372,7 @@
             for (let i = 0; i < coinCount; i++) {
                 const coin = getCoinFromPool();
                 if (coin) {
-                    const lanes = [-3, -1.5, 0, 1.5, 3];
+                    const lanes = [-8, -4, 0, 4, 8]; // Full width lanes (was -3, -1.5, 0, 1.5, 3)
                     const lane = lanes[Math.floor(Math.random() * lanes.length)];
                     const yPos = 1 + Math.random() * 5; // Various heights
                     const zSpacing = 300 / coinCount; // Spread over distance
@@ -5183,7 +5401,7 @@
             for (let i = 0; i < coinCount; i++) {
                 const coin = getCoinFromPool();
                 if (coin) {
-                    const lanes = [-2, 0, 2];
+                    const lanes = [-6, -3, 0, 3, 6]; // Wider spread (was -2, 0, 2)
                     const lane = lanes[Math.floor(Math.random() * lanes.length)];
                     coin.position.set(lane, 2 + Math.random() * 2, startZ - (i * spacing));
                     coins.push(coin);
@@ -5216,7 +5434,7 @@
             // Spawn 1-2 optional rings far apart
             if (Math.random() < 0.5) {
                 const ring1 = new THREE.Mesh(ringGeometry, ringMat);
-                ring1.position.set((Math.random() - 0.5) * 8, Math.random() * 2 + 2, -180);
+                ring1.position.set((Math.random() - 0.5) * 16, Math.random() * 3 + 1.5, -180); // Full width (was * 8)
                 ring1.rotation.x = 0;
                 ring1.rotation.y = 0;
                 ring1.userData.collected = false;
@@ -5227,7 +5445,7 @@
 
                 if (Math.random() < 0.3) {
                     const ring2 = new THREE.Mesh(ringGeometry, ringMat);
-                    ring2.position.set((Math.random() - 0.5) * 8, Math.random() * 2 + 3, -280);
+                    ring2.position.set((Math.random() - 0.5) * 16, Math.random() * 3 + 1.5, -280); // Full width (was * 8)
                     ring2.rotation.x = 0;
                     ring2.rotation.y = 0;
                     ring2.userData.collected = false;
@@ -5268,7 +5486,7 @@
             for (let i = 0; i < coinCount; i++) {
                 const coin = getCoinFromPool();
                 if (coin) {
-                    const lanes = [-3, -1.5, 0, 1.5, 3];
+                    const lanes = [-8, -4, 0, 4, 8]; // Full width lanes (was -3, -1.5, 0, 1.5, 3)
                     const lane = lanes[Math.floor(Math.random() * lanes.length)];
                     const yPos = 1 + Math.random() * 4;
                     const coinZ = -220 - (i * 30);
@@ -5288,8 +5506,8 @@
 
         // RINGS PHASE - Spawn rings (ONLY ONCE per phase, not during boss)
         if (currentPhase === 'rings' && !ringsSpawnedThisPhase && !bossActive) {
-            // SHORT ring runs: only 2-3 rings max
-            const ringCount = Math.floor(Math.random() * 2) + 2; // 2-3 rings
+            // SHORT ring runs: 3-5 rings for better rewards
+            const ringCount = Math.floor(Math.random() * 3) + 3; // 3-5 rings
 
             for (let i = 0; i < ringCount; i++) {
                 // 10% chance for rare fuchsia ring (50 bonus)
@@ -5297,8 +5515,8 @@
                 const material = isFuchsia ? fuchsiaRingMat : ringMat;
                 const ring = new THREE.Mesh(ringGeometry, material);
 
-                const ringX = (Math.random() - 0.5) * 8;
-                const ringY = Math.random() * 2 + 2;
+                const ringX = (Math.random() - 0.5) * 16; // Full width -8 to +8 (was * 8 = -4 to +4)
+                const ringY = Math.random() * 3 + 1.5; // Full height 1.5 to 4.5 (was 2 to 4)
                 const ringZ = -250 - (i * 50);
 
                 // Check for overlaps before spawning
