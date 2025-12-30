@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Slime - Mirrored Ceiling Physics</title>
-  <style> body { margin: 0; background: #000; overflow: hidden; touch-action: none; } </style>
+  <title>Slime - Mobile Portrait Build</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: sans-serif; }
+    #ui { position: absolute; top: env(safe-area-inset-top, 20px); left: 20px; color: #00ff88; font-size: 28px; pointer-events: none; text-shadow: 2px 2px #000; z-index: 10; }
+  </style>
 </head>
 <body>
+<div id="ui">Energy: 0</div>
 <script type="importmap"> { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } } </script>
 <script type="module">
   import * as THREE from 'three';
@@ -14,10 +18,10 @@
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // --- WORLD ---
   const worldBounds = 30;
   const getNoise = (x, f, a) => Math.sin(x * f) * a + Math.sin(x * f * 2.2) * (a * 0.4);
   const getFloor = (x) => -4.5 + getNoise(x, 2.0, 0.2);
@@ -31,11 +35,10 @@
     for(let i = 0; i < pos.count; i++) { pos.setY(i, getVal(pos.getX(i))); }
     scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.12 })));
   };
-  createRibbon(getFloor, 0x00ffff);
-  createRibbon(getCeil, 0xffff00);
+  createRibbon(getFloor, 0x00ffff); createRibbon(getCeil, 0xffff00);
 
   const createJagWall = (xPos) => {
-    const geo = new THREE.PlaneGeometry(5, 15, 1, 50);
+    const geo = new THREE.PlaneGeometry(5, 9.5, 1, 50);
     geo.rotateY(Math.PI / 2);
     const pos = geo.getAttribute('position');
     for(let i = 0; i < pos.count; i++) { pos.setX(i, xPos + (xPos > 0 ? -getWallJag(pos.getY(i)) : getWallJag(pos.getY(i)))); }
@@ -43,28 +46,16 @@
   };
   createJagWall(-worldBounds); createJagWall(worldBounds);
 
-  // --- RIGID JAGGED BOULDER ---
-  const bRad = 1.1;
-  const bGeo = new THREE.IcosahedronGeometry(bRad, 1);
-  const bPAttr = bGeo.getAttribute('position');
-  for(let i = 0; i < bPAttr.count; i++) {
-    const v = new THREE.Vector3().fromBufferAttribute(bPAttr, i);
-    const sharp = Math.floor(Math.sin(v.x * 12) * 5) / 5;
-    v.addScaledVector(v.normalize(), sharp * 0.25);
-    bPAttr.setXYZ(i, v.x, v.y, v.z);
-  }
-  bGeo.computeVertexNormals();
-  const boulder = new THREE.Mesh(bGeo, new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
+  const boulder = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
   let bPhys = { x: 12, y: 0, vx: 0 }; scene.add(boulder);
 
-  // --- ORBS ---
   const nodes = [];
+  let score = 0;
   for (let i = 0; i < 20; i++) {
     const n = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true }));
     n.position.set((Math.random()-0.5)*55, (Math.random()-0.5)*7, 0); scene.add(n); nodes.push(n);
   }
 
-  // --- SLIME ---
   const geometry = new THREE.IcosahedronGeometry(1.8, 5);
   const blob = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, wireframe: true, transparent: true, opacity: 0.85 }));
   scene.add(blob);
@@ -72,143 +63,147 @@
   const colorAttr = new THREE.BufferAttribute(new Float32Array(posAttr.count * 3), 3);
   geometry.setAttribute('color', colorAttr);
 
-  // --- PHYSICS ---
-  let centerPos = { x: 0, y: 0, vx: 0, vy: 0 }, slimeT = { x: 0, y: 0 };
+  let centerPos = { x: 0, y: 0 }, slimeT = { x: 0, y: 0 };
   let currentBias = -1, lastTime = performance.now();
-  let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, fusionInten = 0, pressInten = 0;
-  const keys = {};
+  let jelloX = 0, jelloY = 0, jelloVelX = 0, jelloVelY = 0, pressInten = 0, walkSquash = 0, fusionInten = 0;
 
-  // Mobile Gesture Support
-  let touchYStart = 0;
-  window.addEventListener('touchstart', e => { touchYStart = e.touches[0].clientY; });
-  window.addEventListener('touchend', e => {
-    let delta = touchYStart - e.changedTouches[0].clientY;
-    if (Math.abs(delta) > 30) currentBias = delta > 0 ? 1 : -1;
+  const inputs = { left: false, right: false, up: false, down: false };
+
+  // --- TOUCH HANDLERS ---
+  const updateTouch = (e) => {
+    e.preventDefault();
+    inputs.left = inputs.right = inputs.up = inputs.down = false;
+    for (let t of e.touches) {
+      if (t.clientX < window.innerWidth * 0.4) inputs.left = true;
+      if (t.clientX > window.innerWidth * 0.6) inputs.right = true;
+      if (t.clientY < window.innerHeight * 0.4) inputs.up = true;
+      if (t.clientY > window.innerHeight * 0.6) inputs.down = true;
+    }
+  };
+  window.addEventListener('touchstart', updateTouch, { passive: false });
+  window.addEventListener('touchmove', updateTouch, { passive: false });
+  window.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) inputs.left = inputs.right = inputs.up = inputs.down = false;
+    else updateTouch(e);
   });
 
+  // Keep keyboard for desktop testing
   window.addEventListener('keydown', e => {
-    keys[e.code] = true;
-    if(e.code==='KeyW'||e.code==='ArrowUp') currentBias=1;
-    if(e.code==='KeyS'||e.code==='ArrowDown') currentBias=-1;
+    if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = true;
+    if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = true;
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') inputs.up = true;
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') inputs.down = true;
   });
-  window.addEventListener('keyup', e => keys[e.code] = false);
+  window.addEventListener('keyup', e => {
+    if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = false;
+    if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = false;
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') inputs.up = false;
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') inputs.down = false;
+  });
 
-  camera.position.z = 25;
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 
   function animate(now) {
     requestAnimationFrame(animate);
-    const dt = Math.min((now - lastTime) / 16.6, 2.0);
+    const dt = Math.min((now - lastTime) / 16.66, 1.0);
     lastTime = now;
-    const time = now * 0.001;
-    const pL=keys['KeyA']||keys['ArrowLeft'], pR=keys['KeyD']||keys['ArrowRight'], pU=keys['KeyW']||keys['ArrowUp'], pD=keys['KeyS']||keys['ArrowDown'];
 
-    const fV_c = getFloor(centerPos.x), cV_c = getCeil(centerPos.x);
-    const lW_c = -worldBounds + getWallJag(centerPos.y), rW_c = worldBounds - getWallJag(centerPos.y);
+    const fV = getFloor(centerPos.x), cV = getCeil(centerPos.x);
+    const lW = -worldBounds + getWallJag(centerPos.y), rW = worldBounds - getWallJag(centerPos.y);
+    const distL = Math.abs(centerPos.x - lW), distR = Math.abs(centerPos.x - rW);
+    const onWall = distL < 2.0 || distR < 2.0;
 
-    // Boulder Constraint
-    if (Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2)) < 2.4) bPhys.vx += (centerPos.x > bPhys.x ? -0.07 : 0.07) * dt;
+    if (onWall) {
+      if (Math.abs(centerPos.y - fV) < 1.0) currentBias = -1;
+      else if (Math.abs(centerPos.y - cV) < 1.0) currentBias = 1;
+      else currentBias = 0;
+    } else {
+      if (inputs.up) currentBias = 1;
+      if (inputs.down) currentBias = -1;
+    }
+
+    const distToBoulder = Math.sqrt(Math.pow(centerPos.x - bPhys.x, 2) + Math.pow(centerPos.y - bPhys.y, 2));
+    if (distToBoulder < 2.4) bPhys.vx += (centerPos.x > bPhys.x ? -0.07 : 0.07) * dt;
     bPhys.vx *= Math.pow(0.92, dt); bPhys.x += bPhys.vx;
-    const wallBL = -worldBounds + getWallJag(bPhys.y) + 1.2, wallBR = worldBounds - getWallJag(bPhys.y) - 1.2;
-    bPhys.x = THREE.MathUtils.clamp(bPhys.x, wallBL, wallBR);
-    bPhys.y = getFloor(bPhys.x) + bRad;
+    bPhys.x = THREE.MathUtils.clamp(bPhys.x, -worldBounds + 2, worldBounds - 2);
+    bPhys.y = getFloor(bPhys.x) + 1.1;
     boulder.position.set(bPhys.x, bPhys.y, 0);
 
-    // Press Intensity logic
-    const pressing = (currentBias === -1 && pD) || (currentBias === 1 && pU);
-    pressInten = THREE.MathUtils.lerp(pressInten, pressing ? 1.0 : 0.0, 0.15 * dt);
+    const activeSmush = (currentBias === -1 && inputs.down) || (currentBias === 1 && inputs.up) || (onWall && (inputs.left || inputs.right));
+    pressInten = THREE.MathUtils.lerp(pressInten, activeSmush ? 1.0 : 0.0, 0.15 * dt);
+    walkSquash = THREE.MathUtils.lerp(walkSquash, (inputs.left||inputs.right||inputs.up||inputs.down) ? 1.0 : 0.0, 0.1 * dt);
 
-    // Movement
     const moveAmt = 0.22 * dt;
-    slimeT.x += (pR ? moveAmt : 0) - (pL ? moveAmt : 0);
-    const distL = Math.abs(centerPos.x - lW_c), distR = Math.abs(centerPos.x - rW_c);
-    if (distL < 2.5 || distR < 2.5 || Math.abs(centerPos.x - bPhys.x) < 2.5) slimeT.y += (pU ? moveAmt : 0) - (pD ? moveAmt : 0);
-    else slimeT.y += (currentBias * 0.45 * dt);
+    slimeT.x += (inputs.right ? moveAmt : 0) - (inputs.left ? moveAmt : 0);
+    if (onWall) slimeT.y += (inputs.up ? moveAmt : 0) - (inputs.down ? moveAmt : 0);
+    else slimeT.y += (currentBias * 0.4 * dt);
 
-    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW_c + 1.1, rW_c - 1.1);
-    slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV_c + 1.1, cV_c - 1.1);
+    slimeT.x = THREE.MathUtils.clamp(slimeT.x, lW + 1.1, rW - 1.1);
+    slimeT.y = THREE.MathUtils.clamp(slimeT.y, fV + 1.1, cV - 1.1);
 
     let oldX = centerPos.x, oldY = centerPos.y;
-    centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.15 * dt);
-    centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.15 * dt);
-    centerPos.vx = centerPos.x - oldX; centerPos.vy = centerPos.y - oldY;
+    centerPos.x = THREE.MathUtils.lerp(centerPos.x, slimeT.x, 0.12 * dt);
+    centerPos.y = THREE.MathUtils.lerp(centerPos.y, slimeT.y, 0.12 * dt);
 
-    jelloVelX = (jelloVelX + (-centerPos.vx * 12 - jelloX) * 0.15) * 0.8; jelloX += jelloVelX * dt;
-    jelloVelY = (jelloVelY + (-centerPos.vy * 12 - jelloY) * 0.15) * 0.8; jelloY += jelloVelY * dt;
+    jelloVelX = (jelloVelX + (-(centerPos.x - oldX) * 12 - jelloX) * 0.1) * 0.85; jelloX += jelloVelX * dt;
+    jelloVelY = (jelloVelY + (-(centerPos.y - oldY) * 12 - jelloY) * 0.1) * 0.85; jelloY += jelloVelY * dt;
 
     nodes.forEach(n => {
-      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 3.2) {
-        n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2 * dt);
-        if (n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 0.9) { n.visible = false; fusionInten = 1.0; }
+      if (n.visible && n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 3) {
+        n.position.lerp(new THREE.Vector3(centerPos.x, centerPos.y, 0), 0.2);
+        if (n.position.distanceTo(new THREE.Vector3(centerPos.x, centerPos.y, 0)) < 0.8) { n.visible = false; score++; document.getElementById('ui').innerText = `Energy: ${score}`; fusionInten = 1; }
       }
     });
-    fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.06 * dt);
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.08 * dt);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.25, 0.05 * dt);
-
-    const breath = Math.sin(time * 2.5) * 0.06;
+    fusionInten = THREE.MathUtils.lerp(fusionInten, 0, 0.05);
 
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1];
       const vPy = (oy + 1.8) / 3.6, vPx = (ox + 1.8) / 3.6;
-
-      // 1. MIRRORED PANCAKE LOGIC
-      const squash = 0.62 - (pressInten * 0.12);
-      const t = currentBias === -1 ? (1.0 - vPy) : vPy; // t=0 is the contact surface
-      oy *= squash;
-      ox *= (1.0 + (1.1 + pressInten * 0.4) * Math.pow(t, 1.8));
-      oy += (currentBias * -0.35); // Pull toward bias surface
-
-      // 2. CORNER WEDGE / WALL SUCTION
-      const xW = ox + centerPos.x;
-      const dWL = Math.abs(xW - lW_c), dWR = Math.abs(xW - rW_c);
-      const wallProx = Math.min(dWL, dWR);
-      if (wallProx < 2.5) {
-        const factor = THREE.MathUtils.smoothstep(wallProx, 0.4, 2.5);
-        ox *= (0.75 + 0.25 * factor);
-        oy *= (1.0 + 0.6 * (1.0 - factor));
-        ox += (dWL < dWR ? -0.3 : 0.3) * (1.0 - factor);
-      }
-
-      // 3. INTERNAL BREATH + JELLO
+      const squash = 0.52 - (pressInten * 0.12) - (walkSquash * 0.08);
+      const distToW = Math.min(Math.abs(ox + centerPos.x - lW), Math.abs(ox + centerPos.x - rW));
+      const wrapWeight = 1.0 - THREE.MathUtils.smoothstep(distToW, 0.0, 1.8);
+      const cornerSlurp = Math.sin(wrapWeight * Math.PI);
+      const wallPinch = THREE.MathUtils.lerp(1.0, 0.5, wrapWeight * (1.0 - cornerSlurp * 0.5));
+      const tW = (distL < distR) ? (1.0 - vPx) : vPx;
+      const oxW = (ox * wallPinch) * squash + (distL < distR ? -0.42 : 0.42);
+      const oyW = oy * (1.3 + (1.4 + pressInten * 0.6 + walkSquash * 0.5) * Math.pow(tW, 1.8));
+      const tF = (centerPos.y > 0 ? vPy : (1.0 - vPy));
+      const oyF = oy * squash + (centerPos.y > 0 ? 0.38 : -0.38);
+      const oxF = ox * (1.1 + (1.2 + pressInten * 0.5 + walkSquash * 0.4) * Math.pow(tF, 1.8));
+      ox = THREE.MathUtils.lerp(oxF, oxW, wrapWeight);
+      oy = THREE.MathUtils.lerp(oyF, oyW, wrapWeight);
       ox += jelloX * Math.pow(vPy, 1.4); oy += jelloY * Math.pow(vPx, 1.4);
-      const bScale = 1.0 + breath; ox *= bScale; oy *= bScale;
-
+      const bScale = 1.0 + Math.sin(now * 0.0025) * 0.06; ox *= bScale; oy *= bScale;
       let vX = ox + centerPos.x, vY = oy + centerPos.y;
-
-      // 4. BOULDER
-      const dB = Math.sqrt(Math.pow(vX-bPhys.x, 2) + Math.pow(vY-bPhys.y, 2));
-      if (dB < bRad + 0.3) {
-        const ang = Math.atan2(vY-bPhys.y, vX-bPhys.x);
-        vX = bPhys.x + Math.cos(ang)*(bRad + 0.3); vY = bPhys.y + Math.sin(ang)*(bRad + 0.3);
+      let seep = 1.8 + (pressInten * 1.5), curF_v = getFloor(vX), curC_v = getCeil(vX);
+      const wL_v = -worldBounds + getWallJag(vY), wR_v = worldBounds - getWallJag(vY);
+      let suc = 0;
+      if (vX < wL_v + seep || vX > wR_v - seep) {
+        suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wL_v), Math.abs(vX-wR_v)), 0, seep);
+        vX = THREE.MathUtils.lerp(vX, (Math.abs(vX-wL_v) < Math.abs(vX-wR_v) ? wL_v : wR_v), suc * 0.99);
       }
-
-      const curF = getFloor(vX), curC = getCeil(vX);
-      const wallL = -worldBounds + getWallJag(vY), wallR = worldBounds - getWallJag(vY);
-      let r=1, g=0, b=1, suc=0, seep = 1.3 + (pressInten * 0.6);
-
-      // MIRRORED SEEPAGE (Floor/Ceiling/Walls)
-      if (vX < wallL + seep || vX > wallR - seep) { // Wall
-        suc = 1.0 - THREE.MathUtils.smoothstep(Math.min(Math.abs(vX-wallL), Math.abs(vX-wallR)), 0, seep);
-        vX = THREE.MathUtils.lerp(vX, (Math.abs(vX-wallL) < Math.abs(vX-wallR) ? wallL : wallR), suc * 0.95);
-        r = 1-suc; g = suc; b = 1-suc*0.5;
-      } else if (currentBias === -1 && vY < curF + seep) { // Floor
-        suc = 1.0 - THREE.MathUtils.smoothstep(vY - curF, 0, seep);
-        vY = THREE.MathUtils.lerp(vY, curF, suc * 0.96);
-        r = 1-suc*0.8; g = suc; b = 1-suc*0.2;
-      } else if (currentBias === 1 && vY > curC - seep) { // Ceiling
-        suc = 1.0 - THREE.MathUtils.smoothstep(curC - vY, 0, seep);
-        vY = THREE.MathUtils.lerp(vY, curC, suc * 0.96);
-        r = 1-suc*0.2; g = suc; b = 1-suc*0.8;
+      if (vY < curF_v) vY = curF_v; if (vY > curC_v) vY = curC_v;
+      if (vY < curF_v + seep) {
+        let s = 1.0 - THREE.MathUtils.smoothstep(vY - curF_v, 0, seep);
+        suc = Math.max(suc, s); vY = THREE.MathUtils.lerp(vY, curF_v, s * 0.99);
+      } else if (vY > curC_v - seep) {
+        let s = 1.0 - THREE.MathUtils.smoothstep(curC_v - vY, 0, seep);
+        suc = Math.max(suc, s); vY = THREE.MathUtils.lerp(vY, curC_v, s * 0.99);
       }
-
-      const flash = fusionInten * (0.8 + Math.sin(i * 0.2 + time * 10) * 0.2);
-      g = Math.max(g, flash); r = Math.min(r, 1.0 - flash * 0.7);
-      posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = THREE.MathUtils.clamp(vY, curF, curC) - centerPos.y;
-      colorAttr.setXYZ(i, r, g, b);
+      posAttr.array[idx] = vX - centerPos.x; posAttr.array[idx+1] = vY - centerPos.y;
+      const r = THREE.MathUtils.lerp(1.0, 0.2, suc), g = THREE.MathUtils.lerp(0.2, 1.0, suc), b = THREE.MathUtils.lerp(0.8, 0.4, suc);
+      colorAttr.setXYZ(i, r + fusionInten * 0.4, g, b);
     }
     posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
     blob.position.set(centerPos.x, centerPos.y, 0);
+    // Camera Zoom Logic for Portrait Mode
+    const zoom = window.innerWidth < window.innerHeight ? 32 : 25;
+    camera.position.set(THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.06 * dt), THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.3, 0.06 * dt), zoom);
     renderer.render(scene, camera);
   }
   animate(performance.now());
