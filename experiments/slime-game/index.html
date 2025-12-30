@@ -72,7 +72,14 @@
   window.addEventListener('touchstart', e => {
     for(let t of e.changedTouches) {
       if (t.clientX < window.innerWidth / 2 && touchIdMove === null) {
-        touchIdMove = t.identifier; joyBg.style.display = 'block';
+        touchIdMove = t.identifier;
+        // Position joystick at touch location
+        joyBg.style.left = (t.clientX - 50) + 'px';
+        joyBg.style.top = (t.clientY - 50) + 'px';
+        joyBg.style.display = 'block';
+        // Reset stick to center
+        joyStick.style.left = '30px';
+        joyStick.style.top = '30px';
       } else if (touchIdJump === null) { touchIdJump = t.identifier; startYJump = t.clientY; }
     }
   }, { passive: false });
