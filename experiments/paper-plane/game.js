@@ -1147,24 +1147,34 @@
     // Helper to create building data (returns type and properties)
     function createBuildingData() {
         const buildingType = Math.random();
+        const heightVariation = Math.random();
         let type, height;
 
-        if (buildingType < 0.25) {
-            // Square building
+        // Determine building type (shape)
+        if (buildingType < 0.3) {
             type = 'box';
-            height = Math.random() * 6 + 5; // 5-11 units tall (increased from 3-9)
-        } else if (buildingType < 0.4) {
-            // Rectangle (tall or wide)
-            type = 'box';
-            height = Math.random() * 8 + 5; // 5-13 units tall (increased from 2-10)
-        } else if (buildingType < 0.7) {
-            // Cone/Pyramid - increased spawn rate to 30%
+        } else if (buildingType < 0.65) {
             type = 'pyramid';
-            height = Math.random() * 5 + 5; // 5-10 units tall (increased from 3-8)
         } else {
-            // Cylinder (squat or tall)
             type = 'cylinder';
-            height = Math.random() < 0.5 ? Math.random() * 3 + 5 : Math.random() * 8 + 8; // Squat: 5-8, Tall: 8-16 (increased)
+        }
+
+        // DRAMATIC HEIGHT VARIETY - creates visual rhythm and gameplay variety
+        if (heightVariation < 0.15) {
+            // Very Short (15%) - easy to fly over
+            height = Math.random() * 2 + 2; // 2-4 units
+        } else if (heightVariation < 0.45) {
+            // Short-Medium (30%) - standard obstacles
+            height = Math.random() * 3 + 5; // 5-8 units
+        } else if (heightVariation < 0.75) {
+            // Medium-Tall (30%) - requires attention
+            height = Math.random() * 4 + 9; // 9-13 units
+        } else if (heightVariation < 0.95) {
+            // Very Tall (20%) - dramatic landmarks
+            height = Math.random() * 4 + 14; // 14-18 units
+        } else {
+            // Extreme Tall (5%) - skyscrapers!
+            height = Math.random() * 6 + 18; // 18-24 units
         }
 
         return { type, height };
@@ -2031,6 +2041,12 @@
             canFollowItself: false,
             description: 'Collect scattered coins'
         },
+        rings_and_coins: {
+            intensity: 'low',
+            duration: [15000, 20000], // 15-20 seconds - Combined point gain!
+            canFollowItself: false,
+            description: 'Collect both rings AND coins - maximum points!'
+        },
         bonus: {
             intensity: 'medium',
             duration: [15000, 22000], // 15-22 seconds - Special moment
@@ -2071,6 +2087,7 @@
         walls: -Infinity,
         rings: -Infinity,
         coins: -Infinity,
+        rings_and_coins: -Infinity,
         bonus: -Infinity,
         breather: -Infinity,
         mixed: -Infinity,
@@ -2082,6 +2099,7 @@
     let ringsSpawnedThisPhase = false;
     let wallsSpawnedThisPhase = false;
     let coinsSpawnedThisPhase = false;
+    let ringsAndCoinsSpawnedThisPhase = false;
     let mixedSpawnedThisPhase = false;
     let bonusSpawnedThisPhase = false;
     let breatherSetup = false;
@@ -2111,7 +2129,7 @@
             }
 
             // RULE 3: HEAVILY FAVOR BUILDINGS - Core gameplay is building dodging!
-            // Buildings should be 70-80% of gameplay
+            // Buildings should be ~75% of gameplay, with frequent point-gain phases
             if (phaseName === 'buildings') {
                 weight *= 5.0; // MASSIVELY favor buildings phase
 
@@ -2130,10 +2148,16 @@
             } else if (phaseName === 'mixed') {
                 weight *= 2.0; // Mixed has buildings too, so boost it
             } else if (phaseName === 'rings') {
-                // Rings should appear more often than other bonus phases
-                weight *= 0.5; // More frequent than other phases for score/upgrades
+                // BOOSTED: Rings for frequent point gain opportunities
+                weight *= 0.6; // More frequent than before (was 0.5)
+            } else if (phaseName === 'coins') {
+                // BOOSTED: Coins for frequent point gain (was 0.15 as "other")
+                weight *= 0.4; // Much more frequent than before!
+            } else if (phaseName === 'rings_and_coins') {
+                // NEW: Combined rings+coins for MAXIMUM point gain!
+                weight *= 0.5; // Balanced between rings and coins frequency
             } else {
-                // Drastically reduce weight of non-building phases
+                // Other phases (walls, breathers, etc.) remain rare
                 weight *= 0.15; // Other phases are rare bonus content
             }
 
@@ -2516,6 +2540,32 @@
         scene.add(gate);
         gates.push(gate);
 
+        // CLEAR ZONE: Remove all obstacles near checkpoint gate for safe approach
+        buildings.forEach(b => {
+            // Clear buildings in front of gate (-250 to -150)
+            if (b.position.z < -150 && b.position.z > -250) {
+                b.position.z = -500;
+                b.active = false;
+                b.scale.set(0, 0, 0);
+            }
+        });
+        // Clear walls in gate approach zone
+        for (let i = walls.length - 1; i >= 0; i--) {
+            if (walls[i].position.z < -150 && walls[i].position.z > -250) {
+                walls[i].visible = false;
+                walls[i].position.z = -1000;
+                walls.splice(i, 1);
+            }
+        }
+        // Clear barriers in gate approach zone
+        for (let i = barrierWalls.length - 1; i >= 0; i--) {
+            if (barrierWalls[i].position.z < -150 && barrierWalls[i].position.z > -250) {
+                barrierWalls[i].visible = false;
+                barrierWalls[i].position.z = -1000;
+                barrierWalls.splice(i, 1);
+            }
+        }
+
         return gate;
     }
 
@@ -2632,7 +2682,7 @@
         uiControls.updateLivesDisplay(currentLives, maxLives);
 
         if (currentLives > 0) {
-            // Still have lives - respawn at current position with 1 heart
+            // Still have lives - respawn at CURRENT position (don't center plane!)
             crashMessage = `LIFE LOST! ${currentLives} REMAINING`;
             crashMessageTimer = 120; // Show for 2 seconds
 
@@ -2642,11 +2692,8 @@
                 currentHealth = 0;
                 uiControls.updateHealthBar(currentHealth, maxHealth);
 
-                // Reset ship position to center
-                shipGroup.position.x = 0;
-                shipGroup.position.y = 0;
-                targetX = 0;
-                targetY = 2.5;
+                // DON'T reset position - keep player where they were
+                // (removed centering to prevent jarring teleport)
 
                 // Activate grace period to give player time to reach checkpoint
                 gracePeriodActive = true;
@@ -2700,6 +2747,7 @@
         ringsSpawnedThisPhase = false;
         wallsSpawnedThisPhase = false;
         coinsSpawnedThisPhase = false;
+        ringsAndCoinsSpawnedThisPhase = false;
         mixedSpawnedThisPhase = false;
         bonusSpawnedThisPhase = false;
         breatherSetup = false;
@@ -3882,6 +3930,8 @@
 
         // Check if we're in a breather phase to skip building updates
         const isBreatherPhase = currentPhase === 'rings' ||
+            currentPhase === 'rings_and_coins' ||
+            currentPhase === 'coins' ||
             currentPhase === 'breather_before_rings' ||
             currentPhase === 'breather_after_rings' ||
             currentPhase === 'walls';
@@ -4282,18 +4332,23 @@
             }
 
             // CRITICAL: Only check buildings in collision zone around player
-            // Player is at z ≈ 3.5, so check buildings from -20 to +15 (same as walls for consistency)
-            // This prevents collisions with buildings that are too far behind or ahead
-            if(b.position.z > 15 || b.position.z < -20) {
+            // Player is at z ≈ 3.5, buildings fade at z > 10
+            // Collision zone: -15 to 10 (wide enough to not skip buildings, tight enough to prevent fade zone hits)
+            if(b.position.z > 10 || b.position.z < -15) {
                 return; // Building outside collision zone
             }
 
-            // Strict distance check: only check very close buildings
+            // GHOST HIT FIX: Ensure building has valid scale and isn't in cleanup state
+            if(!b.originalScale || b.scale.x < 0.01 || b.scale.y < 0.01 || b.scale.z < 0.01) {
+                return; // Building lacks valid scale, in cleanup state
+            }
+
+            // Distance check: only check reasonably close buildings
             const dx = b.position.x - curX;
             const dy = b.position.y - curY;
             const dz = b.position.z - 3.5;
             const distSq = dx * dx + dy * dy + dz * dz;
-            const maxCollisionDistSq = 400; // 20 units (increased from 49 to account for full lane width of 16 units)
+            const maxCollisionDistSq = 256; // 16 units (balanced - not too tight, not too loose)
 
             // Skip if too far away for collision
             if (distSq > maxCollisionDistSq) {
@@ -4529,14 +4584,14 @@
                 continue;
             }
 
-            // Only check collision when wall is close
-            if (wall.position.z > -20 && wall.position.z < 15) {
+            // Only check collision when wall is close (matched to building collision zone)
+            if (wall.position.z > -15 && wall.position.z < 10) {
                 // Broad-phase culling: distance check before expensive Box3 operations
                 const dx = wall.position.x - curX;
                 const dy = wall.position.y - curY;
                 const dz = wall.position.z - 3.5;
                 const distSq = dx * dx + dy * dy + dz * dz;
-                const maxCollisionDistSq = 100; // ~10 units squared
+                const maxCollisionDistSq = 256; // 16 units (balanced to match buildings)
 
                 // Skip if too far away for collision
                 if (distSq > maxCollisionDistSq) {
@@ -4632,13 +4687,13 @@
                 continue;
             }
 
-            // Collision detection when barrier is close
-            if (barrier.position.z > -20 && barrier.position.z < 15) {
+            // Collision detection when barrier is close (matched to building collision zone)
+            if (barrier.position.z > -15 && barrier.position.z < 10) {
                 const dx = barrier.position.x - curX;
                 const dy = barrier.position.y - curY;
                 const dz = barrier.position.z - 3.5;
                 const distSq = dx * dx + dy * dy + dz * dz;
-                const maxCollisionDistSq = 100;
+                const maxCollisionDistSq = 256; // 16 units (balanced to match buildings)
 
                 if (distSq > maxCollisionDistSq) {
                     continue;
@@ -5360,6 +5415,7 @@
             ringsSpawnedThisPhase = false;
             wallsSpawnedThisPhase = false;
             coinsSpawnedThisPhase = false;
+            ringsAndCoinsSpawnedThisPhase = false;
             mixedSpawnedThisPhase = false;
             bonusSpawnedThisPhase = false;
             breatherSetup = false;
@@ -5389,6 +5445,56 @@
             });
 
             coinsSpawnedThisPhase = true;
+        }
+
+        // RINGS + COINS PHASE - Maximum point gain combo!
+        if (currentPhase === 'rings_and_coins' && !ringsAndCoinsSpawnedThisPhase && !bossActive) {
+            // Spawn 3-4 rings
+            const ringCount = Math.floor(Math.random() * 2) + 3; // 3-4 rings
+            for (let i = 0; i < ringCount; i++) {
+                const isFuchsia = Math.random() < 0.1;
+                const material = isFuchsia ? fuchsiaRingMat : ringMat;
+                const ring = new THREE.Mesh(ringGeometry, material);
+
+                const ringX = (Math.random() - 0.5) * 16;
+                const ringY = Math.random() * 3 + 1.5;
+                const ringZ = -250 - (i * 60); // Spread rings out
+
+                if (isPositionClear(ringX, ringY, ringZ, 6)) {
+                    ring.position.set(ringX, ringY, ringZ);
+                    ring.rotation.x = 0;
+                    ring.rotation.y = 0;
+                    ring.userData.collected = false;
+                    ring.userData.missTracked = false;
+                    ring.userData.points = isFuchsia ? 50 : 25;
+                    ring.userData.originalScale = { x: 1, y: 1, z: 1 };
+                    scene.add(ring);
+                    rings.push(ring);
+                }
+            }
+
+            // Spawn 8-12 coins scattered between rings
+            const coinCount = Math.floor(Math.random() * 5) + 8; // 8-12 coins
+            for (let i = 0; i < coinCount; i++) {
+                const coin = getCoinFromPool();
+                if (coin) {
+                    const lanes = [-8, -4, 0, 4, 8];
+                    const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                    const yPos = 1 + Math.random() * 5;
+                    const zSpacing = 250 / coinCount;
+
+                    coin.position.set(lane, yPos, -200 - (i * zSpacing));
+                    coins.push(coin);
+                }
+            }
+
+            // Clear buildings during rings+coins phase
+            buildings.forEach(b => {
+                b.position.z = -500;
+                b.visible = false;
+            });
+
+            ringsAndCoinsSpawnedThisPhase = true;
         }
 
         // BONUS PHASE - Coin run + wind gusts combo

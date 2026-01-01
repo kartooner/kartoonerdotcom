@@ -62,8 +62,49 @@
   const worldBounds = 30;
   const getPinch = (x) => 3.9 * Math.exp(-(x * x) / (5.5 * 5.5));
   const getNoise = (x, f, a) => Math.sin(x * f) * a + Math.sin(x * f * 2.2) * (a * 0.4);
-  const getFloor = (x) => -4.5 + getNoise(x, 2.0, 0.2) + getPinch(x);
-  const getCeil = (x) => 4.5 - getNoise(x, 2.5, 0.2) - getPinch(x);
+
+  // Terrain variation: mix smooth, ragged, and dramatic sections
+  const getTerrainVariation = (x) => {
+    const section = Math.floor(x / 8); // Different characteristics every 8 units
+    const sectionType = Math.abs(section) % 4;
+
+    if (sectionType === 0) {
+      // Smooth section
+      return { amplitude: 0.15, frequency: 1.5, drama: 0 };
+    } else if (sectionType === 1) {
+      // Ragged section
+      return { amplitude: 0.35, frequency: 3.5, drama: 0 };
+    } else if (sectionType === 2) {
+      // Dramatic bumps
+      return { amplitude: 0.25, frequency: 2.0, drama: 0.8 };
+    } else {
+      // Mixed (medium bumpy)
+      return { amplitude: 0.22, frequency: 2.2, drama: 0.3 };
+    }
+  };
+
+  // Add diagonal slope to terrain (makes surfaces less vertical, more angled)
+  const getDiagonalSlope = (x) => {
+    // Strong diagonal wave that tilts the whole cave at ~45 degrees
+    return Math.sin(x * 0.25) * 2.5 + Math.sin(x * 0.12) * 1.8;
+  };
+
+  const getFloor = (x) => {
+    const variation = getTerrainVariation(x);
+    const baseNoise = getNoise(x, variation.frequency, variation.amplitude);
+    const dramaticBump = variation.drama > 0 ? Math.sin(x * 0.8) * variation.drama : 0;
+    const slope = getDiagonalSlope(x) * 0.9; // Diagonal tilt
+    return -4.8 + baseNoise + getPinch(x) + dramaticBump + slope;
+  };
+
+  const getCeil = (x) => {
+    const variation = getTerrainVariation(x);
+    const baseNoise = getNoise(x, variation.frequency, variation.amplitude);
+    const dramaticBump = variation.drama > 0 ? Math.sin(x * 0.8 + 1.5) * variation.drama : 0;
+    const slope = getDiagonalSlope(x) * 0.9; // Same diagonal tilt (whole cave rotates together)
+    return 4.8 - baseNoise - getPinch(x) - dramaticBump + slope;
+  };
+
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
 
   // Randomize biome sections
@@ -188,7 +229,7 @@
   const boxX = 5;
   const boxY = getFloor(boxX) + boxSize / 2;
   box.position.set(boxX, boxY, 0);
-  box.userData = { x: boxX, y: boxY, size: boxSize, vx: 0, vy: 0 };
+  box.userData = { x: boxX, y: boxY, size: boxSize, vx: 0, vy: 0, atRest: true, angularVel: 0 };
   scene.add(box);
 
   const slimeRadius = 1.2;
@@ -204,6 +245,12 @@
   const inputs = { left: false, right: false, up: false, down: false, grab: false };
   let boxGrabbed = false;
   let boxGrabOffset = { x: 0, y: 0 };
+  let boxAbsorptionProgress = 0; // 0 = outside, 1 = fully absorbed
+
+  // Charge jump state
+  let chargeStartTime = 0;
+  let chargingDirection = 0; // 1 for up (W), -1 for down (S), 0 for not charging
+  const CHARGE_THRESHOLD = 2000; // milliseconds to hold before rocket jump activates
 
   // Mobile Handlers
   const joyBg = document.getElementById('joy-bg'), joyStick = document.getElementById('joy-stick');
@@ -266,16 +313,66 @@
   window.addEventListener('keydown', e => {
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = true;
     if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = true;
-    if (e.code === 'KeyW' || e.code === 'ArrowUp') { inputs.up = true; tryFlip(1); }
-    if (e.code === 'KeyS' || e.code === 'ArrowDown') { inputs.down = true; tryFlip(-1); }
-    if (e.code === 'Space') { e.preventDefault(); inputs.grab = true; }
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+      if (!inputs.up) { // Only on initial press
+        inputs.up = true;
+        tryFlip(1);
+        // Start charging if on CEILING (press into ceiling to launch to floor)
+        if (currentBias === 1) {
+          chargingDirection = 1;
+          chargeStartTime = Date.now();
+        }
+      }
+    }
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+      if (!inputs.down) { // Only on initial press
+        inputs.down = true;
+        tryFlip(-1);
+        // Start charging if on FLOOR (press into floor to launch to ceiling)
+        if (currentBias === -1) {
+          chargingDirection = -1;
+          chargeStartTime = Date.now();
+        }
+      }
+    }
+    if (e.code === 'Space') {
+      e.preventDefault();
+      inputs.grab = !inputs.grab; // Toggle grab (same as mobile)
+    }
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'KeyA' || e.code === 'ArrowLeft') inputs.left = false;
     if (e.code === 'KeyD' || e.code === 'ArrowRight') inputs.right = false;
-    if (e.code === 'KeyW' || e.code === 'ArrowUp') inputs.up = false;
-    if (e.code === 'KeyS' || e.code === 'ArrowDown') inputs.down = false;
-    if (e.code === 'Space') inputs.grab = false;
+    if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+      inputs.up = false;
+      // Trigger rocket jump if charged enough (was on ceiling, launch to floor)
+      if (chargingDirection === 1) {
+        const chargeTime = Date.now() - chargeStartTime;
+        if (chargeTime >= CHARGE_THRESHOLD) {
+          // ROCKET JUMP TO FLOOR! Same as flip but with powerful boost
+          slimeT.y -= 20; // Massive downward boost for fast flip
+          currentBias = -1; // Flip to floor
+          gravityTimer = Date.now(); // Reset flip cooldown
+        }
+        chargingDirection = 0; // Reset charge
+      }
+    }
+    if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+      inputs.down = false;
+      // Trigger rocket jump if charged enough (was on floor, launch to ceiling)
+      if (chargingDirection === -1) {
+        const chargeTime = Date.now() - chargeStartTime;
+        if (chargeTime >= CHARGE_THRESHOLD) {
+          // ROCKET JUMP TO CEILING! Same as flip but with powerful boost
+          slimeT.y += 20; // Massive upward boost for fast flip
+          currentBias = 1; // Flip to ceiling
+          gravityTimer = Date.now(); // Reset flip cooldown
+        }
+        chargingDirection = 0; // Reset charge
+      }
+    }
+    // Space is now toggle, no need to handle keyup
+    // if (e.code === 'Space') inputs.grab = false;
   });
 
   function tryFlip(b) { if (Date.now() - gravityTimer > 350) { currentBias = b; gravityTimer = Date.now(); } }
@@ -310,63 +407,111 @@
     } else if (!inputs.grab && boxGrabbed) {
       // Release the box - gentle horizontal throw, let gravity handle vertical
       boxGrabbed = false;
-      const horizontalVel = (slimeT.x - centerPos.x) * 1.2; // Reduced throw force
-      box.userData.vx = horizontalVel;
+      boxAbsorptionProgress = 0; // Reset absorption
+
+      // Base horizontal velocity from slime movement
+      const horizontalVel = (slimeT.x - centerPos.x) * 1.2;
+
+      // Add subtle random horizontal variation (natural imperfection when dropping)
+      // Slightly more variation when dropping from height
+      const dropHeight = Math.abs(centerPos.y);
+      const randomNudge = (Math.random() - 0.5) * 0.25; // ±0.125 random
+      const heightVariation = (dropHeight / 10) * (Math.random() - 0.5) * 0.15; // More variation from height
+
+      box.userData.vx = horizontalVel + randomNudge + heightVariation;
       box.userData.vy = 0; // Don't throw vertically, just drop naturally
+      box.userData.atRest = false; // Box is now active and can roll down slopes
+
+      // Reset visual effects
+      box.material.opacity = 1.0;
+      box.rotation.x = 0;
+      box.rotation.y = 0;
+      box.rotation.z = 0;
     }
 
     if (boxGrabbed) {
-      // Drag box with slime, positioning based on current surface
-      const grabDist = slimeRadius + halfBox + 0.3;
+      // Gradually absorb box into slime (seeping effect)
+      boxAbsorptionProgress = Math.min(boxAbsorptionProgress + 0.08 * dt, 1.0);
+
+      // Box STAYS at slime center, with only a small visual offset based on surface
+      // This keeps it absorbed regardless of surface changes
+      let targetX = centerPos.x;
+      let targetY = centerPos.y;
+
+      // Small visibility offset so box peeks out slightly on the "free" side
+      // Only applies when fully absorbed
+      const visibilityOffset = 0.4 * boxAbsorptionProgress;
 
       if (currentBias === -1) {
-        // On floor - box above slime
-        box.userData.x = centerPos.x;
-        box.userData.y = centerPos.y + grabDist;
+        // On floor - box shows slightly above center
+        targetY += visibilityOffset;
       } else if (currentBias === 1) {
-        // On ceiling - box below slime
-        box.userData.x = centerPos.x;
-        box.userData.y = centerPos.y - grabDist;
+        // On ceiling - box shows slightly below center
+        targetY -= visibilityOffset;
       } else {
-        // On wall - box on opposite side (heaving it along)
+        // On wall - box shows slightly on opposite side
         const onLeftWall = Math.abs(centerPos.x - lW) < (slimeRadius + 0.6);
         const onRightWall = Math.abs(centerPos.x - rW) < (slimeRadius + 0.6);
 
         if (onLeftWall) {
-          // On left wall - box to the right
-          box.userData.x = centerPos.x + grabDist;
+          targetX += visibilityOffset;
         } else if (onRightWall) {
-          // On right wall - box to the left
-          box.userData.x = centerPos.x - grabDist;
-        } else {
-          // Fallback to stored offset direction
-          const sideOffset = Math.sign(boxGrabOffset.x) * grabDist;
-          box.userData.x = centerPos.x + sideOffset;
+          targetX -= visibilityOffset;
         }
-        box.userData.y = centerPos.y;
       }
 
-      // Auto-drop box if trying to carry through squeeze zone
-      const squeezeZoneRadius = 4.0;
-      if (Math.abs(box.userData.x) < squeezeZoneRadius) {
-        // Drop the box at the edge and push it away from squeeze!
+      // Cartoony vertical bob (no spinning, just up-down movement)
+      const verticalBob = Math.sin(now * 0.004) * 0.15 * boxAbsorptionProgress;
+
+      targetY += verticalBob;
+
+      // NO lerp - box follows slime position EXACTLY (no lag)
+      box.userData.x = targetX;
+      box.userData.y = targetY;
+
+      // Auto-drop box if trying to carry through squeeze zone (gap too narrow)
+      const gapAtBox = getCeil(box.userData.x) - getFloor(box.userData.x);
+      const minGap = box.userData.size + 0.5; // Need margin to fit through
+
+      if (gapAtBox < minGap) {
+        // Gap too narrow - drop box and push it AWAY from slime
         boxGrabbed = false;
+        boxAbsorptionProgress = 0;
         inputs.grab = false;
         grabBtn.classList.remove('active');
 
-        // Position at edge of squeeze zone
-        box.userData.x = box.userData.x > 0 ? squeezeZoneRadius : -squeezeZoneRadius;
+        // Push box away from slime's center position
+        const pushDirection = box.userData.x > centerPos.x ? 1 : -1;
+        box.userData.vx = pushDirection * 0.5; // Strong push away
 
-        // Give it velocity to roll away from squeeze
-        box.userData.vx = box.userData.x > 0 ? 0.3 : -0.3;
-        box.userData.vy = 0;
+        // Vertical velocity depends on which surface we're on
+        if (currentBias === -1) {
+          // On floor - bounce upward
+          box.userData.vy = 0.3;
+        } else if (currentBias === 1) {
+          // On ceiling - fall downward
+          box.userData.vy = -0.3;
+        } else {
+          // On wall - slight upward pop
+          box.userData.vy = 0.15;
+        }
 
-        box.position.set(box.userData.x, box.userData.y, 0);
+        box.userData.atRest = false; // Box is now active
       } else {
         box.userData.vx = 0;
         box.userData.vy = 0;
-        box.position.set(box.userData.x, box.userData.y, 0);
       }
+
+      // Visual absorption effects - keep same size, just fade transparency
+      box.material.opacity = THREE.MathUtils.lerp(1.0, 0.35, boxAbsorptionProgress); // Fade to 35%
+      box.material.transparent = true;
+
+      // Keep box upright (no rotation while grabbed - more cartoony)
+      box.rotation.x = 0;
+      box.rotation.y = 0;
+      box.rotation.z = 0;
+
+      box.position.set(box.userData.x, box.userData.y, 0);
     } else {
       // Box physics when not grabbed
       const bFv = getFloor(box.userData.x);
@@ -377,7 +522,25 @@
       } else {
         box.userData.y = bFv + halfBox;
         box.userData.vy = 0;
-        box.userData.vx *= Math.pow(0.88, dt); // Friction
+
+        // Only apply slope physics if box is active (not at rest)
+        if (!box.userData.atRest) {
+          // Calculate overall slope trend (sample over larger distance to ignore small bumps)
+          const slopeDelta = 3.0; // Look ahead further to get general slope, not individual bumps
+          const floorHere = getFloor(box.userData.x);
+          const floorAhead = getFloor(box.userData.x + slopeDelta);
+          const slope = (floorAhead - floorHere) / slopeDelta;
+
+          // Apply downhill force based on slope (steeper = faster slide)
+          // Negative sign: positive slope (upward right) = negative force (roll down left)
+          const slopeForce = -slope * 0.012 * dt; // Strong force to maintain momentum
+          box.userData.vx += slopeForce;
+
+          box.userData.vx *= Math.pow(0.94, dt); // Light friction - box keeps rolling
+        } else {
+          // Box is at rest - no movement at all
+          box.userData.vx = 0;
+        }
       }
 
       // Apply velocity
@@ -389,34 +552,80 @@
       const bRw = worldBounds - getWallJag(box.userData.y) - halfBox;
       box.userData.x = THREE.MathUtils.clamp(box.userData.x, bLw, bRw);
 
-      // Prevent box from entering squeeze zone (creates puzzle element!)
-      const squeezeZoneRadius = 4.0;
-      if (Math.abs(box.userData.x) < squeezeZoneRadius) {
-        // Push box out of squeeze zone
-        box.userData.x = box.userData.x > 0 ? squeezeZoneRadius : -squeezeZoneRadius;
-        box.userData.vx = 0; // Stop horizontal movement when blocked
+      // Check if gap between floor and ceiling is too narrow for box
+      const gapAtBox = getCeil(box.userData.x) - getFloor(box.userData.x);
+      const minGap = box.userData.size + 0.3; // Box needs at least its size + margin to fit
+
+      if (gapAtBox < minGap) {
+        // Gap is too narrow - box can't fit through squeeze point
+        // Push box back to where it came from
+        const pushBackDistance = 0.3;
+        if (box.userData.vx > 0) {
+          box.userData.x -= pushBackDistance; // Was moving right, push left
+        } else if (box.userData.vx < 0) {
+          box.userData.x += pushBackDistance; // Was moving left, push right
+        }
+        // Stop horizontal movement and bounce back slightly
+        box.userData.vx = -box.userData.vx * 0.5; // Reverse and dampen
+        box.userData.atRest = true; // Come to rest at the squeeze point
       }
 
+      // Detect if box is wedged in a corner (reuse existing bFv, bLw, bRw from above)
+      const bCv = getCeil(box.userData.x);
+
+      const nearFloor = Math.abs(box.userData.y - bFv) < halfBox + 0.3;
+      const nearCeiling = Math.abs(box.userData.y - bCv) < halfBox + 0.3;
+      const nearLeftWall = Math.abs(box.userData.x - bLw) < halfBox + 0.3;
+      const nearRightWall = Math.abs(box.userData.x - bRw) < halfBox + 0.3;
+
+      const isWedged = (nearFloor || nearCeiling) && (nearLeftWall || nearRightWall);
+      const isStill = Math.abs(box.userData.vx) < 0.05 && Math.abs(box.userData.vy) < 0.05;
+      const boxIsWedgedInCorner = isWedged && isStill;
+
       box.position.set(box.userData.x, box.userData.y, 0);
-      box.rotation.z += box.userData.vx * 0.3;
 
-      // Push box when slime rolls into it
+      // Only rotate when not grabbed AND not wedged in corner
+      if (!boxGrabbed && !boxIsWedgedInCorner) {
+        // Angular velocity has momentum - smoothly accelerates/decelerates
+        // Negative sign: rolling right (positive vx) = clockwise spin (negative rotation)
+        const targetAngularVel = -box.userData.vx * 0.4; // Target rotation speed based on linear velocity
+        box.userData.angularVel += (targetAngularVel - box.userData.angularVel) * 0.15; // Smooth acceleration
+        box.userData.angularVel *= Math.pow(0.96, dt); // Light damping
+        box.rotation.z += box.userData.angularVel * dt;
+      } else {
+        box.userData.angularVel = 0; // Reset when grabbed or wedged
+      }
+
+      // Slime interaction with box
       if (dToBox < slimeRadius + halfBox) {
-        const pushStrength = 0.08 * dt;
-        const pushX = (centerPos.x - box.userData.x) * pushStrength;
-        const pushY = (centerPos.y - box.userData.y) * pushStrength;
+        if (boxIsWedgedInCorner) {
+          // Box is wedged - treat as solid obstacle, slime can climb OVER it
+          const pushStrength = 0.12 * dt; // Stronger push to help climb
+          const pushX = (centerPos.x - box.userData.x) * pushStrength;
+          const pushY = (centerPos.y - box.userData.y) * pushStrength;
 
-        // Slime pushes box based on movement direction
-        const slimeVelX = slimeT.x - centerPos.x;
-        const isMovingIntoBox = (slimeVelX > 0 && pushX < 0) || (slimeVelX < 0 && pushX > 0);
-
-        if (isMovingIntoBox && Math.abs(slimeVelX) > 0.02) {
-          // Push the box in movement direction (gentle nudge)
-          box.userData.vx += slimeVelX * 0.15;
-        } else {
-          // Normal climbing - push slime away from box
+          // Push slime away/over the box (helps climbing)
           slimeT.x += pushX;
           slimeT.y += pushY;
+        } else {
+          // Box is free - normal push/climb behavior
+          const pushStrength = 0.08 * dt;
+          const pushX = (centerPos.x - box.userData.x) * pushStrength;
+          const pushY = (centerPos.y - box.userData.y) * pushStrength;
+
+          // Slime pushes box based on movement direction
+          const slimeVelX = slimeT.x - centerPos.x;
+          const isMovingIntoBox = (slimeVelX > 0 && pushX < 0) || (slimeVelX < 0 && pushX > 0);
+
+          if (isMovingIntoBox && Math.abs(slimeVelX) > 0.02) {
+            // Push the box in movement direction (gentle nudge)
+            box.userData.vx += slimeVelX * 0.15;
+            box.userData.atRest = false; // Box is now active from slime collision
+          } else {
+            // Normal climbing - push slime away from box
+            slimeT.x += pushX;
+            slimeT.y += pushY;
+          }
         }
       }
     }
@@ -430,9 +639,18 @@
     for (let fern of ferns) {
       const distToFern = Math.sqrt(Math.pow(centerPos.x - fern.userData.baseX, 2) + Math.pow(centerPos.y - fern.userData.baseY, 2));
 
+      // Slime pushes ferns
       if (distToFern < 2.5) {
         const swayDir = (centerPos.x - fern.userData.baseX) > 0 ? 1 : -1;
         const pushForce = (2.5 - distToFern) * 0.015;
+        fern.userData.swayVel += swayDir * pushForce;
+      }
+
+      // Box also pushes ferns
+      const distBoxToFern = Math.sqrt(Math.pow(box.userData.x - fern.userData.baseX, 2) + Math.pow(box.userData.y - fern.userData.baseY, 2));
+      if (distBoxToFern < 2.2) {
+        const swayDir = (box.userData.x - fern.userData.baseX) > 0 ? 1 : -1;
+        const pushForce = (2.2 - distBoxToFern) * 0.012;
         fern.userData.swayVel += swayDir * pushForce;
       }
 
@@ -459,6 +677,13 @@
           if (distToSeg < 2.0) {
             const pushForce = (2.0 - distToSeg) * 0.008;
             seg.userData.vx += (seg.userData.x - centerPos.x) * pushForce;
+          }
+
+          // Check distance to box - box also pushes vines
+          const distBoxToSeg = Math.sqrt(Math.pow(box.userData.x - seg.userData.x, 2) + Math.pow(box.userData.y - seg.userData.y, 2));
+          if (distBoxToSeg < 1.8) {
+            const pushForce = (1.8 - distBoxToSeg) * 0.007;
+            seg.userData.vx += (seg.userData.x - box.userData.x) * pushForce;
           }
 
           // Gravity
@@ -498,12 +723,21 @@
     }
 
     const breathe = Math.sin(now * 0.003) * 0.04;
+
+    // Calculate charge squish effect
+    let chargeSquish = 0;
+    if (chargingDirection !== 0) {
+      const chargeTime = Math.min(Date.now() - chargeStartTime, CHARGE_THRESHOLD);
+      const chargeProgress = chargeTime / CHARGE_THRESHOLD;
+      chargeSquish = chargeProgress * 0.3; // Max 30% compression
+    }
+
     for (let i = 0; i < posAttr.count; i++) {
       const idx = i * 3;
       let ox = originals[idx], oy = originals[idx+1], oz = originals[idx+2];
       const vPy = (oy + slimeRadius) / (slimeRadius * 2);
       const tF = (currentBias === 1 ? (1.0 - vPy) : vPy);
-      const squash = (0.95 + breathe) * THREE.MathUtils.lerp(1.2, 0.8, tF);
+      const squash = (0.95 + breathe - chargeSquish) * THREE.MathUtils.lerp(1.2, 0.8, tF);
       const dL_v = Math.abs(ox + centerPos.x - lW), dR_v = Math.abs(ox + centerPos.x - rW);
       const wrapW = 1.0 - THREE.MathUtils.smoothstep(Math.min(dL_v, dR_v), 0.0, slimeRadius * 1.4);
 
