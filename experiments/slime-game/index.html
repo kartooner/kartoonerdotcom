@@ -143,15 +143,14 @@
   for (let biome of biomes) {
     if (biome.type === 'ferns') {
       // Fern plants with stem and leaves
-      for (let j = 0; j < 3; j++) {
-        let fernX = biome.xStart + Math.random() * 10;
-        const fernY = getFloor(fernX);
-
-        // Clamp to cave bounds (stay away from walls)
+      for (let j = 0; j < 6; j++) {
+        // First clamp X to safe bounds
         const wallPadding = 2.0;
-        const leftWall = -worldBounds + getWallJag(fernY) + wallPadding;
-        const rightWall = worldBounds - getWallJag(fernY) - wallPadding;
-        fernX = THREE.MathUtils.clamp(fernX, leftWall, rightWall);
+        let fernX = biome.xStart + Math.random() * 10;
+        fernX = THREE.MathUtils.clamp(fernX, -worldBounds + wallPadding, worldBounds - wallPadding);
+
+        // Then calculate floor Y at the clamped X position (plants only on floor)
+        const fernY = getFloor(fernX);
 
         // Create fern group
         const fernGroup = new THREE.Group();
@@ -187,15 +186,14 @@
       }
     } else if (biome.type === 'vines') {
       // Rope-like vines with physics segments
-      for (let j = 0; j < 3; j++) {
-        let vineX = biome.xStart + Math.random() * 10;
-        const ceilY = getCeil(vineX);
-
-        // Clamp to cave bounds (stay away from walls)
+      for (let j = 0; j < 6; j++) {
+        // First clamp X to safe bounds
         const wallPadding = 2.0;
-        const leftWall = -worldBounds + getWallJag(ceilY) + wallPadding;
-        const rightWall = worldBounds - getWallJag(ceilY) - wallPadding;
-        vineX = THREE.MathUtils.clamp(vineX, leftWall, rightWall);
+        let vineX = biome.xStart + Math.random() * 10;
+        vineX = THREE.MathUtils.clamp(vineX, -worldBounds + wallPadding, worldBounds - wallPadding);
+
+        // Then calculate ceiling Y at the clamped X position (vines only on ceiling)
+        const ceilY = getCeil(vineX);
 
         // Create vine as chain of segments
         const vineSegments = [];
