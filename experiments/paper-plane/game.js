@@ -1023,7 +1023,7 @@
     const cylinderGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 8, 1); // 8 segments, low-poly
 
     // Shared material for all building types
-    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.4 });
+    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.5 });
 
     // InstancedMesh for each geometry type (max 20 instances each for better distribution)
     const MAX_BUILDING_INSTANCES = 20;
@@ -1058,7 +1058,9 @@
             box: new THREE.Box3(),
             opacity: 1,
             nearMissCredited: false,
-            geometry: 'box'
+            geometry: 'box',
+            rooftopDetail: null, // Reference to attached rooftop detail
+            windowGrid: null // Reference to attached window grid
         });
         buildingInstances.pyramid.push({
             active: false,
@@ -1073,7 +1075,9 @@
             box: new THREE.Box3(),
             opacity: 1,
             nearMissCredited: false,
-            geometry: 'pyramid'
+            geometry: 'pyramid',
+            rooftopDetail: null, // Reference to attached rooftop detail
+            windowGrid: null // Reference to attached window grid
         });
         buildingInstances.cylinder.push({
             active: false,
@@ -1088,7 +1092,9 @@
             box: new THREE.Box3(),
             opacity: 1,
             nearMissCredited: false,
-            geometry: 'cylinder'
+            geometry: 'cylinder',
+            rooftopDetail: null, // Reference to attached rooftop detail
+            windowGrid: null // Reference to attached window grid
         });
         // Also add to buildings array for compatibility
         buildings.push(buildingInstances.box[i]);
@@ -1112,6 +1118,241 @@
     boxInstancedMesh.instanceMatrix.needsUpdate = true;
     pyramidInstancedMesh.instanceMatrix.needsUpdate = true;
     cylinderInstancedMesh.instanceMatrix.needsUpdate = true;
+
+    // --- 6.5. BUILDING DETAILS (OPTIONS A & B) ---
+    // OPTION A: Rooftop antennas and structures
+    // OPTION B: Window grids on building faces
+    const rooftopDetails = [];
+    const rooftopDetailPool = [];
+    const windowGrids = [];
+    const windowGridPool = [];
+
+    // Create material for rooftop details (brighter cyan for visibility)
+    const rooftopMat = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.6
+    });
+
+    // Antenna geometry - thin vertical cylinder
+    const antennaGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2, 4); // Very thin, 2 units tall
+
+    // Small rooftop structure geometry (HVAC boxes, etc)
+    const rooftopBoxGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.4);
+
+    // Pre-create rooftop detail pool (60 total - one per building max)
+    for (let i = 0; i < 60; i++) {
+        const detailType = Math.random();
+        let detail;
+
+        if (detailType < 0.6) {
+            // 60% chance: Antenna
+            detail = new THREE.Mesh(antennaGeometry, rooftopMat.clone());
+            detail.userData.type = 'antenna';
+        } else {
+            // 40% chance: Rooftop box
+            detail = new THREE.Mesh(rooftopBoxGeometry, rooftopMat.clone());
+            detail.userData.type = 'rooftopBox';
+        }
+
+        detail.visible = false;
+        detail.position.set(0, 0, -1000);
+        detail.userData.active = false;
+        detail.userData.parentBuilding = null; // Reference to building this detail belongs to
+
+        scene.add(detail);
+        rooftopDetailPool.push(detail);
+    }
+
+    // Function to attach rooftop detail to a building
+    function attachRooftopDetail(building) {
+        // Don't add details to pyramids (they have peaked tops already)
+        if (building.geometry === 'pyramid') return null;
+
+        // 70% chance to add a rooftop detail
+        if (Math.random() > 0.7) return null;
+
+        const detail = rooftopDetailPool.find(d => !d.userData.active);
+        if (!detail) return null;
+
+        detail.userData.active = true;
+        detail.userData.parentBuilding = building;
+        detail.visible = true;
+        rooftopDetails.push(detail);
+
+        return detail;
+    }
+
+    // Function to update rooftop detail position/visibility
+    function updateRooftopDetail(detail, building) {
+        if (!detail || !detail.userData.active) return;
+
+        // Position detail on top of building
+        detail.position.x = building.position.x;
+        detail.position.z = building.position.z;
+
+        // Calculate top of building
+        // Building position.y is the center (already includes terrainScale)
+        // Building geometry is 5 units tall, so half-height is 2.5
+        // Scaled half-height is: 2.5 * building.scale.y
+        const buildingTop = building.position.y + (2.5 * building.scale.y);
+
+        if (detail.userData.type === 'antenna') {
+            // Antenna is 2 units tall (centered at origin, so -1 to +1)
+            // Position bottom of antenna at building top
+            detail.position.y = buildingTop + 1; // Center at top + 1 unit (half of 2 unit height)
+            // Scale X/Z with building for width consistency, but keep Y at 1.0 for proper height
+            detail.scale.set(building.scale.x, 1.0, building.scale.z);
+        } else {
+            // Rooftop box is 0.3 units tall (centered at origin, so -0.15 to +0.15)
+            // Position bottom of box at building top
+            detail.position.y = buildingTop + 0.15; // Center at top + 0.15 units (half of 0.3 unit height)
+            // Scale X/Z with building for width consistency, but keep Y at 1.0 for proper height
+            detail.scale.set(building.scale.x, 1.0, building.scale.z);
+        }
+
+        // Match building opacity for fade out
+        if (building.opacity < 1) {
+            detail.material.opacity = building.opacity * 0.6;
+        } else {
+            detail.material.opacity = 0.6;
+        }
+
+        // Hide detail if building is inactive or far offscreen
+        // CRITICAL: Buildings move to z=-120 when hit, cleanup immediately
+        if (!building.active) {
+            detail.visible = false;
+            detail.userData.active = false;
+            detail.userData.parentBuilding = null;
+            detail.position.set(0, 0, -1000);
+
+            // Remove from active array
+            const idx = rooftopDetails.indexOf(detail);
+            if (idx > -1) rooftopDetails.splice(idx, 1);
+        }
+    }
+
+    // --- OPTION B: WINDOW GRIDS ---
+    // Create window grid patterns for building faces
+    function createWindowGrid(buildingType) {
+        // Create grid of lines to simulate windows
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+
+        if (buildingType === 'box') {
+            // Box buildings: 3x5 window grid (3 columns, 5 rows)
+            const cols = 3;
+            const rows = 5;
+            const width = 1.8; // Slightly smaller than building width (2 units)
+            const height = 4.5; // Slightly smaller than building height (5 units)
+
+            // Horizontal lines (floors)
+            for (let r = 0; r <= rows; r++) {
+                const y = (r / rows - 0.5) * height;
+                positions.push(-width/2, y, 1.01); // Front face (slightly in front to prevent z-fighting)
+                positions.push(width/2, y, 1.01);
+            }
+
+            // Vertical lines (columns)
+            for (let c = 0; c <= cols; c++) {
+                const x = (c / cols - 0.5) * width;
+                positions.push(x, -height/2, 1.01);
+                positions.push(x, height/2, 1.01);
+            }
+        } else if (buildingType === 'cylinder') {
+            // Cylinder buildings: circular window pattern
+            const rings = 5;
+            const segments = 8;
+            const radius = 1.4;
+            const height = 4.5;
+
+            // Horizontal rings
+            for (let r = 0; r <= rings; r++) {
+                const y = (r / rings - 0.5) * height;
+                for (let s = 0; s < segments; s++) {
+                    const angle1 = (s / segments) * Math.PI * 2;
+                    const angle2 = ((s + 1) / segments) * Math.PI * 2;
+                    positions.push(
+                        Math.cos(angle1) * radius, y, Math.sin(angle1) * radius,
+                        Math.cos(angle2) * radius, y, Math.sin(angle2) * radius
+                    );
+                }
+            }
+
+            // Vertical lines
+            for (let s = 0; s < segments; s++) {
+                const angle = (s / segments) * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                positions.push(x, -height/2, z);
+                positions.push(x, height/2, z);
+            }
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+        const material = new THREE.LineBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.08, // EXTREMELY subtle windows - barely visible accent detail
+            linewidth: 1
+        });
+
+        return new THREE.LineSegments(geometry, material);
+    }
+
+    // Pre-create window grid pool (60 total - match rooftop details)
+    for (let i = 0; i < 60; i++) {
+        // Alternate between box and cylinder grids
+        const gridType = i % 2 === 0 ? 'box' : 'cylinder';
+        const windowGrid = createWindowGrid(gridType);
+
+        windowGrid.visible = false;
+        windowGrid.position.set(0, 0, -1000);
+        windowGrid.userData.active = false;
+        windowGrid.userData.parentBuilding = null;
+        windowGrid.userData.gridType = gridType;
+
+        scene.add(windowGrid);
+        windowGridPool.push(windowGrid);
+    }
+
+    // Function to attach window grid to a building
+    function attachWindowGrid(building) {
+        // DISABLED: Window grids removed - they interfered with box building rendering
+        return null;
+    }
+
+    // Function to update window grid position/visibility
+    function updateWindowGrid(grid, building) {
+        if (!grid || !grid.userData.active) return;
+
+        // Match building position and scale
+        grid.position.copy(building.position);
+        grid.scale.copy(building.scale);
+        grid.rotation.copy(building.rotation);
+
+        // Match building opacity for fade out
+        if (building.opacity < 1) {
+            grid.material.opacity = building.opacity * 0.08;
+        } else {
+            grid.material.opacity = 0.08;
+        }
+
+        // Hide grid if building is inactive or far offscreen
+        // CRITICAL: Buildings move to z=-120 when hit, cleanup immediately
+        if (!building.active) {
+            grid.visible = false;
+            grid.userData.active = false;
+            grid.userData.parentBuilding = null;
+            grid.position.set(0, 0, -1000);
+
+            // Remove from active array
+            const idx = windowGrids.indexOf(grid);
+            if (idx > -1) windowGrids.splice(idx, 1);
+        }
+    }
 
     // Reusable quaternion for matrix updates (prevents garbage collection)
     const _tempQuaternion = new THREE.Quaternion();
@@ -1752,10 +1993,12 @@
     const wallMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.5 });
 
     // High wall: long horizontal rectangle at top (y=8-10)
-    const highWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8); // Wide, thin, shallow
+    // Extended width to 60 to hide edge attachment points past camera view
+    const highWallGeometry = new THREE.BoxGeometry(60, 1.5, 0.8); // Wide, thin, shallow
 
     // Low wall: long horizontal rectangle at ground level (y=0-2)
-    const lowWallGeometry = new THREE.BoxGeometry(40, 1.5, 0.8);
+    // Extended width to 60 to hide edge attachment points past camera view
+    const lowWallGeometry = new THREE.BoxGeometry(60, 1.5, 0.8);
 
     // Pre-create wall pool (16 walls total - mix of high and low, increased for more frequent spawning)
     for (let i = 0; i < 16; i++) {
@@ -1800,7 +2043,8 @@
 
     // Create vertical barrier segments (these stack to create full coverage)
     // Each barrier is 2 units tall, we need 3-4 to cover 0-8 range
-    const barrierSegmentGeometry = new THREE.BoxGeometry(30, 2, 0.8); // Wide, medium height, thin
+    // Extended width to 50 to hide edge attachment points past camera view
+    const barrierSegmentGeometry = new THREE.BoxGeometry(50, 2, 0.8); // Wide, medium height, thin
 
     // Pre-create barrier segment pool (24 segments - enough for 4 complete barriers with 6 segments each)
     for (let i = 0; i < 24; i++) {
@@ -2788,6 +3032,21 @@
         buildings.forEach(b => {
             b.position.z = -1000;
             b.active = false;
+
+            // Clean up attached details
+            if (b.rooftopDetail) {
+                b.rooftopDetail.visible = false;
+                b.rooftopDetail.userData.active = false;
+                b.rooftopDetail.position.set(0, 0, -1000);
+                b.rooftopDetail = null;
+            }
+            // Window grids disabled
+            // if (b.windowGrid) {
+            //     b.windowGrid.visible = false;
+            //     b.windowGrid.userData.active = false;
+            //     b.windowGrid.position.set(0, 0, -1000);
+            //     b.windowGrid = null;
+            // }
         });
         walls.forEach(w => scene.remove(w));
         walls.length = 0;
@@ -2803,6 +3062,12 @@
             chunk.position.set(0, 0, -1000);
         });
         collisionDebris.length = 0;
+
+        // Clear rooftop details array (pool is reusable, just clear active tracking)
+        rooftopDetails.length = 0;
+
+        // Clear window grids array (pool is reusable, just clear active tracking)
+        windowGrids.length = 0;
 
         // Update UI
         uiControls.updateHealthBar(currentHealth, maxHealth);
@@ -3920,12 +4185,12 @@
         engineLight.intensity = 10 + Math.random()*3;
 
         // Collision logic with varied buildings (simplified)
-        shipBox.setFromObject(shipGroup);
-        // Make collision more forgiving - shrink ship hitbox by 30%
-        // Reuse temp vectors to avoid garbage collection
-        shipBox.getSize(tempVec3_1);
-        shipBox.getCenter(tempVec3_2);
-        tempVec3_1.multiplyScalar(0.7);
+        // FIXED: Use fixed-size collision box to prevent ghost hits from rotation
+        // Previous bug: setFromObject() created expanded AABB when plane was rotated
+        // Now: Create consistent collision box based on plane type, ignoring rotation
+        const planeHalfSize = currentPlaneType === 'glider' ? 0.6 : 0.5; // Glider is slightly larger
+        tempVec3_1.set(planeHalfSize, planeHalfSize * 0.4, planeHalfSize * 1.2); // Elongated box (plane shape)
+        tempVec3_2.set(curX, curY, 3.5); // Center at plane position
         shipBox.setFromCenterAndSize(tempVec3_2, tempVec3_1);
 
         // Check if we're in a breather phase to skip building updates
@@ -3949,12 +4214,13 @@
         const orientationPeriodOver = timeSinceGameStart > 2000; // 2 seconds
 
         if (activeBuildingCount < 10 && canSpawnBuildings && !bossActive && orientationPeriodOver) {
-            // Spawn multiple waves to fill the view (spawn 5-6 distinct pattern sets)
-            for (let waveNum = 0; waveNum < 6; waveNum++) {
+            // Spawn multiple waves to fill the view (spawn 8 distinct pattern sets for denser early game)
+            for (let waveNum = 0; waveNum < 8; waveNum++) {
                 const patternName = getWavePattern(levelDifficulty);
                 const wave = wavePatterns[patternName];
                 const positions = wave.getPositions(Math.floor(miles));
-                const baseZ = -120 - (waveNum * 45); // Clear separation: -120, -165, -210, -255, -300, -345
+                // Reduced spacing from 45 to 35 for denser initial spawns
+                const baseZ = -120 - (waveNum * 35);
 
                 // Spawn ALL buildings in this wave
                 for (let i = 0; i < positions.length; i++) {
@@ -3988,13 +4254,29 @@
                                    geometryType === 'pyramid' ? pyramidInstancedMesh :
                                    cylinderInstancedMesh;
                         updateInstanceMatrix(instance, mesh, index);
+
+                        // Attach rooftop detail (antenna or structure)
+                        instance.rooftopDetail = attachRooftopDetail(instance);
+
+                        // Window grids disabled - caused rendering issues
+                        instance.windowGrid = null;
                     }
                 }
             }
         }
 
         buildings.forEach((b, idx) => {
-            if (!b.active) return; // Skip inactive instances
+            // CRITICAL: Clean up attached details BEFORE checking active state
+            // Otherwise details stick on screen when building becomes inactive
+            if (!b.active) {
+                // Clean up rooftop detail if this building has one
+                if (b.rooftopDetail) {
+                    updateRooftopDetail(b.rooftopDetail, b);
+                    b.rooftopDetail = null; // Clear reference
+                }
+                // Window grids disabled - no cleanup needed
+                return; // Skip rest of logic for inactive instances
+            }
 
             // Get the mesh and instance index for this building
             const mesh = b.geometry === 'box' ? boxInstancedMesh :
@@ -4005,13 +4287,30 @@
             // During breather phases, only hide buildings that haven't spawned yet (far back)
             // Let already-visible buildings pass naturally to avoid jarring disappearance
             if (isBreatherPhase) {
-                if (b.position.z < -50) {
-                    // Only hide buildings that are far back (not yet spawned)
+                if (b.position.z < -150) {
+                    // Only hide buildings that are VERY far back (not yet visible)
+                    // Buildings between -150 and player are already visible, let them pass naturally
                     b.active = false;
                     b.position.z = -500; // Keep them far back
                     b.scale.set(0, 0, 0); // Scale to zero to ensure invisibility
                     b.originalScale = null; // Clear original scale to prevent restoration
                     updateInstanceMatrix(b, mesh, instanceIndex);
+
+                    // Clean up attached details immediately
+                    if (b.rooftopDetail) {
+                        b.rooftopDetail.visible = false;
+                        b.rooftopDetail.userData.active = false;
+                        b.rooftopDetail.position.set(0, 0, -1000);
+                        b.rooftopDetail = null;
+                    }
+                    // Window grids disabled
+                    // if (b.windowGrid) {
+                    //     b.windowGrid.visible = false;
+                    //     b.windowGrid.userData.active = false;
+                    //     b.windowGrid.position.set(0, 0, -1000);
+                    //     b.windowGrid = null;
+                    // }
+
                     return; // Skip rest of logic for unspawned buildings
                 }
                 // Let visible/spawned buildings continue their natural movement
@@ -4034,6 +4333,16 @@
             // Update instance matrix with new position and scale
             updateInstanceMatrix(b, mesh, instanceIndex);
 
+            // Update rooftop detail if this building has one
+            if (b.rooftopDetail) {
+                updateRooftopDetail(b.rooftopDetail, b);
+            }
+
+            // Window grids disabled
+            // if (b.windowGrid) {
+            //     updateWindowGrid(b.windowGrid, b);
+            // }
+
             // Gradual fade as buildings pass camera (smoother than instant toggle)
             if(b.position.z > 10) {
                 // Start fading when approaching camera (z > 10)
@@ -4053,6 +4362,22 @@
                 b.originalScale = null; // Clear original scale to prevent restoration
                 b.opacity = 0; // Set opacity to 0
                 updateInstanceMatrix(b, mesh, instanceIndex);
+
+                // Clean up attached details immediately
+                if (b.rooftopDetail) {
+                    b.rooftopDetail.visible = false;
+                    b.rooftopDetail.userData.active = false;
+                    b.rooftopDetail.position.set(0, 0, -1000);
+                    b.rooftopDetail = null;
+                }
+                // Window grids disabled
+                // if (b.windowGrid) {
+                //     b.windowGrid.visible = false;
+                //     b.windowGrid.userData.active = false;
+                //     b.windowGrid.position.set(0, 0, -1000);
+                //     b.windowGrid = null;
+                // }
+
                 return; // Skip rest of logic for this building
             }
 
@@ -4091,7 +4416,8 @@
 
                     // Apply difficulty scalar and warm-up to obstacle spacing (hidden system)
                     // Lower scalar = easier = more spacing; Higher scalar = harder = less spacing
-                    const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.3 : 1.0); // 30% more spacing in warm-up
+                    // Reduced warm-up multiplier from 1.3 to 1.1 for denser early game spawns
+                    const spacingMultiplier = (1 / difficultyScalar) * (inWarmup ? 1.1 : 1.0);
 
                     // WAVE SPACING: How close waves spawn to each other
                     // AGGRESSIVE spawn rates for constant action - no more empty gaps
@@ -4099,9 +4425,9 @@
                     if (currentPhase === 'boss_gauntlet') {
                         baseDistance = 8; // Boss gauntlet - RELENTLESS (reduced from 10)
                     } else if (miles < 10) {
-                        baseDistance = 8; // EARLY GAME (0-10mi) - CONSTANT waves (reduced from 12)
+                        baseDistance = 6; // EARLY GAME (0-10mi) - VERY DENSE for better onboarding (reduced from 8)
                     } else if (miles < 20) {
-                        baseDistance = 10; // Early (10-20mi) - still very dense (reduced from 15)
+                        baseDistance = 8; // Early (10-20mi) - still very dense (reduced from 10)
                     } else if (miles < 50) {
                         baseDistance = 14; // Early-mid transition (reduced from 20)
                     } else {
@@ -4412,6 +4738,21 @@
                     b.active = false;
                     updateInstanceMatrix(b, mesh, instanceIndex);
 
+                    // CRITICAL: Immediately clean up attached details on collision
+                    if (b.rooftopDetail) {
+                        b.rooftopDetail.visible = false;
+                        b.rooftopDetail.userData.active = false;
+                        b.rooftopDetail.position.set(0, 0, -1000);
+                        b.rooftopDetail = null;
+                    }
+                    // Window grids disabled
+                    // if (b.windowGrid) {
+                    //     b.windowGrid.visible = false;
+                    //     b.windowGrid.userData.active = false;
+                    //     b.windowGrid.position.set(0, 0, -1000);
+                    //     b.windowGrid = null;
+                    // }
+
                     // Invincibility: no damage, just show message
                     if (invincibilityActive) {
                         crashMessage = `INVINCIBLE!`;
@@ -4585,7 +4926,13 @@
             }
 
             // Only check collision when wall is close (matched to building collision zone)
-            if (wall.position.z > -15 && wall.position.z < 10) {
+            // CRITICAL FIX: Tighter collision zone to prevent ghost hits from passed walls
+            if (wall.position.z > -15 && wall.position.z < 5) {
+                // Must be visible to collide
+                if (!wall.visible) {
+                    continue;
+                }
+
                 // Broad-phase culling: distance check before expensive Box3 operations
                 const dx = wall.position.x - curX;
                 const dy = wall.position.y - curY;
@@ -4688,7 +5035,13 @@
             }
 
             // Collision detection when barrier is close (matched to building collision zone)
-            if (barrier.position.z > -15 && barrier.position.z < 10) {
+            // CRITICAL FIX: Tighter collision zone to prevent ghost hits from passed barriers
+            if (barrier.position.z > -15 && barrier.position.z < 5) {
+                // Must be visible to collide
+                if (!barrier.visible) {
+                    continue;
+                }
+
                 const dx = barrier.position.x - curX;
                 const dy = barrier.position.y - curY;
                 const dz = barrier.position.z - 3.5;
