@@ -247,34 +247,11 @@
     </style>
 </head>
 <body>
-    <!-- Skip Navigation Link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
-        
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-    
-    <!-- Theme Toggle Button -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
 
 <div class="container">
     <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
@@ -411,6 +388,8 @@
 </div>
 
 <div id="footer-placeholder"></div>
+<script src="/navigation-loader.js"></script>
+<script src="/theme-toggle-loader.js"></script>
 <script src="/footer-loader.js"></script>
 <script src="/app.min.js"></script>
 <script data-goatcounter="https://kartooner.goatcounter.com/count"

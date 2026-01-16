@@ -97,7 +97,13 @@
       "Bash(cmd /c \"for /f \"tokens=5\" %a in \\(''netstat -ano ^| findstr :8000 ^| findstr LISTENING''\\) do taskkill /F /PID %a\")",
       "Bash(cmd /c \"taskkill /F /PID 2748\")",
       "Bash(copy:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(test:*)",
+      "Bash(for file in \"D:\\\\Github\\\\kartoonerdotcom\\\\entry\\\\everyone-creates.html\" \"D:\\\\Github\\\\kartoonerdotcom\\\\entry\\\\here-we-go-again.html\" \"D:\\\\Github\\\\kartoonerdotcom\\\\entry\\\\the-pole-on-the-corner.html\")",
+      "Bash(do grep -n \"<!-- Persistent Navigation -->\" \"$file\")",
+      "Bash(for file in entry/everyone-creates.html entry/here-we-go-again.html entry/the-pole-on-the-corner.html)",
+      "Bash(do sed -i '/<body>/,/^    <button id=\"\"theme-toggle\"\"/c\\\\<body>\\\\n    <a href=\"\"#main-content\"\" class=\"\"skip-link\"\">Skip to main content<\\\\/a>\\\\n\\\\n    <div id=\"\"navigation-placeholder\"\"><\\\\/div>\\\\n\\\\n    <div id=\"\"theme-toggle-placeholder\"\"><\\\\/div>' \"$file\")",
+      "Bash(do sed -i 's|<script src=\"\"/footer-loader.js\"\"></script>|<script src=\"\"/navigation-loader.js\"\"></script>\\\\n    <script src=\"\"/theme-toggle-loader.js\"\"></script>\\\\n    <script src=\"\"/footer-loader.js\"\"></script>|' \"$file\")"
     ],
     "deny": [],
     "ask": []

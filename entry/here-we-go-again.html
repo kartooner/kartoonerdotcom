@@ -597,34 +597,11 @@
     </script>
 </head>
 <body>
-    <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
-        
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal" class="current" aria-current="page">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
 
     <div class="entry-container">
         <div class="entry-header" id="main-content">
@@ -694,6 +671,8 @@
     </div>
 
     <div id="footer-placeholder"></div>
+    <script src="/navigation-loader.js"></script>
+    <script src="/theme-toggle-loader.js"></script>
     <script src="/footer-loader.js"></script>
 
     <script src="/app.min.js"></script>
