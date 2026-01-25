@@ -2,12 +2,12 @@
 // These patterns work across any industry
 
 const WORKFLOW_PATTERNS = {
-    // Pattern 1: Auto-Approval
     autoApproval: {
         name: 'Auto-Approval Workflow',
         description: 'Automatically approve or route requests based on AI evaluation of policy rules and risk',
         triggerKeywords: ['auto', 'approv', 'automatic'],
         applicableTo: ['Requests', 'Applications', 'Submissions', 'Claims'],
+        humanInTheLoop: 'Required when confidence score is below threshold, for high-value requests, exceptions to policy, or when AI flags uncertainty. Manager approval for edge cases.',
         examples: {
             generic: 'Auto-approve requests based on policy compliance and risk assessment',
             hcm: 'Auto-approve PTO requests with team coverage validation',
@@ -16,13 +16,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Auto-approve returns under $50 with valid receipt'
         }
     },
-    
-    // Pattern 2: Anomaly Detection
+
     anomalyDetection: {
         name: 'Anomaly Detection & Correction',
         description: 'Detect unusual patterns or data issues and suggest corrections',
         triggerKeywords: ['detect', 'anomal', 'missing', 'flag', 'error'],
         applicableTo: ['Transactions', 'Records', 'Data', 'Entries'],
+        humanInTheLoop: 'Human review required for all flagged anomalies before corrections are applied. Critical anomalies should escalate to domain experts for verification.',
         examples: {
             generic: 'Detect anomalies in transaction data and suggest corrections',
             hcm: 'Detect missing time punches and suggest fixes based on schedule',
@@ -31,13 +31,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Detect inventory discrepancies and trigger reconciliation'
         }
     },
-    
-    // Pattern 3: Intelligent Scoring
+
     intelligentScoring: {
         name: 'Intelligent Scoring & Routing',
         description: 'Score entities based on multiple factors and route by threshold',
         triggerKeywords: ['score', 'insight', 'rating', 'classify'],
         applicableTo: ['Applications', 'Submissions', 'Requests', 'Records'],
+        humanInTheLoop: 'Experts should review borderline scores and validate high-stakes decisions. Periodic audits of scoring fairness and accuracy recommended.',
         examples: {
             generic: 'Score and route items based on configurable risk factors',
             hcm: 'Score timecards for anomalies and route by risk threshold',
@@ -46,13 +46,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Score customer returns for fraud likelihood'
         }
     },
-    
-    // Pattern 4: Predictive Intelligence
+
     predictiveIntelligence: {
         name: 'Predictive Intelligence Dashboard',
         description: 'Continuously monitor data and generate proactive insights and alerts',
         triggerKeywords: ['predict', 'forecast', 'alert', 'insight', 'dashboard', 'proactive'],
         applicableTo: ['Trends', 'Risks', 'Opportunities', 'Issues'],
+        humanInTheLoop: 'Humans validate predictions before taking action, especially for interventions. Leadership review for strategic decisions based on forecasts.',
         examples: {
             generic: 'Generate predictive alerts across all business data',
             hcm: 'Predict employee turnover risk and suggest retention actions',
@@ -61,13 +61,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Predict inventory stockouts and optimize reordering'
         }
     },
-    
-    // Pattern 5: Unified Entity View
+
     unifiedEntityView: {
         name: 'Unified Entity Intelligence',
         description: 'Aggregate cross-system data into a single intelligent view with insights',
         triggerKeywords: ['unified', 'everything about', 'complete view', '360', 'vantage'],
         applicableTo: ['People', 'Customers', 'Accounts', 'Products', 'Assets'],
+        humanInTheLoop: 'Users verify AI-generated insights and can flag incorrect correlations. Data stewards review and correct cross-system data conflicts.',
         examples: {
             generic: 'Show complete intelligent view of any entity across all systems',
             hcm: 'View employee across time, payroll, benefits, performance',
@@ -76,13 +76,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'View customer across orders, returns, support, loyalty'
         }
     },
-    
-    // Pattern 6: Cross-System Workflow
+
     crossSystemWorkflow: {
         name: 'Cross-System Orchestration',
         description: 'Orchestrate complex workflows that span multiple systems with impact analysis',
         triggerKeywords: ['cross-domain', 'workflow', 'orchestrat', 'multi-system', 'process'],
         applicableTo: ['State Changes', 'Lifecycle Events', 'Complex Processes'],
+        humanInTheLoop: 'Human approval gates at each major system boundary. Impact analysis must be reviewed before execution. Rollback decisions require human authorization.',
         examples: {
             generic: 'Orchestrate multi-system workflows with impact analysis',
             hcm: 'Process employee promotion across HR, payroll, IT, facilities',
@@ -91,13 +91,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Process order fulfillment across inventory, shipping, billing'
         }
     },
-    
-    // Pattern 7: Natural Language Interface
+
     naturalLanguageQA: {
         name: 'Natural Language Q&A',
         description: 'Answer user questions in natural language with confidence scoring',
         triggerKeywords: ['question', 'ask', 'chat', 'conversational', 'natural language'],
         applicableTo: ['Support', 'Self-Service', 'Information Retrieval'],
+        humanInTheLoop: 'Escalate to human agents when confidence is low or question is complex. Human review of AI responses for sensitive topics. Feedback loop to improve AI answers.',
         examples: {
             generic: 'Answer user questions about their data in natural language',
             hcm: 'Answer employee questions about pay, benefits, PTO',
@@ -106,13 +106,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Answer customer questions about orders, returns, products'
         }
     },
-    
-    // Pattern 8: Intelligent Search
+
     intelligentSearch: {
         name: 'Intelligent Search & Discovery',
         description: 'Search across all systems with semantic understanding and contextual ranking',
         triggerKeywords: ['search', 'find', 'discover', 'global', 'lookup'],
         applicableTo: ['Data', 'Documents', 'Entities', 'Records'],
+        humanInTheLoop: 'Users provide relevance feedback to improve ranking. Administrators configure access controls and sensitive data visibility.',
         examples: {
             generic: 'Search intelligently across all systems and data types',
             hcm: 'Search employees, time records, policies, documents',
@@ -121,13 +121,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Search products, orders, customers, inventory'
         }
     },
-    
-    // Pattern 9: Impact Analysis
+
     impactAnalysis: {
         name: 'What-If Impact Analysis',
         description: 'Analyze cascading impacts of potential changes before they happen',
         triggerKeywords: ['impact', 'what if', 'scenario', 'analysis', 'consequence'],
         applicableTo: ['Changes', 'Decisions', 'Events', 'Scenarios'],
+        humanInTheLoop: 'All impact analyses must be reviewed by domain experts before decisions. Critical impacts require leadership sign-off. Human judgment for intangible factors.',
         examples: {
             generic: 'Analyze impact of changes before executing them',
             hcm: 'Analyze impact if key employee leaves',
@@ -136,13 +136,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Analyze impact of supplier change on inventory'
         }
     },
-    
-    // Pattern 10: Schedule/Resource Optimization
+
     resourceOptimization: {
         name: 'Resource Optimization',
         description: 'Generate optimal resource allocation based on historical patterns and constraints',
         triggerKeywords: ['schedul', 'optimiz', 'allocat', 'generat', 'plan'],
         applicableTo: ['Schedules', 'Resources', 'Capacity', 'Allocation'],
+        humanInTheLoop: 'Managers review and approve AI-generated schedules before publishing. Employees can request adjustments. Human override for special circumstances.',
         examples: {
             generic: 'Optimize resource allocation using historical data',
             hcm: 'Generate employee schedules from past demand patterns',
@@ -151,13 +151,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Optimize inventory allocation across store locations'
         }
     },
-    
-    // Pattern 11: Real-Time Processing
+
     realTimeProcessing: {
         name: 'Real-Time Data Processing',
         description: 'Process and validate data in real-time with automated actions',
         triggerKeywords: ['real-time', 'lock', 'process', 'validate', 'cutoff'],
         applicableTo: ['Transactions', 'Data Feeds', 'Time-Sensitive Processes'],
+        humanInTheLoop: 'Alerts to humans for validation failures requiring intervention. Override capabilities for time-critical exceptions. Post-processing audit by humans.',
         examples: {
             generic: 'Process and validate data streams in real-time',
             hcm: 'Lock timecards at cutoff and send validated data to payroll',
@@ -166,13 +166,13 @@ const WORKFLOW_PATTERNS = {
             retail: 'Process orders in real-time with inventory validation'
         }
     },
-    
-    // Pattern 12: Smart Aggregation
+
     smartAggregation: {
         name: 'Smart Data Aggregation',
         description: 'Intelligently aggregate and route data based on business rules',
         triggerKeywords: ['aggregat', 'consolidat', 'merge', 'append', 'combine'],
         applicableTo: ['Data', 'Transactions', 'Records', 'Reports'],
+        humanInTheLoop: 'Review aggregation logic for complex merges. Approval for aggregations affecting financial or compliance data. Exception handling for conflicts.',
         examples: {
             generic: 'Aggregate data intelligently based on business rules',
             hcm: 'Append adjustments to active paychecks vs creating separate',

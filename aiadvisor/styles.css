@@ -1,34 +1,24 @@
-/* AI Project Advisor - Minimal Design System
-   Inspired by pencil.dev: clean typography,
-   monochromatic palette, single accent color */
-
-/* ==========================================
-   CSS Custom Properties
-   ========================================== */
+/* AI Project Advisor - Minimal Design System */
 
 :root {
-    /* Typography */
     --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --font-display: 'Figtree', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-    /* Font sizes - generous scale */
-    --text-xs: 0.75rem;      /* 12px */
-    --text-sm: 0.875rem;     /* 14px */
-    --text-base: 1rem;       /* 16px */
-    --text-lg: 1.125rem;     /* 18px */
-    --text-xl: 1.25rem;      /* 20px */
-    --text-2xl: 1.5rem;      /* 24px */
-    --text-3xl: 2rem;        /* 32px */
-    --text-4xl: 2.5rem;      /* 40px */
-    --text-5xl: 3rem;        /* 48px */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 2rem;
+    --text-4xl: 2.5rem;
+    --text-5xl: 3rem;
 
-    /* Line heights */
     --leading-tight: 1.1;
     --leading-snug: 1.3;
     --leading-normal: 1.5;
     --leading-relaxed: 1.7;
 
-    /* Spacing - generous whitespace */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
     --space-3: 0.75rem;
@@ -42,31 +32,27 @@
     --space-20: 5rem;
     --space-24: 6rem;
 
-    /* Colors - Monochromatic with yellow accent */
     --white: #ffffff;
     --gray-50: #fafafa;
     --gray-100: #f5f5f5;
     --gray-200: #e5e5e5;
     --gray-300: #d4d4d4;
-    --gray-400: #a3a3a3;  /* Use sparingly - decorative only */
-    --gray-500: #6b7280;  /* Minimum for WCAG AA on white */
+    --gray-400: #a3a3a3;
+    --gray-500: #6b7280;
     --gray-600: #525252;
     --gray-700: #404040;
     --gray-800: #262626;
     --gray-900: #171717;
     --black: #0a0a0a;
 
-    /* Primary accent - Yellow/Gold like pencil.dev */
     --accent: #fbbf24;
     --accent-hover: #f59e0b;
     --accent-light: #fef3c7;
 
-    /* Semantic colors - muted */
     --success: #22c55e;
     --warning: #eab308;
     --error: #ef4444;
 
-    /* Applied colors */
     --bg-primary: var(--white);
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
@@ -74,26 +60,20 @@
     --text-primary: var(--gray-900);
     --text-secondary: var(--gray-600);
     --text-tertiary: var(--gray-500);
-    --text-muted: var(--gray-500);  /* WCAG AA compliant */
+    --text-muted: var(--gray-500);
 
     --border-default: var(--gray-200);
     --border-subtle: var(--gray-100);
 
-    /* Shadows - very minimal */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04);
 
-    /* Border radius - subtle */
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
     --radius-xl: 12px;
     --radius-full: 9999px;
 }
-
-/* ==========================================
-   Base Styles
-   ========================================== */
 
 *, *::before, *::after {
     box-sizing: border-box;
@@ -117,10 +97,6 @@ body {
     font-weight: 400;
 }
 
-/* ==========================================
-   Typography - pencil.dev style
-   ========================================== */
-
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     font-weight: 600;
@@ -130,31 +106,11 @@ h1, h2, h3, h4, h5, h6 {
     margin: 0;
 }
 
-h1 {
-    font-size: var(--text-5xl);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-}
-
-h2 {
-    font-size: var(--text-3xl);
-    font-weight: 600;
-}
-
-h3 {
-    font-size: var(--text-2xl);
-    font-weight: 600;
-}
-
-h4 {
-    font-size: var(--text-xl);
-    font-weight: 600;
-}
-
-h5 {
-    font-size: var(--text-lg);
-    font-weight: 600;
-}
+h1 { font-size: var(--text-5xl); font-weight: 700; letter-spacing: -0.03em; }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
 
 p {
     line-height: var(--leading-relaxed);
@@ -167,10 +123,6 @@ p {
     line-height: var(--leading-relaxed);
     color: var(--text-secondary);
 }
-
-/* ==========================================
-   Accessibility
-   ========================================== */
 
 .sr-only {
     position: absolute;
@@ -215,10 +167,6 @@ p {
     }
 }
 
-/* ==========================================
-   Layout
-   ========================================== */
-
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -228,10 +176,6 @@ p {
 .section {
     padding: var(--space-16) 0;
 }
-
-/* ==========================================
-   Cards - Clean, minimal
-   ========================================== */
 
 .card {
     background: var(--bg-primary);
@@ -247,10 +191,6 @@ p {
     padding: var(--space-6);
     box-shadow: var(--shadow-md);
 }
-
-/* ==========================================
-   OOUX Sections - Simplified, monochromatic
-   ========================================== */
 
 .ooux-object {
     background: var(--bg-primary);
@@ -283,7 +223,6 @@ p {
     padding: var(--space-5);
 }
 
-/* Attribute sections - uniform gray backgrounds */
 .ooux-section {
     padding: var(--space-4);
     background: var(--bg-secondary);
@@ -329,7 +268,6 @@ p {
     flex-shrink: 0;
 }
 
-/* Action pills - simple outline style */
 .ooux-action-pill {
     display: inline-flex;
     font-size: var(--text-xs);
@@ -341,7 +279,6 @@ p {
     color: var(--text-secondary);
 }
 
-/* Relationships */
 .ooux-relationship {
     display: flex;
     align-items: center;
@@ -364,10 +301,6 @@ p {
     font-weight: 500;
     color: var(--text-primary);
 }
-
-/* ==========================================
-   Stats Cards - Clean metrics display
-   ========================================== */
 
 .stat-card {
     background: var(--bg-primary);
@@ -393,10 +326,6 @@ p {
     letter-spacing: -0.02em;
 }
 
-/* ==========================================
-   Callouts/Summary Boxes
-   ========================================== */
-
 .callout {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
@@ -404,22 +333,10 @@ p {
     border-left: 3px solid var(--gray-300);
 }
 
-.callout-accent {
-    border-left-color: var(--accent);
-    background: var(--accent-light);
-}
-
-.callout-success {
-    border-left-color: var(--success);
-}
-
-.callout-warning {
-    border-left-color: var(--warning);
-}
-
-.callout-error {
-    border-left-color: var(--error);
-}
+.callout-accent { border-left-color: var(--accent); background: var(--accent-light); }
+.callout-success { border-left-color: var(--success); }
+.callout-warning { border-left-color: var(--warning); }
+.callout-error { border-left-color: var(--error); }
 
 .callout-label {
     font-size: var(--text-sm);
@@ -436,10 +353,6 @@ p {
     line-height: var(--leading-relaxed);
     color: var(--text-secondary);
 }
-
-/* ==========================================
-   Pattern Banner - Simple header
-   ========================================== */
 
 .pattern-banner {
     background: var(--bg-secondary);
@@ -468,10 +381,6 @@ p {
     color: var(--text-primary);
 }
 
-/* ==========================================
-   Buttons - pencil.dev style
-   ========================================== */
-
 .btn {
     display: inline-flex;
     align-items: center;
@@ -487,7 +396,6 @@ p {
     text-decoration: none;
 }
 
-/* Primary - Yellow like pencil.dev */
 .btn-primary {
     background: var(--accent);
     color: var(--black);
@@ -500,7 +408,6 @@ p {
     border-color: var(--accent-hover);
 }
 
-/* Secondary - Outlined */
 .btn-secondary {
     background: transparent;
     color: var(--text-primary);
@@ -512,7 +419,6 @@ p {
     border-color: var(--gray-300);
 }
 
-/* Ghost - Text only */
 .btn-ghost {
     background: transparent;
     color: var(--text-secondary);
@@ -524,10 +430,6 @@ p {
     color: var(--text-primary);
     background: var(--bg-secondary);
 }
-
-/* ==========================================
-   Badges - Minimal
-   ========================================== */
 
 .badge {
     display: inline-flex;
@@ -544,10 +446,6 @@ p {
     background: var(--accent-light);
     color: var(--gray-800);
 }
-
-/* ==========================================
-   Navigation - Clean sidebar
-   ========================================== */
 
 .sidebar-nav {
     background: var(--bg-primary);
@@ -592,10 +490,6 @@ p {
     font-weight: 500;
 }
 
-/* ==========================================
-   Form Elements
-   ========================================== */
-
 select {
     appearance: none;
     background-color: var(--bg-primary);
@@ -613,14 +507,8 @@ select {
     transition: border-color 0.15s ease;
 }
 
-select:hover {
-    border-color: var(--gray-300);
-}
-
-select:focus {
-    outline: none;
-    border-color: var(--accent);
-}
+select:hover { border-color: var(--gray-300); }
+select:focus { outline: none; border-color: var(--accent); }
 
 input[type="text"],
 input[type="password"],
@@ -636,24 +524,9 @@ textarea {
     transition: border-color 0.15s ease;
 }
 
-input:hover,
-textarea:hover {
-    border-color: var(--gray-300);
-}
-
-input:focus,
-textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-::placeholder {
-    color: var(--text-muted);
-}
-
-/* ==========================================
-   Glossary Terms
-   ========================================== */
+input:hover, textarea:hover { border-color: var(--gray-300); }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+::placeholder { color: var(--text-muted); }
 
 .glossary-term {
     border-bottom: 1px dashed var(--gray-400);
@@ -666,17 +539,8 @@ textarea:focus {
     background: var(--accent-light);
 }
 
-/* ==========================================
-   Modals
-   ========================================== */
-
-[role="dialog"] {
-    z-index: 9999 !important;
-}
-
-.modal-backdrop {
-    background: rgba(0, 0, 0, 0.4);
-}
+[role="dialog"] { z-index: 9999 !important; }
+.modal-backdrop { background: rgba(0, 0, 0, 0.4); }
 
 .modal-content {
     background: var(--bg-primary);
@@ -684,283 +548,120 @@ textarea:focus {
     border-radius: var(--radius-xl);
 }
 
-/* ==========================================
-   Print Styles
-   ========================================== */
-
 @media print {
-    .no-print {
-        display: none;
-    }
+    .no-print { display: none; }
 }
 
-/* ==========================================
-   Tailwind Overrides - Match minimal design
-   ========================================== */
+/* Tailwind overrides for monochromatic design */
+.shadow-lg, .shadow-2xl { box-shadow: var(--shadow-md) !important; }
+.bg-white { background-color: var(--bg-primary) !important; }
+.bg-gray-50, .bg-gray-100 { background-color: var(--bg-secondary) !important; }
+.text-gray-800, .text-gray-900 { color: var(--text-primary) !important; }
+.text-gray-600 { color: var(--text-secondary) !important; }
+.text-gray-500 { color: var(--text-tertiary) !important; }
+.border-gray-200, .border-gray-300 { border-color: var(--border-default) !important; }
 
-/* Remove heavy shadows */
-.shadow-lg,
-.shadow-2xl {
-    box-shadow: var(--shadow-md) !important;
-}
-
-/* Soften backgrounds */
-.bg-white {
-    background-color: var(--bg-primary) !important;
-}
-
-.bg-gray-50,
-.bg-gray-100 {
-    background-color: var(--bg-secondary) !important;
-}
-
-/* Text colors */
-.text-gray-800,
-.text-gray-900 {
-    color: var(--text-primary) !important;
-}
-
-.text-gray-600 {
-    color: var(--text-secondary) !important;
-}
-
-.text-gray-500 {
-    color: var(--text-tertiary) !important;
-}
-
-/* Border colors */
-.border-gray-200,
-.border-gray-300 {
-    border-color: var(--border-default) !important;
-}
-
-/* Remove colorful gradients - make them solid */
 .bg-gradient-to-r.from-cyan-500.to-blue-600,
-.bg-gradient-to-r.from-gray-900.via-purple-900.to-indigo-900 {
-    background: var(--bg-secondary) !important;
-}
+.bg-gradient-to-r.from-gray-900.via-purple-900.to-indigo-900 { background: var(--bg-secondary) !important; }
+.bg-gradient-to-r.from-indigo-600.to-purple-600 { background: var(--accent) !important; }
+.bg-gradient-to-r.from-indigo-50.to-purple-50 { background: var(--bg-secondary) !important; }
+.bg-gradient-to-br.from-blue-50.to-indigo-50 { background: var(--bg-secondary) !important; }
 
-.bg-gradient-to-r.from-indigo-600.to-purple-600 {
-    background: var(--accent) !important;
-}
+/* OOUX Object Colors - accessible color palette */
+.ooux-color-blue { background-color: #dbeafe !important; border-color: #3b82f6 !important; }
+.ooux-color-green { background-color: #dcfce7 !important; border-color: #22c55e !important; }
+.ooux-color-amber { background-color: #fef3c7 !important; border-color: #f59e0b !important; }
+.ooux-color-purple { background-color: #f3e8ff !important; border-color: #a855f7 !important; }
+.ooux-color-rose { background-color: #ffe4e6 !important; border-color: #f43f5e !important; }
+.ooux-color-teal { background-color: #ccfbf1 !important; border-color: #14b8a6 !important; }
 
-.bg-gradient-to-r.from-indigo-50.to-purple-50 {
-    background: var(--bg-secondary) !important;
-}
+/* Object header backgrounds with WCAG compliant text */
+.ooux-header-blue { background-color: #3b82f6 !important; }
+.ooux-header-green { background-color: #16a34a !important; }
+.ooux-header-amber { background-color: #d97706 !important; }
+.ooux-header-purple { background-color: #9333ea !important; }
+.ooux-header-rose { background-color: #e11d48 !important; }
+.ooux-header-teal { background-color: #0d9488 !important; }
 
-.bg-gradient-to-br.from-blue-50.to-indigo-50 {
-    background: var(--bg-secondary) !important;
-}
+.ooux-header-blue, .ooux-header-green, .ooux-header-amber,
+.ooux-header-purple, .ooux-header-rose, .ooux-header-teal { color: #ffffff !important; }
 
-/* OOUX card color simplification - all same gray */
-.bg-blue-500 {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-}
+.bg-blue-500 { background-color: var(--bg-secondary) !important; color: var(--text-primary) !important; }
 
-.bg-pink-50,
-.bg-yellow-50,
-.bg-green-50,
-.bg-purple-50,
-.bg-blue-50,
-.bg-cyan-50,
-.bg-indigo-50,
-.bg-orange-50,
-.bg-red-50 {
-    background-color: var(--bg-secondary) !important;
-}
+/* Allow OOUX attribute section colors (accessible pastel backgrounds with dark text) */
+/* Keep these colors for visual hierarchy in OOUX objects */
+.border-l-4.border-indigo-500 { border-color: var(--border-default) !important; }
 
-.border-pink-400,
-.border-yellow-400,
-.border-green-400,
-.border-purple-400,
-.border-blue-400,
-.border-l-4.border-indigo-500 {
-    border-color: var(--border-default) !important;
-}
+/* Template card backgrounds stay neutral */
+.bg-blue-50, .bg-cyan-50, .bg-indigo-50, .bg-orange-50, .bg-red-50 { background-color: var(--bg-secondary) !important; }
+.bg-purple-50 { background-color: var(--bg-secondary) !important; }
 
-.text-pink-700,
-.text-yellow-800,
-.text-green-700,
-.text-purple-700,
-.text-blue-700,
-.text-indigo-700,
-.text-cyan-700 {
-    color: var(--text-tertiary) !important;
-}
+/* OOUX attribute headers - WCAG AA compliant text on pastel backgrounds */
+.text-pink-700 { color: #9d174d !important; }
+.text-yellow-800 { color: #854d0e !important; }
+.text-green-800, .text-green-700:not(.bg-green-100 .text-green-700) { color: #166534 !important; }
+.text-purple-700 { color: #6b21a8 !important; }
 
-.text-pink-500,
-.text-yellow-500,
-.text-green-500,
-.text-purple-600,
-.text-blue-500 {
-    color: var(--text-muted) !important;
-}
+.text-blue-700 { color: var(--text-tertiary) !important; }
+.text-indigo-700, .text-cyan-700 { color: var(--text-tertiary) !important; }
 
-/* Complexity badges - same subtle background, color indicates level */
-.bg-green-100,
-.bg-yellow-100,
-.bg-red-100 {
-    background-color: var(--bg-secondary) !important;
-}
+.text-pink-500 { color: #ec4899 !important; }
+.text-yellow-500 { color: #ca8a04 !important; }
+.text-green-500 { color: #22c55e !important; }
+.text-purple-600, .text-blue-500 { color: var(--text-muted) !important; }
 
-.text-green-700 {
-    color: var(--success) !important;
-}
+/* WCAG AA compliant badge colors */
+.bg-green-100, .bg-yellow-100, .bg-red-100 { background-color: var(--bg-secondary) !important; }
+.text-green-700 { color: #166534 !important; }
+.text-yellow-700 { color: #854d0e !important; }
+.text-red-700 { color: #b91c1c !important; }
 
-.text-yellow-700 {
-    color: var(--warning) !important;
-}
+.text-indigo-600, .text-indigo-700, .text-purple-600 { color: var(--text-primary) !important; }
+.hover\:text-indigo-600:hover, .hover\:text-indigo-700:hover { color: var(--gray-700) !important; }
+.bg-indigo-600, .bg-indigo-500, .bg-purple-600 { background-color: var(--accent) !important; color: var(--black) !important; }
+.hover\:bg-indigo-700:hover, .hover\:from-indigo-700:hover { background-color: var(--accent-hover) !important; }
+.hover\:border-indigo-500:hover { border-color: var(--accent) !important; }
+.hover\:bg-indigo-50:hover { background-color: var(--accent-light) !important; }
+.group:hover .group-hover\:text-indigo-600 { color: var(--text-primary) !important; }
+.focus\:ring-indigo-500:focus, .focus\:ring-2:focus { box-shadow: 0 0 0 2px var(--accent) !important; }
 
-.text-red-700 {
-    color: var(--error) !important;
-}
+.bg-indigo-50 { background-color: var(--accent-light) !important; }
+.text-indigo-700 { color: var(--text-primary) !important; }
+.bg-cyan-50 { background-color: var(--accent-light) !important; }
+.text-cyan-700 { color: var(--text-primary) !important; }
+.bg-purple-50 { background-color: var(--accent-light) !important; }
+.text-purple-700 { color: var(--text-primary) !important; }
 
-/* Accent colors - use yellow */
-.text-indigo-600,
-.text-indigo-700,
-.text-purple-600 {
-    color: var(--text-primary) !important;
-}
+/* Text on light gradient backgrounds */
+.bg-gradient-to-r.from-gray-50 .text-white,
+.bg-gradient-to-r.from-green-50 .text-white,
+.bg-gradient-to-br.from-blue-50 .text-white { color: var(--text-primary) !important; }
 
-.hover\:text-indigo-600:hover,
-.hover\:text-indigo-700:hover {
-    color: var(--gray-700) !important;
-}
+/* Preserve white text on dark backgrounds for accessibility */
+.bg-gray-900 .text-white, .bg-gray-800 .text-white, .bg-gray-700 .text-white,
+.bg-gray-600 .text-white, .bg-gray-500 .text-white, .bg-blue-600 .text-white,
+.bg-blue-700 .text-white, .bg-green-500 .text-white, .bg-green-600 .text-white,
+.bg-gray-900.text-white, .bg-gray-800.text-white, .bg-gray-700.text-white,
+.bg-gray-600.text-white, .bg-gray-500.text-white, .bg-blue-600.text-white,
+.bg-blue-700.text-white, .bg-green-500.text-white, .bg-green-600.text-white { color: #ffffff !important; }
 
-.bg-indigo-600,
-.bg-indigo-500,
-.bg-purple-600 {
-    background-color: var(--accent) !important;
-    color: var(--black) !important;
-}
+.text-blue-50, .text-cyan-100 { color: var(--text-tertiary) !important; }
+.bg-gray-900 .opacity-90 { opacity: 0.9 !important; }
 
-.hover\:bg-indigo-700:hover,
-.hover\:from-indigo-700:hover {
-    background-color: var(--accent-hover) !important;
-}
+.text-green-600 { color: var(--text-secondary) !important; }
+.hover\:text-green-700:hover { color: var(--text-primary) !important; }
+.text-3xl, .text-4xl { color: var(--text-primary) !important; }
 
-/* Template card hover */
-.hover\:border-indigo-500:hover {
-    border-color: var(--accent) !important;
-}
+.text-2xl.font-bold.text-indigo-600, .text-2xl.font-bold.text-purple-600 { color: var(--text-primary) !important; }
+.text-2xl.font-bold.text-green-600 { color: var(--success) !important; }
+.text-2xl.font-bold.text-yellow-600 { color: var(--warning) !important; }
+.text-2xl.font-bold.text-red-600 { color: var(--error) !important; }
 
-.hover\:bg-indigo-50:hover {
-    background-color: var(--accent-light) !important;
-}
+.text-green-600.text-lg, .text-red-600.text-lg, .text-indigo-600.text-lg { color: var(--text-primary) !important; }
+.text-green-700.font-medium { color: var(--text-primary) !important; }
+.text-red-700 { color: var(--text-secondary) !important; }
+.text-indigo-700.font-medium { color: var(--text-primary) !important; }
 
-.group:hover .group-hover\:text-indigo-600 {
-    color: var(--text-primary) !important;
-}
-
-/* Focus ring color */
-.focus\:ring-indigo-500:focus,
-.focus\:ring-2:focus {
-    box-shadow: 0 0 0 2px var(--accent) !important;
-}
-
-/* Active nav states */
-.bg-indigo-50 {
-    background-color: var(--accent-light) !important;
-}
-
-.text-indigo-700 {
-    color: var(--text-primary) !important;
-}
-
-.bg-cyan-50 {
-    background-color: var(--accent-light) !important;
-}
-
-.text-cyan-700 {
-    color: var(--text-primary) !important;
-}
-
-.bg-purple-50 {
-    background-color: var(--accent-light) !important;
-}
-
-.text-purple-700 {
-    color: var(--text-primary) !important;
-}
-
-/* Banner text on gradient backgrounds */
-.text-white {
-    color: var(--text-primary) !important;
-}
-
-.text-blue-50,
-.text-cyan-100,
-.opacity-90 {
-    color: var(--text-tertiary) !important;
-    opacity: 1 !important;
-}
-
-/* Link colors */
-.text-green-600 {
-    color: var(--text-secondary) !important;
-}
-
-.hover\:text-green-700:hover {
-    color: var(--text-primary) !important;
-}
-
-/* Ensure headings stay dark */
-.text-3xl,
-.text-4xl {
-    color: var(--text-primary) !important;
-}
-
-/* Large stat values - keep color meaningful */
-.text-2xl.font-bold.text-indigo-600 {
-    color: var(--text-primary) !important;
-}
-
-.text-2xl.font-bold.text-purple-600 {
-    color: var(--text-primary) !important;
-}
-
-.text-2xl.font-bold.text-green-600 {
-    color: var(--success) !important;
-}
-
-.text-2xl.font-bold.text-yellow-600 {
-    color: var(--warning) !important;
-}
-
-.text-2xl.font-bold.text-red-600 {
-    color: var(--error) !important;
-}
-
-/* Summary box icons */
-.text-green-600.text-lg,
-.text-red-600.text-lg,
-.text-indigo-600.text-lg {
-    color: var(--text-primary) !important;
-}
-
-.text-green-700.font-medium {
-    color: var(--text-primary) !important;
-}
-
-.text-red-700 {
-    color: var(--text-secondary) !important;
-}
-
-.text-indigo-700.font-medium {
-    color: var(--text-primary) !important;
-}
-
-/* Object header - no blue background */
-.bg-blue-500.px-4.py-3 {
-    background: var(--bg-secondary) !important;
-}
-
-.bg-blue-500 h5,
-.bg-blue-500 .text-white {
-    color: var(--text-primary) !important;
-}
-
-.bg-blue-500 .text-blue-50 {
-    color: var(--text-tertiary) !important;
-}
+.bg-blue-500.px-4.py-3 { background: var(--bg-secondary) !important; }
+.bg-blue-500 h5, .bg-blue-500 .text-white { color: var(--text-primary) !important; }
+.bg-blue-500 .text-blue-50 { color: var(--text-tertiary) !important; }

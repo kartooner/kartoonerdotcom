@@ -873,6 +873,24 @@ const AIProjectAdvisor = () => {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Human in the Loop Guidance */}
+                            {analysis.humanInTheLoop && (
+                                <div className="bg-amber-50 border-l-4 border-amber-400 px-4 py-3">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-amber-600 mt-0.5">👤</span>
+                                        <div>
+                                            <div className="text-sm font-semibold text-gray-900 mb-1">
+                                                <GlossaryText
+                                                    text="Human in the Loop"
+                                                    onTermClick={(key) => { setSelectedGlossaryTerm(key); setShowGlossary(true); }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-gray-700">{analysis.humanInTheLoop}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </section>
 
                         {/* Mobile Jump Navigation Dropdown */}
@@ -1155,12 +1173,15 @@ const AIProjectAdvisor = () => {
                                     <h4 className="font-semibold text-gray-700 mb-3">Key objects</h4>
                                     <p className="text-xs text-gray-600 mb-4">The core data structures in your system, organized by their attributes</p>
                                     <div className="grid md:grid-cols-2 gap-4">
-                                        {analysis.oouxWorkflow.objects.slice(0, 6).map((obj, idx) => (
+                                        {analysis.oouxWorkflow.objects.slice(0, 6).map((obj, idx) => {
+                                            const colors = ['ooux-header-blue', 'ooux-header-green', 'ooux-header-amber', 'ooux-header-purple', 'ooux-header-rose', 'ooux-header-teal'];
+                                            const headerColor = colors[idx % colors.length];
+                                            return (
                                             <div key={idx} className="bg-white border-2 border-gray-300 rounded-lg shadow-lg overflow-hidden">
                                                 {/* Object Header */}
-                                                <div className="bg-gray-100 px-4 py-3">
+                                                <div className={`${headerColor} px-4 py-3`}>
                                                     <h5 className="font-bold text-white text-base uppercase tracking-wide">{obj.name}</h5>
-                                                    <p className="text-xs text-blue-50 mt-1">
+                                                    <p className="text-xs text-white opacity-90 mt-1">
                                                         {obj.description}
                                                     </p>
                                                 </div>
@@ -1235,7 +1256,8 @@ const AIProjectAdvisor = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                        ))}
+                                        );
+                                        })}
                                     </div>
                                 </div>
 
