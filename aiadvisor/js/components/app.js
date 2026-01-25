@@ -104,6 +104,124 @@ const toSentenceCase = (text) => {
     return result;
 };
 
+// Generate Miro-compatible export for OOUX diagrams
+const generateMiroExport = (oouxWorkflow, title) => {
+    if (!oouxWorkflow) return null;
+
+    const timestamp = new Date().toISOString().split('T')[0];
+
+    // Create markdown-formatted content for easy paste into Miro
+    let markdown = `# ${title || 'OOUX Diagram'}\n`;
+    markdown += `*Exported ${timestamp}*\n\n`;
+
+    // Objects section
+    markdown += `## Objects\n\n`;
+    oouxWorkflow.objects.forEach((obj, idx) => {
+        markdown += `### ${idx + 1}. ${obj.name}\n`;
+        markdown += `${obj.description}\n\n`;
+
+        if (obj.coreContent && obj.coreContent.length > 0) {
+            markdown += `**Core Content:**\n`;
+            obj.coreContent.forEach(item => {
+                markdown += `- ${item}\n`;
+            });
+            markdown += `\n`;
+        }
+
+        if (obj.metadata && obj.metadata.length > 0) {
+            markdown += `**Metadata:**\n`;
+            obj.metadata.forEach(item => {
+                markdown += `- ${item}\n`;
+            });
+            markdown += `\n`;
+        }
+
+        if (obj.actions && obj.actions.length > 0) {
+            markdown += `**Actions:**\n`;
+            obj.actions.forEach(item => {
+                markdown += `- ${item}\n`;
+            });
+            markdown += `\n`;
+        }
+    });
+
+    // Flow section
+    markdown += `## User Flow\n\n`;
+    oouxWorkflow.flow.forEach(step => {
+        const condition = step.condition ? ` *(${step.condition})*` : '';
+        const confidence = step.confidence ? ' 🎯' : '';
+        markdown += `${step.step}. **${step.actor}** → ${step.action}${condition}${confidence}\n`;
+    });
+    markdown += `\n`;
+
+    // AI Touchpoints
+    if (oouxWorkflow.aiTouchpoints && oouxWorkflow.aiTouchpoints.length > 0) {
+        markdown += `## AI Touchpoints\n\n`;
+        oouxWorkflow.aiTouchpoints.forEach((point, idx) => {
+            markdown += `${idx + 1}. ${point}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    // Configuration Needs
+    if (oouxWorkflow.configurationNeeds && oouxWorkflow.configurationNeeds.length > 0) {
+        markdown += `## Configuration\n\n`;
+        markdown += `| Setting | Description | Default |\n`;
+        markdown += `|---------|-------------|----------|\n`;
+        oouxWorkflow.configurationNeeds.forEach(config => {
+            markdown += `| ${config.setting} | ${config.description} | ${config.default} |\n`;
+        });
+    }
+
+    return markdown;
+};
+
+// Generate CSV for Miro sticky notes import
+const generateMiroCSV = (oouxWorkflow, title) => {
+    if (!oouxWorkflow) return null;
+
+    let csv = 'Type,Name,Description,Details\n';
+
+    // Add objects as cards
+    oouxWorkflow.objects.forEach(obj => {
+        const details = [
+            obj.coreContent ? `Core: ${obj.coreContent.join(', ')}` : '',
+            obj.metadata ? `Meta: ${obj.metadata.join(', ')}` : '',
+            obj.actions ? `Actions: ${obj.actions.join(', ')}` : ''
+        ].filter(Boolean).join(' | ');
+
+        csv += `Object,"${obj.name}","${obj.description}","${details}"\n`;
+    });
+
+    // Add flow steps
+    oouxWorkflow.flow.forEach(step => {
+        const condition = step.condition ? ` (${step.condition})` : '';
+        csv += `Flow Step,"Step ${step.step}: ${step.actor}","${step.action}","${step.object}${condition}"\n`;
+    });
+
+    // Add AI touchpoints
+    if (oouxWorkflow.aiTouchpoints) {
+        oouxWorkflow.aiTouchpoints.forEach((point, idx) => {
+            csv += `AI Touchpoint,"Touchpoint ${idx + 1}","${point}",""\n`;
+        });
+    }
+
+    return csv;
+};
+
+// Download helper
+const downloadFile = (content, filename, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 const AIProjectAdvisor = () => {
     const [concept, setConcept] = useState('');
     const [workflowTitle, setWorkflowTitle] = useState('');
@@ -975,12 +1093,58 @@ const AIProjectAdvisor = () => {
                                         </h3>
                                         <p className="text-sm text-gray-600">See what data structures you'll need and how users and AI interact with them</p>
                                     </div>
-                                    <button
-                                        onClick={() => toggleSection('ooux')}
-                                        className="text-sm text-gray-600 hover:text-gray-800 font-medium"
-                                    >
-                                        {collapsed.ooux ? 'Expand' : 'Collapse'}
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative group">
+                                            <button
+                                                className="text-sm text-gray-600 hover:text-gray-900 font-medium px-3 py-1.5 border border-gray-200 rounded-md hover:bg-gray-50 flex items-center gap-1.5"
+                                                onClick={(e) => {
+                                                    const dropdown = e.currentTarget.nextElementSibling;
+                                                    dropdown.classList.toggle('hidden');
+                                                }}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                                Export for Miro
+                                            </button>
+                                            <div className="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                                                <button
+                                                    onClick={() => {
+                                                        const md = generateMiroExport(analysis.oouxWorkflow, pageTitle);
+                                                        downloadFile(md, `${currentSlug || 'ooux'}-diagram.md`, 'text/markdown');
+                                                    }}
+                                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                                                >
+                                                    Download Markdown
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const csv = generateMiroCSV(analysis.oouxWorkflow, pageTitle);
+                                                        downloadFile(csv, `${currentSlug || 'ooux'}-cards.csv`, 'text/csv');
+                                                    }}
+                                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                                                >
+                                                    Download CSV (sticky notes)
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const md = generateMiroExport(analysis.oouxWorkflow, pageTitle);
+                                                        navigator.clipboard.writeText(md);
+                                                        alert('Copied to clipboard! Paste directly into Miro.');
+                                                    }}
+                                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                                >
+                                                    Copy to clipboard
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleSection('ooux')}
+                                            className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                                        >
+                                            {collapsed.ooux ? 'Expand' : 'Collapse'}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {!collapsed.ooux && (
