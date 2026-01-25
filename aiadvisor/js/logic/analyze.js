@@ -552,6 +552,7 @@ function analyzeProject(concept, industry = 'generic', templateSlug = null) {
         examples,
         oouxWorkflow,
         detectedPattern: WORKFLOW_PATTERNS[detectedPattern]?.name || 'Generic Workflow',
+        humanInTheLoop: WORKFLOW_PATTERNS[detectedPattern]?.humanInTheLoop || 'Human review recommended for high-stakes decisions, edge cases, and when AI confidence is below threshold.',
         userResearch,
         ethical,
         errorHandling,
