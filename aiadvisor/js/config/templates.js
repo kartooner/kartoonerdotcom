@@ -466,56 +466,56 @@ const TEMPLATES = {
         {
             title: 'Account Closure Workflow',
             slug: 'account-closure-workflow',
-            description: 'Process closure across all related systems',
-            concept: 'Orchestrate account closure workflow across all related systems',
+            description: 'Coordinate account termination across banking, cards, loans, and linked services',
+            concept: 'Orchestrate account closure with balance verification, recurring payment migration, linked account handling, and regulatory compliance documentation',
             complexity: 'high',
             icon: 'GitBranch'
         },
         {
             title: 'Banking Chatbot',
             slug: 'banking-chatbot',
-            description: 'Answer questions about accounts, balances, transactions',
-            concept: 'Answer customer questions about accounts, balances, transactions',
+            description: 'Natural language assistant for account inquiries, transaction disputes, and product information',
+            concept: 'Answer customer questions about account balances, recent transactions, payment status, and product features using conversational AI with secure data access',
             complexity: 'high',
             icon: 'Brain'
         },
         {
             title: 'Financial Search',
             slug: 'financial-search',
-            description: 'Search transactions, accounts, customers, documents',
-            concept: 'Search transactions, accounts, customers, documents',
+            description: 'Semantic search across all financial data with contextual ranking and filters',
+            concept: 'Search transactions, accounts, customers, and documents using natural language with intelligent filtering, faceted results, and relationship discovery',
             complexity: 'high',
             icon: 'Lightbulb'
         },
         {
             title: 'Interest Rate Impact',
             slug: 'interest-rate-impact',
-            description: 'Analyze impact of rate change on portfolio',
-            concept: 'Analyze impact of interest rate change on portfolio',
+            description: 'Model cascading effects of rate changes across loans, deposits, and hedging positions',
+            concept: 'Simulate interest rate scenarios to analyze NIM impact, prepayment risk, deposit repricing, and duration gaps across the entire portfolio',
             complexity: 'high',
             icon: 'AlertCircle'
         },
         {
             title: 'Portfolio Optimization',
             slug: 'portfolio-optimization',
-            description: 'Optimize allocation based on risk profiles',
-            concept: 'Optimize portfolio allocation based on risk profiles',
+            description: 'Balance risk-adjusted returns with diversification and constraint requirements',
+            concept: 'Generate optimal asset allocation recommendations using modern portfolio theory, factor exposures, and client-specific constraints like ESG preferences',
             complexity: 'medium',
             icon: 'Wrench'
         },
         {
             title: 'Real-Time Trading',
             slug: 'real-time-trading',
-            description: 'Process orders with real-time validation',
-            concept: 'Process trading orders with real-time validation',
+            description: 'Validate and execute trading orders with millisecond latency and risk checks',
+            concept: 'Process trading orders in real-time with pre-trade compliance validation, position limits, and market impact analysis',
             complexity: 'high',
             icon: 'AlertCircle'
         },
         {
             title: 'Statement Consolidation',
             slug: 'statement-consolidation',
-            description: 'Consolidate transactions into monthly statements',
-            concept: 'Consolidate transactions into monthly statements',
+            description: 'Intelligently aggregate transactions across accounts into personalized statements',
+            concept: 'Consolidate and categorize transactions across multiple accounts into unified monthly statements with spending insights',
             complexity: 'medium',
             icon: 'Box'
         }
