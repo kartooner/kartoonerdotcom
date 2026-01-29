@@ -165,31 +165,9 @@
     <!-- Skip Navigation Link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
+    <div id="navigation-placeholder"></div>
 
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-
-    <!-- Theme Toggle Button -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+    <div id="theme-toggle-placeholder"></div>
 
     <div class="container">
         <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
@@ -219,11 +197,9 @@
             </div>
 
         </main>
-
-        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
     </div>
+
+    <div id="footer-placeholder"></div>
 
     <script>
         document.getElementById("game").style.display = "none";
@@ -295,6 +271,9 @@
 
         document.getElementById("startButton").addEventListener("click", startGame);
     </script>
+    <script src="/navigation-loader.js"></script>
+    <script src="/theme-toggle-loader.js"></script>
+    <script src="/footer-loader.js"></script>
     <script src="/app.min.js"></script>
     <script data-goatcounter="https://kartooner.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>

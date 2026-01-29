@@ -183,6 +183,27 @@ const AI_GLOSSARY = {
         resources: [
             { title: 'Recommendation Systems Overview', url: 'https://developers.google.com/machine-learning/recommendation', type: 'guide' }
         ]
+    },
+    'human_in_the_loop': {
+        term: 'Human in the Loop (HITL)',
+        shortDefinition: 'AI systems that require human oversight, validation, or intervention at key decision points',
+        fullDefinition: 'Human in the Loop (HITL) is a design pattern where humans are integrated into AI workflows to review, approve, correct, or override AI decisions. This ensures accountability, catches errors, maintains quality, and builds user trust in AI systems.',
+        whenToUse: 'Use HITL for high-stakes decisions, when AI confidence is low, for edge cases, when regulatory compliance requires human approval, or when building trust in new AI systems.',
+        examples: ['Manager approval for AI-recommended hires', 'Human review of flagged fraud cases', 'Expert validation of medical AI diagnoses', 'Editorial review of AI-generated content', 'Approval workflows for AI-suggested policy exceptions'],
+        resources: [
+            { title: 'Human-in-the-Loop Machine Learning', url: 'https://www.oreilly.com/library/view/human-in-the-loop-machine/9781617296741/', type: 'book' },
+            { title: 'Google PAIR Guidelines for Human-AI Interaction', url: 'https://pair.withgoogle.com/', type: 'guide' }
+        ]
+    },
+    'confidence_score': {
+        term: 'Confidence Score',
+        shortDefinition: 'A measure of how certain an AI model is about its prediction or decision',
+        fullDefinition: 'Confidence scores indicate the AI\'s certainty level in its predictions, typically expressed as a percentage or probability. Low confidence scores often trigger human review or alternative processing paths.',
+        whenToUse: 'Use confidence scores to determine when to auto-approve vs. escalate to humans, set thresholds for different actions, and provide transparency to users about AI decision reliability.',
+        examples: ['90% confidence auto-approves, below 70% requires human review', 'Showing users "AI is 85% sure this is spam"', 'Routing low-confidence predictions to expert review queues'],
+        resources: [
+            { title: 'Understanding Model Confidence', url: 'https://developers.google.com/machine-learning/crash-course/classification/thresholding', type: 'guide' }
+        ]
     }
 };
 
@@ -211,7 +232,12 @@ function findGlossaryTermsInText(text) {
         'fine-tuning': 'fine_tuning',
         'embedding': 'embedding',
         'ai': 'ai',
-        'artificial intelligence': 'ai'
+        'artificial intelligence': 'ai',
+        'human in the loop': 'human_in_the_loop',
+        'hitl': 'human_in_the_loop',
+        'human-in-the-loop': 'human_in_the_loop',
+        'confidence score': 'confidence_score',
+        'confidence scoring': 'confidence_score'
     };
 
     Object.entries(termMap).forEach(([searchTerm, key]) => {
@@ -233,6 +259,8 @@ function highlightGlossaryTerms(text, onTermClick) {
     // Terms to highlight (order matters - longer phrases first to avoid partial matches)
     // Using (?<=\s|^) for lookbehind and (?=\s|$|[.,;:!?]) for lookahead to preserve spaces
     const termPatterns = [
+        { pattern: /\b(Human[- ]in[- ]the[- ]Loop|HITL)\b/gi, key: 'human_in_the_loop' },
+        { pattern: /\b(Confidence Scor(?:e|ing))\b/gi, key: 'confidence_score' },
         { pattern: /\b(Large Language Model|LLM)s?\b/gi, key: 'llm' },
         { pattern: /\b(Machine Learning|ML)\b/gi, key: 'ml' },
         { pattern: /\b(Natural Language Processing|NLP)\b/gi, key: 'nlp' },
