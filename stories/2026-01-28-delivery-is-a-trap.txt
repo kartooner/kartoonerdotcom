@@ -1,0 +1,73 @@
+Title: Delivery Is a Trap
+Date: 2026-01-28T19:36:00Z
+Tags: writing, ux, design, career, leadership
+Excerpt: How UX slid from strategy to service — and what it might take to climb back out.
+Images: /img/delivery-is-a-trap-cover.jpg
+Subtitle: How UX slid from strategy to service — and what it might take to climb back out.
+---
+
+We're making drawings.
+
+That thought hit me a few years ago. Credit to a former manager who made it obvious. We were stringing together polished screens into nice-looking workflows, testing them with a handful of people meant to represent everyone, and calling that validation. Somewhere along the way, the drawing became the work. Not the thinking behind it. Not the problem it was meant to solve. The artifact itself.
+
+But the drawings weren't the thing. They were pictures of the thing. And the people we tested with weren't users. They were proxies, doing their best to react to something that didn't exist yet.
+
+The whole ritual assumes that testing a picture is the same as testing reality. That a subset of people in a lab or in a remote usability session can predict how the larger population will receive your work.
+
+But what if there's a better way?
+
+What if you built quickly and learned from real feedback instead? Not skipping research, but shifting where the learning happens. Less time perfecting drawings. More time with rough, real things in front of actual people doing actual work.
+
+The polished deliverable isn't just unnecessary. It might be the thing slowing us down from learning what actually matters.
+
+So how did we end up here?
+
+## How we got here
+
+I don't know exactly when things shifted. There wasn't a memo. But somewhere along the way, design went from thinking to making. From shaping what gets built to producing assets after someone else already decided where the winds would blow.
+
+And honestly? We were complicit. The polished end-to-end vision felt like progress. It looked good in the deck. Marketing could use it. Sales could reference it. Leadership could point to something tangible and say "this is where we're going."
+
+That shininess came with a cost. The more complete the vision looked, the harder it became to change. Iteration became inconvenient. The drawing became the destination instead of a waypoint. And we got comfortable there, because a beautiful artifact is easier to defend than a rough idea that might not work.
+
+## The seat isn't the goal
+
+For years, I would hear through murmurings that the industry talked about getting a seat at the proverbial table, in the room where it happens (to quote Hamilton). And we got it, sort of. Designers are in the room now. But the seat comes with limitations. You're there to represent "the user." To raise concerns. To make sure things look right and feel usable. Important work, but bounded work.
+
+The seat was never the real goal anyway. Influence was. The ability to shape direction, not just react to it. To be part of the early conversations where the actual decisions happen: what we build, why we build it, what we're willing to bet on.
+
+But influence doesn't come from a meeting invite. It comes from trust. And trust comes from being right about things that matter, often enough, that people start asking what you think before they've already decided.
+
+## Show up differently
+
+So how do you build trust when you've been boxed into delivery?
+
+You can't ask for it. You can't petition your way back to influence. Nobody grants strategic relevance because you made a compelling case in a meeting.
+
+You have to show up differently.
+
+That means arriving early with something rough instead of late with something polished. A sketch. A prototype. A question framed as something people can react to. Not "here's the answer" but "here's a possibility — does this hold?"
+
+The polished deliverable closes conversations. It says "I've thought this through, now approve it." The rough experiment opens them. It invites people to think with you instead of evaluating you.
+
+It also means being willing to be wrong faster than the system is comfortable with. Most organizations are built to minimize risk. They want confidence before commitment. The whole apparatus of reviews and approvals and sign-offs exists to make sure nobody ships something embarrassing.
+
+But confidence before commitment is expensive. You're paying in time, in process, in drawings that might not matter. And you're learning slowly, from proxies, from pictures, from guesses about what real people might do.
+
+What if you paid less up front and learned faster on the back end? Built something rough, put it in front of real users, watched what actually happened, and then iterated based on reality instead of predictions?
+
+## Trust takes time
+
+Here's the thing about influence: you earn it through action, not words.
+
+When a team starts inviting you into conversations, that's a good first step. You're there. They want you there. But the seat is just the beginning.
+
+What comes next is harder. Everyone has to loosen their grip. And it's not even about control, really. It's about letting people experiment. Build POCs. Try and fail and try again. It's about creating the conditions where learning is more valuable than being right.
+
+That takes time. This isn't an overnight change. Trust builds slowly, through small moments where you show up differently and deliver something useful. Where you're wrong and recover well. Where you help the team see something they couldn't see before.
+
+It also takes leadership willing to take the risk. Leaders who value the relationship-building, not just the end result. Who can see the throughline between messy experimentation now and better outcomes later. Who understand that trust isn't a distraction from the work — it's what makes the work possible.
+
+There's no shortcut. Just the work, repeated, until people start asking what you think before they've already decided.
+
+And when they do? You're not making drawings anymore. You're making decisions.

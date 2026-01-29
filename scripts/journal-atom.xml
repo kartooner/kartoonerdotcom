@@ -5,9 +5,85 @@
   <link href="https://sagen.com/journal-atom.xml" rel="self" type="application/atom+xml" />
   <link href="https://sagen.com/journal" />
   <generator uri="https://sagen.com">Journal CMS</generator>
-  <updated>2025-12-20T20:38:47.265Z</updated>
+  <updated>2026-01-29T14:40:41.084Z</updated>
   <id>https://sagen.com/journal-atom.xml</id>
   
+  <entry xml:lang="en">
+    <title><![CDATA[Delivery Is a Trap]]></title>
+    <published>2026-01-28T19:36:00.000Z</published>
+    <updated>2026-01-28T19:36:00.000Z</updated>
+    <link href="https://sagen.com/entry/delivery-is-a-trap.html" type="text/html" />
+    <id>https://sagen.com/entry/delivery-is-a-trap.html</id>
+    <author>
+      <name><![CDATA[Erik Sagen]]></name>
+    </author>
+    <category term="Journal" />
+    <content type="html"><![CDATA[<p>We&#39;re making drawings.</p>
+
+<p>That thought hit me a few years ago. Credit to a former manager who made it obvious. We were stringing together polished screens into nice-looking workflows, testing them with a handful of people meant to represent everyone, and calling that validation. Somewhere along the way, the drawing became the work. Not the thinking behind it. Not the problem it was meant to solve. The artifact itself.</p>
+
+<p>But the drawings weren&#39;t the thing. They were pictures of the thing. And the people we tested with weren&#39;t users. They were proxies, doing their best to react to something that didn&#39;t exist yet.</p>
+
+<p>The whole ritual assumes that testing a picture is the same as testing reality. That a subset of people in a lab or in a remote usability session can predict how the larger population will receive your work.</p>
+
+<p>But what if there&#39;s a better way?</p>
+
+<p>What if you built quickly and learned from real feedback instead? Not skipping research, but shifting where the learning happens. Less time perfecting drawings. More time with rough, real things in front of actual people doing actual work.</p>
+
+<p>The polished deliverable isn&#39;t just unnecessary. It might be the thing slowing us down from learning what actually matters.</p>
+
+<p>So how did we end up here?</p>
+
+<h2 id="how-we-got-here">How we got here</h2>
+
+<p>I don&#39;t know exactly when things shifted. There wasn&#39;t a memo. But somewhere along the way, design went from thinking to making. From shaping what gets built to producing assets after someone else already decided where the winds would blow.</p>
+
+<p>And honestly? We were complicit. The polished end-to-end vision felt like progress. It looked good in the deck. Marketing could use it. Sales could reference it. Leadership could point to something tangible and say &quot;this is where we&#39;re going.&quot;</p>
+
+<p>That shininess came with a cost. The more complete the vision looked, the harder it became to change. Iteration became inconvenient. The drawing became the destination instead of a waypoint. And we got comfortable there, because a beautiful artifact is easier to defend than a rough idea that might not work.</p>
+
+<h2 id="the-seat-isnt-the-goal">The seat isn&#39;t the goal</h2>
+
+<p>For years, I would hear through murmurings that the industry talked about getting a seat at the proverbial table, in the room where it happens (to quote Hamilton). And we got it, sort of. Designers are in the room now. But the seat comes with limitations. You&#39;re there to represent &quot;the user.&quot; To raise concerns. To make sure things look right and feel usable. Important work, but bounded work.</p>
+
+<p>The seat was never the real goal anyway. Influence was. The ability to shape direction, not just react to it. To be part of the early conversations where the actual decisions happen: what we build, why we build it, what we&#39;re willing to bet on.</p>
+
+<p>But influence doesn&#39;t come from a meeting invite. It comes from trust. And trust comes from being right about things that matter, often enough, that people start asking what you think before they&#39;ve already decided.</p>
+
+<h2 id="show-up-differently">Show up differently</h2>
+
+<p>So how do you build trust when you&#39;ve been boxed into delivery?</p>
+
+<p>You can&#39;t ask for it. You can&#39;t petition your way back to influence. Nobody grants strategic relevance because you made a compelling case in a meeting.</p>
+
+<p>You have to show up differently.</p>
+
+<p>That means arriving early with something rough instead of late with something polished. A sketch. A prototype. A question framed as something people can react to. Not &quot;here&#39;s the answer&quot; but &quot;here&#39;s a possibility — does this hold?&quot;</p>
+
+<p>The polished deliverable closes conversations. It says &quot;I&#39;ve thought this through, now approve it.&quot; The rough experiment opens them. It invites people to think with you instead of evaluating you.</p>
+
+<p>It also means being willing to be wrong faster than the system is comfortable with. Most organizations are built to minimize risk. They want confidence before commitment. The whole apparatus of reviews and approvals and sign-offs exists to make sure nobody ships something embarrassing.</p>
+
+<p>But confidence before commitment is expensive. You&#39;re paying in time, in process, in drawings that might not matter. And you&#39;re learning slowly, from proxies, from pictures, from guesses about what real people might do.</p>
+
+<p>What if you paid less up front and learned faster on the back end? Built something rough, put it in front of real users, watched what actually happened, and then iterated based on reality instead of predictions?</p>
+
+<h2 id="trust-takes-time">Trust takes time</h2>
+
+<p>Here&#39;s the thing about influence: you earn it through action, not words.</p>
+
+<p>When a team starts inviting you into conversations, that&#39;s a good first step. You&#39;re there. They want you there. But the seat is just the beginning.</p>
+
+<p>What comes next is harder. Everyone has to loosen their grip. And it&#39;s not even about control, really. It&#39;s about letting people experiment. Build POCs. Try and fail and try again. It&#39;s about creating the conditions where learning is more valuable than being right.</p>
+
+<p>That takes time. This isn&#39;t an overnight change. Trust builds slowly, through small moments where you show up differently and deliver something useful. Where you&#39;re wrong and recover well. Where you help the team see something they couldn&#39;t see before.</p>
+
+<p>It also takes leadership willing to take the risk. Leaders who value the relationship-building, not just the end result. Who can see the throughline between messy experimentation now and better outcomes later. Who understand that trust isn&#39;t a distraction from the work — it&#39;s what makes the work possible.</p>
+
+<p>There&#39;s no shortcut. Just the work, repeated, until people start asking what you think before they&#39;ve already decided.</p>
+
+<p>And when they do? You&#39;re not making drawings anymore. You&#39;re making decisions.</p>]]></content>
+  </entry>
   <entry xml:lang="en">
     <title><![CDATA[Everyone Creates]]></title>
     <published>2025-11-14T18:00:00.000Z</published>
