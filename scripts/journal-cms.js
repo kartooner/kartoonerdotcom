@@ -536,6 +536,7 @@ function generateEntryPages(journal) {
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/style.css">
     <style>
         .entry-container {
@@ -1126,32 +1127,12 @@ function generateEntryPages(journal) {
 <body>
     <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
-        
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal" class="current" aria-current="page">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+
+    <!-- Navigation placeholder - loaded dynamically -->
+    <div id="navigation-placeholder"></div>
+
+    <!-- Theme Toggle placeholder - loaded dynamically -->
+    <div id="theme-toggle-placeholder"></div>
 
     <div class="entry-container">
         <div class="entry-header" id="main-content">
@@ -1176,21 +1157,14 @@ ${relatedPostsHtml}
         <div class="navigation">
             <a href="/archive" class="view-all">View all posts</a>
         </div>
-
-        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-                <strong>CSS Joy Webring</strong>
-                <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
-                </div>
-            </div>
-
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
     </div>
-    
+
+    <!-- Footer placeholder - loaded dynamically -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/navigation-loader.js"></script>
+    <script src="/theme-toggle-loader.js"></script>
+    <script src="/footer-loader.js"></script>
     <script src="/app.min.js"></script>
     <script src="/seasonal-loader.js" defer></script>
     <script>
@@ -1302,6 +1276,7 @@ function generateJournalHtml(journal) {
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/style.css">
     <style>
 
@@ -1626,31 +1601,11 @@ function generateJournalHtml(journal) {
     </style>
 </head>
 <body>
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
-        
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal" class="current" aria-current="page">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+    <!-- Navigation placeholder - loaded dynamically -->
+    <div id="navigation-placeholder"></div>
+
+    <!-- Theme Toggle placeholder - loaded dynamically -->
+    <div id="theme-toggle-placeholder"></div>
 
     <div class="journal-container animate-fade-in animate-main">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
@@ -1671,66 +1626,17 @@ function generateJournalHtml(journal) {
                 <a href="/archive" class="view-all">View all posts</a>
             </footer>
         </div>
-
-        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-                <strong>CSS Joy Webring</strong>
-                <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
-                </div>
-            </div>
-
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
     </div>
 
+    <!-- Footer placeholder - loaded dynamically -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/navigation-loader.js"></script>
+    <script src="/theme-toggle-loader.js"></script>
+    <script src="/footer-loader.js"></script>
     <script src="/app.min.js"></script>
     <script src="/seasonal-loader.js" defer></script>
     <script src="/tag-filter.js" defer></script>
-    <script>
-        // Table of Contents toggle (desktop)
-        const tocToggle = document.querySelector('.toc-toggle');
-        const toc = document.getElementById('toc');
-        if (tocToggle && toc) {
-            tocToggle.addEventListener('click', function() {
-                const isCollapsed = toc.classList.toggle('collapsed');
-                this.setAttribute('aria-expanded', !isCollapsed);
-            });
-        }
-
-        // Table of Contents mobile toggle
-        const tocMobileToggle = document.querySelector('.toc-mobile-toggle');
-        const tocMobile = document.querySelector('.toc-mobile');
-        if (tocMobileToggle && tocMobile) {
-            // Start collapsed on mobile
-            tocMobile.classList.add('collapsed');
-
-            tocMobileToggle.addEventListener('click', function() {
-                const isCollapsed = tocMobile.classList.toggle('collapsed');
-                this.setAttribute('aria-expanded', !isCollapsed);
-            });
-        }
-
-        // Table of Contents dropdown navigation (mobile)
-        const tocSelect = document.getElementById('toc-select');
-        if (tocSelect) {
-            tocSelect.addEventListener('change', function() {
-                const targetId = this.value;
-                if (targetId) {
-                    const targetElement = document.getElementById(targetId);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        // Reset the select after navigation
-                        setTimeout(() => {
-                            this.selectedIndex = 0;
-                        }, 300);
-                    }
-                }
-            });
-        }
-    </script>
 </body>
 </html>`;
 
@@ -1784,6 +1690,7 @@ function generateArchiveHtml(journal) {
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/style.css">
     <style>
         .archive-container {
@@ -1855,32 +1762,12 @@ function generateArchiveHtml(journal) {
 <body>
     <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <!-- Persistent Navigation -->
-    <nav class="persistent-nav" aria-label="Site navigation">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-            <span class="menu-text">Menu</span>
-        </button>
-        
-        <!-- Navigation links -->
-        <div class="nav-links">
-            <button class="mobile-close-button" aria-label="Close navigation menu">
-                <span class="close-text">×</span>
-            </button>
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/journal" class="current" aria-current="page">Journal</a>
-            <a href="/voice-acting">Voice Acting</a>
-            <a href="/contact">Contact</a>
-        </div>
-    </nav>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
-        <span class="theme-toggle-icon">🌙</span>
-        <span class="theme-toggle-text">Dark mode</span>
-    </button>
+
+    <!-- Navigation placeholder - loaded dynamically -->
+    <div id="navigation-placeholder"></div>
+
+    <!-- Theme Toggle placeholder - loaded dynamically -->
+    <div id="theme-toggle-placeholder"></div>
 
     <div class="archive-container">
         <main id="main-content" tabindex="-1">
@@ -1889,67 +1776,18 @@ function generateArchiveHtml(journal) {
 
             ${yearsHtml}
 
-            
+
         </main>
-
-        <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
-            <div class="webring" role="region" aria-label="CSS Joy Webring navigation">
-                <strong>CSS Joy Webring</strong>
-                <div class="webring-links">
-                    <a href="https://webri.ng/webring/cssjoy/previous?via=https://www.sagen.com">Previous</a>
-                    <a href="https://webri.ng/webring/cssjoy/random?via=https://www.sagen.com">Random</a>
-                    <a href="https://webri.ng/webring/cssjoy/next?via=https://www.sagen.com">Next</a>
-                </div>
-            </div>
-
-            <p class="changelog">&copy; 2025 Erik Sagen. Built with care in Rochester, NY <span id="weather"></span>. <a href="https://github.com/sagen/sagendotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer" aria-label="View the MIT license on Github, opens in a new tab">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to RSS feed">RSS</a></p>
-        </footer>
     </div>
-    
+
+    <!-- Footer placeholder - loaded dynamically -->
+    <div id="footer-placeholder"></div>
+
+    <script src="/navigation-loader.js"></script>
+    <script src="/theme-toggle-loader.js"></script>
+    <script src="/footer-loader.js"></script>
     <script src="/app.min.js"></script>
     <script src="/seasonal-loader.js" defer></script>
-    <script>
-        // Table of Contents toggle (desktop)
-        const tocToggle = document.querySelector('.toc-toggle');
-        const toc = document.getElementById('toc');
-        if (tocToggle && toc) {
-            tocToggle.addEventListener('click', function() {
-                const isCollapsed = toc.classList.toggle('collapsed');
-                this.setAttribute('aria-expanded', !isCollapsed);
-            });
-        }
-
-        // Table of Contents mobile toggle
-        const tocMobileToggle = document.querySelector('.toc-mobile-toggle');
-        const tocMobile = document.querySelector('.toc-mobile');
-        if (tocMobileToggle && tocMobile) {
-            // Start collapsed on mobile
-            tocMobile.classList.add('collapsed');
-
-            tocMobileToggle.addEventListener('click', function() {
-                const isCollapsed = tocMobile.classList.toggle('collapsed');
-                this.setAttribute('aria-expanded', !isCollapsed);
-            });
-        }
-
-        // Table of Contents dropdown navigation (mobile)
-        const tocSelect = document.getElementById('toc-select');
-        if (tocSelect) {
-            tocSelect.addEventListener('change', function() {
-                const targetId = this.value;
-                if (targetId) {
-                    const targetElement = document.getElementById(targetId);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        // Reset the select after navigation
-                        setTimeout(() => {
-                            this.selectedIndex = 0;
-                        }, 300);
-                    }
-                }
-            });
-        }
-    </script>
 </body>
 </html>`;
 
