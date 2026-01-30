@@ -1,0 +1,1437 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Flow Creator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #2c2c2c;
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100vh;
+            background: #fafafa;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn:hover {
+            border-color: #999;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        /* Zoom indicator */
+        .zoom-indicator {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 10;
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .kbd {
+            display: inline-block;
+            padding: 0.125rem 0.375rem;
+            font-size: 0.75rem;
+            font-family: inherit;
+            background: #f5f5f5;
+            border: 1px solid #d4d4d4;
+            border-radius: 3px;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        /* Canvas */
+        .canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .canvas.panning {
+            cursor: grabbing;
+        }
+
+        /* Node */
+        .node {
+            position: absolute;
+            transition: transform 0.2s ease;
+        }
+
+        .node-body {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border: 2px solid #1a1a1a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            transition: all 0.15s ease;
+        }
+
+        .node-body:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .node-body.task {
+            border-radius: 12px;
+        }
+
+        .node-body.conditional {
+            border-color: #1a1a1a;
+            background: white;
+        }
+
+        .node-body.selected {
+            border-color: #3b82f6;
+            border-width: 3px;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .node-body.state-start {
+            background: #7dd3fc;
+            border-color: #1a1a1a;
+        }
+
+        .node-body.state-start .node-text {
+            color: #1a1a1a;
+        }
+
+        .node-body.state-end {
+            background: #34d399;
+            border-color: #1a1a1a;
+        }
+
+        .node-body.state-end .node-text {
+            color: #1a1a1a;
+        }
+
+        .node-text {
+            width: 100%;
+            text-align: center;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            user-select: none;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        .node-input {
+            width: 100%;
+            text-align: center;
+            background: #f5f5f5;
+            border: 1px solid #d4d4d4;
+            outline: none;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: #1a1a1a;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+
+        /* Toggle button */
+        .node-toggle {
+            position: absolute;
+            top: -2rem;
+            right: 0;
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 4px;
+            padding: 0.25rem;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: background 0.15s ease;
+        }
+
+        .node-toggle:hover {
+            background: #f5f5f5;
+        }
+
+        .node-toggle:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        /* Delete button */
+        .node-delete {
+            position: absolute;
+            top: -2rem;
+            right: 2rem;
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 4px;
+            padding: 0.25rem;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.15s ease;
+            color: #6b7280;
+        }
+
+        .node-delete:hover {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .node-delete:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .node-input:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .node-body.state-start .node-input,
+        .node-body.state-end .node-input {
+            background: white;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
+        }
+
+        /* Skip to main content link for screen readers */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: white;
+            color: #2c2c2c;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border: 2px solid #3b82f6;
+            border-radius: 4px;
+            z-index: 100;
+        }
+
+        .skip-link:focus {
+            top: 1rem;
+        }
+
+        /* Visually hidden but accessible to screen readers */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Empty state */
+        .empty-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            text-align: center;
+            color: #999;
+        }
+
+        .empty-state > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .empty-state h2 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        /* Minimap */
+        .minimap {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            width: 12rem;
+            height: 8rem;
+            background: white;
+            border: 2px solid #d4d4d4;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .minimap-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #fafafa;
+        }
+
+        .minimap-node {
+            position: absolute;
+            background: #3b82f6;
+            opacity: 0.6;
+        }
+
+        /* Connection colors */
+        .connection-yes {
+            stroke: #1a1a1a;
+            stroke-width: 2;
+        }
+
+        .connection-no {
+            stroke: #1a1a1a;
+            stroke-width: 2;
+        }
+
+        .connection-default {
+            stroke: #1a1a1a;
+            stroke-width: 2;
+        }
+
+        .label-yes {
+            fill: white;
+        }
+
+        .label-no {
+            fill: white;
+        }
+
+        .label-pill-yes {
+            fill: #1a1a1a;
+        }
+
+        .label-pill-no {
+            fill: #1a1a1a;
+        }
+
+        /* Keyboard shortcuts panel */
+        .shortcuts-panel {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            padding: 0.625rem 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .shortcuts-panel h3 {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .shortcuts-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .shortcuts-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: #2c2c2c;
+            white-space: nowrap;
+        }
+
+        .shortcuts-list .kbd {
+            min-width: 1.25rem;
+            text-align: center;
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 0.25rem;
+            z-index: 1000;
+            min-width: 160px;
+        }
+
+        .context-menu-item {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .context-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .context-menu-item.active {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: #e5e5e5;
+            margin: 0.25rem 0;
+        }
+
+        .context-menu-item .shortcut {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: #999;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    // Lucide Icons as SVG components
+    const Plus = ({ size = 20 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    );
+
+    const Download = ({ size = 20 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+    );
+
+    const Square = ({ size = 16 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        </svg>
+    );
+
+    const DiamondIcon = ({ size = 16 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="12" y="1" width="15.56" height="15.56" rx="2" transform="rotate(45 12 1)"></rect>
+        </svg>
+    );
+
+    const TaskFlowCreator = () => {
+        const [nodes, setNodes] = useState([]);
+        const [nodeStates, setNodeStates] = useState({});
+        const [connections, setConnections] = useState([]);
+        const [draggedNode, setDraggedNode] = useState(null);
+        const [editingNode, setEditingNode] = useState(null);
+        const [selectedNode, setSelectedNode] = useState(null);
+        const [connectionLabels, setConnectionLabels] = useState({});
+        const [contextMenu, setContextMenu] = useState(null);
+        const [viewportOffset, setViewportOffset] = useState({ x: 0, y: 0 });
+        const [zoom, setZoom] = useState(1);
+        const [isPanning, setIsPanning] = useState(false);
+        const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+        const canvasRef = useRef(null);
+        const [nextId, setNextId] = useState(1);
+
+        const PROXIMITY_THRESHOLD = 150;
+        const NODE_WIDTH = 180;
+        const NODE_HEIGHT = 100;
+
+        // Keyboard shortcuts
+        useEffect(() => {
+            const handleKeyDown = (e) => {
+                // Context menu keyboard shortcuts
+                if (contextMenu) {
+                    if (contextMenu.type === 'connection') {
+                        if (e.key === 'y' || e.key === 'Y') {
+                            e.preventDefault();
+                            setConnectionLabels(prev => ({
+                                ...prev,
+                                [`${contextMenu.fromId}-${contextMenu.toId}`]: 'yes'
+                            }));
+                            setContextMenu(null);
+                        } else if (e.key === 'n' || e.key === 'N') {
+                            e.preventDefault();
+                            setConnectionLabels(prev => ({
+                                ...prev,
+                                [`${contextMenu.fromId}-${contextMenu.toId}`]: 'no'
+                            }));
+                            setContextMenu(null);
+                        }
+                    } else {
+                        if (e.key === 's' || e.key === 'S') {
+                            e.preventDefault();
+                            markNodeAs(contextMenu.nodeId, 'start');
+                        } else if (e.key === 'e' || e.key === 'E') {
+                            e.preventDefault();
+                            markNodeAs(contextMenu.nodeId, 'end');
+                        } else if (e.key === 'c' || e.key === 'C') {
+                            e.preventDefault();
+                            toggleNodeType(contextMenu.nodeId);
+                            setContextMenu(null);
+                        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                            e.preventDefault();
+                            deleteNode(contextMenu.nodeId);
+                            setContextMenu(null);
+                        }
+                    }
+                    return;
+                }
+
+                // Delete selected node with Delete or Backspace (when not editing text)
+                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && !editingNode) {
+                    e.preventDefault();
+                    deleteNode(selectedNode);
+                }
+                // Add new node with N key (when not editing)
+                if (e.key === 'n' && !editingNode && !e.target.matches('input') && !contextMenu) {
+                    e.preventDefault();
+                    addNode(window.innerWidth / 2, window.innerHeight / 2);
+                }
+                // Escape to stop editing or deselect or close context menu
+                if (e.key === 'Escape') {
+                    if (contextMenu) {
+                        setContextMenu(null);
+                    } else if (editingNode) {
+                        setEditingNode(null);
+                    } else if (selectedNode) {
+                        setSelectedNode(null);
+                    }
+                }
+            };
+
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        }, [editingNode, selectedNode, nodes, contextMenu]);
+
+        const addNode = (x, y) => {
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            const worldX = (x - canvasRect.left - viewportOffset.x) / zoom;
+            const worldY = (y - canvasRect.top - viewportOffset.y) / zoom;
+
+            const newNode = {
+                id: nextId,
+                x: worldX,
+                y: worldY,
+                text: 'New Task',
+                type: 'task',
+                width: NODE_WIDTH,
+                height: NODE_HEIGHT
+            };
+
+            setNodes([...nodes, newNode]);
+            setNextId(nextId + 1);
+            setEditingNode(newNode.id);
+        };
+
+        const deleteNode = (nodeId) => {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node && window.confirm(`Delete "${node.text}"?`)) {
+                setNodes(nodes.filter(n => n.id !== nodeId));
+                if (editingNode === nodeId) {
+                    setEditingNode(null);
+                }
+                if (selectedNode === nodeId) {
+                    setSelectedNode(null);
+                }
+            }
+        };
+
+        const toggleNodeType = (nodeId) => {
+            setNodes(nodes.map(node => {
+                if (node.id === nodeId) {
+                    return {
+                        ...node,
+                        type: node.type === 'task' ? 'conditional' : 'task'
+                    };
+                }
+                return node;
+            }));
+        };
+
+        const toggleConnectionLabel = (fromId, toId) => {
+            const key = `${fromId}-${toId}`;
+            setConnectionLabels(prev => ({
+                ...prev,
+                [key]: prev[key] === 'no' ? 'yes' : 'no'
+            }));
+        };
+
+        const markNodeAs = (nodeId, state) => {
+            setNodeStates(prev => {
+                const newStates = { ...prev };
+
+                // If marking as start or end, clear any other nodes with that state
+                if (state === 'start' || state === 'end') {
+                    Object.keys(newStates).forEach(key => {
+                        if (newStates[key] === state) {
+                            delete newStates[key];
+                        }
+                    });
+                }
+
+                // Toggle: if already this state, remove it; otherwise set it
+                if (newStates[nodeId] === state) {
+                    delete newStates[nodeId];
+                } else {
+                    newStates[nodeId] = state;
+                }
+
+                return newStates;
+            });
+            setContextMenu(null);
+        };
+
+        // Close context menu when clicking elsewhere
+        useEffect(() => {
+            const handleClick = () => setContextMenu(null);
+            document.addEventListener('click', handleClick);
+            return () => document.removeEventListener('click', handleClick);
+        }, []);
+
+        const updateNodeText = (nodeId, text) => {
+            setNodes(nodes.map(node =>
+                node.id === nodeId ? { ...node, text } : node
+            ));
+        };
+
+        const getClosestEdges = (node1, node2) => {
+            const edges1 = {
+                top: { x: node1.x + node1.width / 2, y: node1.y, dir: 'top' },
+                bottom: { x: node1.x + node1.width / 2, y: node1.y + node1.height, dir: 'bottom' },
+                left: { x: node1.x, y: node1.y + node1.height / 2, dir: 'left' },
+                right: { x: node1.x + node1.width, y: node1.y + node1.height / 2, dir: 'right' }
+            };
+
+            const edges2 = {
+                top: { x: node2.x + node2.width / 2, y: node2.y, dir: 'top' },
+                bottom: { x: node2.x + node2.width / 2, y: node2.y + node2.height, dir: 'bottom' },
+                left: { x: node2.x, y: node2.y + node2.height / 2, dir: 'left' },
+                right: { x: node2.x + node2.width, y: node2.y + node2.height / 2, dir: 'right' }
+            };
+
+            let minDistance = Infinity;
+            let bestEdges = null;
+
+            Object.values(edges1).forEach(edge1 => {
+                Object.values(edges2).forEach(edge2 => {
+                    const dx = edge2.x - edge1.x;
+                    const dy = edge2.y - edge1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        bestEdges = { from: edge1.dir, to: edge2.dir, distance };
+                    }
+                });
+            });
+
+            return bestEdges;
+        };
+
+        const updateConnections = () => {
+            const newConnections = [];
+
+            nodes.forEach((fromNode) => {
+                const nearbyNodes = [];
+
+                nodes.forEach((toNode) => {
+                    if (fromNode.id !== toNode.id) {
+                        const edgeInfo = getClosestEdges(fromNode, toNode);
+
+                        if (edgeInfo && edgeInfo.distance < PROXIMITY_THRESHOLD) {
+                            nearbyNodes.push({
+                                node: toNode,
+                                distance: edgeInfo.distance,
+                                fromEdge: edgeInfo.from,
+                                toEdge: edgeInfo.to
+                            });
+                        }
+                    }
+                });
+
+                nearbyNodes.sort((a, b) => a.distance - b.distance);
+
+                // For conditionals, connect to ALL nearby nodes (no limit)
+                // For regular tasks, connect to the nearest one only
+                const maxConnections = fromNode.type === 'conditional' ? nearbyNodes.length : 1;
+
+                nearbyNodes.slice(0, maxConnections).forEach((nearby, index) => {
+                    const key = `${fromNode.id}-${nearby.node.id}`;
+                    // Use stored label if it exists, otherwise default based on index
+                    const defaultLabel = fromNode.type === 'conditional' ? (index === 0 ? 'yes' : 'no') : null;
+                    const label = connectionLabels[key] || defaultLabel;
+
+                    newConnections.push({
+                        from: fromNode.id,
+                        to: nearby.node.id,
+                        fromEdge: nearby.fromEdge,
+                        toEdge: nearby.toEdge,
+                        label: label,
+                        fromType: fromNode.type
+                    });
+                });
+            });
+
+            setConnections(newConnections);
+        };
+
+        useEffect(() => {
+            updateConnections();
+        }, [nodes, connectionLabels]);
+
+        const getConnectionPoint = (node, edge) => {
+            switch (edge) {
+                case 'top':
+                    return { x: node.x + node.width / 2, y: node.y };
+                case 'bottom':
+                    return { x: node.x + node.width / 2, y: node.y + node.height };
+                case 'left':
+                    return { x: node.x, y: node.y + node.height / 2 };
+                case 'right':
+                    return { x: node.x + node.width, y: node.y + node.height / 2 };
+                default:
+                    return { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+            }
+        };
+
+        const handleNodeMouseDown = (e, node) => {
+            e.stopPropagation();
+            if (editingNode === node.id) return;
+
+            // Select the node
+            setSelectedNode(node.id);
+
+            setDraggedNode({
+                id: node.id,
+                startX: e.clientX,
+                startY: e.clientY,
+                nodeStartX: node.x,
+                nodeStartY: node.y
+            });
+        };
+
+        useEffect(() => {
+            const handleMouseMove = (e) => {
+                if (draggedNode) {
+                    const dx = (e.clientX - draggedNode.startX) / zoom;
+                    const dy = (e.clientY - draggedNode.startY) / zoom;
+
+                    setNodes(nodes.map(node =>
+                        node.id === draggedNode.id
+                            ? { ...node, x: draggedNode.nodeStartX + dx, y: draggedNode.nodeStartY + dy }
+                            : node
+                    ));
+                }
+
+                if (isPanning) {
+                    const dx = e.clientX - panStart.x;
+                    const dy = e.clientY - panStart.y;
+                    setViewportOffset({
+                        x: viewportOffset.x + dx,
+                        y: viewportOffset.y + dy
+                    });
+                    setPanStart({ x: e.clientX, y: e.clientY });
+                }
+            };
+
+            const handleMouseUp = () => {
+                setDraggedNode(null);
+                setIsPanning(false);
+            };
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }, [draggedNode, isPanning, panStart, nodes, zoom, viewportOffset]);
+
+        const handleCanvasMouseDown = (e) => {
+            if (e.target === canvasRef.current || e.target.classList.contains('canvas-background')) {
+                setIsPanning(true);
+                setPanStart({ x: e.clientX, y: e.clientY });
+                // Deselect any selected node when clicking canvas
+                setSelectedNode(null);
+            }
+        };
+
+        const handleWheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            setZoom(Math.min(Math.max(0.1, zoom * delta), 3));
+        };
+
+        const exportAsPNG = () => {
+            const exportCanvas = document.createElement('canvas');
+            const ctx = exportCanvas.getContext('2d');
+
+            if (nodes.length === 0) return;
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            nodes.forEach(node => {
+                minX = Math.min(minX, node.x);
+                minY = Math.min(minY, node.y);
+                maxX = Math.max(maxX, node.x + node.width);
+                maxY = Math.max(maxY, node.y + node.height);
+            });
+
+            const padding = 100;
+            exportCanvas.width = (maxX - minX + padding * 2);
+            exportCanvas.height = (maxY - minY + padding * 2);
+
+            ctx.fillStyle = '#f9fafb';
+            ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+            const getEdgePoint = (node, edge) => {
+                const x = node.x - minX + padding;
+                const y = node.y - minY + padding;
+
+                switch (edge) {
+                    case 'top': return { x: x + node.width / 2, y: y };
+                    case 'bottom': return { x: x + node.width / 2, y: y + node.height };
+                    case 'left': return { x: x, y: y + node.height / 2 };
+                    case 'right': return { x: x + node.width, y: y + node.height / 2 };
+                    default: return { x: x + node.width / 2, y: y + node.height / 2 };
+                }
+            };
+
+            connections.forEach(conn => {
+                const fromNode = nodes.find(n => n.id === conn.from);
+                const toNode = nodes.find(n => n.id === conn.to);
+                if (!fromNode || !toNode) return;
+
+                const start = getEdgePoint(fromNode, conn.fromEdge);
+                const end = getEdgePoint(toNode, conn.toEdge);
+
+                ctx.strokeStyle = conn.label === 'yes' ? '#059669' : conn.label === 'no' ? '#dc2626' : '#6b7280';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+
+                const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                const arrowLength = 10;
+                ctx.beginPath();
+                ctx.moveTo(end.x, end.y);
+                ctx.lineTo(
+                    end.x - arrowLength * Math.cos(angle - Math.PI / 6),
+                    end.y - arrowLength * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.moveTo(end.x, end.y);
+                ctx.lineTo(
+                    end.x - arrowLength * Math.cos(angle + Math.PI / 6),
+                    end.y - arrowLength * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.stroke();
+
+                if (conn.label) {
+                    const midX = (start.x + end.x) / 2;
+                    const midY = (start.y + end.y) / 2;
+
+                    ctx.fillStyle = conn.label === 'yes' ? '#059669' : '#dc2626';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    const labelText = conn.label === 'yes' ? '✓ Yes' : '✗ No';
+
+                    const metrics = ctx.measureText(labelText);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(midX - metrics.width / 2 - 4, midY - 10, metrics.width + 8, 20);
+
+                    ctx.fillStyle = conn.label === 'yes' ? '#059669' : '#dc2626';
+                    ctx.fillText(labelText, midX, midY);
+                }
+            });
+
+            nodes.forEach(node => {
+                const x = node.x - minX + padding;
+                const y = node.y - minY + padding;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#d1d5db';
+                ctx.lineWidth = 2;
+
+                if (node.type === 'conditional') {
+                    ctx.beginPath();
+                    ctx.moveTo(x + node.width / 2, y);
+                    ctx.lineTo(x + node.width, y + node.height / 2);
+                    ctx.lineTo(x + node.width / 2, y + node.height);
+                    ctx.lineTo(x, y + node.height / 2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    const radius = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + node.width - radius, y);
+                    ctx.quadraticCurveTo(x + node.width, y, x + node.width, y + radius);
+                    ctx.lineTo(x + node.width, y + node.height - radius);
+                    ctx.quadraticCurveTo(x + node.width, y + node.height, x + node.width - radius, y + node.height);
+                    ctx.lineTo(x + radius, y + node.height);
+                    ctx.quadraticCurveTo(x, y + node.height, x, y + node.height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#1f2937';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const words = node.text.split(' ');
+                const lines = [];
+                let currentLine = '';
+
+                words.forEach(word => {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > node.width - 20) {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = testLine;
+                    }
+                });
+                if (currentLine) lines.push(currentLine);
+
+                const lineHeight = 18;
+                const startY = y + node.height / 2 - (lines.length - 1) * lineHeight / 2;
+
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x + node.width / 2, startY + i * lineHeight);
+                });
+            });
+
+            const link = document.createElement('a');
+            link.download = 'task-flow.png';
+            link.href = exportCanvas.toDataURL();
+            link.click();
+        };
+
+        return (
+            <div className="app-container">
+                <a href="#main-canvas" className="skip-link">Skip to canvas</a>
+
+                <div className="sr-only" role="region" aria-label="Instructions">
+                    <h1>Task Flow Creator</h1>
+                    <p>Create and organize task flows with automatic connections.</p>
+                    <h2>Keyboard Shortcuts:</h2>
+                    <ul>
+                        <li>N: Add new task</li>
+                        <li>Delete or Backspace: Delete selected task</li>
+                        <li>Escape: Stop editing</li>
+                        <li>Tab: Navigate between controls</li>
+                        <li>Enter or Space: Activate buttons or edit task text</li>
+                    </ul>
+                </div>
+
+                <div className="toolbar" role="toolbar" aria-label="Task flow controls">
+                    {nodes.length > 0 && (
+                        <button
+                            onClick={() => addNode(window.innerWidth / 2, window.innerHeight / 2)}
+                            className="btn"
+                            aria-label="Add new task (press N)"
+                        >
+                            <Plus size={20} aria-hidden="true" />
+                            Add Task
+                        </button>
+                    )}
+                    <button
+                        onClick={exportAsPNG}
+                        className="btn"
+                        disabled={nodes.length === 0}
+                        aria-label="Export task flow as PNG image"
+                    >
+                        <Download size={20} aria-hidden="true" />
+                        Export
+                    </button>
+                </div>
+
+                <div className="zoom-indicator" role="status" aria-live="polite" aria-label={`Zoom level: ${Math.round(zoom * 100)} percent`}>
+                    {Math.round(zoom * 100)}%
+                </div>
+
+                <div
+                    id="main-canvas"
+                    ref={canvasRef}
+                    className={`canvas ${isPanning ? 'panning' : ''}`}
+                    onMouseDown={handleCanvasMouseDown}
+                    onWheel={handleWheel}
+                    role="application"
+                    aria-label="Task flow canvas. Use Add Task button to create tasks, drag tasks to position them, and they will connect automatically when near each other."
+                    tabIndex={0}
+                    style={{
+                        backgroundImage: 'radial-gradient(circle, #d4d4d4 1px, transparent 1px)',
+                        backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+                        backgroundPosition: `${viewportOffset.x}px ${viewportOffset.y}px`
+                    }}
+                >
+                    <svg
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            pointerEvents: 'none'
+                        }}
+                        role="img"
+                        aria-label={`${connections.length} connection${connections.length !== 1 ? 's' : ''} between tasks`}
+                    >
+                        {connections.map((conn, idx) => {
+                            const fromNode = nodes.find(n => n.id === conn.from);
+                            const toNode = nodes.find(n => n.id === conn.to);
+                            if (!fromNode || !toNode) return null;
+
+                            const fromPoint = getConnectionPoint(fromNode, conn.fromEdge);
+                            const toPoint = getConnectionPoint(toNode, conn.toEdge);
+
+                            const x1 = fromPoint.x * zoom + viewportOffset.x;
+                            const y1 = fromPoint.y * zoom + viewportOffset.y;
+                            const x2 = toPoint.x * zoom + viewportOffset.x;
+                            const y2 = toPoint.y * zoom + viewportOffset.y;
+
+                            const midX = (x1 + x2) / 2;
+                            const midY = (y1 + y2) / 2;
+
+                            return (
+                                <g key={`${conn.from}-${conn.to}-${idx}`}>
+                                    <line
+                                        x1={x1}
+                                        y1={y1}
+                                        x2={x2}
+                                        y2={y2}
+                                        stroke="#1a1a1a"
+                                        strokeWidth={2}
+                                    />
+
+                                    {conn.label && (
+                                        <g
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleConnectionLabel(conn.from, conn.to);
+                                            }}
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setContextMenu({
+                                                    x: e.clientX,
+                                                    y: e.clientY,
+                                                    type: 'connection',
+                                                    fromId: conn.from,
+                                                    toId: conn.to
+                                                });
+                                            }}
+                                        >
+                                            <rect
+                                                x={midX - 30}
+                                                y={midY - 12}
+                                                width={60}
+                                                height={24}
+                                                fill="#1a1a1a"
+                                                rx={12}
+                                            />
+                                            <text
+                                                x={midX}
+                                                y={midY + 5}
+                                                fill="white"
+                                                fontSize="11"
+                                                fontWeight="600"
+                                                textAnchor="middle"
+                                                style={{ userSelect: 'none' }}
+                                            >
+                                                {conn.label === 'yes' ? 'Yes' : 'No'}
+                                            </text>
+                                        </g>
+                                    )}
+                                </g>
+                            );
+                        })}
+                    </svg>
+
+                    {nodes.map(node => {
+                        const screenX = node.x * zoom + viewportOffset.x;
+                        const screenY = node.y * zoom + viewportOffset.y;
+                        const screenWidth = node.width * zoom;
+                        const screenHeight = node.height * zoom;
+
+                        return (
+                            <div
+                                key={node.id}
+                                className="node"
+                                style={{
+                                    left: screenX,
+                                    top: screenY,
+                                    width: screenWidth,
+                                    height: screenHeight,
+                                    transform: node.type === 'conditional' ? 'rotate(45deg)' : 'none'
+                                }}
+                                onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                                onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setContextMenu({
+                                        x: e.clientX,
+                                        y: e.clientY,
+                                        nodeId: node.id,
+                                        nodeType: node.type
+                                    });
+                                }}
+                                role="article"
+                                aria-label={`${node.type === 'conditional' ? 'Conditional' : 'Task'}: ${node.text}`}
+                            >
+                                <div
+                                    className={`node-body ${node.type} ${selectedNode === node.id ? 'selected' : ''} ${nodeStates[node.id] ? `state-${nodeStates[node.id]}` : ''}`}
+                                    style={{
+                                        transform: node.type === 'conditional' ? 'rotate(-45deg)' : 'none'
+                                    }}
+                                >
+                                    {editingNode === node.id ? (
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={node.text}
+                                            onChange={(e) => updateNodeText(node.id, e.target.value)}
+                                            onBlur={() => setEditingNode(null)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    setEditingNode(null);
+                                                    const newX = (screenX + screenWidth + 50 - viewportOffset.x) / zoom;
+                                                    const newY = (screenY - viewportOffset.y) / zoom;
+                                                    const newNode = {
+                                                        id: nextId,
+                                                        x: newX,
+                                                        y: newY,
+                                                        text: 'New Task',
+                                                        type: 'task',
+                                                        width: NODE_WIDTH,
+                                                        height: NODE_HEIGHT
+                                                    };
+                                                    setNodes([...nodes, newNode]);
+                                                    setNextId(nextId + 1);
+                                                    setTimeout(() => setEditingNode(newNode.id), 50);
+                                                }
+                                            }}
+                                            className="node-input"
+                                            onClick={(e) => e.stopPropagation()}
+                                            aria-label="Edit task name"
+                                        />
+                                    ) : (
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingNode(node.id);
+                                            }}
+                                            className="node-text"
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    setEditingNode(node.id);
+                                                }
+                                            }}
+                                            aria-label={`Edit task: ${node.text}. Press Enter or Space to edit.`}
+                                        >
+                                            {node.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleNodeType(node.id);
+                                    }}
+                                    className="node-toggle"
+                                    style={{
+                                        transform: node.type === 'conditional' ? 'rotate(-45deg)' : 'none'
+                                    }}
+                                    aria-label={node.type === 'conditional' ? `Convert ${node.text} to regular task` : `Convert ${node.text} to conditional`}
+                                >
+                                    {node.type === 'conditional' ? <Square size={16} aria-hidden="true" /> : <DiamondIcon size={16} aria-hidden="true" />}
+                                </button>
+
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteNode(node.id);
+                                    }}
+                                    className="node-delete"
+                                    style={{
+                                        transform: node.type === 'conditional' ? 'rotate(-45deg)' : 'none'
+                                    }}
+                                    aria-label={`Delete ${node.text}`}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        );
+                    })}
+
+                    {nodes.length === 0 && (
+                        <div className="empty-state">
+                            <div>
+                                <h2>Add task to get started</h2>
+                                <p>Build your flow by adding and connecting tasks</p>
+                                <button
+                                    onClick={() => addNode(window.innerWidth / 2, window.innerHeight / 2)}
+                                    className="btn btn-primary"
+                                    aria-label="Add new task (press N)"
+                                    style={{ pointerEvents: 'auto', marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    <Plus size={20} aria-hidden="true" />
+                                    Add Task
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="minimap" role="img" aria-label={`Minimap showing overview of ${nodes.length} task${nodes.length !== 1 ? 's' : ''}`}>
+                    <div className="minimap-content">
+                        {nodes.length > 0 && (() => {
+                            const minX = Math.min(...nodes.map(n => n.x));
+                            const minY = Math.min(...nodes.map(n => n.y));
+                            const maxX = Math.max(...nodes.map(n => n.x + n.width));
+                            const maxY = Math.max(...nodes.map(n => n.y + n.height));
+
+                            const width = maxX - minX;
+                            const height = maxY - minY;
+                            const scale = Math.min(180 / width, 120 / height);
+
+                            return nodes.map(node => {
+                                const x = (node.x - minX) * scale + 10;
+                                const y = (node.y - minY) * scale + 6;
+                                const w = node.width * scale;
+                                const h = node.height * scale;
+
+                                return (
+                                    <div
+                                        key={node.id}
+                                        className="minimap-node"
+                                        style={{
+                                            left: x,
+                                            top: y,
+                                            width: w,
+                                            height: h,
+                                            transform: node.type === 'conditional' ? 'rotate(45deg)' : 'none'
+                                        }}
+                                    />
+                                );
+                            });
+                        })()}
+                    </div>
+                </div>
+
+                <div className="shortcuts-panel">
+                    <h3>Keyboard Shortcuts</h3>
+                    <ul className="shortcuts-list">
+                        <li><span className="kbd">N</span> Add task</li>
+                        <li><span className="kbd">Del</span> Delete</li>
+                    </ul>
+                </div>
+
+                {contextMenu && (
+                    <div
+                        className="context-menu"
+                        style={{
+                            left: contextMenu.x,
+                            top: contextMenu.y
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {contextMenu.type === 'connection' ? (
+                            <>
+                                <div
+                                    className={`context-menu-item ${connectionLabels[`${contextMenu.fromId}-${contextMenu.toId}`] === 'yes' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setConnectionLabels(prev => ({
+                                            ...prev,
+                                            [`${contextMenu.fromId}-${contextMenu.toId}`]: 'yes'
+                                        }));
+                                        setContextMenu(null);
+                                    }}
+                                >
+                                    Mark as Yes
+                                    <span className="shortcut">Y</span>
+                                </div>
+                                <div
+                                    className={`context-menu-item ${connectionLabels[`${contextMenu.fromId}-${contextMenu.toId}`] === 'no' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setConnectionLabels(prev => ({
+                                            ...prev,
+                                            [`${contextMenu.fromId}-${contextMenu.toId}`]: 'no'
+                                        }));
+                                        setContextMenu(null);
+                                    }}
+                                >
+                                    Mark as No
+                                    <span className="shortcut">N</span>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div
+                                    className={`context-menu-item ${nodeStates[contextMenu.nodeId] === 'start' ? 'active' : ''}`}
+                                    onClick={() => markNodeAs(contextMenu.nodeId, 'start')}
+                                >
+                                    Mark as Start
+                                    <span className="shortcut">S</span>
+                                </div>
+                                <div
+                                    className={`context-menu-item ${nodeStates[contextMenu.nodeId] === 'end' ? 'active' : ''}`}
+                                    onClick={() => markNodeAs(contextMenu.nodeId, 'end')}
+                                >
+                                    Mark as End
+                                    <span className="shortcut">E</span>
+                                </div>
+                                <div className="context-menu-divider"></div>
+                                <div
+                                    className="context-menu-item"
+                                    onClick={() => {
+                                        toggleNodeType(contextMenu.nodeId);
+                                        setContextMenu(null);
+                                    }}
+                                >
+                                    {contextMenu.nodeType === 'conditional' ? 'Convert to Task' : 'Convert to Conditional'}
+                                    <span className="shortcut">C</span>
+                                </div>
+                                <div className="context-menu-divider"></div>
+                                <div
+                                    className="context-menu-item"
+                                    onClick={() => {
+                                        deleteNode(contextMenu.nodeId);
+                                        setContextMenu(null);
+                                    }}
+                                >
+                                    Delete
+                                    <span className="shortcut">Del</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<TaskFlowCreator />);
+</script>
+</body>
+</html>
