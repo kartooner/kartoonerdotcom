@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const contentFilePath = path.join(__dirname, '..', 'content.json');
+const contentFilePath = path.join(__dirname, '..', 'data', 'content.json');
 
 console.log('🔍 Watching content.json for changes...');
 console.log('📁 File path:', contentFilePath);

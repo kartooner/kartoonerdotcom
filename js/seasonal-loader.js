@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     function loadSeasonalThemesCSS() {
@@ -7,7 +7,7 @@
         const link = document.createElement('link');
         link.id = 'seasonal-themes';
         link.rel = 'stylesheet';
-        link.href = '/seasonal-themes.css';
+        link.href = '/css/seasonal-themes.css';
 
         const mainStylesheet = document.querySelector('link[href*="style.css"]') || document.querySelector('link[rel="stylesheet"]');
         if (mainStylesheet) {

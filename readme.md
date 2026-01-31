@@ -10,26 +10,26 @@ Hey there! I'm Erik Sagen, a Lead Product UX Designer with over two decades of e
 
 ## 🚀 Features
 
-* **Responsive Design:** Looks great on desktops, tablets, and mobile devices.
-* **Accessibility-Focused:** Built with inclusive design principles to ensure everyone can enjoy the content.
-* **Interactive 3D Experiments:** Engaging Three.js experiences that push the boundaries of the browser.
-* **Smooth Animations:** Subtle animations that bring the site to life without overwhelming.
-* **Professional Portfolio:** Showcases my top skills, work experience, and design philosophy.
-* **Blog Links:** Connects to my Medium articles where I share insights and stories.
+* **Responsive design:** Looks great on desktops, tablets, and mobile devices.
+* **Accessibility-focused:** Built with inclusive design principles to ensure everyone can enjoy the content.
+* **Interactive 3D experiments:** Engaging Three.js experiences that push the boundaries of the browser.
+* **Smooth animations:** Subtle animations that bring the site to life without overwhelming.
+* **Professional portfolio:** Showcases my top skills, work experience, and design philosophy.
+* **Blog links:** Connects to my Medium articles where I share insights and stories.
 
 ## 🧪 Experiments (Three.js)
 
 I love tinkering with 3D in the browser. You can find these in the `/experiments` directory:
 
-* **[Paper Plane](./experiments/paper-plane/index.html):** A high-performance 3D flight simulator featuring upgrades, dynamic difficulty, and a sleek 80s aesthetic.
-* **[Slime Game](./experiments/slime-game/index.html):** A physics-based experiment where you control a reactive slime through a procedurally influenced cave environment.
+* **[Paper plane](./experiments/paper-plane/index.html):** A high-performance 3D flight simulator featuring upgrades, dynamic difficulty, and a sleek 80s aesthetic.
+* **[Slime game](./experiments/slime-game/index.html):** A physics-based experiment where you control a reactive slime through a procedurally influenced cave environment.
 
 ## 🛠 Tech Stack
 
 * **HTML5 & CSS3:** The backbone of the site.
-* **Three.js:** Powering the interactive 3D experiments and games.
+* **Three.js:** Powering the interactive 3d experiments and games.
 * **CSS Flexbox:** For those sleek, responsive layouts.
-* **WebAwesome Library:** Custom components powered by Web Components.
+* **WebAwesome library:** Custom components powered by Web Components.
 * **Google Fonts:** Featuring the [Manrope](https://fonts.google.com/specimen/Manrope) typeface.
 * **SVG Icons:** Crisp and scalable visuals.
 
@@ -49,7 +49,7 @@ Want to check out the code or make your own tweaks? Here's how to get started:
 
 3. **Open in Your Favorite Editor:**
   * Use VS Code, Sublime Text, or any editor that sparks joy.
-4. **View Locally:**
+4. **View locally:**
   * Open `index.html` in your browser to see the main site, or dive into `/experiments` for the 3D stuff.
 
 ## ✨ How to Use

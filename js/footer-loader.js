@@ -1,5 +1,5 @@
 // Footer loader - loads footer.html into the page
-(function() {
+(function () {
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', loadFooter);
@@ -11,7 +11,7 @@
         const placeholder = document.getElementById('footer-placeholder');
         if (!placeholder) return;
 
-        fetch('/footer.html')
+        fetch('/partials/footer.html')
             .then(response => {
                 if (!response.ok) throw new Error('Footer not found');
                 return response.text();

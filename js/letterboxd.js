@@ -9,7 +9,7 @@ class ReviewsUI {
             'https://corsproxy.io/?',
             'https://api.codetabs.com/v1/proxy?quest='
         ];
-        this.fallbackJsonUrl = 'letterboxd-fallback.json';
+        this.fallbackJsonUrl = '/data/letterboxd-fallback.json';
         this.profileUrl = 'https://letterboxd.com/kartooner/';
         this.fetchTimeoutMs = 6000;
     }

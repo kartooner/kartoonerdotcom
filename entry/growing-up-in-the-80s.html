@@ -8,7 +8,7 @@
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .entry-container {
             max-width: 800px;
@@ -297,10 +297,10 @@
             display: inline-block;
             padding: 0.375rem 0.875rem;
             background: var(--accent-color);
-            color: white;
+            color: var(--bg-color);
             border-radius: 20px;
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 700;
             transition: all 0.2s ease;
         }
 
@@ -674,11 +674,11 @@
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
 
-    <script src="/navigation-loader.js"></script>
-    <script src="/theme-toggle-loader.js"></script>
-    <script src="/footer-loader.js"></script>
-    <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');

@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found</title>
-    <meta name="description" content="Oops! This page doesn't exist. But hey, why not play some Dig Dug while you're here?">
+    <meta name="description"
+        content="Oops! This page doesn't exist. But hey, why not play some Dig Dug while you're here?">
 
     <!-- Resource hints for external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,10 +19,12 @@
     <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
 
-    <link rel="stylesheet" href="/style.css">
-    <script src="/seasonal-loader.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
 
     <script src="//www.google.com/jsapi"></script>
     <script>
@@ -161,6 +165,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Skip Navigation Link for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -184,7 +189,8 @@
             <!-- Game Section -->
             <section class="game-section animate-fade-in">
                 <h2>Play Dig Dug</h2>
-                <p class="game-intro">Classic Atari 2600 arcade action. Dig tunnels, pump up enemies, and rack up points!</p>
+                <p class="game-intro">Classic Atari 2600 arcade action. Dig tunnels, pump up enemies, and rack up
+                    points!</p>
 
                 <div class="game-container">
                     <div id="game" style="display: none;"></div>
@@ -232,7 +238,7 @@
         }
 
         // Allow clicking outside game to release focus trap
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const gameContainer = document.querySelector('.game-container');
             if (gameActive && gameContainer && !gameContainer.contains(e.target)) {
                 gameActive = false;
@@ -271,11 +277,11 @@
 
         document.getElementById("startButton").addEventListener("click", startGame);
     </script>
-    <script src="/navigation-loader.js"></script>
-    <script src="/theme-toggle-loader.js"></script>
-    <script src="/footer-loader.js"></script>
-    <script src="/app.min.js"></script>
-    <script data-goatcounter="https://kartooner.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
+
 </html>

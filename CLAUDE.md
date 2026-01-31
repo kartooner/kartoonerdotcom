@@ -1,7 +1,7 @@
 - Always run a local server using Node.
 - Use sentence casing on UI labels where it makes sense.
 - Update build scripts when we make navigation changes.
-- journal-entries.json exists in the root.
+- journal-entries.json exists in the /data/ directory.
 - Blog stories are located in `/stories/` directory (not `/scripts/stories/`).
 - Local server should handle clean URLs so you can navigate to /journal, /voice-acting, /contact, etc. without needing the .html extension.
 - Remember to always use port 8000 for the local server. Not 3000, etc.

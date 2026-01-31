@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const JOURNAL_FILE = path.join(__dirname, '..', 'journal-entries.json');
+const JOURNAL_FILE = path.join(__dirname, '..', 'data', 'journal-entries.json');
 const STORIES_DIR = path.join(__dirname, '..', 'stories');
 const ENTRY_DIR = path.join(__dirname, '..', 'entry');
 const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
@@ -46,7 +46,7 @@ function parseStoryFile(filePath) {
         const lines = content.split('\n');
         const metadata = {};
         let contentStart = 0;
-        
+
         // Parse metadata from the beginning of the file
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -54,12 +54,12 @@ function parseStoryFile(filePath) {
                 contentStart = i + 1;
                 break;
             }
-            
+
             const colonIndex = line.indexOf(':');
             if (colonIndex > 0) {
                 const key = line.substring(0, colonIndex).trim().toLowerCase();
                 const value = line.substring(colonIndex + 1).trim();
-                
+
                 switch (key) {
                     case 'title':
                         metadata.title = value;
@@ -82,17 +82,17 @@ function parseStoryFile(filePath) {
                 }
             }
         }
-        
+
         // Get the main content
         const mainContent = lines.slice(contentStart).join('\n').trim();
-        
+
         // Generate ID from filename or title
         const filename = path.basename(filePath, '.txt');
         const id = filename.replace(/^\d{4}-\d{2}-\d{2}-/, '') || generateSlug(metadata.title || '');
-        
+
         // Use excerpt or first 100 chars of content
         const excerpt = metadata.excerpt || mainContent.substring(0, 100) + '...';
-        
+
         return {
             id,
             title: metadata.title || 'Untitled',
@@ -116,13 +116,13 @@ function syncStoriesFromFolder() {
             fs.mkdirSync(STORIES_DIR, { recursive: true });
             return { entries: [] };
         }
-        
+
         const files = fs.readdirSync(STORIES_DIR)
             .filter(file => file.endsWith('.txt'))
             .sort((a, b) => b.localeCompare(a)); // Sort by filename (newest first due to date prefix)
-        
+
         const entries = [];
-        
+
         for (const file of files) {
             const filePath = path.join(STORIES_DIR, file);
             const entry = parseStoryFile(filePath);
@@ -130,18 +130,18 @@ function syncStoriesFromFolder() {
                 entries.push(entry);
             }
         }
-        
+
         // Sort by date (newest first)
         entries.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
+
         const journal = { entries };
-        
+
         // Save to JSON file for consistency
         saveJournal(journal);
-        
+
         console.log(`Synced ${entries.length} stories from /stories folder`);
         return journal;
-        
+
     } catch (error) {
         console.error('Error syncing stories from folder:', error.message);
         return { entries: [] };
@@ -296,14 +296,14 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
     const blocks = html.split('\n\n').filter(block => block.trim() !== '');
     const convertedBlocks = [];
     const h2Headings = []; // Track H2 headings for table of contents
-    
+
     for (let block of blocks) {
         const lines = block.split('\n');
-        
+
         // Check if it's a code block (fenced with ``` or indented)
         if ((lines[0].trim().startsWith('```') && lines[lines.length - 1].trim().startsWith('```')) ||
             lines.every(line => line.startsWith('    ') || line.trim() === '')) {
-            
+
             if (lines[0].trim().startsWith('```')) {
                 // Fenced code block
                 const language = lines[0].replace('```', '').trim();
@@ -317,22 +317,22 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
             }
             continue;
         }
-        
+
         // Check if it's a table (pipe-separated)
         if (lines.length >= 2 && lines.every(line => line.includes('|'))) {
             const headerRow = lines[0].split('|').map(cell => cell.trim()).filter(cell => cell);
             const separatorRow = lines[1];
-            
+
             // Check if second row is separator (contains - and |)
             if (separatorRow.includes('-') && separatorRow.includes('|')) {
                 const dataRows = lines.slice(2);
-                
+
                 let tableHtml = '<table><thead><tr>';
                 headerRow.forEach(header => {
                     tableHtml += `<th>${processInlineMarkdown(header)}</th>`;
                 });
                 tableHtml += '</tr></thead><tbody>';
-                
+
                 dataRows.forEach(row => {
                     const cells = row.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
                     if (cells.length > 0) {
@@ -343,18 +343,18 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
                         tableHtml += '</tr>';
                     }
                 });
-                
+
                 tableHtml += '</tbody></table>';
                 convertedBlocks.push(tableHtml);
                 continue;
             }
         }
-        
+
         // Check if it's a blockquote block
         if (lines.every(line => line.trim().startsWith('>'))) {
             const quoteLines = lines.map(line => line.replace(/^>\s*/, ''));
             const sourceMatch = quoteLines[quoteLines.length - 1].match(/^— (.+)$/);
-            
+
             if (sourceMatch) {
                 const quote = processInlineMarkdown(quoteLines.slice(0, -1).join(' '));
                 const source = processInlineMarkdown(sourceMatch[1]);
@@ -365,7 +365,7 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
             }
             continue;
         }
-        
+
         // Check if it's an unordered list block (- or * or +)
         if (lines.every(line => line.trim().match(/^[-*+]\s/))) {
             const items = lines.map(line => {
@@ -375,7 +375,7 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
             convertedBlocks.push(`<ul>${items}</ul>`);
             continue;
         }
-        
+
         // Check if it's an ordered list block
         if (lines.every(line => line.trim().match(/^\d+\.\s/))) {
             const items = lines.map(line => {
@@ -385,7 +385,7 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
             convertedBlocks.push(`<ol>${items}</ol>`);
             continue;
         }
-        
+
         // Check if it's a heading (single line starting with #)
         if (lines.length === 1) {
             const line = lines[0].trim();
@@ -395,7 +395,7 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
             const h4Match = line.match(/^#### (.+)$/);
             const h5Match = line.match(/^##### (.+)$/);
             const h6Match = line.match(/^###### (.+)$/);
-            
+
             if (h6Match) {
                 convertedBlocks.push(`<h6>${processInlineMarkdown(h6Match[1])}</h6>`);
                 continue;
@@ -421,13 +421,13 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
                 continue;
             }
         }
-        
+
         // Check if it's a horizontal rule
         if (lines.length === 1 && lines[0].trim().match(/^(-{3,}|\*{3,}|_{3,})$/)) {
             convertedBlocks.push('<hr>');
             continue;
         }
-        
+
         // Regular paragraph
         const paragraphContent = block.replace(/\n/g, ' ');
         convertedBlocks.push(`<p>${processInlineMarkdown(paragraphContent)}</p>`);
@@ -445,24 +445,24 @@ function convertMarkdownToHtml(markdown, trackH2s = false) {
 function processInlineMarkdown(text) {
     // Escape HTML first
     let processed = escapeHtml(text);
-    
+
     // Process inline code first (so it's not affected by other formatting)
     processed = processed.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
+
     // Process links [text](url)
     processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-    
+
     // Process bold **text** or __text__
     processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     processed = processed.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-    
+
     // Process italic *text* or _text_ (but not inside words)
     processed = processed.replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, '<em>$1</em>');
     processed = processed.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '<em>$1</em>');
-    
+
     // Process strikethrough ~~text~~
     processed = processed.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-    
+
     return processed;
 }
 
@@ -537,7 +537,7 @@ function generateEntryPages(journal) {
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .entry-container {
             max-width: 800px;
@@ -826,10 +826,10 @@ function generateEntryPages(journal) {
             display: inline-block;
             padding: 0.375rem 0.875rem;
             background: var(--accent-color);
-            color: white;
+            color: var(--bg-color);
             border-radius: 20px;
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 700;
             transition: all 0.2s ease;
         }
 
@@ -1162,11 +1162,11 @@ ${relatedPostsHtml}
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
 
-    <script src="/navigation-loader.js"></script>
-    <script src="/theme-toggle-loader.js"></script>
-    <script src="/footer-loader.js"></script>
-    <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
@@ -1277,7 +1277,7 @@ function generateJournalHtml(journal) {
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
 
         .journal-container {
@@ -1631,12 +1631,12 @@ function generateJournalHtml(journal) {
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
 
-    <script src="/navigation-loader.js"></script>
-    <script src="/theme-toggle-loader.js"></script>
-    <script src="/footer-loader.js"></script>
-    <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js" defer></script>
-    <script src="/tag-filter.js" defer></script>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/seasonal-loader.js" defer></script>
+    <script src="/js/tag-filter.js" defer></script>
 </body>
 </html>`;
 
@@ -1691,7 +1691,7 @@ function generateArchiveHtml(journal) {
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         .archive-container {
             max-width: 800px;
@@ -1783,11 +1783,11 @@ function generateArchiveHtml(journal) {
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
 
-    <script src="/navigation-loader.js"></script>
-    <script src="/theme-toggle-loader.js"></script>
-    <script src="/footer-loader.js"></script>
-    <script src="/app.min.js"></script>
-    <script src="/seasonal-loader.js" defer></script>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/seasonal-loader.js" defer></script>
 </body>
 </html>`;
 
@@ -1890,7 +1890,7 @@ async function addEntry() {
 
     try {
         console.log('\n--- Add New Journal Entry ---\n');
-        
+
         const title = await question('Title: ');
         const subtitle = await question('Subtitle (optional): ');
         const content = await question('Content (markdown): ');
@@ -1900,7 +1900,7 @@ async function addEntry() {
 
         const journal = loadJournal();
         const id = generateSlug(title);
-        
+
         const newEntry = {
             id,
             title,
@@ -1914,17 +1914,17 @@ async function addEntry() {
         if (images) newEntry.images = images.split(',').map(img => img.trim()).filter(img => img);
 
         journal.entries.unshift(newEntry);
-        
+
         saveJournal(journal);
         generateJournalHtml(journal);
         generateArchiveHtml(journal);
         generateEntryPages(journal);
         generateRSSFeed(journal);
         generateAtomFeed(journal);
-        
+
         console.log(`\nEntry "${title}" added successfully!`);
         console.log(`ID: ${id}`);
-        
+
     } catch (error) {
         console.error('Error adding entry:', error.message);
     } finally {

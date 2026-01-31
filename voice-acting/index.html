@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Erik Sagen - Voice Acting Portfolio. Listen to voice over work, character voices, and narration samples.">
+    <meta name="description"
+        content="Erik Sagen - Voice Acting Portfolio. Listen to voice over work, character voices, and narration samples.">
     <meta property="og:title" content="Erik Sagen - Voice Acting Portfolio">
-    <meta property="og:description" content="Voice Acting Portfolio featuring voice over work, character voices, and narration samples">
+    <meta property="og:description"
+        content="Voice Acting Portfolio featuring voice over work, character voices, and narration samples">
     <meta property="og:image" content="https://www.kartooner.com/img/erik-social-preview.jpg">
     <meta property="og:url" content="https://www.kartooner.com/voice-acting">
     <meta name="twitter:card" content="summary_large_image">
@@ -19,15 +22,20 @@
     <link rel="dns-prefetch" href="https://api.web3forms.com">
     <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
-    <link rel="stylesheet" href="/style.css">
-    <script src="/seasonal-loader.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
     <style>
         /* Using .container-narrow from style.css for consistent width */
-        
+
         /* First bio paragraph uses Cartridge Rough font */
         .voice-acting-intro .intro-text,
         .voice-acting-intro p:nth-of-type(1) {
@@ -36,7 +44,7 @@
             font-weight: normal;
             line-height: 1.4;
         }
-        
+
         /* Second and third paragraphs use default Manrope font */
         .voice-acting-intro p:nth-of-type(2),
         .voice-acting-intro p:nth-of-type(3) {
@@ -50,13 +58,15 @@
             font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
             color: var(--accent-color);
         }
-        
+
         .soundcloud-grid {
             display: grid;
-            gap: var(--space-4); /* 32px - consistent 8px grid */
-            margin: var(--space-4) 0; /* 32px - consistent spacing */
+            gap: var(--space-4);
+            /* 32px - consistent 8px grid */
+            margin: var(--space-4) 0;
+            /* 32px - consistent spacing */
         }
-        
+
         .soundcloud-embed,
         .vimeo-embed {
             border-radius: 8px;
@@ -66,26 +76,27 @@
             border: 1px solid rgba(99, 102, 241, 0.1);
             transition: all 0.3s ease;
         }
-        
+
         .voice-sample:hover .soundcloud-embed,
         .voice-sample:hover .vimeo-embed {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
-        
+
         .soundcloud-embed iframe,
         .vimeo-embed iframe {
             width: 100%;
             border: none;
             display: block;
         }
-        
+
         .vimeo-embed {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
+            /* 16:9 aspect ratio */
             height: 0;
         }
-        
+
         .vimeo-embed iframe {
             position: absolute;
             top: 0;
@@ -93,37 +104,40 @@
             width: 100%;
             height: 100%;
         }
-        
+
         .voice-sample {
-            padding: var(--space-4); /* 32px - consistent 8px grid */
+            padding: var(--space-4);
+            /* 32px - consistent 8px grid */
             background: rgba(99, 102, 241, 0.02);
             border-radius: 12px;
             border: 1px solid rgba(99, 102, 241, 0.08);
             transition: all 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
         }
-        
+
         [data-theme="dark"] .voice-sample {
             background: rgba(99, 102, 241, 0.05);
             border-color: rgba(99, 102, 241, 0.15);
         }
-        
+
         .voice-sample:hover {
             background: rgba(99, 102, 241, 0.04);
             border-color: rgba(99, 102, 241, 0.15);
         }
-        
+
         [data-theme="dark"] .voice-sample:hover {
             background: rgba(99, 102, 241, 0.08);
             border-color: rgba(99, 102, 241, 0.25);
         }
-        
+
         .voice-sample h3 {
-            margin-bottom: var(--space-2); /* 16px - consistent spacing */
+            margin-bottom: var(--space-2);
+            /* 16px - consistent spacing */
             color: var(--text-color);
         }
 
         .voice-sample p {
-            margin-bottom: var(--space-3); /* 24px - consistent spacing */
+            margin-bottom: var(--space-3);
+            /* 24px - consistent spacing */
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
@@ -197,11 +211,13 @@
 
         @media (max-width: 768px) {
             .voice-sample {
-                padding: var(--space-3); /* 24px on mobile */
+                padding: var(--space-3);
+                /* 24px on mobile */
             }
         }
     </style>
 </head>
+
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -209,120 +225,115 @@
 
     <div id="theme-toggle-placeholder"></div>
 
-<div class="container-narrow">
-    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
-        
-        <h1 class="logo animate-fade-in animate-header">Voice Acting</h1>
-        
-        <div class="voice-acting-intro">
-            <p class="intro-text page-intro">Beyond design, I explore the world of voice acting. Here's a collection of my voice-over work, character voices, and narration samples.</p>
-        </div>
+    <div class="container-narrow">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
 
-        <div class="soundcloud-grid">
-            <div class="voice-sample">
-                <h3>Voice demo</h3>
-                <p>A sample of my voice work across different styles.</p>
-                <div class="soundcloud-embed">
-                    <div class="embed-facade"
-                         data-embed-type="soundcloud"
-                         data-embed-url="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kartooner/erik-sagen-voice-demo&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
-                         style="height: 166px; background: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);"
-                         role="button"
-                         aria-label="Load SoundCloud player for Voice Demo"
-                         tabindex="0">
-                        <button class="play-button" aria-label="Play audio"></button>
-                        <div class="embed-title">Erik Sagen Voice Demo</div>
+            <h1 class="logo animate-fade-in animate-header">Voice Acting</h1>
+
+            <div class="voice-acting-intro">
+                <p class="intro-text page-intro">Beyond design, I explore the world of voice acting. Here's a collection
+                    of my voice-over work, character voices, and narration samples.</p>
+            </div>
+
+            <div class="soundcloud-grid">
+                <div class="voice-sample">
+                    <h3>Voice demo</h3>
+                    <p>A sample of my voice work across different styles.</p>
+                    <div class="soundcloud-embed">
+                        <div class="embed-facade" data-embed-type="soundcloud"
+                            data-embed-url="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/kartooner/erik-sagen-voice-demo&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+                            style="height: 166px; background: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);"
+                            role="button" aria-label="Load SoundCloud player for Voice Demo" tabindex="0">
+                            <button class="play-button" aria-label="Play audio"></button>
+                            <div class="embed-title">Erik Sagen Voice Demo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voice-sample">
+                    <h3>United Way campaign</h3>
+                    <p>Narrating a delightfully chaotic campaign that actually worked.</p>
+                    <div class="vimeo-embed">
+                        <div class="embed-facade" data-embed-type="vimeo"
+                            data-embed-url="https://player.vimeo.com/video/250322458?referrer=https%3A%2F%2Fbigpicturefilm.com%2F"
+                            style="background: linear-gradient(135deg, #1ab7ea 0%, #0088cc 100%);" role="button"
+                            aria-label="Load Vimeo player for United Way Campaign" tabindex="0">
+                            <button class="play-button" aria-label="Play video"></button>
+                            <div class="embed-title">United Way Campaign</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="voice-sample">
-                <h3>United Way campaign</h3>
-                <p>Narrating a delightfully chaotic campaign that actually worked.</p>
-                <div class="vimeo-embed">
-                    <div class="embed-facade"
-                         data-embed-type="vimeo"
-                         data-embed-url="https://player.vimeo.com/video/250322458?referrer=https%3A%2F%2Fbigpicturefilm.com%2F"
-                         style="background: linear-gradient(135deg, #1ab7ea 0%, #0088cc 100%);"
-                         role="button"
-                         aria-label="Load Vimeo player for United Way Campaign"
-                         tabindex="0">
-                        <button class="play-button" aria-label="Play video"></button>
-                        <div class="embed-title">United Way Campaign</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <section class="contact-section">
+                <h2>Voice over inquiries</h2>
+                <p>Interested in working together on a voice project? <a href="/contact">Get in touch</a>.</p>
+            </section>
 
-        <section class="contact-section">
-            <h2>Voice over inquiries</h2>
-            <p>Interested in working together on a voice project? <a href="/contact">Get in touch</a>.</p>
-        </section>
+        </main>
+    </div>
 
-    </main>
-</div>
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script>
+        // Facade pattern for lazy-loading third-party embeds
+        document.addEventListener('DOMContentLoaded', function () {
+            const embedFacades = document.querySelectorAll('.embed-facade');
 
-<div id="footer-placeholder"></div>
-<script src="/navigation-loader.js"></script>
-<script src="/theme-toggle-loader.js"></script>
-<script src="/footer-loader.js"></script>
-<script src="/app.min.js"></script>
-<script>
-// Facade pattern for lazy-loading third-party embeds
-document.addEventListener('DOMContentLoaded', function() {
-    const embedFacades = document.querySelectorAll('.embed-facade');
+            embedFacades.forEach(facade => {
+                // Handle click and keyboard activation
+                function activateEmbed(e) {
+                    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
+                        return;
+                    }
 
-    embedFacades.forEach(facade => {
-        // Handle click and keyboard activation
-        function activateEmbed(e) {
-            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
-                return;
-            }
+                    e.preventDefault();
 
-            e.preventDefault();
+                    const embedType = facade.dataset.embedType;
+                    const embedUrl = facade.dataset.embedUrl;
 
-            const embedType = facade.dataset.embedType;
-            const embedUrl = facade.dataset.embedUrl;
+                    // Create iframe
+                    const iframe = document.createElement('iframe');
+                    iframe.width = '100%';
+                    iframe.style.border = 'none';
+                    iframe.style.display = 'block';
+                    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+                    iframe.title = facade.getAttribute('aria-label');
 
-            // Create iframe
-            const iframe = document.createElement('iframe');
-            iframe.width = '100%';
-            iframe.style.border = 'none';
-            iframe.style.display = 'block';
-            iframe.allow = 'autoplay; fullscreen; picture-in-picture';
-            iframe.title = facade.getAttribute('aria-label');
+                    let finalUrl = embedUrl;
 
-            let finalUrl = embedUrl;
+                    if (embedType === 'soundcloud') {
+                        iframe.height = '166';
+                        iframe.scrolling = 'no';
+                        iframe.frameBorder = 'no';
+                        // Enable autoplay for SoundCloud
+                        finalUrl = embedUrl.replace('auto_play=false', 'auto_play=true');
+                    } else if (embedType === 'vimeo') {
+                        iframe.style.position = 'absolute';
+                        iframe.style.top = '0';
+                        iframe.style.left = '0';
+                        iframe.style.width = '100%';
+                        iframe.style.height = '100%';
+                        iframe.allowFullscreen = true;
+                        // Enable autoplay for Vimeo
+                        finalUrl = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1';
+                    }
 
-            if (embedType === 'soundcloud') {
-                iframe.height = '166';
-                iframe.scrolling = 'no';
-                iframe.frameBorder = 'no';
-                // Enable autoplay for SoundCloud
-                finalUrl = embedUrl.replace('auto_play=false', 'auto_play=true');
-            } else if (embedType === 'vimeo') {
-                iframe.style.position = 'absolute';
-                iframe.style.top = '0';
-                iframe.style.left = '0';
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.allowFullscreen = true;
-                // Enable autoplay for Vimeo
-                finalUrl = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1';
-            }
+                    iframe.src = finalUrl;
 
-            iframe.src = finalUrl;
+                    // Replace facade with iframe
+                    facade.replaceWith(iframe);
+                }
 
-            // Replace facade with iframe
-            facade.replaceWith(iframe);
-        }
-
-        facade.addEventListener('click', activateEmbed);
-        facade.addEventListener('keydown', activateEmbed);
-    });
-});
-</script>
-<script data-goatcounter="https://kartooner.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+                facade.addEventListener('click', activateEmbed);
+                facade.addEventListener('keydown', activateEmbed);
+            });
+        });
+    </script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
+
 </html>

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Erik Sagen - Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development.">
+    <meta name="description"
+        content="Erik Sagen - Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development.">
     <meta property="og:title" content="Erik Sagen - Lead Product UX Designer">
-    <meta property="og:description" content="Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development">
+    <meta property="og:description"
+        content="Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development">
     <meta property="og:image" content="https://www.kartooner.com/img/erik-avatar.jpg">
     <meta property="og:url" content="https://www.kartooner.com">
     <meta name="twitter:card" content="summary_large_image">
@@ -17,15 +20,32 @@
     <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
     <style>
         /* Critical CSS - Above the fold styles */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
 
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
+
+            *,
+            *::before,
+            *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
@@ -36,6 +56,7 @@
         :root {
             --font-main: "Manrope", sans-serif;
             --font-secondary: "Cartridge Rough", sans-serif;
+            --font-display: "Cartridge Regular", sans-serif;
             --text-base: 1rem;
             --text-lg: 1.2rem;
             --text-2xl: 1.728rem;
@@ -50,7 +71,8 @@
             --leading-relaxed: 1.625;
         }
 
-        :root, [data-theme="dark"] {
+        :root,
+        [data-theme="dark"] {
             --bg-color: #191970;
             --text-color: #ffffff;
             --accent-color: #64ffda;
@@ -77,7 +99,11 @@
             padding: 0 0 var(--space-xl) 0;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2em; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2em;
+        }
 
         .skip-link {
             position: absolute;
@@ -90,9 +116,11 @@
             z-index: 1000;
         }
 
-        .skip-link:focus { top: 6px; }
+        .skip-link:focus {
+            top: 6px;
+        }
     </style>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         /* Index page h1 override - smaller for longer text */
         h1 {
@@ -100,7 +128,7 @@
             color: var(--accent-color);
         }
     </style>
-    <script src="/seasonal-loader.js"></script>
+    <script src="/js/seasonal-loader.js"></script>
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -131,107 +159,117 @@
         }
     </script>
 </head>
+
 <body>
-<a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<div id="navigation-placeholder"></div>
+    <div id="navigation-placeholder"></div>
 
-<div id="theme-toggle-placeholder"></div>
+    <div id="theme-toggle-placeholder"></div>
 
-<div class="doodle-lines" aria-hidden="true">
-  <svg class="doodle-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-    <path class="doodle-line line-1" 
-          d="M0,60 Q150,30 300,50 Q450,70 600,45 Q750,20 900,55 Q1050,80 1200,40" 
-          fill="none" stroke="#6366f1" stroke-width="2" opacity="0.7"/>
-    <path class="doodle-line line-2" 
-          d="M0,70 Q200,45 400,65 Q600,85 800,60 Q1000,35 1200,50" 
-          fill="none" stroke="#8b5cf6" stroke-width="1.8" opacity="0.6"/>
-    <path class="doodle-line line-3" 
-          d="M0,50 Q180,75 360,45 Q540,15 720,70 Q900,95 1200,35" 
-          fill="none" stroke="#ec4899" stroke-width="2.2" opacity="0.5"/>
-  </svg>
-</div>
+    <div class="doodle-lines" aria-hidden="true">
+        <svg class="doodle-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path class="doodle-line line-1" d="M0,60 Q150,30 300,50 Q450,70 600,45 Q750,20 900,55 Q1050,80 1200,40"
+                fill="none" stroke="#6366f1" stroke-width="2" opacity="0.7" />
+            <path class="doodle-line line-2" d="M0,70 Q200,45 400,65 Q600,85 800,60 Q1000,35 1200,50" fill="none"
+                stroke="#8b5cf6" stroke-width="1.8" opacity="0.6" />
+            <path class="doodle-line line-3" d="M0,50 Q180,75 360,45 Q540,15 720,70 Q900,95 1200,35" fill="none"
+                stroke="#ec4899" stroke-width="2.2" opacity="0.5" />
+        </svg>
+    </div>
 
-<div class="container">
-    <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
 
-        <div class="main-content-grid">
-            <div class="left-column">
-                <h1><span lang="no">Hei Der</span>, <span class="desktop-break">I'm Erik Sagen</span></h1>
-                <h2 class="current-role">Lead Product UX Designer @ Paychex</h2>
+            <div class="main-content-grid">
+                <div class="left-column">
+                    <h1><span lang="no">Hei Der</span>, <span class="desktop-break">I'm Erik Sagen</span></h1>
+                    <h2 class="current-role">Lead Product UX Designer @ Paychex</h2>
 
-                <p class="bio">For over 20 years I've worked at the intersection of UX and UI, shaped by a love of illustration, storytelling, and game design. I build systems that feel human, mentor teams, and uncover the story in every interaction. When I'm not designing, I'm probably watching movies or tinkering with projects like this site.</p>
+                    <p class="bio">For over 20 years I've worked at the intersection of UX and UI, shaped by a love of
+                        illustration, storytelling, and game design. I build systems that feel human, mentor teams, and
+                        uncover the story in every interaction. When I'm not designing, I'm probably watching movies or
+                        tinkering with projects like this site.</p>
 
-                <div class="top-skills-box">
-                    <strong><span role="img" aria-label="Diamond">💎</span> Top skills:</strong>
-                    <ul class="top-skills-list">
-                        <li>User Interface</li>
-                        <li>User Experience</li>
-                        <li>Team Leadership</li>
-                        <li>Cross-functional collaboration</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="right-column">
-                <div class="skills-container">
-                    <div class="skills-column">
-                        <h3>Leadership</h3>
-                        <ul class="skills-list">
-                            <li>Innovative design solutions</li>
-                            <li>Mentoring &amp; developing talent</li>
-                            <li>Human-centered design principles</li>
-                            <li>Design processes &amp; workflows</li>
-                        </ul>
-                    </div>
-                    <div class="skills-column">
-                        <h3>Specialties</h3>
-                        <ul class="skills-list">
-                            <li>Design leadership</li>
-                            <li>Team mentorship</li>
-                            <li>Strategic thinking</li>
-                            <li>User interface &amp; experience</li>
+                    <div class="top-skills-box">
+                        <strong><span role="img" aria-label="Diamond">💎</span> Top skills:</strong>
+                        <ul class="top-skills-list">
+                            <li>User Interface</li>
+                            <li>User Experience</li>
+                            <li>Team Leadership</li>
                             <li>Cross-functional collaboration</li>
                         </ul>
                     </div>
                 </div>
 
-                <div class="experience-philosophy-container">
-                    <div class="experience-column">
-                        <h3>Work experience</h3>
-                        <div class="experience">
-                            <h4>Lead Product UX Designer at <a href="https://www.paychex.com" aria-label="Link to Paychex, opens in a new tab" target="_blank" rel="noopener noreferrer">Paychex</a></h4>
-                            <p><time datetime="2018-02">Feb 2018</time> — Present</p>
+                <div class="right-column">
+                    <div class="skills-container">
+                        <div class="skills-column">
+                            <h3>Leadership</h3>
+                            <ul class="skills-list">
+                                <li>Innovative design solutions</li>
+                                <li>Mentoring &amp; developing talent</li>
+                                <li>Human-centered design principles</li>
+                                <li>Design processes &amp; workflows</li>
+                            </ul>
                         </div>
-
-                        <div class="experience">
-                            <h4>Senior Product Designer at <a href="https://www.aol.com" aria-label="Link to AOL, opens in a new tab" target="_blank" rel="noopener noreferrer">AOL</a></h4>
-                            <p><time datetime="2007-06">Jun 2007</time> — <time datetime="2017-06">Jun 2017</time></p>
-                        </div>
-
-                        <div class="experience">
-                            <h4>Designer at <a href="https://www.magnatag.com" aria-label="Link to Magnatag Visible Systems, opens in a new tab" target="_blank" rel="noopener noreferrer">Magnatag Visible Systems</a></h4>
-                            <p><time datetime="2007-01">Jan 2007</time> — <time datetime="2007-06">Jun 2007</time></p>
+                        <div class="skills-column">
+                            <h3>Specialties</h3>
+                            <ul class="skills-list">
+                                <li>Design leadership</li>
+                                <li>Team mentorship</li>
+                                <li>Strategic thinking</li>
+                                <li>User interface &amp; experience</li>
+                                <li>Cross-functional collaboration</li>
+                            </ul>
                         </div>
                     </div>
 
-                    <div class="philosophy-column">
-                        <h3>Design philosophy</h3>
-                        <p>I focus on clarity, people, and results. Using empathy, systems thinking, and creative problem-solving, I design solutions that work for users and work for the business.</p>
+                    <div class="experience-philosophy-container">
+                        <div class="experience-column">
+                            <h3>Work experience</h3>
+                            <div class="experience">
+                                <h4>Lead Product UX Designer at <a href="https://www.paychex.com"
+                                        aria-label="Link to Paychex, opens in a new tab" target="_blank"
+                                        rel="noopener noreferrer">Paychex</a></h4>
+                                <p><time datetime="2018-02">Feb 2018</time> — Present</p>
+                            </div>
+
+                            <div class="experience">
+                                <h4>Senior Product Designer at <a href="https://www.aol.com"
+                                        aria-label="Link to AOL, opens in a new tab" target="_blank"
+                                        rel="noopener noreferrer">AOL</a></h4>
+                                <p><time datetime="2007-06">Jun 2007</time> — <time datetime="2017-06">Jun 2017</time>
+                                </p>
+                            </div>
+
+                            <div class="experience">
+                                <h4>Designer at <a href="https://www.magnatag.com"
+                                        aria-label="Link to Magnatag Visible Systems, opens in a new tab"
+                                        target="_blank" rel="noopener noreferrer">Magnatag Visible Systems</a></h4>
+                                <p><time datetime="2007-01">Jan 2007</time> — <time datetime="2007-06">Jun 2007</time>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="philosophy-column">
+                            <h3>Design philosophy</h3>
+                            <p>I focus on clarity, people, and results. Using empathy, systems thinking, and creative
+                                problem-solving, I design solutions that work for users and work for the business.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-    </main>
-</div>
+        </main>
+    </div>
 
-<div id="footer-placeholder"></div>
-<script src="/navigation-loader.js"></script>
-<script src="/theme-toggle-loader.js"></script>
-<script src="/footer-loader.js"></script>
-<script src="/app.min.js"></script>
-<script data-goatcounter="https://kartooner.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
+
 </html>

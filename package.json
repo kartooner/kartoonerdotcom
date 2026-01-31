@@ -12,7 +12,7 @@
     "sync": "node scripts/blog.js sync",
     "add": "node scripts/journal-cms.js add",
     "list": "node scripts/journal-cms.js list",
-    "optimize-images": "bash convert-to-webp.sh",
+    "optimize-images": "bash scripts/convert-to-webp.sh",
     "minify:aiadvisor": "node scripts/minify-aiadvisor.js",
     "bundle:aiadvisor": "webpack --config webpack.config.js"
   },

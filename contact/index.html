@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,12 +12,17 @@
     <link rel="dns-prefetch" href="https://api.web3forms.com">
     <!-- Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
-    <link rel="stylesheet" href="/style.css">
-    <script src="/seasonal-loader.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
     <style>
         /* Using .container-narrow from style.css for consistent width */
 
@@ -206,7 +212,7 @@
                 bottom: 0;
                 right: 20px;
             }
-            
+
             .darkwing-peek.show {
                 opacity: 1;
                 transform: translateY(-20px);
@@ -221,13 +227,13 @@
                 width: 80px;
                 height: 80px;
             }
-            
+
             .darkwing-peek.show {
                 opacity: 1;
                 transform: translateX(-50%) translateY(-20px);
             }
         }
-        
+
         /* Respect reduced motion preferences */
         @media (prefers-reduced-motion: reduce) {
             .darkwing-peek {
@@ -236,6 +242,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Skip Navigation Link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -246,7 +253,7 @@
         <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
             <span class="menu-text">Menu</span>
         </button>
-        
+
         <!-- Navigation links -->
         <div class="nav-links">
             <button class="mobile-close-button" aria-label="Close navigation menu">
@@ -267,13 +274,15 @@
         <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
             <div class="contact-intro">
                 <h1>Contact me</h1>
-                <p class="page-intro">Have a project in mind? Want to collaborate? Or just want to say hello? I'd love to hear from you.</p>
+                <p class="page-intro">Have a project in mind? Want to collaborate? Or just want to say hello? I'd love
+                    to hear from you.</p>
             </div>
 
             <!-- Status announcements for screen readers -->
             <div id="formStatus" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
-            <form class="contact-form" method="POST" action="https://api.web3forms.com/submit" id="contactForm" novalidate>
+            <form class="contact-form" method="POST" action="https://api.web3forms.com/submit" id="contactForm"
+                novalidate>
                 <!-- Web3Forms configuration -->
                 <input type="hidden" name="access_key" value="2821095f-dff0-4448-9247-7df348a55161">
                 <input type="hidden" name="subject" value="New message from kartooner.com">
@@ -281,19 +290,23 @@
 
                 <div class="form-group">
                     <label for="name">Name *</label>
-                    <input type="text" id="name" name="name" required aria-required="true" aria-describedby="name-error">
+                    <input type="text" id="name" name="name" required aria-required="true"
+                        aria-describedby="name-error">
                     <span id="name-error" class="error-message" role="alert"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email *</label>
-                    <input type="email" id="email" name="email" required aria-required="true" aria-describedby="email-error">
+                    <input type="email" id="email" name="email" required aria-required="true"
+                        aria-describedby="email-error">
                     <span id="email-error" class="error-message" role="alert"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="message">Message *</label>
-                    <textarea id="message" name="message" placeholder="Tell me about your project, idea, or just say hello..." required aria-required="true" aria-describedby="message-error"></textarea>
+                    <textarea id="message" name="message"
+                        placeholder="Tell me about your project, idea, or just say hello..." required
+                        aria-required="true" aria-describedby="message-error"></textarea>
                     <span id="message-error" class="error-message" role="alert"></span>
                 </div>
 
@@ -315,18 +328,18 @@
                 <button onclick="resetForm()" class="submit-button">Send another message</button>
             </div>
         </main>
-</div>
+    </div>
 
-<div id="footer-placeholder"></div>
-<script src="/theme-toggle-loader.js"></script>
-<script src="/footer-loader.js"></script>
+    <div id="footer-placeholder"></div>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
 
     <!-- Darkwing Duck peek animation -->
     <div class="darkwing-peek" id="darkwingPeek"></div>
 
-    <script src="/app.min.js"></script>
+    <script src="/js/app.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('contactForm');
             const submitBtn = document.getElementById('submitBtn');
             const successMessage = document.getElementById('successMessage');
@@ -338,7 +351,7 @@
                 const field = document.getElementById(fieldId);
                 const errorSpan = document.getElementById(fieldId + '-error');
 
-                field.addEventListener('input', function() {
+                field.addEventListener('input', function () {
                     this.classList.remove('error');
                     this.removeAttribute('aria-invalid');
                     errorSpan.textContent = '';
@@ -366,7 +379,7 @@
             }
 
             // Handle form submission with web3forms
-            form.addEventListener('submit', async function(e) {
+            form.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
                 // Validate all fields
@@ -460,15 +473,15 @@
         // Darkwing Duck random peek animation
         function initDarkwingPeek() {
             const darkwingElement = document.getElementById('darkwingPeek');
-            
+
             function randomPeek() {
                 // Random delay between 5-15 seconds
                 const delay = Math.random() * 10000 + 5000;
-                
+
                 setTimeout(() => {
                     // Show Darkwing
                     darkwingElement.classList.add('show');
-                    
+
                     // Hide after 2-4 seconds
                     const hideDelay = Math.random() * 2000 + 2000;
                     setTimeout(() => {
@@ -478,17 +491,17 @@
                     }, hideDelay);
                 }, delay);
             }
-            
+
             // Start the random peek cycle
             randomPeek();
         }
-        
+
         // Initialize Darkwing peek animation after page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initDarkwingPeek();
         });
     </script>
-    <script data-goatcounter="https://kartooner.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
+
 </html>

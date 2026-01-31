@@ -10,9 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const JOURNAL_FILE = path.join(__dirname, '..', 'journal-entries.json');
+const JOURNAL_FILE = path.join(__dirname, '..', 'data', 'journal-entries.json');
 const STORIES_DIR = path.join(__dirname, '..', 'stories');
-const CONTENT_FILE = path.join(__dirname, '..', 'content.json');
+const CONTENT_FILE = path.join(__dirname, '..', 'data', 'content.json');
 
 class BlogBuilder {
     constructor() {
@@ -27,21 +27,21 @@ class BlogBuilder {
 
         try {
             console.log('🔨 Building blog...');
-            
+
             // Step 1: Sync stories from /stories to journal entries
             console.log('📖 Syncing stories...');
             this.syncStories();
-            
+
             // Step 2: Ensure all journal entry pages have proper image sizing
             console.log('🖼️ Ensuring proper image sizing in journal entries...');
             this.ensureImageSizing();
-            
+
             // Step 3: Generate RSS feeds if generate-rss.js exists
             if (fs.existsSync('js/generate-rss.js')) {
                 console.log('📡 Generating RSS feeds...');
                 execSync('node js/generate-rss.js', { stdio: 'pipe' });
             }
-            
+
             console.log('✅ Build complete!');
         } catch (error) {
             console.error('❌ Build failed:', error.message);
@@ -120,26 +120,26 @@ class BlogBuilder {
         if (!fs.existsSync(entryDir)) return;
 
         const entryFiles = fs.readdirSync(entryDir).filter(file => file.endsWith('.html'));
-        
+
         for (const file of entryFiles) {
             const filePath = path.join(entryDir, file);
             let content = fs.readFileSync(filePath, 'utf8');
-            
+
             // Remove inline styles from img tags (rely on global CSS instead)
             content = content.replace(
                 /<img([^>]*?)style="[^"]*?"([^>]*?)>/g,
                 '<img$1$2>'
             );
-            
+
             // Remove any remaining inline image CSS blocks
             content = content.replace(
                 /\s*\.(?:entry|post) img \{[^}]*\}\s*/g,
                 ''
             );
-            
+
             fs.writeFileSync(filePath, content, 'utf8');
         }
-        
+
         console.log(`🖼️ Cleaned up ${entryFiles.length} entry files (removed inline styles)`);
     }
 }
