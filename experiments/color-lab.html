@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Lab Pro | Advanced Color & Accessibility Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light Theme Tokens */
+            --bg-color: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --info-card-bg: #0F172A;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --text-on-dark: #FFFFFF;
+            --border-color: #E2E8F0;
+            --accent: #3B82F6;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Tokens */
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --info-card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border-color: #334155;
+            --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .color-lab {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            container-type: inline-size;
+            container-name: colorlab;
+        }
+
+        /* Header Styles */
+        .color-lab-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 8px;
+        }
+
+        .lab-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .title-group h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .title-group p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Main Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+        }
+
+        @container colorlab (min-width: 900px) {
+            .content-grid {
+                grid-template-columns: 480px 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .panel-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        /* Spectrum Controls */
+        .spectrum-container {
+            width: 100%;
+            height: 260px;
+            border-radius: var(--radius-md);
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #fff 0%, transparent 50%, #000 100%),
+                linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+        }
+
+        .spectrum-marker {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #FFFFFF;
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            left: 50%;
+            top: 50%;
+        }
+
+        /* Slider Styles */
+        .sliders-group {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .slider-field {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .slider-field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            outline: none;
+            background-size: 100% 100%;
+            border: 1px solid var(--border-color);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 3px solid #FFFFFF;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        #hue-slider {
+            background: linear-gradient(90deg, #FF0000 0%, #FFFF00 17%, #00FF00 33%, #00FFFF 50%, #0000FF 67%, #FF00FF 83%, #FF0000 100%);
+        }
+
+        #alpha-slider {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0) 0%, #3B82F6 100%);
+        }
+
+        /* Info Cards */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .info-card {
+            background-color: var(--info-card-bg);
+            color: var(--text-on-dark);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-card.acc {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        .info-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .info-card p.desc {
+            font-size: 12px;
+            color: #94A3B8;
+        }
+
+        .hex-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 8px 0;
+        }
+
+        .mini-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background-color: var(--accent);
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        .hex-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            background: transparent;
+            border: none;
+            color: inherit;
+            width: 100%;
+            outline: none;
+            padding: 4px 0;
+            margin: 0;
+            border-bottom: 2px solid transparent;
+            transition: border-bottom 0.2s ease;
+        }
+
+        @container colorlab (min-width: 400px) {
+            .hex-value {
+                font-size: 36px;
+            }
+        }
+
+        .hex-value:focus {
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .technical-row {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .technical-row span {
+            color: #94A3B8;
+        }
+
+        .copy-btn {
+            background-color: #1E293B;
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            width: fit-content;
+            transition: background 0.2s ease;
+        }
+
+        [data-theme="dark"] .copy-btn {
+            background-color: #334155;
+        }
+
+        /* Accessibility Styles */
+        .acc-status-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .score-badge {
+            width: 56px;
+            height: 56px;
+            background-color: #15803D;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .ratio-text {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .pass-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #15803D;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 8px 0;
+            opacity: 0.5;
+        }
+
+        .previews-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .preview-box {
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-box.on-light {
+            background-color: #F8FAFC;
+            color: #94A3B8;
+        }
+
+        .preview-box.on-dark {
+            background-color: #0F172A;
+            color: #94A3B8;
+        }
+
+        .sample-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .preview-footer {
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+    <button class="theme-toggle" onclick="toggleTheme()">Switch to Dark Mode</button>
+
+    <div class="color-lab">
+        <header class="color-lab-header">
+            <div class="lab-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <div class="title-group">
+                <h1>Color Lab Pro</h1>
+                <p>Advanced color picking and accessibility validation for professional designers.</p>
+            </div>
+        </header>
+
+        <main class="content-grid">
+            <!-- Selector Panel -->
+            <section class="panel" aria-labelledby="picker-heading">
+                <div class="panel-header">
+                    <h2 id="picker-heading">Color selection</h2>
+                </div>
+
+                <div class="spectrum-container" id="spectrum" role="application"
+                    aria-label="Saturation and Brightness picker" tabindex="0">
+                    <div class="spectrum-marker" id="marker" aria-hidden="true"></div>
+                </div>
+
+                <div class="sliders-group">
+                    <div class="slider-field">
+                        <label for="hue-slider">Hue (0-360)</label>
+                        <input type="range" id="hue-slider" min="0" max="360" value="217" aria-label="Hue">
+                    </div>
+                    <div class="slider-field">
+                        <label for="alpha-slider">Transparency (0-100%)</label>
+                        <input type="range" id="alpha-slider" min="0" max="100" value="100" aria-label="Transparency">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Info Panel -->
+            <aside class="side-panel">
+                <div class="info-card" aria-labelledby="props-heading">
+                    <h3 id="props-heading">Color properties</h3>
+                    <p class="desc">Detailed technical values for code implementation.</p>
+                    <div class="hex-row">
+                        <div class="mini-swatch" id="mini-swatch" aria-hidden="true"></div>
+                        <label for="hex-display" class="sr-only">HEX Color Code</label>
+                        <input type="text" class="hex-value" id="hex-display" maxlength="7" spellcheck="false"
+                            aria-label="HEX Color Code">
+                    </div>
+                    <div class="technical-row">
+                        <span>RGBA</span>
+                        <div id="rgba-display">59, 130, 246, 1.0</div>
+                    </div>
+                    <div class="technical-row">
+                        <span>HSL</span>
+                        <div id="hsl-display">217°, 91%, 60%</div>
+                    </div>
+                    <button class="copy-btn" onclick="copyHex()">Copy HEX</button>
+                </div>
+
+                <div class="info-card acc">
+                    <h3>Accessibility score</h3>
+                    <p class="desc">Contrast validation against WCAG 2.1 standards.</p>
+
+                    <div class="acc-status-row">
+                        <div class="score-badge" id="score-badge">AAA</div>
+                        <div class="score-details">
+                            <div class="ratio-text" id="ratio-text">7.2:1 contrast</div>
+                            <div class="pass-label" id="pass-label">Exceptional readability</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="previews-grid">
+                        <div class="preview-box on-light">
+                            <span class="preview-header">On Light</span>
+                            <span class="sample-text" id="sample-lt">Large Text</span>
+                            <span class="preview-footer">Pass AA+</span>
+                        </div>
+                        <div class="preview-box on-dark">
+                            <span class="preview-header">On Dark</span>
+                            <span class="sample-text" id="sample-dt">Large Text</span>
+                            <span class="preview-footer">Pass AAA</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        const spectrum = document.getElementById('spectrum');
+        const marker = document.getElementById('marker');
+        const hueSlider = document.getElementById('hue-slider');
+        const alphaSlider = document.getElementById('alpha-slider');
+        const hexDisplay = document.getElementById('hex-display');
+        const miniSwatch = document.getElementById('mini-swatch');
+        const rgbaDisplay = document.getElementById('rgba-display');
+        const hslDisplay = document.getElementById('hsl-display');
+        const sampleLt = document.getElementById('sample-lt');
+        const sampleDt = document.getElementById('sample-dt');
+
+        // Acc elements
+        const scoreBadge = document.getElementById('score-badge');
+        const ratioText = document.getElementById('ratio-text');
+        const passLabel = document.getElementById('pass-label');
+        const footerLt = document.querySelector('.on-light .preview-footer');
+        const footerDt = document.querySelector('.on-dark .preview-footer');
+
+        let currentH = 217;
+        let currentS = 91;
+        let currentL = 60;
+        let currentA = 1.0;
+
+        function updateUI() {
+            const hex = hslToHex(currentH, currentS, currentL);
+            const rgb = hslToRgb(currentH, currentS, currentL);
+
+            // Update spectrum background
+            spectrum.style.backgroundColor = `hsl(${currentH}, 100%, 50%)`;
+            spectrum.style.backgroundImage = `
+                linear-gradient(to top, #000, transparent),
+                linear-gradient(to right, #fff, transparent)
+            `;
+
+            // Update marker position
+            marker.style.left = currentS + '%';
+            marker.style.top = (100 - currentL) + '%';
+
+            // Update HEX input (only if it's not currently focused)
+            if (document.activeElement !== hexDisplay) {
+                hexDisplay.value = hex.toUpperCase();
+            }
+
+            miniSwatch.style.backgroundColor = hex;
+            rgbaDisplay.innerText = `${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA}`;
+            hslDisplay.innerText = `${currentH}°, ${currentS}%, ${currentL}%`;
+
+            const fullColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA})`;
+            sampleLt.style.color = fullColor;
+            sampleDt.style.color = fullColor;
+
+            // Accessibility Logic
+            const whiteLum = getLuminance(255, 255, 255);
+            const darkLum = getLuminance(15, 23, 42); // #0F172A
+            const colorLum = getLuminance(rgb.r, rgb.g, rgb.b);
+
+            const ratioOnLight = getContrastRatio(colorLum, whiteLum);
+            const ratioOnDark = getContrastRatio(colorLum, darkLum);
+
+            updateAccDisplay(ratioOnLight);
+            footerLt.innerText = getWCAGLevel(ratioOnLight);
+            footerDt.innerText = getWCAGLevel(ratioOnDark);
+
+            // Sync Sliders
+            hueSlider.value = currentH;
+            alphaSlider.value = currentA * 100;
+
+            // Gradient updates for alpha slider
+            alphaSlider.style.background = `linear-gradient(90deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1) 100%)`;
+        }
+
+        // Color Math (Rec. 709)
+        function getLuminance(r, g, b) {
+            const a = [r, g, b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        }
+
+        function getContrastRatio(l1, l2) {
+            const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+            return ratio.toFixed(2);
+        }
+
+        function getWCAGLevel(ratio) {
+            if (ratio >= 7) return "Pass AAA";
+            if (ratio >= 4.5) return "Pass AA";
+            if (ratio >= 3) return "Pass AA Large";
+            return "Fail ADA";
+        }
+
+        function updateAccDisplay(ratio) {
+            ratioText.innerText = `${ratio}:1 contrast`;
+            if (ratio >= 7) {
+                scoreBadge.innerText = "AAA";
+                scoreBadge.style.backgroundColor = "#15803D";
+                passLabel.innerText = "Exceptional readability";
+                passLabel.style.color = "#15803D";
+            } else if (ratio >= 4.5) {
+                scoreBadge.innerText = "AA";
+                scoreBadge.style.backgroundColor = "#15803D";
+                passLabel.innerText = "Good readability";
+                passLabel.style.color = "#15803D";
+            } else if (ratio >= 3) {
+                scoreBadge.innerText = "A+";
+                scoreBadge.style.backgroundColor = "#844d19";
+                passLabel.innerText = "Acceptability (Large text)";
+                passLabel.style.color = "#844d19";
+            } else {
+                scoreBadge.innerText = "FAIL";
+                scoreBadge.style.backgroundColor = "#B91C1C";
+                passLabel.innerText = "Insufficient contrast";
+                passLabel.style.color = "#B91C1C";
+            }
+        }
+
+        // Color Math
+        function hslToRgb(h, s, l) {
+            h /= 360; s /= 100; l /= 100;
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1 / 3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1 / 3);
+            }
+            return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+        }
+
+        function hslToHex(h, s, l) {
+            const { r, g, b } = hslToRgb(h, s, l);
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        // Events
+        hueSlider.addEventListener('input', (e) => {
+            currentH = e.target.value;
+            updateUI();
+        });
+
+        alphaSlider.addEventListener('input', (e) => {
+            currentA = (e.target.value / 100).toFixed(1);
+            updateUI();
+        });
+
+        hexDisplay.addEventListener('input', (e) => {
+            let val = e.target.value.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+
+            const is6Digit = /^#[0-9A-F]{6}$/i.test(val);
+            const is3Digit = /^#[0-9A-F]{3}$/i.test(val);
+
+            if (is6Digit || is3Digit) {
+                let r, g, b;
+                if (is6Digit) {
+                    r = parseInt(val.slice(1, 3), 16);
+                    g = parseInt(val.slice(3, 5), 16);
+                    b = parseInt(val.slice(5, 7), 16);
+                } else {
+                    r = parseInt(val[1] + val[1], 16);
+                    g = parseInt(val[2] + val[2], 16);
+                    b = parseInt(val[3] + val[3], 16);
+                }
+
+                const hsl = rgbToHsl(r, g, b);
+                currentH = Math.round(hsl.h);
+                currentS = Math.round(hsl.s);
+                currentL = Math.round(hsl.l);
+                updateUI();
+            }
+        });
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        hexDisplay.addEventListener('blur', () => {
+            updateUI();
+        });
+
+        spectrum.addEventListener('mousedown', (e) => {
+            const handleMove = (ev) => {
+                const rect = spectrum.getBoundingClientRect();
+                let x = (ev.clientX - rect.left) / rect.width;
+                let y = (ev.clientY - rect.top) / rect.height;
+                x = Math.max(0, Math.min(1, x));
+                y = Math.max(0, Math.min(1, y));
+
+                currentS = Math.round(x * 100);
+                currentL = Math.round((1 - y) * 100);
+                updateUI();
+            };
+            handleMove(e);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', () => window.removeEventListener('mousemove', handleMove), { once: true });
+        });
+
+        spectrum.addEventListener('keydown', (e) => {
+            const step = e.shiftKey ? 10 : 1;
+            switch (e.key) {
+                case 'ArrowLeft': currentS = Math.max(0, currentS - step); break;
+                case 'ArrowRight': currentS = Math.min(100, currentS + step); break;
+                case 'ArrowUp': currentL = Math.min(100, currentL + step); break;
+                case 'ArrowDown': currentL = Math.max(0, currentL - step); break;
+                default: return;
+            }
+            e.preventDefault();
+            updateUI();
+        });
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                btn.innerText = "Switch to Light Mode";
+            } else {
+                body.setAttribute('data-theme', 'light');
+                btn.innerText = "Switch to Dark Mode";
+            }
+        }
+
+        function copyHex() {
+            navigator.clipboard.writeText(hexDisplay.value);
+            const originalText = hexDisplay.value;
+            hexDisplay.value = "COPIED!";
+            setTimeout(() => hexDisplay.value = originalText, 1000);
+        }
+
+        updateUI();
+    </script>
+</body>
+
+</html>
