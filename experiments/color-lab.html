@@ -55,7 +55,7 @@
             /* Base theme color */
             position: relative;
             color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s ease, color 0.4s ease;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -225,12 +225,68 @@
             display: flex;
             flex-direction: column;
             gap: 32px;
+            transform: translateZ(0);
+            /* Force GPU acceleration for stable glass rendering */
+            transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
         .panel-header h2 {
             font-size: 18px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin: 0;
+        }
+
+        .mobile-quick-bar {
+            display: none;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(var(--card-bg-rgb), 0.3);
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .quick-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .quick-hex {
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.05em;
+        }
+
+        .quick-rgb {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        @container colorlab (max-width: 850px) {
+            .mobile-quick-bar {
+                display: grid;
+            }
+        }
+
+        .selection-swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background-color: #C4541B;
+            /* Match default */
+            transition: transform 0.2s ease;
         }
 
         /* Spectrum Controls */
@@ -633,12 +689,16 @@
             gap: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: var(--shadow);
+            transform: translateZ(0);
+            /* Stabilize mobile paint */
+            transition: background-color 0.4s ease, border-color 0.4s ease;
         }
 
         .info-card.acc {
             background: rgba(var(--card-bg-rgb), 0.9);
             border: 1px solid var(--border-color);
             color: var(--text-main);
+            transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
         }
 
         .info-card h3 {
@@ -982,6 +1042,18 @@
                     <h2 id="picker-heading">Color selection</h2>
                 </div>
 
+                <!-- Mobile Condensed Properties -->
+                <div class="mobile-quick-bar">
+                    <div id="quick-swatch" class="selection-swatch"
+                        style="width: 40px; height: 40px; margin: 0; display: block;"></div>
+                    <div class="quick-info">
+                        <div id="quick-hex-val" class="quick-hex">#C4541B</div>
+                        <div id="quick-rgb-val" class="quick-rgb">196, 84, 27, 1.0</div>
+                    </div>
+                    <button class="lab-btn secondary" onclick="copyHex()"
+                        style="padding: 8px 12px; font-size: 11px; height: auto;">Copy</button>
+                </div>
+
                 <div class="spectrum-container" id="spectrum" role="slider"
                     aria-label="Saturation and Brightness picker" aria-valuemin="0" aria-valuemax="100"
                     aria-valuenow="76" aria-valuetext="Saturation 76, Brightness 96" tabindex="0">
@@ -1207,7 +1279,14 @@
                 hexDisplay.value = hex.toUpperCase();
             }
 
+            // Update previews
             miniSwatch.style.backgroundColor = hex;
+
+            // Mobile Quick Bar updates
+            document.getElementById('quick-swatch').style.backgroundColor = hex;
+            document.getElementById('quick-hex-val').innerText = hex.toUpperCase();
+            document.getElementById('quick-rgb-val').innerText = `${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA}`;
+
             rgbaDisplay.innerText = `${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA}`;
             hslDisplay.innerText = `${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%`;
             hsvDisplay.innerText = `${Math.round(currentH)}°, ${Math.round(currentS)}%, ${Math.round(currentV)}%`;
