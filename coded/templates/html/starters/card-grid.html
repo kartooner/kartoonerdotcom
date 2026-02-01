@@ -1,26 +1,29 @@
 <!-- Container for card grid layout -->
 <div class="container">
-  <h1>Featured items</h1>
-  
+  <header class="page-header">
+    <p class="company-name">The Kerner Company</p>
+    <h1>Our capabilities</h1>
+  </header>
+
   <!-- Grid container - automatically responsive with CSS -->
   <div class="grid">
     <!-- Individual card - repeat as needed -->
     <article class="card">
-      <h3>Card title</h3>
-      <p>Card description goes here. Add your content.</p>
-      <button class="btn" aria-label="Learn more about Card title">Learn more</button>
+      <h3>Optical compositing</h3>
+      <p>Traditional optical printer work combining multiple film elements into seamless final shots.</p>
+      <button class="btn" aria-label="Learn more about Optical compositing">Learn more</button>
     </article>
-    
+
     <article class="card">
-      <h3>Another card</h3>
-      <p>Each card can have different content and images.</p>
-      <button class="btn" aria-label="Learn more about Another card">Learn more</button>
+      <h3>Model fabrication</h3>
+      <p>Precision scale models and miniatures for practical photography and visual effects.</p>
+      <button class="btn" aria-label="Learn more about Model fabrication">Learn more</button>
     </article>
-    
+
     <article class="card">
-      <h3>Third card</h3>
-      <p>The grid automatically adjusts to screen size.</p>
-      <button class="btn" aria-label="Learn more about Third card">Learn more</button>
+      <h3>Motion control</h3>
+      <p>Computer-controlled camera systems for repeatable, precise photography of miniatures and elements.</p>
+      <button class="btn" aria-label="Learn more about Motion control">Learn more</button>
     </article>
   </div>
 </div>
@@ -44,6 +47,19 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 3rem 1rem;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.company-name {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #3498db;
+  margin-bottom: 0.5rem;
 }
 
 h1 {
