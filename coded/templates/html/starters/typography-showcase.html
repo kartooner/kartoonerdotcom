@@ -1,0 +1,396 @@
+<!-- Film catalog showcasing typographic hierarchy -->
+<section class="film-catalog" aria-labelledby="catalog-heading">
+  <div class="container">
+    <header class="catalog-header">
+      <h1 id="catalog-heading">Now showing</h1>
+      <p class="catalog-tagline">Featured films from the Kerner Archive</p>
+    </header>
+
+    <!-- Featured film (large format) -->
+    <article class="film-card featured" aria-labelledby="featured-title">
+      <div class="film-poster gradient-featured" role="img" aria-label="Film poster"></div>
+      <div class="film-details">
+        <span class="film-year">1993</span>
+        <h2 id="featured-title">Jurassic Park</h2>
+        <p class="film-tagline">An adventure 65 million years in the making.</p>
+        <p class="film-synopsis">A pragmatic paleontologist touring an almost complete theme park is tasked with protecting a couple of kids after a power failure causes the park's cloned dinosaurs to run loose.</p>
+        <dl class="film-meta">
+          <div>
+            <dt>Director</dt>
+            <dd>Steven Spielberg</dd>
+          </div>
+          <div>
+            <dt>Runtime</dt>
+            <dd>127 min</dd>
+          </div>
+          <div>
+            <dt>Genre</dt>
+            <dd>Science Fiction, Adventure</dd>
+          </div>
+        </dl>
+        <div class="film-rating" aria-label="Rating: 4.5 out of 5">
+          <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
+          <span class="rating-text">4.5</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Film grid (smaller cards) -->
+    <div class="film-grid" role="list">
+      <article class="film-card" role="listitem">
+        <div class="film-poster gradient-1" role="img" aria-label="Film poster"></div>
+        <div class="film-details">
+          <span class="film-year">1984</span>
+          <h3>The Terminator</h3>
+          <p class="film-tagline">Your future is in his hands.</p>
+          <dl class="film-meta compact">
+            <div>
+              <dt class="sr-only">Director</dt>
+              <dd>James Cameron</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Runtime</dt>
+              <dd>107 min</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="film-card" role="listitem">
+        <div class="film-poster gradient-2" role="img" aria-label="Film poster"></div>
+        <div class="film-details">
+          <span class="film-year">1979</span>
+          <h3>Alien</h3>
+          <p class="film-tagline">In space no one can hear you scream.</p>
+          <dl class="film-meta compact">
+            <div>
+              <dt class="sr-only">Director</dt>
+              <dd>Ridley Scott</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Runtime</dt>
+              <dd>117 min</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="film-card" role="listitem">
+        <div class="film-poster gradient-3" role="img" aria-label="Film poster"></div>
+        <div class="film-details">
+          <span class="film-year">1982</span>
+          <h3>Blade Runner</h3>
+          <p class="film-tagline">Man has made his match.</p>
+          <dl class="film-meta compact">
+            <div>
+              <dt class="sr-only">Director</dt>
+              <dd>Ridley Scott</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Runtime</dt>
+              <dd>117 min</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="film-card" role="listitem">
+        <div class="film-poster gradient-4" role="img" aria-label="Film poster"></div>
+        <div class="film-details">
+          <span class="film-year">1968</span>
+          <h3>2001: A Space Odyssey</h3>
+          <p class="film-tagline">The ultimate trip.</p>
+          <dl class="film-meta compact">
+            <div>
+              <dt class="sr-only">Director</dt>
+              <dd>Stanley Kubrick</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Runtime</dt>
+              <dd>149 min</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Import Arimo font */
+@import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap');
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Base reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Film catalog section */
+.film-catalog {
+  padding: 3rem 0;
+}
+
+/* Catalog header - establishes visual hierarchy */
+.catalog-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.catalog-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.catalog-tagline {
+  font-size: 1.125rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Featured film card - horizontal layout */
+.film-card.featured {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2.5rem;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  margin-bottom: 3rem;
+}
+
+.film-card.featured .film-poster {
+  height: 100%;
+  min-height: 450px;
+}
+
+.film-card.featured .film-details {
+  padding: 2.5rem 2.5rem 2.5rem 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.film-card.featured .film-year {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3498db;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.film-card.featured h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.film-card.featured .film-tagline {
+  font-size: 1.25rem;
+  font-style: italic;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.film-card.featured .film-synopsis {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #475569;
+  margin-bottom: 1.5rem;
+}
+
+/* Film metadata definition list */
+.film-meta {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.film-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.film-meta dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.film-meta dd {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+/* Rating display */
+.film-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stars {
+  color: #f59e0b;
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+}
+
+.rating-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Film grid for smaller cards */
+.film-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Standard film card - vertical layout */
+.film-card:not(.featured) {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.film-card:not(.featured):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.film-card:not(.featured) .film-poster {
+  height: 180px;
+}
+
+.film-card:not(.featured) .film-details {
+  padding: 1.25rem;
+}
+
+.film-card:not(.featured) .film-year {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3498db;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.film-card:not(.featured) h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0.25rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.film-card:not(.featured) .film-tagline {
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: #64748b;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+/* Compact meta for grid cards */
+.film-meta.compact {
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.film-meta.compact dd {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Poster gradients - blue/slate palette */
+.gradient-featured { background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%); }
+.gradient-1 { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); }
+.gradient-2 { background: linear-gradient(135deg, #1e293b 0%, #475569 100%); }
+.gradient-3 { background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%); }
+.gradient-4 { background: linear-gradient(135deg, #334155 0%, #0f172a 100%); }
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .film-card.featured {
+    grid-template-columns: 1fr;
+  }
+
+  .film-card.featured .film-poster {
+    min-height: 300px;
+  }
+
+  .film-card.featured .film-details {
+    padding: 2rem;
+  }
+
+  .film-card.featured h2 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .catalog-header h1 {
+    font-size: 2.25rem;
+  }
+
+  .film-card.featured h2 {
+    font-size: 1.75rem;
+  }
+
+  .film-card.featured .film-tagline {
+    font-size: 1.125rem;
+  }
+
+  .film-meta {
+    gap: 1rem;
+  }
+
+  .film-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

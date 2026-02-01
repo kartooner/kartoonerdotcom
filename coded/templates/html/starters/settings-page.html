@@ -1,217 +1,261 @@
-<!-- Settings page container -->
-<div class="container" role="main">
+<!-- Settings page with inline editing -->
+<div class="settings-container" role="main">
   <header class="settings-header">
-    <h1 id="settings-heading">Settings</h1>
-    <p>Manage your account preferences and configuration</p>
+    <h1>Account settings</h1>
   </header>
 
   <div class="settings-layout">
-    <!-- Settings navigation sidebar (desktop) -->
-    <nav class="settings-nav" aria-label="Settings navigation">
+    <!-- Sidebar navigation (desktop) -->
+    <nav class="settings-nav" aria-label="Settings sections">
       <ul role="list">
-        <li><a href="#profile" class="active" aria-current="page">Profile</a></li>
+        <li><a href="#general" class="active" aria-current="page">General</a></li>
+        <li><a href="#profile">Profile</a></li>
         <li><a href="#notifications">Notifications</a></li>
-        <li><a href="#privacy">Privacy & Security</a></li>
-        <li><a href="#appearance">Appearance</a></li>
-        <li><a href="#billing">Billing</a></li>
+        <li><a href="#security">Security</a></li>
       </ul>
     </nav>
 
-    <!-- Settings navigation (mobile select) -->
+    <!-- Mobile dropdown navigation -->
     <div class="settings-nav-mobile">
-      <label for="settings-select" class="sr-only">Navigate to section</label>
-      <select id="settings-select" class="settings-select" aria-label="Settings navigation">
-        <option value="#profile" selected>Profile</option>
-        <option value="#notifications">Notifications</option>
-        <option value="#privacy">Privacy & Security</option>
-        <option value="#appearance">Appearance</option>
-        <option value="#billing">Billing</option>
+      <label for="section-select" class="sr-only">Jump to section</label>
+      <select id="section-select" class="section-select">
+        <option value="general" selected>General</option>
+        <option value="profile">Profile</option>
+        <option value="notifications">Notifications</option>
+        <option value="security">Security</option>
       </select>
     </div>
 
-    <!-- Settings content area -->
-    <main class="settings-content">
-      <!-- Profile section -->
-      <section id="profile" class="settings-section" aria-labelledby="profile-heading">
-        <h2 id="profile-heading">Profile settings</h2>
-        <p class="section-description">Update your personal information and profile details</p>
+    <!-- Main content area -->
+    <main class="settings-main">
+      <!-- General section -->
+      <section id="general" class="settings-section" data-section="general">
+        <div class="section-header">
+          <div>
+            <h2>General</h2>
+            <p>Basic account information and preferences</p>
+          </div>
+          <button type="button" class="btn-edit" aria-label="Edit general settings">Edit</button>
+        </div>
 
-        <form aria-label="Profile settings form">
-          <!-- Avatar upload -->
-          <div class="form-group">
-            <label for="avatar">Profile picture</label>
-            <div class="avatar-upload">
-              <img
-                src="https://placehold.co/80x80"
-                alt="Current profile picture"
-                class="avatar-preview">
-              <div class="avatar-actions">
-                <label for="avatar" class="btn btn-secondary">Change picture</label>
-                <input type="file" id="avatar" name="avatar" accept="image/*" class="sr-only">
-                <button type="button" class="btn-text">Remove</button>
-              </div>
+        <!-- View mode (read-only) -->
+        <div class="section-content view-mode">
+          <dl class="settings-list">
+            <div class="setting-row">
+              <dt>Full name</dt>
+              <dd data-field="fullname">Alan Grant</dd>
             </div>
-          </div>
+            <div class="setting-row">
+              <dt>Email address</dt>
+              <dd data-field="email">a.grant@montana.edu</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Language</dt>
+              <dd data-field="language">English (US)</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Timezone</dt>
+              <dd data-field="timezone">Mountain Time (MT)</dd>
+            </div>
+          </dl>
+        </div>
 
-          <!-- Full name -->
+        <!-- Edit mode (inputs) -->
+        <form class="section-content edit-mode hidden" aria-label="Edit general settings">
           <div class="form-group">
-            <label for="full-name">Full name</label>
-            <input 
-              type="text" 
-              id="full-name" 
-              name="full-name" 
-              value="John Doe"
-              required 
-              aria-required="true">
+            <label for="general-fullname">Full name</label>
+            <input type="text" id="general-fullname" name="fullname" value="Alan Grant">
           </div>
-
-          <!-- Username -->
           <div class="form-group">
-            <label for="username">Username</label>
-            <input 
-              type="text" 
-              id="username" 
-              name="username" 
-              value="johndoe"
-              required 
-              aria-required="true"
-              aria-describedby="username-help">
-            <p id="username-help" class="form-help">Your unique identifier across the platform</p>
+            <label for="general-email">Email address</label>
+            <input type="email" id="general-email" name="email" value="a.grant@montana.edu">
           </div>
-
-          <!-- Bio -->
           <div class="form-group">
-            <label for="bio">Bio</label>
-            <textarea 
-              id="bio" 
-              name="bio" 
-              rows="4"
-              placeholder="Tell us about yourself...">Product designer and developer passionate about creating accessible web experiences.</textarea>
+            <label for="general-language">Language</label>
+            <select id="general-language" name="language">
+              <option value="en-US" selected>English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+            </select>
           </div>
+          <div class="form-group">
+            <label for="general-timezone">Timezone</label>
+            <select id="general-timezone" name="timezone">
+              <option value="PT">Pacific Time (PT)</option>
+              <option value="MT" selected>Mountain Time (MT)</option>
+              <option value="CT">Central Time (CT)</option>
+              <option value="ET">Eastern Time (ET)</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-cancel">Cancel</button>
+          </div>
+        </form>
+      </section>
 
-          <!-- Save button -->
-          <button type="submit" class="btn">Save changes</button>
+      <!-- Profile section -->
+      <section id="profile" class="settings-section" data-section="profile">
+        <div class="section-header">
+          <div>
+            <h2>Profile</h2>
+            <p>Your public profile information</p>
+          </div>
+          <button type="button" class="btn-edit" aria-label="Edit profile settings">Edit</button>
+        </div>
+
+        <div class="section-content view-mode">
+          <dl class="settings-list">
+            <div class="setting-row">
+              <dt>Display name</dt>
+              <dd data-field="displayname">Dr. Alan Grant</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Title</dt>
+              <dd data-field="title">Paleontologist</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Bio</dt>
+              <dd data-field="bio">Leading researcher in dinosaur behavior and paleobiology. Author of "Dinosaur Detectives" and consultant for paleontological expeditions.</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Location</dt>
+              <dd data-field="location">Montana, USA</dd>
+            </div>
+          </dl>
+        </div>
+
+        <form class="section-content edit-mode hidden" aria-label="Edit profile settings">
+          <div class="form-group">
+            <label for="profile-displayname">Display name</label>
+            <input type="text" id="profile-displayname" name="displayname" value="Dr. Alan Grant">
+          </div>
+          <div class="form-group">
+            <label for="profile-title">Title</label>
+            <input type="text" id="profile-title" name="title" value="Paleontologist">
+          </div>
+          <div class="form-group">
+            <label for="profile-bio">Bio</label>
+            <textarea id="profile-bio" name="bio" rows="3">Leading researcher in dinosaur behavior and paleobiology. Author of "Dinosaur Detectives" and consultant for paleontological expeditions.</textarea>
+          </div>
+          <div class="form-group">
+            <label for="profile-location">Location</label>
+            <input type="text" id="profile-location" name="location" value="Montana, USA">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-cancel">Cancel</button>
+          </div>
         </form>
       </section>
 
       <!-- Notifications section -->
-      <section id="notifications" class="settings-section" aria-labelledby="notifications-heading">
-        <h2 id="notifications-heading">Notification preferences</h2>
-        <p class="section-description">Choose how you want to be notified about updates and activity</p>
+      <section id="notifications" class="settings-section" data-section="notifications">
+        <div class="section-header">
+          <div>
+            <h2>Notifications</h2>
+            <p>How you receive updates and alerts</p>
+          </div>
+          <button type="button" class="btn-edit" aria-label="Edit notification settings">Edit</button>
+        </div>
 
-        <form aria-label="Notification preferences form">
-          <!-- Email notifications -->
-          <fieldset class="form-group">
-            <legend>Email notifications</legend>
-            <div class="checkbox-list">
-              <label class="checkbox-label">
-                <input type="checkbox" name="email-updates" checked>
-                <div>
-                  <span class="checkbox-title">Product updates</span>
-                  <span class="checkbox-description">News about product features and updates</span>
-                </div>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" name="email-comments" checked>
-                <div>
-                  <span class="checkbox-title">Comments</span>
-                  <span class="checkbox-description">Notifications when someone comments on your posts</span>
-                </div>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" name="email-mentions">
-                <div>
-                  <span class="checkbox-title">Mentions</span>
-                  <span class="checkbox-description">When someone mentions you in a discussion</span>
-                </div>
-              </label>
+        <div class="section-content view-mode">
+          <dl class="settings-list">
+            <div class="setting-row">
+              <dt>Email notifications</dt>
+              <dd data-field="email-notifs">Enabled</dd>
             </div>
-          </fieldset>
-
-          <!-- Push notifications -->
-          <fieldset class="form-group">
-            <legend>Push notifications</legend>
-            <div class="checkbox-list">
-              <label class="checkbox-label">
-                <input type="checkbox" name="push-messages" checked>
-                <div>
-                  <span class="checkbox-title">Direct messages</span>
-                  <span class="checkbox-description">Get notified of new direct messages</span>
-                </div>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" name="push-activity">
-                <div>
-                  <span class="checkbox-title">Activity updates</span>
-                  <span class="checkbox-description">Updates on your account activity</span>
-                </div>
-              </label>
+            <div class="setting-row">
+              <dt>Push notifications</dt>
+              <dd data-field="push-notifs">Disabled</dd>
             </div>
-          </fieldset>
+            <div class="setting-row">
+              <dt>Weekly digest</dt>
+              <dd data-field="digest">Enabled</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Marketing emails</dt>
+              <dd data-field="marketing">Disabled</dd>
+            </div>
+          </dl>
+        </div>
 
-          <button type="submit" class="btn">Save preferences</button>
+        <form class="section-content edit-mode hidden" aria-label="Edit notification settings">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="email-notifs" checked>
+              <span>Email notifications</span>
+            </label>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="push-notifs">
+              <span>Push notifications</span>
+            </label>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="digest" checked>
+              <span>Weekly digest</span>
+            </label>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="marketing">
+              <span>Marketing emails</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-cancel">Cancel</button>
+          </div>
         </form>
       </section>
 
-      <!-- Privacy section -->
-      <section id="privacy" class="settings-section" aria-labelledby="privacy-heading">
-        <h2 id="privacy-heading">Privacy & Security</h2>
-        <p class="section-description">Control your privacy settings and account security</p>
-
-        <form aria-label="Privacy and security settings form">
-          <!-- Profile visibility -->
-          <div class="form-group">
-            <label for="profile-visibility">Profile visibility</label>
-            <select id="profile-visibility" name="profile-visibility">
-              <option value="public" selected>Public - Anyone can see your profile</option>
-              <option value="private">Private - Only you can see your profile</option>
-              <option value="connections">Connections only</option>
-            </select>
+      <!-- Security section -->
+      <section id="security" class="settings-section" data-section="security">
+        <div class="section-header">
+          <div>
+            <h2>Security</h2>
+            <p>Password and account protection</p>
           </div>
+          <button type="button" class="btn-edit" aria-label="Edit security settings">Edit</button>
+        </div>
 
-          <!-- Two-factor authentication -->
+        <div class="section-content view-mode">
+          <dl class="settings-list">
+            <div class="setting-row">
+              <dt>Password</dt>
+              <dd data-field="password">Last changed 45 days ago</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Two-factor auth</dt>
+              <dd data-field="twofa">Enabled (Authenticator app)</dd>
+            </div>
+            <div class="setting-row">
+              <dt>Active sessions</dt>
+              <dd data-field="sessions">2 devices</dd>
+            </div>
+          </dl>
+        </div>
+
+        <form class="section-content edit-mode hidden" aria-label="Edit security settings">
           <div class="form-group">
-            <div class="setting-item">
-              <div>
-                <h3>Two-factor authentication</h3>
-                <p>Add an extra layer of security to your account</p>
-              </div>
-              <button type="button" class="btn btn-secondary">Enable</button>
-            </div>
+            <label for="security-current-password">Current password</label>
+            <input type="password" id="security-current-password" name="current-password" placeholder="Enter current password">
           </div>
-
-          <!-- Change password -->
           <div class="form-group">
-            <div class="setting-item">
-              <div>
-                <h3>Password</h3>
-                <p>Last changed 3 months ago</p>
-              </div>
-              <button type="button" class="btn btn-secondary">Change password</button>
-            </div>
+            <label for="security-new-password">New password</label>
+            <input type="password" id="security-new-password" name="new-password" placeholder="Enter new password">
           </div>
-
-          <!-- Download data -->
           <div class="form-group">
-            <div class="setting-item">
-              <div>
-                <h3>Download your data</h3>
-                <p>Get a copy of all your account data</p>
-              </div>
-              <button type="button" class="btn btn-secondary">Request download</button>
-            </div>
+            <label for="security-confirm-password">Confirm new password</label>
+            <input type="password" id="security-confirm-password" name="confirm-password" placeholder="Confirm new password">
           </div>
-
-          <!-- Delete account -->
-          <div class="form-group danger-zone">
-            <h3>Danger zone</h3>
-            <div class="setting-item">
-              <div>
-                <h4>Delete account</h4>
-                <p>Permanently delete your account and all data</p>
-              </div>
-              <button type="button" class="btn btn-danger">Delete account</button>
-            </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-cancel">Cancel</button>
           </div>
         </form>
       </section>
@@ -219,8 +263,11 @@
   </div>
 </div>
 
-<!-- Visually hidden class for screen readers -->
 <style>
+/* Import Arimo font */
+@import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap');
+
+/* Screen reader only utility */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -229,11 +276,10 @@
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  border: 0;
 }
 
-/* ===== BASE STYLES ===== */
+/* Base reset */
 * {
   margin: 0;
   padding: 0;
@@ -241,576 +287,432 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  background: #f1f5f9;
   color: #1e293b;
-  padding: 2rem 1rem;
+  background: #f1f5f9;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-h2 {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-/* ===== CONTAINER ===== */
-.container {
-  max-width: 1200px;
+/* Container */
+.settings-container {
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 2rem 1.5rem;
 }
 
-/* ===== SETTINGS HEADER ===== */
+/* Header */
 .settings-header {
   margin-bottom: 2rem;
 }
 
 .settings-header h1 {
-  font-size: 2.25rem;
+  font-size: 2rem;
+  font-weight: 600;
   color: #0f172a;
-  margin-bottom: 0.5rem;
 }
 
-.settings-header p {
-  color: #64748b;
-  font-size: 1rem;
-}
-
-/* ===== SETTINGS LAYOUT ===== */
+/* Two-column layout */
 .settings-layout {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 2rem;
   align-items: start;
 }
 
-@media (max-width: 767px) {
-  .settings-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ===== SETTINGS NAVIGATION (DESKTOP) ===== */
+/* Sidebar navigation */
 .settings-nav {
-  background: #ffffff;
+  background: white;
   border-radius: 12px;
   padding: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   position: sticky;
   top: 1rem;
 }
 
 .settings-nav ul {
   list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.settings-nav li {
-  margin: 0;
-  padding: 0;
 }
 
 .settings-nav a {
   display: block;
-  padding: 0.625rem 0.75rem;
+  padding: 0.75rem 1rem;
   color: #475569;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 0.9375rem;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .settings-nav a:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: #f8fafc;
+  color: #1e293b;
 }
 
 .settings-nav a.active {
-  background: #64748b;
-  color: #ffffff;
+  background: #3498db;
+  color: white;
 }
 
-.settings-nav a:focus {
-  outline: 3px solid #64748b;
-  outline-offset: 2px;
-}
-
-/* ===== SETTINGS NAVIGATION (MOBILE) ===== */
+/* Mobile dropdown navigation (hidden on desktop) */
 .settings-nav-mobile {
   display: none;
-  margin-bottom: 1.5rem;
 }
 
-.settings-select {
+.section-select {
   width: 100%;
   padding: 0.875rem 2.5rem 0.875rem 1rem;
   font-size: 1rem;
   font-weight: 500;
-  background: #ffffff;
+  font-family: inherit;
+  background: white;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23475569' d='M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
-  background-size: 16px;
-  border: 2px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   border-radius: 8px;
   color: #1e293b;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  -moz-appearance: none;
-  transition: all 0.2s ease;
 }
 
-.settings-select:focus {
+.section-select:focus {
   outline: none;
-  border-color: #64748b;
-  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+  border-color: #3498db;
 }
 
-/* ===== SETTINGS CONTENT ===== */
-.settings-content {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+/* Main content */
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-/* ===== SETTINGS SECTION ===== */
+/* Section card */
 .settings-section {
-  padding-bottom: 2rem;
-  margin-bottom: 2rem;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Section header with edit button */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.settings-section:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
-.settings-section h2 {
-  font-size: 1.75rem;
-  color: #0f172a;
-  margin-bottom: 0.5rem;
-}
-
-.section-description {
-  color: #64748b;
-  margin-bottom: 1.5rem;
-  font-size: 0.9375rem;
-}
-
-/* ===== FORM STYLES ===== */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-label {
-  font-size: 0.9375rem;
+.section-header h2 {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="file"],
-textarea,
-select {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  line-height: 1.5;
-  background: #ffffff;
-  color: #1e293b;
-  transition: border-color 0.2s ease;
-  box-shadow: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-
-select {
-  padding-right: 2.5rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  cursor: pointer;
-  appearance: none;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: #64748b;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #94a3b8;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 120px;
-}
-
-.form-help {
+.section-header p {
   font-size: 0.875rem;
   color: #64748b;
-  margin-top: 0.25rem;
 }
 
-/* ===== AVATAR UPLOAD ===== */
-.avatar-upload {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+/* Edit button */
+.btn-edit {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: white;
+  color: #3498db;
+  border: 1.5px solid #3498db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.avatar-preview {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.btn-edit:hover {
+  background: #3498db;
+  color: white;
 }
 
-.avatar-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-/* ===== FIELDSET STYLES ===== */
-fieldset {
-  border: none;
-  padding: 0;
-}
-
-legend {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 1rem;
-}
-
-/* ===== CHECKBOX LIST ===== */
-.checkbox-list {
+/* Settings list (view mode) */
+.settings-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  cursor: pointer;
-  padding: 1rem;
-  border-radius: 8px;
-  transition: background 0.2s ease;
+.setting-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.checkbox-label:hover {
-  background: #f8fafc;
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-row dt {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.setting-row dd {
+  font-size: 0.9375rem;
+  color: #1e293b;
+}
+
+/* Form styles (edit mode) */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #1e293b;
+  transition: border-color 0.15s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+/* Checkbox styling */
+.checkbox-group {
+  margin-bottom: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  margin: 0.125rem 0 0 0;
-  padding: 0;
+  accent-color: #3498db;
   cursor: pointer;
-  accent-color: #64748b;
-  flex-shrink: 0;
 }
 
-.checkbox-label > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.checkbox-title {
-  font-weight: 600;
-  color: #1e293b;
+.checkbox-label span {
   font-size: 0.9375rem;
-  line-height: 1.4;
+  color: #1e293b;
 }
 
-.checkbox-description {
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-/* ===== SETTING ITEM ===== */
-.setting-item {
+/* Form action buttons */
+.form-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
 }
 
-.setting-item h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 0.25rem;
-}
-
-.setting-item h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 0.25rem;
-}
-
-.setting-item p {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.setting-item > div:first-child {
-  flex: 1;
-  min-width: 200px;
-}
-
-/* ===== BUTTON STYLES ===== */
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  background: #64748b;
-  color: #ffffff;
-}
-
-.btn:hover {
-  background: #475569;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
-}
-
-.btn:active {
-  transform: translateY(0);
-}
-
-.btn:focus {
-  outline: 3px solid #64748b;
-  outline-offset: 2px;
-}
-
-.btn-secondary {
-  background: #ffffff;
-  color: #475569;
-  border: 2px solid #e2e8f0;
-}
-
-.btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.btn-text {
-  background: transparent;
-  color: #64748b;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border: none;
+  font-weight: 500;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
 
-.btn-text:hover {
-  background: #f1f5f9;
-  color: #475569;
-  transform: none;
-  box-shadow: none;
+.btn-primary {
+  background: #3498db;
+  color: white;
+  border: none;
 }
 
-.btn-danger {
-  background: #ef4444;
-  color: #ffffff;
+.btn-primary:hover {
+  background: #2980b9;
 }
 
-.btn-danger:hover {
-  background: #dc2626;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+.btn-cancel {
+  background: white;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
 }
 
-/* ===== DANGER ZONE ===== */
-.danger-zone {
-  border: 2px solid #fee2e2;
-  background: #fef2f2;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-top: 2rem;
+.btn-cancel:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
-.danger-zone > h3 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #dc2626;
-  margin-bottom: 1rem;
+/* Hide/show toggle */
+.hidden {
+  display: none;
 }
 
-.danger-zone .setting-item {
-  background: #ffffff;
+/* Editing state indicator */
+.settings-section.editing .section-header {
+  border-bottom-color: #3498db;
 }
 
-/* ===== RESPONSIVE STYLES ===== */
-@media (max-width: 767px) {
-  body {
-    padding: 1rem 0.5rem;
+.settings-section.editing .btn-edit {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
   }
 
-  .settings-header h1 {
-    font-size: 1.75rem;
-  }
-
-  /* Hide desktop nav, show mobile select */
+  /* Hide desktop nav, show mobile dropdown */
   .settings-nav {
     display: none;
   }
 
   .settings-nav-mobile {
     display: block;
+    margin-bottom: 1rem;
   }
 
-  .settings-content {
-    padding: 1.5rem;
+  .setting-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 
-  .settings-section h2 {
-    font-size: 1.5rem;
-  }
-
-  .avatar-upload {
+  .form-actions {
     flex-direction: column;
-    align-items: flex-start;
   }
 
-  .setting-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .setting-item > div:first-child {
-    min-width: auto;
-  }
-
-  .btn,
-  .btn-secondary {
+  .btn {
     width: 100%;
+    text-align: center;
   }
-}
-
-@media (max-width: 480px) {
-  .settings-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .settings-content {
-    padding: 1rem;
-  }
-
-  .settings-section h2 {
-    font-size: 1.25rem;
-  }
-}
-
-/* Smooth scroll */
-html {
-  scroll-behavior: smooth;
 }
 </style>
 
 <script>
-// Navigation functionality
-document.addEventListener('DOMContentLoaded', function() {
-  // Desktop nav - update active state on click
-  const navLinks = document.querySelectorAll('.settings-nav a');
-  navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-      // Remove active class from all links
-      navLinks.forEach(l => {
-        l.classList.remove('active');
-        l.removeAttribute('aria-current');
-      });
-      // Add active class to clicked link
-      this.classList.add('active');
-      this.setAttribute('aria-current', 'page');
-    });
+// Toggle between view and edit mode for each section
+document.querySelectorAll('.settings-section').forEach(section => {
+  const editBtn = section.querySelector('.btn-edit');
+  const viewMode = section.querySelector('.view-mode');
+  const editMode = section.querySelector('.edit-mode');
+  const cancelBtn = section.querySelector('.btn-cancel');
+  const form = section.querySelector('form');
+
+  // Enter edit mode
+  editBtn?.addEventListener('click', () => {
+    viewMode.classList.add('hidden');
+    editMode.classList.remove('hidden');
+    section.classList.add('editing');
+    editMode.querySelector('input, select, textarea')?.focus();
   });
 
-  // Mobile select - navigate on change
-  const mobileSelect = document.getElementById('settings-select');
-  if (mobileSelect) {
-    mobileSelect.addEventListener('change', function() {
-      const target = this.value;
-      if (target) {
-        // Navigate to the anchor
-        window.location.hash = target;
-        // Update active link in desktop nav
-        navLinks.forEach(link => {
-          link.classList.remove('active');
-          link.removeAttribute('aria-current');
-          if (link.getAttribute('href') === target) {
-            link.classList.add('active');
-            link.setAttribute('aria-current', 'page');
+  // Cancel editing
+  cancelBtn?.addEventListener('click', () => {
+    editMode.classList.add('hidden');
+    viewMode.classList.remove('hidden');
+    section.classList.remove('editing');
+    form?.reset();
+  });
+
+  // Save changes (form submit)
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+
+    // Update view mode values from form data
+    formData.forEach((value, key) => {
+      const dd = viewMode.querySelector(`[data-field="${key}"]`);
+      if (dd) {
+        // Handle checkbox values
+        const checkbox = form.querySelector(`input[name="${key}"][type="checkbox"]`);
+        if (checkbox) {
+          dd.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
+        } else {
+          // Handle select display text
+          const select = form.querySelector(`select[name="${key}"]`);
+          if (select) {
+            dd.textContent = select.options[select.selectedIndex].text;
+          } else {
+            dd.textContent = value;
           }
-        });
+        }
+      }
+    });
+
+    // Handle unchecked checkboxes (not in FormData)
+    form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      const dd = viewMode.querySelector(`[data-field="${checkbox.name}"]`);
+      if (dd) {
+        dd.textContent = checkbox.checked ? 'Enabled' : 'Disabled';
+      }
+    });
+
+    // Return to view mode
+    editMode.classList.add('hidden');
+    viewMode.classList.remove('hidden');
+    section.classList.remove('editing');
+  });
+});
+
+// Sidebar navigation highlighting
+document.querySelectorAll('.settings-nav a').forEach(link => {
+  link.addEventListener('click', function(e) {
+    document.querySelectorAll('.settings-nav a').forEach(l => {
+      l.classList.remove('active');
+      l.removeAttribute('aria-current');
+    });
+    this.classList.add('active');
+    this.setAttribute('aria-current', 'page');
+  });
+});
+
+// Mobile dropdown navigation
+const mobileSelect = document.getElementById('section-select');
+mobileSelect?.addEventListener('change', function() {
+  const targetId = this.value;
+  const targetSection = document.getElementById(targetId);
+  if (targetSection) {
+    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Update desktop nav active state to stay in sync
+    document.querySelectorAll('.settings-nav a').forEach(link => {
+      link.classList.remove('active');
+      link.removeAttribute('aria-current');
+      if (link.getAttribute('href') === '#' + targetId) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
       }
     });
   }
