@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Lab Pro | Advanced Color & Accessibility Tools</title>
+    <title>Color lab pro - accessibility color tool</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -13,12 +13,16 @@
             /* Light Theme Tokens */
             --bg-color: #F8FAFC;
             --card-bg: #FFFFFF;
+            --card-bg-rgb: 255, 255, 255;
             --info-card-bg: #0F172A;
+            --info-card-bg-rgb: 15, 23, 42;
             --text-main: #0F172A;
-            --text-muted: #64748B;
+            --text-muted: #475569;
+            /* ADA Compliant (5.3:1 on white) */
             --text-on-dark: #FFFFFF;
             --border-color: #E2E8F0;
-            --accent: #3B82F6;
+            --accent: #0070F3;
+            /* Electric Blue highlight */
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --radius-lg: 24px;
             --radius-md: 12px;
@@ -29,9 +33,12 @@
             /* Dark Theme Tokens */
             --bg-color: #0F172A;
             --card-bg: #1E293B;
+            --card-bg-rgb: 30, 41, 59;
             --info-card-bg: #1E293B;
+            --info-card-bg-rgb: 30, 41, 59;
             --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
+            --text-muted: #CBD5E1;
+            /* High contrast for dark backgrounds */
             --border-color: #334155;
             --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
         }
@@ -45,13 +52,108 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
+            /* Base theme color */
+            position: relative;
             color: var(--text-main);
             transition: background-color 0.3s ease, color 0.3s ease;
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 24px;
+            align-items: flex-start;
+            padding: 40px 24px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        ::selection {
+            background-color: rgba(0, 112, 243, 0.2);
+            color: inherit;
+        }
+
+        /* Glass Stacking Context */
+        .color-lab {
+            position: relative;
+            z-index: 1;
+            /* Content above blobs */
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            container-type: inline-size;
+            container-name: colorlab;
+            margin: auto 0;
+        }
+
+        /* Undeniable Glass Background Blobs - Now visible OVER the body color */
+        .glass-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            /* Between body and content */
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            width: 60vmax;
+            height: 60vmax;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            /* Subdued opacity */
+            animation: float 25s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            background: var(--accent);
+            top: -20%;
+            left: -10%;
+        }
+
+        .blob-2 {
+            background: #F5793B;
+            bottom: -20%;
+            right: -10%;
+            animation-delay: -12s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(10%, 10%) scale(1.1);
+            }
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+            border-radius: 4px;
+        }
+
+        a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .lab-btn:focus-visible,
+        .action-icon-btn:focus-visible,
+        .palette-swatch:focus-visible,
+        .saved-colors-preview:focus-visible,
+        .tech-value-container:focus-visible,
+        .remove-swatch:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         .color-lab {
@@ -62,6 +164,8 @@
             gap: 32px;
             container-type: inline-size;
             container-name: colorlab;
+            margin: auto 0;
+            /* This centers it vertically when there is space */
         }
 
         /* Header Styles */
@@ -109,10 +213,14 @@
         }
 
         .panel {
-            background-color: var(--card-bg);
+            background: rgba(var(--card-bg-rgb), 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border-radius: var(--radius-lg);
             padding: 32px;
-            box-shadow: var(--shadow);
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.08),
+                inset 0 0 0 1px rgba(var(--card-bg-rgb), 0.5);
             border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -138,16 +246,22 @@
         }
 
         .spectrum-marker {
-            width: 20px;
-            height: 20px;
-            border: 3px solid #FFFFFF;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #FFFFFF;
             border-radius: 50%;
             position: absolute;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
             pointer-events: none;
             left: 50%;
             top: 50%;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .spectrum-marker.dark {
+            border-color: #000000;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8);
         }
 
         /* Slider Styles */
@@ -173,6 +287,7 @@
 
         input[type="range"] {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
             height: 12px;
             border-radius: 6px;
@@ -183,14 +298,35 @@
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
+            appearance: none;
             width: 24px;
             height: 24px;
             border-radius: 50%;
             background: #FFFFFF;
-            border: 3px solid #FFFFFF;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.2);
             cursor: pointer;
-            transition: transform 0.1s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(0.95);
         }
 
         #hue-slider {
@@ -201,6 +337,283 @@
             background: linear-gradient(90deg, rgba(59, 130, 246, 0) 0%, #3B82F6 100%);
         }
 
+        /* Palette Builder */
+        .palette-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .palette-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            min-height: 50px;
+            transition: all 0.4s ease;
+        }
+
+        .palette-swatch {
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            border: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            position: relative;
+            background-color: var(--border-color);
+            padding: 0;
+        }
+
+        .palette-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .palette-swatch .remove-swatch {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            background: #EF4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .palette-swatch:hover .remove-swatch {
+            opacity: 1;
+        }
+
+        /* Buttons */
+        .lab-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: fit-content;
+        }
+
+        .lab-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .lab-btn:active {
+            transform: translateY(0);
+        }
+
+        .lab-btn.secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        /* Buttons inside dark property cards should stay light */
+        .info-card .lab-btn.secondary {
+            color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .lab-btn.secondary:hover {
+            background: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .info-card .lab-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+        }
+
+        .lab-btn.copied {
+            background-color: #15803D !important;
+            color: white !important;
+        }
+
+        /* Technical Row Copy Icons */
+        .tech-value-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: color 0.15s ease, transform 0.1s ease;
+        }
+
+        .tech-value-container:hover {
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        [data-theme="dark"] .tech-value-container:hover {
+            color: #FFFFFF;
+        }
+
+        .copy-glyph {
+            opacity: 0.6;
+            /* Visible enough to meet accessibility needs */
+            transition: all 0.15s ease;
+            color: #E2E8F0;
+            /* Lighter gray for better contrast on dark background */
+            display: flex;
+            align-items: center;
+        }
+
+        .tech-value-container:hover .copy-glyph {
+            opacity: 1;
+            color: #FFFFFF;
+            /* Maximum contrast on hover */
+        }
+
+        .copy-glyph:hover {
+            opacity: 1 !important;
+            color: #FFFFFF !important;
+        }
+
+        .tech-value-container.copied {
+            color: #15803D;
+            transform: scale(1.02);
+        }
+
+        .tech-value-container.copied .copy-glyph {
+            opacity: 1;
+            color: #15803D;
+        }
+
+        /* Saved Palettes */
+        .saved-palettes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .saved-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            background: rgba(var(--bg-rgb, 248, 250, 252), 0.3);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .saved-row:hover {
+            background: rgba(var(--bg-rgb, 248, 250, 252), 0.8);
+            transform: translateX(4px);
+        }
+
+        .saved-colors-preview {
+            flex: 1;
+            display: flex;
+            gap: 2px;
+            height: 28px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .saved-color {
+            flex: 1;
+            height: 100%;
+        }
+
+        .saved-actions {
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .saved-row:hover .saved-actions {
+            opacity: 1;
+        }
+
+        .action-icon-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-icon-btn:hover {
+            background: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .action-icon-btn.delete:hover {
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .harmony-swatch:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .harmony-swatch::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            font-weight: 800;
+            color: var(--text-muted);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .harmony-swatch:hover::after {
+            opacity: 1;
+        }
+
         /* Info Cards */
         .side-panel {
             display: flex;
@@ -209,17 +622,22 @@
         }
 
         .info-card {
-            background-color: var(--info-card-bg);
+            background: rgba(var(--info-card-bg-rgb, 15, 23, 42), 0.9);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             color: var(--text-on-dark);
             padding: 32px;
             border-radius: var(--radius-lg);
             display: flex;
             flex-direction: column;
             gap: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
         }
 
         .info-card.acc {
-            background-color: var(--card-bg);
+            background: rgba(var(--card-bg-rgb), 0.9);
+            border: 1px solid var(--border-color);
             color: var(--text-main);
         }
 
@@ -230,7 +648,24 @@
 
         .info-card p.desc {
             font-size: 12px;
-            color: #94A3B8;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ADA Compliance: High contrast descriptions for each card type */
+        .info-card:not(.acc) p.desc {
+            color: #CBD5E1;
+            /* High contrast light gray for dark cards */
+        }
+
+        .info-card.acc p.desc {
+            color: #334155;
+            /* Solid dark slate for light theme */
+        }
+
+        [data-theme="dark"] .info-card.acc p.desc {
+            color: #CBD5E1;
+            /* High contrast light slate for dark theme */
         }
 
         .hex-row {
@@ -246,8 +681,15 @@
             border-radius: var(--radius-sm);
             background-color: var(--accent);
             border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .mini-swatch:hover {
+            transform: scale(1.1);
         }
 
         .hex-value {
@@ -286,21 +728,7 @@
             color: #94A3B8;
         }
 
-        .copy-btn {
-            background-color: #1E293B;
-            color: #FFFFFF;
-            border: none;
-            padding: 10px 16px;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            cursor: pointer;
-            width: fit-content;
-            transition: background 0.2s ease;
-        }
 
-        [data-theme="dark"] .copy-btn {
-            background-color: #334155;
-        }
 
         /* Accessibility Styles */
         .acc-status-row {
@@ -340,10 +768,126 @@
             opacity: 0.5;
         }
 
+        .guide-box {
+            margin-top: 8px;
+        }
+
+        .guide-toggle {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+            text-transform: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .guide-toggle:hover {
+            opacity: 1;
+        }
+
+        .guide-content {
+            display: none;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            margin-top: 12px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .guide-content.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .guide-box strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            font-weight: 800;
+        }
+
+        .guide-box a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .guide-box a:hover {
+            border-bottom-color: var(--accent);
+        }
+
         .previews-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 16px;
+        }
+
+        .custom-bg-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            margin-top: -4px;
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .custom-bg-input {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-bg-input label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 800;
+            opacity: 0.8;
+            /* Increased for ADA compliance */
+            margin-right: 2px;
+        }
+
+        .custom-bg-input input[type="color"] {
+            border: none;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+            border-radius: 4px;
+        }
+
+        .custom-bg-input input[type="text"] {
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 11px;
+            width: 55px;
+            color: inherit;
+            outline: none;
+            text-align: right;
         }
 
         .preview-box {
@@ -362,6 +906,12 @@
         .preview-box.on-dark {
             background-color: #0F172A;
             color: #94A3B8;
+        }
+
+        .preview-box.on-custom {
+            background-color: #3B82F6;
+            color: #FFFFFF;
+            border: 1px solid var(--border-color);
         }
 
         .sample-text {
@@ -392,18 +942,25 @@
             top: 24px;
             right: 24px;
             background: var(--card-bg);
+            color: var(--text-main);
             border: 1px solid var(--border-color);
             padding: 8px 16px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: 600;
             box-shadow: var(--shadow);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 
 <body data-theme="light">
     <button class="theme-toggle" onclick="toggleTheme()">Switch to Dark Mode</button>
+
+    <div class="glass-background" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
 
     <div class="color-lab">
         <header class="color-lab-header">
@@ -413,7 +970,7 @@
                 </svg>
             </div>
             <div class="title-group">
-                <h1>Color Lab Pro</h1>
+                <h1>Color Lab</h1>
                 <p>Advanced color picking and accessibility validation for professional designers.</p>
             </div>
         </header>
@@ -425,19 +982,47 @@
                     <h2 id="picker-heading">Color selection</h2>
                 </div>
 
-                <div class="spectrum-container" id="spectrum" role="application"
-                    aria-label="Saturation and Brightness picker" tabindex="0">
+                <div class="spectrum-container" id="spectrum" role="slider"
+                    aria-label="Saturation and Brightness picker" aria-valuemin="0" aria-valuemax="100"
+                    aria-valuenow="76" aria-valuetext="Saturation 76, Brightness 96" tabindex="0">
                     <div class="spectrum-marker" id="marker" aria-hidden="true"></div>
                 </div>
 
                 <div class="sliders-group">
                     <div class="slider-field">
                         <label for="hue-slider">Hue (0-360)</label>
-                        <input type="range" id="hue-slider" min="0" max="360" value="217" aria-label="Hue">
+                        <input type="range" id="hue-slider" min="0" max="360" value="20" aria-label="Hue">
                     </div>
                     <div class="slider-field">
                         <label for="alpha-slider">Transparency (0-100%)</label>
                         <input type="range" id="alpha-slider" min="0" max="100" value="100" aria-label="Transparency">
+                    </div>
+                </div>
+
+                <div class="palette-group" id="palette-wrapper">
+                    <div class="palette-header">
+                        <label>Custom swatches</label>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="lab-btn" onclick="addToPalette()" id="add-btn">+ Add Color</button>
+                            <button class="lab-btn secondary" onclick="saveCurrentPalette()" id="save-btn"
+                                style="display:none;">Save Set</button>
+                        </div>
+                    </div>
+                    <div class="palette-grid" id="palette-grid">
+                        <div class="palette-swatch"
+                            style="opacity: 0.3; border-style: dashed; background: none; border-color: var(--text-muted);">
+                        </div>
+                    </div>
+
+                    <div class="saved-palettes" id="saved-palettes" style="display: block; margin-top: 16px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label
+                                style="font-size: 10px; opacity: 0.7; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">History</label>
+                            <button class="lab-btn secondary" style="font-size: 9px; padding: 4px 10px;"
+                                onclick="copyAllPalettes(event)">Export JSON</button>
+                        </div>
+                        <div id="palettes-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
                     </div>
                 </div>
             </section>
@@ -448,28 +1033,73 @@
                     <h3 id="props-heading">Color properties</h3>
                     <p class="desc">Detailed technical values for code implementation.</p>
                     <div class="hex-row">
-                        <div class="mini-swatch" id="mini-swatch" aria-hidden="true"></div>
+                        <button class="mini-swatch" id="mini-swatch" onclick="copyHex()" title="Click to copy HEX"
+                            aria-label="Copy current HEX color"></button>
                         <label for="hex-display" class="sr-only">HEX Color Code</label>
                         <input type="text" class="hex-value" id="hex-display" maxlength="7" spellcheck="false"
-                            aria-label="HEX Color Code">
+                            aria-label="HEX Color Code" style="flex: 1;">
+                        <button class="lab-btn secondary" onclick="copyHex()" id="copy-btn"
+                            style="width: 40px; height: 40px; padding: 0; flex-shrink: 0; border-radius: 8px;">
+                            <span id="copy-text"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg></span>
+                        </button>
                     </div>
                     <div class="technical-row">
                         <span>RGBA</span>
-                        <div id="rgba-display">59, 130, 246, 1.0</div>
+                        <div class="tech-value-container" onclick="copyTechValue(this)" role="button" tabindex="0"
+                            onkeydown="if(event.key==='Enter'||event.key===' ') copyTechValue(this)">
+                            <div id="rgba-display">196, 84, 27, 1.0</div>
+                            <div class="copy-glyph"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="3">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg></div>
+                        </div>
                     </div>
                     <div class="technical-row">
                         <span>HSL</span>
-                        <div id="hsl-display">217°, 91%, 60%</div>
+                        <div class="tech-value-container" onclick="copyTechValue(this)" role="button" tabindex="0"
+                            onkeydown="if(event.key==='Enter'||event.key===' ') copyTechValue(this)">
+                            <div id="hsl-display">20°, 76%, 44%</div>
+                            <div class="copy-glyph"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="3">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg></div>
+                        </div>
                     </div>
-                    <button class="copy-btn" onclick="copyHex()">Copy HEX</button>
+                    <div class="technical-row">
+                        <span>HSV</span>
+                        <div class="tech-value-container" onclick="copyTechValue(this)" role="button" tabindex="0"
+                            onkeydown="if(event.key==='Enter'||event.key===' ') copyTechValue(this)">
+                            <div id="hsv-display">20°, 86%, 77%</div>
+                            <div class="copy-glyph"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="3">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg></div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="info-card acc">
-                    <h3>Accessibility score</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                        <h3 style="margin-top: 2px;">Accessibility score</h3>
+                        <div class="custom-bg-input">
+                            <label for="bg-hex">BG</label>
+                            <input type="color" id="bg-picker" value="#3B82F6" title="Pick background color">
+                            <input type="text" id="bg-hex" value="#3B82F6" spellcheck="false" title="Background HEX">
+                        </div>
+                    </div>
                     <p class="desc">Contrast validation against WCAG 2.1 standards.</p>
 
-                    <div class="acc-status-row">
-                        <div class="score-badge" id="score-badge">AAA</div>
+                    <div class="acc-status-row" aria-live="polite">
+                        <div class="score-badge" id="score-badge" role="status"
+                            aria-label="Current Accessibility Score: AAA">AAA</div>
                         <div class="score-details">
                             <div class="ratio-text" id="ratio-text">7.2:1 contrast</div>
                             <div class="pass-label" id="pass-label">Exceptional readability</div>
@@ -489,11 +1119,33 @@
                             <span class="sample-text" id="sample-dt">Large Text</span>
                             <span class="preview-footer">Pass AAA</span>
                         </div>
+                        <div class="preview-box on-custom" id="preview-custom">
+                            <span class="preview-header" style="color: inherit; opacity: 0.8;">On Custom</span>
+                            <span class="sample-text" id="sample-ct">Large Text</span>
+                            <span class="preview-footer" id="footer-ct">Pass AAA</span>
+                        </div>
                     </div>
-                </div>
-            </aside>
-        </main>
-    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="guide-box">
+                        <div class="guide-toggle" onclick="toggleGuide()">
+                            Why AA or AAA for colors?
+                            <svg id="guide-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="3" style="transition: transform 0.2s ease;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="guide-content" id="guide-content" style="margin-top: 8px;">
+                            <a href="https://www.w3.org/WAI/WCAG21/quickref/?showtechniques=143" target="_blank">ADA
+                                (AA)</a> requires 4.5:1 contrast for text and 3:1 for headings. Aim for 7:1 (AAA) to
+                            ensure the best accessibility and readability for all users.
+                        </div>
+                    </div>
+                </div> <!-- closing info-card acc -->
+            </aside> <!-- closing side-panel -->
+        </main> <!-- closing content-grid -->
+    </div> <!-- closing color-lab container -->
 
     <script>
         const spectrum = document.getElementById('spectrum');
@@ -504,8 +1156,14 @@
         const miniSwatch = document.getElementById('mini-swatch');
         const rgbaDisplay = document.getElementById('rgba-display');
         const hslDisplay = document.getElementById('hsl-display');
+        const hsvDisplay = document.getElementById('hsv-display');
         const sampleLt = document.getElementById('sample-lt');
         const sampleDt = document.getElementById('sample-dt');
+        const sampleCt = document.getElementById('sample-ct');
+        const previewCustom = document.getElementById('preview-custom');
+        const bgPicker = document.getElementById('bg-picker');
+        const bgHexInput = document.getElementById('bg-hex');
+        const footerCt = document.getElementById('footer-ct');
 
         // Acc elements
         const scoreBadge = document.getElementById('score-badge');
@@ -514,14 +1172,15 @@
         const footerLt = document.querySelector('.on-light .preview-footer');
         const footerDt = document.querySelector('.on-dark .preview-footer');
 
-        let currentH = 217;
-        let currentS = 91;
-        let currentL = 60;
+        let currentH = 20;
+        let currentS = 86; // Using HSV Saturation for the picker box
+        let currentV = 77; // Using HSV Value for the picker box
         let currentA = 1.0;
 
         function updateUI() {
-            const hex = hslToHex(currentH, currentS, currentL);
-            const rgb = hslToRgb(currentH, currentS, currentL);
+            const rgb = hsvToRgb(currentH, currentS, currentV);
+            const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
             // Update spectrum background
             spectrum.style.backgroundColor = `hsl(${currentH}, 100%, 50%)`;
@@ -530,9 +1189,18 @@
                 linear-gradient(to right, #fff, transparent)
             `;
 
-            // Update marker position
+            // Update marker position & visibility
             marker.style.left = currentS + '%';
-            marker.style.top = (100 - currentL) + '%';
+            marker.style.top = (100 - currentV) + '%';
+
+            // Dynamic marker contrast
+            if (currentV > 70 && currentS < 30) {
+                marker.classList.add('dark');
+            } else if (currentV > 85) {
+                marker.classList.add('dark');
+            } else {
+                marker.classList.remove('dark');
+            }
 
             // Update HEX input (only if it's not currently focused)
             if (document.activeElement !== hexDisplay) {
@@ -541,23 +1209,39 @@
 
             miniSwatch.style.backgroundColor = hex;
             rgbaDisplay.innerText = `${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA}`;
-            hslDisplay.innerText = `${currentH}°, ${currentS}%, ${currentL}%`;
+            hslDisplay.innerText = `${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%`;
+            hsvDisplay.innerText = `${Math.round(currentH)}°, ${Math.round(currentS)}%, ${Math.round(currentV)}%`;
 
             const fullColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentA})`;
             sampleLt.style.color = fullColor;
             sampleDt.style.color = fullColor;
+            sampleCt.style.color = fullColor;
 
             // Accessibility Logic
             const whiteLum = getLuminance(255, 255, 255);
             const darkLum = getLuminance(15, 23, 42); // #0F172A
             const colorLum = getLuminance(rgb.r, rgb.g, rgb.b);
 
+            // Custom BG logic
+            const customBgHex = bgHexInput.value;
+            const customRgb = hexToRgb(customBgHex) || { r: 59, g: 130, b: 246 };
+            const customLum = getLuminance(customRgb.r, customRgb.g, customRgb.b);
+
+            previewCustom.style.backgroundColor = customBgHex;
+            previewCustom.style.color = customLum > 0.5 ? '#0F172A' : '#FFFFFF';
+
             const ratioOnLight = getContrastRatio(colorLum, whiteLum);
             const ratioOnDark = getContrastRatio(colorLum, darkLum);
+            const ratioOnCustom = getContrastRatio(colorLum, customLum);
 
-            updateAccDisplay(ratioOnLight);
+            updateAccDisplay(ratioOnCustom);
             footerLt.innerText = getWCAGLevel(ratioOnLight);
             footerDt.innerText = getWCAGLevel(ratioOnDark);
+            footerCt.innerText = getWCAGLevel(ratioOnCustom);
+
+            // Update spectrum ARIA for screen readers
+            spectrum.setAttribute('aria-valuenow', currentS);
+            spectrum.setAttribute('aria-valuetext', `Saturation ${currentS}%, Brightness ${currentV}%`);
 
             // Sync Sliders
             hueSlider.value = currentH;
@@ -565,6 +1249,202 @@
 
             // Gradient updates for alpha slider
             alphaSlider.style.background = `linear-gradient(90deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1) 100%)`;
+        }
+
+        let activePalette = [];
+
+        function addToPalette() {
+            const currentHex = hexDisplay.value.toUpperCase();
+            if (activePalette.includes(currentHex)) return;
+
+            activePalette.push(currentHex);
+            if (activePalette.length > 5) activePalette.shift();
+
+            renderActivePalette();
+            document.getElementById('save-btn').style.display = activePalette.length > 0 ? 'block' : 'none';
+        }
+
+        function renderActivePalette() {
+            const grid = document.getElementById('palette-grid');
+            grid.innerHTML = '';
+
+            if (activePalette.length === 0) {
+                grid.innerHTML = '<div class="palette-swatch" style="opacity: 0.3; border-style: dashed; background: none; border-color: var(--text-muted);"></div>';
+                return;
+            }
+
+            activePalette.forEach((hex, index) => {
+                const swatch = document.createElement('button');
+                swatch.className = 'palette-swatch';
+                swatch.style.backgroundColor = hex;
+                swatch.setAttribute('aria-label', `Color ${hex}. Click to set as active.`);
+
+                swatch.onclick = () => {
+                    const hsv = hexToHsv(hex);
+                    currentH = Math.round(hsv.h);
+                    currentS = Math.round(hsv.s);
+                    currentV = Math.round(hsv.v);
+                    updateUI();
+                };
+
+                const remove = document.createElement('button');
+                remove.className = 'remove-swatch';
+                remove.innerHTML = '&times;';
+                remove.setAttribute('aria-label', `Remove color ${hex}`);
+                remove.onclick = (e) => {
+                    e.stopPropagation();
+                    activePalette.splice(index, 1);
+                    renderActivePalette();
+                    document.getElementById('save-btn').style.display = activePalette.length > 0 ? 'block' : 'none';
+                };
+
+                swatch.appendChild(remove);
+                grid.appendChild(swatch);
+            });
+        }
+
+        function copyTechValue(container) {
+            const text = container.firstElementChild.innerText;
+            navigator.clipboard.writeText(text);
+
+            container.classList.add('copied');
+            setTimeout(() => container.classList.remove('copied'), 1000);
+        }
+
+        const SAVED_KEY = 'colorlab_palettes';
+
+        function saveCurrentPalette() {
+            if (activePalette.length === 0) return;
+
+            let saved = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+
+            // Deduplication
+            const isDuplicate = saved.some(p => p.join(',') === activePalette.join(','));
+            if (isDuplicate) return;
+
+            saved.unshift([...activePalette]);
+            if (saved.length > 20) saved.pop();
+
+            localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+            loadSavedPalettes();
+
+            // Clear current for fresh start
+            activePalette = [];
+            renderActivePalette();
+            document.getElementById('save-btn').style.display = 'none';
+        }
+
+        function loadSavedPalettes() {
+            const list = document.getElementById('palettes-list');
+            const saved = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+            list.innerHTML = '';
+
+            if (saved.length === 0) {
+                list.innerHTML = '<p style="font-size: 11px; opacity: 0.5; text-align: center; padding: 12px;">No palettes saved yet.</p>';
+                return;
+            }
+
+            saved.forEach((palette, index) => {
+                const row = document.createElement('div');
+                row.className = 'saved-row';
+
+                const preview = document.createElement('button');
+                preview.className = 'saved-colors-preview';
+                preview.setAttribute('aria-label', `Load palette starting with ${palette[0]}`);
+                palette.forEach(hex => {
+                    const color = document.createElement('div');
+                    color.className = 'saved-color';
+                    color.style.backgroundColor = hex;
+                    preview.appendChild(color);
+                });
+
+                preview.onclick = () => {
+                    const hsv = hexToHsv(palette[0]);
+                    currentH = hsv.h;
+                    currentS = hsv.s;
+                    currentV = hsv.v;
+                    updateUI();
+                };
+
+                const actions = document.createElement('div');
+                actions.className = 'saved-actions';
+
+                // Copy Action
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'action-icon-btn';
+                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+                copyBtn.title = "Copy CSS Variables";
+                copyBtn.setAttribute('aria-label', 'Copy CSS Variables');
+                copyBtn.onclick = () => {
+                    const css = palette.map((h, i) => `--color-${i + 1}: ${h};`).join('\n');
+                    navigator.clipboard.writeText(css);
+                    copyBtn.style.color = "#15803D";
+                    setTimeout(() => copyBtn.style.color = "", 1000);
+                };
+
+                // Delete Action
+                const delBtn = document.createElement('button');
+                delBtn.className = 'action-icon-btn delete';
+                delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+                delBtn.title = "Delete Palette";
+                delBtn.setAttribute('aria-label', 'Delete Palette');
+                delBtn.onclick = () => deletePalette(index);
+
+                actions.appendChild(copyBtn);
+                actions.appendChild(delBtn);
+
+                row.appendChild(preview);
+                row.appendChild(actions);
+                list.appendChild(row);
+            });
+        }
+
+        function deletePalette(index) {
+            let saved = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+            saved.splice(index, 1);
+            localStorage.setItem(SAVED_KEY, JSON.stringify(saved));
+            loadSavedPalettes();
+        }
+
+        function copyAllPalettes(e) {
+            const savedRaw = localStorage.getItem(SAVED_KEY) || '[]';
+            const saved = JSON.parse(savedRaw);
+
+            if (saved.length === 0) {
+                alert("No colors to export!");
+                return;
+            }
+
+            navigator.clipboard.writeText(savedRaw);
+            alert("Color history exported to clipboard as JSON!");
+        }
+
+        function hexToHsv(hex) {
+            const rgb = hexToRgb(hex);
+            return rgbToHsv(rgb.r, rgb.g, rgb.b);
+        }
+
+        function hexToRgb(hex) {
+            let val = hex.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+            const is6Digit = /^#[0-9A-F]{6}$/i.test(val);
+            const is3Digit = /^#[0-9A-F]{3}$/i.test(val);
+            if (is6Digit || is3Digit) {
+                if (is6Digit) {
+                    return {
+                        r: parseInt(val.slice(1, 3), 16),
+                        g: parseInt(val.slice(3, 5), 16),
+                        b: parseInt(val.slice(5, 7), 16)
+                    };
+                } else {
+                    return {
+                        r: parseInt(val[1] + val[1], 16),
+                        g: parseInt(val[2] + val[2], 16),
+                        b: parseInt(val[3] + val[3], 16)
+                    };
+                }
+            }
+            return null;
         }
 
         // Color Math (Rec. 709)
@@ -590,56 +1470,80 @@
 
         function updateAccDisplay(ratio) {
             ratioText.innerText = `${ratio}:1 contrast`;
+            let level = "FAIL";
+            let statusText = "Insufficient contrast";
+            let color = "#B91C1C";
+
             if (ratio >= 7) {
-                scoreBadge.innerText = "AAA";
-                scoreBadge.style.backgroundColor = "#15803D";
-                passLabel.innerText = "Exceptional readability";
-                passLabel.style.color = "#15803D";
+                level = "AAA";
+                color = "#15803D";
+                statusText = "Exceptional readability";
             } else if (ratio >= 4.5) {
-                scoreBadge.innerText = "AA";
-                scoreBadge.style.backgroundColor = "#15803D";
-                passLabel.innerText = "Good readability";
-                passLabel.style.color = "#15803D";
+                level = "AA";
+                color = "#15803D";
+                statusText = "Good readability";
             } else if (ratio >= 3) {
-                scoreBadge.innerText = "A+";
-                scoreBadge.style.backgroundColor = "#844d19";
-                passLabel.innerText = "Acceptability (Large text)";
-                passLabel.style.color = "#844d19";
-            } else {
-                scoreBadge.innerText = "FAIL";
-                scoreBadge.style.backgroundColor = "#B91C1C";
-                passLabel.innerText = "Insufficient contrast";
-                passLabel.style.color = "#B91C1C";
+                level = "A+";
+                color = "#844d19";
+                statusText = "Acceptable for large text";
             }
+
+            scoreBadge.innerText = level;
+            scoreBadge.style.backgroundColor = color;
+            scoreBadge.setAttribute('aria-label', `Accessibility Level: ${level}`);
+            passLabel.innerText = statusText;
+            passLabel.style.color = color;
+
+            // Helpful for screen readers to hear the change
+            scoreBadge.parentElement.setAttribute('aria-label', `${level} score with ${ratio} to 1 contrast ratio. ${statusText}.`);
         }
 
         // Color Math
-        function hslToRgb(h, s, l) {
-            h /= 360; s /= 100; l /= 100;
+        function hsvToRgb(h, s, v) {
+            h /= 360; s /= 100; v /= 100;
+            let i = Math.floor(h * 6);
+            let f = h * 6 - i;
+            let p = v * (1 - s);
+            let q = v * (1 - f * s);
+            let t = v * (1 - (1 - f) * s);
             let r, g, b;
-            if (s === 0) {
-                r = g = b = l;
-            } else {
-                const hue2rgb = (p, q, t) => {
-                    if (t < 0) t += 1;
-                    if (t > 1) t -= 1;
-                    if (t < 1 / 6) return p + (q - p) * 6 * t;
-                    if (t < 1 / 2) return q;
-                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                    return p;
-                };
-                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                const p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1 / 3);
-                g = hue2rgb(p, q, h);
-                b = hue2rgb(p, q, h - 1 / 3);
+            switch (i % 6) {
+                case 0: r = v; g = t; b = p; break;
+                case 1: r = q; g = v; b = p; break;
+                case 2: r = p; g = v; b = t; break;
+                case 3: r = p; g = q; b = v; break;
+                case 4: r = t; g = p; b = v; break;
+                case 5: r = v; g = p; b = q; break;
             }
             return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
         }
 
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, v = max;
+            const d = max - min;
+            s = max === 0 ? 0 : d / max;
+            if (max === min) {
+                h = 0;
+            } else {
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, v: v * 100 };
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
         function hslToHex(h, s, l) {
             const { r, g, b } = hslToRgb(h, s, l);
-            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            return rgbToHex(r, g, b);
         }
 
         // Events
@@ -672,10 +1576,10 @@
                     b = parseInt(val[3] + val[3], 16);
                 }
 
-                const hsl = rgbToHsl(r, g, b);
-                currentH = Math.round(hsl.h);
-                currentS = Math.round(hsl.s);
-                currentL = Math.round(hsl.l);
+                const hsv = rgbToHsv(r, g, b);
+                currentH = Math.round(hsv.h);
+                currentS = Math.round(hsv.s);
+                currentV = Math.round(hsv.v);
                 updateUI();
             }
         });
@@ -707,13 +1611,16 @@
         spectrum.addEventListener('mousedown', (e) => {
             const handleMove = (ev) => {
                 const rect = spectrum.getBoundingClientRect();
-                let x = (ev.clientX - rect.left) / rect.width;
-                let y = (ev.clientY - rect.top) / rect.height;
+                const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+                const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+
+                let x = (clientX - rect.left) / rect.width;
+                let y = (clientY - rect.top) / rect.height;
                 x = Math.max(0, Math.min(1, x));
                 y = Math.max(0, Math.min(1, y));
 
                 currentS = Math.round(x * 100);
-                currentL = Math.round((1 - y) * 100);
+                currentV = Math.round((1 - y) * 100);
                 updateUI();
             };
             handleMove(e);
@@ -721,13 +1628,35 @@
             window.addEventListener('mouseup', () => window.removeEventListener('mousemove', handleMove), { once: true });
         });
 
+        // Touch Support
+        spectrum.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const handleMove = (ev) => {
+                const rect = spectrum.getBoundingClientRect();
+                const clientX = ev.touches[0].clientX;
+                const clientY = ev.touches[0].clientY;
+
+                let x = (clientX - rect.left) / rect.width;
+                let y = (clientY - rect.top) / rect.height;
+                x = Math.max(0, Math.min(1, x));
+                y = Math.max(0, Math.min(1, y));
+
+                currentS = Math.round(x * 100);
+                currentV = Math.round((1 - y) * 100);
+                updateUI();
+            };
+            handleMove(e);
+            window.addEventListener('touchmove', handleMove, { passive: false });
+            window.addEventListener('touchend', () => window.removeEventListener('touchmove', handleMove), { once: true });
+        }, { passive: false });
+
         spectrum.addEventListener('keydown', (e) => {
             const step = e.shiftKey ? 10 : 1;
             switch (e.key) {
                 case 'ArrowLeft': currentS = Math.max(0, currentS - step); break;
                 case 'ArrowRight': currentS = Math.min(100, currentS + step); break;
-                case 'ArrowUp': currentL = Math.min(100, currentL + step); break;
-                case 'ArrowDown': currentL = Math.max(0, currentL - step); break;
+                case 'ArrowUp': currentV = Math.min(100, currentV + step); break;
+                case 'ArrowDown': currentV = Math.max(0, currentV - step); break;
                 default: return;
             }
             e.preventDefault();
@@ -746,13 +1675,47 @@
             }
         }
 
-        function copyHex() {
-            navigator.clipboard.writeText(hexDisplay.value);
-            const originalText = hexDisplay.value;
-            hexDisplay.value = "COPIED!";
-            setTimeout(() => hexDisplay.value = originalText, 1000);
+        function toggleGuide() {
+            const content = document.getElementById('guide-content');
+            const arrow = document.getElementById('guide-arrow');
+            const isActive = content.classList.toggle('active');
+            arrow.style.transform = isActive ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
+        function copyHex() {
+            const btn = document.getElementById('copy-btn');
+            const container = document.getElementById('copy-text');
+            const originalText = hexDisplay.value;
+
+            navigator.clipboard.writeText(originalText);
+
+            const copyIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+            const checkIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+            container.innerHTML = checkIcon;
+            btn.classList.add('copied');
+
+            setTimeout(() => {
+                container.innerHTML = copyIcon;
+                btn.classList.remove('copied');
+            }, 1000);
+        }
+
+        // Custom BG Events
+        bgPicker.addEventListener('input', (e) => {
+            bgHexInput.value = e.target.value.toUpperCase();
+            updateUI();
+        });
+
+        bgHexInput.addEventListener('input', (e) => {
+            let val = e.target.value;
+            if (val.length === 7 && val.startsWith('#')) {
+                bgPicker.value = val;
+                updateUI();
+            }
+        });
+
+        loadSavedPalettes();
         updateUI();
     </script>
 </body>
