@@ -1266,7 +1266,7 @@ textarea:focus-visible,
 /* Share mode banner */
 .share-mode-banner {
     display: none;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
     padding: 0.75rem 2rem;
     color: white;
     align-items: center;
@@ -1303,7 +1303,7 @@ textarea:focus-visible,
 
 .share-mode-button.primary {
     background: rgba(255, 255, 255, 0.9);
-    color: #667eea;
+    color: #3498db;
 }
 
 .share-mode-button.primary:hover {

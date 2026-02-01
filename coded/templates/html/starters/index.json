@@ -123,8 +123,14 @@
     {
       "id": "settings-page",
       "name": "Settings page",
-      "description": "Configuration interface with multiple form sections",
+      "description": "Account settings with inline editing sections",
       "file": "settings-page.html"
+    },
+    {
+      "id": "typography-showcase",
+      "name": "Typography showcase",
+      "description": "Film catalog demonstrating typographic hierarchy",
+      "file": "typography-showcase.html"
     }
   ]
 }
