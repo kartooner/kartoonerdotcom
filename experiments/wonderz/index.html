@@ -1,0 +1,213 @@
+<!doctype html>
+<!-- WonderzNet - student project directory (NCTC) -->
+<!-- JF: keep layout simple; needs to work in lab + dorm machines -->
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WonderzNet</title>
+  <link rel="stylesheet" href="wonderz.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <div class="wrap">
+    <header>
+      <div aria-hidden="true" style="font-size:12px; border:1px solid #000; display:inline-block; padding:2px 6px;">
+        WN
+      </div>
+      <h1>WonderzNet</h1>
+      <p class="tagline">A small index of web resources.</p>
+    </header>
+
+    <main id="main">
+      <section>
+        <div class="search-block">
+          <h2 id="searchTitle" style="margin:0 0 8px; font-size:18px; text-decoration:underline;">Search</h2>
+
+          <form id="searchForm" role="search" aria-label="WonderzNet search">
+            <label for="q" id="searchLabel">Search the index</label>
+
+            <div class="search-row">
+              <input id="q" name="q" type="search" autocomplete="off" />
+              <button type="submit" id="searchButton">Search</button>
+            </div>
+
+            <div class="help" id="searchHelp">Type a keyword and press Enter.</div>
+
+            <div id="voiceControls" class="voice-controls" style="display:none;">
+              <button type="button" id="micBtn" class="voice-btn" title="Speak command">🎤 Voice Input</button>
+              <button type="button" id="speechToggle" class="voice-btn" title="Toggle room narration">🔈 Speech:
+                Off</button>
+            </div>
+          </form>
+
+          <div class="utility-links">
+            <a href="#" aria-disabled="true">Submit link</a>
+            <span aria-hidden="true"> | </span>
+            <a href="#" aria-disabled="true">Sign guestbook</a>
+          </div>
+        </div>
+
+        <section class="results" role="region" aria-live="polite" aria-atomic="true" aria-label="Game output">
+          <h2 id="resultsTitle">Results</h2>
+          <div id="resultsBody"></div>
+        </section>
+
+        <!-- Screen reader announcements -->
+        <div id="srAnnouncements" class="sr-only" role="status" aria-live="assertive" aria-atomic="true"></div>
+      </section>
+
+      <section class="about">
+        <h2 style="margin:0 0 6px; font-size:18px; text-decoration:underline;">About WonderzNet</h2>
+
+        <p>
+          This index was started in 1996 by a group of students at
+          <strong>North Cascadia Technical College</strong><br />
+          <a href="http://www.nctc.edu/~media/index.html">
+            http://www.nctc.edu/~media/index.html
+          </a>
+        </p>
+
+        <p>It is part of an independent study on early web communities.</p>
+
+        <p>
+          The project focuses on identifying and maintaining a small collection of web resources.
+          Links are added manually and reviewed on a regular basis.
+        </p>
+
+        <p>WonderzNet is publicly accessible during the duration of the study.</p>
+
+        <p style="font-size:13px;">
+          Reference:
+          <a href="https://info.cern.ch/">https://info.cern.ch/</a>
+        </p>
+      </section>
+
+      <hr />
+
+      <!-- JF: if you add links, keep descriptions short. one line is enough. -->
+      <!-- JF: guestbook form still pending. ask TA about CGI on this server. -->
+
+      <section class="directory">
+        <h2 style="margin:0 0 10px; font-size:18px; text-decoration:underline;">Index</h2>
+
+        <div class="cols">
+          <section class="cat">
+            <h2>News</h2>
+            <ul>
+              <li>
+                <a href="https://www.cnn.com/">CNN Interactive</a>
+                <span class="desc">Online news and reporting.</span>
+              </li>
+              <li>
+                <a href="https://www.reuters.com/">Reuters World News</a>
+                <span class="desc">International news and wire reports.</span>
+              </li>
+              <li>
+                <a href="https://www.usatoday.com/">USA Today Online</a>
+                <span class="desc">National news and features.</span>
+              </li>
+              <li>
+                <a href="https://www.cnn.com/US/OJ/">CNN OJ Trial Coverage</a>
+                <span class="desc">Coverage of the ongoing trial.</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="cat">
+            <h2>Food</h2>
+            <ul>
+              <li>
+                <a href="https://www.pizzahut.com/assets/pizzanet/home.html">PizzaNet (Pizza Hut)</a>
+                <span class="desc">Online food ordering service.</span>
+              </li>
+              <li>
+                <a href="https://www.epicurious.com/">Epicurious</a>
+                <span class="desc">Recipes and food-related articles.</span>
+              </li>
+              <li>
+                <a href="https://www.netgrocer.com/">NetGrocer</a>
+                <span class="desc">Online grocery ordering service.</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="cat">
+            <h2>Live</h2>
+            <ul>
+              <li>
+                <a href="https://fogcam.org/">FogCam</a>
+                <span class="desc">Live camera views of San Francisco.</span>
+              </li>
+              <li>
+                <a href="https://www.earthcam.com/">EarthCam</a>
+                <span class="desc">Public live camera feeds.</span>
+              </li>
+            </ul>
+            <p style="font-size:12px; margin-top:8px;">
+              Note: Some feeds may require plugins or special software.
+            </p>
+          </section>
+
+          <section class="cat">
+            <h2>Misc</h2>
+            <ul>
+              <li>
+                <a href="https://www.spacejam.com/1996/">Space Jam (1996)</a>
+                <span class="desc">Official website for the motion picture.</span>
+              </li>
+              <li>
+                <a href="https://textfiles.com/">Textfiles</a>
+                <span class="desc">Collection of text files and documents.</span>
+              </li>
+              <li>
+                <a href="https://theoldnet.com/">The Old Net</a>
+                <span class="desc">Archived versions of earlier websites.</span>
+              </li>
+              <li>
+                <a href="https://zombo.com/">Zombo</a>
+                <span class="desc">Interactive website.</span>
+              </li>
+              <li>
+                <a href="https://www.toyraygun.com/">Toy Ray Gun</a>
+                <span class="desc">Personal site about toys and collecting.</span>
+              </li>
+              <li>
+                <a href="https://seanconnery.com/">SeanConnery.com</a>
+                <span class="desc">Official website.</span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </section>
+
+      <!-- JF: counter script was flaky on the lab box, leaving as plain text for now -->
+
+      <section class="status">
+        <div>
+          Last crawl: Jan 2, 1997<br />
+          Visits since 1997:
+          <span class="counter">0451</span>
+        </div>
+      </section>
+
+      <footer>
+        <hr />
+        <p class="footer-note">Best viewed with Netscape Navigator 3.0 or higher.</p>
+        <div>
+          © 1996 WonderzNet<br />
+          Maintained by contributors.
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="wonderz.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,317 @@
+/* WonderzNet - Pure HTML/CSS Directory & Game */
+
+:root {
+    --page-max: 820px;
+    --ink: #000;
+    --navy: #1f3a93;
+    --paper: #fdfdfd;
+    --rule: #666;
+}
+
+/* Screen reader only utility - hidden but accessible */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Global Reset */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Times New Roman", Times, serif;
+    font-size: 16px;
+    line-height: 1.3;
+    min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+.skip-link {
+    display: none !important;
+}
+
+.wrap {
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: 10px 10px 36px;
+}
+
+/* UI Elements */
+a:link {
+    color: #0000ee;
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #551a8b;
+}
+
+header {
+    text-align: center;
+    margin-top: 6px;
+}
+
+h1 {
+    margin: 6px 0 2px;
+    font-size: 42px;
+    font-family: Arial, sans-serif;
+    color: var(--navy);
+}
+
+.tagline {
+    margin: 12px 0;
+    font-size: 14px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 14px 0;
+}
+
+.search-block {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.search-block label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.search-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+input[type="search"] {
+    flex: 1;
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid #000;
+}
+
+button {
+    padding: 5px 10px;
+    border: 1px solid #000;
+    background: #e9e9e9;
+    cursor: pointer;
+}
+
+.help {
+    font-size: 13px;
+    margin: 6px 0;
+}
+
+.results {
+    border: 1px solid var(--rule);
+    background: #fff;
+    display: none;
+    margin-top: 12px;
+    min-height: 50px;
+}
+
+.results.visible {
+    display: block;
+}
+
+.results h2 {
+    font-size: 16px;
+    padding: 8px 10px 0;
+    margin: 0;
+}
+
+.results p {
+    font-size: 14px;
+    padding: 0 10px 8px;
+    margin: 0;
+}
+
+.directory,
+.about,
+.status,
+footer {
+    max-width: 720px;
+    margin: 16px auto 0;
+}
+
+.cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.cat h2 {
+    font-size: 18px;
+    text-decoration: underline;
+}
+
+.desc {
+    font-size: 12px;
+    display: block;
+}
+
+@media (max-width: 720px) {
+    .cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   STABLE TERMINAL MODE (GAME ACTIVE)
+   ========================================================================== */
+
+html.game-active,
+body.game-active {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+.game-active .wrap {
+    padding-top: 40px;
+    background: transparent !important;
+}
+
+/* Dark Terminal Blocks */
+.game-active .search-block,
+.game-active .results {
+    display: block !important;
+    background: #000 !important;
+    border: 1px solid #333 !important;
+    padding: 24px !important;
+    max-width: 800px !important;
+    margin: 0 auto 20px !important;
+}
+
+/* Scrollable area */
+.game-active .results {
+    height: 440px;
+    overflow-y: auto;
+}
+
+/* Base text color for terminal areas */
+.game-active .search-block,
+.game-active .results,
+.game-active .search-block label,
+.game-active .search-block h2,
+.game-active .search-block .help,
+.game-active form {
+    background: #000 !important;
+    color: #fff !important;
+    font-family: "Courier New", Courier, monospace !important;
+    border-color: #333 !important;
+}
+
+/* Allow children to inherit color but override for specific features */
+.game-active .results {
+    color: #fff;
+}
+
+.game-active .results a,
+.game-active .results .game-action {
+    color: #00ff00 !important;
+    font-weight: bold;
+}
+
+.game-active .terminal-cursor,
+.game-active .search-block label::after {
+    color: #00ff00 !important;
+}
+
+/* ASCII Art / Preformatted text stability */
+.game-active pre {
+    font-family: "Courier New", Courier, monospace !important;
+    line-height: 1.0 !important;
+    margin: 0;
+    white-space: pre;
+    color: #fff !important;
+    background: transparent !important;
+}
+
+/* Voice Controls Styling */
+.voice-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.voice-btn {
+    background: #1a1a1a !important;
+    color: #00ff00 !important;
+    border: 1px solid #333 !important;
+    padding: 2px 8px !important;
+    font-size: 14px !important;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.voice-btn.active {
+    background: #004400 !important;
+    color: #fff !important;
+    border-color: #00ff00 !important;
+}
+
+.voice-btn:hover {
+    background: #222 !important;
+}
+
+/* Accessible Send Button - High Contrast */
+.game-active button {
+    background: #e0e0e0 !important;
+    color: #000 !important;
+    border: 1px solid #fff !important;
+    font-weight: bold;
+    font-family: Arial, sans-serif !important;
+}
+
+.game-active input[type="search"] {
+    background: #111 !important;
+    border: 1px solid #444 !important;
+    color: #fff !important;
+}
+
+/* Links & Cursor */
+.game-active .results a {
+    color: #00ff00 !important;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+.game-active label::after,
+.terminal-cursor::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+}
+
+/* Hide Everything Else */
+.game-active header,
+.game-active hr,
+.game-active .about,
+.game-active .directory,
+.game-active .status,
+.game-active footer,
+.game-active .utility-links,
+.game-active .help {
+    display: none !important;
+}
