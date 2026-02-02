@@ -235,9 +235,16 @@
     </div>
 
     <div class="container" role="main">
+        <!-- Mobile Editor Tabs -->
+        <div class="mobile-editor-tabs" role="tablist" aria-label="Editor tabs">
+            <button class="mobile-editor-tab active" id="htmlTab" data-panel="html" role="tab" aria-selected="true" aria-controls="htmlPanel" tabindex="0">HTML</button>
+            <button class="mobile-editor-tab" id="cssTab" data-panel="css" role="tab" aria-selected="false" aria-controls="cssPanel" tabindex="-1">CSS</button>
+            <button class="mobile-editor-tab" id="jsTab" data-panel="js" role="tab" aria-selected="false" aria-controls="jsPanel" tabindex="-1">JS</button>
+        </div>
+
         <!-- Editors Section -->
         <div class="editors" role="region" aria-label="Code editors">
-            <div class="editor-panel">
+            <div class="editor-panel mobile-active" id="htmlPanel" role="tabpanel" aria-labelledby="htmlTab">
                 <div class="editor-header">
                     <span>HTML</span>
                     <button class="panel-settings-button" id="htmlSettingsBtn" aria-label="HTML panel settings">⚙</button>
@@ -277,7 +284,7 @@
                     </div>
                 </div>
             </div>
-            <div class="editor-panel">
+            <div class="editor-panel" id="cssPanel" role="tabpanel" aria-labelledby="cssTab">
                 <div class="editor-header">
                     <span>CSS</span>
                     <button class="panel-settings-button" id="cssSettingsBtn" aria-label="CSS panel settings">⚙</button>
@@ -320,7 +327,7 @@
                     </div>
                 </div>
             </div>
-            <div class="editor-panel">
+            <div class="editor-panel" id="jsPanel" role="tabpanel" aria-labelledby="jsTab">
                 <div class="editor-header">
                     <span>JavaScript</span>
                     <button class="panel-settings-button" id="jsSettingsBtn" aria-label="JavaScript panel settings">⚙</button>

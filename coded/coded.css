@@ -1164,23 +1164,200 @@ body.share-mode .editors {
     border-top-color: var(--accent-color);
 }
 
-/* Mobile - hide for now */
+/* Mobile responsive */
 @media (max-width: 768px) {
-    body::before {
-        content: "Coded is only available on desktop and tablet devices.";
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        padding: 2rem;
-        background: var(--editor-bg);
-        border: 2px solid var(--editor-border);
-        border-radius: 8px;
-        z-index: 9999;
+    body {
+        height: 100dvh;
+        min-height: -webkit-fill-available;
     }
 
-    .container, header {
+    /* Header adjustments */
+    header {
+        padding: 0.5rem 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    h1 {
+        font-size: 1.25rem;
+    }
+
+    .header-actions {
+        gap: 0.5rem;
+    }
+
+    /* Hide auto-run label on mobile, keep checkbox */
+    .auto-run-toggle label {
+        display: none;
+    }
+
+    .auto-run-toggle {
+        gap: 0;
+    }
+
+    .run-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        height: 36px;
+    }
+
+    .more-options-button {
+        height: 36px;
+        width: 36px;
+    }
+
+    /* Mobile editor tabs */
+    .mobile-editor-tabs {
+        display: flex;
+        background: var(--editor-bg);
+        border-bottom: 2px solid var(--editor-border);
+        padding: 0;
+    }
+
+    .mobile-editor-tab {
+        flex: 1;
+        padding: 0.75rem 0.5rem;
+        background: none;
+        border: none;
+        color: var(--secondary-color);
+        font-family: var(--font-main);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 3px solid transparent;
+        text-align: center;
+    }
+
+    .mobile-editor-tab:hover {
+        color: var(--text-color);
+    }
+
+    .mobile-editor-tab.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+        background: rgba(100, 255, 218, 0.05);
+    }
+
+    /* Editors section - stack and show one at a time */
+    .editors {
+        grid-template-columns: 1fr;
+        height: 45%;
+    }
+
+    .editor-panel {
+        display: none;
+    }
+
+    .editor-panel.mobile-active {
+        display: flex;
+    }
+
+    /* Hide individual editor headers on mobile (tabs replace them) */
+    .editor-panel .editor-header {
+        display: none;
+    }
+
+    /* Preview section adjustments */
+    .preview-section {
+        flex: 1;
+        min-height: 0;
+    }
+
+    .preview-header {
+        padding: 0.5rem 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .preview-actions {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    /* Hide device preview buttons on mobile - not useful */
+    .device-buttons,
+    .viewport-size {
+        display: none;
+    }
+
+    #toggleConsoleBtn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Console panel adjustments */
+    .console-panel {
+        height: 150px;
+    }
+
+    /* Resizer - larger touch target */
+    .resizer {
+        height: 8px;
+    }
+
+    .resizer::before {
+        top: -8px;
+        bottom: -8px;
+    }
+
+    /* Modal adjustments for mobile */
+    .snippets-menu {
+        min-width: 90vw;
+        max-width: 95vw;
+        max-height: 80vh;
+    }
+
+    #findReplacePanel {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+
+    /* Learn panel adjustments */
+    .learn-panel {
+        width: 100%;
+    }
+
+    /* Template selector adjustments */
+    .template-selector {
+        padding: 1rem;
+    }
+
+    .template-selector-title {
+        font-size: 2rem;
+    }
+
+    .template-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .template-card {
+        padding: 1.5rem 1rem;
+    }
+
+    /* Share mode banner */
+    .share-mode-banner {
+        padding: 0.5rem 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .share-mode-info {
+        flex: 1 1 100%;
+    }
+
+    .share-mode-actions {
+        flex: 1 1 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Hide mobile tabs on tablet/desktop */
+@media (min-width: 769px) {
+    .mobile-editor-tabs {
         display: none;
     }
 }
