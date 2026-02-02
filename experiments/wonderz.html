@@ -408,6 +408,121 @@
       const titleEl = document.getElementById('resultsTitle');
       const bodyEl = document.getElementById('resultsBody');
 
+      // Text Adventure Game State
+      const game = {
+        active: false,
+        location: 'field'
+      };
+
+      // Room descriptions
+      const rooms = {
+        field: {
+          description: `You are standing in an open, grassy field. The wind is blowing against you, icy cold. Your skin is starting to feel numb.<br><br>Ahead of you is a thick forest of brambles but you can see an opening.`,
+          exits: { north: 'forest_entrance' }
+        },
+        forest_entrance: {
+          description: `You step through the opening into a dense forest. The brambles scratch at your arms as you push through. It's darker here, the canopy blocking most of the light.<br><br>A narrow path continues north, deeper into the woods. You can go back south to the field.`,
+          exits: { north: 'deep_forest', south: 'field' }
+        },
+        deep_forest: {
+          description: `You've reached a small clearing deep in the forest. An old stone well sits in the center, covered in moss. Strange symbols are carved into its rim.<br><br>The path leads back south. To the east, you notice a faint glow between the trees.`,
+          exits: { south: 'forest_entrance', east: 'glow' }
+        },
+        glow: {
+          description: `You push through the underbrush toward the glow. In a tiny grove, you find a lantern hanging from a branch, still lit after who knows how long.<br><br>There's nothing else here. You can go back west to the clearing.`,
+          exits: { west: 'deep_forest' }
+        }
+      };
+
+      function showRoom() {
+        const room = rooms[game.location];
+        titleEl.textContent = '>';
+
+        // Build list of available directions
+        const dirLabels = {
+          north: 'Go north',
+          south: 'Go south',
+          east: 'Go east',
+          west: 'Go west'
+        };
+
+        let optionsHtml = '<br><br><strong>Where do you go next?</strong><ol style="margin:8px 0 0; padding-left:20px;">';
+        for (const dir of ['north', 'east', 'south', 'west']) {
+          if (room.exits[dir]) {
+            optionsHtml += `<li>${dirLabels[dir]}</li>`;
+          }
+        }
+        optionsHtml += '</ol>';
+
+        bodyEl.innerHTML = room.description + optionsHtml;
+      }
+
+      function handleCommand(cmd) {
+        const command = cmd.toLowerCase().trim();
+
+        // Start the game with "look"
+        if (!game.active && command === 'look') {
+          game.active = true;
+          game.location = 'field';
+          showRoom();
+          return;
+        }
+
+        // If game not active, show normal search behavior
+        if (!game.active) {
+          if (!command) {
+            titleEl.textContent = 'Results';
+            bodyEl.textContent = 'Type a query above.';
+          } else {
+            titleEl.textContent = `Results for "${cmd}"`;
+            bodyEl.innerHTML = `No results found for <strong>${escapeHtml(cmd)}</strong>.`;
+          }
+          return;
+        }
+
+        // Game is active - handle adventure commands
+        const room = rooms[game.location];
+
+        if (command === 'look' || command === 'l') {
+          showRoom();
+          return;
+        }
+
+        // Movement commands
+        const directions = {
+          'north': 'north', 'n': 'north',
+          'south': 'south', 's': 'south',
+          'east': 'east', 'e': 'east',
+          'west': 'west', 'w': 'west',
+          'forward': 'north', 'ahead': 'north',
+          'back': 'south', 'go back': 'south'
+        };
+
+        const dir = directions[command];
+        if (dir && room.exits[dir]) {
+          game.location = room.exits[dir];
+          showRoom();
+          return;
+        }
+
+        if (dir && !room.exits[dir]) {
+          titleEl.textContent = '>';
+          bodyEl.textContent = "You can't go that way.";
+          return;
+        }
+
+        // Help command
+        if (command === 'help' || command === '?') {
+          titleEl.textContent = '>';
+          bodyEl.innerHTML = `<strong>Commands:</strong><br>look - examine your surroundings<br>north/south/east/west (or n/s/e/w) - move in a direction<br>help - show this message`;
+          return;
+        }
+
+        // Unknown command
+        titleEl.textContent = '>';
+        bodyEl.textContent = `I don't understand "${cmd}". Type "help" for commands.`;
+      }
+
       function escapeHtml(str) {
         return str.replace(/[&<>"']/g, (c) => ({
           '&': '&amp;',
@@ -421,16 +536,8 @@
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         const raw = (input.value || '').trim();
-
-        if (!raw) {
-          titleEl.textContent = 'Results';
-          bodyEl.textContent = 'Type a query above.';
-          input.focus();
-          return;
-        }
-
-        titleEl.textContent = `Results for "${raw}"`;
-        bodyEl.innerHTML = `No results found for <strong>${escapeHtml(raw)}</strong>.`;
+        handleCommand(raw);
+        input.value = '';
         input.focus();
       });
     })();
