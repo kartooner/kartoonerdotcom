@@ -2311,3 +2311,93 @@ ${js}
                 }
             });
         });
+
+        // Mobile editor tabs
+        const mobileEditorTabs = document.querySelectorAll('.mobile-editor-tab');
+        const editorPanels = {
+            html: document.getElementById('htmlPanel'),
+            css: document.getElementById('cssPanel'),
+            js: document.getElementById('jsPanel')
+        };
+
+        function switchMobileTab(panelName) {
+            // Update tab states and tabindex (ADA compliance - roving tabindex)
+            mobileEditorTabs.forEach(tab => {
+                const isActive = tab.dataset.panel === panelName;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                tab.setAttribute('tabindex', isActive ? '0' : '-1');
+            });
+
+            // Update panel visibility
+            Object.entries(editorPanels).forEach(([name, panel]) => {
+                if (panel) {
+                    panel.classList.toggle('mobile-active', name === panelName);
+                }
+            });
+
+            // Announce tab change to screen readers
+            if (window.announceToScreenReader) {
+                const tabNames = { html: 'HTML', css: 'CSS', js: 'JavaScript' };
+                window.announceToScreenReader(`${tabNames[panelName]} editor selected`);
+            }
+        }
+
+        mobileEditorTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                switchMobileTab(tab.dataset.panel);
+            });
+
+            // Keyboard navigation for tabs (ADA compliance)
+            tab.addEventListener('keydown', (e) => {
+                const tabs = Array.from(mobileEditorTabs);
+                const currentIndex = tabs.indexOf(tab);
+                let nextIndex;
+
+                switch (e.key) {
+                    case 'ArrowLeft':
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        nextIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+                        tabs[nextIndex].focus();
+                        switchMobileTab(tabs[nextIndex].dataset.panel);
+                        break;
+                    case 'ArrowRight':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+                        tabs[nextIndex].focus();
+                        switchMobileTab(tabs[nextIndex].dataset.panel);
+                        break;
+                    case 'Home':
+                        e.preventDefault();
+                        tabs[0].focus();
+                        switchMobileTab(tabs[0].dataset.panel);
+                        break;
+                    case 'End':
+                        e.preventDefault();
+                        tabs[tabs.length - 1].focus();
+                        switchMobileTab(tabs[tabs.length - 1].dataset.panel);
+                        break;
+                }
+            });
+        });
+
+        // Handle window resize - ensure proper panel visibility
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            const currentWidth = window.innerWidth;
+
+            // Transitioning from desktop to mobile
+            if (lastWidth > 768 && currentWidth <= 768) {
+                // Make sure HTML panel is visible by default on mobile
+                const activeTab = document.querySelector('.mobile-editor-tab.active');
+                if (activeTab) {
+                    switchMobileTab(activeTab.dataset.panel);
+                } else {
+                    switchMobileTab('html');
+                }
+            }
+
+            lastWidth = currentWidth;
+        });
