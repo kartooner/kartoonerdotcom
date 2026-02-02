@@ -1449,6 +1449,15 @@ textarea:focus-visible,
         max-width: 90vw;
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        pointer-events: auto;
+    }
+
+    /* Ensure template/library modals appear above panel settings */
+    .snippets-menu[style*="display: block"],
+    .snippets-menu[style*="display:block"],
+    #templatesMenu,
+    #librariesMenu {
+        z-index: 2002 !important;
     }
 
     /* Preview section adjustments */
