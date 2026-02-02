@@ -437,7 +437,24 @@
       function showRoom() {
         const room = rooms[game.location];
         titleEl.textContent = '>';
-        bodyEl.innerHTML = room.description;
+
+        // Build list of available directions
+        const dirLabels = {
+          north: 'Go north',
+          south: 'Go south',
+          east: 'Go east',
+          west: 'Go west'
+        };
+
+        let optionsHtml = '<br><br><strong>Where do you go next?</strong><ol style="margin:8px 0 0; padding-left:20px;">';
+        for (const dir of ['north', 'east', 'south', 'west']) {
+          if (room.exits[dir]) {
+            optionsHtml += `<li>${dirLabels[dir]}</li>`;
+          }
+        }
+        optionsHtml += '</ol>';
+
+        bodyEl.innerHTML = room.description + optionsHtml;
       }
 
       function handleCommand(cmd) {
