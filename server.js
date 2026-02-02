@@ -132,6 +132,13 @@ const server = http.createServer((req, res) => {
   if (pathname === '/') {
     pathname = '/index.html';
   }
+
+  // Redirect /wonderz to /experiments/wonderz
+  if (pathname === '/wonderz' || pathname === '/wonderz/') {
+    res.writeHead(301, { 'Location': '/experiments/wonderz' });
+    res.end();
+    return;
+  }
   
   // Handle clean URLs - if no extension, try .html
   if (!path.extname(pathname)) {
