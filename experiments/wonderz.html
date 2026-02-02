@@ -446,15 +446,24 @@
           west: 'Go west'
         };
 
-        let optionsHtml = '<br><br><strong>Where do you go next?</strong><ol style="margin:8px 0 0; padding-left:20px;">';
+        let optionsHtml = '<br><br><strong>What next?</strong><ol style="margin:8px 0 0; padding-left:20px;">';
         for (const dir of ['north', 'east', 'south', 'west']) {
           if (room.exits[dir]) {
-            optionsHtml += `<li>${dirLabels[dir]}</li>`;
+            optionsHtml += `<li><a href="#" class="game-action" data-direction="${dir}">${dirLabels[dir]}</a></li>`;
           }
         }
         optionsHtml += '</ol>';
 
         bodyEl.innerHTML = room.description + optionsHtml;
+
+        // Attach click handlers to direction links
+        bodyEl.querySelectorAll('.game-action').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const dir = link.getAttribute('data-direction');
+            handleCommand(dir);
+          });
+        });
       }
 
       function handleCommand(cmd) {
