@@ -2401,3 +2401,39 @@ ${js}
 
             lastWidth = currentWidth;
         });
+
+        // Mobile panel settings button - opens settings for active editor
+        const mobilePanelSettingsBtn = document.getElementById('mobilePanelSettingsBtn');
+        if (mobilePanelSettingsBtn) {
+            mobilePanelSettingsBtn.addEventListener('click', () => {
+                const activeTab = document.querySelector('.mobile-editor-tab.active');
+                if (!activeTab) return;
+
+                const panelName = activeTab.dataset.panel;
+                const settingsMenuMap = {
+                    html: htmlSettingsMenu,
+                    css: cssSettingsMenu,
+                    js: jsSettingsMenu
+                };
+
+                // Close any other open menus
+                Object.values(settingsMenuMap).forEach(menu => menu.classList.remove('active'));
+
+                // Open the menu for the active panel
+                const settingsMenu = settingsMenuMap[panelName];
+                if (settingsMenu) {
+                    settingsMenu.classList.add('active');
+                    // Show overlay on mobile
+                    if (window.innerWidth <= 768) {
+                        snippetsOverlay.style.display = 'block';
+                    }
+                }
+            });
+
+            // Close panel settings when overlay is clicked (mobile)
+            snippetsOverlay.addEventListener('click', () => {
+                htmlSettingsMenu.classList.remove('active');
+                cssSettingsMenu.classList.remove('active');
+                jsSettingsMenu.classList.remove('active');
+            });
+        }

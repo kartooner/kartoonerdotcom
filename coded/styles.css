@@ -1396,6 +1396,24 @@ textarea:focus-visible,
         background: rgba(100, 255, 218, 0.05);
     }
 
+    /* Mobile panel settings button */
+    .mobile-panel-settings-btn {
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        border-left: 1px solid var(--editor-border);
+        color: var(--secondary-color);
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .mobile-panel-settings-btn:hover,
+    .mobile-panel-settings-btn:focus {
+        color: var(--accent-color);
+        background: rgba(100, 255, 218, 0.05);
+    }
+
     /* Editors section - stack and show one at a time */
     .editors {
         grid-template-columns: 1fr;
@@ -1413,6 +1431,20 @@ textarea:focus-visible,
     /* Hide individual editor headers on mobile (tabs replace them) */
     .editor-panel .editor-header {
         display: none;
+    }
+
+    /* But allow panel settings menus to appear as fixed modals on mobile */
+    .panel-settings-menu.active {
+        display: block !important;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2001;
+        min-width: 250px;
+        max-width: 90vw;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
     /* Preview section adjustments */
