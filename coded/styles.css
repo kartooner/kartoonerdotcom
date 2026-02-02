@@ -1429,13 +1429,17 @@ textarea:focus-visible,
     }
 
     /* Hide individual editor headers on mobile (tabs replace them) */
+    /* Use visibility/size instead of display:none so menus can still render */
     .editor-panel .editor-header {
-        display: none;
+        position: absolute;
+        height: 0;
+        overflow: visible;
+        visibility: hidden;
     }
 
-    /* But allow panel settings menus to appear as fixed modals on mobile */
-    .panel-settings-menu.active {
-        display: block !important;
+    /* Panel settings menus appear as fixed modals on mobile */
+    .editor-panel .panel-settings-menu.active {
+        visibility: visible;
         position: fixed;
         top: 50%;
         left: 50%;
