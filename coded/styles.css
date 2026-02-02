@@ -1439,6 +1439,7 @@ textarea:focus-visible,
 
     /* Panel settings menus appear as fixed modals on mobile */
     .editor-panel .panel-settings-menu.active {
+        display: block !important;
         visibility: visible;
         position: fixed;
         top: 50%;
