@@ -364,7 +364,8 @@ h1 {
     flex-direction: column;
 }
 
-.snippets-menu[style*="display: block"] {
+.snippets-menu[style*="display: block"],
+.snippets-menu[style*="display:block"] {
     display: flex !important;
 }
 
@@ -1456,9 +1457,17 @@ textarea:focus-visible,
     /* Ensure template/library modals appear above panel settings */
     .snippets-menu[style*="display: block"],
     .snippets-menu[style*="display:block"],
-    #templatesMenu,
-    #librariesMenu {
+    #templatesMenu[style*="display: block"],
+    #templatesMenu[style*="display:block"],
+    #librariesMenu[style*="display: block"],
+    #librariesMenu[style*="display:block"] {
+        display: flex !important;
+        visibility: visible !important;
         z-index: 2002 !important;
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }
 
     /* Preview section adjustments */
