@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time sync</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            margin-bottom: 30px;
+            animation: fadeIn 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 600px;
+        }
+
+        /* OS Toggle */
+        .os-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            padding: 4px;
+            gap: 4px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .os-option {
+            padding: 12px 32px;
+            border-radius: 50px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .os-option.active {
+            background: white;
+            color: #1e3c72;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Demo Controls */
+        .demo-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .control-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .scenario-select {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .scenario-select:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .scenario-select option {
+            background: #2a2a2a;
+            color: white;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 6px 16px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .speed-indicator {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Phone Container */
+        .phone-wrapper {
+            perspective: 1000px;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .phone-container {
+            width: 390px;
+            height: 844px;
+            background: #1a1a1a;
+            border-radius: 55px;
+            padding: 14px;
+            box-shadow:
+                0 0 0 2px #2a2a2a,
+                0 0 0 10px #1a1a1a,
+                0 30px 60px rgba(0, 0, 0, 0.4),
+                inset 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.ios .phone-container {
+            background: #1d1d1f;
+        }
+
+        body.android .phone-container {
+            background: #202124;
+            border-radius: 45px;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            border-radius: 45px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #000;
+        }
+
+        body.android .phone-screen {
+            border-radius: 35px;
+        }
+
+        /* iOS Dynamic Island */
+        .dynamic-island {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 126px;
+            height: 37px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        body.android .dynamic-island {
+            width: 80px;
+            height: 30px;
+            top: 16px;
+            border-radius: 15px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 54px;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-top: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            position: relative;
+            z-index: 999;
+        }
+
+        body.ios .status-bar {
+            color: #fff;
+        }
+
+        body.android .status-bar {
+            color: #e8eaed;
+            padding-top: 10px;
+            font-size: 13px;
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.ios .chat-header {
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 8px 16px 12px;
+            border-bottom: 0.5px solid rgba(84, 84, 88, 0.6);
+        }
+
+        body.android .chat-header {
+            background: #1f1f1f;
+            padding: 12px 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .back-button {
+            font-size: 20px;
+            color: #0a84ff;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.android .back-button {
+            color: #8ab4f8;
+            font-size: 24px;
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        body.android .contact-name {
+            font-size: 18px;
+            color: #e8eaed;
+        }
+
+        .contact-status {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+
+        body.android .contact-status {
+            font-size: 13px;
+            color: #9aa0a6;
+        }
+
+        /* Messages Container */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        body.ios .messages-container {
+            background: #000;
+        }
+
+        body.android .messages-container {
+            background: #0d1117;
+        }
+
+        .messages-container::-webkit-scrollbar {
+            width: 0;
+        }
+
+        /* Date Divider */
+        .date-divider {
+            text-align: center;
+            color: #8e8e93;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        body.android .date-divider {
+            color: #9aa0a6;
+            font-size: 13px;
+        }
+
+        /* Message Group */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+            animation: messageSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation-fill-mode: both;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+        }
+
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 16px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        /* iOS Message Bubbles */
+        body.ios .message.received .message-bubble {
+            background: #3a3a3c;
+            color: #fff;
+            border-bottom-left-radius: 4px;
+        }
+
+        body.ios .message.sent .message-bubble {
+            background: #0a84ff;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Android Message Bubbles */
+        body.android .message.received .message-bubble {
+            background: #303134;
+            color: #e8eaed;
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        body.android .message.sent .message-bubble {
+            background: #8ab4f8;
+            color: #000;
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            margin-top: 4px;
+            opacity: 0.6;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        body.ios .message.received .message-time {
+            color: #8e8e93;
+            align-self: flex-start;
+        }
+
+        body.ios .message.sent .message-time {
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        body.android .message.received .message-time {
+            color: #9aa0a6;
+            align-self: flex-start;
+        }
+
+        body.android .message.sent .message-time {
+            color: #000;
+            align-self: flex-end;
+        }
+
+        /* Read Receipt & Status */
+        .message-status {
+            font-size: 10px;
+            margin-left: 4px;
+            font-weight: 500;
+        }
+
+        body.ios .message.sent .message-status {
+            color: #0a84ff;
+        }
+
+        body.android .message.sent .message-status {
+            color: #8ab4f8;
+        }
+
+        /* Delivered/Read animation */
+        @keyframes statusAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .message-status {
+            animation: statusAppear 0.3s ease-out 0.5s both;
+        }
+
+        /* Quick Actions */
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-badge.success {
+            background: rgba(48, 209, 88, 0.15);
+            color: #30d158;
+        }
+
+        .status-badge.warning {
+            background: rgba(255, 159, 10, 0.15);
+            color: #ff9f0a;
+        }
+
+        .status-badge.error {
+            background: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 14px;
+            border-radius: 18px;
+            width: fit-content;
+        }
+
+        body.ios .typing-indicator {
+            background: #3a3a3c;
+        }
+
+        body.android .typing-indicator {
+            background: #303134;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #8e8e93;
+            border-radius: 50%;
+            animation: typing 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* Input Area */
+        .input-container {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        body.ios .input-container {
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 8px 12px 34px;
+            border-top: 0.5px solid rgba(84, 84, 88, 0.6);
+        }
+
+        body.android .input-container {
+            background: #1f1f1f;
+            padding: 12px 12px 24px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-action-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8e8e93;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        body.android .input-action-btn {
+            color: #9aa0a6;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 8px 36px 8px 12px;
+            border-radius: 20px;
+            border: none;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            max-height: 100px;
+            transition: all 0.2s ease;
+        }
+
+        body.ios .message-input {
+            background: #2c2c2e;
+            color: #fff;
+        }
+
+        body.ios .message-input::placeholder {
+            color: #8e8e93;
+        }
+
+        body.ios .message-input:focus {
+            outline: none;
+            background: #3a3a3c;
+        }
+
+        body.android .message-input {
+            background: #303134;
+            color: #e8eaed;
+        }
+
+        body.android .message-input::placeholder {
+            color: #9aa0a6;
+        }
+
+        body.android .message-input:focus {
+            outline: none;
+            background: #3c4043;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        body.ios .send-button {
+            background: #0a84ff;
+            color: #fff;
+        }
+
+        body.ios .send-button:hover {
+            background: #0077ed;
+            transform: scale(1.05);
+        }
+
+        body.ios .send-button:active {
+            transform: scale(0.95);
+        }
+
+        body.android .send-button {
+            background: #8ab4f8;
+            color: #000;
+        }
+
+        body.android .send-button:hover {
+            background: #aac8ff;
+            transform: scale(1.05);
+        }
+
+        body.android .send-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Highlight text */
+        .highlight {
+            font-weight: 600;
+        }
+
+        body.ios .highlight {
+            color: #0a84ff;
+        }
+
+        body.android .highlight {
+            color: #8ab4f8;
+        }
+    </style>
+</head>
+
+<body class="ios">
+    <div class="control-panel">
+        <div class="os-toggle">
+            <button class="os-option active" data-os="ios">iOS</button>
+            <button class="os-option" data-os="android">Android</button>
+        </div>
+
+        <div class="demo-controls">
+            <div class="control-group">
+                <span class="control-label">Scenario</span>
+                <select class="scenario-select" id="scenarioSelect">
+                    <option value="random">Random</option>
+                    <option value="0">Missing Punch Out</option>
+                    <option value="1">Extended Break</option>
+                    <option value="2">Missing Punch In</option>
+                    <option value="3">Early Arrival</option>
+                    <option value="4">Missing Meal Break</option>
+                    <option value="5">Duplicate Punches</option>
+                    <option value="6">Overtime Approval</option>
+                    <option value="7">Location Verification</option>
+                    <option value="8">Unscheduled Day</option>
+                    <option value="9">PTO Confusion</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Speed</span>
+                <button class="control-btn" id="speedDown">−</button>
+                <span class="speed-indicator" id="speedDisplay">1×</span>
+                <button class="control-btn" id="speedUp">+</button>
+            </div>
+
+            <button class="control-btn" id="resetBtn">
+                <span>↻</span> Reset
+            </button>
+        </div>
+    </div>
+
+    <div class="phone-wrapper">
+        <div class="phone-container">
+            <div class="phone-screen">
+                <div class="dynamic-island"></div>
+
+                <div class="status-bar">
+                    <div class="status-left">
+                        <span>9:41</span>
+                    </div>
+                    <div class="status-right">
+                        <span>⚡︎</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <div class="chat-header">
+                    <div class="back-button">‹</div>
+                    <div class="contact-avatar">TS</div>
+                    <div class="contact-info">
+                        <div class="contact-name">TimeSync</div>
+                        <div class="contact-status">Active now</div>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <div class="date-divider">Today</div>
+                </div>
+
+                <div class="input-container">
+                    <div class="input-actions">
+                        <button class="input-action-btn">+</button>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea class="message-input" id="messageInput" placeholder="iMessage" rows="1"></textarea>
+                        <button class="send-button" id="sendButton">
+                            ↑
+                        </button>
+                    </div>
+                    <button class="input-action-btn">🎤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive error handler to catch and log any errors
+        window.addEventListener('error', function (event) {
+            console.error('=== ERROR CAUGHT ===');
+            console.error('Message:', event.message);
+            console.error('Filename:', event.filename);
+            console.error('Line:', event.lineno, 'Column:', event.colno);
+            console.error('Error object:', event.error);
+            console.error('Stack:', event.error?.stack);
+            // Don't suppress the error
+            return false;
+        });
+
+        window.addEventListener('unhandledrejection', function (event) {
+            console.error('=== UNHANDLED PROMISE REJECTION ===');
+            console.error('Reason:', event.reason);
+        });
+
+        // OS Toggle
+        const body = document.body;
+        const osOptions = document.querySelectorAll('.os-option');
+        const messageInput = document.getElementById('messageInput');
+
+        osOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                osOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+
+                const os = option.dataset.os;
+                body.className = os;
+
+                // Update placeholder
+                messageInput.placeholder = os === 'ios' ? 'iMessage' : 'Message';
+            });
+        });
+
+        // Message System
+        const messagesContainer = document.getElementById('messagesContainer');
+        const sendButton = document.getElementById('sendButton');
+        let conversationState = 'initial';
+        let awaitingResponse = false;
+        let use24HourTime = false; // Can be toggled based on user preference
+        let messageStartTime = null; // Track when conversation started
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        function getRealisticTime(isSystemMessage = false) {
+            const now = new Date();
+
+            // For first system message, set realistic context
+            if (isSystemMessage && !messageStartTime) {
+                // If it's about yesterday's punch, set time to next morning around 8-9am
+                const morning = new Date();
+                morning.setHours(8, 30 + Math.floor(Math.random() * 30), 0, 0);
+                messageStartTime = morning;
+                return formatTime(morning);
+            }
+
+            // If we have a conversation start time, increment from there
+            if (messageStartTime) {
+                // Add 1-3 minutes for each message exchange
+                messageStartTime = new Date(messageStartTime.getTime() + (1 + Math.random() * 2) * 60000);
+                return formatTime(messageStartTime);
+            }
+
+            return formatTime(now);
+        }
+
+        function formatTime(date) {
+            let hours = date.getHours();
+            const minutes = date.getMinutes();
+
+            if (use24HourTime) {
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            } else {
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12; // Convert to 12-hour format
+                const minuteStr = minutes.toString().padStart(2, '0');
+                return `${hours}:${minuteStr} ${ampm}`;
+            }
+        }
+
+        function getCurrentTime() {
+            return getRealisticTime(false);
+        }
+
+        function createMessage(text, type, options = {}) {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.innerHTML = text;
+
+            const time = document.createElement('div');
+            time.className = 'message-time';
+
+            // Use realistic timing for system messages
+            if (type === 'received') {
+                time.textContent = getRealisticTime(true);
+            } else {
+                time.textContent = getCurrentTime();
+            }
+
+            // Add read receipt for sent messages
+            if (type === 'sent') {
+                const status = document.createElement('span');
+                status.className = 'message-status';
+                status.textContent = 'Read';
+                time.appendChild(status);
+            }
+
+            message.appendChild(bubble);
+            message.appendChild(time);
+
+            if (options.status) {
+                const badge = document.createElement('div');
+                badge.className = `status-badge ${options.status}`;
+                badge.innerHTML = `<span>${options.statusIcon || '✓'}</span> ${options.statusText}`;
+                message.appendChild(badge);
+            }
+
+            return message;
+        }
+
+        function addMessage(text, type, options = {}) {
+            const message = createMessage(text, type, options);
+            messagesContainer.appendChild(message);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Add manager notification for certain scenarios
+            if (options.notifyManager) {
+                setTimeout(() => {
+                    const notification = document.createElement('div');
+                    notification.className = 'message received';
+                    notification.style.opacity = '0.7';
+
+                    const notifBubble = document.createElement('div');
+                    notifBubble.className = 'message-bubble';
+                    notifBubble.style.fontSize = '14px';
+                    notifBubble.style.fontStyle = 'italic';
+                    notifBubble.innerHTML = `📧 ${options.notifyManager}`;
+
+                    notification.appendChild(notifBubble);
+                    messagesContainer.appendChild(notification);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 800 / typingSpeed);
+            }
+        }
+
+        function showTyping() {
+            const typing = document.createElement('div');
+            typing.className = 'message received';
+            typing.id = 'typing-indicator';
+
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+
+            typing.appendChild(indicator);
+            messagesContainer.appendChild(typing);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function handleQuickAction(action) {
+            sendMessage(action);
+        }
+
+        function parseUserInput(text) {
+            // Normalize the input
+            const normalized = text.toLowerCase().trim();
+
+            // Remove common punctuation and extra spaces
+            const cleaned = normalized.replace(/[.,!?;]/g, '').replace(/\s+/g, ' ');
+
+            return {
+                original: text,
+                normalized: normalized,
+                cleaned: cleaned,
+
+                // Check for affirmative responses
+                isYes: function () {
+                    const yesPatterns = [
+                        /^y$/,
+                        /^ye$/,
+                        /^yea$/,
+                        /^yeah$/,
+                        /^yep$/,
+                        /^yes$/,
+                        /^yup$/,
+                        /^sure$/,
+                        /^ok$/,
+                        /^okay$/,
+                        /^k$/,
+                        /^correct$/,
+                        /^right$/,
+                        /^thats right$/,
+                        /^yessir$/,
+                        /^yesmaam$/,
+                        /add it/,
+                        /do it/,
+                        /go ahead/,
+                        /sounds good/,
+                        /looks good/
+                    ];
+                    return yesPatterns.some(pattern => pattern.test(this.cleaned));
+                },
+
+                // Check for negative responses
+                isNo: function () {
+                    const noPatterns = [
+                        /^n$/,
+                        /^no$/,
+                        /^nope$/,
+                        /^nah$/,
+                        /^not/,
+                        /different/,
+                        /another/,
+                        /wrong/,
+                        /incorrect/
+                    ];
+                    return noPatterns.some(pattern => pattern.test(this.cleaned));
+                },
+
+                // Extract time even with no spaces or weird formatting
+                extractTime: function () {
+                    // Match various time formats
+                    const patterns = [
+                        // Standard: 5:30 PM, 5:30pm, 5:30 pm
+                        /(\d{1,2}):(\d{2})\s*(am|pm|a|p)/i,
+                        // No colon: 530pm, 530 pm
+                        /(\d{1,2})(\d{2})\s*(am|pm|a|p)/i,
+                        // Just hour: 5pm, 5 pm
+                        /(\d{1,2})\s*(am|pm|a|p)/i,
+                        // 24 hour: 17:30, 1730
+                        /(\d{2}):?(\d{2})/
+                    ];
+
+                    for (let pattern of patterns) {
+                        const match = this.cleaned.match(pattern);
+                        if (match) {
+                            let hours = parseInt(match[1]);
+                            let minutes = match[2] ? parseInt(match[2]) : 0;
+                            let period = match[3] ? match[3].toLowerCase() : '';
+
+                            // Handle single letter period
+                            if (period === 'p') period = 'pm';
+                            if (period === 'a') period = 'am';
+
+                            // Format nicely
+                            if (period) {
+                                return `${hours}:${minutes.toString().padStart(2, '0')} ${period.toUpperCase()}`;
+                            } else {
+                                // 24 hour format
+                                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                            }
+                        }
+                    }
+
+                    // Try natural language
+                    if (/noon/.test(this.cleaned)) return '12:00 PM';
+                    if (/midnight/.test(this.cleaned)) return '12:00 AM';
+
+                    return null;
+                },
+
+                // Check for common phrases
+                contains: function (words) {
+                    if (typeof words === 'string') words = [words];
+                    return words.some(word => this.cleaned.includes(word.toLowerCase()));
+                },
+
+                // Check if it's about not working
+                indicatesDidntWork: function () {
+                    return this.contains(['didnt work', 'didn\'t work', 'wasnt there', 'wasn\'t there',
+                        'not work', 'day off', 'off that day', 'called out', 'called in']);
+                },
+
+                // Check if they don't remember
+                indicatesUncertain: function () {
+                    return this.contains(['dont remember', 'don\'t remember', 'cant remember',
+                        'can\'t remember', 'not sure', 'dont know', 'don\'t know',
+                        'forgot', 'unsure', 'idk', 'dunno']);
+                },
+
+                // Extract names (for manager approval, etc)
+                extractName: function () {
+                    // Simple name extraction - capitalized words
+                    const words = this.original.split(/\s+/);
+                    const capitalizedWords = words.filter(w => /^[A-Z][a-z]+/.test(w));
+                    return capitalizedWords.join(' ') || this.original.trim();
+                }
+            };
+        }
+
+        function processResponse(userMessage) {
+            const input = parseUserInput(userMessage);
+
+            switch (conversationState) {
+                case 'initial':
+                    if (input.isYes() || input.contains('add it')) {
+                        completeScenario(
+                            'Perfect! I\'ve added your punch out at <span class="highlight">5:00 PM</span> on Feb 2. Your timecard is now complete.',
+                            'success',
+                            'Punch Corrected'
+                        );
+                    } else if (input.isNo() || input.contains('different')) {
+                        addMessage(
+                            'No problem! What time did you actually punch out? You can say something like "4:30 PM" or "I left at 4:45".',
+                            'received'
+                        );
+                        conversationState = 'awaiting_time';
+                    } else if (input.contains('didn\'t work') || input.contains('not work')) {
+                        completeScenario(
+                            'Understood. I\'ve noted that you didn\'t work on Feb 2. No punch correction needed.',
+                            'success',
+                            'Resolved'
+                        );
+                    } else {
+                        addMessage(
+                            'I\'m not sure I understood that. Could you clarify: Did you work on Feb 2, and if so, what time did you punch out?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_time':
+                    const timeMatch = userMessage.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+                    if (timeMatch) {
+                        const time = timeMatch[0];
+                        completeScenario(
+                            `Got it! I've recorded your punch out at <span class="highlight">${time}</span>. Your timecard is updated.`,
+                            'success',
+                            'Punch Corrected'
+                        );
+                    } else if (input.contains('forgot') || input.contains('don\'t remember')) {
+                        completeScenario(
+                            'That\'s okay! I\'ve flagged this for your manager to review.',
+                            'warning',
+                            'Flagged for Review'
+                        );
+                        setTimeout(() => {
+                            addMessage(
+                                'Your manager will reach out to confirm your hours.',
+                                'received',
+                                { notifyManager: 'Notification sent to manager about missing punch time' }
+                            );
+                        }, 1000 / typingSpeed);
+                    } else {
+                        addMessage(
+                            'I didn\'t catch a valid time. Please specify the time like "4:30 PM" or "5:15".',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'break_scenario':
+                    if (input.contains('forgot') || input.contains('end break')) {
+                        addMessage(
+                            'No worries! What time did you actually end your break?',
+                            'received'
+                        );
+                        conversationState = 'awaiting_break_time';
+                    } else if (input.contains('approved') || input.contains('extended')) {
+                        addMessage(
+                            'Got it. Who approved the extended break? I\'ll note this for payroll.',
+                            'received'
+                        );
+                        conversationState = 'awaiting_approval';
+                    } else if (input.contains('system') || input.contains('error')) {
+                        completeScenario(
+                            'Thanks for letting me know! I\'ve logged this as a system error. IT will investigate. Your break is corrected to 30 minutes.',
+                            'success',
+                            'System Error Logged'
+                        );
+                    } else {
+                        addMessage(
+                            'I\'m not sure what happened. Could you clarify?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_break_time':
+                    const breakTime = userMessage.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+                    if (breakTime) {
+                        const time = breakTime[0];
+                        completeScenario(
+                            `Perfect! I've updated your break end time to <span class="highlight">${time}</span>. Your total break is now 30 minutes.`,
+                            'success',
+                            'Break Corrected'
+                        );
+                    } else {
+                        addMessage(
+                            'Please provide a valid time like "12:30 PM" or "1:00".',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_approval':
+                    completeScenario(
+                        `Thanks! I've noted that <span class="highlight">${userMessage}</span> approved your extended break. This will be reflected in your timecard.`,
+                        'success',
+                        'Approved Break Logged'
+                    );
+                    break;
+
+                case 'punch_in_scenario':
+                    if (input.isYes() || input.contains('8:00')) {
+                        completeScenario(
+                            'Done! I\'ve added your punch in at <span class="highlight">8:00 AM</span>. You\'re all set.',
+                            'success',
+                            'Punch Added'
+                        );
+                    } else if (input.contains('different')) {
+                        addMessage(
+                            'What time did you actually arrive? Just let me know like "8:15 AM" or "7:45".',
+                            'received'
+                        );
+                        conversationState = 'awaiting_punch_in_time';
+                    } else if (input.contains('late') || input.contains('running')) {
+                        addMessage(
+                            'No problem. What time do you think you\'ll arrive? I can add the punch then.',
+                            'received'
+                        );
+                        conversationState = 'awaiting_arrival_time';
+                    } else {
+                        addMessage(
+                            'Not sure what you need. Should I add 8:00 AM or a different time?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_punch_in_time':
+                case 'awaiting_arrival_time':
+                    const punchTime = userMessage.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+                    if (punchTime) {
+                        const time = punchTime[0];
+                        completeScenario(
+                            `Got it! I've recorded your punch in at <span class="highlight">${time}</span>.`,
+                            'success',
+                            'Punch Added'
+                        );
+                    } else {
+                        addMessage(
+                            'I need a time like "8:30 AM" or "9:00" to proceed.',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'early_punch_scenario':
+                    if (input.contains('approved') || input.contains('early')) {
+                        addMessage(
+                            'Great! Who approved your early start? I\'ll document this.',
+                            'received'
+                        );
+                        conversationState = 'awaiting_early_approval';
+                    } else if (input.contains('adjust') || input.contains('8:00')) {
+                        completeScenario(
+                            'Understood. I\'ve adjusted your punch in to <span class="highlight">8:00 AM</span> to match your scheduled start time.',
+                            'success',
+                            'Punch Adjusted'
+                        );
+                    } else if (input.contains('manager') || input.contains('talk')) {
+                        addMessage(
+                            'No problem. I\'ve flagged this for your manager to review.',
+                            'received',
+                            { status: 'warning', statusIcon: '⚠', statusText: 'Manager Review Required', notifyManager: 'Your manager has been notified about the early punch' }
+                        );
+                        setTimeout(() => {
+                            addMessage(
+                                'They\'ll reach out to discuss.',
+                                'received'
+                            );
+                        }, 1000 / typingSpeed);
+                        conversationState = 'complete';
+
+                        setTimeout(() => {
+                            conversationState = 'ended';
+                            setTimeout(() => {
+                                const dateDiv = messagesContainer.querySelector('.date-divider');
+                                messagesContainer.innerHTML = '';
+                                messagesContainer.appendChild(dateDiv);
+                                setTimeout(() => startNewScenario(), 500 / typingSpeed);
+                            }, 3000 / typingSpeed);
+                        }, 1000 / typingSpeed);
+                    } else {
+                        addMessage(
+                            'Should I keep the early punch or adjust to your scheduled time?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_early_approval':
+                    completeScenario(
+                        `Perfect! I've noted that <span class="highlight">${userMessage}</span> approved your early start. Your 7:45 AM punch is valid.`,
+                        'success',
+                        'Early Start Approved'
+                    );
+                    break;
+
+                case 'meal_break_scenario':
+                    if (input.isYes() || input.contains('forgot')) {
+                        addMessage(
+                            'What time did you start and end your meal break?',
+                            'received'
+                        );
+                        conversationState = 'awaiting_meal_times';
+                    } else if (input.isNo() || input.contains('no break')) {
+                        addMessage(
+                            'I understand. I\'ve flagged this shift for compliance review.',
+                            'received',
+                            { status: 'warning', statusIcon: '⚠', statusText: 'Compliance Review', notifyManager: 'Your manager and HR have been notified about the missed meal break' }
+                        );
+                        setTimeout(() => {
+                            addMessage(
+                                'Please note: working 10+ hours requires a meal break in most states.',
+                                'received'
+                            );
+                        }, 1200 / typingSpeed);
+                        conversationState = 'complete';
+
+                        setTimeout(() => {
+                            conversationState = 'ended';
+                            setTimeout(() => {
+                                const dateDiv = messagesContainer.querySelector('.date-divider');
+                                messagesContainer.innerHTML = '';
+                                messagesContainer.appendChild(dateDiv);
+                                setTimeout(() => startNewScenario(), 500 / typingSpeed);
+                            }, 3000 / typingSpeed);
+                        }, 1000 / typingSpeed);
+                    } else if (input.contains('system') || input.contains('error')) {
+                        completeScenario(
+                            'Thanks for reporting! I\'ve logged this as a system error and IT will investigate.',
+                            'success',
+                            'Error Logged'
+                        );
+                    } else {
+                        addMessage(
+                            'Did you take a meal break that day?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_meal_times':
+                    const mealTimes = userMessage.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/gi);
+                    if (mealTimes && mealTimes.length >= 2) {
+                        completeScenario(
+                            `Perfect! I've added your meal break from <span class="highlight">${mealTimes[0]}</span> to <span class="highlight">${mealTimes[1]}</span>.`,
+                            'success',
+                            'Meal Break Added'
+                        );
+                    } else if (mealTimes && mealTimes.length === 1) {
+                        addMessage(
+                            `I got the start time (${mealTimes[0]}). What time did your break end?`,
+                            'received'
+                        );
+                    } else {
+                        addMessage(
+                            'Please provide both start and end times, like "12:00 PM to 12:30 PM" or "started at noon, ended at 12:30".',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'duplicate_punch_scenario':
+                    const enteredTime = input.extractTime();
+                    console.log('Debug - User typed:', userMessage);
+                    console.log('Debug - Extracted time:', enteredTime);
+
+                    if (enteredTime) {
+                        // Check if it matches either of the duplicates
+                        if (enteredTime.includes('5:00')) {
+                            completeScenario(
+                                'Got it! I kept <span class="highlight">5:00 PM</span> and removed the duplicate at 5:02 PM.',
+                                'success',
+                                'Duplicate Removed'
+                            );
+                        } else if (enteredTime.includes('5:02')) {
+                            completeScenario(
+                                'Got it! I kept <span class="highlight">5:02 PM</span> and removed the duplicate at 5:00 PM.',
+                                'success',
+                                'Duplicate Removed'
+                            );
+                        } else {
+                            // They gave a different time
+                            console.log('Debug - About to display:', enteredTime);
+                            completeScenario(
+                                `Perfect! I removed both duplicates and recorded your punch out at <span class="highlight">${enteredTime}</span>.`,
+                                'success',
+                                'Punch Corrected'
+                            );
+                        }
+                    } else if (input.contains(['neither', 'different', 'wrong'])) {
+                        addMessage(
+                            'What was the correct time?\n\n<i style="opacity: 0.6; font-size: 13px;">Type the time like "5:15pm"</i>',
+                            'received'
+                        );
+                    } else {
+                        addMessage(
+                            'Which time is right?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "5:00", "5:02", or the correct time</i>',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'overtime_scenario':
+                    if (input.isYes() || input.contains('approved')) {
+                        addMessage(
+                            'Great! Who authorized the overtime? I\'ll document this for payroll.',
+                            'received'
+                        );
+                        conversationState = 'awaiting_overtime_approval';
+                    } else if (input.contains('check') || input.contains('need to')) {
+                        addMessage(
+                            'No problem! I\'ve flagged this for manager approval.',
+                            'received',
+                            { status: 'warning', statusIcon: '⚠', statusText: 'Pending Approval', notifyManager: 'Your manager has been notified about overtime approval needed' }
+                        );
+                        setTimeout(() => {
+                            addMessage(
+                                'You\'ll get a notification once it\'s reviewed.',
+                                'received'
+                            );
+                        }, 1200 / typingSpeed);
+                        conversationState = 'complete';
+
+                        setTimeout(() => {
+                            conversationState = 'ended';
+                            setTimeout(() => {
+                                const dateDiv = messagesContainer.querySelector('.date-divider');
+                                messagesContainer.innerHTML = '';
+                                messagesContainer.appendChild(dateDiv);
+                                setTimeout(() => startNewScenario(), 500 / typingSpeed);
+                            }, 3000 / typingSpeed);
+                        }, 1000 / typingSpeed);
+                    } else if (input.contains('40') || input.contains('should be')) {
+                        addMessage(
+                            'I can adjust your hours to 40. Which day should I reduce?',
+                            'received'
+                        );
+                        conversationState = 'awaiting_ot_adjustment';
+                    } else {
+                        addMessage(
+                            'Is the overtime approved?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_overtime_approval':
+                    completeScenario(
+                        `Perfect! I've noted that <span class="highlight">${userMessage}</span> approved your overtime. Your 43.5 hours are valid.`,
+                        'success',
+                        'Overtime Approved'
+                    );
+                    break;
+
+                case 'awaiting_ot_adjustment':
+                    completeScenario(
+                        `Got it! I've adjusted your ${userMessage} hours to bring your week to 40 hours total. Your timecard is updated.`,
+                        'success',
+                        'Hours Adjusted'
+                    );
+                    break;
+
+                case 'location_scenario':
+                    if (input.isYes() || input.contains('different')) {
+                        addMessage(
+                            'Thanks for confirming! What\'s the name or address of the work site?',
+                            'received'
+                        );
+                        conversationState = 'awaiting_location_details';
+                    } else if (input.contains('remote') || input.contains('home')) {
+                        completeScenario(
+                            'Understood! I\'ve marked you as working remotely for today. Your punch is valid.',
+                            'success',
+                            'Remote Work Logged'
+                        );
+                    } else if (input.contains('gps') || input.contains('error')) {
+                        completeScenario(
+                            'Thanks for letting me know! I\'ve logged this GPS issue and verified your punch at the usual location.',
+                            'success',
+                            'Location Corrected'
+                        );
+                    } else {
+                        addMessage(
+                            'Where were you working?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_location_details':
+                    completeScenario(
+                        `Perfect! I've logged your work location as <span class="highlight">${userMessage}</span> for today.`,
+                        'success',
+                        'Location Verified'
+                    );
+                    break;
+
+                case 'unscheduled_scenario':
+                    if (input.isYes()) {
+                        completeScenario(
+                            'Perfect! I kept your Saturday punches. Your hours are recorded.',
+                            'success',
+                            'Punches Kept'
+                        );
+                    } else if (input.isNo() || input.contains(['wrong', 'mistake', 'oops'])) {
+                        completeScenario(
+                            'Got it! I removed your Saturday punches. Your timecard is corrected.',
+                            'success',
+                            'Punches Removed'
+                        );
+                    } else if (input.contains(['manager', 'asked', 'requested'])) {
+                        addMessage(
+                            'Got it! Who asked you to come in? I\'ll document this.\n\n<i style="opacity: 0.6; font-size: 13px;">Type their name</i>',
+                            'received'
+                        );
+                        conversationState = 'awaiting_unscheduled_approval';
+                    } else if (input.contains(['shift', 'picking', 'extra'])) {
+                        completeScenario(
+                            'Perfect! I added Saturday to your schedule. Your punches are valid.',
+                            'success',
+                            'Schedule Updated'
+                        );
+                    } else {
+                        addMessage(
+                            'Should I keep the Saturday punches?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes", "no", or explain why you worked</i>',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_unscheduled_approval':
+                    completeScenario(
+                        `Thanks! I've noted that <span class="highlight">${userMessage}</span> requested you on Saturday. Your hours are approved.`,
+                        'success',
+                        'Unscheduled Work Approved'
+                    );
+                    break;
+
+                case 'pto_scenario':
+                    if (input.contains('working') || input.contains('cancel')) {
+                        completeScenario(
+                            'Understood! I\'ve canceled your PTO request for today. Your work hours are being recorded.',
+                            'success',
+                            'PTO Canceled'
+                        );
+                    } else if (input.contains('pto') || input.contains('remove')) {
+                        completeScenario(
+                            'Got it! I\'ve removed today\'s punches and kept your PTO request active.',
+                            'success',
+                            'Punches Removed'
+                        );
+                    } else if (input.contains('half')) {
+                        addMessage(
+                            'No problem! What time are you working until? I\'ll adjust your PTO to a half day.',
+                            'received'
+                        );
+                        conversationState = 'awaiting_half_day_time';
+                    } else {
+                        addMessage(
+                            'Are you working today or taking PTO?',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'awaiting_half_day_time':
+                    const halfDayTime = userMessage.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+                    if (halfDayTime) {
+                        completeScenario(
+                            `Perfect! I've set your PTO as a half day and recorded work hours until <span class="highlight">${halfDayTime[0]}</span>.`,
+                            'success',
+                            'Half Day Scheduled'
+                        );
+                    } else {
+                        addMessage(
+                            'Please provide the time you\'re working until, like "12:00 PM" or "1:00".',
+                            'received'
+                        );
+                    }
+                    break;
+
+                case 'general_help':
+                    addMessage(
+                        `I've noted your question. For detailed inquiries, I recommend reaching out to your manager or HR. Take care!`,
+                        'received'
+                    );
+                    conversationState = 'ended';
+
+                    // Restart conversation
+                    setTimeout(() => {
+                        const dateDiv = messagesContainer.querySelector('.date-divider');
+                        messagesContainer.innerHTML = '';
+                        messagesContainer.appendChild(dateDiv);
+
+                        setTimeout(() => {
+                            startNewScenario();
+                        }, 3000 / typingSpeed);
+                    }, 2000 / typingSpeed);
+                    break;
+            }
+        }
+
+        // Scenario Management
+        const allScenarios = [
+            {
+                message: 'Hey! I noticed you didn\'t punch out yesterday (Monday, Feb 2) at 5:00 PM. Want me to add that for you?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes" or give me a different time</i>',
+                state: 'initial'
+            },
+            {
+                message: 'Hi there! Your break on Feb 3 was 1 hour 15 minutes, but it should be 30 minutes. What happened?\n\n<i style="opacity: 0.6; font-size: 13px;">Type what happened (forgot to end break, got approval, etc.)</i>',
+                state: 'break_scenario'
+            },
+            {
+                message: 'Good morning! I don\'t see a punch in for today. Your shift starts at 8:00 AM. Should I add that?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes" or tell me when you got there</i>',
+                state: 'punch_in_scenario'
+            },
+            {
+                message: 'Hey! You punched in at 7:45 AM but your shift starts at 8:00 AM. Did someone ask you to come in early?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes" or "no"</i>',
+                state: 'early_punch_scenario'
+            },
+            {
+                message: 'I see you worked 10.5 hours Thursday without a meal break. Did you take a break and forget to clock it?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes" or "no"</i>',
+                state: 'meal_break_scenario'
+            },
+            {
+                message: 'I see two punch outs - one at 5:00 PM and one at 5:02 PM on Feb 1. Which time is right?\n\n<i style="opacity: 0.6; font-size: 13px;">Type the correct time</i>',
+                state: 'duplicate_punch_scenario'
+            },
+            {
+                message: 'Hi! You worked 43.5 hours this week - that\'s overtime! Did your manager say that\'s okay?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes", "no", or a manager name</i>',
+                state: 'overtime_scenario'
+            },
+            {
+                message: 'Hey! You punched in 15 miles from your usual spot. Were you at a different work site today?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes", "no", or location name</i>',
+                state: 'location_scenario'
+            },
+            {
+                message: 'I see you punched in on Saturday, but you\'re usually off weekends. Is this right?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "yes" or "no"</i>',
+                state: 'unscheduled_scenario'
+            },
+            {
+                message: 'Hey! You have punches for today, but you also requested time off for Feb 3. Are you working or taking the day off?\n\n<i style="opacity: 0.6; font-size: 13px;">Type "working" or "day off"</i>',
+                state: 'pto_scenario'
+            }
+        ];
+
+        let usedScenarios = [];
+        let typingSpeed = 1; // 1x normal speed
+
+        function getRandomScenario() {
+            // Reset if all scenarios have been used
+            if (usedScenarios.length >= allScenarios.length) {
+                usedScenarios = [];
+            }
+
+            // Get available scenarios
+            const available = allScenarios.filter((_, index) => !usedScenarios.includes(index));
+
+            // Pick random from available
+            const randomIndex = Math.floor(Math.random() * available.length);
+            const scenario = available[randomIndex];
+
+            // Mark as used
+            const originalIndex = allScenarios.indexOf(scenario);
+            usedScenarios.push(originalIndex);
+
+            return scenario;
+        }
+
+        function startNewScenario() {
+            messageStartTime = null; // Reset timing for new scenario
+            const scenario = getRandomScenario();
+
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                addMessage(scenario.message, 'received');
+                conversationState = scenario.state;
+            }, 1000 / typingSpeed);
+        }
+
+        function completeScenario(message, status, statusText) {
+            addMessage(message, 'received', { status, statusIcon: '✓', statusText });
+            conversationState = 'complete';
+
+            // End conversation naturally without asking if they need more help
+            setTimeout(() => {
+                conversationState = 'ended';
+
+                // Start new scenario after brief pause
+                setTimeout(() => {
+                    const dateDiv = messagesContainer.querySelector('.date-divider');
+                    messagesContainer.innerHTML = '';
+                    messagesContainer.appendChild(dateDiv);
+
+                    setTimeout(() => {
+                        startNewScenario();
+                    }, 500 / typingSpeed);
+                }, 3000 / typingSpeed);
+            }, 1000 / typingSpeed);
+        }
+
+        // Event Listeners
+        sendButton.addEventListener('click', () => sendMessage());
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Initialize with random first message
+        setTimeout(() => {
+            const firstScenario = getRandomScenario();
+            addMessage(firstScenario.message, 'received');
+            conversationState = firstScenario.state;
+        }, 800);
+
+        // Demo Controls
+        const scenarioSelect = document.getElementById('scenarioSelect');
+        const speedDown = document.getElementById('speedDown');
+        const speedUp = document.getElementById('speedUp');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Scenario Selector
+        scenarioSelect.addEventListener('change', (e) => {
+            const value = e.target.value;
+
+            if (value === 'random') {
+                resetConversation();
+                return;
+            }
+
+            const scenarioIndex = parseInt(value);
+            const scenario = allScenarios[scenarioIndex];
+
+            // Clear and start selected scenario
+            const dateDiv = messagesContainer.querySelector('.date-divider');
+            messagesContainer.innerHTML = '';
+            messagesContainer.appendChild(dateDiv);
+
+            awaitingResponse = false;
+            messageStartTime = null; // Reset timing
+
+            setTimeout(() => {
+                addMessage(scenario.message, 'received');
+                conversationState = scenario.state;
+            }, 300);
+        });
+
+        // Speed Controls
+        speedDown.addEventListener('click', () => {
+            if (typingSpeed > 0.5) {
+                typingSpeed = Math.max(0.5, typingSpeed - 0.25);
+                speedDisplay.textContent = typingSpeed + '×';
+            }
+        });
+
+        speedUp.addEventListener('click', () => {
+            if (typingSpeed < 2) {
+                typingSpeed = Math.min(2, typingSpeed + 0.25);
+                speedDisplay.textContent = typingSpeed + '×';
+            }
+        });
+
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            resetConversation();
+        });
+
+        function resetConversation() {
+            const dateDiv = messagesContainer.querySelector('.date-divider');
+            messagesContainer.innerHTML = '';
+            messagesContainer.appendChild(dateDiv);
+
+            awaitingResponse = false;
+            messageStartTime = null; // Reset timing
+            scenarioSelect.value = 'random';
+
+            setTimeout(() => {
+                const newScenario = getRandomScenario();
+                addMessage(newScenario.message, 'received');
+                conversationState = newScenario.state;
+            }, 300);
+        }
+
+        // Update sendMessage to use typing speed
+        function sendMessage(text = null) {
+            const message = text || messageInput.value.trim();
+            if (!message || awaitingResponse) return;
+
+            try {
+                addMessage(message, 'sent');
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+
+                awaitingResponse = true;
+
+                showTyping();
+
+                const baseDelay = 1500;
+                const randomDelay = Math.random() * 1000;
+                const totalDelay = (baseDelay + randomDelay) / typingSpeed;
+
+                setTimeout(() => {
+                    try {
+                        hideTyping();
+                        processResponse(message);
+                        awaitingResponse = false;
+                    } catch (error) {
+                        console.error('Error in processResponse:', error);
+                        console.error('Stack:', error.stack);
+                        awaitingResponse = false;
+                        hideTyping();
+                        addMessage('Oops! Something went wrong. Please try again.', 'received');
+                    }
+                }, totalDelay);
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                console.error('Stack:', error.stack);
+                awaitingResponse = false;
+            }
+        }
+
+        // Event Listeners
+        sendButton.addEventListener('click', () => sendMessage());
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+
+</html>
