@@ -2533,6 +2533,24 @@ footer p {
     padding-top: var(--space-6);
 }
 
+.page-home .experience-intro {
+    font-size: var(--text-sm);
+    color: var(--secondary-color);
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-4);
+    opacity: 0.9;
+}
+
+.page-home .experience-intro a {
+    color: var(--accent-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.page-home .experience-intro a:hover {
+    opacity: 0.8;
+}
+
 .page-home .experience-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
