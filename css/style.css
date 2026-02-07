@@ -2513,7 +2513,7 @@ footer p {
 
 .page-home .skills-list li {
     font-size: var(--text-base);
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
     color: var(--skills-color);
     position: relative;
     padding-left: var(--space-4);
@@ -2554,6 +2554,19 @@ footer p {
     color: var(--accent-color);
     margin-bottom: 0;
     font-weight: 600;
+}
+
+.page-home .status-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.125rem 0.5rem;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent-color);
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-left: 0.5rem;
+    vertical-align: middle;
 }
 
 .page-home .experience h4 {
