@@ -2442,6 +2442,16 @@ footer p {
     color: var(--text-color);
 }
 
+.page-home .bio-highlight {
+    background: linear-gradient(120deg, rgba(var(--accent-rgb), 0.1) 0%, rgba(var(--accent-rgb), 0.05) 100%);
+    padding: 0.125rem 0.5rem;
+    border-radius: 2px;
+    font-weight: 500;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    display: inline;
+}
+
 .page-home h1 {
     margin-bottom: var(--space-4);
 }
