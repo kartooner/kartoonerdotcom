@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jump Start // Master Pixel Journalism</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono:wght@700&family=Lora:ital,wght@0,400;1,400&family=Pixelify+Sans:wght@700&family=Playfair+Display:ital,wght@0,900;1,900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <header class="masthead-full">
+        <div class="logo-box">
+            <button id="themeToggle" class="theme-switch mono uppercase" aria-label="Toggle Theme">toggle_mode
+                [dark/light]</button>
+            <h1 class="logo-text">Jump Start</h1>
+        </div>
+        <button id="menuToggle" class="menu-button mono ui" aria-expanded="false" aria-controls="mainNav">Menu
+            [+]</button>
+        <nav id="mainNav" class="nav mono" aria-label="Main Navigation">
+            <a href="#">Hardware</a>
+            <a href="#">Indie Pulse</a>
+            <a href="#">Deep Theory</a>
+            <a href="#">Patch Notes</a>
+            <a href="#">Archive</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero" aria-labelledby="main-headline">
+            <article class="hero-left">
+                <header>
+                    <figure>
+                        <img src="https://images.pexels.com/photos/1293261/pexels-photo-1293261.jpeg?auto=compress&cs=tinysrgb&w=1260"
+                            alt="Retro pixel art display on a monitor" class="hero-img">
+                    </figure>
+                    <div class="meta-data">
+                        <small class="tag ui">Special Report • <time datetime="2026-02-06">Feb 06</time></small>
+                    </div>
+                    <h2 id="main-headline" class="hero-headline"><a href="#">The Resurrection of 16-Bit: Why Pixels
+                            Still Reign Supreme in 2026</a></h2>
+                </header>
+
+                <footer class="hero-byline">
+                    <img src="https://avataaars.io/?avatarStyle=Transparent&topType=ShortHairShortFlat&accessoriesType=Blank&hairColor=Black&facialHairType=Blank&clotheType=BlazerShirt&eyeType=Default&eyebrowType=Default&mouthType=Default&skinColor=Light"
+                        alt="Dan Cederholm" class="avatar">
+                    <address class="author-info">
+                        <h4 class="ui"><a href="#" rel="author">Dan Cederholm</a></h4>
+                        <small class="mono uppercase">Editor-in-chief</small>
+                    </address>
+                </footer>
+
+                <div class="hero-body">
+                    <p class="hero-intro">
+                        In an era of hyper-realistic rendering and neuro-link interfaces, the humble sprite is making a
+                        comeback.
+                    </p>
+                    <p>
+                        We dive deep into the aesthetic shift that's defining the new decade with a renewed focus on
+                        craft and the soul of the pixel. The flicker of a scanline, the intentionality of a 16x16 grid,
+                        and the deliberate palette choices of the late nineties aren't just nostalgia; they are a
+                        rejection of the procedural sludge that has come to dominate the AAA landscape.
+                    </p>
+                </div>
+
+                <blockquote class="pull-quote">
+                    <p>“We are seeing a generation of developers who grew up on CRT monitors reclaiming the texture of
+                        their youth as a legitimate artistic choice.”</p>
+                    <cite class="ui">— Sarah Parmenter, Creative Director</cite>
+                </blockquote>
+
+                <div class="hero-body">
+                    <p>
+                        When hardware can render every individual hair on a protagonist's head, the art of suggestion is
+                        lost. Pixel art, by its very nature, demands a collaboration between the artist and the viewer's
+                        imagination. You aren't just seeing a character; you're interpreting a silhouette.
+                    </p>
+                </div>
+            </article>
+
+            <aside class="hero-right" aria-label="Related News">
+                <article class="news-item">
+                    <figure>
+                        <img src="https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&w=940"
+                            alt="Abstract hardware components" class="news-img">
+                    </figure>
+                    <header>
+                        <h3><a href="#">The Craft: Hardware • <time datetime="2026-02-06">Feb 06</time></a></h3>
+                    </header>
+                    <p class="hero-body-small">Exploring the tactile nature of hardware design in an increasingly
+                        digital world.</p>
+                    <footer class="byline-group">
+                        <img src="https://avataaars.io/?avatarStyle=Transparent&topType=LongHairNotTooLong&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=GraphicShirt&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Brown"
+                            alt="Sarah Parmenter" class="avatar-small">
+                        <address class="ui"><a href="#" rel="author">By Sarah Parmenter</a></address>
+                    </footer>
+                </article>
+
+                <article class="news-item">
+                    <figure>
+                        <img src="https://images.pexels.com/photos/1038935/pexels-photo-1038935.jpeg?auto=compress&cs=tinysrgb&w=940"
+                            alt="Close up of CRT monitor scanlines" class="news-img">
+                    </figure>
+                    <header>
+                        <h3><a href="#">Pixel Perfect Scanlines • <time datetime="2026-02-05">Feb 05</time></a></h3>
+                    </header>
+                    <p class="hero-body-small">Is the CRT the only 'true' way to experience first-generation titles?</p>
+                    <footer class="byline-group">
+                        <img src="https://avataaars.io/?avatarStyle=Transparent&topType=ShortHairShortCurly&accessoriesType=Prescription02&hairColor=Blonde&facialHairType=BeardLight&clotheType=Hoodie&eyeType=Surprised&eyebrowType=RaisedExcited&mouthType=Open&skinColor=Light"
+                            alt="Elliot Jay Stocks" class="avatar-small">
+                        <address class="ui"><a href="#" rel="author">By Elliot Jay Stocks</a></address>
+                    </footer>
+                </article>
+            </aside>
+        </section>
+
+        <!-- Patch Notes -->
+        <section class="patches" aria-labelledby="patches-title">
+            <header class="section-header">
+                <h2 id="patches-title" class="ui">Patch Notes</h2>
+                <small class="meta-alert">Updated Hourly</small>
+            </header>
+            <div class="patch-grid">
+                <article>
+                    <header>
+                        <small class="meta-alert">v.1.4.2</small>
+                        <h3><a href="#">Elden Ring: Shadow Mode</a></h3>
+                    </header>
+                </article>
+                <article>
+                    <header>
+                        <small class="mono uppercase">Rumor</small>
+                        <h3><a href="#">Silksong: Coffee Shop Leak</a></h3>
+                    </header>
+                </article>
+                <article>
+                    <header>
+                        <small class="mono uppercase">Hardware</small>
+                        <h3><a href="#">Steam Deck Lite E-Ink</a></h3>
+                    </header>
+                </article>
+                <article>
+                    <header>
+                        <small class="mono uppercase">Indie</small>
+                        <h3><a href="#">Balatro: The 2024 Hazard</a></h3>
+                    </header>
+                </article>
+            </div>
+        </section>
+
+        <!-- Editorial -->
+        <section class="editorial" aria-labelledby="editorial-title">
+            <header class="section-header">
+                <h2 id="editorial-title" class="ui">The Staff Pulse // Editorial</h2>
+            </header>
+            <div class="editorial-grid">
+                <article>
+                    <header>
+                        <small class="meta-alert">Indie Pulse</small>
+                        <h3><a href="#">Why procedurally generated art is actually great for human artists.</a></h3>
+                    </header>
+                    <footer class="byline-group">
+                        <img src="https://avataaars.io/?avatarStyle=Transparent&topType=LongHairNotTooLong&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=GraphicShirt&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Brown"
+                            alt="Austin Walker" class="avatar-mid">
+                        <address class="ui"><a href="#" rel="author">By Austin Walker</a></address>
+                    </footer>
+                </article>
+                <article class="vertical-divider">
+                    <header>
+                        <small class="ui">The Retro Grade</small>
+                        <h3><a href="#">Your CRT setup is probably lying to you about the true color of Mario.</a></h3>
+                    </header>
+                    <footer class="byline-group">
+                        <img src="https://avataaars.io/?avatarStyle=Transparent&topType=ShortHairShortCurly&accessoriesType=Prescription02&hairColor=Blonde&facialHairType=BeardLight&clotheType=Hoodie&eyeType=Surprised&eyebrowType=RaisedExcited&mouthType=Open&skinColor=Light"
+                            alt="Linz the 8-Bit" class="avatar-mid">
+                        <address class="ui"><a href="#" rel="author">By Linz the 8-Bit</a></address>
+                    </footer>
+                </article>
+                <article>
+                    <header>
+                        <small class="ui">Opinion</small>
+                        <h3><a href="#">The death of the 'Big AAA' model is finally here, and it's glorious.</a></h3>
+                    </header>
+                    <footer class="byline-group">
+                        <img src="https://avataaars.io/?avatarStyle=Transparent&topType=ShortHairDreads01&accessoriesType=Blank&hairColor=Black&facialHairType=Blank&clotheType=ShirtVNeck&eyeType=Default&eyebrowType=FlatNatural&mouthType=Default&skinColor=DarkBrown"
+                            alt="Jeff Keeley" class="avatar-mid">
+                        <address class="ui"><a href="#" rel="author">By Jeff Keeley</a></address>
+                    </footer>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-grid">
+            <nav class="footer-col" aria-label="Footer Site Links">
+                <h5 class="ui">Site</h5>
+                <ul>
+                    <li><a href="#">About Jump Start</a></li>
+                    <li><a href="#">Staff Profiles</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </nav>
+            <nav class="footer-col" aria-label="Footer Legal Links">
+                <h5 class="ui">Legal</h5>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                </ul>
+            </nav>
+            <nav class="footer-col" aria-label="Footer Social Links">
+                <h5 class="ui">Social</h5>
+                <ul>
+                    <li><a href="#">Twitter / X</a></li>
+                    <li><a href="#">Discord</a></li>
+                    <li><a href="#">Mastodon</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="container copyArea mono">
+            <small>© 2026 Jump Start Media Group. All Rights Reserved.</small>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
