@@ -294,7 +294,7 @@ h6 {
 }
 
 h1 {
-    font-size: clamp(3.5rem, 3rem + 3vw, 5.5rem);
+    font-size: clamp(2.575rem, 3.3475rem + 4.944vw, 5.68148rem);
     line-height: 1.1;
     /* Tighter for large headings */
     letter-spacing: -0.02em;
@@ -1289,18 +1289,57 @@ header {
     color: var(--text-color);
 }
 
-/* Column Headers without Icons */
+/* Column Headers with Icons */
 .experience-column h3,
 .skills-column h3,
 .philosophy-column h3 {
     position: relative;
-    padding-left: 0;
+    padding-left: 1.6em;
 }
 
-.experience-column h3::before,
-.skills-column h3::before,
+.skills-column h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 1.2em;
+    height: 1.2em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2397a1c6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'%3E%3C/polygon%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.8;
+}
+
+.experience-column h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 1.2em;
+    height: 1.2em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2397a1c6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.8;
+}
+
 .philosophy-column h3::before {
-    display: none;
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 1.2em;
+    height: 1.2em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2397a1c6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.11 15.88c-.83 2.17-3.02 3.62-5.44 3.62H7.33c-.81 0-1.59-.23-2.26-.67-.98-.63-1.68-1.65-1.93-2.85-.25-1.19-.05-2.44.56-3.43.61-1 1.63-1.74 2.8-1.87l.5-.05c.23-1.15.77-2.19 1.55-2.98.78-.79 1.81-1.34 2.95-1.57.23-.05.46-.08.7-.1.24-.01.47-.01.71 0 1.14.05 2.21.47 3.07 1.17.44.36.8.8 1.08 1.3.71-.26 1.48-.35 2.25-.27 1.26.13 2.39.77 3.18 1.77.79 1.01 1.19 2.32 1.05 3.64'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.8;
 }
 
 /* Skills List */
@@ -2410,178 +2449,6 @@ footer p {
 
 [data-theme="dark"] .feed-links p strong {
     color: var(--text-color);
-}
-
-/* ==========================================
-   Homepage Refinements (page-home)
-   ========================================== */
-
-.page-home .main-content-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: var(--space-xl);
-    align-items: start;
-    margin-top: var(--space-8);
-}
-
-.page-home .left-column {
-    grid-column: span 7;
-}
-
-.page-home .right-column {
-    grid-column: span 5;
-    padding: 0;
-}
-
-/* Typography Enhancements - Homepage Only */
-.page-home .bio {
-    font-size: var(--text-lg);
-    line-height: 1.7;
-    margin-bottom: var(--space-6);
-    max-width: 65ch;
-    color: var(--text-color);
-}
-
-.page-home h1 {
-    margin-bottom: var(--space-4);
-}
-
-.page-home h2.current-role {
-    font-family: var(--font-main);
-    font-size: var(--text-lg);
-    color: var(--secondary-color);
-    font-weight: 400;
-    margin-bottom: var(--space-6);
-    opacity: 0.9;
-}
-
-.page-home h3 {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--accent-color);
-    margin-bottom: var(--space-4);
-    border-bottom: 2px solid rgba(var(--accent-rgb), 0.15);
-    padding-bottom: var(--space-2);
-    display: block;
-    font-weight: 700;
-}
-
-/* Philosophy Section on Left */
-.page-home .philosophy-section {
-    margin-top: var(--space-8);
-    padding: var(--space-6);
-    background: rgba(var(--accent-rgb), 0.03);
-    border-left: 3px solid var(--accent-color);
-}
-
-.page-home .philosophy-section p {
-    font-size: var(--text-base);
-    line-height: 1.6;
-    margin-bottom: 0;
-    color: var(--secondary-color);
-}
-
-/* Right Column - Skills Stacked */
-.page-home .right-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-10);
-}
-
-.page-home .skills-column {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: none;
-}
-
-.page-home .skills-list {
-    list-style: none;
-    padding: 0;
-}
-
-.page-home .skills-list li {
-    font-size: var(--text-base);
-    margin-bottom: var(--space-3);
-    color: var(--skills-color);
-    position: relative;
-    padding-left: var(--space-4);
-}
-
-.page-home .skills-list li::before {
-    content: "›";
-    position: absolute;
-    left: 0;
-    color: var(--accent-color);
-    font-weight: bold;
-}
-
-/* Work Experience Full Width Section */
-.page-home .experience-full-width {
-    margin-top: var(--space-8);
-    padding-top: var(--space-6);
-}
-
-.page-home .experience-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-12);
-    margin-top: var(--space-8);
-}
-
-/* Make individual work history stacked vertically */
-.page-home .experience {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.page-home .experience p {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--accent-color);
-    margin-bottom: 0;
-    font-weight: 600;
-}
-
-.page-home .experience h4 {
-    font-size: var(--text-base);
-    margin-bottom: 0;
-    line-height: 1.3;
-    color: var(--text-color);
-}
-
-/* Responsiveness for Homepage Layout */
-@media (max-width: 1024px) {
-
-    .page-home .left-column,
-    .page-home .right-column {
-        grid-column: span 12;
-        padding-right: 0;
-    }
-
-    /* Consistent vertical spacing on mobile */
-    .page-home .philosophy-section {
-        margin-top: var(--space-6);
-        margin-bottom: 0;
-    }
-
-    .page-home .right-column {
-        margin-top: var(--space-6);
-        gap: var(--space-6);
-    }
-
-    .page-home .experience-full-width {
-        margin-top: var(--space-6);
-        padding-top: 0;
-    }
-
-    .page-home .experience-grid {
-        grid-template-columns: 1fr;
-        gap: var(--space-6);
-    }
 }
 
 /* ==========================================

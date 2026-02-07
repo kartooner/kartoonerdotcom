@@ -160,7 +160,7 @@
     </script>
 </head>
 
-<body class="page-home">
+<body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
     <div id="navigation-placeholder"></div>
@@ -191,58 +191,72 @@
                         uncover the story in every interaction. When I'm not designing, I'm probably watching movies or
                         tinkering with projects like this site.</p>
 
-                    <div class="philosophy-section">
-                        <h3>Design philosophy</h3>
-                        <p>I focus on clarity, people, and results. Using empathy, systems thinking, and creative
-                            problem-solving, I design solutions that work for users and work for the business.</p>
-                    </div>
-                </div>
-
-                <div class="right-column">
-                    <div class="skills-column">
-                        <h3>Leadership</h3>
-                        <ul class="skills-list">
-                            <li>Innovative design solutions</li>
-                            <li>Mentoring &amp; developing talent</li>
-                            <li>Human-centered design principles</li>
-                            <li>Design processes &amp; workflows</li>
-                        </ul>
-                    </div>
-                    <div class="skills-column">
-                        <h3>Specialties</h3>
-                        <ul class="skills-list">
-                            <li>Design leadership</li>
-                            <li>Team mentorship</li>
-                            <li>Strategic thinking</li>
-                            <li>User interface &amp; experience</li>
+                    <div class="top-skills-box">
+                        <strong><span role="img" aria-label="Diamond">💎</span> Top skills:</strong>
+                        <ul class="top-skills-list">
+                            <li>User Interface</li>
+                            <li>User Experience</li>
+                            <li>Team Leadership</li>
                             <li>Cross-functional collaboration</li>
                         </ul>
                     </div>
                 </div>
-            </div>
 
-            <div class="experience-full-width">
-                <h3>Work experience</h3>
-                <div class="experience-grid">
-                    <div class="experience">
-                        <p><time datetime="2018-02">Feb 2018</time> — Present</p>
-                        <h4>Lead Product UX Designer at <a href="https://www.paychex.com"
-                                aria-label="Link to Paychex, opens in a new tab" target="_blank"
-                                rel="noopener noreferrer">Paychex</a></h4>
+                <div class="right-column">
+                    <div class="skills-container">
+                        <div class="skills-column">
+                            <h3>Leadership</h3>
+                            <ul class="skills-list">
+                                <li>Innovative design solutions</li>
+                                <li>Mentoring &amp; developing talent</li>
+                                <li>Human-centered design principles</li>
+                                <li>Design processes &amp; workflows</li>
+                            </ul>
+                        </div>
+                        <div class="skills-column">
+                            <h3>Specialties</h3>
+                            <ul class="skills-list">
+                                <li>Design leadership</li>
+                                <li>Team mentorship</li>
+                                <li>Strategic thinking</li>
+                                <li>User interface &amp; experience</li>
+                                <li>Cross-functional collaboration</li>
+                            </ul>
+                        </div>
                     </div>
 
-                    <div class="experience">
-                        <p><time datetime="2007-06">Jun 2007</time> — <time datetime="2017-06">Jun 2017</time></p>
-                        <h4>Senior Product Designer at <a href="https://www.aol.com"
-                                aria-label="Link to AOL, opens in a new tab" target="_blank"
-                                rel="noopener noreferrer">AOL</a></h4>
-                    </div>
+                    <div class="experience-philosophy-container">
+                        <div class="experience-column">
+                            <h3>Work experience</h3>
+                            <div class="experience">
+                                <h4>Lead Product UX Designer at <a href="https://www.paychex.com"
+                                        aria-label="Link to Paychex, opens in a new tab" target="_blank"
+                                        rel="noopener noreferrer">Paychex</a></h4>
+                                <p><time datetime="2018-02">Feb 2018</time> — Present</p>
+                            </div>
 
-                    <div class="experience">
-                        <p><time datetime="2007-01">Jan 2007</time> — <time datetime="2007-06">Jun 2007</time></p>
-                        <h4>Designer at <a href="https://www.magnatag.com"
-                                aria-label="Link to Magnatag Visible Systems, opens in a new tab" target="_blank"
-                                rel="noopener noreferrer">Magnatag Visible Systems</a></h4>
+                            <div class="experience">
+                                <h4>Senior Product Designer at <a href="https://www.aol.com"
+                                        aria-label="Link to AOL, opens in a new tab" target="_blank"
+                                        rel="noopener noreferrer">AOL</a></h4>
+                                <p><time datetime="2007-06">Jun 2007</time> — <time datetime="2017-06">Jun 2017</time>
+                                </p>
+                            </div>
+
+                            <div class="experience">
+                                <h4>Designer at <a href="https://www.magnatag.com"
+                                        aria-label="Link to Magnatag Visible Systems, opens in a new tab"
+                                        target="_blank" rel="noopener noreferrer">Magnatag Visible Systems</a></h4>
+                                <p><time datetime="2007-01">Jan 2007</time> — <time datetime="2007-06">Jun 2007</time>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="philosophy-column">
+                            <h3>Design philosophy</h3>
+                            <p>I focus on clarity, people, and results. Using empathy, systems thinking, and creative
+                                problem-solving, I design solutions that work for users and work for the business.</p>
+                        </div>
                     </div>
                 </div>
             </div>

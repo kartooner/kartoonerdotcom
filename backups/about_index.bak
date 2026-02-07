@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Erik Sagen</title>
+    <meta name="description"
+        content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    <!-- Resource hints for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://letterboxd.com">
+    <link rel="dns-prefetch" href="https://api.web3forms.com">
+    <!-- Preload custom fonts -->
+    <link rel="preload" href="/assets/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
+
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="About - Erik Sagen">
+    <meta property="og:description"
+        content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    <meta property="og:image" content="https://kartooner.com/img/og-preview.png">
+    <meta property="og:url" content="https://kartooner.com/about">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About - Erik Sagen">
+    <meta name="twitter:description"
+        content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
+    <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
+
+    <style>
+        /* About page specific container width override */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2em;
+        }
+
+        /* First bio paragraph uses Cartridge Rough font */
+        .about-intro .intro-text,
+        .about-intro p:nth-of-type(1) {
+            font-family: var(--font-secondary);
+            font-size: 1.3rem;
+            font-weight: normal;
+            line-height: 1.4;
+            color: #333333;
+        }
+
+        /* White text in dark mode - applies to all seasonal themes */
+        [data-theme="dark"] .about-intro .intro-text,
+        [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-christmas] [data-theme="dark"] .about-intro .intro-text,
+        body[data-christmas] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-fall] [data-theme="dark"] .about-intro .intro-text,
+        body[data-fall] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-halloween] [data-theme="dark"] .about-intro .intro-text,
+        body[data-halloween] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-summer] [data-theme="dark"] .about-intro .intro-text,
+        body[data-summer] [data-theme="dark"] .about-intro p:nth-of-type(1),
+        body[data-spring] [data-theme="dark"] .about-intro .intro-text,
+        body[data-spring] [data-theme="dark"] .about-intro p:nth-of-type(1) {
+            color: #ffffff;
+        }
+
+        /* Dark text in light mode - applies to all seasonal themes */
+        body[data-christmas][data-theme="light"] .about-intro .intro-text,
+        body[data-christmas][data-theme="light"] .about-intro p:nth-of-type(1),
+        body[data-fall][data-theme="light"] .about-intro .intro-text,
+        body[data-fall][data-theme="light"] .about-intro p:nth-of-type(1),
+        body[data-halloween][data-theme="light"] .about-intro .intro-text,
+        body[data-halloween][data-theme="light"] .about-intro p:nth-of-type(1),
+        body[data-summer][data-theme="light"] .about-intro .intro-text,
+        body[data-summer][data-theme="light"] .about-intro p:nth-of-type(1),
+        body[data-spring][data-theme="light"] .about-intro .intro-text,
+        body[data-spring][data-theme="light"] .about-intro p:nth-of-type(1) {
+            color: #333333;
+        }
+
+        /* Second and third paragraphs use default Manrope font */
+        .about-intro p:nth-of-type(2),
+        .about-intro p:nth-of-type(3) {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Darkwing sprite as divider */
+        .darkwing-sprite {
+            display: block;
+            margin: 2rem auto;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .darkwing-sprite:hover {
+            transform: scale(1.05);
+        }
+
+        .darkwing-sprite:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 4px;
+        }
+
+        /* Look animation keyframes */
+        @keyframes darkwing-look {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            25% {
+                transform: rotate(-15deg) scale(1.1);
+            }
+
+            50% {
+                transform: rotate(15deg) scale(1.1);
+            }
+
+            75% {
+                transform: rotate(-8deg) scale(1.05);
+            }
+
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+        }
+
+        .darkwing-sprite.looking {
+            animation: darkwing-look 0.8s ease-in-out;
+        }
+
+        /* Respect reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .darkwing-sprite.looking {
+                animation: none !important;
+            }
+
+            .darkwing-sprite:hover {
+                transform: none !important;
+            }
+        }
+
+        .logo {
+            text-align: center;
+            font-family: var(--font-secondary);
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
+            color: var(--accent-color);
+        }
+
+        /* Career Timeline */
+        .career-timeline {
+            margin: 3rem 0;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+        }
+
+        .career-timeline h2,
+        .reading-section h2,
+        .recently-watched h2 {
+            font-family: var(--font-secondary);
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-intro,
+        .section-intro {
+            color: var(--skills-color);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-intro a {
+            color: var(--skills-color);
+        }
+
+        .section-intro a:hover {
+            color: var(--accent-color);
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(var(--accent-rgb), 0.3);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 0 0.75rem 1rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.55rem;
+            top: 1rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .timeline-item.current::before {
+            background: var(--accent-color);
+        }
+
+        .timeline-item.personal::before {
+            border-style: dashed;
+        }
+
+        .timeline-item.personal .timeline-role {
+            font-style: italic;
+        }
+
+        .timeline-year {
+            font-family: var(--font-secondary);
+            font-size: 1rem;
+            color: var(--accent-color);
+            min-width: 80px;
+            font-weight: 600;
+        }
+
+        .timeline-role {
+            color: var(--text-color);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .timeline-company,
+        a.timeline-company {
+            color: var(--skills-color);
+            text-decoration: underline;
+        }
+
+        a.timeline-company:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 500px) {
+            .timeline-item {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .timeline-year {
+                min-width: auto;
+            }
+        }
+    </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            "mainEntity": {
+                "@type": "Person",
+                "name": "Erik Sagen",
+                "jobTitle": "Lead Product UX Designer",
+                "url": "https://www.kartooner.com",
+                "image": "https://www.kartooner.com/img/erik-avatar.jpg",
+                "description": "Lead Product UX Designer with over two decades of experience in UI/UX design, illustration, and web development.",
+                "sameAs": [
+                    "https://linkedin.com/in/eriksagen",
+                    "https://medium.com/@kartooner",
+                    "https://www.threads.net/@kartooner",
+                    "https://bsky.app/profile/kartooner.bsky.social"
+                ]
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
+
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+
+            <h1 class="logo animate-fade-in animate-header">About me</h1>
+
+            <div class="about-intro">
+                <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive
+                    loading="lazy" />
+                <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing games,
+                    writing short stories and putting on plays with my cousins. I was glued to cartoons like Darkwing
+                    Duck and TMNT and movies like Back to the Future and Jurassic Park shaped a lot of how I see the
+                    world and the stories within it.</p>
+
+                <p>These days I lead design teams for work. Outside of that I'm usually drawing, writing, watching
+                    movies, playing games, or tinkering with projects like this one. Most nights it's simple: a book or
+                    time with my family.</p>
+
+                <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when there's no
+                    clear answer; asking why helps me see a little better and shape what I'm working on.</p>
+
+                <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around"
+                    width="100" height="100" data-progressive class="darkwing-sprite" tabindex="0" role="button"
+                    aria-label="Darkwing Duck easter egg - click to animate" loading="lazy" />
+            </div>
+
+            <!-- Career Timeline -->
+            <section class="career-timeline animate-fade-in">
+                <h2>The journey so far</h2>
+                <p class="timeline-intro">I worked at a few retailers early on, but here's where I've been for the past
+                    20+ years.</p>
+                <div class="timeline">
+                    <div class="timeline-item current">
+                        <span class="timeline-year">Present</span>
+                        <span class="timeline-role">Lead UX Product Designer — <a href="https://www.paychex.com"
+                                target="_blank" rel="noopener" class="timeline-company">Paychex</a></span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2022</span>
+                        <span class="timeline-role">Senior UX Designer — <a href="https://www.elixirsolutions.com"
+                                target="_blank" rel="noopener" class="timeline-company">Elixir</a></span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2017</span>
+                        <span class="timeline-role">Senior UX Product Designer — <a href="https://www.paychex.com"
+                                target="_blank" rel="noopener" class="timeline-company">Paychex</a></span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2007–2017</span>
+                        <span class="timeline-role">Senior Designer — <a href="https://www.aol.com" target="_blank"
+                                rel="noopener" class="timeline-company">AOL</a></span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2007</span>
+                        <span class="timeline-role">Designer — <a href="https://www.magnatag.com" target="_blank"
+                                rel="noopener" class="timeline-company">Magnatag</a></span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2002</span>
+                        <span class="timeline-role">Assistant Social Worker — <a href="https://rivcodpss.org/"
+                                target="_blank" rel="noopener" class="timeline-company">DPSS/Riverside County</a></span>
+                    </div>
+                    <div class="timeline-item personal">
+                        <span class="timeline-year">1998</span>
+                        <span class="timeline-role">Graduated high school, attended college</span>
+                    </div>
+                    <div class="timeline-item personal">
+                        <span class="timeline-year">1980</span>
+                        <span class="timeline-role">Born outside of Chicago</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File > Open Recent Section -->
+            <!-- Commented out for now - will bring back later
+        <aside id="link-share" class="link-share-section animate-fade-in">
+            <h2 aria-label="Recent links">File &gt; Open Recent</h2>
+
+            <div class="link-grid">
+                <div class="link-card">
+                    <img
+                            src="img/pathfinder-thumb.png"
+                            alt="Simple illustration of a few nodes connected by lines"
+                            class="link-thumb"
+                            data-progressive
+                    />
+                    <div class="link-info">
+                        <h3>
+                            <a href="https://www.matthewsiu.com/pathfinder" target="_blank" rel="noopener noreferrer">
+                                Pathfinder
+                            </a>
+                        </h3>
+                        <p>From its creator: "[A] tool for exploring the space between two concepts." Fascinating.</p>
+                    </div>
+                </div>
+
+                <div class="link-card">
+                    <img
+                            src="img/og-friendly-introduction-to-svg.png"
+                            alt="Hero image of a friendly introduction to SVG"
+                            class="link-thumb"
+                            data-progressive
+                    />
+                    <div class="link-info">
+                        <h3>
+                            <a href="https://www.joshwcomeau.com/svg/friendly-introduction-to-svg/" target="_blank" rel="noopener noreferrer">
+                                A Friendly Introduction to SVG
+                            </a>
+                        </h3>
+                        <p>I can't think of a better description other than what the title already conveys.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        -->
+
+            <!-- Currently Reading Section -->
+            <aside id="reading" class="reading-section currently-reading animate-fade-in">
+                <h2>Currently reading</h2>
+                <p class="section-intro">I read a lot of books, often several at a time, but here's one I'm currently
+                    engaged with.</p>
+                <div class="book-entry">
+                    <img src="../img/how-great-ideas-happen-cover.jpg"
+                        alt="Book cover of How Great Ideas Happen by George Newman" class="book-cover"
+                        data-progressive />
+                    <div class="book-info">
+                        <h3><a href="https://a.co/d/cVuPkkJ" target="_blank" rel="noopener noreferrer"
+                                aria-label="View book listing">How Great Ideas Happen</a> by
+                            George Newman</h3>
+                        <p>A book that finally gets at the core of creativity—that it doesn't truly come from within and
+                            it's not a solo activity. It comes from a process of discovery that may or may not yield
+                            anything to pursue.</p>
+                    </div>
+                </div>
+                <p class="section-intro" style="margin: 1.25rem 0;">Check out my <a
+                        href="/recommended-books">recommended books</a> for UX design reading.</p>
+            </aside>
+
+            <!-- Movies Section -->
+            <section class="recently-watched animate-fade-in">
+                <h2>Movies I've recently watched</h2>
+                <p class="section-intro">Using <a href="https://letterboxd.com/kartooner/" target="_blank"
+                        rel="noopener">Letterboxd</a>, here are the last 4 films I've enjoyed and my thoughts on them.
+                </p>
+                <div id="reviews-container" class="reviews-grid">
+                    <!-- Reviews will be injected here -->
+                    <div class="reviews-loading">Loading latest watches...</div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+
+    <script>
+        (function () {
+            function escapeHtml(text) {
+                if (typeof text !== 'string') return '';
+                return text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function renderRecentLinks(links) {
+                var grid = document.querySelector('#link-share .link-grid');
+                if (!grid || !Array.isArray(links)) return;
+                grid.innerHTML = '';
+
+                links.forEach(function (item) {
+                    var card = document.createElement('div');
+                    card.className = 'link-card';
+                    card.innerHTML =
+                        '<img src="' + escapeHtml(item.thumbnail || '') + '" alt="' + escapeHtml(item.alt || item.title || '') + '" class="link-thumb" data-progressive />' +
+                        '<div class="link-info">' +
+                        '  <h3>' +
+                        '    <a href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title || '') + '</a>' +
+                        '  </h3>' +
+                        '  <p>' + escapeHtml(item.description || '') + '</p>' +
+                        '</div>';
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderCurrentlyReading(book) {
+                var entry = document.querySelector('#reading .book-entry');
+                if (!entry || !book) return;
+
+                entry.innerHTML =
+                    '<img src="' + escapeHtml(book.thumbnail || '') + '" alt="' + escapeHtml(book.alt || book.title || '') + '" class="book-cover" data-progressive />' +
+                    '<div class="book-info">' +
+                    '  <h3><a href="' + escapeHtml(book.url || '#') + '" target="_blank" rel="noopener noreferrer" aria-label="View ' + escapeHtml(book.title || '') + '">' + escapeHtml(book.title || '') + '</a> by ' + escapeHtml(book.author || '') + '</h3>' +
+                    '  <p>' + escapeHtml(book.review || '') + '</p>' +
+                    '</div>';
+            }
+
+            function init() {
+                fetch('/data/content.json', { cache: 'no-cache' })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        try { renderRecentLinks(data.recentLinks); } catch (e) { /* no-op */ }
+                        try { renderCurrentlyReading(data.currentlyReading); } catch (e) { /* no-op */ }
+                    })
+                    .catch(function () { /* leave fallback HTML */ });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+
+    <script>
+        // Darkwing Duck interactive animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const darkwingSprite = document.querySelector('.darkwing-sprite');
+
+            if (darkwingSprite) {
+                function triggerLookAnimation() {
+                    // Prevent multiple animations at once
+                    if (darkwingSprite.classList.contains('looking')) {
+                        return;
+                    }
+
+                    // Add animation class
+                    darkwingSprite.classList.add('looking');
+
+                    // Remove class after animation completes
+                    setTimeout(() => {
+                        darkwingSprite.classList.remove('looking');
+                    }, 800); // Match animation duration
+                }
+
+                // Add click/tap event listeners
+                darkwingSprite.addEventListener('click', triggerLookAnimation);
+                darkwingSprite.addEventListener('touchstart', function (e) {
+                    e.preventDefault(); // Prevent double-tap zoom
+                    triggerLookAnimation();
+                });
+
+                // Add keyboard support (Enter and Space)
+                darkwingSprite.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        triggerLookAnimation();
+                    }
+                });
+            }
+        });
+    </script>
+    <script src="/js/app.min.js"></script>
+    <script src="/js/letterboxd.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>

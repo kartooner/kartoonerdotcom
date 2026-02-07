@@ -174,34 +174,56 @@
 
     <div id="theme-toggle-placeholder"></div>
 
-    <div class="container">
-        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
-
-            <div class="error-message">
-                <h1 class="error-code animate-fade-in animate-header">404</h1>
-                <p class="error-text">Page Not Found</p>
-                <p class="error-description">
-                    Looks like you've dug yourself into a hole! This page doesn't exist,
-                    but since you're here, how about a game of Dig Dug?
-                </p>
-            </div>
-
-            <!-- Game Section -->
-            <section class="game-section animate-fade-in">
-                <h2>Play Dig Dug</h2>
-                <p class="game-intro">Classic Atari 2600 arcade action. Dig tunnels, pump up enemies, and rack up
-                    points!</p>
-
-                <div class="game-container">
-                    <div id="game" style="display: none;"></div>
-                    <button id="startButton">PLAY</button>
+    <div class="container animate-fade-in animate-main">
+        <main id="main-content" tabindex="-1">
+            <div class="editorial-grid">
+                <div class="col-full">
+                    <h1 style="font-size: var(--text-hero); margin-bottom: var(--space-4);">404</h1>
+                    <p class="page-intro" style="text-align: left; margin-bottom: var(--space-8); max-width: 600px;">
+                        Looks like you've dug yourself into a hole! This page doesn't exist, but since you're here, how
+                        about a game of Dig Dug?</p>
                 </div>
-            </section>
 
-            <div class="back-link">
-                <a href="/">← Back to home</a>
+                <div class="col-full">
+                    <div class="editorial-grid">
+                        <div class="col-main">
+                            <!-- Game Section -->
+                            <section class="game-section" style="margin: 0; padding: 0; border: none;">
+                                <h2 class="uppercase tracking-widest"
+                                    style="font-size: var(--text-2xl); margin-bottom: var(--space-4); color: var(--accent-color);">
+                                    Play Dig Dug</h2>
+                                <p
+                                    style="margin-bottom: var(--space-8); font-size: var(--text-sm); color: var(--skills-color);">
+                                    Classic Atari 2600 arcade action. Dig tunnels, pump up enemies, and rack up points!
+                                </p>
+
+                                <div class="game-container"
+                                    style="border-radius: 0; border: 1px solid var(--border); box-shadow: none;">
+                                    <div id="game" style="display: none;"></div>
+                                    <button id="startButton" class="btn btn-secondary"
+                                        style="margin: var(--space-12) auto; border-radius: 0; font-family: 'Press Start 2P', cursive;">PLAY</button>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="col-side">
+                            <div style="border-top: 2px solid var(--accent-color); padding-top: var(--space-4);">
+                                <h3 class="uppercase tracking-wider"
+                                    style="font-size: var(--text-xs); color: var(--accent-color); margin-bottom: var(--space-4);">
+                                    Lost?</h3>
+                                <ul style="list-style: none; padding: 0; font-size: var(--text-sm);">
+                                    <li style="margin-bottom: var(--space-2);"><a href="/"
+                                            style="text-decoration: none;">← Back to home</a></li>
+                                    <li style="margin-bottom: var(--space-2);"><a href="/journal"
+                                            style="text-decoration: none;">Latest journal entries</a></li>
+                                    <li style="margin-bottom: var(--space-2);"><a href="/contact"
+                                            style="text-decoration: none;">Report a bug</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
         </main>
     </div>
 

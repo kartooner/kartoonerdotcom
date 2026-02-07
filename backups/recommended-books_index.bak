@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended books - Erik Sagen</title>
+    <meta name="description"
+        content="A curated collection of UX design books that have shaped my approach to design, from foundational principles to practical techniques.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
+    <meta property="og:title" content="Recommended books - Erik Sagen">
+    <meta property="og:description"
+        content="A curated collection of UX design books that have shaped my approach to design, from foundational principles to practical techniques.">
+    <meta property="og:image" content="https://kartooner.com/img/og-preview.png">
+    <meta property="og:url" content="https://kartooner.com/recommended-books">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Recommended books - Erik Sagen">
+    <meta name="twitter:description"
+        content="A curated collection of UX design books that have shaped my approach to design, from foundational principles to practical techniques.">
+    <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
+
+    <style>
+        /* Recommended books page specific styles */
+        .container {
+            max-width: 1200px;
+        }
+
+        /* Ensure h1 inherits responsive sizing from global styles */
+        h1 {
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem) !important;
+        }
+
+        .books-intro {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .books-intro h1 {
+            color: var(--accent-color);
+        }
+
+
+        .books-intro p {
+            font-size: 1.1rem;
+            color: var(--text-color-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .book-card {
+            background: var(--bg-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .book-image {
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            background: var(--bg-secondary, #f5f5f5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .book-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .book-card:hover .book-image img {
+            transform: scale(1.05);
+        }
+
+        .book-info {
+            padding: 1.5rem;
+        }
+
+        .book-info h3 {
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--heading-color);
+            margin: 0 0 0.5rem;
+        }
+
+        .book-info h3::after {
+            content: " ↗";
+            font-size: 0.85em;
+            opacity: 0.6;
+            vertical-align: super;
+        }
+
+        .book-info p {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .book-card:hover .book-info p {
+            color: var(--text-color-secondary) !important;
+        }
+
+        .book-card:hover .book-info h3 {
+            color: var(--heading-color) !important;
+        }
+
+        /* Prevent color changes on all child elements */
+        .book-card * {
+            color: inherit !important;
+        }
+
+        .book-card .book-info h3 {
+            color: var(--heading-color) !important;
+        }
+
+        .book-card .book-info p {
+            color: var(--text-color-secondary) !important;
+        }
+
+        /* Remove all link styling and glyphs */
+        .book-card,
+        .book-card:link,
+        .book-card:visited,
+        .book-card:hover,
+        .book-card:active {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+
+        .book-card::after,
+        .book-card h3::after,
+        .book-card p::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        /* Lightbox styles */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .lightbox-image {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            line-height: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .lightbox-close:hover {
+            opacity: 0.7;
+        }
+
+        .lightbox-info {
+            color: white;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .lightbox-info h3 {
+            font-size: 1.3rem;
+            margin: 0 0 0.5rem;
+        }
+
+        .lightbox-info p {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: clamp(2.1rem, 5vw + 1rem, 3.15rem) !important;
+            }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .lightbox-close {
+                font-size: 1.5rem;
+                top: -35px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
+
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+
+            <div class="books-intro">
+                <h1>Recommended books</h1>
+                <p>Books that have shaped my approach to UX design, from foundational principles to practical
+                    techniques.</p>
+            </div>
+
+            <div class="books-grid">
+
+                <a href="https://www.oreilly.com/library/view/laws-of-ux/9781492055303/" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="Laws of UX"
+                    data-description="Psychology-backed principles that help designers create intuitive interfaces.">
+                    <div class="book-image">
+                        <img src="/img/books/laws-of-ux.jpg" alt="Laws of UX book cover by Jon Yablonski"
+                            loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Laws of UX by Jon Yablonski</h3>
+                        <p>Psychology-backed principles that help designers create intuitive interfaces. A quick,
+                            accessible reference I keep coming back to.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Design-Everyday-Things-Revised-Expanded/dp/0465050654" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="The Design of Everyday Things"
+                    data-description="The foundational text that teaches you to see design everywhere.">
+                    <div class="book-image">
+                        <img src="/img/books/design-everyday-things.jpg"
+                            alt="The Design of Everyday Things book cover by Don Norman" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>The Design of Everyday Things by Don Norman</h3>
+                        <p>The foundational text that teaches you to see design everywhere, from door handles to
+                            dashboards. Essential reading for understanding user-centered design.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/User-Friendly-Hidden-Rules-Design/dp/0374279756" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="User Friendly"
+                    data-description="A fascinating history of how design shapes our relationship with technology.">
+                    <div class="book-image">
+                        <img src="/img/books/user-friendly.jpg"
+                            alt="User Friendly book cover by Cliff Kuang and Robert Fabricant" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>User Friendly by Cliff Kuang</h3>
+                        <p>A fascinating history of how design shapes our relationship with technology. It's part
+                            detective story, part philosophy, really engaging stuff.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Dont-Make-Think-Revisited-Usability/dp/0321965515" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="Don't Make Me Think"
+                    data-description="Timeless web usability principles delivered with humor and common sense.">
+                    <div class="book-image">
+                        <img src="/img/books/dont-make-me-think.jpg" alt="Don't Make Me Think book cover by Steve Krug"
+                            loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Don't Make Me Think by Steve Krug</h3>
+                        <p>Timeless web usability principles delivered with humor and common sense. Even after all these
+                            years, it's still the book I recommend to anyone getting started in UX.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Lean-UX-Designing-Great-Products/dp/1098116305" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="Lean UX"
+                    data-description="Practical techniques for integrating UX into agile workflows without slowing down.">
+                    <div class="book-image">
+                        <img src="/img/books/lean-ux.jpg" alt="Lean UX book cover by Jeff Gothelf and Josh Seiden"
+                            loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Lean UX by Jeff Gothelf & Josh Seiden</h3>
+                        <p>Practical techniques for integrating UX into agile workflows without slowing down. Perfect
+                            for designers working in fast-paced product teams.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Paradox-Choice-Why-More-Less/dp/149151423X" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="The Paradox of Choice"
+                    data-description="Why offering too many options can paralyze users instead of empowering them.">
+                    <div class="book-image">
+                        <img src="/img/books/paradox-of-choice.jpg"
+                            alt="The Paradox of Choice book cover by Barry Schwartz" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>The Paradox of Choice by Barry Schwartz</h3>
+                        <p>Why offering too many options can paralyze users instead of empowering them. Changed how I
+                            think about navigation and decision-making in interfaces.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Creative-Confidence-Unleashing-Potential-Within/dp/038534936X"
+                    target="_blank" rel="noopener noreferrer" class="book-card" data-title="Creative Confidence"
+                    data-description="The Kelley brothers show that creativity is a skill anyone can develop.">
+                    <div class="book-image">
+                        <img src="/img/books/creative-confidence.jpg"
+                            alt="Creative Confidence book cover by Tom and David Kelley" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Creative Confidence by Tom and David Kelley</h3>
+                        <p>The Kelley brothers show that creativity is a skill anyone can develop, not some innate gift.
+                            Encouraging for designers and non-designers alike.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Build-Better-Products-Successful-User-Centered/dp/1933820586"
+                    target="_blank" rel="noopener noreferrer" class="book-card" data-title="Build Better Products"
+                    data-description="A comprehensive guide to modern product design with frameworks you can use immediately.">
+                    <div class="book-image">
+                        <img src="/img/books/build-better-products.jpg"
+                            alt="Build Better Products book cover by Laura Klein" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Build Better Products by Laura Klein</h3>
+                        <p>A comprehensive guide to modern product design with frameworks you can use immediately.
+                            Klein's advice is practical, not theoretical.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Defensive-Design-Web-improve-messages/dp/073571410X" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="Defensive Design for the Web"
+                    data-description="37signals teaches you to anticipate errors and build interfaces that help users recover.">
+                    <div class="book-image">
+                        <img src="/img/books/defensive-design.jpg"
+                            alt="Defensive Design for the Web book cover by 37signals" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Defensive Design for the Web by 37signals</h3>
+                        <p>37signals teaches you to anticipate errors and build interfaces that help users recover
+                            gracefully. A classic from the team that gets design.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Designing-Web-Standards-Jeffrey-Zeldman/dp/0321616952" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="Designing with Web Standards"
+                    data-description="Zeldman's classic on semantic HTML, CSS, and building accessible web experiences.">
+                    <div class="book-image">
+                        <img src="/img/books/designing-web-standards.jpg"
+                            alt="Designing with Web Standards book cover by Jeffrey Zeldman" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Designing with Web Standards by Jeffrey Zeldman</h3>
+                        <p>Zeldman's classic on semantic HTML, CSS, and building accessible web experiences. The book
+                            that helped shape the modern web as we know it.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/Articulating-Design-Decisions-Communicate-Stakeholders/dp/1491921560"
+                    target="_blank" rel="noopener noreferrer" class="book-card"
+                    data-title="Articulating Design Decisions"
+                    data-description="A practical guide to communicating design decisions effectively to stakeholders.">
+                    <div class="book-image">
+                        <img src="/img/books/articulating-design-decisions.jpg"
+                            alt="Articulating Design Decisions book cover by Tom Greever" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>Articulating Design Decisions by Tom Greever</h3>
+                        <p>A practical guide to presenting and defending your design work to stakeholders. Essential for
+                            anyone who needs to explain the why behind their decisions.</p>
+                    </div>
+                </a>
+
+                <a href="https://www.amazon.com/User-Experience-Team-One-Research/dp/1933820187" target="_blank"
+                    rel="noopener noreferrer" class="book-card" data-title="The User Experience Team of One"
+                    data-description="How to do great UX work when you're the only designer.">
+                    <div class="book-image">
+                        <img src="/img/books/ux-team-of-one.jpg"
+                            alt="The User Experience Team of One book cover by Leah Buley" loading="lazy">
+                    </div>
+                    <div class="book-info">
+                        <h3>The User Experience Team of One by Leah Buley</h3>
+                        <p>How to do great UX work when you're the only designer on the team. Full of practical tips for
+                            wearing multiple hats and getting buy-in.</p>
+                    </div>
+                </a>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>

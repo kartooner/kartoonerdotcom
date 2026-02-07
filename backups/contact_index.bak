@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Get in touch with Erik Sagen - Lead Product UX Designer">
+    <title>Contact - Erik Sagen</title>
+    <!-- Resource hints for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.web3forms.com">
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&display=swap" rel="stylesheet">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
+    <style>
+        /* Using .container-narrow from style.css for consistent width */
+
+        .contact-form {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            padding: var(--space-4);
+            margin: var(--space-4) 0;
+        }
+
+        [data-theme="dark"] .contact-form {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-3);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--space-1);
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: var(--space-2);
+            border: 1px solid var(--tertiary-color);
+            border-radius: 4px;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            background: #ffffff;
+            color: #333333;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .submit-button {
+            background: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            padding: var(--space-2) var(--space-3);
+            border-radius: 4px;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .contact-intro {
+            text-align: center;
+            margin-bottom: var(--space-4);
+        }
+
+        .contact-intro h1 {
+            font-family: var(--font-secondary);
+            font-size: var(--text-7xl);
+            color: var(--accent-color);
+            margin-bottom: var(--space-2);
+        }
+
+        .contact-intro p {
+            color: var(--text-color);
+            font-family: var(--font-secondary);
+            font-size: var(--text-xl);
+            line-height: var(--leading-snug);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: var(--space-4);
+            background: rgba(0, 128, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 128, 0, 0.3);
+            margin: var(--space-4) 0;
+        }
+
+        .success-message h2 {
+            font-family: var(--font-secondary);
+            color: var(--accent-color);
+            margin-bottom: var(--space-2);
+            font-size: var(--text-2xl);
+        }
+
+        .success-message p {
+            color: var(--text-color);
+            font-size: var(--text-lg);
+            margin-bottom: var(--space-3);
+        }
+
+        .sr-only {
+            position: absolute;
+            left: -10000px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .error-message {
+            display: block;
+            color: #d32f2f;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            min-height: 1.2em;
+        }
+
+        .form-group input.error,
+        .form-group textarea.error {
+            border-color: #d32f2f;
+            background-color: rgba(211, 47, 47, 0.05);
+        }
+
+        .error-message-box {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(211, 47, 47, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(211, 47, 47, 0.3);
+            margin: 2rem 0;
+        }
+
+        .error-message-box h2 {
+            font-family: var(--font-secondary);
+            color: #d32f2f;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .error-message-box p {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .button-loading {
+            display: inline-block;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .darkwing-peek {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background-image: url('../img/darkwing-sprite.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.5s ease-in-out;
+        }
+
+        @media (min-width: 769px) {
+            .darkwing-peek {
+                bottom: 0;
+                right: 20px;
+            }
+
+            .darkwing-peek.show {
+                opacity: 1;
+                transform: translateY(-20px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .darkwing-peek {
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%) translateY(100%);
+                width: 80px;
+                height: 80px;
+            }
+
+            .darkwing-peek.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(-20px);
+            }
+        }
+
+        /* Respect reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .darkwing-peek {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Skip Navigation Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Persistent Navigation -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <span class="menu-text">Menu</span>
+        </button>
+
+        <!-- Navigation links -->
+        <div class="nav-links">
+            <button class="mobile-close-button" aria-label="Close navigation menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/journal">Journal</a>
+            <a href="/voice-acting">Voice Acting</a>
+            <a href="/contact" class="current" aria-current="page">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Theme Toggle -->
+    <div id="theme-toggle-placeholder"></div>
+
+    <div class="container-narrow">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+            <div class="contact-intro">
+                <h1>Contact me</h1>
+                <p class="page-intro">Have a project in mind? Want to collaborate? Or just want to say hello? I'd love
+                    to hear from you.</p>
+            </div>
+
+            <!-- Status announcements for screen readers -->
+            <div id="formStatus" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+            <form class="contact-form" method="POST" action="https://api.web3forms.com/submit" id="contactForm"
+                novalidate>
+                <!-- Web3Forms configuration -->
+                <input type="hidden" name="access_key" value="2821095f-dff0-4448-9247-7df348a55161">
+                <input type="hidden" name="subject" value="New message from kartooner.com">
+                <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" required aria-required="true"
+                        aria-describedby="name-error">
+                    <span id="name-error" class="error-message" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required aria-required="true"
+                        aria-describedby="email-error">
+                    <span id="email-error" class="error-message" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" name="message"
+                        placeholder="Tell me about your project, idea, or just say hello..." required
+                        aria-required="true" aria-describedby="message-error"></textarea>
+                    <span id="message-error" class="error-message" role="alert"></span>
+                </div>
+
+                <button type="submit" class="submit-button" id="submitBtn">
+                    <span class="button-text">Send Message</span>
+                    <span class="button-loading" style="display: none;">Sending...</span>
+                </button>
+            </form>
+
+            <div id="errorMessage" class="error-message-box" style="display: none;" role="alert">
+                <h2>Oops! Something went wrong.</h2>
+                <p id="errorText"></p>
+                <button onclick="closeErrorMessage()" class="submit-button">Try again</button>
+            </div>
+
+            <div id="successMessage" class="success-message" style="display: none;" role="status">
+                <h2>Message has been sent across the tubes.</h2>
+                <p>Once I have my staff of robotic eels read it, I'll be sure to get back to you.</p>
+                <button onclick="resetForm()" class="submit-button">Send another message</button>
+            </div>
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+
+    <!-- Darkwing Duck peek animation -->
+    <div class="darkwing-peek" id="darkwingPeek"></div>
+
+    <script src="/js/app.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('contactForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const formStatus = document.getElementById('formStatus');
+
+            // Clear error on input
+            ['name', 'email', 'message'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                const errorSpan = document.getElementById(fieldId + '-error');
+
+                field.addEventListener('input', function () {
+                    this.classList.remove('error');
+                    this.removeAttribute('aria-invalid');
+                    errorSpan.textContent = '';
+                });
+            });
+
+            // Validate individual field
+            function validateField(field) {
+                const errorSpan = document.getElementById(field.id + '-error');
+                let isValid = true;
+
+                if (!field.value.trim()) {
+                    errorSpan.textContent = 'This field is required';
+                    field.classList.add('error');
+                    field.setAttribute('aria-invalid', 'true');
+                    isValid = false;
+                } else if (field.type === 'email' && !field.validity.valid) {
+                    errorSpan.textContent = 'Please enter a valid email address';
+                    field.classList.add('error');
+                    field.setAttribute('aria-invalid', 'true');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            // Handle form submission with web3forms
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                // Validate all fields
+                const nameField = document.getElementById('name');
+                const emailField = document.getElementById('email');
+                const messageField = document.getElementById('message');
+
+                const isNameValid = validateField(nameField);
+                const isEmailValid = validateField(emailField);
+                const isMessageValid = validateField(messageField);
+
+                if (!isNameValid || !isEmailValid || !isMessageValid) {
+                    formStatus.textContent = 'Please fix the errors in the form';
+                    return;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.querySelector('.button-text').style.display = 'none';
+                submitBtn.querySelector('.button-loading').style.display = 'inline';
+                formStatus.textContent = 'Sending your message...';
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        form.style.display = 'none';
+                        successMessage.style.display = 'block';
+                        formStatus.textContent = 'Message sent successfully!';
+                        successMessage.focus();
+                    } else {
+                        showError('Unable to send your message. Please try again or contact me directly via email.');
+                    }
+                } catch (error) {
+                    showError('Network error. Please check your connection and try again.');
+                } finally {
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('.button-text').style.display = 'inline';
+                    submitBtn.querySelector('.button-loading').style.display = 'none';
+                }
+            });
+        });
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const formStatus = document.getElementById('formStatus');
+
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            formStatus.textContent = 'Error: ' + message;
+            errorMessage.focus();
+        }
+
+        function closeErrorMessage() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'none';
+            document.getElementById('name').focus();
+        }
+
+        function resetForm() {
+            const form = document.getElementById('contactForm');
+            const successMessage = document.getElementById('successMessage');
+            const formStatus = document.getElementById('formStatus');
+
+            form.reset();
+            form.style.display = 'block';
+            successMessage.style.display = 'none';
+            formStatus.textContent = '';
+
+            // Clear any error states
+            ['name', 'email', 'message'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                const errorSpan = document.getElementById(fieldId + '-error');
+                field.classList.remove('error');
+                field.removeAttribute('aria-invalid');
+                errorSpan.textContent = '';
+            });
+
+            document.getElementById('name').focus();
+        }
+
+        // Darkwing Duck random peek animation
+        function initDarkwingPeek() {
+            const darkwingElement = document.getElementById('darkwingPeek');
+
+            function randomPeek() {
+                // Random delay between 5-15 seconds
+                const delay = Math.random() * 10000 + 5000;
+
+                setTimeout(() => {
+                    // Show Darkwing
+                    darkwingElement.classList.add('show');
+
+                    // Hide after 2-4 seconds
+                    const hideDelay = Math.random() * 2000 + 2000;
+                    setTimeout(() => {
+                        darkwingElement.classList.remove('show');
+                        // Schedule next peek
+                        randomPeek();
+                    }, hideDelay);
+                }, delay);
+            }
+
+            // Start the random peek cycle
+            randomPeek();
+        }
+
+        // Initialize Darkwing peek animation after page load
+        document.addEventListener('DOMContentLoaded', function () {
+            initDarkwingPeek();
+        });
+    </script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>

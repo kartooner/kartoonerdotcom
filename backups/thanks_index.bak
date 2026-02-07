@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Thanks - Erik Sagen</title>
+    <meta name="description"
+        content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
+
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="Special Thanks - Erik Sagen">
+    <meta property="og:description"
+        content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
+    <meta property="og:image" content="https://kartooner.com/img/og-preview.png">
+    <meta property="og:url" content="https://kartooner.com/thanks">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Special Thanks - Erik Sagen">
+    <meta name="twitter:description"
+        content="Special thanks and acknowledgments for the technology, resources, and people that make this website possible.">
+    <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
+
+    <style>
+        /* Movie poster credits styling */
+        .container {
+            max-width: 1200px;
+        }
+
+        .credits-poster {
+            background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-secondary, var(--bg-color)) 100%);
+            min-height: 80vh;
+            padding: var(--space-6) var(--space-4);
+            /* 48px 32px - consistent 8px grid */
+            position: relative;
+            overflow: hidden;
+        }
+
+        .credits-poster::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(var(--accent-rgb, 130, 87, 229), 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb, 130, 87, 229), 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .poster-title {
+            text-align: center;
+            font-family: var(--font-secondary);
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem);
+            color: var(--accent-color);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 2rem;
+        }
+
+        .credits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 3rem;
+        }
+
+        .credit-block {
+            background: rgba(var(--text-rgb, 255, 255, 255), 0.03);
+            border-radius: 8px;
+            padding: var(--space-5) var(--space-4);
+            /* 40px 32px - consistent 8px grid */
+            text-align: center;
+            transition: all 0.3s ease, background-color 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .credit-block:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(var(--accent-rgb, 130, 87, 229), 0.2);
+        }
+
+        .credit-category {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .credit-category::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        .credit-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .credit-item {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .credit-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .credit-name {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .credit-role {
+            font-size: 0.85rem;
+            color: var(--text-color-secondary);
+            font-style: italic;
+        }
+
+        .credit-link {
+            color: var(--text-color);
+            transition: opacity 0.2s ease;
+        }
+
+        .credit-link:hover {
+            opacity: 0.8;
+        }
+
+        .poster-footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            border-top: 1px solid rgba(var(--text-rgb, 255, 255, 255), 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .poster-footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .poster-footer a:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .credits-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .credits-poster {
+                padding: 2rem 1rem;
+            }
+
+            .poster-title {
+                margin-bottom: 2rem;
+            }
+
+            .credit-block {
+                padding: var(--space-4) var(--space-3);
+                /* 32px 24px on mobile */
+            }
+        }
+
+        /* Contact section styling */
+        .contact-section {
+            margin-top: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .contact-section p {
+            margin-bottom: 1.5rem;
+        }
+
+        .site-navigation {
+            background: rgba(var(--accent-rgb), 0.08);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+
+        .site-navigation a {
+            margin-right: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            font-weight: 400;
+            text-decoration: underline;
+            transition: all 0.3s ease;
+        }
+
+        .site-navigation a:hover,
+        .site-navigation a:focus {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .site-navigation a {
+                font-size: 0.9rem;
+                display: block;
+                margin-right: 0;
+                margin-bottom: 0.75rem;
+                background: rgba(var(--accent-rgb), 0.08);
+                padding: 0.75rem 1rem;
+                border-radius: 6px;
+                text-align: center;
+            }
+
+            .site-navigation a:last-child {
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
+
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+
+            <div class="credits-poster">
+                <h1 class="poster-title">Special Thanks</h1>
+
+                <div class="poster-footer"
+                    style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 3rem;">
+                    This site is a labor of love, built with care and attention to detail.<br>
+                    Here's what makes it all possible.
+                </div>
+
+                <div class="credits-grid">
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Tech & Code</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name">HTML5, CSS3 & JavaScript</div>
+                                <div class="credit-role">Core foundation, written from scratch</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">Progressive web app</div>
+                                <div class="credit-role">Enhanced performance & user experience</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">Semantic HTML</div>
+                                <div class="credit-role">Accessibility & structure</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Typography</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://fonts.google.com/specimen/Manrope"
+                                        target="_blank" rel="noopener noreferrer" class="credit-link">Manrope</a></div>
+                                <div class="credit-role">Primary typeface for body text and headings</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://simplebits.shop/products/cartridge"
+                                        target="_blank" rel="noopener noreferrer" class="credit-link">Cartridge</a>
+                                </div>
+                                <div class="credit-role">Display font by <a href="https://www.simplebits.com"
+                                        target="_blank" rel="noopener noreferrer" class="credit-link">Dan Cedarholm</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Services & APIs</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://letterboxd.com/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">Letterboxd</a></div>
+                                <div class="credit-role">Movie reviews and watchlist integration</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://open-meteo.com/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">Open-Meteo</a></div>
+                                <div class="credit-role">Free weather API providing Rochester temperature data</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://github.com/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">GitHub</a></div>
+                                <div class="credit-role">Code hosting and version control</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Web Standards</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://webri.ng/webring/cssjoy/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">CSS Joy Webring</a></div>
+                                <div class="credit-role">Connecting with fellow web creators</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://www.w3.org/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">W3C Standards</a></div>
+                                <div class="credit-role">Accessibility & semantic markup best practices</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">Progressive enhancement</div>
+                                <div class="credit-role">Building for everyone, every device</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Honorary Mentions</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://www.pexels.com/" target="_blank"
+                                        rel="noopener noreferrer" class="credit-link">Pexels</a></div>
+                                <div class="credit-role">High-quality stock photography</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">My family</div>
+                                <div class="credit-role">Patience while I tinker with code</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">Fellow developers</div>
+                                <div class="credit-role">Sharing knowledge & inspiring better work</div>
+                            </li>
+                            <li class="credit-item">
+                                <div class="credit-name">You</div>
+                                <div class="credit-role">For visiting and reading this</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="credit-block">
+                        <h2 class="credit-category">Open Source</h2>
+                        <ul class="credit-list">
+                            <li class="credit-item">
+                                <div class="credit-name"><a href="https://github.com/kartooner/kartoonerdotcom"
+                                        target="_blank" rel="noopener noreferrer" class="credit-link">Available on
+                                        GitHub</a></div>
+                                <div class="credit-role">MIT License - explore, learn, use in your projects</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>
