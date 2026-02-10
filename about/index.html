@@ -43,21 +43,123 @@
     <meta name="twitter:image" content="https://kartooner.com/img/og-preview.png">
 
     <style>
-        /* About page specific container width override */
+        /* About page specific container width - wider for grid layout */
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 0 2em;
         }
 
-        /* First bio paragraph uses Cartridge Rough font */
+        /* Bio section grid layout */
+        .about-intro {
+            margin-bottom: var(--space-8);
+            /* 64px - consistent spacing to next section */
+        }
+
+        .bio-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: var(--space-4);
+            /* 32px gap - 4 baseline units */
+            align-items: start;
+            margin-bottom: var(--space-8);
+            /* 64px - consistent spacing before Darkwing sprite */
+        }
+
+        .avatar-column {
+            grid-column: span 4;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .bio-column {
+            grid-column: span 8;
+        }
+
+        /* Avatar image styling */
+        .author-headshot {
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+            border-radius: 50%;
+            /* Keep rounded as requested */
+            border: 4px solid var(--accent-color);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .author-headshot:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="light"] .author-headshot {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="light"] .author-headshot:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* First bio paragraph - display font for impact */
         .about-intro .intro-text,
-        .about-intro p:nth-of-type(1) {
+        .bio-column p:first-child {
             font-family: var(--font-secondary);
-            font-size: 1.3rem;
+            /* Cartridge Rough for visual impact on opening statement */
+            font-size: var(--text-2xl);
+            /* Larger, more prominent - 25-31.25px */
             font-weight: normal;
-            line-height: 1.4;
+            line-height: 1.3;
+            /* Tighter for display text - larger text needs tighter leading */
             color: #333333;
+            margin-bottom: var(--space-4);
+            /* 32px - 4 baseline units */
+        }
+
+        /* Second and third bio paragraphs - still prominent but secondary */
+        .bio-column p:nth-child(2),
+        .bio-column p:nth-child(3) {
+            font-size: var(--text-lg);
+            /* Fluid 18-21.6px - larger than body text */
+            line-height: 1.6;
+            /* Comfortable reading */
+            margin-bottom: var(--space-3);
+            /* 24px - 3 baseline units */
+            max-width: none;
+        }
+
+        .bio-column p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Responsive: Stack on tablet and mobile */
+        @media (max-width: 768px) {
+            .bio-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-4);
+            }
+
+            .avatar-column,
+            .bio-column {
+                grid-column: span 1;
+            }
+
+            .avatar-column {
+                justify-content: center;
+                margin-bottom: var(--space-3);
+            }
+
+            .author-headshot {
+                max-width: 200px;
+            }
+
+            /* Slightly smaller on mobile but still prominent */
+            .about-intro .intro-text,
+            .bio-column p:first-child {
+                font-size: var(--text-xl);
+                /* 20.25-25.9px on mobile */
+            }
         }
 
         /* White text in dark mode - applies to all seasonal themes */
@@ -100,7 +202,8 @@
         /* Darkwing sprite as divider */
         .darkwing-sprite {
             display: block;
-            margin: 2rem auto;
+            margin: var(--space-8) auto;
+            /* 64px top and bottom - consistent with section spacing */
             cursor: pointer;
             transition: transform 0.1s ease;
             user-select: none;
@@ -157,6 +260,27 @@
             }
         }
 
+        /* Reading and movies sections - consistent spacing */
+        .reading-section,
+        .recently-watched {
+            margin-top: var(--space-8);
+            /* 64px - consistent with other sections */
+            margin-bottom: var(--space-8);
+            /* 64px - consistent spacing */
+        }
+
+        /* Currently Reading - clean aesthetic with borders only */
+        .currently-reading {
+            padding: var(--space-6) 0;
+            /* 48px top and bottom padding */
+            border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+            border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
+            background: none;
+            /* No background */
+            border-radius: 0;
+            /* No rounded corners */
+        }
+
         .logo {
             text-align: center;
             font-family: var(--font-secondary);
@@ -166,8 +290,10 @@
 
         /* Career Timeline */
         .career-timeline {
-            margin: 3rem 0;
-            padding: 2rem 0;
+            margin: var(--space-8) 0;
+            /* 64px top and bottom - consistent with other sections */
+            padding: var(--space-4) 0;
+            /* 32px padding */
             border-top: 1px solid rgba(var(--accent-rgb), 0.2);
         }
 
@@ -175,16 +301,23 @@
         .reading-section h2,
         .recently-watched h2 {
             font-family: var(--font-secondary);
-            font-size: 2rem;
+            font-size: var(--text-2xl);
+            /* Reduced from 3xl - now 25-31.25px, smaller than bio hero text */
+            line-height: 1.2;
             color: var(--accent-color);
-            margin-bottom: 0.5rem;
+            margin-bottom: var(--space-3);
+            /* 24px - 3 baseline units */
         }
 
         .timeline-intro,
         .section-intro {
             color: var(--skills-color);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
+            font-size: var(--text-sm);
+            /* Reduced from base - now 14-15px, more subtle */
+            line-height: 1.5;
+            /* Tightened from 1.6 for more compact appearance */
+            margin-bottom: var(--space-4);
+            /* 32px - 4 baseline units */
         }
 
         .section-intro a {
@@ -193,6 +326,110 @@
 
         .section-intro a:hover {
             color: var(--accent-color);
+        }
+
+        /* Book entry grid layout - clean and minimal */
+        .book-entry {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: var(--space-4);
+            /* 32px gap */
+            align-items: start;
+            margin-bottom: var(--space-4);
+        }
+
+        .book-cover {
+            grid-column: span 2;
+            /* Compact size */
+            width: 100%;
+            height: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .book-cover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="light"] .book-cover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="light"] .book-cover:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .book-info {
+            grid-column: span 10;
+            /* Expanded to accommodate smaller book cover */
+        }
+
+        /* Book title and author - PRIMARY FOCUS */
+        .book-info h3 {
+            font-size: var(--text-xl);
+            /* Increased from lg - now 20.25-25.9px, more prominent */
+            font-weight: 500;
+            /* Slightly bolder */
+            line-height: 1.3;
+            margin-bottom: var(--space-2);
+            /* 16px - 2 baseline units */
+            color: var(--heading-color);
+        }
+
+        .book-info h3 a {
+            color: var(--heading-color);
+            text-decoration: none;
+        }
+
+        .book-info h3 a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Book review - SUBTLE, like Design Philosophy */
+        .book-info p {
+            font-size: var(--text-sm);
+            /* Small, subtle */
+            line-height: 1.6;
+            margin-bottom: 0;
+            opacity: 0.8;
+            /* Reduced opacity for subtlety */
+            color: var(--skills-color);
+        }
+
+        /* Responsive book entry */
+        @media (max-width: 768px) {
+            .book-entry {
+                grid-template-columns: 1fr;
+                gap: var(--space-3);
+            }
+
+            .book-cover,
+            .book-info {
+                grid-column: span 1;
+            }
+
+            .book-cover {
+                max-width: 200px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Reviews grid for movies */
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-4);
+            /* 32px gap - 4 baseline units */
+            margin-top: var(--space-4);
+        }
+
+        .reviews-loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: var(--space-6);
+            color: var(--skills-color);
+            font-size: var(--text-base);
         }
 
         .timeline {
@@ -305,19 +542,30 @@
             <h1 class="logo animate-fade-in animate-header">About me</h1>
 
             <div class="about-intro">
-                <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot" data-progressive
-                    loading="lazy" />
-                <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing games,
-                    writing short stories and putting on plays with my cousins. I was glued to cartoons like Darkwing
-                    Duck and TMNT and movies like Back to the Future and Jurassic Park shaped a lot of how I see the
-                    world and the stories within it.</p>
+                <div class="bio-grid">
+                    <div class="avatar-column">
+                        <img src="../img/erik-avatar.jpg" alt="Erik Sagen headshot" class="author-headshot"
+                            data-progressive loading="lazy" />
+                    </div>
+                    <div class="bio-column">
+                        <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing
+                            games,
+                            writing short stories and putting on plays with my cousins.</p>
 
-                <p>These days I lead design teams for work. Outside of that I'm usually drawing, writing, watching
-                    movies, playing games, or tinkering with projects like this one. Most nights it's simple: a book or
-                    time with my family.</p>
+                        <p>As a child I was glued to cartoons like Darkwing Duck and TMNT and movies like Back to the
+                            Future and Jurassic Park shaped a lot of how I see the world and the stories within it.</p>
 
-                <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when there's no
-                    clear answer; asking why helps me see a little better and shape what I'm working on.</p>
+                        <p>These days I lead design teams for work. Outside of that I'm usually drawing, writing,
+                            watching
+                            movies, playing games, or tinkering with projects like this one. Most nights it's simple: a
+                            book or
+                            time with my family.</p>
+
+                        <p>I'm curious by nature and ask a lot of questions, and I talk too much sometimes. Even when
+                            there's no
+                            clear answer; asking why helps me see a little better and shape what I'm working on.</p>
+                    </div>
+                </div>
 
                 <img src="../img/darkwing-sprite.png" alt="Darkwing Duck sprite - click or tap to see him look around"
                     width="100" height="100" data-progressive class="darkwing-sprite" tabindex="0" role="button"
