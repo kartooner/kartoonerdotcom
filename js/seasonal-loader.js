@@ -165,7 +165,7 @@
         const now = new Date();
         const year = now.getFullYear();
         const startDate = new Date(year, 0, 1);
-        const endDate = new Date(year, 2, 20);
+        const endDate = new Date(year, 0, 31);
         return now >= startDate && now <= endDate;
     }
 
