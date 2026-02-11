@@ -1831,7 +1831,7 @@ function generateRSSFeed(journal) {
 </rss>`;
 
     try {
-        fs.writeFileSync(path.join(__dirname, 'journal-feed.xml'), rssContent, 'utf8');
+        fs.writeFileSync(path.join(__dirname, '..', 'journal-feed.xml'), rssContent, 'utf8');
         console.log('RSS feed generated successfully.');
     } catch (error) {
         console.error('Error generating RSS feed:', error.message);
@@ -1873,7 +1873,7 @@ function generateAtomFeed(journal) {
 </feed>`;
 
     try {
-        fs.writeFileSync(path.join(__dirname, 'journal-atom.xml'), atomContent, 'utf8');
+        fs.writeFileSync(path.join(__dirname, '..', 'journal-atom.xml'), atomContent, 'utf8');
         console.log('Atom feed generated successfully.');
     } catch (error) {
         console.error('Error generating Atom feed:', error.message);

@@ -86,7 +86,13 @@ class ReviewsUI {
     }
 
     showLoading() {
-        this.container.innerHTML = '<div class="reviews-loading">Loading latest watches...</div>';
+        this.container.innerHTML = `
+            <div class="reviews-loading" role="status" aria-label="Loading latest movies">
+                <div class="spinner" aria-hidden="true">
+                    <div class="double-bounce1"></div>
+                    <div class="double-bounce2"></div>
+                </div>
+            </div>`;
     }
 
     renderCta() {
