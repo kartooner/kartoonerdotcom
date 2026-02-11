@@ -36,7 +36,8 @@
         entry.innerHTML =
             '<img src="' + escapeHtml(book.thumbnail || '') + '" alt="' + escapeHtml(book.alt || book.title || '') + '" class="book-cover" data-progressive />' +
             '<div class="book-info">' +
-            '  <h3><a href="' + escapeHtml(book.url || '#') + '" target="_blank" rel="noopener noreferrer" aria-label="View ' + escapeHtml(book.title || '') + '">' + escapeHtml(book.title || '') + '</a> by ' + escapeHtml(book.author || '') + '</h3>' +
+            '  <h3><a href="' + escapeHtml(book.url || '#') + '" target="_blank" rel="noopener noreferrer" aria-label="View ' + escapeHtml(book.title || '') + '">' + escapeHtml(book.title || '') + '</a></h3>' +
+            '  <p class="book-author">by ' + escapeHtml(book.author || '') + '</p>' +
             '  <p>' + escapeHtml(book.review || '') + '</p>' +
             '  <div class="books-callout">' +
             '    <p><strong>UX Reading:</strong> Want to see what else I\'ve enjoyed? <a href="/recommended-books">Check out my recommended books</a> for further reading.</p>' +
