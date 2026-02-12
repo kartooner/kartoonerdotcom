@@ -1809,8 +1809,8 @@ function generateRSSFeed(journal) {
         return `
     <item>
       <title><![CDATA[${entry.title}]]></title>
-      <link>https://sagen.com/entry/${entry.id}.html</link>
-      <guid>https://sagen.com/entry/${entry.id}.html</guid>
+      <link>https://www.kartooner.com/entry/${entry.id}.html</link>
+      <guid>https://www.kartooner.com/entry/${entry.id}.html</guid>
       <pubDate>${new Date(entry.date).getTime() ? new Date(entry.date).toUTCString() : new Date().toUTCString()}</pubDate>
       <description><![CDATA[${entry.excerpt}]]></description>
       <content:encoded><![CDATA[${contentHtml}]]></content:encoded>
@@ -1821,7 +1821,7 @@ function generateRSSFeed(journal) {
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Erik's Journal</title>
-    <link>https://sagen.com</link>
+    <link>https://www.kartooner.com</link>
     <description>Personal journal entries from Erik Sagen</description>
     <language>en-us</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
@@ -1850,8 +1850,8 @@ function generateAtomFeed(journal) {
     <title><![CDATA[${entry.title}]]></title>
     <published>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</published>
     <updated>${new Date(entry.date).getTime() ? new Date(entry.date).toISOString() : new Date().toISOString()}</updated>
-    <link href="https://sagen.com/entry/${entry.id}.html" type="text/html" />
-    <id>https://sagen.com/entry/${entry.id}.html</id>
+    <link href="https://www.kartooner.com/entry/${entry.id}.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/${entry.id}.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -1864,11 +1864,11 @@ function generateAtomFeed(journal) {
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title><![CDATA[Erik's Journal]]></title>
   <subtitle><![CDATA[Personal journal entries from Erik Sagen]]></subtitle>
-  <link href="https://sagen.com/journal-atom.xml" rel="self" type="application/atom+xml" />
-  <link href="https://sagen.com/journal" />
-  <generator uri="https://sagen.com">Journal CMS</generator>
+  <link href="https://www.kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
+  <link href="https://www.kartooner.com/journal" />
+  <generator uri="https://www.kartooner.com">Journal CMS</generator>
   <updated>${new Date().toISOString()}</updated>
-  <id>https://sagen.com/journal-atom.xml</id>
+  <id>https://www.kartooner.com/journal-atom.xml</id>
   ${atomEntries}
 </feed>`;
 
