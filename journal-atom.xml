@@ -2,18 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title><![CDATA[Erik's Journal]]></title>
   <subtitle><![CDATA[Personal journal entries from Erik Sagen]]></subtitle>
-  <link href="https://sagen.com/journal-atom.xml" rel="self" type="application/atom+xml" />
-  <link href="https://sagen.com/journal" />
-  <generator uri="https://sagen.com">Journal CMS</generator>
-  <updated>2026-02-11T17:33:33.291Z</updated>
-  <id>https://sagen.com/journal-atom.xml</id>
+  <link href="https://www.kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
+  <link href="https://www.kartooner.com/journal" />
+  <generator uri="https://www.kartooner.com">Journal CMS</generator>
+  <updated>2026-02-12T13:27:44.237Z</updated>
+  <id>https://www.kartooner.com/journal-atom.xml</id>
   
   <entry xml:lang="en">
     <title><![CDATA[Delivery Is a Trap]]></title>
     <published>2026-01-28T19:36:00.000Z</published>
     <updated>2026-01-28T19:36:00.000Z</updated>
-    <link href="https://sagen.com/entry/delivery-is-a-trap.html" type="text/html" />
-    <id>https://sagen.com/entry/delivery-is-a-trap.html</id>
+    <link href="https://www.kartooner.com/entry/delivery-is-a-trap.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/delivery-is-a-trap.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -88,8 +88,8 @@
     <title><![CDATA[Everyone Creates]]></title>
     <published>2025-11-14T18:00:00.000Z</published>
     <updated>2025-11-14T18:00:00.000Z</updated>
-    <link href="https://sagen.com/entry/everyone-creates.html" type="text/html" />
-    <id>https://sagen.com/entry/everyone-creates.html</id>
+    <link href="https://www.kartooner.com/entry/everyone-creates.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/everyone-creates.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -242,8 +242,8 @@
     <title><![CDATA[Growing up in the 80s]]></title>
     <published>2025-09-05T11:35:00.000Z</published>
     <updated>2025-09-05T11:35:00.000Z</updated>
-    <link href="https://sagen.com/entry/growing-up-in-the-80s.html" type="text/html" />
-    <id>https://sagen.com/entry/growing-up-in-the-80s.html</id>
+    <link href="https://www.kartooner.com/entry/growing-up-in-the-80s.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/growing-up-in-the-80s.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -268,8 +268,8 @@
     <title><![CDATA[The Pole on the Corner]]></title>
     <published>2025-08-29T05:33:01.000Z</published>
     <updated>2025-08-29T05:33:01.000Z</updated>
-    <link href="https://sagen.com/entry/the-pole-on-the-corner.html" type="text/html" />
-    <id>https://sagen.com/entry/the-pole-on-the-corner.html</id>
+    <link href="https://www.kartooner.com/entry/the-pole-on-the-corner.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/the-pole-on-the-corner.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
@@ -304,8 +304,8 @@
     <title><![CDATA[Here we go again]]></title>
     <published>2025-08-28T10:00:00.000Z</published>
     <updated>2025-08-28T10:00:00.000Z</updated>
-    <link href="https://sagen.com/entry/here-we-go-again.html" type="text/html" />
-    <id>https://sagen.com/entry/here-we-go-again.html</id>
+    <link href="https://www.kartooner.com/entry/here-we-go-again.html" type="text/html" />
+    <id>https://www.kartooner.com/entry/here-we-go-again.html</id>
     <author>
       <name><![CDATA[Erik Sagen]]></name>
     </author>
