@@ -14,7 +14,8 @@
     "list": "node scripts/journal-cms.js list",
     "optimize-images": "bash scripts/convert-to-webp.sh",
     "minify:aiadvisor": "node scripts/minify-aiadvisor.js",
-    "bundle:aiadvisor": "webpack --config webpack.config.js"
+    "bundle:aiadvisor": "webpack --config webpack.config.js",
+    "fetch-movies": "node scripts/fetch-movies.js"
   },
   "repository": {
     "type": "git",

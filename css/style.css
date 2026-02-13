@@ -1717,6 +1717,13 @@ header {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+.review-stars {
+    font-size: 1rem;
+    letter-spacing: 1px;
+    color: #00e054;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 .loading {
     grid-column: 1 / -1;
     text-align: center;
