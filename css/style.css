@@ -1669,6 +1669,13 @@ header {
     color: inherit;
     display: block;
     height: 100%;
+    border-radius: 8px;
+}
+
+.review-card a:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 1px var(--bg-color);
 }
 
 .review-card img {
