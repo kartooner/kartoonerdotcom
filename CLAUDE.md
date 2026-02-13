@@ -5,3 +5,4 @@
 - Blog stories are located in `/stories/` directory (not `/scripts/stories/`).
 - Local server should handle clean URLs so you can navigate to /journal, /voice-acting, /contact, etc. without needing the .html extension.
 - Remember to always use port 8000 for the local server. Not 3000, etc.
+- When asked to "update movies", run: `npm run fetch-movies`
