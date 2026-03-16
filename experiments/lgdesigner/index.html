@@ -1,0 +1,1228 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LangGraph Designer</title>
+<style>
+/* Skip link */
+#skip-link{position:absolute;top:-40px;left:8px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);padding:6px 12px;border-radius:4px;font-family:var(--mono);font-size:11px;z-index:999;transition:top .15s;text-decoration:none}
+#skip-link:focus{top:8px}
+/* Screen-reader only utility */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0f0f0f;--surface:#161616;--surface2:#1e1e1e;
+  --border:#2a2a2a;--border2:#363636;
+  --text-primary:#e2e2e2;--text-secondary:#999999;--text-muted:#8a8a8a;
+  --accent:#4fffb0;--accent-bg:#0e2a1e;--accent-border:#1a4030;
+  --prompt-text:#a5b4fc;--prompt-bg:#1a1930;--prompt-border:#2e2b60;
+  --dec-text:#fdba74;--dec-bg:#261508;--dec-border:#5a3010;
+  --tool-text:#6ee7b7;--tool-bg:#081f16;--tool-border:#0a4228;
+  --handoff-text:#f9a8d4;--handoff-bg:#250d1a;--handoff-border:#5a2040;
+  --fallback-text:#fca5a5;--fallback-bg:#250808;--fallback-border:#5a1818;
+  --end-text:#94a3b8;--end-bg:#141820;--end-border:#202a36;
+  --note-text:#fcd34d;--note-bg:#221a05;--note-border:#5a3a08;
+  --dot-color:#2a2a2a;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+[data-theme="light"]{
+  --bg:#f5f5f3;--surface:#ffffff;--surface2:#ebebea;
+  --border:#d8d8d6;--border2:#c4c4c2;
+  --text-primary:#1a1a1a;--text-secondary:#555555;--text-muted:#666666;
+  --accent:#0d6e49;--accent-bg:#e6f7f0;--accent-border:#a8ddc9;
+  --prompt-text:#3730a3;--prompt-bg:#eef2ff;--prompt-border:#c7d2fe;
+  --dec-text:#9a3412;--dec-bg:#fff7ed;--dec-border:#fed7aa;
+  --tool-text:#065f46;--tool-bg:#ecfdf5;--tool-border:#a7f3d0;
+  --handoff-text:#9d174d;--handoff-bg:#fdf2f8;--handoff-border:#fbcfe8;
+  --fallback-text:#991b1b;--fallback-bg:#fef2f2;--fallback-border:#fecaca;
+  --end-text:#334155;--end-bg:#f1f5f9;--end-border:#cbd5e1;
+  --note-text:#92400e;--note-bg:#fffbeb;--note-border:#fde68a;
+  --dot-color:#d0d0ce;
+}
+
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text-primary);font-family:var(--font);font-size:13px;transition:background .2s,color .2s;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ── Toolbar ── */
+#toolbar{background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;transition:background .2s,border-color .2s}
+#toolbar-top{display:flex;align-items:center;gap:5px;padding:0 12px;height:40px;border-bottom:1px solid var(--border)}
+#logo{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em;white-space:nowrap;margin-right:4px;transition:color .2s}
+.tsep{width:1px;height:18px;background:var(--border2);margin:0 3px;flex-shrink:0}
+.tbtn{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text-secondary);font-size:11px;cursor:pointer;font-family:var(--mono);transition:all .15s;white-space:nowrap;letter-spacing:.02em;line-height:1}
+.tbtn:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+.tbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tbtn:disabled{opacity:.35;cursor:default;pointer-events:none}
+.tbtn-accent{border-color:var(--accent)!important;color:var(--accent)!important;background:var(--accent-bg)!important}
+.tbtn-accent:hover{background:var(--accent-border)!important}
+.tbtn-icon{padding:4px 7px;font-size:14px}
+#menu-wrap{position:relative}
+#menu-btn{padding:2px 8px;font-size:20px;line-height:1;letter-spacing:0;font-weight:400}
+#dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:6px;min-width:172px;z-index:100;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.28);display:none}
+#dropdown.open{display:block}
+.menu-item{display:flex;align-items:center;gap:9px;padding:9px 13px;font-size:12px;color:var(--text-secondary);cursor:pointer;font-family:var(--mono);transition:background .1s,color .1s;white-space:nowrap;border:none;background:none;width:100%;text-align:left}
+.menu-item:hover{background:var(--surface2);color:var(--text-primary)}
+.menu-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.menu-sep{height:1px;background:var(--border);margin:3px 0}
+.menu-icon{font-size:13px;opacity:.7;width:16px;text-align:center}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+#toolbar-palette{display:flex;align-items:center;gap:5px;padding:0 12px;height:38px;overflow-x:auto}
+#toolbar-palette::-webkit-scrollbar{display:none}
+.pal-label{font-size:9px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);white-space:nowrap;margin-right:3px}
+.nb{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:4px;border:1px solid;cursor:grab;font-size:11px;font-weight:500;user-select:none;transition:opacity .15s,transform .1s;white-space:nowrap;font-family:var(--mono);flex-shrink:0}
+.nb:hover{opacity:.8;transform:translateY(-1px)}
+.nb:active{cursor:grabbing;transform:translateY(0)}
+.nb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.nb-prompt  {background:var(--prompt-bg);  border-color:var(--prompt-border);  color:var(--prompt-text)}
+.nb-decision{background:var(--dec-bg);     border-color:var(--dec-border);     color:var(--dec-text)}
+.nb-tool    {background:var(--tool-bg);     border-color:var(--tool-border);    color:var(--tool-text)}
+.nb-handoff {background:var(--handoff-bg);  border-color:var(--handoff-border); color:var(--handoff-text)}
+.nb-fallback{background:var(--fallback-bg); border-color:var(--fallback-border);color:var(--fallback-text)}
+.nb-end     {background:var(--end-bg);      border-color:var(--end-border);     color:var(--end-text)}
+.nb-note    {background:var(--note-bg);     border-color:var(--note-border);    color:var(--note-text)}
+
+/* ── Main ── */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── Canvas ── */
+#cw{flex:1;position:relative;overflow:hidden;background:var(--bg);transition:background .2s}
+#cw::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(circle,var(--dot-color) 1px,transparent 1px);
+  background-size:var(--gs,24px) var(--gs,24px);
+  background-position:var(--gx,0px) var(--gy,0px)}
+#ct{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;z-index:1;-webkit-font-smoothing:antialiased}
+#cv{position:relative;width:4000px;height:3000px}
+#esvg{position:absolute;top:0;left:0;width:4000px;height:3000px;pointer-events:none;overflow:visible}
+#cw.panning{cursor:grab}#cw.panning:active{cursor:grabbing}
+
+/* ── Empty state ── */
+#empty-state{
+  position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;pointer-events:none;
+  transition:opacity .3s;
+}
+#empty-state.hidden{opacity:0;pointer-events:none}
+.es-inner{
+  display:flex;flex-direction:column;align-items:center;gap:32px;
+  max-width:520px;width:100%;padding:0 32px;
+}
+.es-title{font-size:20px;font-weight:500;color:var(--text-secondary);font-family:var(--mono);letter-spacing:.04em;text-align:center}
+.es-sub{font-size:13px;color:var(--text-muted);text-align:center;line-height:1.8;max-width:400px}
+.es-actions{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;pointer-events:all}
+.es-btn{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 20px;border-radius:8px;border:1px solid var(--border2);
+  background:transparent;color:var(--text-secondary);cursor:pointer;
+  font-family:var(--mono);font-size:12px;transition:all .18s;width:100%;
+  text-align:left;line-height:1.4;
+}
+.es-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.es-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.es-btn-icon{font-size:22px;opacity:.65;flex-shrink:0}
+.es-btn-text{display:flex;flex-direction:column;gap:3px}
+.es-btn-label{font-weight:500;font-size:13px}
+.es-btn-hint{font-size:11px;opacity:.6;font-weight:400}
+
+/* Canvas-level drop zone highlight */
+#cw.drop-active::after{
+  content:'Drop your .py file here';
+  position:absolute;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:16px;font-weight:500;color:var(--accent);
+  background:color-mix(in srgb,var(--accent-bg) 80%,transparent);
+  border:2px dashed var(--accent);
+  border-radius:0;pointer-events:none;letter-spacing:.06em;
+}
+
+/* ── Reticulating overlay ── */
+#reticulating{
+  position:fixed;inset:0;z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+[data-theme="light"] #reticulating{background:rgba(240,240,238,.8)}
+#reticulating.show{opacity:1;pointer-events:all}
+.ret-text{font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:.08em}
+.ret-bar-wrap{width:220px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.ret-bar{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .12s ease-out}
+.ret-sub{font-size:10px;font-family:var(--mono);color:var(--text-muted);letter-spacing:.06em}
+
+/* ── Nodes ── */
+.node{position:absolute;border-radius:6px;border:1px solid;padding:10px 13px;cursor:move;min-width:150px;max-width:216px;user-select:none;transition:box-shadow .12s,background .2s,border-color .2s;-webkit-font-smoothing:antialiased;backface-visibility:hidden;transform:translateZ(0)}
+.node:hover{box-shadow:0 0 0 1px rgba(128,128,128,.18)}
+.node.selected{box-shadow:0 0 0 2.5px var(--accent)!important}
+.node.happy{box-shadow:0 0 0 1.5px rgba(79,255,176,.45),0 0 10px rgba(79,255,176,.1)}
+[data-theme="light"] .node.happy{box-shadow:0 0 0 1.5px rgba(13,110,73,.5),0 0 8px rgba(13,110,73,.1)}
+.node.selected.happy{box-shadow:0 0 0 2.5px var(--accent),0 0 14px rgba(79,255,176,.2)!important}
+.ntag{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px;opacity:.5}
+.ntitle{font-size:13px;font-weight:500;line-height:1.3;word-break:break-word;color:var(--text-primary)}
+.ndesc{font-size:11px;margin-top:4px;line-height:1.4;word-break:break-word;color:var(--text-secondary)}
+.n-prompt  {background:var(--prompt-bg);  border-color:var(--prompt-border)}
+.n-decision{background:var(--dec-bg);     border-color:var(--dec-border)}
+.n-tool    {background:var(--tool-bg);     border-color:var(--tool-border)}
+.n-handoff {background:var(--handoff-bg);  border-color:var(--handoff-border)}
+.n-fallback{background:var(--fallback-bg); border-color:var(--fallback-border)}
+.n-end     {background:var(--end-bg);      border-color:var(--end-border)}
+.n-prompt .ntag{color:var(--prompt-text)}
+.n-decision .ntag{color:var(--dec-text)}
+.n-tool .ntag{color:var(--tool-text)}
+.n-handoff .ntag{color:var(--handoff-text)}
+.n-fallback .ntag{color:var(--fallback-text)}
+.n-end .ntag{color:var(--end-text)}
+.n-annotation{background:var(--note-bg);border:1px dashed var(--note-border);border-radius:4px;min-width:130px;max-width:190px;padding:8px 10px;cursor:move}
+.ann-tag{font-size:9px;color:var(--note-text);font-family:var(--mono);margin-bottom:4px;letter-spacing:.08em;opacity:.7}
+.ann-body{font-size:11px;font-weight:400;color:var(--note-text);font-family:var(--mono);white-space:pre-wrap;line-height:1.55}
+
+/* Port dots */
+.port{width:11px;height:11px;border-radius:50%;border:1.5px solid;position:absolute;background:var(--bg);transition:transform .12s,background .12s,border-color .2s;z-index:10}
+.port:hover,.port:focus{background:var(--accent)!important;transform:scale(1.6)!important;outline:none}
+.port-out {bottom:-6px;left:50%;transform:translateX(-50%);cursor:crosshair}
+.port-in  {top:-6px;   left:50%;transform:translateX(-50%);cursor:default}
+.port-out-l{left:-6px; top:50%;transform:translateY(-50%);cursor:crosshair}
+.port-out-r{right:-6px;top:50%;transform:translateY(-50%);cursor:crosshair}
+/* Port pulse — shown once on first-ever node click */
+@keyframes port-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 0%,transparent)}}
+.port.pulse{animation:port-pulse 1s ease-in-out 3}
+
+/* Edge label hover affordance */
+.edge-label-btn{
+  position:absolute;display:none;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;background:var(--surface);
+  border:1px solid var(--border2);color:var(--text-muted);font-size:10px;
+  cursor:pointer;font-family:var(--mono);transition:all .15s;z-index:20;
+  transform:translate(-50%,-50%);
+}
+.edge-label-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* ── Sidebar ── */
+#sidebar{width:236px;min-width:236px;border-left:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;overflow:hidden;transition:background .2s,border-color .2s,width .2s,min-width .2s}
+#sidebar.collapsed{width:0;min-width:0;border-left:none}
+#stabs{display:flex;border-bottom:1px solid var(--border)}
+.stab{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-family:var(--mono);color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.05em}
+.stab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.stab:hover:not(.active){color:var(--text-secondary)}
+.stab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#sbody{flex:1;overflow-y:auto;padding:14px}
+#sbody::-webkit-scrollbar{width:4px}
+#sbody::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ps{margin-bottom:14px}
+.psl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-family:var(--mono);margin-bottom:8px}
+.pr{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.pl{font-size:11px;color:var(--text-secondary)}
+.pi,.pta{width:100%;padding:5px 8px;border-radius:4px;border:1px solid var(--border2);background:var(--surface2);font-size:12px;color:var(--text-primary);font-family:var(--font);transition:border-color .15s,background .2s}
+.pi:focus,.pta:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.pta{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px;line-height:1.5}
+.no-sel{color:var(--text-muted);font-size:11px;line-height:1.9}
+.dbtn{width:100%;padding:5px;border-radius:4px;border:1px solid var(--fallback-border);background:transparent;color:var(--fallback-text);font-size:11px;cursor:pointer;font-family:var(--mono);transition:all .15s}
+.dbtn:hover{background:var(--fallback-bg)}
+.dbtn:focus-visible{outline:2px solid var(--fallback-text);outline-offset:2px}
+.tag-row{display:flex;gap:5px;margin-top:2px}
+.tag{padding:2px 8px;border-radius:3px;font-size:10px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border2);color:var(--text-muted);transition:all .15s}
+.tag:hover{color:var(--text-secondary)}
+.tag:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+/* sidebar toggle button */
+#sb-toggle{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:16px;height:48px;background:var(--surface);border:1px solid var(--border);
+  border-right:none;border-radius:4px 0 0 4px;cursor:pointer;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);font-size:10px;transition:all .15s;
+}
+#sb-toggle:hover{color:var(--text-primary);background:var(--surface2)}
+#sidebar-wrap{position:relative;display:flex;flex-shrink:0}
+
+/* Import */
+#imp{display:none;flex-direction:column;gap:9px}
+#imp.vis{display:flex}
+.idrop{border:1px dashed var(--border2);border-radius:5px;padding:16px;text-align:center;color:var(--text-muted);font-size:11px;cursor:pointer;transition:all .15s}
+.idrop:hover,.idrop.dov{border-color:var(--accent);color:var(--accent)}
+.idrop input{display:none}
+.isep{display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:10px}
+.isep::before,.isep::after{content:'';flex:1;height:1px;background:var(--border)}
+.ita{width:100%;height:130px;padding:7px;border-radius:4px;border:1px solid var(--border2);background:var(--surface2);color:var(--text-primary);font-family:var(--mono);font-size:10px;resize:vertical;line-height:1.5}
+.ita:focus{outline:none;border-color:var(--accent)}
+.ibtn{padding:7px;border-radius:4px;border:1px solid var(--accent);background:var(--accent-bg);color:var(--accent);font-size:11px;cursor:pointer;font-family:var(--mono);transition:all .15s;width:100%}
+.ibtn:hover{background:var(--accent-border)}
+.ibtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.imsg{font-size:11px;font-family:var(--mono);padding:5px 8px;border-radius:4px;display:none}
+.imsg.ok{background:var(--tool-bg);color:var(--tool-text)}
+.imsg.err{background:var(--fallback-bg);color:var(--fallback-text)}
+
+/* Export modal */
+#mbg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:200}
+#mbg.open{display:flex}
+#modal{background:var(--surface);border:1px solid var(--border2);border-radius:7px;width:92%;max-width:640px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;transition:background .2s}
+#mhdr{display:flex;align-items:center;padding:11px 15px;border-bottom:1px solid var(--border);gap:7px}
+#mtitle{font-family:var(--mono);font-size:11px;color:var(--accent);flex:1;letter-spacing:.04em}
+#mcopy,#mdl,#mcls{padding:4px 9px;border-radius:4px;border:1px solid var(--border2);background:transparent;font-size:10px;cursor:pointer;font-family:var(--mono);transition:all .15s}
+#mcopy,#mdl{color:var(--text-secondary)}
+#mcopy:hover,#mdl:hover{border-color:var(--accent);color:var(--accent)}
+#mcls{color:var(--text-secondary)}#mcls:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+#mcopy:focus-visible,#mdl:focus-visible,#mcls:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#mcwrap{flex:1;overflow-y:auto;padding:14px}
+#mcwrap::-webkit-scrollbar{width:4px}
+#mcwrap::-webkit-scrollbar-thumb{background:var(--border2)}
+#mcode{font-family:var(--mono);font-size:11px;white-space:pre;color:var(--text-primary);line-height:1.8;tab-size:4}
+
+/* Zoom */
+#zbar{position:absolute;bottom:12px;right:12px;display:flex;gap:3px;align-items:center;z-index:5}
+.zbtn{width:26px;height:26px;border-radius:4px;border:1px solid var(--border2);background:var(--surface);color:var(--text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:var(--mono)}
+.zbtn:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+.zbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#zlbl{font-size:10px;font-family:var(--mono);color:var(--text-muted);min-width:34px;text-align:center}
+
+/* Legend */
+#legend{position:absolute;bottom:12px;left:12px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;z-index:5;transition:background .2s,border-color .2s}
+.li{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--text-secondary);font-family:var(--mono)}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;border:1px solid transparent}
+
+/* Hint bar */
+#hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-muted);pointer-events:none;font-family:var(--mono);letter-spacing:.03em;white-space:nowrap;background:var(--surface);padding:4px 10px;border-radius:4px;border:1px solid var(--border);z-index:5;transition:background .2s,opacity .3s}
+#hint.fade{opacity:0}
+
+/* Status */
+#status{height:22px;min-height:22px;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;padding:0 12px;gap:14px;font-size:10px;font-family:var(--mono);color:var(--text-muted);transition:background .2s,border-color .2s}
+#status b{color:var(--text-secondary)}
+#ssel{margin-left:auto;color:var(--text-muted)}
+
+/* Toast */
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:4px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<a href="#main-content" id="skip-link">Skip to canvas</a>
+<div id="app">
+<div id="canvas-keyboard-help" class="sr-only" aria-hidden="true">
+  Flow canvas. Tab to navigate nodes. Enter or Space on palette chips adds a node. Delete removes selected. Escape clears selection. Space plus drag to pan. Scroll to zoom.
+</div>
+
+<div id="toolbar">
+  <div id="toolbar-top">
+    <div id="logo">lg/designer</div>
+    <div class="tsep"></div>
+    <button class="tbtn tbtn-icon" id="undo-btn" title="Undo (Ctrl+Z)" aria-label="Undo last action">↩</button>
+    <button class="tbtn tbtn-icon" id="redo-btn" title="Redo (Ctrl+Y)" aria-label="Redo last action">↪</button>
+    <div class="tsep"></div>
+    <button class="tbtn tbtn-accent" id="export-btn">export .py ↗</button>
+    <div class="top-right">
+      <button class="tbtn tbtn-icon" id="theme-btn" title="Toggle theme" aria-label="Toggle light/dark theme">◑</button>
+      <div class="tsep"></div>
+      <div id="menu-wrap">
+        <button class="tbtn tbtn-icon" id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="More actions">⋮</button>
+        <div id="dropdown" role="menu">
+          <button class="menu-item" id="mi-save"  role="menuitem"><span class="menu-icon">↓</span>Save canvas (.json)</button>
+          <button class="menu-item" id="mi-load"  role="menuitem"><span class="menu-icon">↑</span>Load canvas (.json)</button>
+          <div class="menu-sep"></div>
+          <button class="menu-item" id="mi-example" role="menuitem"><span class="menu-icon">◈</span>Load example flow</button>
+          <button class="menu-item" id="mi-clear" role="menuitem"><span class="menu-icon">⊘</span>Clear canvas</button>
+          <div class="menu-sep"></div>
+          <button class="menu-item" id="mi-fit"   role="menuitem"><span class="menu-icon">⊡</span>Fit to screen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="toolbar-palette" role="toolbar" aria-label="Node types">
+    <span class="pal-label">add node</span>
+    <div class="nb nb-prompt"   draggable="true" data-type="prompt"    tabindex="0" role="button"><div class="nd" style="background:var(--prompt-text)"></div>prompt</div>
+    <div class="nb nb-decision" draggable="true" data-type="decision"  tabindex="0" role="button"><div class="nd" style="background:var(--dec-text)"></div>decision</div>
+    <div class="nb nb-tool"     draggable="true" data-type="tool"      tabindex="0" role="button"><div class="nd" style="background:var(--tool-text)"></div>tool</div>
+    <div class="nb nb-handoff"  draggable="true" data-type="handoff"   tabindex="0" role="button"><div class="nd" style="background:var(--handoff-text)"></div>handoff</div>
+    <div class="nb nb-fallback" draggable="true" data-type="fallback"  tabindex="0" role="button"><div class="nd" style="background:var(--fallback-text)"></div>fallback</div>
+    <div class="nb nb-end"      draggable="true" data-type="end"       tabindex="0" role="button"><div class="nd" style="background:var(--end-text)"></div>end</div>
+    <div class="nb nb-note"     draggable="true" data-type="annotation"tabindex="0" role="button"><div class="nd" style="background:var(--note-text)"></div>note</div>
+  </div>
+</div>
+
+<input type="file" id="load-file" accept=".json" style="display:none" aria-hidden="true">
+<input type="file" id="py-drop-file" accept=".py,.txt" style="display:none" aria-hidden="true">
+
+<div id="main" id="main-content">
+  <div id="cw" role="application" aria-label="Flow canvas" aria-describedby="canvas-keyboard-help">
+    <div id="ct"><div id="cv"><svg id="esvg" aria-hidden="true"></svg></div></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" aria-label="Empty canvas — get started">
+      <div class="es-inner">
+        <div class="es-title">nothing here yet</div>
+        <div class="es-sub">Each card on the canvas is a <strong>node</strong> — one step the AI can take. Start by importing a file from your developer, or drag a node from the toolbar above.</div>
+        <div class="es-actions">
+          <button class="es-btn" id="es-import-btn" aria-label="Import a Python file">
+            <span class="es-btn-icon">⬆</span>
+            <span class="es-btn-text">
+              <span class="es-btn-label">Import a .py file</span>
+              <span class="es-btn-hint">from your developer</span>
+            </span>
+          </button>
+          <button class="es-btn" id="es-example-btn" aria-label="Load example flow">
+            <span class="es-btn-icon">◈</span>
+            <span class="es-btn-text">
+              <span class="es-btn-label">Load example flow</span>
+              <span class="es-btn-hint">see how it works</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hint" aria-hidden="true">drag a node from the toolbar to start · connect nodes by dragging the port dots · space+drag to pan · scroll to zoom</div>
+    <div id="legend" aria-label="Node type legend">
+      <div class="li"><div class="ld" style="background:var(--prompt-text);border-color:var(--prompt-border)"></div>prompt / ask</div>
+      <div class="li"><div class="ld" style="background:var(--dec-text);border-color:var(--dec-border)"></div>decision</div>
+      <div class="li"><div class="ld" style="background:var(--tool-text);border-color:var(--tool-border)"></div>tool call</div>
+      <div class="li"><div class="ld" style="background:var(--handoff-text);border-color:var(--handoff-border)"></div>human handoff</div>
+      <div class="li"><div class="ld" style="background:var(--fallback-text);border-color:var(--fallback-border)"></div>fallback</div>
+      <div class="li"><div class="ld" style="background:var(--end-text);border-color:var(--end-border)"></div>end</div>
+      <div class="li"><div class="ld" style="background:var(--note-text);border-color:var(--note-border)"></div>annotation</div>
+      <div class="li" style="margin-top:3px"><div class="ld" style="background:var(--accent);opacity:.8"></div>happy path</div>
+    </div>
+    <div id="zbar">
+      <button class="zbtn" id="zout" aria-label="Zoom out">−</button>
+      <span id="zlbl" aria-live="polite">100%</span>
+      <button class="zbtn" id="zin"  aria-label="Zoom in">+</button>
+    </div>
+  </div>
+
+  <div id="sidebar-wrap">
+    <button id="sb-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">›</button>
+    <div id="sidebar" role="complementary" aria-label="Properties panel">
+      <div id="stabs" role="tablist" aria-label="Panel tabs">
+        <div class="stab active" data-tab="props" role="tab" tabindex="0" aria-selected="true" aria-controls="props-panel">properties</div>
+        <div class="stab" data-tab="import" role="tab" tabindex="0" aria-selected="false" aria-controls="imp">import .py</div>
+      </div>
+      <div id="sbody">
+        <div id="props-panel" role="tabpanel">
+          <p class="no-sel">
+            <strong style="color:var(--text-secondary);font-size:12px">Getting started</strong><br><br>
+            Each card on the canvas is a <strong style="color:var(--text-secondary)">node</strong> — one step the AI can take. Drag a node from the toolbar above to place it. Connect two nodes by dragging from the dot at the bottom of one card to the dot at the top of another.<br><br>
+            Click any node or edge to edit it here.<br><br>
+            <span style="color:var(--text-muted)">space + drag — pan around<br>scroll — zoom in and out<br>ctrl+z / ctrl+y — undo and redo<br>delete key — remove selected</span>
+          </p>
+        </div>
+        <div id="imp" role="tabpanel" aria-hidden="true">
+          <div class="idrop" id="dropzone" tabindex="0" role="button" aria-label="Drop or click to upload Python file">
+            <input type="file" id="filein" accept=".py,.txt" aria-hidden="true">
+            <div>drop a <strong style="color:var(--accent)">langgraph .py</strong> file here</div>
+            <div style="margin-top:3px;font-size:10px;color:var(--text-muted)">or click to browse your files</div>
+          </div>
+          <div class="isep">or paste</div>
+          <textarea class="ita" id="impcode" aria-label="Paste Python code here" placeholder="# paste your langgraph python here...&#10;# the tool will read it and draw the flow&#10;graph = StateGraph(AgentState)&#10;graph.add_node(&quot;agent&quot;, fn)"></textarea>
+          <button class="ibtn" id="parsebtn">parse &amp; render →</button>
+          <div id="impmsg" class="imsg" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status" role="status" aria-live="polite">
+  <span>nodes <b id="sn">0</b></span>
+  <span>edges <b id="se">0</b></span>
+  <span>notes <b id="sa">0</b></span>
+  <span id="ssel"></span>
+</div>
+</div>
+
+<!-- Export modal -->
+<div id="mbg" role="dialog" aria-modal="true" aria-labelledby="mtitle">
+  <div id="modal">
+    <div id="mhdr">
+      <span id="mtitle">// langgraph_flow.py</span>
+      <button id="mcopy">copy</button>
+      <button id="mdl">download</button>
+      <button id="mcls">close</button>
+    </div>
+    <div id="mcwrap"><pre id="mcode" tabindex="0"></pre></div>
+  </div>
+</div>
+
+<!-- Reticulating splines overlay -->
+<div id="reticulating" aria-live="polite" aria-label="Loading">
+  <div class="ret-text" id="ret-msg">Reticulating splines...</div>
+  <div class="ret-bar-wrap"><div class="ret-bar" id="ret-bar"></div></div>
+  <div class="ret-sub" id="ret-sub">mapping your flow</div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="sr-announce" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+<script>
+// ══════════════════════════════════
+// THEME
+// ══════════════════════════════════
+let theme=localStorage.getItem('lgd-theme')||'dark';
+function applyTheme(t){theme=t;document.documentElement.setAttribute('data-theme',t==='light'?'light':'');localStorage.setItem('lgd-theme',t);setTimeout(renderEdges,30);}
+applyTheme(theme);
+document.getElementById('theme-btn').addEventListener('click',()=>applyTheme(theme==='dark'?'light':'dark'));
+
+// ══════════════════════════════════
+// MENU
+// ══════════════════════════════════
+const menuBtn=document.getElementById('menu-btn'),dropdown=document.getElementById('dropdown');
+menuBtn.addEventListener('click',e=>{e.stopPropagation();const open=dropdown.classList.toggle('open');menuBtn.setAttribute('aria-expanded',open);if(open)dropdown.querySelector('.menu-item').focus();});
+document.addEventListener('click',()=>{dropdown.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');});
+dropdown.addEventListener('keydown',e=>{
+  const items=[...dropdown.querySelectorAll('.menu-item')];const idx=items.indexOf(document.activeElement);
+  if(e.key==='ArrowDown'){e.preventDefault();items[(idx+1)%items.length].focus();}
+  if(e.key==='ArrowUp'){e.preventDefault();items[(idx-1+items.length)%items.length].focus();}
+  if(e.key==='Escape'){dropdown.classList.remove('open');menuBtn.focus();}
+});
+
+// ══════════════════════════════════
+// SIDEBAR TOGGLE
+// ══════════════════════════════════
+let sidebarOpen=true;
+const sbToggle=document.getElementById('sb-toggle'),sidebar=document.getElementById('sidebar');
+function setSidebar(open){
+  sidebarOpen=open;sidebar.classList.toggle('collapsed',!open);
+  sbToggle.textContent=open?'›':'‹';sbToggle.setAttribute('aria-label',open?'Collapse sidebar':'Expand sidebar');
+  sbToggle.style.right=open?'0':'-16px';
+}
+sbToggle.addEventListener('click',()=>setSidebar(!sidebarOpen));
+
+// ══════════════════════════════════
+// NODE CONFIG
+// ══════════════════════════════════
+const NCFG={
+  prompt:    {label:'Prompt / ask',  sub:'Agent says or asks something',cls:'n-prompt',   ports:['in','out']},
+  decision:  {label:'Decision',      sub:'Branch on condition',         cls:'n-decision', ports:['in','out-l','out-r']},
+  tool:      {label:'Tool call',     sub:'Run a tool, update state',    cls:'n-tool',     ports:['in','out']},
+  handoff:   {label:'Human handoff', sub:'Pause for human',             cls:'n-handoff',  ports:['in','out']},
+  fallback:  {label:'Fallback',      sub:'Error or retry path',         cls:'n-fallback', ports:['in','out']},
+  end:       {label:'End',           sub:'Flow resolved',               cls:'n-end',      ports:['in']},
+  annotation:{label:'Add note here', sub:'',                            cls:'n-annotation',ports:[]},
+};
+
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+let nodes=[],edges=[],selId=null,selType=null;
+let dragNode=null,dragOff={x:0,y:0};
+let connFrom=null,tempPath=null;
+let nc=0,ec=0,panX=0,panY=0,zoom=1;
+let panning=false,panStart={x:0,y:0},spaceDown=false;
+let undoStack=[],redoStack=[];
+let hasSeenPortPulse=false;
+
+const cw=()=>document.getElementById('cw'),ct=()=>document.getElementById('ct'),cv=()=>document.getElementById('cv'),esvg=()=>document.getElementById('esvg'),pp=()=>document.getElementById('props-panel');
+
+// ══════════════════════════════════
+// EMPTY STATE
+// ══════════════════════════════════
+function updEmptyState(){
+  const hasNodes=nodes.length>0;
+  const es=document.getElementById('empty-state');
+  es.classList.toggle('hidden',hasNodes);
+  document.getElementById('hint').classList.toggle('fade',!hasNodes);
+}
+
+document.getElementById('es-import-btn').addEventListener('click',()=>{
+  activateTab(document.querySelector('[data-tab="import"]'));
+  if(!sidebarOpen)setSidebar(true);
+});
+document.getElementById('es-example-btn').addEventListener('click',()=>{
+  loadExample();updEmptyState();setTimeout(fitScreen,80);
+});
+
+// ══════════════════════════════════
+// RETICULATING SPLINES
+// ══════════════════════════════════
+const retMsgs=[
+  'Reticulating splines...',
+  'Untangling decision trees...',
+  'Herding nodes into position...',
+  'Connecting the dots (literally)...',
+  'Mapping the agent brain...',
+  'Aligning arrows with destiny...',
+];
+const retSubs=['mapping your flow','almost there','reading the graph','placing the nodes','drawing the edges'];
+
+function showReticulating(onDone){
+  const overlay=document.getElementById('reticulating');
+  const bar=document.getElementById('ret-bar');
+  const msg=document.getElementById('ret-msg');
+  const sub=document.getElementById('ret-sub');
+  msg.textContent=retMsgs[Math.floor(Math.random()*retMsgs.length)];
+  sub.textContent=retSubs[Math.floor(Math.random()*retSubs.length)];
+  bar.style.width='0%';
+  overlay.classList.add('show');
+  let pct=0;
+  const tick=setInterval(()=>{
+    pct+=Math.random()*22+8;
+    if(pct>92)pct=92;
+    bar.style.width=pct+'%';
+  },120);
+  setTimeout(()=>{
+    clearInterval(tick);bar.style.width='100%';
+    setTimeout(()=>{overlay.classList.remove('show');onDone();},300);
+  },900+Math.random()*400);
+}
+
+// ══════════════════════════════════
+// UNDO/REDO
+// ══════════════════════════════════
+const snap=()=>JSON.stringify({nodes,edges});
+function pushUndo(){undoStack.push(snap());if(undoStack.length>60)undoStack.shift();redoStack=[];updUB();}
+function applySnap(s){
+  const d=JSON.parse(s);cv().querySelectorAll('.node').forEach(n=>n.remove());
+  nodes=d.nodes;edges=d.edges;
+  nodes.forEach(n=>{const x=parseInt(n.id.replace('n',''));if(x>nc)nc=x;});
+  edges.forEach(e=>{const x=parseInt(e.id.replace('e',''));if(x>ec)ec=x;});
+  nodes.forEach(n=>renderNode(n));renderEdges();clearSel();updStatus();updEmptyState();
+}
+function undo(){if(!undoStack.length)return;redoStack.push(snap());applySnap(undoStack.pop());updUB();}
+function redo(){if(!redoStack.length)return;undoStack.push(snap());applySnap(redoStack.pop());updUB();}
+function updUB(){document.getElementById('undo-btn').disabled=!undoStack.length;document.getElementById('redo-btn').disabled=!redoStack.length;}
+document.getElementById('undo-btn').addEventListener('click',undo);
+document.getElementById('redo-btn').addEventListener('click',redo);
+updUB();
+
+// ══════════════════════════════════
+// TRANSFORM
+// ══════════════════════════════════
+function applyT(){
+  const px=Math.round(panX*100)/100,py=Math.round(panY*100)/100;
+  ct().style.transform=`translate(${px}px,${py}px) scale(${zoom})`;
+  const w=cw();w.style.setProperty('--gs',`${24*zoom}px`);w.style.setProperty('--gx',`${px}px`);w.style.setProperty('--gy',`${py}px`);
+  document.getElementById('zlbl').textContent=Math.round(zoom*100)+'%';
+}
+document.getElementById('zin').onclick=()=>{zoom=Math.min(zoom*1.2,3);applyT();};
+document.getElementById('zout').onclick=()=>{zoom=Math.max(zoom/1.2,.2);applyT();};
+function fitScreen(){
+  if(!nodes.length)return;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),xe=nodes.map(n=>n.x+210),ye=nodes.map(n=>n.y+110);
+  const minX=Math.min(...xs),minY=Math.min(...ys),maxX=Math.max(...xe),maxY=Math.max(...ye);
+  const w=cw(),ww=w.clientWidth-80,wh=w.clientHeight-80;
+  zoom=Math.min(ww/(maxX-minX||1),wh/(maxY-minY||1),1.4);
+  panX=-minX*zoom+40;panY=-minY*zoom+40;applyT();
+}
+document.getElementById('mi-fit').addEventListener('click',()=>{dropdown.classList.remove('open');fitScreen();});
+cw().addEventListener('wheel',e=>{
+  e.preventDefault();const r=cw().getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const d=e.deltaY>0?.9:1.1,nz=Math.max(.2,Math.min(3,zoom*d));
+  panX=mx-(mx-panX)*(nz/zoom);panY=my-(my-panY)*(nz/zoom);zoom=nz;applyT();
+},{passive:false});
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!e.target.matches('input,textarea')){spaceDown=true;cw().classList.add('panning');e.preventDefault();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();redo();}
+  if((e.key==='Delete'||e.key==='Backspace')&&!e.target.matches('input,textarea')&&selId)delSel();
+});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;cw().classList.remove('panning');panning=false;}});
+cw().addEventListener('mousedown',e=>{
+  if(spaceDown){panning=true;panStart={x:e.clientX-panX,y:e.clientY-panY};e.preventDefault();return;}
+  if(e.target===cw()||e.target===cv()||e.target===ct()||e.target===esvg())clearSel();
+});
+
+// ══════════════════════════════════
+// CANVAS-WIDE PY DROP
+// ══════════════════════════════════
+cw().addEventListener('dragenter',e=>{
+  if([...e.dataTransfer.types].includes('Files'))cw().classList.add('drop-active');
+});
+cw().addEventListener('dragleave',e=>{
+  if(!cw().contains(e.relatedTarget))cw().classList.remove('drop-active');
+});
+cw().addEventListener('dragover',e=>{
+  e.preventDefault();
+  // if it's a file drop (not a node drag), signal copy
+  if([...e.dataTransfer.types].includes('Files'))e.dataTransfer.dropEffect='copy';
+});
+cw().addEventListener('drop',e=>{
+  e.preventDefault();cw().classList.remove('drop-active');
+  const nodeType=e.dataTransfer.getData('node-type');
+  if(nodeType){
+    // node drag from palette
+    const p=toC(e.clientX,e.clientY);pushUndo();makeNode(nodeType,p.x-76,p.y-28);renderEdges();updStatus();updEmptyState();return;
+  }
+  // file drop on canvas
+  const file=e.dataTransfer.files[0];
+  if(file&&(file.name.endsWith('.py')||file.name.endsWith('.txt'))){
+    const r=new FileReader();
+    r.onload=ev=>{
+      const code=ev.target.result.trim();if(!code)return;
+      const res=parsePy(code);
+      if(res.error){toast('Could not parse that file: '+res.error);return;}
+      pushUndo();
+      showReticulating(()=>{applyParsed(res);toast(`imported ${res.pn.length} nodes, ${res.pe.length} edges`);updEmptyState();});
+    };
+    r.readAsText(file);
+  }
+});
+
+// ══════════════════════════════════
+// HELPERS
+// ══════════════════════════════════
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function toC(cx,cy){const r=cw().getBoundingClientRect();return{x:(cx-r.left-panX)/zoom,y:(cy-r.top-panY)/zoom};}
+function updStatus(){document.getElementById('sn').textContent=nodes.filter(n=>n.type!=='annotation').length;document.getElementById('se').textContent=edges.length;document.getElementById('sa').textContent=nodes.filter(n=>n.type==='annotation').length;}
+
+// ══════════════════════════════════
+// NODE CREATE / RENDER
+// ══════════════════════════════════
+function makeNode(type,x,y,ov={}){
+  const id='n'+(++nc);
+  const n={id,type,label:ov.label??NCFG[type].label,note:ov.note??'',nodeId:ov.nodeId??(type+'_'+nc),x:Math.max(8,x),y:Math.max(8,y),happy:ov.happy??false};
+  nodes.push(n);renderNode(n);
+  announce(`${n.label} node added to canvas`);
+  return n;
+}
+function renderNode(node){
+  const old=document.getElementById('node-'+node.id);if(old)old.remove();
+  const cfg=NCFG[node.type];const el=document.createElement('div');
+  el.id='node-'+node.id;el.style.left=node.x+'px';el.style.top=node.y+'px';
+  if(node.type==='annotation'){
+    el.className='node n-annotation'+(node.id===selId?' selected':'');
+    el.setAttribute('role','figure');el.setAttribute('aria-label','Annotation: '+node.label);
+    el.innerHTML=`<div class="ann-tag">// note</div><div class="ann-body">${esc(node.label)}</div>`;
+  } else {
+    const pm={'out':'bottom:-6px;left:50%;transform:translateX(-50%)','in':'top:-6px;left:50%;transform:translateX(-50%)','out-l':'left:-6px;top:50%;transform:translateY(-50%)','out-r':'right:-6px;top:50%;transform:translateY(-50%)'};
+    const ports=cfg.ports.map(p=>`<div class="port" data-node="${node.id}" data-port="${p}" style="${pm[p]}" tabindex="${p!=='in'?'0':'-1'}" role="button" aria-label="${p==='in'?'input port':'output port'}"></div>`).join('');
+    el.className=`node ${cfg.cls}${node.id===selId?' selected':''}${node.happy?' happy':''}`;
+    el.setAttribute('role','figure');el.setAttribute('aria-label',`${node.type} node: ${node.label}`);
+    el.innerHTML=`<div class="ntag">${node.type}</div><div class="ntitle">${esc(node.label)}</div>${node.note?`<div class="ndesc">${esc(node.note)}</div>`:'<div class="ndesc" style="display:none"></div>'}${ports}`;
+  }
+  cv().appendChild(el);
+  // Force immediate GPU layer promotion in Edge/Chromium — prevents blur-until-click
+  void el.offsetHeight;
+  // Make node focusable for keyboard navigation
+  el.setAttribute('tabindex','0');
+  el.addEventListener('focus',()=>selItem(node.id,'node'));
+  el.addEventListener('keydown',e=>{
+    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();delSel();}
+    if(e.key==='Escape'){e.preventDefault();clearSel();cw().focus();}
+  });
+  bindNode(el,node);
+}
+function updNode(n){
+  const el=document.getElementById('node-'+n.id);if(!el)return;
+  if(n.type==='annotation'){el.querySelector('.ann-body').textContent=n.label;return;}
+  el.querySelector('.ntitle').textContent=n.label;
+  const d=el.querySelector('.ndesc');if(d){d.textContent=n.note;d.style.display=n.note?'':'none';}
+  el.classList.toggle('happy',!!n.happy);el.setAttribute('aria-label',`${n.type} node: ${n.label}`);
+}
+function bindNode(el,node){
+  el.addEventListener('mousedown',e=>{
+    if(e.target.classList.contains('port')||spaceDown)return;
+    e.preventDefault();e.stopPropagation();
+    selItem(node.id,'node');dragNode=node;
+    const r=el.getBoundingClientRect();dragOff={x:e.clientX-r.left,y:e.clientY-r.top};
+    // one-time port pulse to teach the interaction
+    if(!hasSeenPortPulse&&node.type!=='annotation'){
+      hasSeenPortPulse=true;
+      el.querySelectorAll('.port-out,.port-out-l,.port-out-r').forEach(p=>{
+        p.classList.add('pulse');p.addEventListener('animationend',()=>p.classList.remove('pulse'),{once:true});
+      });
+    }
+  });
+  el.querySelectorAll('.port').forEach(p=>{
+    p.addEventListener('mousedown',e=>{
+      if(p.dataset.port==='in')return;
+      e.stopPropagation();e.preventDefault();
+      connFrom={nodeId:node.id,port:p.dataset.port};
+      const accentColor=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      tempPath=document.createElementNS('http://www.w3.org/2000/svg','path');
+      tempPath.setAttribute('fill','none');tempPath.setAttribute('stroke',accentColor);
+      tempPath.setAttribute('stroke-width','1.5');tempPath.setAttribute('stroke-dasharray','6 3');tempPath.setAttribute('opacity','.8');
+      esvg().appendChild(tempPath);
+    });
+  });
+}
+function portPos(nodeId,port){
+  const el=document.getElementById('node-'+nodeId);if(!el)return{x:0,y:0};
+  const pel=el.querySelector(`[data-port="${port}"]`);
+  if(!pel){const r=el.getBoundingClientRect(),cr=cw().getBoundingClientRect();return{x:(r.left+r.width/2-cr.left-panX)/zoom,y:(r.bottom-cr.top-panY)/zoom};}
+  const pr=pel.getBoundingClientRect(),cr=cw().getBoundingClientRect();
+  return{x:(pr.left+pr.width/2-cr.left-panX)/zoom,y:(pr.top+pr.height/2-cr.top-panY)/zoom};
+}
+function drawTemp(x1,y1,x2,y2){if(!tempPath)return;const cy=Math.max(40,Math.abs(y2-y1)*.5);tempPath.setAttribute('d',`M${x1},${y1} C${x1},${y1+cy} ${x2},${y2-cy} ${x2},${y2}`);}
+
+// ══════════════════════════════════
+// EDGES
+// ══════════════════════════════════
+function renderEdges(){
+  esvg().innerHTML='';
+  const cs=getComputedStyle(document.documentElement);
+  const acc=cs.getPropertyValue('--accent').trim();
+  const isDark=theme==='dark';
+  const arrNorm=isDark?'#444':'#bbb';
+  const arrHappy=isDark?'rgba(79,255,176,.55)':'rgba(13,110,73,.5)';
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  [['arr',arrNorm],['arr-s',acc],['arr-h',arrHappy]].forEach(([id,col])=>{
+    const mk=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    mk.setAttribute('id',id);mk.setAttribute('viewBox','0 0 10 10');mk.setAttribute('refX','8');mk.setAttribute('refY','5');mk.setAttribute('markerWidth','6');mk.setAttribute('markerHeight','6');mk.setAttribute('orient','auto-start-reverse');
+    const mp=document.createElementNS('http://www.w3.org/2000/svg','path');mp.setAttribute('d','M2 1L8 5L2 9');mp.setAttribute('fill','none');mp.setAttribute('stroke',col);mp.setAttribute('stroke-width','1.5');mp.setAttribute('stroke-linecap','round');mp.setAttribute('stroke-linejoin','round');mk.appendChild(mp);defs.appendChild(mk);
+  });
+  esvg().appendChild(defs);
+  edges.forEach(edge=>{
+    const from=portPos(edge.fromNode,edge.fromPort),to=portPos(edge.toNode,'in');
+    const isSel=(selType==='edge'&&selId===edge.id);
+    const fn=nodes.find(n=>n.id===edge.fromNode),tn=nodes.find(n=>n.id===edge.toNode);
+    const isH=fn?.happy&&tn?.happy;
+    const cy=Math.max(40,Math.abs(to.y-from.y)*.5);
+    const d=`M${from.x},${from.y} C${from.x},${from.y+cy} ${to.x},${to.y-cy} ${to.x},${to.y}`;
+    const stroke=isSel?acc:isH?arrHappy:(isDark?'#2e2e2e':'#ccc');
+    const hit=document.createElementNS('http://www.w3.org/2000/svg','path');
+    hit.setAttribute('d',d);hit.setAttribute('fill','none');hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.style.cursor='pointer';hit.style.pointerEvents='stroke';
+    hit.addEventListener('click',()=>selItem(edge.id,'edge'));esvg().appendChild(hit);
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',d);path.setAttribute('fill','none');path.setAttribute('stroke',stroke);
+    path.setAttribute('stroke-width',isSel?'2':'1.5');
+    path.setAttribute('marker-end',isSel?'url(#arr-s)':isH?'url(#arr-h)':'url(#arr)');
+    esvg().appendChild(path);
+    if(edge.label){
+      const mx=(from.x+to.x)/2,my=(from.y+to.y)/2,tw=edge.label.length*6+12;
+      const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('x',mx-tw/2);bg.setAttribute('y',my-11);bg.setAttribute('width',tw);bg.setAttribute('height',16);bg.setAttribute('rx','2');
+      bg.setAttribute('fill',isDark?'#161616':'#fff');bg.setAttribute('stroke',isDark?'#2a2a2a':'#d8d8d6');bg.setAttribute('stroke-width','0.5');esvg().appendChild(bg);
+      const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',mx);txt.setAttribute('y',my+1);txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size','10');txt.setAttribute('font-family','IBM Plex Mono,monospace');
+      txt.setAttribute('fill',isSel?acc:(isDark?'#8a8a8a':'#666'));txt.textContent=edge.label;esvg().appendChild(txt);
+    }
+  });
+}
+
+// ══════════════════════════════════
+// SELECTION
+// ══════════════════════════════════
+function selItem(id,type){
+  selId=id;selType=type;document.querySelectorAll('.node').forEach(n=>n.classList.remove('selected'));
+  if(type==='node'){const el=document.getElementById('node-'+id);if(el)el.classList.add('selected');renderNodeProps(nodes.find(n=>n.id===id));document.getElementById('ssel').textContent=id;}
+  else{renderEdgeProps(edges.find(e=>e.id===id));document.getElementById('ssel').textContent='edge: '+id;}
+  renderEdges();
+}
+function clearSel(){
+  selId=null;selType=null;document.querySelectorAll('.node').forEach(n=>n.classList.remove('selected'));
+  pp().innerHTML=`<p class="no-sel"><strong style="color:var(--text-secondary);font-size:12px">Getting started</strong><br><br>Each card on the canvas is a <strong style="color:var(--text-secondary)">node</strong> — one step the AI can take. Drag a node from the toolbar above to place it. Connect two nodes by dragging from the dot at the bottom of one card to the dot at the top of another.<br><br>Click any node or edge to edit it here.<br><br><span style="color:var(--text-muted)">space + drag — pan around<br>scroll — zoom in and out<br>ctrl+z / ctrl+y — undo and redo<br>delete key — remove selected</span></p>`;
+  document.getElementById('ssel').textContent='';renderEdges();
+}
+function delSel(){
+  if(!selId)return;pushUndo();
+  if(selType==='node'){
+    const n=nodes.find(n=>n.id===selId);
+    const label=n?n.label:'Node';
+    edges=edges.filter(e=>e.fromNode!==selId&&e.toNode!==selId);nodes=nodes.filter(n=>n.id!==selId);
+    const el=document.getElementById('node-'+selId);if(el)el.remove();
+    announce(`${label} node deleted`);
+  } else {
+    edges=edges.filter(e=>e.id!==selId);
+    announce('Edge deleted');
+  }
+  clearSel();renderEdges();updStatus();updEmptyState();
+}
+
+// ══════════════════════════════════
+// PROPS PANELS
+// ══════════════════════════════════
+function renderNodeProps(n){
+  if(!n)return;
+  if(n.type==='annotation'){
+    pp().innerHTML=`<div class="ps"><div class="psl">annotation</div><div class="pr"><label class="pl" for="p-ann">Note text</label><textarea class="pta" id="p-ann" rows="5">${esc(n.label)}</textarea></div></div><div class="ps"><button class="dbtn" id="dbtn">delete note</button></div>`;
+    document.getElementById('p-ann').oninput=e=>{n.label=e.target.value;updNode(n);};
+    document.getElementById('dbtn').onclick=delSel;return;
+  }
+  pp().innerHTML=`
+    <div class="ps"><div class="psl">node · ${n.type}</div>
+      <div class="pr"><label class="pl" for="p-label">Label</label><input class="pi" id="p-label" value="${esc(n.label)}"></div>
+      <div class="pr"><label class="pl" for="p-note">Description</label><input class="pi" id="p-note" value="${esc(n.note||'')}"></div>
+      <div class="pr"><label class="pl" for="p-nid">Node ID <span style="color:var(--text-muted);font-size:10px">(export name)</span></label><input class="pi" id="p-nid" value="${esc(n.nodeId||n.id)}"></div>
+      <div class="pr"><label class="pl">Tag</label>
+        <div class="tag-row"><button class="tag${n.happy?' on':''}" id="t-happy" aria-pressed="${!!n.happy}">happy path</button></div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:5px;line-height:1.6">Mark this node as part of the normal successful flow. Happy path nodes glow on the canvas.</div>
+      </div>
+    </div>
+    <div class="ps"><button class="dbtn" id="dbtn">delete node</button></div>`;
+  document.getElementById('p-label').oninput=e=>{n.label=e.target.value;updNode(n);};
+  document.getElementById('p-note').oninput=e=>{n.note=e.target.value;updNode(n);};
+  document.getElementById('p-nid').oninput=e=>{n.nodeId=e.target.value;};
+  document.getElementById('t-happy').onclick=()=>{pushUndo();n.happy=!n.happy;const btn=document.getElementById('t-happy');btn.classList.toggle('on',n.happy);btn.setAttribute('aria-pressed',n.happy);updNode(n);renderEdges();};
+  document.getElementById('dbtn').onclick=delSel;
+}
+function renderEdgeProps(edge){
+  if(!edge)return;
+  const fn=nodes.find(n=>n.id===edge.fromNode),tn=nodes.find(n=>n.id===edge.toNode);
+  pp().innerHTML=`<div class="ps"><div class="psl">edge</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-bottom:10px;line-height:1.9">${fn?(fn.nodeId||fn.id):'?'}<br>↓<br>${tn?(tn.nodeId||tn.id):'?'}</div>
+    <div class="pr"><label class="pl" for="p-el">Condition label</label>
+      <input class="pi" id="p-el" placeholder="e.g. needs_clarification" value="${esc(edge.label||'')}">
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.6">Describe what has to be true for the flow to take this path. Shown on the arrow.</div>
+    </div></div>
+    <div class="ps"><button class="dbtn" id="dbtn">delete edge</button></div>`;
+  document.getElementById('p-el').oninput=e=>{edge.label=e.target.value;renderEdges();};
+  document.getElementById('dbtn').onclick=delSel;
+}
+
+// ══════════════════════════════════
+// GLOBAL MOUSE
+// ══════════════════════════════════
+document.addEventListener('mousemove',e=>{
+  if(panning){panX=e.clientX-panStart.x;panY=e.clientY-panStart.y;applyT();return;}
+  if(dragNode){
+    const p=toC(e.clientX,e.clientY);
+    dragNode.x=Math.max(8,Math.round(p.x-dragOff.x/zoom));
+    dragNode.y=Math.max(8,Math.round(p.y-dragOff.y/zoom));
+    const el=document.getElementById('node-'+dragNode.id);if(el){el.style.left=dragNode.x+'px';el.style.top=dragNode.y+'px';}renderEdges();
+  }
+  if(connFrom&&tempPath){const from=portPos(connFrom.nodeId,connFrom.port),p=toC(e.clientX,e.clientY);drawTemp(from.x,from.y,p.x,p.y);}
+});
+document.addEventListener('mouseup',e=>{
+  if(panning){panning=false;return;}
+  if(dragNode){pushUndo();dragNode=null;}
+  if(connFrom&&tempPath){
+    const t=e.target;
+    if(t.classList.contains('port')&&t.dataset.port==='in'&&t.dataset.node!==connFrom.nodeId){
+      if(!edges.find(ed=>ed.fromNode===connFrom.nodeId&&ed.fromPort===connFrom.port&&ed.toNode===t.dataset.node)){
+        pushUndo();edges.push({id:'e'+(++ec),fromNode:connFrom.nodeId,fromPort:connFrom.port,toNode:t.dataset.node,label:''});renderEdges();updStatus();
+      }
+    }
+    tempPath.remove();tempPath=null;connFrom=null;
+  }
+});
+cw().addEventListener('mousedown',e=>{if(spaceDown){panning=true;panStart={x:e.clientX-panX,y:e.clientY-panY};e.preventDefault();}});
+
+// ══════════════════════════════════
+// TABS
+// ══════════════════════════════════
+function activateTab(t){
+  document.querySelectorAll('.stab').forEach(s=>{s.classList.remove('active');s.setAttribute('aria-selected','false');s.setAttribute('tabindex','-1');});
+  t.classList.add('active');t.setAttribute('aria-selected','true');t.setAttribute('tabindex','0');
+  const w=t.dataset.tab;
+  document.getElementById('props-panel').style.display=w==='props'?'':'none';
+  document.getElementById('props-panel').setAttribute('aria-hidden',w!=='props');
+  const im=document.getElementById('imp');
+  im.style.display=w==='import'?'flex':'none';if(w==='import')im.classList.add('vis');
+  im.setAttribute('aria-hidden',w!=='import');
+}
+document.querySelectorAll('.stab').forEach(t=>{
+  t.addEventListener('click',()=>activateTab(t));
+  t.addEventListener('keydown',e=>{
+    const tabs=[...document.querySelectorAll('.stab')];
+    const idx=tabs.indexOf(t);
+    if(e.key==='ArrowRight'){e.preventDefault();const next=tabs[(idx+1)%tabs.length];activateTab(next);next.focus();}
+    if(e.key==='ArrowLeft'){e.preventDefault();const prev=tabs[(idx-1+tabs.length)%tabs.length];activateTab(prev);prev.focus();}
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();activateTab(t);}
+  });
+});
+
+// ══════════════════════════════════
+// MENU ACTIONS
+// ══════════════════════════════════
+function closeMenu(){dropdown.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');}
+document.getElementById('mi-clear').addEventListener('click',()=>{
+  closeMenu();if(nodes.length&&!confirm('Clear canvas?'))return;
+  pushUndo();nodes=[];edges=[];cv().querySelectorAll('.node').forEach(n=>n.remove());renderEdges();clearSel();updStatus();updEmptyState();
+});
+document.getElementById('mi-example').addEventListener('click',()=>{
+  closeMenu();loadExample();updEmptyState();setTimeout(fitScreen,80);
+});
+document.getElementById('mi-save').addEventListener('click',()=>{
+  closeMenu();
+  const blob=new Blob([JSON.stringify({nodes,edges,meta:{v:2,theme,saved:new Date().toISOString()}},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='langgraph-flow.json';a.click();toast('saved langgraph-flow.json');
+});
+document.getElementById('mi-load').addEventListener('click',()=>{closeMenu();document.getElementById('load-file').click();});
+document.getElementById('load-file').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);if(!d.nodes||!d.edges)throw new Error('invalid');
+      pushUndo();cv().querySelectorAll('.node').forEach(n=>n.remove());
+      nodes=d.nodes;edges=d.edges;nodes.forEach(n=>renderNode(n));renderEdges();clearSel();updStatus();
+      if(d.meta?.theme)applyTheme(d.meta.theme);
+      updEmptyState();setTimeout(fitScreen,80);toast('loaded '+f.name);
+    }catch(err){alert('Load error: '+err.message);}
+  };r.readAsText(f);e.target.value='';
+});
+
+// ══════════════════════════════════
+// EXPORT
+// ══════════════════════════════════
+document.getElementById('export-btn').addEventListener('click',()=>{document.getElementById('mcode').textContent=genPy();document.getElementById('mbg').classList.add('open');document.getElementById('mcode').focus();});
+document.getElementById('mcls').addEventListener('click',()=>{document.getElementById('mbg').classList.remove('open');document.getElementById('export-btn').focus();});
+document.getElementById('mcopy').addEventListener('click',()=>navigator.clipboard.writeText(document.getElementById('mcode').textContent).then(()=>toast('copied to clipboard')));
+document.getElementById('mdl').addEventListener('click',()=>{
+  const b=new Blob([document.getElementById('mcode').textContent],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='langgraph_flow.py';a.click();toast('downloaded langgraph_flow.py');
+});
+document.getElementById('mbg').addEventListener('click',e=>{if(e.target===document.getElementById('mbg'))document.getElementById('mbg').classList.remove('open');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('mbg').classList.contains('open')){document.getElementById('mbg').classList.remove('open');document.getElementById('export-btn').focus();}});
+
+function genPy(){
+  const fn=nodes.filter(n=>n.type!=='annotation');if(!fn.length)return'# No nodes on canvas yet.';
+  const dn=fn.filter(n=>n.type==='decision'),ann=nodes.filter(n=>n.type==='annotation');
+  let py=`# ═══════════════════════════════════════════════\n# LangGraph Flow — generated by LangGraph Designer\n# ${new Date().toLocaleString()}\n`;
+  if(ann.length){py+=`#\n# Designer notes:\n`;ann.forEach(a=>{py+=`#   ${a.label.replace(/\n/g,'\n#   ')}\n`;});}
+  py+=`# ═══════════════════════════════════════════════\n\nfrom langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Annotated\nimport operator\n\n\n# ── State ────────────────────────────────────\nclass AgentState(TypedDict):\n    messages: Annotated[list, operator.add]\n    next: str\n    # TODO: add custom fields here\n\n\n# ── Node functions ───────────────────────────\n`;
+  fn.forEach(n=>{
+    if(n.type==='end')return;
+    const nid=n.nodeId||n.id,desc=n.note||NCFG[n.type].sub;
+    py+=`\ndef ${nid}(state: AgentState) -> AgentState:\n    """${n.label}${desc?' — '+desc:''}"""\n`;
+    if(n.type==='decision'){const outs=edges.filter(e=>e.fromNode===n.id);py+=`    # TODO: return one of: ${outs.map(e=>`"${e.label||'condition'}"`).join(', ')}\n    return {"next": "TODO"}\n`;}
+    else if(n.type==='handoff')py+=`    # Pause — hand off to human\n    return {"messages": state["messages"], "next": "awaiting_human"}\n`;
+    else if(n.type==='fallback')py+=`    # Handle error or retry\n    return {"messages": state["messages"]}\n`;
+    else py+=`    # TODO: implement\n    return {"messages": state["messages"]}\n`;
+  });
+  if(dn.length){py+=`\n\n# ── Routers ──────────────────────────────────\n`;dn.forEach(n=>{py+=`\ndef route_${n.nodeId||n.id}(state: AgentState) -> str:\n    return state["next"]\n`;});}
+  py+=`\n\n# ── Graph assembly ───────────────────────────\ngraph = StateGraph(AgentState)\n\n# Nodes\n`;
+  fn.forEach(n=>{if(n.type!=='end')py+=`graph.add_node("${n.nodeId||n.id}", ${n.nodeId||n.id})\n`;});
+  const entry=fn.find(n=>n.type!=='end');if(entry)py+=`\ngraph.set_entry_point("${entry.nodeId||entry.id}")\n`;
+  const ne=edges.filter(e=>{const f=nodes.find(n=>n.id===e.fromNode);return f&&f.type!=='decision'&&f.type!=='annotation';});
+  if(ne.length){py+=`\n# Edges\n`;ne.forEach(e=>{const f=nodes.find(n=>n.id===e.fromNode),t=nodes.find(n=>n.id===e.toNode);if(!f||!t)return;py+=`graph.add_edge("${f.nodeId||f.id}", ${t.type==='end'?'END':`"${t.nodeId||t.id}"`})\n`;});}
+  if(dn.length){py+=`\n# Conditional edges\n`;dn.forEach(n=>{const nid=n.nodeId||n.id,outs=edges.filter(e=>e.fromNode===n.id);if(!outs.length)return;const map=outs.map(e=>{const t=nodes.find(n=>n.id===e.toNode);if(!t)return null;return`        "${e.label||'condition'}": ${t.type==='end'?'END':`"${t.nodeId||t.id}"`}`;}).filter(Boolean).join(',\n');py+=`graph.add_conditional_edges(\n    "${nid}",\n    route_${nid},\n    {\n${map}\n    }\n)\n`;});}
+  py+=`\n# Compile\napp = graph.compile()\n\n# Run\n# result = app.invoke({"messages": [], "next": ""})\n# print(result)\n`;
+  return py;
+}
+
+// ══════════════════════════════════
+// IMPORT
+// ══════════════════════════════════
+const dz=document.getElementById('dropzone'),fi=document.getElementById('filein');
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click();}});
+fi.addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{document.getElementById('impcode').value=ev.target.result;};r.readAsText(f);e.target.value='';
+});
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dov');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dov'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('dov');
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{document.getElementById('impcode').value=ev.target.result;};r.readAsText(f);
+});
+document.getElementById('parsebtn').addEventListener('click',()=>{
+  const code=document.getElementById('impcode').value.trim();if(!code)return;
+  const res=parsePy(code);const msg=document.getElementById('impmsg');
+  if(res.error){msg.textContent=res.error;msg.className='imsg err';msg.style.display='block';}
+  else{
+    pushUndo();
+    showReticulating(()=>{
+      applyParsed(res);
+      msg.textContent=`imported ${res.pn.length} nodes, ${res.pe.length} edges`;
+      msg.className='imsg ok';msg.style.display='block';
+      activateTab(document.querySelector('[data-tab="props"]'));
+      updEmptyState();
+      setTimeout(()=>msg.style.display='none',3500);
+    });
+  }
+});
+
+function parsePy(code){
+  try{
+    const clean=code.split('\n').map(l=>l.replace(/#.*$/,'').trimEnd()).join('\n');
+    // ── Find graph variable ──
+    let gv=null;
+    const sgm=/(\w+)\s*=\s*StateGraph\s*\(/.exec(clean);
+    if(sgm)gv=sgm[1];
+    if(!gv){
+      const vc={};const sr=/(\w+)\.(add_node|add_edge|add_conditional)\s*\(/g;let sm;
+      while((sm=sr.exec(clean))!==null)vc[sm[1]]=(vc[sm[1]]||0)+1;
+      const top=Object.entries(vc).sort((a,b)=>b[1]-a[1]);
+      if(top.length)gv=top[0][0];
+    }
+    if(!gv)return{error:'Could not find a StateGraph or add_node() call. Is this a LangGraph file?'};
+
+    // ── Collapse multiline calls by paren depth ──
+    function collapseParens(src){
+      const lines=[];let cur='',d=0;
+      for(const ch of src){
+        if(ch==='(')d++;if(ch===')')d--;
+        if(ch==='\n'&&d===0){if(cur.trim())lines.push(cur.trim());cur='';}
+        else cur+=(ch==='\n'?' ':ch);
+      }
+      if(cur.trim())lines.push(cur.trim());return lines;
+    }
+    // ── Split args respecting nesting/quotes ──
+    function splitArgs(inner){
+      const args=[];let cur='',d=0,inS=false,sc='';
+      for(let i=0;i<inner.length;i++){
+        const c=inner[i];
+        if(inS){cur+=c;if(c===sc&&inner[i-1]!=='\\')inS=false;}
+        else if(c==='"'||c==="'"){inS=true;sc=c;cur+=c;}
+        else if(c==='('||c==='{'||c==='['){d++;cur+=c;}
+        else if(c===')'||c==='}'||c===']'){d--;cur+=c;}
+        else if(c===','&&d===0){args.push(cur.trim());cur='';}
+        else cur+=c;
+      }
+      if(cur.trim())args.push(cur.trim());return args;
+    }
+    function getArgs(callStr){
+      const s=callStr.indexOf('('),e=callStr.lastIndexOf(')');
+      if(s<0||e<0)return[];return splitArgs(callStr.slice(s+1,e));
+    }
+    function unwrap(tok){
+      tok=(tok||'').trim();
+      if((tok.startsWith('"')&&tok.endsWith('"'))||(tok.startsWith("'")&&tok.endsWith("'")))return tok.slice(1,-1);
+      return tok;
+    }
+    const ENDS=new Set(['END','__end__']);
+    const STARTS=new Set(['START','__start__']);
+    const isEnd=t=>{const u=unwrap(t);return ENDS.has(t)||ENDS.has(u);};
+    const isStart=t=>{const u=unwrap(t);return STARTS.has(t)||STARTS.has(u);};
+    function parseDict(raw){
+      const inner=raw.slice(raw.indexOf('{')+1,raw.lastIndexOf('}'));
+      const result={};
+      for(const e of splitArgs(inner)){const ci=e.indexOf(':');if(ci<0)continue;result[unwrap(e.slice(0,ci).trim())]=unwrap(e.slice(ci+1).trim());}
+      return result;
+    }
+    function parseList(raw){
+      return splitArgs(raw.slice(raw.indexOf('[')+1,raw.lastIndexOf(']'))).map(t=>unwrap(t.trim())).filter(Boolean);
+    }
+    // ── Walk lines ──
+    const pn=[],pe=[],ns=new Set();let eid=null;
+    const ensureEnd=()=>{if(!ns.has('END')){ns.add('END');pn.push({nodeId:'END',forceType:'end'});}};
+    function addNode(id){if(id&&!isEnd(id)&&!isStart(id)&&!ns.has(id)){ns.add(id);pn.push({nodeId:id});}}
+    for(const line of collapseParens(clean)){
+      if(line.includes(`${gv}.add_node(`)){
+        const args=getArgs(line);if(!args.length)continue;
+        addNode(unwrap(args[0]));
+      }
+      else if(line.includes('.set_entry_point(')){
+        const args=getArgs(line);if(args.length>=1)eid=unwrap(args[0]);
+      }
+      else if(line.includes(`${gv}.add_edge(`)&&!line.includes('conditional')){
+        const args=getArgs(line);if(args.length<2)continue;
+        const rf=args[0].trim(),rt=args[1].trim();
+        if(rf.startsWith('[')){
+          for(const src of parseList(rf)){
+            if(isEnd(rt)){ensureEnd();pe.push({from:src,to:'END',label:''});}
+            else if(!isStart(rt))pe.push({from:src,to:unwrap(rt),label:''});
+          }
+        } else if(isStart(rf)){eid=unwrap(rt);}
+        else if(isEnd(rt)){ensureEnd();pe.push({from:unwrap(rf),to:'END',label:''});}
+        else if(!isEnd(rf)&&!isStart(rf))pe.push({from:unwrap(rf),to:unwrap(rt),label:''});
+      }
+      else if(line.includes(`${gv}.add_conditional_edges(`)){
+        const args=getArgs(line);if(!args.length)continue;
+        const fromRaw=args[0].trim();
+        const fromId=isStart(fromRaw)?null:unwrap(fromRaw);
+        if(fromId){const pnd=pn.find(n=>n.nodeId===fromId);if(pnd)pnd.forceType='decision';}
+        const dictArg=args.find(a=>a.trim().startsWith('{'));
+        const listArg=args.find(a=>a.trim().startsWith('['));
+        if(dictArg&&fromId){
+          for(const[label,target]of Object.entries(parseDict(dictArg))){
+            if(isEnd(target)){ensureEnd();pe.push({from:fromId,to:'END',label,isC:true});}
+            else if(!isStart(target))pe.push({from:fromId,to:target,label,isC:true});
+          }
+        } else if(listArg&&fromId){
+          for(const target of parseList(listArg)){
+            if(isEnd(target)){ensureEnd();pe.push({from:fromId,to:'END',label:'',isC:true});}
+            else if(!isStart(target))pe.push({from:fromId,to:target,label:'',isC:true});
+          }
+        }
+      }
+    }
+    if(!pn.length)return{error:'No nodes found. Make sure the file uses add_node() calls.'};
+    // ── Type inference: topology first, then name patterns ──
+    const hasOut=id=>pe.some(e=>e.from===id);
+    pn.forEach(n=>{
+      if(n.forceType){n.type=n.forceType;return;}
+      const id=n.nodeId.toLowerCase();
+      if(!hasOut(n.nodeId)){n.type='end';return;}
+      if(/tool|search|fetch|lookup|retriev|query|pull|load|^get_|api_/.test(id))n.type='tool';
+      else if(/human|handoff|review|approv|escalat|admin/.test(id))n.type='handoff';
+      else if(/fallback|error|retry|fail|except/.test(id))n.type='fallback';
+      else if(/decision|route|check|branch|router|_edge$|cond/.test(id))n.type='decision';
+      else n.type='prompt';
+    });
+    return{pn,pe,entryId:eid};
+  }catch(e){return{error:'Parse error: '+e.message};}
+}
+function applyParsed(res){
+  cv().querySelectorAll('.node').forEach(n=>n.remove());nodes=[];edges=[];
+  let ord=[...res.pn];
+  if(res.entryId){const i=ord.findIndex(n=>n.nodeId===res.entryId);if(i>0){const[e]=ord.splice(i,1);ord.unshift(e);}}
+  const ei=ord.findIndex(n=>n.type==='end');if(ei>0){const[e]=ord.splice(ei,1);ord.push(e);}
+  const cols=Math.max(1,Math.ceil(Math.sqrt(ord.length)));const idm={};
+  ord.forEach((pn,i)=>{const col=i%cols,row=Math.floor(i/cols);const n=makeNode(pn.type,60+col*260,80+row*130,{label:pn.nodeId,nodeId:pn.nodeId});idm[pn.nodeId]=n.id;});
+  res.pe.forEach(pe=>{const fid=idm[pe.from],tid=idm[pe.to];if(!fid||!tid)return;const fn=nodes.find(n=>n.id===fid);let fp='out';if(fn&&fn.type==='decision'){const ex=edges.filter(e=>e.fromNode===fid);fp=ex.length===0?'out-l':'out-r';}edges.push({id:'e'+(++ec),fromNode:fid,fromPort:fp,toNode:tid,label:pe.label});});
+  renderEdges();clearSel();updStatus();setTimeout(fitScreen,80);
+}
+
+// ══════════════════════════════════
+// SCREEN READER ANNOUNCER
+// ══════════════════════════════════
+function announce(msg){
+  const el=document.getElementById('sr-announce');
+  el.textContent='';
+  // Double rAF ensures the DOM change is picked up by screen readers
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{el.textContent=msg;}));
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
+
+// ══════════════════════════════════
+// EXAMPLE FLOW
+// ══════════════════════════════════
+function loadExample(){
+  cv().querySelectorAll('.node').forEach(n=>n.remove());nodes=[];edges=[];
+
+  // Payroll: Missing Documents Agent
+  // Admin gets alerted when an employee is missing required payroll docs
+  const a=makeNode('prompt',    100,  60,{label:'New hire alert',        note:'System flags employee with missing payroll documents',        nodeId:'new_hire_alert',      happy:true});
+  const b=makeNode('tool',      100, 195,{label:'Pull employee record',  note:'Fetch HR profile, doc checklist, and employment start date', nodeId:'fetch_employee_record',happy:true});
+  const c=makeNode('decision',  100, 340,{label:'Docs missing?',         note:'Check which required documents are absent from the record',  nodeId:'check_missing_docs',  happy:true});
+  const d=makeNode('prompt',    340, 460,{label:'All docs on file',      note:'No action needed — confirm and close the alert',             nodeId:'docs_complete',       happy:true});
+  const e=makeNode('tool',     -160, 460,{label:'Identify missing docs', note:'List specific missing items: W-4, I-9, direct deposit form', nodeId:'identify_missing',    happy:true});
+  const f=makeNode('prompt',   -160, 600,{label:'Send reminder to employee',note:'Draft and send a plain-language email listing what is needed and the deadline',nodeId:'send_reminder',happy:true});
+  const g=makeNode('decision', -160, 740,{label:'Response received?',    note:'Did the employee reply or upload within 3 business days?',   nodeId:'check_response'});
+  const h=makeNode('tool',     -360, 860,{label:'Log follow-up needed',  note:'Flag the record for admin review and log the outreach attempt',nodeId:'log_followup'});
+  const i=makeNode('handoff',   -20, 860,{label:'Admin review',          note:'Escalate to payroll admin — employee did not respond in time',nodeId:'admin_review'});
+  const j=makeNode('tool',      100, 860,{label:'Save docs to record',   note:'Attach received documents and mark checklist items complete', nodeId:'save_documents',      happy:true});
+  const k=makeNode('fallback',  340, 600,{label:'Handle system error',   note:'Retry doc fetch or alert admin if HR system is unavailable', nodeId:'handle_error'});
+  const l=makeNode('end',       100,1000,{label:'Case closed',           note:'Employee record is complete, payroll can proceed',           nodeId:'case_closed',         happy:true});
+
+  makeNode('annotation', 560, 320,{label:'Happy path = docs received\nand filed before deadline.\nDecision nodes branch on\nwhat the agent finds.',nodeId:'ann_1'});
+
+  [
+    [a,'out',b,''],
+    [b,'out',c,''],
+    [b,'out',k,'on error'],
+    [c,'out-r',d,'no missing docs'],
+    [c,'out-l',e,'docs missing'],
+    [e,'out',f,''],
+    [f,'out',g,''],
+    [g,'out-l',h,'no response'],
+    [h,'out',i,''],
+    [g,'out-r',j,'docs received'],
+    [j,'out',l,''],
+    [d,'out',l,''],
+    [i,'out',l,''],
+    [k,'out',l,''],
+  ].forEach(([fn,fp,tn,lbl])=>edges.push({id:'e'+(++ec),fromNode:fn.id,fromPort:fp,toNode:tn.id,label:lbl}));
+
+  renderEdges();updStatus();
+}
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+// Bind palette chip drag + keyboard activation
+document.querySelectorAll('.nb').forEach(b=>{
+  b.addEventListener('dragstart',e=>e.dataTransfer.setData('node-type',b.dataset.type));
+  // Keyboard: Enter or Space places a node at canvas center
+  b.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();
+      const w=cw(),r=w.getBoundingClientRect();
+      const cx=(r.width/2-panX)/zoom-76;
+      const cy=(r.height/2-panY)/zoom-28;
+      pushUndo();
+      const n=makeNode(b.dataset.type,cx+Math.random()*40-20,cy+Math.random()*40-20);
+      renderEdges();updStatus();updEmptyState();
+      // Focus the new node for screen readers
+      setTimeout(()=>{const el=document.getElementById('node-'+n.id);if(el)el.focus();},50);
+    }
+  });
+});
+updEmptyState();
+applyT();
+</script>
+</body>
+</html>
