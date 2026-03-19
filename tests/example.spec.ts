@@ -1,18 +1,86 @@
 import { test, expect } from '@playwright/test';
 
-test('has title', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+// --- Homepage ---
+test.describe('Homepage', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
+  test('has correct title', async ({ page }) => {
+    await expect(page).toHaveTitle(/Erik Sagen/);
+  });
+
+  test('shows name heading', async ({ page }) => {
+    await expect(page.getByRole('heading', { level: 1 })).toContainText("I'm Erik Sagen");
+  });
+
+  test('shows job title', async ({ page }) => {
+    await expect(page.getByText('Lead Product UX Designer @ Paychex')).toBeVisible();
+  });
+
+  test('skip link is present', async ({ page }) => {
+    await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeAttached();
+  });
 });
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+// --- About page ---
+test.describe('About page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/about/');
+  });
 
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
+  test('has correct title', async ({ page }) => {
+    await expect(page).toHaveTitle(/About - Erik Sagen/);
+  });
 
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+  test('shows About me heading', async ({ page }) => {
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('About me');
+  });
+
+  test('shows career timeline section', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'The journey so far' })).toBeVisible();
+  });
+
+  test('avatar image loads', async ({ page }) => {
+    const avatar = page.getByAltText('Erik Sagen headshot');
+    await expect(avatar).toBeVisible();
+  });
+});
+
+// --- Contact page ---
+test.describe('Contact page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/contact/');
+  });
+
+  test('has correct title', async ({ page }) => {
+    await expect(page).toHaveTitle(/Contact - Erik Sagen/);
+  });
+
+  test('contact form fields are present', async ({ page }) => {
+    await expect(page.getByRole('textbox', { name: /name/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /email/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /send/i })).toBeVisible();
+  });
+});
+
+// --- Navigation ---
+test.describe('Navigation', () => {
+  test('navigates from home to about', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: /about/i }).first().click();
+    await expect(page).toHaveURL(/\/about/);
+  });
+
+  test('navigates from home to contact', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: /contact/i }).first().click();
+    await expect(page).toHaveURL(/\/contact/);
+  });
+});
+
+// --- 404 page ---
+test('shows 404 page for unknown routes', async ({ page }) => {
+  const response = await page.goto('/this-page-does-not-exist');
+  expect(response?.status()).toBe(404);
 });

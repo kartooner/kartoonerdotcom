@@ -14,7 +14,10 @@
     "optimize-images": "bash scripts/convert-to-webp.sh",
     "minify:aiadvisor": "node scripts/minify-aiadvisor.js",
     "bundle:aiadvisor": "webpack --config webpack.config.js",
-    "fetch-movies": "node scripts/fetch-movies.js"
+    "fetch-movies": "node scripts/fetch-movies.js",
+    "test": "playwright test",
+    "test:edge": "playwright test --project=\"Microsoft Edge\" --headed",
+    "test:movies": "playwright test tests/movies.spec.ts --project=\"Microsoft Edge\" --headed"
   },
   "repository": {
     "type": "git",
