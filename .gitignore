@@ -11,3 +11,11 @@ experiments/paper-plane/screenshot.png
 backups/
 DEV-GUIDE.md
 AGENTS.md
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+package-lock.json
