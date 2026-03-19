@@ -21,8 +21,8 @@
 /* Local Cartridge font */
 @font-face {
     font-family: "Cartridge Regular";
-    src: url('../assets/Cartridge-Regular.woff2') format('woff2'),
-         url('../assets/Cartridge-Regular.woff') format('woff');
+    src: url('../assets/fonts/Cartridge-Regular.woff2') format('woff2'),
+         url('../assets/fonts/Cartridge-Regular.woff') format('woff');
     font-weight: 400;
     font-style: normal;
     font-display: swap;

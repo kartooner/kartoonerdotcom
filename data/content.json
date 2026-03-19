@@ -3,14 +3,14 @@
     {
       "title": "American advertisements of the 1930s – in pictures",
       "url": "https://www.theguardian.com/artanddesign/gallery/2025/sep/02/american-adverts-of-the-1930s-in-pictures",
-      "thumbnail": "/img/1930s-thumb.png",
+      "thumbnail": "/assets/images/1930s-thumb.png",
       "alt": "A 1930s style advert for Seagrams",
       "description": "The Guardian showcases some amazing 1930s adverts."
     },
     {
       "title": "The Management Skill Nobody Talks About",
       "url": "https://terriblesoftware.org/2025/08/22/the-management-skill-nobody-talks-about/",
-      "thumbnail": "/img/manager-thumb.jpeg",
+      "thumbnail": "/assets/images/manager-thumb.jpeg",
       "alt": "A cartoon of a frustrated manager",
       "description": "Managing people and expectations is hard."
     }
@@ -19,7 +19,7 @@
     "title": "How Great Ideas Happen",
     "url": "https://a.co/d/cVuPkkJ",
     "author": "George Newman",
-    "thumbnail": "/img/how-great-ideas-happen-cover.jpg",
+    "thumbnail": "/assets/images/how-great-ideas-happen-cover.jpg",
     "alt": "Book cover of How Great Ideas Happen by George Newman",
     "review": "A book that finally gets at the core of creativity—that it doesn't truly come from within and it's not a solo activity. It comes from a process of discovery that may or may not yield anything to pursue."
   }

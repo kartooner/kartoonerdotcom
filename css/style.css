@@ -56,8 +56,8 @@ html {
 @font-face {
     font-family: "Cartridge Rough";
     src:
-        url("/assets/Cartridge-Rough.woff2") format("woff2"),
-        url("/assets/Cartridge-Rough.woff") format("woff");
+        url("/assets/fonts/Cartridge-Rough.woff2") format("woff2"),
+        url("/assets/fonts/Cartridge-Rough.woff") format("woff");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -66,8 +66,8 @@ html {
 @font-face {
     font-family: "Cartridge Regular";
     src:
-        url("/assets/Cartridge-Regular.woff2") format("woff2"),
-        url("/assets/Cartridge-Regular.woff") format("woff");
+        url("/assets/fonts/Cartridge-Regular.woff2") format("woff2"),
+        url("/assets/fonts/Cartridge-Regular.woff") format("woff");
     font-weight: normal;
     font-style: normal;
     font-display: swap;

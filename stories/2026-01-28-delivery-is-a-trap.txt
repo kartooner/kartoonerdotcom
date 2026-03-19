@@ -2,7 +2,7 @@ Title: Delivery Is a Trap
 Date: 2026-01-28T19:36:00Z
 Tags: writing, ux, design, career, leadership
 Excerpt: How UX slid from strategy to service — and what it might take to climb back out.
-Images: /img/delivery-is-a-trap-cover.jpg
+Images: /assets/images/delivery-is-a-trap-cover.jpg
 Subtitle: How UX slid from strategy to service — and what it might take to climb back out.
 ---
 

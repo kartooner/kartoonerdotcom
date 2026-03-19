@@ -2,7 +2,7 @@ Title: Everyone Creates
 Date: 2025-11-14T18:00:00Z
 Tags: writing, personal, career, growth, longform
 Excerpt: You were always creative; you just forgot you didn't need permission to remember
-Images: /img/dancing-corn-dogs-cover.png
+Images: /assets/images/dancing-corn-dogs-cover.png
 Subtitle: Even when the system says you don't
 ---
 

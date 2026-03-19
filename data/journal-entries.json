@@ -15,7 +15,7 @@
         "leadership"
       ],
       "images": [
-        "/img/delivery-is-a-trap-cover.jpg"
+        "/assets/images/delivery-is-a-trap-cover.jpg"
       ]
     },
     {
@@ -33,7 +33,7 @@
         "longform"
       ],
       "images": [
-        "/img/dancing-corn-dogs-cover.png"
+        "/assets/images/dancing-corn-dogs-cover.png"
       ]
     },
     {
@@ -48,7 +48,7 @@
         "personal"
       ],
       "images": [
-        "/img/land-before-time-cover.jpg"
+        "/assets/images/land-before-time-cover.jpg"
       ]
     },
     {
@@ -63,7 +63,7 @@
         "personal"
       ],
       "images": [
-        "/img/power-pole.jpg"
+        "/assets/images/power-pole.jpg"
       ]
     },
     {
@@ -77,7 +77,7 @@
         "personal"
       ],
       "images": [
-        "/img/sketch-of-kcd2.JPG"
+        "/assets/images/sketch-of-kcd2.JPG"
       ]
     }
   ]
