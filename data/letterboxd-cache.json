@@ -1,6 +1,33 @@
 {
-  "fetchedAt": "2026-02-13T12:48:56.612Z",
+  "fetchedAt": "2026-03-19T16:46:31.470Z",
   "movies": [
+    {
+      "title": "Hoppers",
+      "year": "2026",
+      "link": "https://letterboxd.com/kartooner/film/hoppers/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/2/0/7/5/5/7/1207557-hoppers-0-600-0-900-crop.jpg?v=7711e7b5a7",
+      "stars": "★★★★",
+      "rating": 4,
+      "date": "2026-03-07"
+    },
+    {
+      "title": "Ghost",
+      "year": "1990",
+      "link": "https://letterboxd.com/kartooner/film/ghost/",
+      "imageUrl": "https://a.ltrbxd.com/resized/sm/upload/8n/7z/dy/d9/rtxy3cplRFPUvruZajpcoxOQ7bi-0-600-0-900-crop.jpg?v=5eb6ee5f42",
+      "stars": "★★★★",
+      "rating": 4,
+      "date": "2026-02-15"
+    },
+    {
+      "title": "Folktales",
+      "year": "2025",
+      "link": "https://letterboxd.com/kartooner/film/folktales/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/2/8/4/1/5/2/1284152-folktales-0-600-0-900-crop.jpg?v=618e63dc66",
+      "stars": "★★★★½",
+      "rating": 4.5,
+      "date": "2026-02-14"
+    },
     {
       "title": "Casino Royale",
       "year": "2006",
@@ -9,33 +36,6 @@
       "stars": "★★★★",
       "rating": 4,
       "date": "2026-02-08"
-    },
-    {
-      "title": "Send Help",
-      "year": "2026",
-      "link": "https://letterboxd.com/kartooner/film/send-help/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/0/8/4/1/1/7/1084117-send-help-0-600-0-900-crop.jpg?v=9d8917c355",
-      "stars": "★★★½",
-      "rating": 3.5,
-      "date": "2026-02-01"
-    },
-    {
-      "title": "Spider-Man: Into the Spider-Verse",
-      "year": "2018",
-      "link": "https://letterboxd.com/kartooner/film/spider-man-into-the-spider-verse/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/2/5/1/9/4/3/251943-spider-man-into-the-spider-verse-0-600-0-900-crop.jpg?v=538fe0ada6",
-      "stars": "★★★★★",
-      "rating": 5,
-      "date": "2026-02-01"
-    },
-    {
-      "title": "The Wolf of Wall Street",
-      "year": "2013",
-      "link": "https://letterboxd.com/kartooner/film/the-wolf-of-wall-street/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/8/6/1/1/4/86114-the-wolf-of-wall-street-0-600-0-900-crop.jpg?v=a2b958b6f1",
-      "stars": "★★★★",
-      "rating": 4,
-      "date": "2026-02-01"
     }
   ]
 }
