@@ -613,6 +613,42 @@
         </div>
 
 
+        <nav class="table-of-contents collapsed" aria-label="Table of Contents" id="toc">
+            <!-- Desktop version: collapsible jump list -->
+            <div class="toc-desktop">
+                <button class="toc-toggle" aria-expanded="false" aria-controls="toc-content">
+                    <span class="toc-toggle-icon">▼</span>
+                    <span class="toc-toggle-text">Jump to section</span>
+                </button>
+                <div class="toc-content" id="toc-content">
+                    <ul class="toc-list">
+                        <li><a href="#how-we-got-here">How we got here</a></li>
+                        <li><a href="#the-seat-isnt-the-goal">The seat isn't the goal</a></li>
+                        <li><a href="#show-up-differently">Show up differently</a></li>
+                        <li><a href="#trust-takes-time">Trust takes time</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Mobile version: collapsible dropdown -->
+            <div class="toc-mobile">
+                <button class="toc-mobile-toggle" aria-expanded="false" aria-controls="toc-mobile-content">
+                    <span class="toc-mobile-toggle-icon">▼</span>
+                    <span class="toc-mobile-toggle-text">Jump to section</span>
+                </button>
+                <div class="toc-mobile-content" id="toc-mobile-content">
+                    <select id="toc-select" class="toc-select">
+                        <option value="">Choose a section...</option>
+                        <option value="how-we-got-here">How we got here</option>
+                        <option value="the-seat-isnt-the-goal">The seat isn't the goal</option>
+                        <option value="show-up-differently">Show up differently</option>
+                        <option value="trust-takes-time">Trust takes time</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+
+
         <div class="entry">
             <div class="entry-content">
                 <img src="/img/delivery-is-a-trap-cover.jpg" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" /><p>We&#39;re making drawings.</p>
