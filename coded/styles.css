@@ -1073,6 +1073,29 @@ textarea:focus-visible,
     background: #1a1a2e;
 }
 
+/* Preview Section Status Dot & Feedback */
+.preview-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #2ecc71; /* Explicitly green */
+    opacity: 0.3;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    display: inline-block;
+}
+
+.status-dot.active {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+}
+
 .preview-viewport {
     flex: 1;
     display: flex;
@@ -1081,6 +1104,24 @@ textarea:focus-visible,
     overflow: auto;
     padding: 1rem;
     position: relative;
+    transition: opacity 0.2s ease;
+}
+
+.preview-viewport.updating {
+    opacity: 0.85; /* Less impactful than a border flash */
+}
+
+/* Fallback for prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .status-dot,
+    .preview-viewport {
+        transition: none !important;
+    }
+    
+    .status-dot.active {
+        transform: none;
+        box-shadow: none;
+    }
 }
 
 .preview-viewport.constrained {

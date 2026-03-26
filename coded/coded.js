@@ -70,6 +70,7 @@
         const themeLightBtn = document.getElementById('themeLightBtn');
         const syntaxOnBtn = document.getElementById('syntaxOnBtn');
         const syntaxOffBtn = document.getElementById('syntaxOffBtn');
+        const feedbackToggle = document.getElementById('feedbackToggle');
         const findReplacePanel = document.getElementById('findReplacePanel');
         const closeFindReplaceBtn = document.getElementById('closeFindReplaceBtn');
         const findInput = document.getElementById('findInput');
@@ -1106,6 +1107,13 @@
             consoleOutput.innerHTML = '';
         }
 
+        // Settings functionality
+        let feedbackEnabled = localStorage.getItem('coded-feedback') !== 'false';
+        let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
+        let currentLayout = localStorage.getItem('coded-layout') || 'horizontal';
+        let currentTheme = localStorage.getItem('coded-theme') || 'dark';
+        let syntaxHighlightingEnabled = localStorage.getItem('coded-syntax-highlighting') !== 'false';
+
         // Run code in preview
         function runCode() {
             const html = htmlEditor.value;
@@ -1182,40 +1190,40 @@
 </html>
             `;
 
-            // Write to iframe
-            const previewFrame = preview.contentDocument || preview.contentWindow.document;
-            previewFrame.open();
-            previewFrame.write(previewDoc);
-            previewFrame.close();
+            // Use srcdoc for a more reliable fresh state than document.write
+            // This ensures a cleaner context reset between runs
+            const previewElement = document.getElementById('preview');
+            
+            // Visual feedback: Status dot and subtle viewport pulse
+            if (feedbackEnabled) {
+                const statusDot = document.getElementById('statusDot');
+                const viewport = document.getElementById('previewViewport');
+                
+                if (statusDot) {
+                    statusDot.classList.add('active');
+                    // Remove active class after a delay to show it "pulsed"
+                    setTimeout(() => {
+                        statusDot.classList.remove('active');
+                    }, 800);
+                }
+
+                if (viewport) {
+                    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    
+                    if (!prefersReducedMotion) {
+                        viewport.classList.add('updating');
+                        setTimeout(() => {
+                            viewport.classList.remove('updating');
+                        }, 300);
+                    }
+                }
+            }
+            
+            previewElement.srcdoc = previewDoc;
 
             // Announce to screen readers
             window.announceToScreenReader('Code executed successfully');
         }
-
-        // Listen for console messages from iframe
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'console') {
-                addConsoleMessage(event.data.method, event.data.args);
-            }
-        });
-
-        // Console button event listeners
-        toggleConsoleBtn.addEventListener('click', toggleConsole);
-        clearConsoleBtn.addEventListener('click', clearConsole);
-
-        // Initialize console visibility
-        if (consoleVisible) {
-            consolePanel.classList.add('active');
-            toggleConsoleBtn.style.background = 'var(--accent-color)';
-            toggleConsoleBtn.style.color = 'var(--bg-color)';
-            toggleConsoleBtn.setAttribute('aria-expanded', 'true');
-        }
-
-        // Settings functionality
-        let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
-        let currentLayout = localStorage.getItem('coded-layout') || 'horizontal';
-        let currentTheme = localStorage.getItem('coded-theme') || 'dark';
-        let syntaxHighlightingEnabled = localStorage.getItem('coded-syntax-highlighting') !== 'false';
 
         function openSettingsModal() {
             settingsMenu.style.display = 'block';
@@ -1339,6 +1347,14 @@
         if (fontSizeSlider) {
             fontSizeSlider.addEventListener('input', (e) => {
                 updateFontSize(parseInt(e.target.value));
+            });
+        }
+
+        if (feedbackToggle) {
+            feedbackToggle.checked = feedbackEnabled;
+            feedbackToggle.addEventListener('change', (e) => {
+                feedbackEnabled = e.target.checked;
+                localStorage.setItem('coded-feedback', feedbackEnabled);
             });
         }
 
@@ -1566,11 +1582,11 @@
                 localStorage.removeItem('coded-css');
                 localStorage.removeItem('coded-js');
 
-                // Clear preview
-                const previewFrame = preview.contentDocument || preview.contentWindow.document;
-                previewFrame.open();
-                previewFrame.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>');
-                previewFrame.close();
+                // Clear preview using srcdoc for a reliable reset
+                const previewElement = document.getElementById('preview');
+                if (previewElement) {
+                    previewElement.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>';
+                }
             }
         }
 
@@ -1737,11 +1753,11 @@ ${js}
                 cssHighlight.innerHTML = '';
                 jsHighlight.innerHTML = '';
 
-                // Clear preview
-                const previewFrame = preview.contentDocument || preview.contentWindow.document;
-                previewFrame.open();
-                previewFrame.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>');
-                previewFrame.close();
+                // Clear preview using srcdoc for a reliable reset
+                const previewElement = document.getElementById('preview');
+                if (previewElement) {
+                    previewElement.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>';
+                }
 
                 // Exit share mode
                 isShareMode = false;
