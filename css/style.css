@@ -2603,8 +2603,8 @@ footer p {
 .page-home .experience-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    column-gap: var(--space-12);
-    row-gap: 0;
+    column-gap: var(--space-6);
+    row-gap: var(--space-4);
     margin-top: var(--space-3);
 }
 

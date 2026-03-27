@@ -195,24 +195,56 @@
                     </div>
                     <div class="intro-illustration" aria-hidden="true">
                         <svg viewBox="0 0 215 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="philosophy-svg">
-                            <!-- Background blob -->
-                            <path d="M72,38 C96,24 152,24 178,52 C198,74 194,120 176,148 C158,174 122,182 94,175 C66,168 46,146 44,116 C42,86 50,54 72,38 Z" fill="currentColor" opacity="0.07" stroke="none"/>
-                            <!-- Paperclip (top-left, slightly tilted) -->
+                            <!-- Expanded Inorganic Kidney Bean Shape -->
+                            <path d="M168,45 C200,80 190,160 135,190 C80,220 20,175 30,105 C40,45 80,70 105,95 C130,120 140,30 168,45 Z" fill="currentColor" opacity="0.05" stroke="none"/>
+                            
+                            <!-- Paperclip with dimension -->
                             <g transform="translate(52,44) rotate(-15)">
-                                <path d="M-24,8 C-32,8 -32,-8 -24,-8 L20,-8 C28,-8 28,8 20,8 L-12,8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M-12,8 C-20,8 -20,0 -12,0 L20,0" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Shadow (Increased for Dark Mode) -->
+                                <path d="M-24,9 C-33,9 -33,-7 -24,-7 L20,-7 C29,-7 29,9 20,9 L-12,9" stroke="#000" opacity="0.25" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(1.5,1.5)"/>
+                                <!-- Main body -->
+                                <path d="M-24,8 C-32,8 -32,-8 -24,-8 L20,-8 C28,-8 28,8 20,8 L-12,8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M-12,8 C-20,8 -20,0 -12,0 L20,0" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Highlight -->
+                                <path d="M-22,-6.5 L18,-6.5" stroke="white" opacity="0.15" stroke-width="0.8" stroke-linecap="round"/>
                             </g>
-                            <!-- Pencil (lying flat, tip left, eraser right) -->
+
+                            <!-- Pencil with dimension -->
                             <g transform="translate(105,100) rotate(75) scale(1.35)">
-                                <rect x="-6" y="-70" width="12" height="11" rx="2" stroke-width="2.5"/>
-                                <rect x="-8" y="-59" width="16" height="9" stroke-width="2.5"/>
-                                <rect x="-8" y="-50" width="16" height="84" rx="1" stroke-width="2.5"/>
-                                <path d="M-8,34 L0,52 L8,34" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Soft Shadow (Universal Dark) -->
+                                <rect x="-7" y="-69" width="16" height="122" rx="1" fill="#000" opacity="0.15" stroke="none" transform="translate(2,2)"/>
+                                
+                                <!-- Main Body Facets -->
+                                <rect x="-8" y="-50" width="16" height="84" rx="1" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="-8" y="-50" width="6" height="84" fill="#000" opacity="0.2" stroke="none"/> <!-- Facet shadow -->
+                                <rect x="2" y="-50" width="4" height="84" fill="white" opacity="0.15" stroke="none"/> <!-- Facet highlight -->
+                                
+                                <!-- Ferrule (metal band) -->
+                                <rect x="-8" y="-59" width="16" height="9" stroke="currentColor" stroke-width="2.5"/>
+                                <line x1="-8" y1="-56" x2="8" y2="-56" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+                                <line x1="-8" y1="-53" x2="8" y2="-53" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+                                
+                                <!-- Eraser -->
+                                <rect x="-6" y="-70" width="12" height="11" rx="2" stroke="currentColor" stroke-width="2.5"/>
+                                <rect x="-4" y="-70" width="3" height="11" fill="white" opacity="0.15" stroke="none"/>
+                                
+                                <!-- Sharpened wood tip -->
+                                <path d="M-8,34 L0,52 L8,34" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                                <path d="M-8,34 L0,52 L0,34 Z" fill="#000" opacity="0.15" stroke="none"/> <!-- Tip shadow -->
+                                
+                                <!-- Lead tip -->
+                                <path d="M-2,47.5 L0,52 L2,47.5 Z" fill="currentColor" stroke="none"/>
                             </g>
-                            <!-- Eraser block (lower right, casually placed) -->
+
+                            <!-- Eraser block with dimension -->
                             <g transform="translate(158,156) rotate(-8)">
-                                <rect x="-27" y="-14" width="54" height="28" rx="3" stroke-width="2.5"/>
-                                <line x1="-27" y1="0" x2="27" y2="0" stroke-width="1.5"/>
+                                <!-- 3D depth side -->
+                                <path d="M-27,-10 L-27,18 L27,18 L27,-10 Z" fill="#000" opacity="0.15" stroke="none" transform="translate(2,2)"/>
+                                <!-- Main face -->
+                                <rect x="-27" y="-14" width="54" height="28" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                <line x1="-27" y1="0" x2="27" y2="0" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                                <!-- Highlight -->
+                                <path d="M-24,-13 L24,-13" stroke="white" opacity="0.15" stroke-width="1" stroke-linecap="round"/>
                             </g>
                         </svg>
                     </div>
