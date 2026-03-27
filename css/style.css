@@ -2533,7 +2533,7 @@ footer p {
 
 .page-home .philosophy-svg {
     width: 100%;
-    max-width: 360px;
+    max-width: 460px;
     height: auto;
     stroke: var(--secondary-color);
     opacity: 0.85;
@@ -2587,6 +2587,7 @@ footer p {
     color: var(--text-color);
     margin-top: var(--space-4);
     margin-bottom: var(--space-2);
+    max-width: 60ch;
 }
 
 .page-home .experience p {
@@ -2597,32 +2598,6 @@ footer p {
     color: var(--accent-color);
     text-decoration: underline;
     text-underline-offset: 2px;
-}
-
-.page-home .experience-more {
-    grid-column: 1 / -1;
-    justify-self: center;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-top: -2px;
-    margin-bottom: -2px;
-    padding: 2px 4px;
-    font-size: var(--text-sm);
-    color: var(--secondary-color);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    border-radius: 4px;
-    width: fit-content;
-}
-
-.page-home .experience-more:hover {
-    color: var(--accent-color);
-    background: rgba(var(--accent-rgb), 0.1);
-}
-
-.page-home .experience-more:hover .experience-glyph {
-    color: var(--accent-color);
 }
 
 .page-home .experience-intro a:hover {
@@ -2637,16 +2612,19 @@ footer p {
 }
 
 .page-home .experience-grid .experience {
+    position: relative;
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     column-gap: var(--space-2);
     align-items: baseline;
+    align-content: start;
     border: 1px solid rgba(var(--accent-rgb), 0.2);
     border-radius: 8px;
     padding: var(--space-4);
     margin-top: 0;
     margin-bottom: 0;
+    box-shadow: 2px 4px 0 rgba(0, 0, 0, 0.04);
 }
 
 .page-home .experience-grid .experience .experience-glyph {
@@ -2665,10 +2643,39 @@ footer p {
     grid-row: 2;
 }
 
+.page-home .experience-grid .experience h4 {
+    overflow-wrap: break-word;
+}
+
+.page-home .experience-grid .experience .status-badge {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+}
+
+.status-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    background: rgba(var(--accent-rgb), 0.12);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: 99px;
+    padding: 0.1em 0.5em;
+    vertical-align: middle;
+    line-height: 1.6;
+}
+
 @media (max-width: 768px) {
     .page-home .intro-section {
         grid-template-columns: 1fr;
-        gap: var(--space-5);
+        gap: var(--space-3);
+    }
+
+    .page-home .intro-illustration {
+        padding-top: 0;
     }
 
     .page-home .philosophy-svg {
