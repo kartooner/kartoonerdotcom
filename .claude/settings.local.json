@@ -103,7 +103,11 @@
       "Bash(do grep -n \"<!-- Persistent Navigation -->\" \"$file\")",
       "Bash(for file in entry/everyone-creates.html entry/here-we-go-again.html entry/the-pole-on-the-corner.html)",
       "Bash(do sed -i '/<body>/,/^    <button id=\"\"theme-toggle\"\"/c\\\\<body>\\\\n    <a href=\"\"#main-content\"\" class=\"\"skip-link\"\">Skip to main content<\\\\/a>\\\\n\\\\n    <div id=\"\"navigation-placeholder\"\"><\\\\/div>\\\\n\\\\n    <div id=\"\"theme-toggle-placeholder\"\"><\\\\/div>' \"$file\")",
-      "Bash(do sed -i 's|<script src=\"\"/footer-loader.js\"\"></script>|<script src=\"\"/navigation-loader.js\"\"></script>\\\\n    <script src=\"\"/theme-toggle-loader.js\"\"></script>\\\\n    <script src=\"\"/footer-loader.js\"\"></script>|' \"$file\")"
+      "Bash(do sed -i 's|<script src=\"\"/footer-loader.js\"\"></script>|<script src=\"\"/navigation-loader.js\"\"></script>\\\\n    <script src=\"\"/theme-toggle-loader.js\"\"></script>\\\\n    <script src=\"\"/footer-loader.js\"\"></script>|' \"$file\")",
+      "Bash(where python3:*)",
+      "Bash(where python:*)",
+      "Bash(where py:*)",
+      "Bash(where npx:*)"
     ],
     "deny": [],
     "ask": []
