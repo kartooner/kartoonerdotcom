@@ -14,8 +14,8 @@ test.describe('Homepage', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText("I'm Erik Sagen");
   });
 
-  test('shows job title', async ({ page }) => {
-    await expect(page.getByText('Lead Product UX Designer @ Paychex')).toBeVisible();
+  test('shows job title in work experience', async ({ page }) => {
+    await expect(page.getByText('Lead Product UX Designer at Paychex')).toBeVisible();
   });
 
   test('skip link is present', async ({ page }) => {
