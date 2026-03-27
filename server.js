@@ -167,9 +167,9 @@ const server = http.createServer((req, res) => {
       const headers = { 'Content-Type': contentType };
 
       if (ext === '.css' || ext === '.js' || ext === '.woff2' || ext === '.woff' || ext === '.ttf') {
-        headers['Cache-Control'] = 'public, max-age=31536000'; // 1 year
+        headers['Cache-Control'] = 'no-cache';
       } else if (ext === '.html') {
-        headers['Cache-Control'] = 'public, max-age=3600'; // 1 hour
+        headers['Cache-Control'] = 'no-cache';
       } else if (ext === '.png' || ext === '.jpg' || ext === '.gif' || ext === '.webp' || ext === '.svg') {
         headers['Cache-Control'] = 'public, max-age=86400'; // 1 day
       }

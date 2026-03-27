@@ -272,7 +272,7 @@ body[data-theme="light"] .about-intro p:nth-of-type(1) {
 
 .book-info h3 a {
     color: var(--heading-color);
-    text-decoration: none;
+    text-decoration: underline;
 }
 
 .book-info h3 a:hover {
@@ -513,7 +513,7 @@ a.timeline-company:hover {
 
 .article-info h3 a {
     color: var(--heading-color);
-    text-decoration: none;
+    text-decoration: underline;
     transition: color 0.3s ease;
 }
 

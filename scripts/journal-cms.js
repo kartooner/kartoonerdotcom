@@ -1242,14 +1242,13 @@ function generateJournalHtml(journal) {
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(1, 4) // Next 3 posts for compact list
         .map(entry => {
-            const contentHtml = convertMarkdownToHtml(entry.content);
-            const snippet = getSnippet(contentHtml);
+            const readingTime = calculateReadingTime(entry.content);
             return `
-                <div class="recent-post-item">
-                    <h3 class="recent-post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
-                    <p class="recent-post-snippet">${snippet}</p>
-                    <a href="/entry/${entry.id}.html" class="recent-post-link">Read more →</a>
-                </div>`;
+                <a href="/entry/${entry.id}.html" class="recent-post-item">
+                    <span class="recent-post-date">${formatDate(entry.date)}</span>
+                    <span class="recent-post-title">${entry.title}</span>
+                    <span class="recent-post-meta">${readingTime}</span>
+                </a>`;
         }).join('\n                ');
 
     const postsHtml = entries.map(entry => {
@@ -1453,65 +1452,58 @@ function generateJournalHtml(journal) {
         }
 
         .recent-posts-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
+            display: flex;
+            flex-direction: column;
             margin: 0;
         }
 
         .recent-post-item {
-            background: rgba(var(--accent-rgb), 0.05);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-color);
-            transition: all 0.3s ease;
+            display: grid;
+            grid-template-columns: 7rem 1fr auto;
+            align-items: baseline;
+            gap: 1.5rem;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .recent-post-date,
+        .recent-post-meta {
+            text-decoration: none;
         }
 
         .recent-post-item:hover {
-            background: rgba(var(--accent-rgb), 0.08);
-            transform: translateX(4px);
+            opacity: 0.7;
+        }
+
+        .recent-post-date {
+            font-size: var(--text-xs);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--secondary-color);
+            white-space: nowrap;
         }
 
         .recent-post-title {
-            font-size: 1.5rem;
-            margin: 0 0 0.75rem 0;
-            color: var(--heading-color);
-        }
-
-        .recent-post-title a {
+            font-size: var(--text-base);
             color: var(--text-color);
-            text-decoration: none;
+            text-decoration: underline;
             transition: color 0.2s ease;
         }
 
-        .recent-post-title a:hover,
-        .recent-post-title a:focus {
+        .recent-post-item:hover .recent-post-title {
             color: var(--accent-color);
         }
 
-        .recent-post-snippet {
-            color: var(--text-color);
-            font-family: var(--font-primary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin: 0 0 1rem 0;
+        .recent-post-meta {
+            font-size: var(--text-xs);
+            color: var(--secondary-color);
+            white-space: nowrap;
         }
 
-        .recent-post-link {
-            color: var(--accent-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-
-        .recent-post-link:hover,
-        .recent-post-link:focus {
-            text-decoration: underline;
-            transform: translateX(2px);
-        }
-
-        footer {
+        .recent-posts-footer {
             display: flex;
             justify-content: center;
             margin-bottom: 2.5rem; /* 40px */
@@ -1627,9 +1619,9 @@ function generateJournalHtml(journal) {
                 ${recentEntries}
             </div>
 
-            <footer>
+            <div class="recent-posts-footer">
                 <a href="/archive" class="view-all">View all posts</a>
-            </footer>
+            </div>
         </div>
     </div>
 
