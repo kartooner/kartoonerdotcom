@@ -2632,9 +2632,16 @@ footer p {
 .page-home .experience-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    column-gap: var(--space-6);
-    row-gap: var(--space-4);
+    gap: var(--space-4);
     margin-top: var(--space-3);
+}
+
+.page-home .experience-grid .experience {
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: 8px;
+    padding: var(--space-4);
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
