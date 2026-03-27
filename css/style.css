@@ -2642,12 +2642,17 @@ footer p {
         grid-template-columns: 1fr;
     }
 
+    .page-home .philosophy-svg {
+        max-width: 180px;
+    }
+
     .page-home .skills-row {
         grid-template-columns: 1fr;
     }
 
     .page-home .experience-grid {
         grid-template-columns: 1fr;
+        row-gap: var(--space-2);
     }
 }
 
