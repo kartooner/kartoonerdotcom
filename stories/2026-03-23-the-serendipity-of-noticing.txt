@@ -1,8 +1,8 @@
 Title: The Serendipity of Noticing
-Date: 2026-03-23T19:36:00Z
+Date: 2026-03-23T15:02:00Z
 Tags: writing, life
 Excerpt: How the frequency illusion shows up in our daily lives and the art of noticing.
-Images: /assets/images/delivery-is-a-trap-cover.jpg
+Images:
 Subtitle: What we don't notice until we open our eyes.
 ---
 
@@ -22,11 +22,11 @@ The clearest example of this happened years ago at Ontario Mall in Ontario, Cali
  
 Moments later, we passed a Payless Shoes store. The window display was advertising a pair of completely orange shoes.
  
-We both stopped. We both stared. And then we both shrugged it off.
+We both stopped. We both stared, and then we both shrugged it off.
  
 But think about what actually happened. Those shoes were in that window the whole time. The Payless store existed before our conversation. The orange color existed. The odds of us walking past that exact display at that exact moment were probably unremarkable, after-all, it's a busy mall. But because we'd *just talked about orange shoes*, our brains were primed to notice them. Our eyes locked onto that color. The coincidence felt electric.
  
-That's the Baader-Meinhof effect. Pattern recognition gone hyperactive.
+That's the Baader-Meinhof effect and if you look it up; it's pattern recognition gone hyperactive.
  
 Once you know about frequency illusion, you see it everywhere (which is, ironically, another example of it). You learn about a word you've never heard before, and suddenly that word appears in three conversations the next day. You decide to buy a specific car, and you see that model in every parking lot. You become aware of a concept, and your mind starts running a background search for it, automatically, without you asking.
  

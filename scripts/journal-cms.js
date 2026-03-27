@@ -291,6 +291,7 @@ function getSnippet(htmlContent) {
 
 function convertMarkdownToHtml(markdown, trackH2s = false) {
     let html = markdown.replace(/\r\n/g, '\n'); // Normalize line endings
+    html = html.replace(/\n[ \t]+\n/g, '\n\n'); // Normalize whitespace-only lines to blank lines
 
     // Split into blocks by double newlines
     const blocks = html.split('\n\n').filter(block => block.trim() !== '');
