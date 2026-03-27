@@ -255,8 +255,12 @@ function getContentPreview(htmlContent) {
     const paragraphRegex = /<p>.*?<\/p>/gs;
     const paragraphs = htmlContent.match(paragraphRegex) || [];
 
-    // If 3 or fewer paragraphs, it's short - return full content
-    if (paragraphs.length <= 3) {
+    // Word count of full plain text
+    const plainText = htmlContent.replace(/<[^>]+>/g, '');
+    const wordCount = plainText.trim().split(/\s+/).length;
+
+    // Short content: 3 or fewer paragraphs AND under 200 words
+    if (paragraphs.length <= 3 && wordCount <= 200) {
         return { preview: htmlContent, isLong: false };
     }
 
