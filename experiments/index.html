@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiments - Erik Sagen</title>
+    <meta name="description"
+        content="Interactive experiments, games, and playful projects built with Three.js and web tech.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link id="pixelify-font"
+        href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
+        disabled>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/seasonal-loader.js"></script>
+    <meta property="og:title" content="Experiments - Erik Sagen">
+    <meta property="og:description"
+        content="Interactive experiments, games, and playful projects built with Three.js and web tech.">
+    <meta property="og:image" content="https://kartooner.com/assets/images/og-preview.png">
+    <meta property="og:url" content="https://kartooner.com/experiments">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Experiments - Erik Sagen">
+    <meta name="twitter:description"
+        content="Interactive experiments, games, and playful projects built with Three.js and web tech.">
+    <meta name="twitter:image" content="https://kartooner.com/assets/images/og-preview.png">
+
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 3.25rem + 4.8vw, 5.516rem) !important;
+        }
+
+        .experiments-intro {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .experiments-intro h1 {
+            color: var(--accent-color);
+        }
+
+        .experiments-intro p {
+            font-size: 1.1rem;
+            color: var(--text-color-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .experiments-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .experiment-card {
+            background: var(--bg-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+        }
+
+        .experiment-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .experiment-image {
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .experiment-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .experiment-card:hover .experiment-image img {
+            transform: scale(1.05);
+        }
+
+        .experiment-info {
+            padding: 1.5rem;
+        }
+
+        .experiment-info h3 {
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--heading-color) !important;
+            margin: 0 0 0.5rem;
+        }
+
+        .experiment-info p {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary) !important;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .experiment-card,
+        .experiment-card:link,
+        .experiment-card:visited,
+        .experiment-card:hover,
+        .experiment-card:active {
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+
+        .experiment-card::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .experiment-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--accent-color) !important;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: clamp(2.1rem, 5vw + 1rem, 3.15rem) !important;
+            }
+
+            .experiments-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .experiment-image {
+                height: 220px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div id="navigation-placeholder"></div>
+
+    <div id="theme-toggle-placeholder"></div>
+
+    <div class="container">
+        <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
+
+            <div class="experiments-intro">
+                <h1>Experiments</h1>
+                <p>Playful projects and interactive things built for the browser — mostly games and tools I made to learn
+                    something new.</p>
+            </div>
+
+            <div class="experiments-grid">
+
+                <a href="/experiments/paper-plane" class="experiment-card">
+                    <div class="experiment-image">
+                        <img src="/assets/images/experiment-paper-plane.jpg"
+                            alt="Paper Plane game screenshot showing a 3D paper airplane flying through the sky"
+                            loading="lazy">
+                    </div>
+                    <div class="experiment-info">
+                        <span class="experiment-tag">Three.js · Game</span>
+                        <h3>Paper Plane</h3>
+                        <p>A Starfox-like game where you pilot a paper airplane, collecting rings and dodging obstacles. You even get powerups. How far can you get?</p>
+                    </div>
+                </a>
+
+                <a href="/experiments/slime-game" class="experiment-card">
+                    <div class="experiment-image">
+                        <img src="/assets/images/experiment-slime-game.jpg"
+                            alt="Slime Game screenshot showing a 3D slime character in a colorful environment"
+                            loading="lazy">
+                    </div>
+                    <div class="experiment-info">
+                        <span class="experiment-tag">Three.js · Game</span>
+                        <h3>Slime Game</h3>
+                        <p>A physics-based demo where you control a slime ball through a cave system. This was mainly to see if I could even attempt soft-body physics, but I'm most proud of the adhesion coloring — oh and try to take that box through the squeeze point. Ain't happening.</p>
+                    </div>
+                </a>
+
+            </div>
+
+        </main>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    <script src="/js/navigation-loader.js"></script>
+    <script src="/js/theme-toggle-loader.js"></script>
+    <script src="/js/footer-loader.js"></script>
+    <script src="/js/app.min.js"></script>
+    <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+
+</html>

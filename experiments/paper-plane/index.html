@@ -1047,5 +1047,35 @@
 <script type="module" src="./game.js"></script>
 <script data-goatcounter="https://kartooner.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
+<style>
+    #back-to-experiments {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(0, 255, 255, 0.25);
+        border-radius: 999px;
+        color: rgba(0, 255, 255, 0.5);
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        text-decoration: none;
+        opacity: 0.4;
+        transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        white-space: nowrap;
+        pointer-events: all;
+    }
+    #back-to-experiments:hover {
+        opacity: 1;
+        color: rgba(0, 255, 255, 1);
+        border-color: rgba(0, 255, 255, 0.6);
+    }
+</style>
+<a id="back-to-experiments" href="/experiments">← Experiments</a>
 </body>
 </html>

@@ -107,7 +107,11 @@
       "Bash(where python3:*)",
       "Bash(where python:*)",
       "Bash(where py:*)",
-      "Bash(where npx:*)"
+      "Bash(where npx:*)",
+      "Bash(find /d/Github/kartoonerdotcom -type f \\\\\\(-name *.html -o -name *.css -o -name *.js -o -name *.json \\\\\\))",
+      "Bash(for dir:*)",
+      "Bash(do echo:*)",
+      "Read(//d/Github/kartoonerdotcom/**)"
     ],
     "deny": [],
     "ask": []
