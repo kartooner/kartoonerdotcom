@@ -2640,6 +2640,7 @@ footer p {
 @media (max-width: 768px) {
     .page-home .intro-section {
         grid-template-columns: 1fr;
+        gap: var(--space-2);
     }
 
     .page-home .philosophy-svg {
