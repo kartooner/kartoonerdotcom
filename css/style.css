@@ -2637,6 +2637,20 @@ footer p {
     margin-top: var(--space-3);
 }
 
+@media (max-width: 768px) {
+    .page-home .intro-section {
+        grid-template-columns: 1fr;
+    }
+
+    .page-home .skills-row {
+        grid-template-columns: 1fr;
+    }
+
+    .page-home .experience-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /*
  * ╔════════════════════════════════════════╗
  * ║           INVISIBLE BOY                ║
