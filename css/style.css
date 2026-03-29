@@ -2648,9 +2648,9 @@ footer p {
 }
 
 .page-home .experience-grid .experience .status-badge {
-    position: absolute;
-    top: var(--space-3);
-    right: var(--space-3);
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.25em;
 }
 
 .status-badge {
