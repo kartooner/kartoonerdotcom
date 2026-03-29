@@ -2636,21 +2636,19 @@ footer p {
 .page-home .experience-grid .experience p {
     grid-column: 2;
     grid-row: 1;
+    padding-right: 3.5rem;
 }
 
 .page-home .experience-grid .experience h4 {
     grid-column: 1 / -1;
     grid-row: 2;
-}
-
-.page-home .experience-grid .experience h4 {
     overflow-wrap: break-word;
 }
 
 .page-home .experience-grid .experience .status-badge {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 0.25em;
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
 }
 
 .status-badge {
