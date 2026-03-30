@@ -7,6 +7,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @font-face {
+            font-family: 'Cartridge';
+            src: url('../../assets/fonts/Cartridge-Regular.woff2') format('woff2'),
+                 url('../../assets/fonts/Cartridge-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Cartridge';
+            src: url('../../assets/fonts/Cartridge-Rough.woff2') format('woff2'),
+                 url('../../assets/fonts/Cartridge-Rough.woff') format('woff');
+            font-weight: 900;
+            font-style: normal;
+        }
         body {
             margin: 0;
             overflow: hidden;
@@ -48,6 +62,7 @@
             text-shadow: 0 0 15px rgba(0, 242, 255, 0.6);
         }
         .title {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
             font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #fff; font-style: italic;
             letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 2.5rem;
             text-shadow: 0 0 50px rgba(255, 170, 0, 0.6);
@@ -144,6 +159,7 @@
             this.segmentCount = 52;
             this.spacing = 2.2;
             this.swimSpeed = 1.0;
+            this.posHistory = [];
 
             const headColor = new THREE.Color(0x00f2ff);
             const tailColor = new THREE.Color(0xffaa00);
@@ -200,19 +216,29 @@
             if (wrap.length() > 0) {
                 head.position.add(wrap);
                 for (let i = 1; i < this.nodes.length; i++) this.nodes[i].mesh.position.add(wrap);
+                for (let i = 0; i < this.posHistory.length; i++) this.posHistory[i].add(wrap);
                 camera.position.add(wrap);
                 camTarget.add(wrap);
                 touchWorldPos.add(wrap);
                 dragOffset.add(wrap);
             }
 
+            // Record head position into history whenever it has moved at least spacing units,
+            // so each body segment can follow the exact path the head traced.
+            if (this.posHistory.length === 0 || head.position.distanceTo(this.posHistory[0]) >= this.spacing) {
+                this.posHistory.unshift(head.position.clone());
+                if (this.posHistory.length > this.nodes.length + 1) this.posHistory.length = this.nodes.length + 1;
+            }
+
             for (let i = 1; i < this.nodes.length; i++) {
-                const lead = this.nodes[i - 1].mesh;
+                if (!this.posHistory[i]) break;
                 const follow = this.nodes[i].mesh;
-                const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
-                follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
-                const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
-                follow.quaternion.slerp(targetRot, 0.2);
+                follow.position.copy(this.posHistory[i]);
+                const raw = new THREE.Vector3().subVectors(this.posHistory[i], this.posHistory[i - 1]);
+                if (raw.lengthSq() > 0.0001) {
+                    const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), raw.normalize().negate());
+                    follow.quaternion.slerp(targetRot, 0.3);
+                }
             }
 
             const delta = head.position.clone().sub(prevHeadPos);
