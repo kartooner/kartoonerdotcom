@@ -1,351 +1,405 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-
-const App = () => {
-  const containerRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showUI, setShowUI] = useState(true);
-
-  // Refs for game state to avoid re-renders
-  const state = useRef({
-    scene: null,
-    camera: null,
-    renderer: null,
-    clock: new THREE.Clock(),
-    snake: null,
-    nutrients: [],
-    nebulaClouds: [],
-    snow: null,
-    worldSize: 2500,
-    isTouching: false,
-    touchWorldPos: new THREE.Vector3(),
-    dragOffset: new THREE.Vector3(),
-    moveVelocity: new THREE.Vector3(0, 0, 1.2),
-    camTarget: new THREE.Vector3(),
-    spectrum: [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x7700ff, 0xffcc00]
-  });
-
-  useEffect(() => {
-    const s = state.current;
-    
-    // Setup
-    s.scene = new THREE.Scene();
-    s.scene.fog = new THREE.FogExp2(0x02050a, 0.0006);
-    
-    s.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
-    s.camera.position.set(0, 300, 450);
-    
-    s.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    s.renderer.setSize(window.innerWidth, window.innerHeight);
-    s.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    containerRef.current.appendChild(s.renderer.domElement);
-
-    // Backdrop
-    const canvas = document.createElement('canvas');
-    canvas.width = 512; canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 512);
-    grad.addColorStop(0, '#3a1a00'); 
-    grad.addColorStop(0.3, '#1a0033'); 
-    grad.addColorStop(0.6, '#001a44'); 
-    grad.addColorStop(1, '#02050a'); 
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
-    const bgTex = new THREE.CanvasTexture(canvas);
-    const background = new THREE.Mesh(
-      new THREE.SphereGeometry(18000, 32, 32),
-      new THREE.MeshBasicMaterial({ map: bgTex, side: THREE.BackSide, depthWrite: false })
-    );
-    s.scene.add(background);
-
-    // Rainbow Regions
-    const regions = [
-      { pos: [1.3, 1.3], col: 0xffaa00 },   
-      { pos: [-1.3, 1.3], col: 0x00f2ff },  
-      { pos: [1.3, -1.3], col: 0xff00cc },  
-      { pos: [-1.3, -1.3], col: 0x00ffcc }, 
-      { pos: [0, 1.9], col: 0x7700ff },    
-      { pos: [0, -1.9], col: 0xff8800 }     
-    ];
-    regions.forEach(region => {
-      const glow = new THREE.Mesh(
-        new THREE.SphereGeometry(5000, 16, 16),
-        new THREE.MeshBasicMaterial({ color: region.col, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending })
-      );
-      glow.position.set(region.pos[0] * s.worldSize, 0, region.pos[1] * s.worldSize);
-      s.scene.add(glow);
-    });
-
-    // Clouds
-    for(let i = 0; i < 60; i++) {
-      const cloud = new THREE.Mesh(
-        new THREE.SphereGeometry(1500 + Math.random() * 3000, 12, 12),
-        new THREE.MeshBasicMaterial({ 
-          color: s.spectrum[Math.floor(Math.random() * s.spectrum.length)], 
-          transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending 
-        })
-      );
-      cloud.position.set((Math.random()-0.5)*s.worldSize*8, (Math.random()-0.5)*3000, (Math.random()-0.5)*s.worldSize*8);
-      s.scene.add(cloud);
-    }
-
-    // Snow
-    const snowGeo = new THREE.BufferGeometry();
-    const snowCount = 4000;
-    const snowPos = new Float32Array(snowCount * 3);
-    const snowCols = new Float32Array(snowCount * 3);
-    for(let i=0; i<snowCount; i++) {
-      snowPos[i*3] = (Math.random()-0.5) * s.worldSize * 8;
-      snowPos[i*3+1] = (Math.random()-0.5) * 3000;
-      snowPos[i*3+2] = (Math.random()-0.5) * s.worldSize * 8;
-      const c = new THREE.Color(s.spectrum[Math.floor(Math.random()*s.spectrum.length)]);
-      snowCols[i*3] = c.r; snowCols[i*3+1] = c.g; snowCols[i*3+2] = c.b;
-    }
-    snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-    snowGeo.setAttribute('color', new THREE.BufferAttribute(snowCols, 3));
-    s.snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({ vertexColors: true, size: 12, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
-    s.scene.add(s.snow);
-
-    // Organism
-    class Organism {
-      constructor(scene) {
-        this.nodes = [];
-        this.baseSize = 9.0;
-        this.segmentCount = 55;
-        this.spacing = 2.2;
-        this.swimSpeed = 1.05;
-        const headColor = new THREE.Color(0x00f2ff);
-        const tailColor = new THREE.Color(0xffaa00);
-
-        for (let i = 0; i < this.segmentCount; i++) {
-          const pct = i / this.segmentCount;
-          const r = this.baseSize * (1 - pct * 0.88);
-          const col = headColor.clone().lerp(tailColor, pct);
-          const geo = new THREE.IcosahedronGeometry(r, 1);
-          const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: i === 0 ? 1 : 0.8, depthTest: false }));
-          mesh.renderOrder = 20000 - i * 10;
-          
-          const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.3, depthTest: false }));
-          wire.renderOrder = mesh.renderOrder + 1;
-          mesh.add(wire);
-          
-          if (i > 0) mesh.position.set(0, 0, -i * this.spacing);
-          scene.add(mesh);
-          this.nodes.push(mesh);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nebula Floaties</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #02050a; 
+            font-family: 'Pixelify Sans', sans-serif;
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        #ui-root {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; pointer-events: none;
+            background: rgba(2, 5, 10, 0.2);
+            transition: opacity 1s ease;
         }
 
-        const jGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
-        const jMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
-        this.lJaw = new THREE.Mesh(jGeo, jMat);
-        this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
-        this.lJaw.rotation.x = Math.PI / 2;
-        this.nodes[0].add(this.lJaw);
-        this.rJaw = this.lJaw.clone();
-        this.rJaw.position.x = -this.baseSize * 0.35;
-        this.nodes[0].add(this.rJaw);
-      }
+        #menu {
+            pointer-events: auto; text-align: center; padding: 2rem;
+        }
+        
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+            50% { transform: translateY(-15px) rotate(0.5deg); }
+        }
 
-      update(t, isTouching, touchWorldPos, dragOffset, velocity, worldSize, isPlaying) {
-        const head = this.nodes[0];
-        const prevPos = head.position.clone();
+        .title {
+            font-size: clamp(3rem, 12vw, 7.5rem); 
+            font-weight: 600; 
+            color: #fff; 
+            line-height: 0.9; 
+            margin-bottom: 3.5rem;
+            text-shadow: 0 0 30px rgba(255, 170, 0, 0.8), 0 0 60px rgba(0, 242, 255, 0.5);
+            animation: floatTitle 8s ease-in-out infinite;
+            display: block;
+        }
+
+        #btn-play {
+            background: transparent; border: 3px solid #00ffcc; color: #00ffcc;
+            padding: 1.25rem 5rem; font-size: 1.5rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.15em; cursor: pointer;
+            border-radius: 4px; transition: all 0.4s ease;
+            outline: none;
+            font-family: 'Pixelify Sans', sans-serif;
+        }
+        #btn-play:focus {
+            box-shadow: 0 0 0 4px rgba(0, 255, 204, 0.5);
+            background: rgba(0, 255, 204, 0.05);
+        }
+        #btn-play:hover {
+            background: rgba(0, 255, 204, 0.15);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-root" aria-live="polite">
+    <div id="menu" role="dialog" aria-labelledby="main-title">
+        <h1 class="title" id="main-title">Nebula Floaties</h1>
+        <button id="btn-play" onclick="startPlay()" aria-label="Start the simulation">Play</button>
+    </div>
+</div>
+
+<script>
+    let scene, camera, renderer, clock;
+    let snake, nutrients = [], snow = [], nebulaClouds = [];
+    let worldSize = 2500;
+    let isTouching = false;
+    let isPlaying = false;
+    
+    let touchWorldPos = new THREE.Vector3();
+    let dragOffset = new THREE.Vector3();
+    let moveVelocity = new THREE.Vector3(0, 0, 1.2);
+    let camTarget = new THREE.Vector3();
+
+    const RAINBOW_PALETTE = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x7700ff, 0xffcc00];
+
+    function createBackdrop() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 512);
+        grad.addColorStop(0, '#3a1a00'); 
+        grad.addColorStop(0.3, '#1a0033'); 
+        grad.addColorStop(0.6, '#001a44'); 
+        grad.addColorStop(1, '#02050a'); 
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    class Part {
+        constructor(radius, color, opacity, order) {
+            const geo = new THREE.IcosahedronGeometry(radius, 1);
+            this.mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ 
+                color: color, 
+                transparent: true, 
+                opacity: opacity,
+                depthTest: false 
+            }));
+            this.mesh.renderOrder = order; 
+            
+            const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.2,
+                depthTest: false
+            }));
+            wire.renderOrder = order + 1;
+            this.mesh.add(wire);
+            scene.add(this.mesh);
+        }
+    }
+
+    class Organism {
+        constructor() {
+            this.nodes = [];
+            this.baseSize = 9.0; 
+            this.segmentCount = 55;
+            this.spacing = 2.2; 
+            this.swimSpeed = 1.05;
+
+            const headColor = new THREE.Color(0x00f2ff);
+            const tailColor = new THREE.Color(0xffaa00); 
+
+            for (let i = 0; i < this.segmentCount; i++) {
+                const pct = i / this.segmentCount;
+                const r = this.baseSize * (1 - pct * 0.88);
+                const color = headColor.clone().lerp(tailColor, pct);
+                const order = 20000 - i * 10;
+                const node = new Part(r, color, i === 0 ? 1.0 : 0.8, order);
+                this.nodes.push(node);
+                if (i > 0) {
+                    node.mesh.position.set(0, 0, -i * this.spacing);
+                }
+            }
+
+            const tGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
+            const tMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
+            this.lJaw = new THREE.Mesh(tGeo, tMat);
+            this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
+            this.lJaw.rotation.x = Math.PI / 2;
+            this.lJaw.renderOrder = 20100;
+            this.nodes[0].mesh.add(this.lJaw);
+            
+            this.rJaw = this.lJaw.clone();
+            this.rJaw.position.x = -this.baseSize * 0.35;
+            this.rJaw.renderOrder = 20100;
+            this.nodes[0].mesh.add(this.rJaw);
+        }
+
+        update(t, dt) {
+            const head = this.nodes[0].mesh;
+            const prevHeadPos = head.position.clone();
+
+            if (isPlaying) {
+                if (isTouching) {
+                    const target = touchWorldPos.clone().sub(dragOffset);
+                    
+                    // LIMIT PULL RADIUS - prevents the slingshot
+                    const dist = head.position.distanceTo(target);
+                    const maxLeash = 120;
+                    if (dist > maxLeash) {
+                        const clampedDir = new THREE.Vector3().subVectors(target, head.position).setLength(maxLeash);
+                        target.copy(head.position).add(clampedDir);
+                    }
+
+                    // Frame-independent lerp
+                    head.position.lerp(target, 1 - Math.pow(0.001, dt)); 
+                } else {
+                    head.position.add(moveVelocity.clone().multiplyScalar(this.swimSpeed));
+                }
+            } else {
+                head.position.x += Math.sin(t * 0.4) * 0.15;
+                head.position.z += Math.cos(t * 0.3) * 0.15;
+            }
+
+            const b = worldSize / 2;
+            let wrap = new THREE.Vector3();
+            if (head.position.x > b) wrap.x = -worldSize;
+            else if (head.position.x < -b) wrap.x = worldSize;
+            if (head.position.z > b) wrap.z = -worldSize;
+            else if (head.position.z < -b) wrap.z = worldSize;
+
+            if (wrap.length() > 0) {
+                head.position.add(wrap);
+                for (let i = 1; i < this.nodes.length; i++) this.nodes[i].mesh.position.add(wrap);
+                camera.position.add(wrap);
+                camTarget.add(wrap);
+                touchWorldPos.add(wrap);
+                dragOffset.add(wrap);
+            }
+
+            for (let i = 1; i < this.nodes.length; i++) {
+                const lead = this.nodes[i - 1].mesh;
+                const follow = this.nodes[i].mesh;
+                const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
+                follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
+                const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
+                follow.quaternion.slerp(targetRot, 1 - Math.pow(0.01, dt));
+            }
+
+            const delta = head.position.clone().sub(prevHeadPos);
+            if (delta.length() > 0.01) {
+                moveVelocity.copy(delta).normalize();
+                const headRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), moveVelocity);
+                head.quaternion.slerp(headRot, 0.15);
+            }
+
+            const snap = (Math.sin(t * 12) + 1) * 0.5;
+            this.lJaw.rotation.z = snap * 0.8;
+            this.rJaw.rotation.z = -snap * 0.8;
+        }
+
+        grow(n) {
+            this.baseSize += n;
+            const s = 1 + (this.baseSize - 9.0) * 0.08;
+            this.nodes.forEach(node => node.mesh.scale.setScalar(s));
+            this.spacing = 2.2 * s;
+        }
+    }
+
+    function init() {
+        scene = new THREE.Scene();
+        clock = new THREE.Clock();
+        scene.fog = new THREE.FogExp2(0x02050a, 0.0006);
+        
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
+        camera.position.set(0, 300, 450); 
+        camera.up.set(0, 1, 0); 
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x02050a, 1);
+        document.body.appendChild(renderer.domElement);
+
+        const background = new THREE.Mesh(
+            new THREE.SphereGeometry(18000, 32, 32),
+            new THREE.MeshBasicMaterial({ map: createBackdrop(), side: THREE.BackSide, depthWrite: false })
+        );
+        background.renderOrder = -100;
+        scene.add(background);
+
+        // Rainbow Gradient regions
+        const regions = [
+            { pos: [1.3, 1.3], col: 0xffaa00 }, { pos: [-1.3, 1.3], col: 0x00f2ff },  
+            { pos: [1.3, -1.3], col: 0xff00cc }, { pos: [-1.3, -1.3], col: 0x00ffcc }, 
+            { pos: [0, 1.9], col: 0x7700ff }, { pos: [0, -1.9], col: 0xff8800 }     
+        ];
+
+        regions.forEach(region => {
+            const size = 5000 + Math.random() * 2000;
+            const glowGeo = new THREE.SphereGeometry(size, 16, 16);
+            const glowMat = new THREE.MeshBasicMaterial({ 
+                color: region.col, transparent: true, opacity: 0.15, depthWrite: false, blending: THREE.AdditiveBlending
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.set(region.pos[0] * worldSize, 0, region.pos[1] * worldSize);
+            scene.add(glow);
+        });
+
+        for(let i = 0; i < 70; i++) {
+            const size = 1500 + Math.random() * 3500;
+            const cloudGeo = new THREE.SphereGeometry(size, 12, 12);
+            const cloudMat = new THREE.MeshBasicMaterial({ 
+                color: RAINBOW_PALETTE[Math.floor(Math.random() * RAINBOW_PALETTE.length)], 
+                transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending
+            });
+            const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+            cloud.position.set((Math.random()-0.5)*worldSize*9, (Math.random()-0.5)*3500, (Math.random()-0.5)*worldSize*9);
+            scene.add(cloud);
+            nebulaClouds.push(cloud);
+        }
+
+        const snowGeo = new THREE.BufferGeometry();
+        const snowCount = 4000;
+        const snowPos = new Float32Array(snowCount * 3);
+        const snowCols = new Float32Array(snowCount * 3);
+        for(let i=0; i<snowCount; i++) {
+            snowPos[i*3] = (Math.random()-0.5) * worldSize * 9;
+            snowPos[i*3+1] = (Math.random()-0.5) * 3500;
+            snowPos[i*3+2] = (Math.random()-0.5) * worldSize * 9;
+            const c = new THREE.Color(RAINBOW_PALETTE[Math.floor(Math.random()*RAINBOW_PALETTE.length)]);
+            snowCols[i*3] = c.r; snowCols[i*3+1] = c.g; snowCols[i*3+2] = c.b;
+        }
+        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+        snowGeo.setAttribute('color', new THREE.BufferAttribute(snowCols, 3));
+        const snowMat = new THREE.PointsMaterial({ 
+            vertexColors: true, size: 10, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending 
+        });
+        scene.add(new THREE.Points(snowGeo, snowMat));
+
+        snake = new Organism();
+        spawnNutrients();
+
+        const rc = new THREE.Raycaster();
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        function updateCoords(x, y) {
+            const m = new THREE.Vector2((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
+            rc.setFromCamera(m, camera);
+            rc.ray.intersectPlane(plane, touchWorldPos);
+        }
+
+        const handleStart = (e) => {
+            if (!isPlaying) return;
+            isTouching = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            updateCoords(clientX, clientY);
+            dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
+        };
+
+        const handleMove = (e) => {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            updateCoords(clientX, clientY);
+            if (isPlaying && e.touches) e.preventDefault();
+        };
+
+        window.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', () => isTouching = false);
+        window.addEventListener('touchstart', handleStart, { passive: false });
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', () => isTouching = false);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    }
+
+    function spawnNutrients() {
+        for(let i=0; i<300; i++) {
+            const b = new THREE.Mesh(
+                new THREE.TetrahedronGeometry(12, 0),
+                new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
+            );
+            b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
+            scene.add(b);
+            nutrients.push(b);
+        }
+    }
+
+    function startPlay() {
+        const ui = document.getElementById('ui-root');
+        ui.style.opacity = '0';
+        setTimeout(() => { ui.style.display = 'none'; isPlaying = true; }, 1000);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        let dt = clock.getDelta();
+        dt = Math.min(dt, 0.1); 
+
+        snake.update(t, dt);
+
+        const headPos = snake.nodes[0].mesh.position;
+        const h = 280 + (snake.baseSize * 4);
+        const d = 320 + (snake.baseSize * 4);
+        const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
+        
+        // Sticky camera - fixed orientation follow
+        camera.position.lerp(desiredCamPos, 1 - Math.pow(0.001, dt));
+        camTarget.lerp(headPos, 1 - Math.pow(0.0001, dt));
+        camera.lookAt(camTarget);
 
         if (isPlaying) {
-          if (isTouching) {
-            const target = touchWorldPos.clone().sub(dragOffset);
-            
-            // PHYSICS TETHER CAP
-            // We cap the distance the target can be from the current position.
-            // This prevents the "slingshot" if the finger moves too far ahead.
-            const dist = head.position.distanceTo(target);
-            const maxLeash = 80; 
-            if (dist > maxLeash) {
-              const diff = new THREE.Vector3().subVectors(target, head.position).setLength(maxLeash);
-              target.copy(head.position).add(diff);
-            }
-            
-            head.position.lerp(target, 0.15); 
-          } else {
-            head.position.add(velocity.clone().multiplyScalar(this.swimSpeed));
-          }
+            nutrients.forEach((f, i) => {
+                if (f.position.distanceTo(headPos) < snake.baseSize + 18.0) {
+                    f.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
+                    snake.grow(0.65);
+                }
+            });
         }
-
-        // World Wrap
-        const b = worldSize / 2;
-        let wrap = new THREE.Vector3();
-        if (head.position.x > b) wrap.x = -worldSize;
-        else if (head.position.x < -b) wrap.x = worldSize;
-        if (head.position.z > b) wrap.z = -worldSize;
-        else if (head.position.z < -b) wrap.z = worldSize;
-
-        if (wrap.length() > 0) {
-          this.nodes.forEach(n => n.position.add(wrap));
-          return wrap; // Signal to camera to teleport
-        }
-
-        // Body Chain
-        for (let i = 1; i < this.nodes.length; i++) {
-          const lead = this.nodes[i - 1];
-          const follow = this.nodes[i];
-          const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
-          follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
-          const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
-          follow.quaternion.slerp(targetRot, 0.2);
-        }
-
-        // Heading
-        const delta = head.position.clone().sub(prevPos);
-        if (delta.length() > 0.01) {
-          velocity.copy(delta).normalize();
-          const headRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), velocity);
-          head.quaternion.slerp(headRot, 0.15);
-        }
-
-        const snap = (Math.sin(t * 12) + 1) * 0.5;
-        this.lJaw.rotation.z = snap * 0.8;
-        this.rJaw.rotation.z = -snap * 0.8;
-        return null;
-      }
+        renderer.render(scene, camera);
     }
 
-    s.snake = new Organism(s.scene);
-
-    // Nutrients
-    for(let i=0; i<300; i++) {
-      const b = new THREE.Mesh(
-        new THREE.TetrahedronGeometry(12, 0),
-        new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
-      );
-      b.position.set((Math.random()-0.5)*s.worldSize, 0, (Math.random()-0.5)*s.worldSize);
-      s.scene.add(b);
-      s.nutrients.push(b);
-    }
-
-    const rc = new THREE.Raycaster();
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const updateCoords = (x, y) => {
-      const m = new THREE.Vector2((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
-      rc.setFromCamera(m, s.camera);
-      rc.ray.intersectPlane(plane, s.touchWorldPos);
-    };
-
-    const handleStart = (e) => {
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      s.isTouching = true;
-      updateCoords(x, y);
-      s.dragOffset.copy(s.touchWorldPos).sub(s.snake.nodes[0].position);
-    };
-    const handleMove = (e) => {
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      updateCoords(x, y);
-    };
-    const handleEnd = () => s.isTouching = false;
-
-    window.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchstart', handleStart, { passive: true });
-    window.addEventListener('touchmove', handleMove, { passive: true });
-    window.addEventListener('touchend', handleEnd, { passive: true });
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      const t = s.clock.getElapsedTime();
-      
-      const wrapOffset = s.snake.update(t, s.isTouching, s.touchWorldPos, s.dragOffset, s.moveVelocity, s.worldSize, s.isPlaying);
-      if (wrapOffset) {
-        s.camera.position.add(wrapOffset);
-        s.camTarget.add(wrapOffset);
-        s.touchWorldPos.add(wrapOffset);
-        s.dragOffset.add(wrapOffset);
-      }
-
-      const headPos = s.snake.nodes[0].position;
-      const h = 280 + (s.snake.baseSize * 4);
-      const d = 320 + (s.snake.baseSize * 4);
-      const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
-      
-      // SUPER STICKY CAMERA
-      // High lerp values to prevent the camera from surging or lagging
-      s.camera.position.lerp(desiredCamPos, 0.3);
-      s.camTarget.lerp(headPos, 0.4);
-      s.camera.lookAt(s.camTarget);
-
-      s.snow.rotation.y += 0.0006;
-
-      if (s.isPlaying) {
-        s.nutrients.forEach((f, i) => {
-          if (f.position.distanceTo(headPos) < s.snake.baseSize + 18.0) {
-            f.position.set((Math.random()-0.5)*s.worldSize, 0, (Math.random()-0.5)*s.worldSize);
-            s.snake.baseSize += 0.65;
-            const sc = 1 + (s.snake.baseSize - 9.0) * 0.08;
-            s.snake.nodes.forEach(n => n.scale.setScalar(sc));
-            s.snake.spacing = 2.2 * sc;
-          }
-        });
-      }
-      s.renderer.render(s.scene, s.camera);
-    };
-
-    animate();
-
-    const handleResize = () => {
-      s.camera.aspect = window.innerWidth / window.innerHeight;
-      s.camera.updateProjectionMatrix();
-      s.renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousedown', handleStart);
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
-    };
-  }, []);
-
-  const startGame = () => {
-    setShowUI(false);
-    setTimeout(() => {
-      state.current.isPlaying = true;
-    }, 1000);
-  };
-
-  return (
-    <div className="w-full h-full relative touch-none select-none">
-      <div ref={containerRef} className="absolute inset-0" />
-      
-      {showUI && (
-        <div 
-          className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 transition-opacity duration-1000 z-50 pointer-events-none"
-          style={{ opacity: showUI ? 1 : 0 }}
-        >
-          <div className="text-center pointer-events-auto p-8">
-            <h1 
-              className="text-white font-bold italic tracking-tighter leading-none mb-16 animate-pulse"
-              style={{ 
-                fontFamily: "'Pixelify Sans', sans-serif",
-                fontSize: "clamp(3rem, 15vw, 9rem)",
-                textShadow: "0 0 30px rgba(255, 170, 0, 0.8), 0 0 60px rgba(0, 242, 255, 0.5)",
-                fontWeight: 600
-              }}
-            >
-              Nebula Floaties
-            </h1>
-            <button 
-              onClick={startGame}
-              className="border-4 border-[#00ffcc] text-[#00ffcc] px-16 py-6 text-3xl font-semibold uppercase tracking-[0.2em] transition-all hover:bg-[#00ffcc] hover:text-black hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(0,255,204,0.3)]"
-              style={{ fontFamily: "'Pixelify Sans', sans-serif" }}
-            >
-              Play
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default App;
+    init();
+</script>
+</body>
+</html>
 
