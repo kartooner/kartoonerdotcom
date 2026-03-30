@@ -24,7 +24,7 @@
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 1000; pointer-events: none;
-            background: rgba(2, 5, 10, 0.2);
+            background: rgba(2, 5, 10, 0.4);
             transition: opacity 1s ease;
         }
 
@@ -83,10 +83,10 @@
     let isTouching = false;
     let isPlaying = false;
     
-    let touchWorldPos = new THREE.Vector3();
-    let dragOffset = new THREE.Vector3();
-    let moveVelocity = new THREE.Vector3(0, 0, 1.2);
-    let camTarget = new THREE.Vector3();
+    const touchWorldPos = new THREE.Vector3();
+    const dragOffset = new THREE.Vector3();
+    const moveVelocity = new THREE.Vector3(0, 0, 1.2);
+    const camTarget = new THREE.Vector3();
 
     const RAINBOW_PALETTE = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x7700ff, 0xffcc00];
 
@@ -106,7 +106,7 @@
 
     class Swirl {
         constructor() {
-            const geo = new THREE.TorusGeometry(40, 0.8, 8, 48);
+            const geo = new THREE.TorusGeometry(50, 1.2, 8, 32);
             this.mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
                 color: 0x00ffff,
                 transparent: true,
@@ -115,9 +115,9 @@
                 depthWrite: false
             }));
             this.mesh.rotation.x = Math.PI / 2;
-            this.state = 'hidden'; 
+            this.state = 'hidden';
             this.timer = 0;
-            this.life = 3 + Math.random() * 5;
+            this.life = 4 + Math.random() * 6;
             scene.add(this.mesh);
         }
 
@@ -125,12 +125,11 @@
             if (this.state === 'hidden') {
                 if (Math.random() < 0.0005) {
                     this.state = 'fadein';
-                    this.mesh.position.set((Math.random() - 0.5) * worldSize, -30, (Math.random() - 0.5) * worldSize);
-                    this.mesh.scale.setScalar(0.1);
+                    this.mesh.position.set((Math.random() - 0.5) * worldSize, -40, (Math.random() - 0.5) * worldSize);
+                    this.mesh.scale.setScalar(0.2);
                 }
             } else if (this.state === 'fadein') {
                 this.mesh.material.opacity += dt * 0.1;
-                this.mesh.scale.setScalar(this.mesh.scale.x + dt * 0.5);
                 if (this.mesh.material.opacity >= 0.15) {
                     this.mesh.material.opacity = 0.15;
                     this.state = 'active';
@@ -139,6 +138,7 @@
             } else if (this.state === 'active') {
                 this.timer += dt;
                 this.mesh.rotation.z += dt * 1.5;
+                this.mesh.scale.setScalar(this.mesh.scale.x + dt * 0.05);
                 if (this.timer > this.life) this.state = 'fadeout';
             } else if (this.state === 'fadeout') {
                 this.mesh.material.opacity -= dt * 0.1;
@@ -165,7 +165,7 @@
                 color: 0xffffff, 
                 wireframe: true, 
                 transparent: true, 
-                opacity: 0.12,
+                opacity: 0.1,
                 depthTest: false
             }));
             wire.renderOrder = order + 1;
@@ -178,9 +178,9 @@
     class Organism {
         constructor() {
             this.nodes = [];
-            this.baseSize = 10.5; 
+            this.baseSize = 11.0; 
             this.segmentCount = 65;
-            this.spacing = 2.4; 
+            this.spacing = 2.5; 
             this.swimSpeed = 1.05;
 
             const headColor = new THREE.Color(0x00f2ff);
@@ -188,10 +188,8 @@
 
             for (let i = 0; i < this.segmentCount; i++) {
                 const pct = i / this.segmentCount;
-                // Serpentine profile: thick body, late taper
-                const taper = Math.pow(pct, 2.5);
-                const r = this.baseSize * (1 - taper * 0.75);
-                
+                const taper = Math.pow(pct, 3.0);
+                const r = this.baseSize * (1 - taper * 0.8);
                 const color = headColor.clone().lerp(tailColor, pct);
                 const node = new Part(r, color, i === 0 ? 1.0 : 0.85, 20000 - i * 10);
                 this.nodes.push(node);
@@ -200,7 +198,7 @@
                 }
             }
 
-            const jGeo = new THREE.ConeGeometry(this.baseSize * 0.22, this.baseSize * 0.6, 3);
+            const jGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
             const jMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
             this.lJaw = new THREE.Mesh(jGeo, jMat);
             this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.4);
@@ -270,9 +268,9 @@
 
         grow(n) {
             this.baseSize += n;
-            const sc = 1 + (this.baseSize - 10.5) * 0.05;
+            const sc = 1 + (this.baseSize - 11.0) * 0.05;
             this.nodes.forEach(node => node.mesh.scale.setScalar(sc));
-            this.spacing = 2.4 * sc;
+            this.spacing = 2.5 * sc;
         }
     }
 
@@ -304,7 +302,7 @@
 
         regions.forEach(region => {
             const glow = new THREE.Mesh(
-                new THREE.SphereGeometry(5000 + Math.random() * 2000, 16, 16),
+                new THREE.SphereGeometry(6000, 16, 16),
                 new THREE.MeshBasicMaterial({ color: region.col, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             glow.position.set(region.pos[0] * worldSize, 0, region.pos[1] * worldSize);
@@ -315,11 +313,10 @@
             const size = 1500 + Math.random() * 3500;
             const cloud = new THREE.Mesh(
                 new THREE.SphereGeometry(size, 12, 12),
-                new THREE.MeshBasicMaterial({ color: RAINBOW_PALETTE[i % RAINBOW_PALETTE.length], transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending })
+                new THREE.MeshBasicMaterial({ color: RAINBOW_PALETTE[i % RAINBOW_PALETTE.length], transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             cloud.position.set((Math.random()-0.5)*worldSize*9, (Math.random()-0.5)*3500, (Math.random()-0.5)*worldSize*9);
             scene.add(cloud);
-            nebulaClouds.push(cloud);
         }
 
         const createSnow = (count, size, opacity, range) => {
@@ -344,8 +341,8 @@
         scene.add(fgSnow);
 
         for(let i=0; i<80; i++) {
-            const dGeo = new THREE.IcosahedronGeometry(12 + Math.random()*25, 0);
-            const dMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, depthWrite: false });
+            const dGeo = new THREE.IcosahedronGeometry(15 + Math.random()*30, 0);
+            const dMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04, depthWrite: false });
             const dMesh = new THREE.Mesh(dGeo, dMat);
             dMesh.position.set((Math.random()-0.5)*worldSize*5, (Math.random()-0.5)*1200, (Math.random()-0.5)*worldSize*5);
             dMesh.userData.speed = Math.random() * 0.3 + 0.05;
@@ -354,12 +351,12 @@
         }
 
         for(let i=0; i<15; i++) {
-            const size = 180 + Math.random() * 350;
+            const size = 200 + Math.random() * 400;
             const oGeo = new THREE.IcosahedronGeometry(size, 1);
-            const oMat = new THREE.MeshBasicMaterial({ color: 0x050a15, transparent: true, opacity: 0.45, depthWrite: false });
+            const oMat = new THREE.MeshBasicMaterial({ color: 0x050a15, transparent: true, opacity: 0.4, depthWrite: false });
             const oMesh = new THREE.Mesh(oGeo, oMat);
-            oMesh.position.set((Math.random()-0.5)*worldSize*4, -700 - Math.random()*500, (Math.random()-0.5)*worldSize*4);
-            oMesh.userData.rotSpeed = (Math.random() - 0.5) * 0.002;
+            oMesh.position.set((Math.random()-0.5)*worldSize*4, -800 - Math.random()*500, (Math.random()-0.5)*worldSize*4);
+            oMesh.userData.rotSpeed = (Math.random() - 0.5) * 0.001;
             scene.add(oMesh);
             ominousObjects.push(oMesh);
         }
@@ -420,16 +417,18 @@
             );
             b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
             b.userData.offset = Math.random() * 6.28;
-            b.userData.rotSpeed = (Math.random() - 0.5) * 0.05;
+            b.userData.rotSpeed = (Math.random() - 0.5) * 0.04;
             scene.add(b);
             nutrients.push(b);
         }
     }
 
     function startPlay() {
-        const ui = document.getElementById('ui-root');
-        ui.style.opacity = '0';
-        setTimeout(() => { ui.style.display = 'none'; isPlaying = true; }, 1000);
+        document.getElementById('ui-root').style.opacity = '0';
+        setTimeout(() => { 
+            document.getElementById('ui-root').style.display = 'none'; 
+            isPlaying = true; 
+        }, 1000);
     }
 
     function animate() {
@@ -451,22 +450,22 @@
         }
 
         if (snow) snow.rotation.y += 0.0004;
-        if (fgSnow) fgSnow.rotation.y += 0.0015;
+        if (fgSnow) fgSnow.rotation.y += 0.0012;
 
         debris.forEach(d => {
-            d.position.y += Math.sin(t * d.userData.speed) * 0.3;
-            d.rotation.x += 0.01;
+            d.position.y += Math.sin(t * d.userData.speed) * 0.25;
+            d.rotation.x += 0.008;
         });
 
         ominousObjects.forEach(o => {
             o.rotation.y += o.userData.rotSpeed;
-            o.position.x += Math.sin(t * 0.05) * 0.05;
+            o.position.x += Math.sin(t * 0.05) * 0.04;
         });
 
         swirls.forEach(s => s.update(dt));
 
         nutrients.forEach((f) => {
-            f.position.y = Math.sin(t * 1.5 + f.userData.offset) * 10;
+            f.position.y = Math.sin(t * 1.5 + f.userData.offset) * 8;
             f.rotation.y += f.userData.rotSpeed;
             if (isPlaying && snake && f.position.distanceTo(snake.nodes[0].mesh.position) < snake.baseSize + 18.0) {
                 f.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
