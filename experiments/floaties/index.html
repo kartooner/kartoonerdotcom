@@ -281,9 +281,12 @@
                 this.headVelocity.addScaledVector(right, lateral).normalize();
             }
 
-            // ── Speed control: S key slows down, releases return to normal ───────
-            const targetSpeed = (inputMode === 'keyboard' && (keysDown.has('s') || keysDown.has('arrowdown'))) ? 0.8 : 2.5;
+            // ── Speed control: W boosts, S slows, else cruise ────────────────────
+            const isBoost = inputMode === 'keyboard' && (keysDown.has('w') || keysDown.has('arrowup'));
+            const isBrake = inputMode === 'keyboard' && (keysDown.has('s') || keysDown.has('arrowdown'));
+            const targetSpeed = isBoost ? 5.5 : isBrake ? 0.8 : 2.5;
             this.swimSpeed += (targetSpeed - this.swimSpeed) * 0.08;
+            this.isBoosting = isBoost;
 
             // ── Always propel forward ─────────────────────────────────────────────
             head.position.addScaledVector(this.headVelocity, this.swimSpeed);
@@ -306,8 +309,13 @@
                 touchWorldPos.add(wrap);
             }
 
-            // ── Orient head along velocity ────────────────────────────────────────
-            head.lookAt(head.position.clone().add(this.headVelocity));
+            // ── Body undulation: drive head Y so the whole snake ripples via path ──
+            head.position.y = Math.sin(t * 3.5) * 7;
+
+            // ── Orient head: face forward with subtle pitch from undulation ────────
+            const pitchY = Math.cos(t * 3.5) * 0.18;
+            const lookDir = new THREE.Vector3(this.headVelocity.x, pitchY, this.headVelocity.z).normalize();
+            head.lookAt(head.position.clone().add(lookDir));
 
             // ── Record path point (distance-gated, not every frame) ───────────────
             if (!this.pathHistory.length ||
@@ -634,6 +642,11 @@
         const lookAhead = headPos.clone().addScaledVector(snake.headVelocity, 100);
         camTarget.lerp(lookAhead, 0.10);
         camera.lookAt(camTarget);
+
+        // FOV widens on boost for speed feel
+        const targetFov = snake.isBoosting ? 66 : 50;
+        camera.fov += (targetFov - camera.fov) * 0.06;
+        camera.updateProjectionMatrix();
 
         snow.forEach(sys => {
             sys.rotation.y += 0.0012;
