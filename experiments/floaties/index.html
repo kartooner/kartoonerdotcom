@@ -106,14 +106,16 @@
     let scene, camera, renderer, clock;
     let snake, nutrients = [], snow = [], pillars = [], nebulaClouds = [];
     let worldSize = 2500;
-    let isTouching = false;
     let isPlaying = false;
 
+    // --- Input state (exclusive: only one mode active at a time) ---
+    // Modes: null | 'keyboard' | 'drag' | 'touch' | 'waypoint'
+    let inputMode = null;
+    let keysDown = new Set();
+    let dragWorldPos = new THREE.Vector3();
     let touchWorldPos = new THREE.Vector3();
-    let dragOffset = new THREE.Vector3();
-    let velocity = new THREE.Vector3(0, 0, 1.2);
+    let waypointPos = null;
     let camTarget = new THREE.Vector3();
-    let clickTarget = null;
 
     const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
 
@@ -159,11 +161,13 @@
         constructor() {
             this.nodes = [];
             this.baseSize = 9.0;
-            this.segmentCount = 52;
-            this.spacing = 2.2;
-            this.spacingFrames = 2;
+            this.segmentCount = 11;
+            this.segmentSpacing = 20;   // world-space units between segment centers
+            this.minPathDist = 3;       // min distance before adding new path point
             this.swimSpeed = 2.5;
-            this.posHistory = [];
+            // Start swimming in -Z (camera is behind at +Z, so snake moves away → nice initial view)
+            this.headVelocity = new THREE.Vector3(0, 0, -1);
+            this.pathHistory = [];      // world positions, most-recent first
 
             const headColor = new THREE.Color(0x00f2ff);
             const tailColor = new THREE.Color(0xffaa00);
@@ -175,9 +179,6 @@
                 const order = 20000 - i * 10;
                 const node = new Part(r, color, i === 0 ? 1.0 : 0.8, order);
                 this.nodes.push(node);
-                if (i > 0) {
-                    node.mesh.position.set(0, 0, -i * this.spacing);
-                }
             }
 
             const tGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
@@ -192,83 +193,166 @@
             this.rJaw.position.x = -this.baseSize * 0.35;
             this.rJaw.renderOrder = 20100;
             this.nodes[0].mesh.add(this.rJaw);
+
+            this._prePopulatePath();
+        }
+
+        // Fill path history with a sinuous curve trailing behind the head so the
+        // snake starts fully extended instead of collapsed at origin.
+        _prePopulatePath() {
+            const totalLength = (this.segmentCount + 2) * this.segmentSpacing;
+            const numPoints = Math.ceil(totalLength / this.minPathDist) + 10;
+
+            // Head is at (0,0,0) moving in -Z; trail extends in +Z
+            for (let i = 0; i < numPoints; i++) {
+                const s = i * this.minPathDist;
+                this.pathHistory.push(new THREE.Vector3(
+                    Math.sin(s * 0.012) * 60,
+                    0,
+                    s // +Z: behind a -Z-moving head
+                ));
+            }
+
+            // Position each segment along the pre-populated path
+            for (let i = 0; i < this.segmentCount; i++) {
+                this.nodes[i].mesh.position.copy(this._samplePath(i * this.segmentSpacing));
+            }
+
+            // Orient head
+            this.nodes[0].mesh.lookAt(
+                this.nodes[0].mesh.position.clone().add(this.headVelocity)
+            );
+        }
+
+        // Walk path and return interpolated world position at arc-distance `arcDist` from head.
+        // Used only during initialization; update() uses the faster single-pass approach.
+        _samplePath(arcDist) {
+            let acc = 0;
+            for (let i = 0; i < this.pathHistory.length - 1; i++) {
+                const sl = this.pathHistory[i].distanceTo(this.pathHistory[i + 1]);
+                if (acc + sl >= arcDist) {
+                    const t = sl > 0 ? (arcDist - acc) / sl : 0;
+                    return this.pathHistory[i].clone().lerp(this.pathHistory[i + 1], t);
+                }
+                acc += sl;
+            }
+            return this.pathHistory[this.pathHistory.length - 1].clone();
         }
 
         update(t) {
             const head = this.nodes[0].mesh;
-            const prevHeadPos = head.position.clone();
 
+            // ── Steer headVelocity based on active input ──────────────────────────
             if (isPlaying) {
-                if (isTouching) {
-                    dragOffset.multiplyScalar(0.92);
-                    const target = touchWorldPos.clone().sub(dragOffset);
-                    const dir = target.clone().sub(head.position);
-                    const dist = dir.length();
-                    const speed = Math.min(Math.max(dist * 0.2, 2.5), 10);
-                    if (dist > 0.5) head.position.add(dir.normalize().multiplyScalar(speed));
-                } else if (clickTarget) {
-                    const dir = clickTarget.clone().sub(head.position);
-                    const dist = dir.length();
-                    if (dist < this.baseSize) {
-                        clickTarget = null;
-                    } else {
-                        const speed = Math.min(Math.max(dist * 0.12, 2.5), 8);
-                        head.position.add(dir.normalize().multiplyScalar(speed));
+                if (inputMode === 'keyboard') {
+                    // Fixed turn rate per frame (camera-relative left/right)
+                    const TURN = 0.055; // ~3.15° per frame
+                    let dAngle = 0;
+                    if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
+                    if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
+                    if (dAngle !== 0) {
+                        const c = Math.cos(dAngle), s = Math.sin(dAngle);
+                        const nx = this.headVelocity.x * c - this.headVelocity.z * s;
+                        const nz = this.headVelocity.x * s + this.headVelocity.z * c;
+                        this.headVelocity.set(nx, 0, nz).normalize();
                     }
-                } else {
-                    const coast = Math.max(this.swimSpeed * 0.97, 2.5);
-                    head.position.add(velocity.clone().multiplyScalar(coast));
+                } else if (inputMode === 'drag' || inputMode === 'touch') {
+                    const wp = inputMode === 'drag' ? dragWorldPos : touchWorldPos;
+                    const toTarget = new THREE.Vector3().subVectors(wp, head.position);
+                    toTarget.y = 0;
+                    if (toTarget.length() > 20) {
+                        this.headVelocity.lerp(toTarget.normalize(), 0.14).normalize();
+                    }
+                } else if (inputMode === 'waypoint' && waypointPos) {
+                    const toTarget = new THREE.Vector3().subVectors(waypointPos, head.position);
+                    toTarget.y = 0;
+                    if (toTarget.length() < 40) {
+                        waypointPos = null;
+                        inputMode = null;
+                    } else {
+                        this.headVelocity.lerp(toTarget.normalize(), 0.08).normalize();
+                    }
                 }
+                // else: no input — coast forward in current direction
             } else {
-                head.position.x += Math.sin(t * 0.4) * 0.15;
-                head.position.z += Math.cos(t * 0.3) * 0.15;
+                // Idle (title screen): gentle sinuous drift — slow, wide curves
+                const lateral = Math.sin(t * 0.28) * 0.002;
+                const right = new THREE.Vector3(-this.headVelocity.z, 0, this.headVelocity.x);
+                this.headVelocity.addScaledVector(right, lateral).normalize();
             }
 
-            const b = worldSize / 2;
-            let wrap = new THREE.Vector3();
-            if (head.position.x > b) wrap.x = -worldSize;
-            if (head.position.x < -b) wrap.x = worldSize;
-            if (head.position.z > b) wrap.z = -worldSize;
-            if (head.position.z < -b) wrap.z = worldSize;
+            // ── Speed control: S key slows down, releases return to normal ───────
+            const targetSpeed = (inputMode === 'keyboard' && (keysDown.has('s') || keysDown.has('arrowdown'))) ? 0.8 : 2.5;
+            this.swimSpeed += (targetSpeed - this.swimSpeed) * 0.08;
 
+            // ── Always propel forward ─────────────────────────────────────────────
+            head.position.addScaledVector(this.headVelocity, this.swimSpeed);
+
+            // ── World wrap ────────────────────────────────────────────────────────
+            const b = worldSize / 2;
+            const wrap = new THREE.Vector3();
+            if (head.position.x >  b) wrap.x = -worldSize;
+            if (head.position.x < -b) wrap.x =  worldSize;
+            if (head.position.z >  b) wrap.z = -worldSize;
+            if (head.position.z < -b) wrap.z =  worldSize;
             if (wrap.length() > 0) {
                 head.position.add(wrap);
                 for (let i = 1; i < this.nodes.length; i++) this.nodes[i].mesh.position.add(wrap);
-                for (let i = 0; i < this.posHistory.length; i++) this.posHistory[i].add(wrap);
+                for (const p of this.pathHistory) p.add(wrap);
                 camera.position.add(wrap);
                 camTarget.add(wrap);
+                if (waypointPos) waypointPos.add(wrap);
+                dragWorldPos.add(wrap);
                 touchWorldPos.add(wrap);
-                if (clickTarget) clickTarget.add(wrap);
             }
 
-            // Record every frame so segments can index by i * spacingFrames.
-            this.posHistory.unshift(head.position.clone());
-            const maxHistory = (this.nodes.length - 1) * this.spacingFrames + 1;
-            if (this.posHistory.length > maxHistory) this.posHistory.length = maxHistory;
+            // ── Orient head along velocity ────────────────────────────────────────
+            head.lookAt(head.position.clone().add(this.headVelocity));
 
+            // ── Record path point (distance-gated, not every frame) ───────────────
+            if (!this.pathHistory.length ||
+                head.position.distanceTo(this.pathHistory[0]) >= this.minPathDist) {
+                this.pathHistory.unshift(head.position.clone());
+                const maxLen = Math.ceil(this.segmentCount * this.segmentSpacing / this.minPathDist) + 20;
+                if (this.pathHistory.length > maxLen) this.pathHistory.length = maxLen;
+            }
+
+            // ── Place body segments – single O(n+m) pass ──────────────────────────
+            // Walk pathHistory once, placing each segment at its arc-distance target.
+            let accumulated = 0;
+            let pi = 0;
             for (let i = 1; i < this.nodes.length; i++) {
-                const idx = i * this.spacingFrames;
-                const prevIdx = (i - 1) * this.spacingFrames;
-                if (idx >= this.posHistory.length) break;
-                const follow = this.nodes[i].mesh;
-                follow.position.copy(this.posHistory[idx]);
-                const raw = new THREE.Vector3().subVectors(this.posHistory[idx], this.posHistory[prevIdx]);
-                if (raw.lengthSq() > 0.0001) {
-                    const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), raw.normalize().negate());
-                    follow.quaternion.slerp(targetRot, 0.3);
+                const target = i * this.segmentSpacing;
+
+                // Advance path index until we bracket 'target'
+                while (pi < this.pathHistory.length - 1) {
+                    const sl = this.pathHistory[pi].distanceTo(this.pathHistory[pi + 1]);
+                    if (accumulated + sl >= target) break;
+                    accumulated += sl;
+                    pi++;
+                }
+                if (pi >= this.pathHistory.length - 1) break;
+
+                const sl = this.pathHistory[pi].distanceTo(this.pathHistory[pi + 1]);
+                const frac = sl > 0 ? Math.min(1, (target - accumulated) / sl) : 0;
+                const pos = this.pathHistory[pi].clone().lerp(this.pathHistory[pi + 1], frac);
+                const seg = this.nodes[i].mesh;
+                seg.position.copy(pos);
+
+                // Orient segment toward the segment ahead of it
+                const prevPos = i === 1 ? head.position : this.nodes[i - 1].mesh.position;
+                const dir = new THREE.Vector3().subVectors(prevPos, seg.position);
+                if (dir.lengthSq() > 0.001) {
+                    const q = new THREE.Quaternion().setFromUnitVectors(
+                        new THREE.Vector3(0, 0, 1), dir.normalize()
+                    );
+                    seg.quaternion.slerp(q, 0.4);
                 }
             }
 
-            const delta = head.position.clone().sub(prevHeadPos);
-            const deltaLen = delta.length();
-            if (deltaLen > 0.01) {
-                velocity.copy(delta).normalize();
-                this.swimSpeed = deltaLen; // carry momentum into coast mode
-                head.lookAt(head.position.clone().add(velocity));
-            }
-
+            // ── Jaw animation ────────────────────────────────────────────────────
             const snap = (Math.sin(t * 12) + 1) * 0.5;
-            this.lJaw.rotation.z = snap * 0.8;
+            this.lJaw.rotation.z =  snap * 0.8;
             this.rJaw.rotation.z = -snap * 0.8;
         }
 
@@ -276,7 +360,7 @@
             this.baseSize += n;
             const s = 1 + (this.baseSize - 9.0) * 0.08;
             this.nodes.forEach(node => node.mesh.scale.setScalar(s));
-            this.spacing = 2.2 * s;
+            this.segmentSpacing = 20 * s;
         }
     }
 
@@ -286,7 +370,8 @@
         scene.fog = new THREE.FogExp2(0x02050a, 0.0006);
 
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
-        camera.position.set(0, 300, 450);
+        // Will be overridden after snake is created; placeholder until then
+        camera.position.set(0, 280, 400);
         camera.up.set(0, 1, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -303,56 +388,57 @@
         scene.add(background);
 
         const corners = [
-            { pos: [1, 1], col: 0xffaa00 },
-            { pos: [-1, 1], col: 0x00f2ff },
-            { pos: [1, -1], col: 0xff0066 },
+            { pos: [1, 1],   col: 0xffaa00 },
+            { pos: [-1, 1],  col: 0x00f2ff },
+            { pos: [1, -1],  col: 0xff0066 },
             { pos: [-1, -1], col: 0x00ffaa },
             { pos: [0, 1.5], col: 0xffaa00 },
-            { pos: [0, -1.5], col: 0x5500ff }
+            { pos: [0, -1.5],col: 0x5500ff }
         ];
 
         corners.forEach(corner => {
             const size = 3000 + Math.random() * 2000;
             const glowGeo = new THREE.SphereGeometry(size, 16, 16);
             const glowMat = new THREE.MeshBasicMaterial({
-                color: corner.col,
-                transparent: true,
-                opacity: 0.12,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                color: corner.col, transparent: true, opacity: 0.12,
+                depthWrite: false, blending: THREE.AdditiveBlending
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
             glow.position.set(corner.pos[0] * worldSize, 0, corner.pos[1] * worldSize);
             scene.add(glow);
         });
 
-        for(let i = 0; i < 50; i++) {
+        for (let i = 0; i < 50; i++) {
             const size = 1500 + Math.random() * 3000;
             const cloudGeo = new THREE.SphereGeometry(size, 12, 12);
             const cloudMat = new THREE.MeshBasicMaterial({
                 color: PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)],
-                transparent: true,
-                opacity: 0.1,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                transparent: true, opacity: 0.1,
+                depthWrite: false, blending: THREE.AdditiveBlending
             });
             const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-            cloud.position.set((Math.random()-0.5)*worldSize*8, (Math.random()-0.5)*3000, (Math.random()-0.5)*worldSize*8);
+            cloud.position.set(
+                (Math.random()-0.5)*worldSize*8,
+                (Math.random()-0.5)*3000,
+                (Math.random()-0.5)*worldSize*8
+            );
             scene.add(cloud);
             nebulaClouds.push(cloud);
         }
 
-        for(let i=0; i<25; i++) {
+        for (let i = 0; i < 25; i++) {
             const pGeo = new THREE.CylinderGeometry(150, 600, 12000, 12);
             const pMat = new THREE.MeshBasicMaterial({
                 color: PHM_COLORS[Math.floor(Math.random()*PHM_COLORS.length)],
-                transparent: true,
-                opacity: 0.1,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
+                transparent: true, opacity: 0.1,
+                depthWrite: false, blending: THREE.AdditiveBlending
             });
             const pillar = new THREE.Mesh(pGeo, pMat);
-            pillar.position.set((Math.random()-0.5)*worldSize*9, 0, (Math.random()-0.5)*worldSize*9);
+            pillar.position.set(
+                (Math.random()-0.5)*worldSize*9,
+                0,
+                (Math.random()-0.5)*worldSize*9
+            );
             pillar.rotation.z = (Math.random()-0.5) * 3.14;
             scene.add(pillar);
             pillars.push(pillar);
@@ -360,24 +446,21 @@
 
         const snowGeo = new THREE.BufferGeometry();
         const snowCount = 4000;
-        const snowPos = new Float32Array(snowCount * 3);
+        const snowPos  = new Float32Array(snowCount * 3);
         const snowCols = new Float32Array(snowCount * 3);
-        for(let i=0; i<snowCount; i++) {
-            snowPos[i*3] = (Math.random()-0.5) * worldSize * 8;
+        for (let i = 0; i < snowCount; i++) {
+            snowPos[i*3]   = (Math.random()-0.5) * worldSize * 8;
             snowPos[i*3+1] = (Math.random()-0.5) * 3000;
             snowPos[i*3+2] = (Math.random()-0.5) * worldSize * 8;
             const c = new THREE.Color(PHM_COLORS[Math.floor(Math.random()*PHM_COLORS.length)]);
             snowCols[i*3] = c.r; snowCols[i*3+1] = c.g; snowCols[i*3+2] = c.b;
         }
         snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-        snowGeo.setAttribute('color', new THREE.BufferAttribute(snowCols, 3));
+        snowGeo.setAttribute('color',    new THREE.BufferAttribute(snowCols, 3));
         const snowMat = new THREE.PointsMaterial({
-            vertexColors: true,
-            size: 10,
-            transparent: true,
-            opacity: 0.8,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
+            vertexColors: true, size: 10,
+            transparent: true, opacity: 0.8,
+            depthWrite: false, blending: THREE.AdditiveBlending
         });
         const snowSystem = new THREE.Points(snowGeo, snowMat);
         scene.add(snowSystem);
@@ -386,73 +469,117 @@
         snake = new Organism();
         spawnNutrients();
 
-        const rc = new THREE.Raycaster();
-        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        // Position camera behind snake's initial heading
+        const initBehind = snake.headVelocity.clone().negate().multiplyScalar(400);
+        camera.position.set(initBehind.x, 280, initBehind.z);
+        camTarget.copy(snake.nodes[0].mesh.position);
 
-        function updateWorldCoords(x, y) {
-            const m = new THREE.Vector2((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
-            rc.setFromCamera(m, camera);
-            rc.ray.intersectPlane(plane, touchWorldPos);
+        // ── Raycaster (shared by all pointer inputs) ───────────────────────────────
+        const rc = new THREE.Raycaster();
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        function screenToWorld(x, y, out) {
+            const ndc = new THREE.Vector2(
+                (x / window.innerWidth)  *  2 - 1,
+                (y / window.innerHeight) * -2 + 1
+            );
+            rc.setFromCamera(ndc, camera);
+            rc.ray.intersectPlane(groundPlane, out);
         }
 
-        const touchHandleStart = (x, y) => {
+        // Returns true if the given mode can become active.
+        // 'drag' / 'touch' are "hard" inputs that block each other and keyboard.
+        // 'keyboard' blocks drag/touch.
+        // 'waypoint' (soft) is overridden by anything.
+        function canActivate(mode) {
+            if (!inputMode || inputMode === mode) return true;
+            if (inputMode === 'waypoint') return true; // soft — always overrideable
+            return false;
+        }
+
+        function activateMode(mode) {
+            if (inputMode === 'waypoint') { waypointPos = null; }
+            inputMode = mode;
+        }
+
+        // ── Keyboard ──────────────────────────────────────────────────────────────
+        const STEER_KEYS = new Set(['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d']);
+
+        window.addEventListener('keydown', (e) => {
             if (!isPlaying) return;
-            isTouching = true;
-            clickTarget = null;
-            updateWorldCoords(x, y);
-            dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
-        };
+            const key = e.key.toLowerCase();
+            if (!STEER_KEYS.has(key)) return;
+            if (!canActivate('keyboard')) return;
+            e.preventDefault();
+            activateMode('keyboard');
+            keysDown.add(key);
+        });
 
-        const touchHandleMove = (x, y) => {
-            if (isTouching) updateWorldCoords(x, y);
-        };
+        window.addEventListener('keyup', (e) => {
+            keysDown.delete(e.key.toLowerCase());
+            if (inputMode === 'keyboard' && keysDown.size === 0) inputMode = null;
+        });
 
-        const touchHandleEnd = () => isTouching = false;
-
-        window.addEventListener('touchstart', (e) => {
-            touchHandleStart(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            touchHandleMove(e.touches[0].clientX, e.touches[0].clientY);
-            if (isPlaying) e.preventDefault();
-        }, { passive: false });
-
-        window.addEventListener('touchend', touchHandleEnd, { passive: true });
-
-        // Mouse: distinguish click from drag
-        let mouseDownCoords = null;
+        // ── Mouse ─────────────────────────────────────────────────────────────────
+        let mouseDownAt  = null;
+        let isDragging   = false;
         const DRAG_THRESHOLD = 6;
 
         window.addEventListener('mousedown', (e) => {
             if (!isPlaying) return;
-            mouseDownCoords = { x: e.clientX, y: e.clientY };
+            if (!canActivate('drag')) return;
+            mouseDownAt = { x: e.clientX, y: e.clientY };
+            isDragging = false;
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (!mouseDownCoords) return;
-            const dx = e.clientX - mouseDownCoords.x;
-            const dy = e.clientY - mouseDownCoords.y;
-            if (!isTouching && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
-                isTouching = true;
-                clickTarget = null;
-                updateWorldCoords(mouseDownCoords.x, mouseDownCoords.y);
-                dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
+            if (!mouseDownAt) return;
+            if (!isDragging) {
+                const dx = e.clientX - mouseDownAt.x;
+                const dy = e.clientY - mouseDownAt.y;
+                if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) {
+                    if (!canActivate('drag')) { mouseDownAt = null; return; }
+                    isDragging = true;
+                    activateMode('drag');
+                    screenToWorld(mouseDownAt.x, mouseDownAt.y, dragWorldPos);
+                }
             }
-            if (isTouching) updateWorldCoords(e.clientX, e.clientY);
+            if (isDragging) screenToWorld(e.clientX, e.clientY, dragWorldPos);
         });
 
         window.addEventListener('mouseup', (e) => {
-            if (!isPlaying || !mouseDownCoords) { mouseDownCoords = null; return; }
-            if (isTouching) {
-                isTouching = false;
-            } else {
-                // It was a click — set persistent target
-                updateWorldCoords(e.clientX, e.clientY);
-                clickTarget = touchWorldPos.clone();
+            if (!mouseDownAt) return;
+            const wasDrag = isDragging;
+            isDragging = false;
+            if (inputMode === 'drag') inputMode = null;
+
+            if (!wasDrag && isPlaying && canActivate('drag')) {
+                // Click → waypoint navigation
+                const wp = new THREE.Vector3();
+                screenToWorld(e.clientX, e.clientY, wp);
+                waypointPos = wp;
+                activateMode('waypoint');
             }
-            mouseDownCoords = null;
+            mouseDownAt = null;
         });
+
+        // ── Touch ─────────────────────────────────────────────────────────────────
+        window.addEventListener('touchstart', (e) => {
+            if (!isPlaying) return;
+            if (!canActivate('touch')) return;
+            activateMode('touch');
+            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (inputMode !== 'touch') return;
+            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (inputMode === 'touch') inputMode = null;
+        }, { passive: true });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -464,10 +591,13 @@
     }
 
     function spawnNutrients() {
-        for(let i=0; i<300; i++) {
+        for (let i = 0; i < 300; i++) {
             const b = new THREE.Mesh(
                 new THREE.TetrahedronGeometry(11, 0),
-                new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
+                new THREE.MeshBasicMaterial({
+                    color: 0x00ffcc, wireframe: true,
+                    transparent: true, opacity: 1, depthWrite: false
+                })
             );
             b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
             b.renderOrder = 500;
@@ -481,6 +611,7 @@
         ui.style.opacity = '0';
         setTimeout(() => {
             ui.style.display = 'none';
+            inputMode = null;
             isPlaying = true;
         }, 1000);
     }
@@ -491,13 +622,17 @@
         snake.update(t);
 
         const headPos = snake.nodes[0].mesh.position;
+        const h = 280 + snake.baseSize * 3;
+        const d = 420 + snake.baseSize * 3;
 
-        const h = 260 + (snake.baseSize * 4);
-        const d = 300 + (snake.baseSize * 4);
-        const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
+        // Chase camera: stay behind the snake's direction of travel
+        const behind = snake.headVelocity.clone().negate().multiplyScalar(d);
+        const desiredCamPos = headPos.clone().add(behind).add(new THREE.Vector3(0, h, 0));
+        camera.position.lerp(desiredCamPos, 0.08);
 
-        camera.position.lerp(desiredCamPos, 0.1);
-        camTarget.lerp(headPos, 0.15);
+        // Look slightly ahead of the head for a more dynamic feel
+        const lookAhead = headPos.clone().addScaledVector(snake.headVelocity, 100);
+        camTarget.lerp(lookAhead, 0.10);
         camera.lookAt(camTarget);
 
         snow.forEach(sys => {
@@ -510,10 +645,12 @@
                 if (f.position.distanceTo(headPos) < snake.baseSize + 15.0) {
                     scene.remove(f);
                     nutrients.splice(i, 1);
-                    snake.grow(0.6);
                     const b = new THREE.Mesh(
                         new THREE.TetrahedronGeometry(11, 0),
-                        new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
+                        new THREE.MeshBasicMaterial({
+                            color: 0x00ffcc, wireframe: true,
+                            transparent: true, opacity: 1, depthWrite: false
+                        })
                     );
                     b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
                     b.renderOrder = 500;
@@ -522,6 +659,7 @@
                 }
             });
         }
+
         renderer.render(scene, camera);
     }
 
