@@ -111,7 +111,10 @@
       "Bash(find /d/Github/kartoonerdotcom -type f \\\\\\(-name *.html -o -name *.css -o -name *.js -o -name *.json \\\\\\))",
       "Bash(for dir:*)",
       "Bash(do echo:*)",
-      "Read(//d/Github/kartoonerdotcom/**)"
+      "Read(//d/Github/kartoonerdotcom/**)",
+      "Bash(node -e \"require\\(''puppeteer''\\)\")",
+      "Bash(node -e \"require\\(''playwright''\\)\")",
+      "Bash(xargs -I{} taskkill //PID {} //F)"
     ],
     "deny": [],
     "ask": []

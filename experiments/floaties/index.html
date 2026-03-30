@@ -55,6 +55,7 @@
         }
 
         .subtitle {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
             font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.4em; color: #00f2ff;
             font-weight: 800; margin-bottom: 0.75rem;
             animation: floatSubtitle 9s ease-in-out infinite;
@@ -70,6 +71,7 @@
             display: block;
         }
         #btn-play {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
             background: transparent; border: 2.5px solid #00ffcc; color: #00ffcc;
             padding: 1.25rem 4.5rem; font-size: 1.125rem; font-weight: 900;
             text-transform: uppercase; letter-spacing: 0.3em; cursor: pointer;
@@ -111,6 +113,7 @@
     let dragOffset = new THREE.Vector3();
     let velocity = new THREE.Vector3(0, 0, 1.2);
     let camTarget = new THREE.Vector3();
+    let clickTarget = null;
 
     const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
 
@@ -158,7 +161,8 @@
             this.baseSize = 9.0;
             this.segmentCount = 52;
             this.spacing = 2.2;
-            this.swimSpeed = 1.0;
+            this.spacingFrames = 2;
+            this.swimSpeed = 2.5;
             this.posHistory = [];
 
             const headColor = new THREE.Color(0x00f2ff);
@@ -196,10 +200,24 @@
 
             if (isPlaying) {
                 if (isTouching) {
+                    dragOffset.multiplyScalar(0.92);
                     const target = touchWorldPos.clone().sub(dragOffset);
-                    head.position.lerp(target, 0.15);
+                    const dir = target.clone().sub(head.position);
+                    const dist = dir.length();
+                    const speed = Math.min(Math.max(dist * 0.2, 2.5), 10);
+                    if (dist > 0.5) head.position.add(dir.normalize().multiplyScalar(speed));
+                } else if (clickTarget) {
+                    const dir = clickTarget.clone().sub(head.position);
+                    const dist = dir.length();
+                    if (dist < this.baseSize) {
+                        clickTarget = null;
+                    } else {
+                        const speed = Math.min(Math.max(dist * 0.12, 2.5), 8);
+                        head.position.add(dir.normalize().multiplyScalar(speed));
+                    }
                 } else {
-                    head.position.add(velocity.clone().multiplyScalar(this.swimSpeed));
+                    const coast = Math.max(this.swimSpeed * 0.97, 2.5);
+                    head.position.add(velocity.clone().multiplyScalar(coast));
                 }
             } else {
                 head.position.x += Math.sin(t * 0.4) * 0.15;
@@ -220,21 +238,21 @@
                 camera.position.add(wrap);
                 camTarget.add(wrap);
                 touchWorldPos.add(wrap);
-                dragOffset.add(wrap);
+                if (clickTarget) clickTarget.add(wrap);
             }
 
-            // Record head position into history whenever it has moved at least spacing units,
-            // so each body segment can follow the exact path the head traced.
-            if (this.posHistory.length === 0 || head.position.distanceTo(this.posHistory[0]) >= this.spacing) {
-                this.posHistory.unshift(head.position.clone());
-                if (this.posHistory.length > this.nodes.length + 1) this.posHistory.length = this.nodes.length + 1;
-            }
+            // Record every frame so segments can index by i * spacingFrames.
+            this.posHistory.unshift(head.position.clone());
+            const maxHistory = (this.nodes.length - 1) * this.spacingFrames + 1;
+            if (this.posHistory.length > maxHistory) this.posHistory.length = maxHistory;
 
             for (let i = 1; i < this.nodes.length; i++) {
-                if (!this.posHistory[i]) break;
+                const idx = i * this.spacingFrames;
+                const prevIdx = (i - 1) * this.spacingFrames;
+                if (idx >= this.posHistory.length) break;
                 const follow = this.nodes[i].mesh;
-                follow.position.copy(this.posHistory[i]);
-                const raw = new THREE.Vector3().subVectors(this.posHistory[i], this.posHistory[i - 1]);
+                follow.position.copy(this.posHistory[idx]);
+                const raw = new THREE.Vector3().subVectors(this.posHistory[idx], this.posHistory[prevIdx]);
                 if (raw.lengthSq() > 0.0001) {
                     const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), raw.normalize().negate());
                     follow.quaternion.slerp(targetRot, 0.3);
@@ -242,8 +260,10 @@
             }
 
             const delta = head.position.clone().sub(prevHeadPos);
-            if (delta.length() > 0.01) {
+            const deltaLen = delta.length();
+            if (deltaLen > 0.01) {
                 velocity.copy(delta).normalize();
+                this.swimSpeed = deltaLen; // carry momentum into coast mode
                 head.lookAt(head.position.clone().add(velocity));
             }
 
@@ -375,32 +395,64 @@
             rc.ray.intersectPlane(plane, touchWorldPos);
         }
 
-        const handleStart = (x, y) => {
+        const touchHandleStart = (x, y) => {
             if (!isPlaying) return;
             isTouching = true;
+            clickTarget = null;
             updateWorldCoords(x, y);
             dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
         };
 
-        const handleMove = (x, y) => {
+        const touchHandleMove = (x, y) => {
             if (isTouching) updateWorldCoords(x, y);
         };
 
-        const handleEnd = () => isTouching = false;
+        const touchHandleEnd = () => isTouching = false;
 
         window.addEventListener('touchstart', (e) => {
-            handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            touchHandleStart(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            touchHandleMove(e.touches[0].clientX, e.touches[0].clientY);
             if (isPlaying) e.preventDefault();
         }, { passive: false });
 
-        window.addEventListener('touchend', handleEnd, { passive: true });
-        window.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
-        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchend', touchHandleEnd, { passive: true });
+
+        // Mouse: distinguish click from drag
+        let mouseDownCoords = null;
+        const DRAG_THRESHOLD = 6;
+
+        window.addEventListener('mousedown', (e) => {
+            if (!isPlaying) return;
+            mouseDownCoords = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDownCoords) return;
+            const dx = e.clientX - mouseDownCoords.x;
+            const dy = e.clientY - mouseDownCoords.y;
+            if (!isTouching && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+                isTouching = true;
+                clickTarget = null;
+                updateWorldCoords(mouseDownCoords.x, mouseDownCoords.y);
+                dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
+            }
+            if (isTouching) updateWorldCoords(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!isPlaying || !mouseDownCoords) { mouseDownCoords = null; return; }
+            if (isTouching) {
+                isTouching = false;
+            } else {
+                // It was a click — set persistent target
+                updateWorldCoords(e.clientX, e.clientY);
+                clickTarget = touchWorldPos.clone();
+            }
+            mouseDownCoords = null;
+        });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
