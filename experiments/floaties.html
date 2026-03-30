@@ -11,7 +11,7 @@
         body { 
             margin: 0; 
             overflow: hidden; 
-            background: #02050a; 
+            background: #010308; 
             font-family: 'Pixelify Sans', sans-serif;
             touch-action: none; 
             user-select: none;
@@ -24,7 +24,7 @@
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 1000; pointer-events: none;
-            background: rgba(2, 5, 10, 0.4);
+            background: rgba(1, 3, 8, 0.4);
             transition: opacity 1s ease;
         }
 
@@ -55,10 +55,6 @@
             border-radius: 4px; transition: all 0.4s ease;
             outline: none;
             font-family: 'Pixelify Sans', sans-serif;
-        }
-        #btn-play:focus {
-            box-shadow: 0 0 0 4px rgba(0, 255, 204, 0.5);
-            background: rgba(0, 255, 204, 0.05);
         }
         #btn-play:hover {
             background: rgba(0, 255, 204, 0.15);
@@ -95,10 +91,10 @@
         canvas.width = 512; canvas.height = 512;
         const ctx = canvas.getContext('2d');
         const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 512);
-        grad.addColorStop(0, '#3a1a00'); 
-        grad.addColorStop(0.3, '#1a0033'); 
-        grad.addColorStop(0.6, '#001a44'); 
-        grad.addColorStop(1, '#02050a'); 
+        grad.addColorStop(0, '#2a1a00'); 
+        grad.addColorStop(0.3, '#1a0022'); 
+        grad.addColorStop(0.6, '#001a33'); 
+        grad.addColorStop(1, '#010308'); 
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
         return new THREE.CanvasTexture(canvas);
@@ -106,7 +102,7 @@
 
     class Swirl {
         constructor() {
-            const geo = new THREE.TorusGeometry(50, 1.2, 8, 32);
+            const geo = new THREE.TorusGeometry(60, 1.5, 8, 32);
             this.mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
                 color: 0x00ffff,
                 transparent: true,
@@ -117,31 +113,32 @@
             this.mesh.rotation.x = Math.PI / 2;
             this.state = 'hidden';
             this.timer = 0;
-            this.life = 4 + Math.random() * 6;
+            this.life = 5 + Math.random() * 5;
             scene.add(this.mesh);
         }
 
         update(dt) {
             if (this.state === 'hidden') {
-                if (Math.random() < 0.0005) {
+                if (Math.random() < 0.0006) {
                     this.state = 'fadein';
                     this.mesh.position.set((Math.random() - 0.5) * worldSize, -40, (Math.random() - 0.5) * worldSize);
-                    this.mesh.scale.setScalar(0.2);
+                    this.mesh.scale.setScalar(0.1);
                 }
             } else if (this.state === 'fadein') {
-                this.mesh.material.opacity += dt * 0.1;
-                if (this.mesh.material.opacity >= 0.15) {
-                    this.mesh.material.opacity = 0.15;
+                this.mesh.material.opacity += dt * 0.15;
+                this.mesh.scale.setScalar(this.mesh.scale.x + dt * 0.4);
+                if (this.mesh.material.opacity >= 0.12) {
+                    this.mesh.material.opacity = 0.12;
                     this.state = 'active';
                     this.timer = 0;
                 }
             } else if (this.state === 'active') {
                 this.timer += dt;
-                this.mesh.rotation.z += dt * 1.5;
-                this.mesh.scale.setScalar(this.mesh.scale.x + dt * 0.05);
+                this.mesh.rotation.z += dt * 1.2;
+                this.mesh.scale.setScalar(this.mesh.scale.x + dt * 0.02);
                 if (this.timer > this.life) this.state = 'fadeout';
             } else if (this.state === 'fadeout') {
-                this.mesh.material.opacity -= dt * 0.1;
+                this.mesh.material.opacity -= dt * 0.15;
                 if (this.mesh.material.opacity <= 0) {
                     this.mesh.material.opacity = 0;
                     this.state = 'hidden';
@@ -165,7 +162,7 @@
                 color: 0xffffff, 
                 wireframe: true, 
                 transparent: true, 
-                opacity: 0.1,
+                opacity: 0.12,
                 depthTest: false
             }));
             wire.renderOrder = order + 1;
@@ -178,9 +175,9 @@
     class Organism {
         constructor() {
             this.nodes = [];
-            this.baseSize = 11.0; 
-            this.segmentCount = 65;
-            this.spacing = 2.5; 
+            this.baseSize = 11.5; 
+            this.segmentCount = 70;
+            this.spacing = 2.4; 
             this.swimSpeed = 1.05;
 
             const headColor = new THREE.Color(0x00f2ff);
@@ -188,8 +185,8 @@
 
             for (let i = 0; i < this.segmentCount; i++) {
                 const pct = i / this.segmentCount;
-                const taper = Math.pow(pct, 3.0);
-                const r = this.baseSize * (1 - taper * 0.8);
+                const taper = Math.pow(pct, 2.8);
+                const r = this.baseSize * (1 - taper * 0.85);
                 const color = headColor.clone().lerp(tailColor, pct);
                 const node = new Part(r, color, i === 0 ? 1.0 : 0.85, 20000 - i * 10);
                 this.nodes.push(node);
@@ -224,7 +221,11 @@
                     }
                     head.position.lerp(target, 0.15); 
                 } else {
-                    head.position.add(moveVelocity.clone().multiplyScalar(this.swimSpeed));
+                    // Constant slow movement with organic "life" wiggle
+                    const wiggleX = Math.sin(t * 1.2) * 0.25;
+                    const wiggleY = Math.cos(t * 0.8) * 0.1;
+                    const wiggleVec = new THREE.Vector3(wiggleX, wiggleY, 0).applyQuaternion(head.quaternion);
+                    head.position.add(moveVelocity.clone().multiplyScalar(this.swimSpeed).add(wiggleVec));
                 }
             } else {
                 head.position.x += Math.sin(t * 0.4) * 0.15;
@@ -252,13 +253,14 @@
                 const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
                 follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
                 const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
-                follow.quaternion.slerp(targetRot, 0.2);
+                follow.quaternion.slerp(targetRot, 0.15);
             }
 
             const delta = head.position.clone().sub(prevHeadPos);
-            if (delta.length() > 0.01) {
+            if (delta.length() > 0.001) {
                 moveVelocity.copy(delta).normalize();
-                head.lookAt(head.position.clone().add(moveVelocity));
+                const headRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), moveVelocity);
+                head.quaternion.slerp(headRot, 0.12);
             }
 
             const snap = (Math.sin(t * 12) + 1) * 0.5;
@@ -268,16 +270,16 @@
 
         grow(n) {
             this.baseSize += n;
-            const sc = 1 + (this.baseSize - 11.0) * 0.05;
+            const sc = 1 + (this.baseSize - 11.5) * 0.045;
             this.nodes.forEach(node => node.mesh.scale.setScalar(sc));
-            this.spacing = 2.5 * sc;
+            this.spacing = 2.4 * sc;
         }
     }
 
     function init() {
         scene = new THREE.Scene();
         clock = new THREE.Clock();
-        scene.fog = new THREE.FogExp2(0x02050a, 0.00075);
+        scene.fog = new THREE.FogExp2(0x010308, 0.00085);
         
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 25000);
         camera.position.set(0, 300, 450); 
@@ -285,7 +287,7 @@
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x02050a, 1);
+        renderer.setClearColor(0x010308, 1);
         document.body.appendChild(renderer.domElement);
 
         const background = new THREE.Mesh(
@@ -302,18 +304,18 @@
 
         regions.forEach(region => {
             const glow = new THREE.Mesh(
-                new THREE.SphereGeometry(6000, 16, 16),
-                new THREE.MeshBasicMaterial({ color: region.col, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending })
+                new THREE.SphereGeometry(6500, 16, 16),
+                new THREE.MeshBasicMaterial({ color: region.col, transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             glow.position.set(region.pos[0] * worldSize, 0, region.pos[1] * worldSize);
             scene.add(glow);
         });
 
-        for(let i = 0; i < 70; i++) {
+        for(let i = 0; i < 80; i++) {
             const size = 1500 + Math.random() * 3500;
             const cloud = new THREE.Mesh(
                 new THREE.SphereGeometry(size, 12, 12),
-                new THREE.MeshBasicMaterial({ color: RAINBOW_PALETTE[i % RAINBOW_PALETTE.length], transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending })
+                new THREE.MeshBasicMaterial({ color: RAINBOW_PALETTE[i % RAINBOW_PALETTE.length], transparent: true, opacity: 0.07, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             cloud.position.set((Math.random()-0.5)*worldSize*9, (Math.random()-0.5)*3500, (Math.random()-0.5)*worldSize*9);
             scene.add(cloud);
@@ -335,33 +337,33 @@
             return new THREE.Points(geo, new THREE.PointsMaterial({ vertexColors: true, size: size, transparent: true, opacity: opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
         };
 
-        snow = createSnow(5000, 6, 0.7, 9);
+        snow = createSnow(6000, 5, 0.6, 9);
         scene.add(snow);
-        fgSnow = createSnow(400, 25, 0.1, 5);
+        fgSnow = createSnow(600, 20, 0.08, 5);
         scene.add(fgSnow);
 
-        for(let i=0; i<80; i++) {
-            const dGeo = new THREE.IcosahedronGeometry(15 + Math.random()*30, 0);
-            const dMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04, depthWrite: false });
+        for(let i=0; i<120; i++) {
+            const dGeo = new THREE.IcosahedronGeometry(10 + Math.random()*20, 0);
+            const dMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.03, depthWrite: false });
             const dMesh = new THREE.Mesh(dGeo, dMat);
             dMesh.position.set((Math.random()-0.5)*worldSize*5, (Math.random()-0.5)*1200, (Math.random()-0.5)*worldSize*5);
-            dMesh.userData.speed = Math.random() * 0.3 + 0.05;
+            dMesh.userData.speed = Math.random() * 0.2 + 0.05;
             scene.add(dMesh);
             debris.push(dMesh);
         }
 
-        for(let i=0; i<15; i++) {
-            const size = 200 + Math.random() * 400;
+        for(let i=0; i<25; i++) {
+            const size = 250 + Math.random() * 500;
             const oGeo = new THREE.IcosahedronGeometry(size, 1);
-            const oMat = new THREE.MeshBasicMaterial({ color: 0x050a15, transparent: true, opacity: 0.4, depthWrite: false });
+            const oMat = new THREE.MeshBasicMaterial({ color: 0x03060c, transparent: true, opacity: 0.5, depthWrite: false });
             const oMesh = new THREE.Mesh(oGeo, oMat);
-            oMesh.position.set((Math.random()-0.5)*worldSize*4, -800 - Math.random()*500, (Math.random()-0.5)*worldSize*4);
-            oMesh.userData.rotSpeed = (Math.random() - 0.5) * 0.001;
+            oMesh.position.set((Math.random()-0.5)*worldSize*4.5, -900 - Math.random()*600, (Math.random()-0.5)*worldSize*4.5);
+            oMesh.userData.rotSpeed = (Math.random() - 0.5) * 0.0008;
             scene.add(oMesh);
             ominousObjects.push(oMesh);
         }
 
-        for(let i=0; i<8; i++) {
+        for(let i=0; i<12; i++) {
             swirls.push(new Swirl());
         }
 
@@ -424,9 +426,10 @@
     }
 
     function startPlay() {
-        document.getElementById('ui-root').style.opacity = '0';
+        const ui = document.getElementById('ui-root');
+        ui.style.opacity = '0';
         setTimeout(() => { 
-            document.getElementById('ui-root').style.display = 'none'; 
+            ui.style.display = 'none'; 
             isPlaying = true; 
         }, 1000);
     }
@@ -449,17 +452,17 @@
             camera.lookAt(camTarget);
         }
 
-        if (snow) snow.rotation.y += 0.0004;
-        if (fgSnow) fgSnow.rotation.y += 0.0012;
+        if (snow) snow.rotation.y += 0.0003;
+        if (fgSnow) fgSnow.rotation.y += 0.001;
 
         debris.forEach(d => {
-            d.position.y += Math.sin(t * d.userData.speed) * 0.25;
-            d.rotation.x += 0.008;
+            d.position.y += Math.sin(t * d.userData.speed) * 0.2;
+            d.rotation.x += 0.005;
         });
 
         ominousObjects.forEach(o => {
             o.rotation.y += o.userData.rotSpeed;
-            o.position.x += Math.sin(t * 0.05) * 0.04;
+            o.position.x += Math.sin(t * 0.04) * 0.03;
         });
 
         swirls.forEach(s => s.update(dt));
@@ -469,7 +472,7 @@
             f.rotation.y += f.userData.rotSpeed;
             if (isPlaying && snake && f.position.distanceTo(snake.nodes[0].mesh.position) < snake.baseSize + 18.0) {
                 f.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
-                snake.grow(0.5);
+                snake.grow(0.4);
             }
         });
 
