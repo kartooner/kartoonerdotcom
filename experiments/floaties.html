@@ -50,7 +50,7 @@
 
         #btn-play {
             background: transparent; border: 3px solid #00ffcc; color: #00ffcc;
-            padding: 1.25rem 5rem; font-size: 1.5rem; font-weight: 600;
+            padding: 1.25rem 5rem; font-size: 2rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 0.15em; cursor: pointer;
             border-radius: 4px; transition: all 0.4s ease;
             outline: none;
@@ -78,7 +78,7 @@
 
 <script>
     let scene, camera, renderer, clock;
-    let snake, nutrients = [], snow = [], fgSnow = [], nebulaClouds = [];
+    let snake, nutrients = [], snow, fgSnow, nebulaClouds = [];
     let worldSize = 2500;
     let isTouching = false;
     let isPlaying = false;
@@ -125,11 +125,7 @@
             wire.renderOrder = order + 1;
             this.mesh.add(wire);
             
-            // Store base data for pulsing
-            this.baseScale = 1.0;
-            this.pulseTimer = 0;
             this.baseColor = new THREE.Color(color);
-            
             scene.add(this.mesh);
         }
     }
@@ -141,7 +137,7 @@
             this.segmentCount = 55;
             this.spacing = 2.2; 
             this.swimSpeed = 1.05;
-            this.pulseWave = 0; // Wave that travels down body
+            this.pulseWave = 0;
 
             const headColor = new THREE.Color(0x00f2ff);
             const tailColor = new THREE.Color(0xffaa00); 
@@ -150,25 +146,21 @@
                 const pct = i / this.segmentCount;
                 const r = this.baseSize * (1 - pct * 0.88);
                 const color = headColor.clone().lerp(tailColor, pct);
-                const order = 20000 - i * 10;
-                const node = new Part(r, color, i === 0 ? 1.0 : 0.8, order);
+                const node = new Part(r, color, i === 0 ? 1.0 : 0.8, 20000 - i * 10);
                 this.nodes.push(node);
                 if (i > 0) {
                     node.mesh.position.set(0, 0, -i * this.spacing);
                 }
             }
 
-            const tGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
-            const tMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
-            this.lJaw = new THREE.Mesh(tGeo, tMat);
+            const jGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
+            const jMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
+            this.lJaw = new THREE.Mesh(jGeo, jMat);
             this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
             this.lJaw.rotation.x = Math.PI / 2;
-            this.lJaw.renderOrder = 20100;
             this.nodes[0].mesh.add(this.lJaw);
-            
             this.rJaw = this.lJaw.clone();
             this.rJaw.position.x = -this.baseSize * 0.35;
-            this.rJaw.renderOrder = 20100;
             this.nodes[0].mesh.add(this.rJaw);
         }
 
@@ -182,6 +174,7 @@
 
             if (isPlaying) {
                 if (isTouching) {
+                    // Control logic restored
                     const target = touchWorldPos.clone().sub(dragOffset);
                     const dist = head.position.distanceTo(target);
                     const maxLeash = 120;
@@ -189,7 +182,7 @@
                         const clampedDir = new THREE.Vector3().subVectors(target, head.position).setLength(maxLeash);
                         target.copy(head.position).add(clampedDir);
                     }
-                    head.position.lerp(target, 1 - Math.pow(0.001, dt)); 
+                    head.position.lerp(target, 0.15); 
                 } else {
                     head.position.add(moveVelocity.clone().multiplyScalar(this.swimSpeed));
                 }
@@ -213,10 +206,7 @@
                 dragOffset.add(wrap);
             }
 
-            // Move the pulse wave down the body
-            if (this.pulseWave > 0) {
-                this.pulseWave -= dt * 2.0; 
-            }
+            if (this.pulseWave > 0) this.pulseWave -= dt * 2.0;
 
             for (let i = 1; i < this.nodes.length; i++) {
                 const lead = this.nodes[i - 1].mesh;
@@ -225,9 +215,8 @@
                 const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
                 follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
                 const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
-                follow.quaternion.slerp(targetRot, 1 - Math.pow(0.01, dt));
+                follow.quaternion.slerp(targetRot, 0.2);
 
-                // Pulse Logic
                 const nodePct = i / this.segmentCount;
                 const waveImpact = Math.max(0, 1 - Math.abs(this.pulseWave - nodePct) * 5.0);
                 const s = 1.0 + waveImpact * 0.4;
@@ -248,13 +237,9 @@
 
         grow(n) {
             this.baseSize += n;
-            const s = 1 + (this.baseSize - 9.0) * 0.08;
-            this.nodes.forEach(node => {
-                const nodePct = node.mesh.renderOrder / 20000; // rough proxy
-                // Re-apply base scaling factors
-                node.mesh.scale.setScalar(s);
-            });
-            this.spacing = 2.2 * s;
+            const sc = 1 + (this.baseSize - 9.0) * 0.08;
+            this.nodes.forEach(node => node.mesh.scale.setScalar(sc));
+            this.spacing = 2.2 * sc;
         }
     }
 
@@ -265,7 +250,6 @@
         
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 25000);
         camera.position.set(0, 300, 450); 
-        camera.up.set(0, 1, 0); 
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -277,22 +261,20 @@
             new THREE.SphereGeometry(18000, 32, 32),
             new THREE.MeshBasicMaterial({ map: createBackdrop(), side: THREE.BackSide, depthWrite: false })
         );
-        background.renderOrder = -100;
         scene.add(background);
 
-        // Rainbow Gradient regions
         const regions = [
             { pos: [1.3, 1.3], col: 0xffaa00 }, { pos: [-1.3, 1.3], col: 0x00f2ff },  
             { pos: [1.3, -1.3], col: 0xff00cc }, { pos: [-1.3, -1.3], col: 0x00ffcc }, 
             { pos: [0, 1.9], col: 0x7700ff }, { pos: [0, -1.9], col: 0xff8800 }     
         ];
 
-        regions.forEach(region => {
+        regions.forEach(r => {
             const glow = new THREE.Mesh(
                 new THREE.SphereGeometry(5000 + Math.random() * 2000, 16, 16),
-                new THREE.MeshBasicMaterial({ color: region.col, transparent: true, opacity: 0.15, depthWrite: false, blending: THREE.AdditiveBlending })
+                new THREE.MeshBasicMaterial({ color: r.col, transparent: true, opacity: 0.15, depthWrite: false, blending: THREE.AdditiveBlending })
             );
-            glow.position.set(region.pos[0] * worldSize, 0, region.pos[1] * worldSize);
+            glow.position.set(r.pos[0] * worldSize, 0, r.pos[1] * worldSize);
             scene.add(glow);
         });
 
@@ -307,7 +289,6 @@
             nebulaClouds.push(cloud);
         }
 
-        // Particle systems
         const createSnow = (count, size, opacity, range) => {
             const geo = new THREE.BufferGeometry();
             const pos = new Float32Array(count * 3);
@@ -326,8 +307,6 @@
 
         snow = createSnow(4000, 10, 0.7, 9);
         scene.add(snow);
-
-        // Foreground faster snow
         fgSnow = createSnow(300, 40, 0.1, 5);
         scene.add(fgSnow);
 
@@ -354,14 +333,16 @@
             const x = e.touches ? e.touches[0].clientX : e.clientX;
             const y = e.touches ? e.touches[0].clientY : e.clientY;
             updateCoords(x, y);
-            if (isPlaying && e.touches) e.preventDefault();
         };
 
         window.addEventListener('mousedown', handleStart);
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', () => isTouching = false);
         window.addEventListener('touchstart', handleStart, { passive: false });
-        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            handleMove(e);
+            if (isPlaying) e.preventDefault();
+        }, { passive: false });
         window.addEventListener('touchend', () => isTouching = false);
 
         window.addEventListener('resize', () => {
@@ -380,8 +361,7 @@
                 new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
             );
             b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
-            // Nutrient bob data
-            b.userData.offset = Math.random() * Math.PI * 2;
+            b.userData.offset = Math.random() * 6.28;
             b.userData.rotSpeed = (Math.random() - 0.5) * 0.05;
             scene.add(b);
             nutrients.push(b);
@@ -389,16 +369,14 @@
     }
 
     function startPlay() {
-        const ui = document.getElementById('ui-root');
-        ui.style.opacity = '0';
-        setTimeout(() => { ui.style.display = 'none'; isPlaying = true; }, 1000);
+        document.getElementById('ui-root').style.opacity = '0';
+        setTimeout(() => { document.getElementById('ui-root').style.display = 'none'; isPlaying = true; }, 1000);
     }
 
     function animate() {
         requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
-        let dt = clock.getDelta();
-        dt = Math.min(dt, 0.1); 
+        const dt = Math.min(clock.getDelta(), 0.1); 
 
         snake.update(t, dt);
 
@@ -407,19 +385,16 @@
         const d = 320 + (snake.baseSize * 4);
         const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
         
-        camera.position.lerp(desiredCamPos, 1 - Math.pow(0.001, dt));
-        camTarget.lerp(headPos, 1 - Math.pow(0.0001, dt));
+        camera.position.lerp(desiredCamPos, 0.15);
+        camTarget.lerp(headPos, 0.2);
         camera.lookAt(camTarget);
 
         snow.rotation.y += 0.0006;
-        fgSnow.rotation.y += 0.002; // Faster foreground movement
+        fgSnow.rotation.y += 0.002;
 
         nutrients.forEach((f) => {
-            // Liquid bobbing
             f.position.y = Math.sin(t * 1.5 + f.userData.offset) * 10;
             f.rotation.y += f.userData.rotSpeed;
-            f.rotation.z += f.userData.rotSpeed * 0.5;
-
             if (isPlaying && f.position.distanceTo(headPos) < snake.baseSize + 18.0) {
                 f.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
                 snake.grow(0.65);
@@ -434,3 +409,4 @@
 </script>
 </body>
 </html>
+
