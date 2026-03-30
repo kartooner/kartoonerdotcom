@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nebula Floaties</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #02050a; 
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        #ui-root {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; pointer-events: none;
+            background: rgba(2, 5, 10, 0.4);
+            transition: opacity 1s ease;
+        }
+
+        #menu {
+            pointer-events: auto; text-align: center; padding: 2rem;
+        }
+        
+        @keyframes floatSubtitle {
+            0%, 100% { transform: translateY(0) rotate(0.5deg); opacity: 0.7; }
+            50% { transform: translateY(-10px) rotate(-0.5deg); opacity: 1; }
+        }
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); filter: blur(0px); }
+            50% { transform: translateY(-12px) rotate(0.5deg); filter: blur(0.8px); }
+        }
+
+        .subtitle {
+            font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.4em; color: #00f2ff;
+            font-weight: 800; margin-bottom: 0.75rem;
+            animation: floatSubtitle 9s ease-in-out infinite;
+            display: inline-block;
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.6);
+        }
+        .title {
+            font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #fff; font-style: italic;
+            letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 2.5rem;
+            text-shadow: 0 0 50px rgba(255, 170, 0, 0.6);
+            animation: floatTitle 8s ease-in-out infinite;
+            display: block;
+        }
+        #btn-play {
+            background: transparent; border: 2.5px solid #00ffcc; color: #00ffcc;
+            padding: 1.25rem 4.5rem; font-size: 1.125rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.3em; cursor: pointer;
+            border-radius: 8px; transition: all 0.4s ease;
+            outline: none;
+        }
+        #btn-play:focus {
+            box-shadow: 0 0 0 4px rgba(0, 255, 204, 0.5);
+            background: rgba(0, 255, 204, 0.05);
+        }
+        #btn-play:hover {
+            background: rgba(0, 255, 204, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            transform: scale(1.02);
+        }
+        #btn-play:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-root" aria-live="polite">
+    <div id="menu" role="dialog" aria-labelledby="main-title">
+        <div class="subtitle">Primordial Glow</div>
+        <h1 class="title" id="main-title">Nebula Floaties</h1>
+        <button id="btn-play" onclick="startPlay()" aria-label="Start the simulation">Play</button>
+    </div>
+</div>
+
+<script>
+    let scene, camera, renderer, clock;
+    let snake, nutrients = [], snow = [], pillars = [], nebulaClouds = [];
+    let worldSize = 2500;
+    let isTouching = false;
+    let isPlaying = false;
+    
+    let touchWorldPos = new THREE.Vector3();
+    let dragOffset = new THREE.Vector3();
+    let velocity = new THREE.Vector3(0, 0, 1.2);
+    let camTarget = new THREE.Vector3();
+
+    const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
+
+    function createBackdrop() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 512);
+        grad.addColorStop(0, '#332200'); 
+        grad.addColorStop(0.3, '#1a0033'); 
+        grad.addColorStop(0.6, '#001a44'); 
+        grad.addColorStop(1, '#02050a'); 
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    class Part {
+        constructor(radius, color, opacity, order) {
+            const geo = new THREE.IcosahedronGeometry(radius, 1);
+            this.mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ 
+                color: color, 
+                transparent: true, 
+                opacity: opacity,
+                depthTest: false 
+            }));
+            this.mesh.renderOrder = order; 
+            
+            const wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.35,
+                depthTest: false
+            }));
+            wire.renderOrder = order + 1;
+            this.mesh.add(wire);
+            scene.add(this.mesh);
+        }
+    }
+
+    class Organism {
+        constructor() {
+            this.nodes = [];
+            this.baseSize = 9.0; 
+            this.segmentCount = 52;
+            this.spacing = 2.2; 
+            this.swimSpeed = 1.0;
+
+            const headColor = new THREE.Color(0x00f2ff);
+            const tailColor = new THREE.Color(0xffaa00); 
+
+            for (let i = 0; i < this.segmentCount; i++) {
+                const pct = i / this.segmentCount;
+                const r = this.baseSize * (1 - pct * 0.9);
+                const color = headColor.clone().lerp(tailColor, pct);
+                const order = 20000 - i * 10;
+                const node = new Part(r, color, i === 0 ? 1.0 : 0.8, order);
+                this.nodes.push(node);
+                if (i > 0) {
+                    node.mesh.position.set(0, 0, -i * this.spacing);
+                }
+            }
+
+            const tGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
+            const tMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
+            this.lJaw = new THREE.Mesh(tGeo, tMat);
+            this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
+            this.lJaw.rotation.x = Math.PI / 2;
+            this.lJaw.renderOrder = 20100;
+            this.nodes[0].mesh.add(this.lJaw);
+            
+            this.rJaw = this.lJaw.clone();
+            this.rJaw.position.x = -this.baseSize * 0.35;
+            this.rJaw.renderOrder = 20100;
+            this.nodes[0].mesh.add(this.rJaw);
+        }
+
+        update(t) {
+            const head = this.nodes[0].mesh;
+            const prevHeadPos = head.position.clone();
+
+            if (isPlaying) {
+                if (isTouching) {
+                    const target = touchWorldPos.clone().sub(dragOffset);
+                    head.position.lerp(target, 0.15); 
+                } else {
+                    head.position.add(velocity.clone().multiplyScalar(this.swimSpeed));
+                }
+            } else {
+                head.position.x += Math.sin(t * 0.4) * 0.15;
+                head.position.z += Math.cos(t * 0.3) * 0.15;
+            }
+
+            const b = worldSize / 2;
+            let wrap = new THREE.Vector3();
+            if (head.position.x > b) wrap.x = -worldSize;
+            if (head.position.x < -b) wrap.x = worldSize;
+            if (head.position.z > b) wrap.z = -worldSize;
+            if (head.position.z < -b) wrap.z = worldSize;
+
+            if (wrap.length() > 0) {
+                head.position.add(wrap);
+                for (let i = 1; i < this.nodes.length; i++) this.nodes[i].mesh.position.add(wrap);
+                camera.position.add(wrap);
+                camTarget.add(wrap);
+                touchWorldPos.add(wrap);
+                dragOffset.add(wrap);
+            }
+
+            for (let i = 1; i < this.nodes.length; i++) {
+                const lead = this.nodes[i - 1].mesh;
+                const follow = this.nodes[i].mesh;
+                const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
+                follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
+                const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
+                follow.quaternion.slerp(targetRot, 0.2);
+            }
+
+            const delta = head.position.clone().sub(prevHeadPos);
+            if (delta.length() > 0.01) {
+                velocity.copy(delta).normalize();
+                head.lookAt(head.position.clone().add(velocity));
+            }
+
+            const snap = (Math.sin(t * 12) + 1) * 0.5;
+            this.lJaw.rotation.z = snap * 0.8;
+            this.rJaw.rotation.z = -snap * 0.8;
+        }
+
+        grow(n) {
+            this.baseSize += n;
+            const s = 1 + (this.baseSize - 9.0) * 0.08;
+            this.nodes.forEach(node => node.mesh.scale.setScalar(s));
+            this.spacing = 2.2 * s;
+        }
+    }
+
+    function init() {
+        scene = new THREE.Scene();
+        clock = new THREE.Clock();
+        scene.fog = new THREE.FogExp2(0x02050a, 0.0006);
+        
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
+        camera.position.set(0, 300, 450); 
+        camera.up.set(0, 1, 0); 
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x02050a, 1);
+        document.body.appendChild(renderer.domElement);
+
+        const background = new THREE.Mesh(
+            new THREE.SphereGeometry(18000, 32, 32),
+            new THREE.MeshBasicMaterial({ map: createBackdrop(), side: THREE.BackSide, depthWrite: false })
+        );
+        background.renderOrder = -100;
+        scene.add(background);
+
+        const corners = [
+            { pos: [1, 1], col: 0xffaa00 },   
+            { pos: [-1, 1], col: 0x00f2ff },  
+            { pos: [1, -1], col: 0xff0066 },  
+            { pos: [-1, -1], col: 0x00ffaa }, 
+            { pos: [0, 1.5], col: 0xffaa00 }, 
+            { pos: [0, -1.5], col: 0x5500ff } 
+        ];
+
+        corners.forEach(corner => {
+            const size = 3000 + Math.random() * 2000;
+            const glowGeo = new THREE.SphereGeometry(size, 16, 16);
+            const glowMat = new THREE.MeshBasicMaterial({ 
+                color: corner.col, 
+                transparent: true, 
+                opacity: 0.12, 
+                depthWrite: false, 
+                blending: THREE.AdditiveBlending
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.set(corner.pos[0] * worldSize, 0, corner.pos[1] * worldSize);
+            scene.add(glow);
+        });
+
+        for(let i = 0; i < 50; i++) {
+            const size = 1500 + Math.random() * 3000;
+            const cloudGeo = new THREE.SphereGeometry(size, 12, 12);
+            const cloudMat = new THREE.MeshBasicMaterial({ 
+                color: PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)], 
+                transparent: true, 
+                opacity: 0.1, 
+                depthWrite: false, 
+                blending: THREE.AdditiveBlending
+            });
+            const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+            cloud.position.set((Math.random()-0.5)*worldSize*8, (Math.random()-0.5)*3000, (Math.random()-0.5)*worldSize*8);
+            scene.add(cloud);
+            nebulaClouds.push(cloud);
+        }
+
+        for(let i=0; i<25; i++) {
+            const pGeo = new THREE.CylinderGeometry(150, 600, 12000, 12);
+            const pMat = new THREE.MeshBasicMaterial({ 
+                color: PHM_COLORS[Math.floor(Math.random()*PHM_COLORS.length)], 
+                transparent: true, 
+                opacity: 0.1, 
+                depthWrite: false, 
+                blending: THREE.AdditiveBlending
+            });
+            const pillar = new THREE.Mesh(pGeo, pMat);
+            pillar.position.set((Math.random()-0.5)*worldSize*9, 0, (Math.random()-0.5)*worldSize*9);
+            pillar.rotation.z = (Math.random()-0.5) * 3.14;
+            scene.add(pillar);
+            pillars.push(pillar);
+        }
+
+        const snowGeo = new THREE.BufferGeometry();
+        const snowCount = 4000;
+        const snowPos = new Float32Array(snowCount * 3);
+        const snowCols = new Float32Array(snowCount * 3);
+        for(let i=0; i<snowCount; i++) {
+            snowPos[i*3] = (Math.random()-0.5) * worldSize * 8;
+            snowPos[i*3+1] = (Math.random()-0.5) * 3000;
+            snowPos[i*3+2] = (Math.random()-0.5) * worldSize * 8;
+            const c = new THREE.Color(PHM_COLORS[Math.floor(Math.random()*PHM_COLORS.length)]);
+            snowCols[i*3] = c.r; snowCols[i*3+1] = c.g; snowCols[i*3+2] = c.b;
+        }
+        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+        snowGeo.setAttribute('color', new THREE.BufferAttribute(snowCols, 3));
+        const snowMat = new THREE.PointsMaterial({ 
+            vertexColors: true, 
+            size: 10, 
+            transparent: true, 
+            opacity: 0.8, 
+            depthWrite: false, 
+            blending: THREE.AdditiveBlending 
+        });
+        const snowSystem = new THREE.Points(snowGeo, snowMat);
+        scene.add(snowSystem);
+        snow.push(snowSystem);
+
+        snake = new Organism();
+        spawnNutrients();
+
+        const rc = new THREE.Raycaster();
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        function updateWorldCoords(x, y) {
+            const m = new THREE.Vector2((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
+            rc.setFromCamera(m, camera);
+            rc.ray.intersectPlane(plane, touchWorldPos);
+        }
+
+        const handleStart = (x, y) => {
+            if (!isPlaying) return;
+            isTouching = true;
+            updateWorldCoords(x, y);
+            dragOffset.copy(touchWorldPos).sub(snake.nodes[0].mesh.position);
+        };
+
+        const handleMove = (x, y) => {
+            if (isTouching) updateWorldCoords(x, y);
+        };
+
+        const handleEnd = () => isTouching = false;
+
+        window.addEventListener('touchstart', (e) => {
+            handleStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+        
+        window.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            if (isPlaying) e.preventDefault();
+        }, { passive: false });
+        
+        window.addEventListener('touchend', handleEnd, { passive: true });
+        window.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handleEnd);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    }
+
+    function spawnNutrients() {
+        for(let i=0; i<300; i++) {
+            const b = new THREE.Mesh(
+                new THREE.TetrahedronGeometry(11, 0),
+                new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
+            );
+            b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
+            b.renderOrder = 500;
+            scene.add(b);
+            nutrients.push(b);
+        }
+    }
+
+    function startPlay() {
+        const ui = document.getElementById('ui-root');
+        ui.style.opacity = '0';
+        setTimeout(() => {
+            ui.style.display = 'none';
+            isPlaying = true;
+        }, 1000);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        snake.update(t);
+
+        const headPos = snake.nodes[0].mesh.position;
+        
+        const h = 260 + (snake.baseSize * 4);
+        const d = 300 + (snake.baseSize * 4);
+        const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
+        
+        camera.position.lerp(desiredCamPos, 0.1);
+        camTarget.lerp(headPos, 0.15);
+        camera.lookAt(camTarget);
+
+        snow.forEach(sys => {
+            sys.rotation.y += 0.0012;
+            sys.position.y = Math.sin(t * 0.05) * 80;
+        });
+
+        if (isPlaying) {
+            nutrients.forEach((f, i) => {
+                if (f.position.distanceTo(headPos) < snake.baseSize + 15.0) {
+                    scene.remove(f);
+                    nutrients.splice(i, 1);
+                    snake.grow(0.6);
+                    const b = new THREE.Mesh(
+                        new THREE.TetrahedronGeometry(11, 0),
+                        new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 1, depthWrite: false })
+                    );
+                    b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
+                    b.renderOrder = 500;
+                    scene.add(b);
+                    nutrients.push(b);
+                }
+            });
+        }
+        renderer.render(scene, camera);
+    }
+
+    init();
+</script>
+</body>
+</html>
+
