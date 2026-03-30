@@ -7,6 +7,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @font-face {
+            font-family: 'Cartridge';
+            src: url('../../assets/fonts/Cartridge-Regular.woff2') format('woff2'),
+                 url('../../assets/fonts/Cartridge-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Cartridge';
+            src: url('../../assets/fonts/Cartridge-Rough.woff2') format('woff2'),
+                 url('../../assets/fonts/Cartridge-Rough.woff') format('woff');
+            font-weight: 900;
+            font-style: normal;
+        }
         body {
             margin: 0;
             overflow: hidden;
@@ -48,6 +62,7 @@
             text-shadow: 0 0 15px rgba(0, 242, 255, 0.6);
         }
         .title {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
             font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #fff; font-style: italic;
             letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 2.5rem;
             text-shadow: 0 0 50px rgba(255, 170, 0, 0.6);
