@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nebula Floaties</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            background: #01050a; 
-            font-family: 'Press Start 2P', cursive;
+            background: #02050a; 
+            font-family: 'Pixelify Sans', sans-serif;
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
@@ -24,7 +24,7 @@
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 1000; pointer-events: none;
-            background: rgba(1, 5, 10, 0.3);
+            background: rgba(2, 5, 10, 0.2);
             transition: opacity 1s ease;
         }
 
@@ -33,37 +33,33 @@
         }
         
         @keyframes floatTitle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+            50% { transform: translateY(-15px) rotate(0.5deg); }
         }
 
         .title {
-            font-size: clamp(2rem, 10vw, 5rem); 
+            font-size: clamp(3rem, 12vw, 8rem); 
+            font-weight: 600; 
             color: #fff; 
-            line-height: 1.2; 
-            margin-bottom: 4rem;
-            text-shadow: 6px 6px 0px #ffaa00, 12px 12px 0px rgba(0, 242, 255, 0.4);
-            animation: floatTitle 6s ease-in-out infinite;
+            line-height: 0.9; 
+            margin-bottom: 3.5rem;
+            text-shadow: 0 0 30px rgba(255, 170, 0, 0.8), 0 0 60px rgba(0, 242, 255, 0.5);
+            animation: floatTitle 8s ease-in-out infinite;
             display: block;
         }
 
         #btn-play {
-            background: transparent; border: 4px solid #00ffcc; color: #00ffcc;
-            padding: 1.5rem 4rem; font-size: 1.2rem; cursor: pointer;
-            transition: all 0.2s ease;
+            background: transparent; border: 3px solid #00ffcc; color: #00ffcc;
+            padding: 1.25rem 5rem; font-size: 2rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;
+            border-radius: 4px; transition: all 0.4s ease;
             outline: none;
-            font-family: 'Press Start 2P', cursive;
-            box-shadow: 4px 4px 0px #000;
+            font-family: 'Pixelify Sans', sans-serif;
         }
         #btn-play:hover {
-            background: #00ffcc;
-            color: #01050a;
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0px #000;
-        }
-        #btn-play:active {
-            transform: translate(2px, 2px);
-            box-shadow: 1px 1px 0px #000;
+            background: rgba(0, 255, 204, 0.2);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.4);
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -110,7 +106,8 @@
             this.baseSize = 9.5; 
             this.segmentCount = 50;
             this.spacing = 2.4; 
-            this.swimSpeed = 1.0;
+            this.swimSpeed = 1.1;
+            this.maxDragSpeed = 4.5; // HARD CAP to prevent slingshot
 
             const headColor = new THREE.Color(0x00f2ff);
             const tailColor = new THREE.Color(0xffaa00); 
@@ -147,21 +144,27 @@
             this.nodes[0].add(this.rJaw);
         }
 
-        update(t, isTouching, touchPos, offset, isPlaying) {
+        update(t, dt, isTouching, touchPos, offset, isPlaying) {
             const head = this.nodes[0];
             const prevPos = head.position.clone();
 
             if (isPlaying) {
                 if (isTouching) {
                     const target = touchPos.clone().sub(offset);
-                    // 1:1 follow with a smooth lerp to keep it liquid
-                    head.position.lerp(target, 0.2); 
+                    const diff = new THREE.Vector3().subVectors(target, head.position);
+                    const dist = diff.length();
+                    
+                    if (dist > 0.1) {
+                        // Apply movement with a hard speed cap to stop the slingshot
+                        // The multiplier (0.1) provides the liquid drag feel
+                        const moveStep = Math.min(dist * 0.1, this.maxDragSpeed);
+                        head.position.add(diff.normalize().multiplyScalar(moveStep));
+                    }
                 } else {
                     head.position.add(moveDir.clone().multiplyScalar(this.swimSpeed));
                 }
             }
 
-            // Wrap logic
             const b = worldSize / 2;
             let wrap = new THREE.Vector3();
             if (head.position.x > b) wrap.x = -worldSize;
@@ -174,14 +177,13 @@
                 return wrap;
             }
 
-            // Body Chain
             for (let i = 1; i < this.nodes.length; i++) {
                 const lead = this.nodes[i - 1];
                 const follow = this.nodes[i];
                 const d = new THREE.Vector3().subVectors(follow.position, lead.position).normalize();
                 follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
                 const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
-                follow.quaternion.slerp(targetRot, 0.2);
+                follow.quaternion.slerp(targetRot, 0.25);
             }
 
             const delta = head.position.clone().sub(prevPos);
@@ -217,7 +219,6 @@
         );
         scene.add(background);
 
-        // Rainbow Regions (Project Hail Mary style)
         const regions = [
             { pos: [1.3, 1.3], col: 0xffaa00 }, { pos: [-1.3, 1.3], col: 0x00f2ff },  
             { pos: [1.3, -1.3], col: 0xff00cc }, { pos: [-1.3, -1.3], col: 0x00ffcc }, 
@@ -232,18 +233,17 @@
             scene.add(glow);
         });
 
-        // Blended Clouds
         for(let i = 0; i < 70; i++) {
             const cloud = new THREE.Mesh(
                 new THREE.SphereGeometry(1500 + Math.random() * 3000, 12, 12),
-                new THREE.MeshBasicMaterial({ color: COLORS[i % COLORS.length], transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending })
+                new THREE.MeshBasicMaterial({ color: COLORS[i % COLORS.length], transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             cloud.position.set((Math.random()-0.5)*worldSize*8, (Math.random()-0.5)*3000, (Math.random()-0.5)*worldSize*8);
             scene.add(cloud);
         }
 
         const snowGeo = new THREE.BufferGeometry();
-        const snowCount = 3000;
+        const snowCount = 3500;
         const snowPos = new Float32Array(snowCount * 3);
         const snowCols = new Float32Array(snowCount * 3);
         for(let i=0; i<snowCount; i++) {
@@ -280,14 +280,13 @@
             const x = e.touches ? e.touches[0].clientX : e.clientX;
             const y = e.touches ? e.touches[0].clientY : e.clientY;
             updateCoords(x, y);
-            if (isPlaying && e.touches) e.preventDefault();
         };
 
         window.addEventListener('mousedown', handleStart);
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', () => isTouching = false);
-        window.addEventListener('touchstart', handleStart, { passive: false });
-        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchstart', handleStart, { passive: true });
+        window.addEventListener('touchmove', handleMove, { passive: true });
         window.addEventListener('touchend', () => isTouching = false);
 
         window.addEventListener('resize', () => {
@@ -310,7 +309,9 @@
     function animate() {
         requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
-        const wrap = snake.update(t, isTouching, touchWorldPos, dragOffset, isPlaying);
+        const dt = clock.getDelta();
+        
+        const wrap = snake.update(t, dt, isTouching, touchWorldPos, dragOffset, isPlaying);
         
         if (wrap) {
             camera.position.add(wrap);
@@ -324,11 +325,9 @@
         const d = 320 + (snake.baseSize * 4);
         const desiredCamPos = headPos.clone().add(new THREE.Vector3(0, h, d));
         
-        // FIXED OFFSET CAMERA
-        // Lower lerp value makes it feel smoother, higher keeps it tighter.
-        // We look directly at the head with no leading offset to prevent the surge.
-        camera.position.lerp(desiredCamPos, 0.15);
-        camFocalPoint.lerp(headPos, 0.2);
+        // Sticky Camera - No leading lookahead to stop surging
+        camera.position.lerp(desiredCamPos, 0.2);
+        camFocalPoint.lerp(headPos, 0.25);
         camera.lookAt(camFocalPoint);
 
         snow.rotation.y += 0.0006;
