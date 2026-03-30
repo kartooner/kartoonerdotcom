@@ -78,7 +78,7 @@
 
 <script>
     let scene, camera, renderer, clock;
-    let snake, nutrients = [], snow, fgSnow, nebulaClouds = [];
+    let snake, nutrients = [], snow, fgSnow, debris = [], nebulaClouds = [];
     let worldSize = 2500;
     let isTouching = false;
     let isPlaying = false;
@@ -119,7 +119,7 @@
                 color: 0xffffff, 
                 wireframe: true, 
                 transparent: true, 
-                opacity: 0.2,
+                opacity: 0.15,
                 depthTest: false
             }));
             wire.renderOrder = order + 1;
@@ -133,39 +133,37 @@
     class Organism {
         constructor() {
             this.nodes = [];
-            this.baseSize = 9.0; 
-            this.segmentCount = 55;
-            this.spacing = 2.2; 
+            this.baseSize = 10.0; 
+            this.segmentCount = 60;
+            this.spacing = 2.4; 
             this.swimSpeed = 1.05;
-            this.pulseWave = 0;
 
             const headColor = new THREE.Color(0x00f2ff);
             const tailColor = new THREE.Color(0xffaa00); 
 
             for (let i = 0; i < this.segmentCount; i++) {
                 const pct = i / this.segmentCount;
-                const r = this.baseSize * (1 - pct * 0.88);
+                // Snake-like tapering: stay thick for most of the body, taper late
+                const t = Math.pow(pct, 1.5);
+                const r = this.baseSize * (1 - t * 0.7);
+                
                 const color = headColor.clone().lerp(tailColor, pct);
-                const node = new Part(r, color, i === 0 ? 1.0 : 0.8, 20000 - i * 10);
+                const node = new Part(r, color, i === 0 ? 1.0 : 0.85, 20000 - i * 10);
                 this.nodes.push(node);
                 if (i > 0) {
                     node.mesh.position.set(0, 0, -i * this.spacing);
                 }
             }
 
-            const jGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
+            const jGeo = new THREE.ConeGeometry(this.baseSize * 0.22, this.baseSize * 0.6, 3);
             const jMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
             this.lJaw = new THREE.Mesh(jGeo, jMat);
-            this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
+            this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.4);
             this.lJaw.rotation.x = Math.PI / 2;
             this.nodes[0].mesh.add(this.lJaw);
             this.rJaw = this.lJaw.clone();
             this.rJaw.position.x = -this.baseSize * 0.35;
             this.nodes[0].mesh.add(this.rJaw);
-        }
-
-        triggerEatPulse() {
-            this.pulseWave = 1.0;
         }
 
         update(t, dt) {
@@ -174,7 +172,6 @@
 
             if (isPlaying) {
                 if (isTouching) {
-                    // Control logic restored
                     const target = touchWorldPos.clone().sub(dragOffset);
                     const dist = head.position.distanceTo(target);
                     const maxLeash = 120;
@@ -206,8 +203,6 @@
                 dragOffset.add(wrap);
             }
 
-            if (this.pulseWave > 0) this.pulseWave -= dt * 2.0;
-
             for (let i = 1; i < this.nodes.length; i++) {
                 const lead = this.nodes[i - 1].mesh;
                 const node = this.nodes[i];
@@ -216,12 +211,6 @@
                 follow.position.copy(lead.position).add(d.multiplyScalar(this.spacing));
                 const targetRot = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), d.negate());
                 follow.quaternion.slerp(targetRot, 0.2);
-
-                const nodePct = i / this.segmentCount;
-                const waveImpact = Math.max(0, 1 - Math.abs(this.pulseWave - nodePct) * 5.0);
-                const s = 1.0 + waveImpact * 0.4;
-                follow.scale.setScalar(s);
-                follow.material.color.copy(node.baseColor).lerp(new THREE.Color(0xffffff), waveImpact * 0.5);
             }
 
             const delta = head.position.clone().sub(prevHeadPos);
@@ -237,9 +226,9 @@
 
         grow(n) {
             this.baseSize += n;
-            const sc = 1 + (this.baseSize - 9.0) * 0.08;
+            const sc = 1 + (this.baseSize - 10.0) * 0.06;
             this.nodes.forEach(node => node.mesh.scale.setScalar(sc));
-            this.spacing = 2.2 * sc;
+            this.spacing = 2.4 * sc;
         }
     }
 
@@ -279,9 +268,8 @@
         });
 
         for(let i = 0; i < 70; i++) {
-            const size = 1500 + Math.random() * 3500;
             const cloud = new THREE.Mesh(
-                new THREE.SphereGeometry(size, 12, 12),
+                new THREE.SphereGeometry(1500 + Math.random() * 3500, 12, 12),
                 new THREE.MeshBasicMaterial({ color: RAINBOW_PALETTE[i % RAINBOW_PALETTE.length], transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending })
             );
             cloud.position.set((Math.random()-0.5)*worldSize*9, (Math.random()-0.5)*3500, (Math.random()-0.5)*worldSize*9);
@@ -309,6 +297,17 @@
         scene.add(snow);
         fgSnow = createSnow(300, 40, 0.1, 5);
         scene.add(fgSnow);
+
+        // Blurry out-of-focus debris
+        for(let i=0; i<40; i++) {
+            const dGeo = new THREE.IcosahedronGeometry(20 + Math.random()*40, 0);
+            const dMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, depthWrite: false });
+            const dMesh = new THREE.Mesh(dGeo, dMat);
+            dMesh.position.set((Math.random()-0.5)*worldSize*4, (Math.random()-0.5)*1000, (Math.random()-0.5)*worldSize*4);
+            dMesh.userData.speed = Math.random() * 0.5 + 0.1;
+            scene.add(dMesh);
+            debris.push(dMesh);
+        }
 
         snake = new Organism();
         spawnNutrients();
@@ -392,13 +391,17 @@
         snow.rotation.y += 0.0006;
         fgSnow.rotation.y += 0.002;
 
+        debris.forEach(d => {
+            d.position.y += Math.sin(t * d.userData.speed) * 0.5;
+            d.rotation.x += 0.01;
+        });
+
         nutrients.forEach((f) => {
             f.position.y = Math.sin(t * 1.5 + f.userData.offset) * 10;
             f.rotation.y += f.userData.rotSpeed;
             if (isPlaying && f.position.distanceTo(headPos) < snake.baseSize + 18.0) {
                 f.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
-                snake.grow(0.65);
-                snake.triggerEatPulse();
+                snake.grow(0.6);
             }
         });
 
