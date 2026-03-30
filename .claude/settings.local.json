@@ -115,7 +115,9 @@
       "Bash(node -e \"require\\(''puppeteer''\\)\")",
       "Bash(node -e \"require\\(''playwright''\\)\")",
       "Bash(xargs -I{} taskkill //PID {} //F)",
-      "Bash(npx --yes http-server -p 8000 --cors)"
+      "Bash(npx --yes http-server -p 8000 --cors)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__gemini-cli__gemini-youtube"
     ],
     "deny": [],
     "ask": []
