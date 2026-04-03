@@ -1,6 +1,33 @@
 {
-  "fetchedAt": "2026-03-23T15:40:46.594Z",
+  "fetchedAt": "2026-04-03T14:39:33.731Z",
   "movies": [
+    {
+      "title": "Backdraft",
+      "year": "1991",
+      "link": "https://letterboxd.com/kartooner/film/backdraft/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/5/0/0/0/9/50009-backdraft-0-600-0-900-crop.jpg?v=c3cf67bdce",
+      "stars": "★★★",
+      "rating": 3,
+      "date": "2026-04-02"
+    },
+    {
+      "title": "Fried Green Tomatoes",
+      "year": "1991",
+      "link": "https://letterboxd.com/kartooner/film/fried-green-tomatoes/",
+      "imageUrl": "https://a.ltrbxd.com/resized/sm/upload/ga/rd/2u/p6/wbRihqz7vjlFCaYb0bPj3aZqQXD-0-600-0-900-crop.jpg?v=9a0514624a",
+      "stars": "★★★★",
+      "rating": 4,
+      "date": "2026-03-31"
+    },
+    {
+      "title": "Elmer Gantry",
+      "year": "1960",
+      "link": "https://letterboxd.com/kartooner/film/elmer-gantry/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/3/8/1/2/4/38124-elmer-gantry-0-600-0-900-crop.jpg?v=992be89007",
+      "stars": "★★★½",
+      "rating": 3.5,
+      "date": "2026-03-31"
+    },
     {
       "title": "Project Hail Mary",
       "year": "2026",
@@ -9,33 +36,6 @@
       "stars": "★★★★½",
       "rating": 4.5,
       "date": "2026-03-21"
-    },
-    {
-      "title": "Hamnet",
-      "year": "2025",
-      "link": "https://letterboxd.com/kartooner/film/hamnet/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/7/7/2/2/3/2/772232-hamnet-0-600-0-900-crop.jpg?v=631489314d",
-      "stars": "★★★★",
-      "rating": 4,
-      "date": "2026-03-21"
-    },
-    {
-      "title": "Hoppers",
-      "year": "2026",
-      "link": "https://letterboxd.com/kartooner/film/hoppers/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/2/0/7/5/5/7/1207557-hoppers-0-600-0-900-crop.jpg?v=7711e7b5a7",
-      "stars": "★★★★",
-      "rating": 4,
-      "date": "2026-03-07"
-    },
-    {
-      "title": "Ghost",
-      "year": "1990",
-      "link": "https://letterboxd.com/kartooner/film/ghost/",
-      "imageUrl": "https://a.ltrbxd.com/resized/sm/upload/8n/7z/dy/d9/rtxy3cplRFPUvruZajpcoxOQ7bi-0-600-0-900-crop.jpg?v=5eb6ee5f42",
-      "stars": "★★★★",
-      "rating": 4,
-      "date": "2026-02-15"
     }
   ]
 }
