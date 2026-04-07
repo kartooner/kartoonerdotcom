@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InGen | Login</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Corporate Palette - WCAG AA Compliant Contrasts */
+            --primary: #0284c7; 
+            --primary-hover: #0369a1;
+            --bg-page: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #cbd5e1;
+            --focus-ring: #0284c733;
+            
+            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Libre Franklin', -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            background-image: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* --- Navigation --- */
+        .nav-main {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* --- Main Content Layout --- */
+        .wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 140px 1.5rem 120px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* --- Quote Section --- */
+        .quote-box {
+            max-width: 640px;
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .quote-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .quote-author {
+            font-family: 'Libre Franklin', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        /* --- Login Card --- */
+        .login-card {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 480px;
+            padding: 3rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header h1 {
+            font-size: 2.125rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        /* --- Forms --- */
+        .form-field {
+            margin-bottom: 1.5rem;
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.625rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .icon-overlay {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
+            font-family: inherit;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        /* Visibility Toggle */
+        .toggle-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            display: none; /* Only show when typing */
+            z-index: 10;
+        }
+
+        .toggle-btn.visible {
+            display: flex;
+        }
+
+        .toggle-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .eye-open, .eye-closed { display: none; }
+        .toggle-btn:not(.is-showing) .eye-open { display: block; }
+        .toggle-btn.is-showing .eye-closed { display: block; }
+
+        /* Helpers */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .remember-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Social/Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin: 1.5rem 0;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider span { padding: 0 1rem; }
+
+        .btn-google {
+            width: 100%;
+            padding: 0.75rem;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-google:hover {
+            background: #f8fafc;
+        }
+
+        .card-footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .card-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* --- Footer --- */
+        .teeth-strip {
+            width: 100%;
+            height: 80px;
+            overflow: hidden;
+            background: transparent;
+            margin-top: 4rem;
+        }
+
+        .site-footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 4rem 2.5rem 2rem;
+        }
+
+        .footer-grid {
+            max-width: 1200px;
+            margin: 0 auto 3rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-col h4 {
+            color: #fff;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+        }
+
+        .footer-col ul { list-style: none; }
+        .footer-col li { margin-bottom: 0.75rem; }
+        .footer-col a { color: inherit; text-decoration: none; font-size: 0.875rem; }
+        .footer-col a:hover { color: #fff; }
+
+        .footer-legal {
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid #1e293b;
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .nav-main { padding: 1rem; }
+            .nav-links { display: none; }
+            .footer-legal { flex-direction: column; gap: 1rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-main" aria-label="Main Navigation">
+        <a href="/" class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="3" y="7" width="4" height="10" rx="2"/>
+                <rect x="10" y="3" width="4" height="18" rx="2"/>
+                <rect x="17" y="3" width="4" height="18" rx="2"/>
+            </svg>
+            InGen
+        </a>
+        <div class="nav-links">
+            <a href="#">Solutions</a>
+            <a href="#">Security</a>
+            <a href="#">Help Center</a>
+        </div>
+    </nav>
+
+    <div class="wrapper">
+        <div class="container">
+            <section class="quote-box">
+                <p class="quote-text">
+                    "We've made living biological attractions so astounding that they'll capture the imagination of the entire planet."
+                </p>
+                <cite class="quote-author">John Hammond</cite>
+            </section>
+
+            <main class="login-card">
+                <header class="login-header">
+                    <h1>Welcome back</h1>
+                    <p>Enter employee credentials to continue.</p>
+                </header>
+
+                <form action="#" method="POST">
+                    <div class="form-field">
+                        <label for="email" class="field-label">Email Address</label>
+                        <div class="input-group">
+                            <span class="icon-overlay">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            </span>
+                            <input type="email" id="email" name="email" class="text-input" placeholder="name@ingen.com" required aria-required="true" autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="password" class="field-label">Password</label>
+                        <div class="input-group">
+                            <span class="icon-overlay">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </span>
+                            <input type="password" id="password" name="password" class="text-input" placeholder="••••••••" required aria-required="true" autocomplete="current-password">
+                            <button type="button" class="toggle-btn" id="pwToggle" aria-label="Toggle password visibility">
+                                <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88 12 12m.12-2.12L10 12M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path d="m2 2 20 20"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="remember-wrap">
+                            <input type="checkbox" name="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Sign In</button>
+                </form>
+
+                <div class="divider">
+                    <span>Or login with SSO</span>
+                </div>
+
+                <button type="button" class="btn-google">
+                    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Continue with Google
+                </button>
+
+                <p class="card-footer">
+                    Need an account? <a href="#">Register here</a>
+                </p>
+            </main>
+        </div>
+    </div>
+
+    <!-- Geometric Teeth Transition -->
+    <div class="teeth-strip" aria-hidden="true">
+        <svg width="100%" height="80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="teeth" x="0" y="0" width="300" height="80" patternUnits="userSpaceOnUse">
+                    <path d="M0 80 L20 20 L40 80 L75 10 L110 80 L145 35 L180 80 L220 15 L260 80 L280 40 L300 80 V80 H0 Z" fill="#0f172a"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="80" fill="url(#teeth)" />
+        </svg>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>Solutions</h4>
+                <ul>
+                    <li><a href="#">Genomic Mapping</a></li>
+                    <li><a href="#">Bio-Security</a></li>
+                    <li><a href="#">Asset Tracking</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>InGen</h4>
+                <ul>
+                    <li><a href="#">Our Vision</a></li>
+                    <li><a href="#">Corporate Ethics</a></li>
+                    <li><a href="#">Press Kit</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">NDA Agreement</a></li>
+                    <li><a href="#">Compliance</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-legal">
+            <p>&copy; 2026 InGen International. We make the future today.</p>
+            <div style="display: flex; gap: 1.5rem;">
+                <span>ISO 27001 Certified</span>
+                <span>GDPR Compliant</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Password Toggle Logic -->
+    <script>
+        const pwField = document.getElementById('password');
+        const pwToggle = document.getElementById('pwToggle');
+
+        // Show/hide toggle button based on input
+        pwField.addEventListener('input', () => {
+            if (pwField.value.length > 0) {
+                pwToggle.classList.add('visible');
+            } else {
+                pwToggle.classList.remove('visible');
+            }
+        });
+
+        // Toggle actual visibility
+        pwToggle.addEventListener('click', () => {
+            const isShowing = pwField.type === 'text';
+            pwField.type = isShowing ? 'password' : 'text';
+            pwToggle.classList.toggle('is-showing');
+        });
+    </script>
+</body>
+</html>
