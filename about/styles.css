@@ -116,61 +116,11 @@ body[data-theme="light"] .about-intro p:nth-of-type(1) {
 
 /* Remove redundant typography styles */
 
-.darkwing-sprite {
+.erik-arcade {
     display: block;
     margin: var(--space-8) auto;
-    cursor: pointer;
-    transition: transform 0.1s ease;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.darkwing-sprite:hover {
-    transform: scale(1.05);
-}
-
-.darkwing-sprite:focus {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 4px;
-}
-
-@keyframes darkwing-look {
-    0% {
-        transform: rotate(0deg) scale(1);
-    }
-
-    25% {
-        transform: rotate(-15deg) scale(1.1);
-    }
-
-    50% {
-        transform: rotate(15deg) scale(1.1);
-    }
-
-    75% {
-        transform: rotate(-8deg) scale(1.05);
-    }
-
-    100% {
-        transform: rotate(0deg) scale(1);
-    }
-}
-
-.darkwing-sprite.looking {
-    animation: darkwing-look 0.8s ease-in-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .darkwing-sprite.looking {
-        animation: none !important;
-    }
-
-    .darkwing-sprite:hover {
-        transform: none !important;
-    }
+    width: 100px;
+    height: auto;
 }
 
 .reading-section,

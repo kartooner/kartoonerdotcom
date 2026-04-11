@@ -62,39 +62,3 @@
     }
 })();
 
-// Darkwing Duck interactive animation
-document.addEventListener('DOMContentLoaded', function () {
-    const darkwingSprite = document.querySelector('.darkwing-sprite');
-
-    if (darkwingSprite) {
-        function triggerLookAnimation() {
-            // Prevent multiple animations at once
-            if (darkwingSprite.classList.contains('looking')) {
-                return;
-            }
-
-            // Add animation class
-            darkwingSprite.classList.add('looking');
-
-            // Remove class after animation completes
-            setTimeout(() => {
-                darkwingSprite.classList.remove('looking');
-            }, 800); // Match animation duration
-        }
-
-        // Add click/tap event listeners
-        darkwingSprite.addEventListener('click', triggerLookAnimation);
-        darkwingSprite.addEventListener('touchstart', function (e) {
-            e.preventDefault(); // Prevent double-tap zoom
-            triggerLookAnimation();
-        });
-
-        // Add keyboard support (Enter and Space)
-        darkwingSprite.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                triggerLookAnimation();
-            }
-        });
-    }
-});
