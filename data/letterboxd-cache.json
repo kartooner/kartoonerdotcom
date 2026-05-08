@@ -1,41 +1,41 @@
 {
-  "fetchedAt": "2026-04-03T14:41:36.791Z",
+  "fetchedAt": "2026-05-08T13:42:02.013Z",
   "movies": [
     {
-      "title": "Sentimental Value",
-      "year": "2025",
-      "link": "https://letterboxd.com/kartooner/film/sentimental-value-2025/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/0/1/3/3/5/7/1013357-sentimental-value-2025-0-600-0-900-crop.jpg?v=e89e64a309",
+      "title": "Pig",
+      "year": "2021",
+      "link": "https://letterboxd.com/kartooner/film/pig-2021/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/5/6/1/7/6/3/561763-pig-0-600-0-900-crop.jpg?v=fb522b9d9a",
       "stars": "★★★★",
       "rating": 4,
-      "date": "2026-04-03"
+      "date": "2026-05-08"
     },
     {
-      "title": "Backdraft",
-      "year": "1991",
-      "link": "https://letterboxd.com/kartooner/film/backdraft/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/5/0/0/0/9/50009-backdraft-0-600-0-900-crop.jpg?v=c3cf67bdce",
-      "stars": "★★★",
-      "rating": 3,
-      "date": "2026-04-02"
-    },
-    {
-      "title": "Fried Green Tomatoes",
-      "year": "1991",
-      "link": "https://letterboxd.com/kartooner/film/fried-green-tomatoes/",
-      "imageUrl": "https://a.ltrbxd.com/resized/sm/upload/ga/rd/2u/p6/wbRihqz7vjlFCaYb0bPj3aZqQXD-0-600-0-900-crop.jpg?v=9a0514624a",
-      "stars": "★★★★",
-      "rating": 4,
-      "date": "2026-03-31"
-    },
-    {
-      "title": "Elmer Gantry",
-      "year": "1960",
-      "link": "https://letterboxd.com/kartooner/film/elmer-gantry/",
-      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/3/8/1/2/4/38124-elmer-gantry-0-600-0-900-crop.jpg?v=992be89007",
+      "title": "The Secret Life of Walter Mitty",
+      "year": "1947",
+      "link": "https://letterboxd.com/kartooner/film/the-secret-life-of-walter-mitty/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/2/4/7/9/2/24792-the-secret-life-of-walter-mitty-0-600-0-900-crop.jpg?v=73f95db9e2",
       "stars": "★★★½",
       "rating": 3.5,
-      "date": "2026-03-31"
+      "date": "2026-04-26"
+    },
+    {
+      "title": "The Super Mario Galaxy Movie",
+      "year": "2026",
+      "link": "https://letterboxd.com/kartooner/film/the-super-mario-galaxy-movie/",
+      "imageUrl": "https://a.ltrbxd.com/resized/film-poster/1/1/1/0/0/8/0/1110080-the-super-mario-galaxy-movie-0-600-0-900-crop.jpg?v=fefcfca134",
+      "stars": "★★½",
+      "rating": 2.5,
+      "date": "2026-04-19"
+    },
+    {
+      "title": "Clueless",
+      "year": "1995",
+      "link": "https://letterboxd.com/kartooner/film/clueless/",
+      "imageUrl": "https://a.ltrbxd.com/resized/sm/upload/fn/rr/3z/h7/i8gEHh2sszB6YWLC0jl559sxAeN-0-600-0-900-crop.jpg?v=593192fedf",
+      "stars": "★★★",
+      "rating": 3,
+      "date": "2026-04-11"
     }
   ]
 }
