@@ -34,7 +34,13 @@
         the right thing before you build the thing.
       </p>
       <div class="hero-cta">
-        <div class="install-cmd">npx skills add kartooner/viking-design</div>
+        <div class="install-cmd">
+          <span class="install-text">npx skills add kartooner/viking-design</span>
+          <button class="copy-btn" data-copy="npx skills add kartooner/viking-design" title="Copy to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="copy-label">Copy</span>
+          </button>
+        </div>
         <a href="#methodology" class="learn-link">or learn the methodology ↓</a>
       </div>
     </div>
@@ -239,6 +245,10 @@
       </p>
       <div class="cta-install">
         <span class="cta-cmd">npx skills add kartooner/viking-design</span>
+        <button class="copy-btn copy-btn--dark" data-copy="npx skills add kartooner/viking-design" title="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span class="copy-label">Copy</span>
+        </button>
       </div>
       <div class="cta-links">
         <a href="#methodology">Read the methodology →</a>
@@ -254,5 +264,15 @@
     </div>
   </section>
 
+  <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 2000);
+        });
+      });
+    });
+  </script>
 </body>
 </html>
