@@ -582,3 +582,83 @@ section.dark {
 .no-cli-note a:hover {
   color: var(--heading);
 }
+
+/* === Canon (UX intellectual foundation) === */
+.canon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-bottom: 40px;
+}
+
+.canon-item {
+  padding: 24px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.canon-item:nth-child(odd) {
+  padding-right: 40px;
+}
+
+.canon-item:nth-child(even) {
+  padding-left: 40px;
+  border-left: 1px solid var(--rule);
+}
+
+.canon-author {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.canon-title {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 8px;
+}
+
+.canon-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.canon-cta {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 28px;
+}
+
+.canon-cta a {
+  color: var(--amber);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.canon-cta a:hover {
+  color: var(--heading);
+}
+
+@media (max-width: 640px) {
+  .canon-grid {
+    grid-template-columns: 1fr;
+  }
+  .canon-item:nth-child(odd),
+  .canon-item:nth-child(even) {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: none;
+  }
+  .canon-item:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+}

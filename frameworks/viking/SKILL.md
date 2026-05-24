@@ -86,4 +86,25 @@ The **Viking Design Orchestrator** is a specialized engine for **UX Product Desi
 4. **Be Terse**: Follow the `AGENTS.md` rules: 7th-grade reading level, direct, and authoritative.
 
 ---
-*Credits: Synthesized from Impeccably, Design with Intent (ghaida/intent), and the personal AI-first UX methodology of Erik Sagen.*
+
+## 📚 Intellectual Foundation
+
+This framework draws its UX, design, and research principles from a canon of foundational works.
+All agents have access to `reference/ux-canon.md`, which maps these principles to each role in the chain.
+
+| Author | Book |
+|---|---|
+| Don Norman | *The Design of Everyday Things* |
+| Jesse James Garrett | *The Elements of User Experience* |
+| Steve Krug | *Don't Make Me Think* |
+| Jon Yablonski | *Laws of UX* |
+| Laura Klein | *Build Better Products* |
+| Tom Greever | *Articulating Design Decisions* |
+| Jakob Nielsen | *10 Usability Heuristics for User Interface Design* |
+| W3C WAI | *Web Content Accessibility Guidelines (WCAG) 2.2* |
+
+Full reading list: **https://www.kartooner.com/recommended-books/**
+
+---
+*Credits: Synthesized from Impeccably, Design with Intent (ghaida/intent), the personal AI-first UX
+methodology of Erik Sagen, and the canon works listed above.*
