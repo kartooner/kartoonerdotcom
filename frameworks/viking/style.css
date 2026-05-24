@@ -558,6 +558,13 @@ section.dark {
   margin-top: 6px;
 }
 
+@media (max-width: 640px) {
+  .command-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
 .no-cli-note {
   font-family: var(--font-body);
   font-size: 13px;
