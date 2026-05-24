@@ -13,10 +13,10 @@ Invoke the framework to step through the 1-7 sequential chain:
 
 1. **Odin (Creative Director)**: Sets the mandate and guards the aesthetic. (`/vikingdesign audit`)
 2. **Mimir (UX Researcher)**: Runs the **5 Gates** fit assessment. (`/vikingdesign gate`)
-3. **Tyr (Creative Strategist)**: Frames the problem and sizes opportunity.
+3. **Tyr (Creative Strategist)**: Frames the problem and sizes opportunity. (`/vikingdesign frame`)
 4. **Heimdall (Systems Architect)**: Maps **Things, States, and Rules**. (`/vikingdesign map`)
 5. **Loki (Flow Designer)**: Builds ephemeral **UI Recipes**. (`/vikingdesign shape`)
-6. **Bragi (Content Designer)**: Crafts **Sandwich Pattern** copy.
+6. **Bragi (Content Designer)**: Crafts **Sandwich Pattern** copy. (`/vikingdesign content`)
 7. **Thor (Handoff Specialist)**: Delivers **Component Contracts**. (`/vikingdesign craft`)
 
 ## 🚀 Commands: /vikingdesign
@@ -25,7 +25,11 @@ Invoke the framework to step through the 1-7 sequential chain:
 **Agent:** `2. Mimir`
 **Logic:** Run the 5-Gate fit check. Do not design anything until the project passes Gate 0 (Value) and Gate 1 (Precision).
 
-### 2. System Mapping (`/vikingdesign map`)
+### 2. Problem Framing (`/vikingdesign frame`)
+**Agent:** `3. Tyr`
+**Logic:** Translate business direction into a design brief. Define user hats, size the opportunity, and frame the design problem before any system work begins.
+
+### 3. System Mapping (`/vikingdesign map`)
 **Agent:** `4. Heimdall`
 **Logic:** Map the system using **Things, States, and Rules**. 
 
@@ -33,7 +37,11 @@ Invoke the framework to step through the 1-7 sequential chain:
 **Agents:** All agents 1-7 in sequence.
 **Logic:** Step through the council. Start with **1. Odin**, end with **7. Thor**.
 
-### 4. Generative Craft (`/vikingdesign shape` or `/vikingdesign craft`)
+### 5. UX Copy (`/vikingdesign content`)
+**Agent:** `6. Bragi`
+**Logic:** Write the UX copy. Warm, direct, and clear. Apply the Sandwich Pattern to frame AI actions in human terms.
+
+### 6. Generative Craft (`/vikingdesign shape` or `/vikingdesign craft`)
 **Agents:** `5. Loki` (Shape) and `7. Thor` (Craft/Specs).
 **Logic:** Build ephemeral UI recipes and technical specs.
 

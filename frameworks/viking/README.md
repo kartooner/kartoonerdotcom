@@ -36,8 +36,10 @@ Type these as slash commands at the AI prompt:
 
 - `/viking-design` — Open the Discovery Map.
 - `/viking-design gate` — Run the 5 Gates fit assessment.
+- `/viking-design frame` — Problem framing: design brief, user hats, opportunity sizing.
 - `/viking-design map` — Logic mapping: Things, States, and Rules.
 - `/viking-design chain` — Activate the full Council chain from strategy to handoff.
+- `/viking-design content` — UX copy using the Sandwich Pattern.
 - `/viking-design audit` — Run the AI Slop Test quality audit.
 
 ---
