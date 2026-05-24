@@ -453,3 +453,21 @@ section.dark {
   line-height: 1.65;
   padding-top: 4px;
 }
+
+.no-cli-note {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--quiet);
+  margin-top: 28px;
+  line-height: 1.6;
+}
+
+.no-cli-note a {
+  color: var(--amber);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.no-cli-note a:hover {
+  color: var(--navy);
+}
