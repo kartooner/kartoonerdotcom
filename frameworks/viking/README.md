@@ -9,7 +9,7 @@ Viking follows a disciplined **Systems First, Surfaces Second** philosophy:
 1.  **The 5 Gates:** Determine if AI is the right tool before building (Value, Precision, Logic, Risk, Context).
 2.  **Things, States, Rules:** Map the logical object model before touching the canvas.
 3.  **The Creative High Council:** A sequential 1-7 skill chain that guides you from strategy to handoff.
-4.  **Generative UI Recipes:** Ephemeral surfaces designed as recipes rather than fixed screens.
+4.  **Generative UI Recipes:** Contextual surfaces designed as recipes rather than fixed screens.
 5.  **The AI Slop Test:** A quality audit to reject generic, AI-generated aesthetics in favor of clean, typographically beautiful design.
 
 ## 🏛️ The Viking High Council (Agents)
@@ -18,7 +18,7 @@ Viking follows a disciplined **Systems First, Surfaces Second** philosophy:
 2.  **Mimir (UX Researcher):** The wise one who runs the 5 Gates fit assessment.
 3.  **Tyr (Creative Strategist):** Framer of problems and opportunity sizer.
 4.  **Heimdall (Systems Architect):** Watcher who maps Things, States, and Rules.
-5.  **Loki (Flow Designer):** Designer of ephemeral interaction recipes.
+5.  **Loki (Flow Designer):** Designer of contextual interaction recipes.
 6.  **Bragi (Content Designer):** Poet who crafts the Sandwich Pattern copy.
 7.  **Thor (Handoff Specialist):** Deliverer of component contracts to Engineering.
 
@@ -27,22 +27,18 @@ Viking follows a disciplined **Systems First, Surfaces Second** philosophy:
 To add the Viking Design Framework to your Gemini CLI or Claude Code environment, use the standardized skill installer:
 
 ```bash
-# Standard installation (Recommended)
-npx skills add eriksagen/viking-design
-
-# OR install via universal installer
-npx @eriksagen/viking-design setup
+npx skills add kartooner/viking-design
 ```
 
 ## 🛠️ Usage
 
 Evoke the framework within your CLI or terminal:
 
-- `viking-design` - Open the Discovery Map.
-- `viking-design gate` - 2. Run the 5 Gates value assessment.
-- `viking-design map` - 4. Perform logic mapping (Things, States, Rules).
-- `viking-design chain` - 1-7. Activate the full sequential Council chain.
-- `viking-design audit` - 1. Run the aesthetic/AI Slop audit.
+- `/viking-design` — Open the Discovery Map.
+- `/viking-design gate` — Run the 5 Gates fit assessment.
+- `/viking-design map` — Logic mapping: Things, States, and Rules.
+- `/viking-design chain` — Activate the full Council chain from strategy to handoff.
+- `/viking-design audit` — Run the AI Slop Test quality audit.
 
 ---
 
