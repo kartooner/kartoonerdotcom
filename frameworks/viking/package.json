@@ -1,0 +1,28 @@
+{
+  "name": "viking-design-framework",
+  "version": "1.0.0",
+  "description": "An AI-intent-first UX product design methodology and agentic framework.",
+  "main": "vikingdesign.py",
+  "bin": {
+    "viking-design": "bin/viking.js",
+    "vikingdesign": "bin/viking.js",
+    "viking-detect": "scripts/viking-detect.mjs",
+    "viking-document": "scripts/viking-document.mjs",
+    "viking-context": "scripts/viking-context.mjs"
+  },
+  "scripts": {
+    "setup": "node bin/install.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "ux",
+    "design",
+    "framework",
+    "viking",
+    "intent",
+    "orchestrator"
+  ],
+  "author": "Erik Sagen",
+  "license": "MIT"
+}
