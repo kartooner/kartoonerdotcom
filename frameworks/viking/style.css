@@ -294,21 +294,13 @@ section.dark {
   color: #5a9e6f;
 }
 
-.copy-btn.copied .copy-label::before {
-  content: 'Copied!';
-  position: absolute;
-}
-
-.copy-btn.copied svg {
-  display: none;
-}
-
 .copy-btn.copied .copy-label {
   visibility: hidden;
   position: relative;
 }
 
 .copy-btn.copied .copy-label::before {
+  content: 'Copied!';
   visibility: visible;
   position: absolute;
   left: 0;
