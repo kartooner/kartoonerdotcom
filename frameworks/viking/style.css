@@ -5,20 +5,41 @@
   padding: 0;
 }
 
-/* === Variables === */
+/* === Variables — dark mode first === */
 :root {
-  --navy:      #1a1a2e;
+  --navy:      #1a1a2e;   /* fixed dark surface (CTA, install pill) */
   --amber:     #c8773a;
-  --amber-bg:  #fdf3ec;
-  --off-white: #f7f5f2;
-  --body:      #555;
-  --muted:     #666;
-  --quiet:     #888;
-  --rule:      #eee;
-  --rule-warm: #e2ddd7;
+
+  --bg:        #0d0d1a;
+  --bg-alt:    #111120;
+  --heading:   #e8e8f8;
+  --body:      #9999bb;
+  --muted:     #8888aa;
+  --quiet:     #666688;
+  --rule:      #2a2a3e;
+  --rule-warm: #2a2a3e;
+  --amber-bg:  #1e1208;
+  --tag-bg:    #1e1e32;
+  --install-bg:#1e1e32;
 
   --font-head: 'Space Grotesk', sans-serif;
   --font-body: 'Poppins', sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #fff;
+    --bg-alt:    #f7f5f2;
+    --heading:   #1a1a2e;
+    --body:      #555;
+    --muted:     #666;
+    --quiet:     #888;
+    --rule:      #eee;
+    --rule-warm: #e2ddd7;
+    --amber-bg:  #fdf3ec;
+    --tag-bg:    #edeae5;
+    --install-bg:#1a1a2e;
+  }
 }
 
 /* === Base === */
@@ -30,7 +51,7 @@ html {
 body {
   font-family: var(--font-body);
   color: var(--body);
-  background: #fff;
+  background: var(--bg);
   line-height: 1.6;
 }
 
@@ -42,7 +63,7 @@ a {
 /* === Typography === */
 h1, h2, h3, h4 {
   font-family: var(--font-head);
-  color: var(--navy);
+  color: var(--heading);
   letter-spacing: -0.04em;
   line-height: 1.15;
 }
@@ -68,7 +89,7 @@ section {
 }
 
 section.off-white {
-  background: var(--off-white);
+  background: var(--bg-alt);
 }
 
 section.dark {
@@ -138,7 +159,7 @@ section.dark {
   font-family: var(--font-head);
   font-size: 17px;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--heading);
   margin-bottom: 6px;
 }
 
@@ -155,7 +176,7 @@ section.dark {
   font-size: 11px;
   font-weight: 600;
   color: var(--quiet);
-  background: #edeae5;
+  background: var(--tag-bg);
   padding: 2px 8px;
   border-radius: 4px;
   margin-top: 8px;
@@ -173,7 +194,7 @@ section.dark {
 /* === Nav === */
 .site-nav {
   border-bottom: 1px solid var(--rule);
-  background: #fff;
+  background: var(--bg);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -191,7 +212,6 @@ section.dark {
   justify-content: center;
 }
 
-
 .nav-links {
   display: flex;
   gap: 28px;
@@ -207,7 +227,7 @@ section.dark {
 }
 
 .nav-links a:hover {
-  color: var(--navy);
+  color: var(--heading);
 }
 
 .nav-cta {
@@ -257,7 +277,7 @@ section.dark {
 }
 
 .install-cmd {
-  background: var(--navy);
+  background: var(--install-bg);
   color: #fff;
   font-family: var(--font-head);
   font-size: 13px;
@@ -378,7 +398,7 @@ section.dark {
   font-family: var(--font-head);
   font-size: 16px;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--heading);
   margin-bottom: 2px;
 }
 
@@ -492,8 +512,8 @@ section.dark {
   font-family: var(--font-head);
   font-size: 13px;
   font-weight: 600;
-  color: var(--navy);
-  background: #edeae5;
+  color: var(--heading);
+  background: var(--tag-bg);
   padding: 6px 12px;
   border-radius: 4px;
   display: inline-block;
@@ -507,6 +527,15 @@ section.dark {
   color: var(--muted);
   line-height: 1.65;
   padding-top: 4px;
+}
+
+.cmd-example {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--quiet);
+  font-style: italic;
+  margin-top: 6px;
+  line-height: 1.5;
 }
 
 .no-cli-note {
@@ -524,5 +553,5 @@ section.dark {
 }
 
 .no-cli-note a:hover {
-  color: var(--navy);
+  color: var(--heading);
 }
