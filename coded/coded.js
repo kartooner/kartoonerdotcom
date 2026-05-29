@@ -216,11 +216,15 @@ function escHtml(str) {
         }
 
         // Performance: Debounced syntax highlighting
+        const _scheduleIdle = window.requestIdleCallback
+            ? (cb) => requestIdleCallback(cb, { timeout: 500 })
+            : (cb) => setTimeout(cb, 16);
+
         let highlightTimeouts = { html: null, css: null, js: null };
         function debouncedHighlight(editor, highlight, language, editorType) {
             clearTimeout(highlightTimeouts[editorType]);
             highlightTimeouts[editorType] = setTimeout(() => {
-                highlightEditor(editor, highlight, language);
+                _scheduleIdle(() => highlightEditor(editor, highlight, language));
             }, 150); // Highlight after 150ms of inactivity
         }
 
