@@ -1096,6 +1096,15 @@ function escHtml(str) {
             consoleOutput.innerHTML = '';
         }
 
+        window.addEventListener('message', (e) => {
+            if (e.source !== preview.contentWindow) return;
+            if (!e.data || e.data.type !== 'console') return;
+            const { method, args } = e.data;
+            if (['log', 'error', 'warn', 'info'].includes(method)) {
+                addConsoleMessage(method, args);
+            }
+        });
+
         // Settings functionality
         let feedbackEnabled = localStorage.getItem('coded-feedback') !== 'false';
         let currentFontSize = parseInt(localStorage.getItem('coded-font-size')) || 14;
