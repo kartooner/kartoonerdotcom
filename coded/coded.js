@@ -1,3 +1,12 @@
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
         // Get DOM elements
         const htmlEditor = document.getElementById('htmlEditor');
         const cssEditor = document.getElementById('cssEditor');
@@ -380,14 +389,14 @@
             }
 
             snippetsList.innerHTML = snippets.map(snippet => `
-                <div class="snippet-item" role="group" aria-label="${snippet.name}">
+                <div class="snippet-item" role="group" aria-label="${escHtml(snippet.name)}">
                     <div class="snippet-name" onclick="loadSnippet(${snippet.id})"
                          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();loadSnippet(${snippet.id})}"
-                         tabindex="0" role="button" aria-label="Load snippet ${snippet.name}">${snippet.name}</div>
+                         tabindex="0" role="button" aria-label="Load snippet ${escHtml(snippet.name)}">${escHtml(snippet.name)}</div>
                     <div class="snippet-actions">
                         <span class="snippet-delete" onclick="deleteSnippet(${snippet.id})"
                               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();deleteSnippet(${snippet.id})}"
-                              tabindex="0" role="button" aria-label="Delete snippet ${snippet.name}">Delete</span>
+                              tabindex="0" role="button" aria-label="Delete snippet ${escHtml(snippet.name)}">Delete</span>
                     </div>
                 </div>
             `).join('');
@@ -470,14 +479,17 @@
             // Render popular libraries for this category
             popularLibraries.innerHTML = categoryLibs.map(lib => {
                 const isAdded = added.find(l => l.url === lib.url);
+                const safeN = escHtml(lib.name);
+                const safeU = escHtml(lib.url);
+                const safeT = escHtml(lib.type);
                 return `
                     <div class="library-item ${isAdded ? 'added' : ''}"
-                         ${isAdded ? '' : `onclick="addLibrary('${lib.name}', '${lib.url}', '${lib.type}')"
-                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();addLibrary('${lib.name}', '${lib.url}', '${lib.type}')}"
-                         tabindex="0" role="button" aria-label="Add ${lib.name} library"`}>
+                         ${isAdded ? '' : `onclick="addLibrary('${safeN}', '${safeU}', '${safeT}')"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();addLibrary('${safeN}', '${safeU}', '${safeT}')}"
+                         tabindex="0" role="button" aria-label="Add ${safeN} library"`}>
                         <div>
-                            <span class="library-name">${lib.name}</span>
-                            <span class="library-version">${lib.type.toUpperCase()}</span>
+                            <span class="library-name">${safeN}</span>
+                            <span class="library-version">${safeT.toUpperCase()}</span>
                         </div>
                         ${isAdded ? '<span style="color: var(--accent-color);">✓ Added</span>' : ''}
                     </div>
@@ -488,17 +500,22 @@
             if (added.length === 0) {
                 addedLibrariesList.innerHTML = '<div class="empty-state-text" style="text-align: center; padding: 1rem; color: var(--secondary-color);">No libraries added yet</div>';
             } else {
-                addedLibrariesList.innerHTML = added.map(lib => `
-                    <div class="library-item" role="group" aria-label="${lib.name}">
+                addedLibrariesList.innerHTML = added.map(lib => {
+                    const safeN = escHtml(lib.name);
+                    const safeU = escHtml(lib.url);
+                    const safeT = escHtml(lib.type);
+                    return `
+                    <div class="library-item" role="group" aria-label="${safeN}">
                         <div>
-                            <span class="library-name">${lib.name}</span>
-                            <span class="library-version">${lib.type.toUpperCase()}</span>
+                            <span class="library-name">${safeN}</span>
+                            <span class="library-version">${safeT.toUpperCase()}</span>
                         </div>
-                        <span class="library-remove" onclick="removeLibrary('${lib.url}')"
-                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();removeLibrary('${lib.url}')}"
-                              tabindex="0" role="button" aria-label="Remove ${lib.name} library">Remove</span>
+                        <span class="library-remove" onclick="removeLibrary('${safeU}')"
+                              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();removeLibrary('${safeU}')}"
+                              tabindex="0" role="button" aria-label="Remove ${safeN} library">Remove</span>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
         }
 
@@ -2103,7 +2120,7 @@ ${js}
                     // Update banner text to show file name
                     const bannerInfo = shareModeBanner.querySelector('.share-mode-info');
                     if (bannerInfo) {
-                        bannerInfo.innerHTML = `<span>📁 Loaded file: <strong>${shareData.name || 'Untitled.coded'}</strong></span>`;
+                        bannerInfo.innerHTML = `<span>📁 Loaded file: <strong>${escHtml(shareData.name || 'Untitled.coded')}</strong></span>`;
                     }
 
                     // Announce to screen readers
