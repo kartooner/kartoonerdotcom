@@ -275,12 +275,18 @@ function escHtml(str) {
         }
 
         // Snippets management
+        let _snippetsCache = null;
+        let _librariesCache = null;
+
         function getSnippets() {
-            const snippets = localStorage.getItem('coded-snippets');
-            return snippets ? JSON.parse(snippets) : [];
+            if (_snippetsCache !== null) return _snippetsCache;
+            const raw = localStorage.getItem('coded-snippets');
+            _snippetsCache = raw ? JSON.parse(raw) : [];
+            return _snippetsCache;
         }
 
         function saveSnippets(snippets) {
+            _snippetsCache = snippets;
             localStorage.setItem('coded-snippets', JSON.stringify(snippets));
         }
 
@@ -450,11 +456,14 @@ function escHtml(str) {
         };
 
         function getAddedLibraries() {
-            const libs = localStorage.getItem('coded-libraries');
-            return libs ? JSON.parse(libs) : [];
+            if (_librariesCache !== null) return _librariesCache;
+            const raw = localStorage.getItem('coded-libraries');
+            _librariesCache = raw ? JSON.parse(raw) : [];
+            return _librariesCache;
         }
 
         function saveAddedLibraries(libs) {
+            _librariesCache = libs;
             localStorage.setItem('coded-libraries', JSON.stringify(libs));
         }
 
