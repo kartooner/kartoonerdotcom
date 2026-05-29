@@ -224,6 +224,14 @@ function escHtml(str) {
             }, 150); // Highlight after 150ms of inactivity
         }
 
+        let lineNumberTimeouts = { html: null, css: null, js: null };
+        function debouncedLineNumbers(editor, lineNumbersElement, editorType) {
+            clearTimeout(lineNumberTimeouts[editorType]);
+            lineNumberTimeouts[editorType] = setTimeout(() => {
+                updateLineNumbers(editor, lineNumbersElement);
+            }, 150);
+        }
+
         // Sync scroll between editor and highlight
         function syncScroll(editor, highlight) {
             highlight.scrollTop = editor.scrollTop;
@@ -891,8 +899,8 @@ function escHtml(str) {
 
         // Add event listeners for live highlighting and auto-save
         htmlEditor.addEventListener('input', () => {
-            highlightEditor(htmlEditor, htmlHighlight, 'markup');
-            updateLineNumbers(htmlEditor, htmlLineNumbers);
+            debouncedHighlight(htmlEditor, htmlHighlight, 'markup', 'html');
+            debouncedLineNumbers(htmlEditor, htmlLineNumbers, 'html');
             saveCode();
             debouncedAutoRun();
         });
@@ -902,8 +910,8 @@ function escHtml(str) {
         }, { passive: true });
 
         cssEditor.addEventListener('input', () => {
-            highlightEditor(cssEditor, cssHighlight, 'css');
-            updateLineNumbers(cssEditor, cssLineNumbers);
+            debouncedHighlight(cssEditor, cssHighlight, 'css', 'css');
+            debouncedLineNumbers(cssEditor, cssLineNumbers, 'css');
             saveCode();
             debouncedAutoRun();
         });
@@ -913,8 +921,8 @@ function escHtml(str) {
         }, { passive: true });
 
         jsEditor.addEventListener('input', () => {
-            highlightEditor(jsEditor, jsHighlight, 'javascript');
-            updateLineNumbers(jsEditor, jsLineNumbers);
+            debouncedHighlight(jsEditor, jsHighlight, 'javascript', 'js');
+            debouncedLineNumbers(jsEditor, jsLineNumbers, 'js');
             saveCode();
             debouncedAutoRun();
         });
