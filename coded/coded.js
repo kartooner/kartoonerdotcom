@@ -567,6 +567,19 @@ function escHtml(str) {
                 return;
             }
 
+            let parsed;
+            try {
+                parsed = new URL(url);
+            } catch {
+                alert('Invalid URL. Please enter a valid https:// CDN URL.');
+                return;
+            }
+
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                alert('Only http:// and https:// URLs are allowed.');
+                return;
+            }
+
             const type = url.endsWith('.css') ? 'css' : 'js';
             const name = prompt('Enter a name for this library:');
             if (!name) return;
