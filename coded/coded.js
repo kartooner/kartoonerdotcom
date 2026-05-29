@@ -222,12 +222,22 @@
         }
 
         // Enhanced sync with requestAnimationFrame for better cursor positioning
+        let _scrollRafId = null;
         function syncScrollRaf(editor, highlight) {
-            requestAnimationFrame(() => {
+            if (_scrollRafId) cancelAnimationFrame(_scrollRafId);
+            _scrollRafId = requestAnimationFrame(() => {
                 highlight.scrollTop = editor.scrollTop;
                 highlight.scrollLeft = editor.scrollLeft;
+                _scrollRafId = null;
             });
         }
+
+        document.addEventListener('selectionchange', () => {
+            const active = document.activeElement;
+            if (active === htmlEditor) syncScrollRaf(htmlEditor, htmlHighlight);
+            else if (active === cssEditor) syncScrollRaf(cssEditor, cssHighlight);
+            else if (active === jsEditor) syncScrollRaf(jsEditor, jsHighlight);
+        });
 
         // Update line numbers
         function updateLineNumbers(editor, lineNumbersElement) {
@@ -861,21 +871,6 @@
             syncLineNumbersScroll(htmlEditor, htmlLineNumbers);
         }, { passive: true });
 
-        // Sync on click to ensure cursor positioning is accurate
-        htmlEditor.addEventListener('click', () => {
-            syncScroll(htmlEditor, htmlHighlight);
-            syncScrollRaf(htmlEditor, htmlHighlight);
-        });
-        htmlEditor.addEventListener('focus', () => {
-            syncScrollRaf(htmlEditor, htmlHighlight);
-        });
-        htmlEditor.addEventListener('keyup', () => {
-            syncScrollRaf(htmlEditor, htmlHighlight);
-        });
-        htmlEditor.addEventListener('select', () => {
-            syncScrollRaf(htmlEditor, htmlHighlight);
-        });
-
         cssEditor.addEventListener('input', () => {
             highlightEditor(cssEditor, cssHighlight, 'css');
             updateLineNumbers(cssEditor, cssLineNumbers);
@@ -887,21 +882,6 @@
             syncLineNumbersScroll(cssEditor, cssLineNumbers);
         }, { passive: true });
 
-        // Sync on click to ensure cursor positioning is accurate
-        cssEditor.addEventListener('click', () => {
-            syncScroll(cssEditor, cssHighlight);
-            syncScrollRaf(cssEditor, cssHighlight);
-        });
-        cssEditor.addEventListener('focus', () => {
-            syncScrollRaf(cssEditor, cssHighlight);
-        });
-        cssEditor.addEventListener('keyup', () => {
-            syncScrollRaf(cssEditor, cssHighlight);
-        });
-        cssEditor.addEventListener('select', () => {
-            syncScrollRaf(cssEditor, cssHighlight);
-        });
-
         jsEditor.addEventListener('input', () => {
             highlightEditor(jsEditor, jsHighlight, 'javascript');
             updateLineNumbers(jsEditor, jsLineNumbers);
@@ -912,21 +892,6 @@
             syncScroll(jsEditor, jsHighlight);
             syncLineNumbersScroll(jsEditor, jsLineNumbers);
         }, { passive: true });
-
-        // Sync on click to ensure cursor positioning is accurate
-        jsEditor.addEventListener('click', () => {
-            syncScroll(jsEditor, jsHighlight);
-            syncScrollRaf(jsEditor, jsHighlight);
-        });
-        jsEditor.addEventListener('focus', () => {
-            syncScrollRaf(jsEditor, jsHighlight);
-        });
-        jsEditor.addEventListener('keyup', () => {
-            syncScrollRaf(jsEditor, jsHighlight);
-        });
-        jsEditor.addEventListener('select', () => {
-            syncScrollRaf(jsEditor, jsHighlight);
-        });
 
         // Wait for fonts to load, then sync everything
         if (document.fonts && document.fonts.ready) {
@@ -1032,11 +997,18 @@
 
         // Focus handlers to show/hide tab trap indicator
         function handleEditorFocus(editorName) {
+            const editorMap = {
+                html: { editor: htmlEditor, highlight: htmlHighlight },
+                css: { editor: cssEditor, highlight: cssHighlight },
+                js: { editor: jsEditor, highlight: jsHighlight }
+            };
             return function(e) {
                 const editorContent = e.target.closest('.editor-content');
                 if (tabTrappingEnabled[editorName]) {
                     editorContent.classList.add('tab-trapped');
                 }
+                const { editor, highlight } = editorMap[editorName];
+                syncScrollRaf(editor, highlight);
             };
         }
 
