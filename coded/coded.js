@@ -1942,6 +1942,7 @@ ${js}
 
         // Reset panel sizes on window resize to prevent breakpoint issues
         let resizeTimeout;
+        let _lastMobileWidth = window.innerWidth;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
@@ -1965,6 +1966,14 @@ ${js}
                 syncScroll(htmlEditor, htmlHighlight);
                 syncScroll(cssEditor, cssHighlight);
                 syncScroll(jsEditor, jsHighlight);
+
+                // Mobile tab reset on breakpoint crossing
+                const newWidth = window.innerWidth;
+                if (_lastMobileWidth > 768 && newWidth <= 768) {
+                    const activeTab = document.querySelector('.mobile-editor-tab.active');
+                    switchMobileTab(activeTab ? activeTab.dataset.panel : 'html');
+                }
+                _lastMobileWidth = newWidth;
             }, 250);
         });
 
@@ -2425,25 +2434,6 @@ ${js}
                         break;
                 }
             });
-        });
-
-        // Handle window resize - ensure proper panel visibility
-        let lastWidth = window.innerWidth;
-        window.addEventListener('resize', () => {
-            const currentWidth = window.innerWidth;
-
-            // Transitioning from desktop to mobile
-            if (lastWidth > 768 && currentWidth <= 768) {
-                // Make sure HTML panel is visible by default on mobile
-                const activeTab = document.querySelector('.mobile-editor-tab.active');
-                if (activeTab) {
-                    switchMobileTab(activeTab.dataset.panel);
-                } else {
-                    switchMobileTab('html');
-                }
-            }
-
-            lastWidth = currentWidth;
         });
 
         // Mobile panel settings button - opens settings for active editor

@@ -51,8 +51,6 @@
     }
 
     window.openTemplatesModal = async function(panel, type) {
-        console.log('Opening templates modal for:', panel, type);
-
         currentTemplatePanel = panel;
         currentTemplateType = type || 'starters';
 
