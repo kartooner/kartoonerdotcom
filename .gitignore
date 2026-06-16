@@ -19,3 +19,4 @@ AGENTS.md
 /playwright/.cache/
 /playwright/.auth/
 package-lock.json
+.claude/settings.local.json

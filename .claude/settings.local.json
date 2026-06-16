@@ -117,7 +117,12 @@
       "Bash(xargs -I{} taskkill //PID {} //F)",
       "Bash(npx --yes http-server -p 8000 --cors)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "mcp__gemini-cli__gemini-youtube"
+      "mcp__gemini-cli__gemini-youtube",
+      "Bash(cd /d \"D:\\\\Github\\\\kartoonerdotcom\")",
+      "Bash(Get-Content coded/coded.js -TotalCount 600)",
+      "Bash(Select-Object -Skip 540)",
+      "Bash(Remove-Item *)",
+      "WebFetch(domain:www.penguinrandomhouse.com)"
     ],
     "deny": [],
     "ask": []
