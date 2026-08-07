@@ -503,7 +503,7 @@ function generateEntryPages(journal) {
         // Generate "Tagged with" section with clickable tags
         const tagsHtml = entry.tags && entry.tags.length > 0 ? `
         <div class="tags-section">
-            <h3>Tagged with</h3>
+            <h2>Tagged with</h2>
             <div class="tags-list">
                 ${entry.tags.map(tag => `<a href="/journal?tag=${encodeURIComponent(tag)}" class="tag">#${tag}</a>`).join('\n                ')}
             </div>
@@ -814,7 +814,7 @@ function generateEntryPages(journal) {
             border-left: 3px solid var(--accent-color);
         }
 
-        .tags-section h3 {
+        .tags-section h2 {
             font-family: var(--font-secondary);
             font-size: 1.2rem;
             color: var(--heading-color);
@@ -827,18 +827,26 @@ function generateEntryPages(journal) {
             gap: 0.5rem;
         }
 
-        .tag {
+        .tag,
+        .tag:visited,
+        .tag:hover,
+        .tag:focus,
+        .tag:active {
             display: inline-block;
             padding: 0.375rem 0.875rem;
-            background: var(--accent-color);
-            color: var(--bg-color);
+            background: var(--accent-color) !important;
+            color: var(--bg-color) !important;
             border-radius: 20px;
             font-size: 0.875rem;
             font-weight: 700;
+            text-decoration: none !important;
+            opacity: 1 !important;
+            margin: 0;
             transition: all 0.2s ease;
         }
 
-        .tag:hover {
+        .tag:hover,
+        .tag:focus {
             transform: translateY(-2px);
             box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.3);
         }

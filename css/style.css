@@ -14,6 +14,7 @@
 html {
     scroll-behavior: smooth;
     overflow-y: scroll;
+    height: 100%;
 }
 
 /* ==========================================
@@ -212,6 +213,10 @@ body {
     padding: 0;
     /* Smooth theme transitions */
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* Keep footer pinned to viewport bottom on short pages */
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
 }
 
 .container,
@@ -544,8 +549,8 @@ a[target="_blank"]:after {
     vertical-align: middle;
 }
 
-a:not(.social-icon):not(.webring-links a):not(.nav-links a):not(.view-all):not(.recent-post-item):hover,
-a:not(.social-icon):not(.webring-links a):not(.nav-links a):not(.view-all):not(.recent-post-item):focus {
+a:not(.social-icon):not(.webring-links a):not(.nav-links a):not(.view-all):not(.recent-post-item):not(.changelog a):not(.tag):hover,
+a:not(.social-icon):not(.webring-links a):not(.nav-links a):not(.view-all):not(.recent-post-item):not(.changelog a):not(.tag):focus {
     color: var(--accent-color);
     text-decoration: underline;
     background: rgba(var(--accent-rgb), 0.1);
@@ -587,13 +592,15 @@ button:focus-visible {
     box-shadow: 0 0 0 1px var(--bg-color);
 }
 
-/* Tag links - override global link hover */
+/* Tag links - override global link hover/visited styling */
 .tag,
+.tag:visited,
 .tag:hover,
 .tag:focus,
 .tag:active {
     color: var(--bg-color) !important;
     text-decoration: none !important;
+    opacity: 1 !important;
 }
 
 /* ==========================================
@@ -1343,7 +1350,7 @@ header {
     margin-bottom: 1.25rem;
 }
 
-.experience h4 {
+.experience h3 {
     margin-bottom: 0.3125rem;
     font-size: 1.1rem;
 }
@@ -1762,8 +1769,12 @@ header {
 
 footer {
     width: 100%;
-    margin-top: 4rem;
-    padding: 2.5rem 0 2.5rem;
+    /* Auto margin absorbs leftover flex space, pinning the footer to the
+       viewport bottom on short pages; padding (not margin) preserves the
+       breathing room above the footer content on tall pages, since auto
+       margins collapse to 0 once content already fills the viewport. */
+    margin-top: auto;
+    padding: 6.5rem 0 2.5rem;
     background: rgba(0, 0, 0, 0.2);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -1799,10 +1810,12 @@ footer p {
 }
 
 
-.changelog a {
+.changelog a,
+.changelog a:visited {
     color: var(--skills-color);
     border-bottom: 1px dotted var(--skills-color);
     text-decoration: none;
+    opacity: 1;
 }
 
 .changelog a:hover,
@@ -2512,10 +2525,9 @@ footer p {
     margin-bottom: var(--space-6);
 }
 
-.page-home h3 {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
+.page-home h2 {
+    font-size: var(--text-lg);
+    letter-spacing: 0.05em;
     color: var(--accent-color);
     margin-bottom: var(--space-4);
     display: block;
@@ -2526,9 +2538,13 @@ footer p {
 .page-home .philosophy-inline p {
     font-size: var(--text-base);
     line-height: 1.6;
-    margin-bottom: 0;
+    margin-bottom: var(--space-3);
     color: var(--text-color);
     font-weight: 400;
+}
+
+.page-home .philosophy-inline p:last-child {
+    margin-bottom: 0;
 }
 
 .page-home .philosophy-svg {
@@ -2639,7 +2655,7 @@ footer p {
     padding-right: 3.5rem;
 }
 
-.page-home .experience-grid .experience h4 {
+.page-home .experience-grid .experience h3 {
     grid-column: 1 / -1;
     grid-row: 2;
     overflow-wrap: break-word;

@@ -122,7 +122,16 @@
       "Bash(Get-Content coded/coded.js -TotalCount 600)",
       "Bash(Select-Object -Skip 540)",
       "Bash(Remove-Item *)",
-      "WebFetch(domain:www.penguinrandomhouse.com)"
+      "WebFetch(domain:www.penguinrandomhouse.com)",
+      "Read(//tmp/**)",
+      "Bash(where magick *)",
+      "Bash(where convert *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(sed -i 's/<h3>/<h2>/g; s/<\\\\/h3>/<\\\\/h2>/g' experiments/index.html)",
+      "Bash(sed -i 's/\\\\.experiment-info h3/.experiment-info h2/' experiments/index.html)",
+      "mcp__vault__read_text_file",
+      "mcp__vault__list_allowed_directories"
     ],
     "deny": [],
     "ask": []

@@ -151,9 +151,8 @@ body[data-theme="light"] .about-intro p:nth-of-type(1) {
 .career-timeline h2,
 .reading-section h2,
 .animate-fade-in.recently-watched h2 {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
+    font-size: var(--text-lg);
+    letter-spacing: 0.05em;
     color: var(--accent-color);
     margin-bottom: var(--space-4);
     border-bottom: 2px solid rgba(var(--accent-rgb), 0.15);
@@ -383,9 +382,8 @@ a.timeline-company:hover {
 }
 
 .recent-writing-section h2 {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
+    font-size: var(--text-lg);
+    letter-spacing: 0.05em;
     color: var(--accent-color);
     margin-bottom: var(--space-4);
     border-bottom: 2px solid rgba(var(--accent-rgb), 0.15);

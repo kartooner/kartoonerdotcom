@@ -31,8 +31,8 @@
 [data-fall="true"][data-theme="light"] {
     --bg-color: #fff5e6;
     --text-color: #2d1b0e;
-    --accent-color: #d9541e;
-    --accent-rgb: 217, 84, 30;
+    --accent-color: #bf4a1a; /* Darkened for WCAG AA contrast (4.5:1) */
+    --accent-rgb: 191, 74, 26;
     --secondary-color: #6b4e71;
     --tertiary-color: #e6d5c9;
     --skills-color: #3d2817;
@@ -135,8 +135,8 @@
 [data-christmas="true"][data-theme="dark"] {
     --bg-color: #2b2d31;
     --text-color: #f5f0e8;
-    --accent-color: #d85e5e;
-    --accent-rgb: 216, 94, 94;
+    --accent-color: #e18181; /* Lightened for WCAG AA contrast (4.5:1) against bg-color text */
+    --accent-rgb: 225, 129, 129;
     --secondary-color: #e6b85c;
     --tertiary-color: #3d4a42;
     --skills-color: #ddd5c7;
@@ -423,12 +423,12 @@
 [data-summer="true"][data-theme="light"] {
     --bg-color: #fffbf5;
     --text-color: #2d2520;
-    --accent-color: #e65100; /* Darkened for WCAG AA contrast (4.5:1) */
-    --accent-rgb: 230, 81, 0;
+    --accent-color: #c34500; /* Darkened for WCAG AA contrast (4.5:1 against both bg-color and white text) */
+    --accent-rgb: 195, 69, 0;
     --secondary-color: #00bcd4;
     --tertiary-color: #fff3e0;
     --skills-color: #5d4a3c;
-    --heading-color: #e65100;
+    --heading-color: #c34500;
     --experience-text-color: #6d5a4d;
     --light-gray: #7d6b5d;
 }

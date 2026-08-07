@@ -54,17 +54,25 @@
         // Sort entries by date (newest first)
         const sortedEntries = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Build filtered posts HTML using recent-post-item style
+        // Build filtered posts HTML using the same full "post" card style as the main journal view
         const postsHtml = sortedEntries.map((entry, index) => {
             const snippet = entry.excerpt || entry.subtitle || '';
             const delay = 0.3 + (index * 0.1);
+            const dateStr = new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const wordCount = (entry.content || '').split(/\s+/).filter(Boolean).length;
+            const readTime = Math.max(1, Math.round(wordCount / 200));
 
             return `
-                <div class="recent-post-item animate-fade-in" style="animation-delay: ${delay}s">
-                    <h3 class="recent-post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
-                    <p class="recent-post-snippet">${snippet}</p>
-                    <a href="/entry/${entry.id}.html" class="recent-post-link" aria-label="Read more about ${entry.title}">Read more →</a>
+                <div class="post animate-fade-in" style="animation-delay: ${delay}s">
+                    <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${dateStr} &bull; ${readTime} min read &bull; Erik Sagen</div>
+                    <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
+                    ${entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : ''}
+                    <div class="post-content">
+                        <p>${snippet}</p>
+                        <p class="read-more"><a href="/entry/${entry.id}.html" aria-label="Read full post: ${entry.title}">Read full post →</a></p>
+                    </div>
                 </div>
+                <hr class="divider" />
             `;
         }).join('');
 
@@ -76,16 +84,17 @@
         });
 
         const postsContainer = document.createElement('div');
-        postsContainer.className = 'recent-posts-grid';
+        postsContainer.className = 'tag-filtered-posts';
         postsContainer.innerHTML = postsHtml;
 
-        const divider = container.querySelector('hr.divider');
-        if (divider) {
-            divider.after(postsContainer);
+        if (topDivider) {
+            topDivider.after(postsContainer);
         } else {
             const firstHr = container.querySelector('hr');
             if (firstHr) {
                 firstHr.after(postsContainer);
+            } else {
+                container.appendChild(postsContainer);
             }
         }
     }
