@@ -515,6 +515,10 @@ a.timeline-company:hover {
         grid-template-columns: 1fr;
         gap: var(--space-8);
     }
+
+    .reviews-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
 }
 
 /* Loading Spinners */

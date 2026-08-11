@@ -225,9 +225,11 @@ main {
 }
 
 .container {
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 var(--space-4);
+    min-width: 0;
 }
 
 /* Container width variants for different page types */
@@ -835,7 +837,6 @@ button:focus-visible {
         min-height: 60px;
         align-items: center;
         justify-content: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .mobile-close-button:hover,
@@ -852,10 +853,6 @@ button:focus-visible {
     .close-text {
         font-weight: 300;
         line-height: 1;
-    }
-
-    [data-theme="light"] .mobile-close-button {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     .nav-links a {
