@@ -2592,6 +2592,7 @@ footer p {
 /* Work Experience Full Width Section */
 .page-home .experience-full-width {
     margin-top: var(--space-4);
+    margin-bottom: var(--space-8);
     padding-top: var(--space-3);
 }
 
