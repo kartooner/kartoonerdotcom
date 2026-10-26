@@ -203,6 +203,54 @@ section.dark {
   margin-top: 24px;
 }
 
+/* === Principles (inside methodology) === */
+.principles {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--rule-warm);
+}
+
+.principles-heading {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--heading);
+  margin-bottom: 28px;
+}
+
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.principle-link,
+.item-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--amber);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.principle-link:hover,
+.item-link:hover {
+  color: var(--heading);
+}
+
+.item-link {
+  display: block;
+  width: fit-content;
+}
+
+@media (max-width: 640px) {
+  .principles-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
 /* === Nav === */
 .site-nav {
   border-bottom: 1px solid var(--rule);
@@ -218,10 +266,6 @@ section.dark {
   justify-content: space-between;
   padding-top: 18px;
   padding-bottom: 18px;
-}
-
-.nav-inner--centered {
-  justify-content: center;
 }
 
 .nav-links {
@@ -245,6 +289,31 @@ section.dark {
 .nav-cta {
   color: var(--amber) !important;
   font-weight: 600;
+}
+
+.nav-home {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--quiet);
+  transition: color 0.15s;
+}
+
+.nav-home:hover {
+  color: var(--heading);
+}
+
+@media (max-width: 640px) {
+  .nav-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .nav-links {
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 /* === Hero === */
@@ -396,6 +465,18 @@ section.dark {
 
 .council-member--full:nth-child(odd) {
   padding-right: 0;
+}
+
+@media (max-width: 640px) {
+  .council-grid {
+    grid-template-columns: 1fr;
+  }
+  .council-member:nth-child(odd),
+  .council-member:nth-child(even) {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: none;
+  }
 }
 
 .member-number {

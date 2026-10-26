@@ -13,9 +13,11 @@
 <body>
 
   <header class="site-nav">
-    <div class="container nav-inner nav-inner--centered">
+    <div class="container nav-inner">
+      <a href="/" class="nav-home">← kartooner.com</a>
       <nav class="nav-links" aria-label="Main navigation">
         <a href="#methodology">Methodology</a>
+        <a href="#example">Example</a>
         <a href="#council">The council</a>
         <a href="#canon">Foundation</a>
         <a href="#install" class="nav-cta">Install →</a>
@@ -97,6 +99,7 @@
           <div>
             <div class="item-title">The 5 Gates</div>
             <p class="item-desc">Before anything else, assess whether AI is the right tool. Five questions covering Value, Precision, Logic, Risk, and Context that save you from building the wrong thing entirely.</p>
+            <a class="item-link" href="https://medium.com/@kartooner/do-you-actually-need-ai-f45ae9e19ccf" target="_blank" rel="noopener">Do you actually need AI? →</a>
             <span class="item-tag">Fit assessment</span>
           </div>
         </div>
@@ -130,6 +133,26 @@
             <div class="item-title">The AI Slop Test</div>
             <p class="item-desc">A quality audit to catch generic, AI-generated aesthetics before they ship. Clean typography and real design judgment. Not pattern soup.</p>
             <span class="item-tag">Quality audit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="principles">
+        <p class="section-label">Principles</p>
+        <h3 class="principles-heading">Three rules under every step.</h3>
+        <div class="principles-grid">
+          <div class="principle">
+            <div class="item-title">Glassbox</div>
+            <p class="item-desc">When AI does work that matters, it shows its homework. The reasoning and the way to override it get designed alongside the action.</p>
+          </div>
+          <div class="principle">
+            <div class="item-title">Sandwich</div>
+            <p class="item-desc">AI content always sits between two layers of fixed copy: a line that sets trust on top, a way to check or act on the bottom.</p>
+          </div>
+          <div class="principle">
+            <div class="item-title">Mirror</div>
+            <p class="item-desc">Fix the instance. Reflect the pattern. When AI fills a gap a person should have filled, the record gets fixed but the habit doesn't. Show the pattern to the person who owns it.</p>
+            <a class="principle-link" href="https://medium.com/@kartooner/why-predictive-ux-needs-a-reflective-mirror-1056743438d6" target="_blank" rel="noopener">Why predictive UX needs a reflective mirror →</a>
           </div>
         </div>
       </div>
@@ -205,6 +228,54 @@
     </div>
   </section>
 
+  <section id="example" class="off-white">
+    <div class="container">
+      <p class="section-label">Worked example</p>
+      <h2>One ask. Four jobs. Two of them aren't AI.</h2>
+      <p class="section-intro section-intro--spaced">
+        The ask: "Add AI to our expense tool so people can snap a receipt and be done."
+        The 5 Gates split that into four jobs, and each one landed somewhere different.
+      </p>
+      <div class="numbered-list">
+        <div class="numbered-item warm">
+          <span class="item-number">01</span>
+          <div>
+            <div class="item-title">Suggest a category</div>
+            <p class="item-desc">Fuzzy, low risk, and easy to fix. Passes every gate. If the model isn't sure, the field stays empty instead of guessing.</p>
+            <span class="item-tag">AI</span>
+          </div>
+        </div>
+        <div class="numbered-item warm">
+          <span class="item-number">02</span>
+          <div>
+            <div class="item-title">Read the receipt</div>
+            <p class="item-desc">A good AI job, except the total has to be exact. The model fills it in; the person confirms it, and it's matched against the card charge.</p>
+            <span class="item-tag">AI with a human check</span>
+          </div>
+        </div>
+        <div class="numbered-item warm">
+          <span class="item-number">03</span>
+          <div>
+            <div class="item-title">Check the policy</div>
+            <p class="item-desc">"Over $75 needs an itemized receipt" is a checklist. Fails the Logic gate. A rules engine does it every time, for free.</p>
+            <span class="item-tag">Rules, not AI</span>
+          </div>
+        </div>
+        <div class="numbered-item warm">
+          <span class="item-number">04</span>
+          <div>
+            <div class="item-title">Pick the project code</div>
+            <p class="item-desc">The data lives in each manager's spreadsheet. Fails the Context gate. It stays manual until the data moves.</p>
+            <span class="item-tag">Not yet</span>
+          </div>
+        </div>
+      </div>
+      <p class="canon-cta">
+        Every deliverable from all seven roles, from the brief to the QA checklist: <a href="https://github.com/kartooner/viking-design/blob/main/examples/expense-receipts.md" target="_blank" rel="noopener">read the full run on GitHub →</a>
+      </p>
+    </div>
+  </section>
+
   <section id="canon">
     <div class="container">
       <p class="section-label">Intellectual foundation</p>
@@ -264,7 +335,7 @@
   <section id="commands" class="off-white">
     <div class="container">
       <p class="section-label">Usage</p>
-      <h2>Seven commands. Start anywhere.</h2>
+      <h2>Nine commands. Start anywhere.</h2>
       <p class="section-intro section-intro--spaced">
         Once installed, type these as slash commands at the AI prompt in Claude Code CLI or Gemini CLI. Viking automatically detects tools in your environment (Figma MCP, Pencil, and others) and incorporates them into the workflow.
       </p>
@@ -299,10 +370,11 @@
           </div>
         </div>
         <div class="command-item">
-          <code class="cmd-name">/viking-design chain</code>
+          <code class="cmd-name">/viking-design shape</code>
           <div>
-            <p class="cmd-desc">Activate the full Council chain. Runs all seven roles in sequence from strategy to handoff.</p>
-            <p class="cmd-example">e.g. "Run the full design process for our AI inbox triage feature."</p>
+            <p class="cmd-desc">UI recipes. Build task flows and surfaces from the system map, with the unhappy paths designed first.</p>
+            <p class="cmd-example">e.g. "Design the flow for when the AI isn't sure which team a ticket belongs to."</p>
+            <p class="cmd-tools">Uses Pencil or Figma MCP if available.</p>
           </div>
         </div>
         <div class="command-item">
@@ -310,7 +382,21 @@
           <div>
             <p class="cmd-desc">UX copy. Write warm, direct interface copy that makes AI behavior clear and legible to real people.</p>
             <p class="cmd-example">e.g. "Write the copy for our AI triage confirmation screen."</p>
-            <p class="cmd-tools">Uses Miro MCP if available.</p>
+          </div>
+        </div>
+        <div class="command-item">
+          <code class="cmd-name">/viking-design craft</code>
+          <div>
+            <p class="cmd-desc">Handoff specs. Component contracts, acceptance criteria, and QA checklists engineering can build from.</p>
+            <p class="cmd-example">e.g. "Write the handoff spec for the triage review card."</p>
+            <p class="cmd-tools">Uses Figma MCP if available.</p>
+          </div>
+        </div>
+        <div class="command-item">
+          <code class="cmd-name">/viking-design chain</code>
+          <div>
+            <p class="cmd-desc">Activate the full Council chain. Runs all seven roles in sequence from strategy to handoff.</p>
+            <p class="cmd-example">e.g. "Run the full design process for our AI inbox triage feature."</p>
           </div>
         </div>
         <div class="command-item">
@@ -341,12 +427,12 @@
       </div>
       <div class="cta-links">
         <a href="#methodology">Read the methodology →</a>
-        <a href="https://github.com/kartooner/kartoonerdotcom/tree/main/frameworks/viking" target="_blank" rel="noopener">View on GitHub →</a>
-        <a href="https://github.com/kartooner/kartoonerdotcom/blob/main/frameworks/viking/LICENSE" target="_blank" rel="noopener">MIT License →</a>
+        <a href="https://github.com/kartooner/viking-design" target="_blank" rel="noopener">View on GitHub →</a>
+        <a href="https://github.com/kartooner/viking-design/blob/main/LICENSE" target="_blank" rel="noopener">MIT License →</a>
       </div>
       <hr class="cta-divider">
       <p class="cta-attribution">
-        Built on <a href="https://github.com/impeccable-design" target="_blank" rel="noopener">Impeccable</a> and <a href="https://designwithintent.ai/" target="_blank" rel="noopener">Design with Intent</a>. Original contributions by Erik Sagen. MIT licensed. Draws from Norman, Garrett, Krug, Yablonski, Klein, Greever &amp; Nielsen. <a href="https://www.kartooner.com/recommended-books/" target="_blank" rel="noopener">Full reading list →</a>
+        Built on <a href="https://github.com/pbakaus/impeccable" target="_blank" rel="noopener">Impeccable</a> and <a href="https://designwithintent.ai/" target="_blank" rel="noopener">Design with Intent</a>. Original contributions by <a href="/about/">Erik Sagen</a>. MIT licensed. Draws from Norman, Garrett, Krug, Yablonski, Klein, Greever &amp; Nielsen. <a href="https://www.kartooner.com/recommended-books/" target="_blank" rel="noopener">Full reading list →</a>
       </p>
     </div>
   </section>
