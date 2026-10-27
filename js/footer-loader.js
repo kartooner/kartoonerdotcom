@@ -29,15 +29,45 @@
                 const currentPath = window.location.pathname;
                 const isIndexPage = currentPath === '/' || currentPath === '/index.html';
 
+                const footer = document.querySelector('footer');
+
                 if (!isIndexPage) {
                     const webring = document.querySelector('.webring');
                     if (webring) {
                         webring.style.display = 'none';
                     }
+                    // No webring, so the footer content gets a single column
+                    if (footer) {
+                        footer.classList.add('footer--single');
+                    }
                 }
+
+                alignFooterToContent(footer);
+                window.addEventListener('resize', () => alignFooterToContent(footer));
             })
             .catch(error => {
                 console.error('Error loading footer:', error);
             });
+    }
+
+    // Each page sets its own content width, so line the footer's side
+    // padding up with the page's content edges (desktop only; mobile uses CSS)
+    function alignFooterToContent(footer) {
+        if (!footer) return;
+
+        const content = document.querySelector('main') || document.querySelector('.container, .container-narrow');
+        if (!content || !window.matchMedia('(min-width: 769px)').matches) {
+            footer.style.removeProperty('padding-left');
+            footer.style.removeProperty('padding-right');
+            return;
+        }
+
+        const rect = content.getBoundingClientRect();
+        const styles = window.getComputedStyle(content);
+        const left = rect.left + parseFloat(styles.paddingLeft);
+        const right = document.documentElement.clientWidth - (rect.right - parseFloat(styles.paddingRight));
+
+        footer.style.paddingLeft = Math.round(left) + 'px';
+        footer.style.paddingRight = Math.round(right) + 'px';
     }
 })();

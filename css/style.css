@@ -1771,9 +1771,32 @@ footer {
        breathing room above the footer content on tall pages, since auto
        margins collapse to 0 once content already fills the viewport. */
     margin-top: auto;
-    padding: 6.5rem 0 2.5rem;
+    padding: 6.5rem 2rem 2.5rem;
     background: rgba(0, 0, 0, 0.2);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Desktop: footer follows the site-wide two-column grid, with its content
+   edges matching .container (1200px max, 2rem side margin) */
+@media (min-width: 769px) {
+    footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: var(--grid-gutter, 48px);
+        align-items: start;
+        padding-left: max(2rem, calc((100% - 1136px) / 2));
+        padding-right: max(2rem, calc((100% - 1136px) / 2));
+    }
+
+    footer .webring {
+        margin-top: 0;
+    }
+
+    /* Pages without the webring: one column, capped so the copyright
+       line doesn't stretch across wide pages */
+    footer.footer--single {
+        grid-template-columns: minmax(0, 600px);
+    }
 }
 
 [data-theme="light"] footer {
@@ -1826,7 +1849,7 @@ footer p {
 .webring {
     margin-top: 2rem;
     padding: 1rem;
-    text-align: center;
+    text-align: left;
 }
 
 .webring strong {
@@ -1838,7 +1861,7 @@ footer p {
 
 .webring-links {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 1.5rem;
     margin-top: 0.5rem;
 }
@@ -1871,11 +1894,11 @@ footer p {
 .footer-content {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 0;
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto;
+    text-align: left;
+    max-width: none;
+    margin: 0;
 }
 
 /* Footer Icon */
@@ -1900,7 +1923,7 @@ footer p {
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     margin: 0.5rem 0 0 0;
     padding: 0;
     list-style: none;
@@ -2458,10 +2481,17 @@ footer p {
 }
 
 /* Intro: text left, illustration right */
+/* Site-wide two-column grid: two equal columns with a 48px gutter.
+   Drives the hero, skills row, work experience header, and footer
+   so their column edges line up down the page. */
+:root {
+    --grid-gutter: 48px;
+}
+
 .page-home .intro-section {
     display: grid;
-    grid-template-columns: 60fr 40fr;
-    gap: var(--space-6);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--grid-gutter);
     align-items: start;
 }
 
@@ -2472,15 +2502,20 @@ footer p {
     padding-top: var(--space-2);
 }
 
-/* Leadership | Specialties | Design Philosophy: three columns */
+/* Leadership + Specialties (paired) | Design Philosophy (wide) */
 .page-home .skills-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: var(--space-6);
+    grid-template-columns: 1fr 1fr;
+    gap: var(--grid-gutter);
     border-top: 1px solid rgba(var(--accent-rgb), 0.2);
-    border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
-    padding-top: var(--space-5);
-    padding-bottom: var(--space-5);
+    padding-top: 56px;
+    padding-bottom: 56px;
+}
+
+.page-home .skills-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
 }
 
 /* Typography Enhancements - Homepage Only */
@@ -2488,7 +2523,7 @@ footer p {
     font-size: var(--text-base);
     line-height: 1.7;
     margin-bottom: 0;
-    max-width: 65ch;
+    max-width: none;
     color: var(--text-color);
 }
 
@@ -2534,8 +2569,8 @@ footer p {
 /* Design philosophy inline column */
 .page-home .philosophy-inline p {
     font-size: var(--text-base);
-    line-height: 1.6;
-    margin-bottom: var(--space-3);
+    line-height: 1.65;
+    margin-bottom: 28px;
     color: var(--text-color);
     font-weight: 400;
 }
@@ -2562,22 +2597,28 @@ footer p {
 .page-home .skills-list {
     list-style: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
+/* Icon left, label wraps beside it; row grows with content */
 .page-home .skills-list li {
     font-size: var(--text-base);
     font-weight: 600;
-    margin-bottom: var(--space-2);
+    margin-bottom: 0;
     color: var(--skills-color);
-    position: relative;
-    padding-left: var(--space-4);
+    display: flex;
+    align-items: flex-start;
+    gap: 21px;
+    padding-left: 0;
 }
 
 .page-home .skills-list li::before {
     content: "";
-    position: absolute;
-    left: 0;
-    top: 0.3em;
+    position: static;
+    flex: 0 0 11px;
+    margin-top: 5px;
     width: 11px;
     height: 11px;
     background-color: var(--accent-color);
@@ -2590,18 +2631,34 @@ footer p {
 }
 
 /* Work Experience Full Width Section */
+/* Thin top rule matches the one above the skills row */
 .page-home .experience-full-width {
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-8);
-    padding-top: var(--space-3);
+    margin-top: 0;
+    margin-bottom: 0;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.2);
+    padding-top: 56px;
+    padding-bottom: 56px;
 }
 
+.page-home .experience-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--grid-gutter);
+    align-items: start;
+}
+
+.page-home .experience-header h2 {
+    margin-bottom: 0;
+}
+
+/* Supporting text: reads smaller than the Design philosophy body copy */
 .page-home .experience-intro {
-    font-size: var(--text-base);
+    font-size: 16px;
+    line-height: 1.6;
     color: var(--text-color);
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-2);
-    max-width: 60ch;
+    margin-top: 0;
+    margin-bottom: 0;
+    max-width: none;
 }
 
 .page-home .experience p {
@@ -2622,47 +2679,62 @@ footer p {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-4);
-    margin-top: var(--space-3);
+    margin-top: var(--space-4);
 }
 
 .page-home .experience-grid .experience {
-    position: relative;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-    column-gap: var(--space-2);
-    align-items: baseline;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     border: 1px solid rgba(var(--accent-rgb), 0.2);
     border-radius: 8px;
-    padding: var(--space-4);
+    padding: 28px;
     margin-top: 0;
     margin-bottom: 0;
     box-shadow: 2px 4px 0 rgba(0, 0, 0, 0.04);
 }
 
+/* Top row: icon chip + date range, badge pushed to the far right */
+.page-home .experience-grid .experience-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-home .experience-grid .experience-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(var(--accent-rgb), 0.12);
+}
+
 .page-home .experience-grid .experience .experience-glyph {
-    grid-column: 1;
-    grid-row: 1;
     font-size: 0.75rem;
 }
 
 .page-home .experience-grid .experience p {
-    grid-column: 2;
-    grid-row: 1;
-    padding-right: 3.5rem;
+    margin: 0;
+    opacity: 0.75;
 }
 
 .page-home .experience-grid .experience h3 {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    margin: 0;
     overflow-wrap: break-word;
 }
 
+/* Wrap the company name as one unit so the external-link icon never
+   lands on a line by itself */
+.page-home .experience-grid .experience h3 a {
+    display: inline-block;
+    max-width: 100%;
+}
+
 .page-home .experience-grid .experience .status-badge {
-    position: absolute;
-    top: var(--space-3);
-    right: var(--space-3);
+    margin-left: auto;
 }
 
 .status-badge {
@@ -2694,8 +2766,30 @@ footer p {
         max-width: 180px;
     }
 
-    .page-home .skills-row {
+    /* Stack the skills row vertically; the asymmetric split is desktop only */
+    .page-home .skills-row,
+    .page-home .skills-pair {
         grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .page-home .skills-column {
+        margin-bottom: 0;
+        padding-right: 0;
+    }
+
+    .page-home .skills-row {
+        padding-top: var(--space-5);
+        padding-bottom: var(--space-5);
+    }
+
+    .page-home .experience-full-width {
+        padding-top: var(--space-5);
+    }
+
+    .page-home .experience-header {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
     }
 
     .page-home .experience-grid {
