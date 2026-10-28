@@ -3,6 +3,7 @@ Date: 2026-01-28T19:36:00Z
 Tags: writing, ux, design, career, leadership
 Excerpt: How UX slid from strategy to service — and what it might take to climb back out.
 Images: /assets/images/delivery-is-a-trap-cover.jpg
+Image alt: Looking up from the bottom of a deep cave at a circle of sky, with a metal walkway bolted to the rock edge
 Subtitle: How UX slid from strategy to service — and what it might take to climb back out.
 ---
 

@@ -3,6 +3,7 @@ Date: 2025-08-28T10:00:00Z
 Tags: writing, personal
 Excerpt: It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this.
 Images: /assets/images/sketch-of-kcd2.JPG
+Image alt: A red ink sketch of an old timber-framed house and tower, drawn in a spiral dot-grid notebook on a wooden table
 ---
 
 It's been awhile since I've written here. Long enough that I started to wonder if I'd ever come back to this (blogging).

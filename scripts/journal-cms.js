@@ -9,8 +9,14 @@ const STORIES_DIR = path.join(__dirname, '..', 'stories');
 const ENTRY_DIR = path.join(__dirname, '..', 'entry');
 const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
 const JOURNAL_HTML = path.join(JOURNAL_DIR, 'index.html');
-const ARCHIVE_DIR = path.join(__dirname, '..', 'archive');
-const ARCHIVE_HTML = path.join(ARCHIVE_DIR, 'index.html');
+
+// Icons: Font Awesome Free 6.7.1 (CC BY 4.0) https://fontawesome.com/license/free
+// Inline so they follow the text color and need nothing extra to load
+const ICONS = {
+    rss: '<svg class="icon glyph" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M0 64C0 46.3 14.3 32 32 32c229.8 0 416 186.2 416 416c0 17.7-14.3 32-32 32s-32-14.3-32-32C384 253.6 226.4 96 32 96C14.3 96 0 81.7 0 64zM0 416a64 64 0 1 1 128 0A64 64 0 1 1 0 416zM32 160c159.1 0 288 128.9 288 288c0 17.7-14.3 32-32 32s-32-14.3-32-32c0-123.7-100.3-224-224-224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>',
+    clock: '<svg class="icon glyph" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>',
+    tag: '<svg class="icon glyph" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>'
+};
 
 function loadJournal() {
     try {
@@ -79,6 +85,10 @@ function parseStoryFile(filePath) {
                     case 'images':
                         metadata.images = value.split(',').map(img => img.trim()).filter(img => img);
                         break;
+                    case 'image alt':
+                        // Separated with | since descriptions often have commas
+                        metadata.imageAlts = value.split('|').map(alt => alt.trim());
+                        break;
                 }
             }
         }
@@ -101,7 +111,8 @@ function parseStoryFile(filePath) {
             content: mainContent,
             excerpt,
             tags: metadata.tags || [],
-            images: metadata.images
+            images: metadata.images,
+            imageAlts: metadata.imageAlts
         };
     } catch (error) {
         console.error(`Error parsing story file ${filePath}:`, error.message);
@@ -489,7 +500,23 @@ function generateEntryPages(journal) {
         fs.mkdirSync(ENTRY_DIR, { recursive: true });
     }
 
+    // Newest first, for the older/newer links at the bottom of each entry
+    const chronological = journal.entries.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
     journal.entries.forEach(entry => {
+        const position = chronological.findIndex(e => e.id === entry.id);
+        const newer = chronological[position - 1];
+        const older = chronological[position + 1];
+        const pagerLink = (post, direction) => post ? `
+            <a href="/entry/${post.id}.html" class="entry-pager-link entry-pager-${direction}" rel="${direction === 'older' ? 'prev' : 'next'}">
+                <span class="entry-pager-label">${direction === 'older' ? '<span aria-hidden="true">&larr;</span> Older' : 'Newer <span aria-hidden="true">&rarr;</span>'}</span>
+                <span class="entry-pager-title">${escapeHtml(post.title)}</span>
+            </a>` : `
+            <span class="entry-pager-link entry-pager-${direction}" aria-hidden="true"></span>`;
+        const pagerHtml = older || newer ? `
+        <nav class="entry-pager" aria-label="More posts">${pagerLink(older, 'older')}${pagerLink(newer, 'newer')}
+        </nav>` : '';
+
         // Check if this is a longform post
         const isLongform = entry.tags && entry.tags.includes('longform');
 
@@ -497,13 +524,18 @@ function generateEntryPages(journal) {
         const tocHtml = isLongform ? generateTableOfContents(h2Headings) : '';
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
         const readingTime = calculateReadingTime(entry.content);
-        const imagesHtml = entry.images ? entry.images.map(img =>
-            `<img src="${img}" alt="Illustration accompanying the journal entry" data-progressive loading="lazy" />`).join('\n            ') : '';
+        // The first image opens the entry (usually the largest thing on screen), so it
+        // loads right away at high priority; any others wait until they're scrolled near
+        const imageAlt = index => escapeHtml((entry.imageAlts && entry.imageAlts[index]) || 'Illustration accompanying the journal entry');
+        const imagesHtml = entry.images ? entry.images.map((img, index) =>
+            index === 0
+                ? `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="eager" fetchpriority="high" />`
+                : `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="lazy" />`).join('\n            ') : '';
 
         // Generate "Tagged with" section with clickable tags
         const tagsHtml = entry.tags && entry.tags.length > 0 ? `
         <div class="tags-section">
-            <h2>Tagged with</h2>
+            <h2>${ICONS.tag}Tagged with</h2>
             <div class="tags-list">
                 ${entry.tags.map(tag => `<a href="/journal?tag=${encodeURIComponent(tag)}" class="tag">#${tag}</a>`).join('\n                ')}
             </div>
@@ -537,12 +569,25 @@ function generateEntryPages(journal) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        /* Apply the saved (or system) theme before first paint to avoid a flash */
+        (function () {
+            var theme;
+            try { theme = localStorage.getItem('theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <title>${entry.title} - Erik's Journal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
+    <script src="/js/seasonal-loader.js"></script>
     <style>
         .entry-container {
             max-width: 800px;
@@ -573,22 +618,132 @@ function generateEntryPages(journal) {
             color: var(--text-color);
         }
         
-        .entry-header {
-            margin-bottom: 20px;
+        /* Font Awesome glyphs (ICONS at the top of this file) */
+        .glyph {
+            margin-right: 0.35em;
         }
 
-        .entry-date {
+        /* Centered header, like the page titles on Journal and Voice Acting:
+           back link, title, subtitle, date, then a squiggle into the post */
+        .entry-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: var(--space-6);
+            text-align: center;
+        }
+
+        .entry-header::after {
+            content: "";
+            width: 4.5rem;
+            height: 0.7rem;
+            margin-top: var(--space-6);
+            background: var(--accent-color);
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+        }
+
+        /* Way back to the list, before the title; styled like "Back to home" on the 404 page.
+           a. prefixes outrank the global a:link underline. */
+        a.entry-back,
+        a.entry-back:link,
+        a.entry-back:visited {
+            display: inline-block;
+            margin-bottom: var(--space-6);
+            color: var(--text-color);
+            opacity: 1;
+            font-size: var(--text-base);
+            text-decoration: none;
+        }
+
+        .entry-back span {
+            margin-right: 0.5em;
+        }
+
+        a.entry-back:hover,
+        a.entry-back:focus-visible {
+            color: var(--accent-color) !important;
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 0 var(--space-6) !important;
+            text-decoration: none !important;
+        }
+
+        /* Older and newer posts, above "View all posts" */
+        .entry-pager {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-6);
+            margin: var(--space-6) 0 0;
+        }
+
+        .entry-pager-link,
+        a.entry-pager-link:link,
+        a.entry-pager-link:visited {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-1);
+            opacity: 1;
+            text-decoration: none;
+        }
+
+        .entry-pager-newer {
+            text-align: right;
+        }
+
+        .entry-pager-label {
+            font-size: var(--text-sm);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             color: var(--skills-color);
-            margin-bottom: 10px;
-            font-size: 1rem;
+        }
+
+        .entry-pager-title {
+            font-family: var(--font-secondary);
+            font-size: var(--text-xl);
+            line-height: var(--leading-snug);
+            color: var(--accent-color);
+        }
+
+        a.entry-pager-link:hover,
+        a.entry-pager-link:focus {
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            text-decoration: none !important;
+        }
+
+        a.entry-pager-link:hover .entry-pager-title,
+        a.entry-pager-link:focus .entry-pager-title {
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 0.2em;
+        }
+
+        @media (max-width: 640px) {
+            .entry-pager {
+                grid-template-columns: 1fr;
+                gap: var(--space-4);
+            }
+
+            .entry-pager-newer {
+                text-align: left;
+            }
+
+            /* Nothing on one side? Don't leave a gap */
+            span.entry-pager-link {
+                display: none;
+            }
         }
 
         .entry-title {
+            margin: 0 0 var(--space-4);
             font-family: var(--font-secondary);
             font-size: 4.5rem;
             line-height: 0.95;
-            margin-bottom: 15px;
-            color: var(--heading-color);
+            color: var(--accent-color);
+            text-wrap: balance;
         }
         
         .entry-byline {
@@ -598,11 +753,19 @@ function generateEntryPages(journal) {
             font-style: italic;
         }
         
+        /* Subtitle type comes from .page-intro, same as the page intros */
         .entry-subtitle {
-            font-family: var(--font-secondary);
-            font-size: 1.2rem;
-            color: var(--text-color);
-            margin-bottom: 20px;
+            text-wrap: balance;
+        }
+
+        /* Date and reading time, labeled like the months on /journal */
+        .entry-meta {
+            margin: 0;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--skills-color);
         }
 
         .entry-content {
@@ -914,7 +1077,8 @@ function generateEntryPages(journal) {
         /* Table of Contents - Floating on right */
         .table-of-contents {
             position: fixed;
-            top: 6rem;
+            /* Clear of the nav (6.1rem tall) and its divider */
+            top: 7.6rem;
             right: 2rem;
             background: rgba(var(--accent-rgb), 0.08);
             border-radius: 8px;
@@ -1147,12 +1311,13 @@ function generateEntryPages(journal) {
     <!-- Theme Toggle placeholder - loaded dynamically -->
     <div id="theme-toggle-placeholder"></div>
 
-    <div class="entry-container">
-        <div class="entry-header" id="main-content">
-            <div class="entry-date"># &bull; ${formatDate(entry.date)} &bull; ${readingTime} &bull; Erik Sagen</div>
+    <main class="entry-container">
+        <header class="entry-header" id="main-content">
+            <a href="/journal" class="entry-back"><span aria-hidden="true">&larr;</span>Back to Journal</a>
             <h1 class="entry-title">${entry.title}</h1>
-            ${entry.subtitle ? `<div class="entry-subtitle">${entry.subtitle}</div>` : ''}
-        </div>
+            ${entry.subtitle ? `<p class="entry-subtitle page-intro">${entry.subtitle}</p>` : ''}
+            <p class="entry-meta"><time datetime="${new Date(entry.date).toISOString().slice(0, 10)}">${formatDate(entry.date)}</time> &middot; ${ICONS.clock}${readingTime}</p>
+        </header>
 
 ${tocHtml}
         <div class="entry">
@@ -1166,11 +1331,12 @@ ${tagsHtml}
 ${relatedPostsHtml}
 
         <hr class="divider" />
+${pagerHtml}
 
         <div class="navigation">
-            <a href="/archive" class="view-all">View all posts</a>
+            <a href="/journal" class="view-all">View all posts</a>
         </div>
-    </div>
+    </main>
 
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
@@ -1179,7 +1345,6 @@ ${relatedPostsHtml}
     <script src="/js/theme-toggle-loader.js"></script>
     <script src="/js/footer-loader.js"></script>
     <script src="/js/app.min.js"></script>
-    <script src="/js/seasonal-loader.js" defer></script>
     <script>
         // Table of Contents toggle (desktop)
         const tocToggle = document.querySelector('.toc-toggle');
@@ -1242,54 +1407,70 @@ function generateJournalHtml(journal) {
         fs.mkdirSync(JOURNAL_DIR, { recursive: true });
     }
 
-    const entries = journal.entries
+    // Every entry, newest first, grouped by year and then month
+    const byYear = new Map();
+    journal.entries
+        .slice()
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 1); // Show only the latest post in full
+        .forEach(entry => {
+            const date = new Date(entry.date);
+            const year = date.getFullYear();
+            const month = date.toLocaleDateString('en-US', { month: 'long' });
+            if (!byYear.has(year)) byYear.set(year, new Map());
+            const months = byYear.get(year);
+            if (!months.has(month)) months.set(month, []);
+            months.get(month).push(entry);
+        });
 
-    const recentEntries = journal.entries
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(1, 4) // Next 3 posts for compact list
-        .map(entry => {
-            const readingTime = calculateReadingTime(entry.content);
-            return `
-                <a href="/entry/${entry.id}.html" class="recent-post-item">
-                    <span class="recent-post-date">${formatDate(entry.date)}</span>
-                    <span class="recent-post-title">${entry.title}</span>
-                    <span class="recent-post-meta">${readingTime}</span>
-                </a>`;
-        }).join('\n                ');
-
-    const postsHtml = entries.map(entry => {
-        const contentHtml = convertMarkdownToHtml(entry.content);
-        const { preview, isLong } = getContentPreview(contentHtml);
-        const subtitleHtml = entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : '';
-        const readingTime = calculateReadingTime(entry.content);
-
-        const readMoreLink = isLong ? `<p class="read-more"><a href="/entry/${entry.id}.html">Read full post →</a></p>` : '';
-
+    const snippetHtml = entry => {
+        const date = new Date(entry.date);
+        const isoDate = isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+        const tags = (entry.tags || []).map(tag => escapeHtml(tag.toLowerCase())).join(',');
         return `
-    <div class="post">
-        <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${formatDate(entry.date)} &bull; ${readingTime} &bull; Erik Sagen</div>
-        <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
-        ${subtitleHtml}
-        <div class="post-content">
-            ${preview}
-            ${readMoreLink}
-        </div>
-    </div>`;
-    }).join('\n\n    <hr class="divider" />\n');
+                        <li class="journal-item" data-tags="${tags}">
+                            <article class="journal-snippet">
+                                <h4 class="journal-snippet-title"><a href="/entry/${entry.id}.html">${escapeHtml(entry.title)}</a></h4>
+                                ${entry.excerpt ? `<p class="journal-snippet-excerpt">${escapeHtml(entry.excerpt)}</p>` : ''}
+                                <p class="journal-snippet-meta"><time datetime="${isoDate}">${formatDate(entry.date)}</time> &middot; ${ICONS.clock}${calculateReadingTime(entry.content)}</p>
+                            </article>
+                        </li>`;
+    };
+
+    const archiveHtml = [...byYear].map(([year, months]) => `
+        <section class="journal-year" aria-labelledby="year-${year}">
+            <h2 class="journal-year-title" id="year-${year}">${year}</h2>
+            ${[...months].map(([month, monthEntries]) => `
+            <section class="journal-month" aria-labelledby="month-${year}-${month.toLowerCase()}">
+                <h3 class="journal-month-title" id="month-${year}-${month.toLowerCase()}">${month} <span class="sr-only">${year}</span></h3>
+                <ol class="journal-list">${monthEntries.map(snippetHtml).join('')}
+                </ol>
+            </section>`).join('')}
+        </section>`).join('');
 
     const template = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        /* Apply the saved (or system) theme before first paint to avoid a flash */
+        (function () {
+            var theme;
+            try { theme = localStorage.getItem('theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <title>Journal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..700&display=swap" rel="stylesheet">
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
+    <script src="/js/seasonal-loader.js"></script>
     <style>
 
         .journal-container {
@@ -1581,26 +1762,158 @@ function generateJournalHtml(journal) {
             vertical-align: text-bottom;
         }
 
-        /* Read more link styling */
-        .read-more {
-            margin-top: 1.5rem;
-            font-size: 1rem;
+        /* Font Awesome glyphs (ICONS at the top of this file) */
+        .glyph {
+            margin-right: 0.35em;
         }
 
-        .read-more a {
+        /* Intro under the title; type and width come from .page-intro, same as Voice Acting and Contact */
+        /* The icon has no side bearing like letters do, so give it room after "the" */
+        .journal-intro .glyph {
+            margin-left: 0.2em;
+        }
+
+        .journal-intro a {
             color: var(--accent-color);
-            text-decoration: none;
-            font-weight: 700;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
+            white-space: nowrap;
         }
 
-        .read-more a:hover,
-        .read-more a:focus {
-            transform: translateX(4px);
+        /* Every entry, listed by year and month */
+        .journal-archive {
+            text-align: left;
+        }
+
+        .journal-year {
+            margin-top: var(--space-8);
+        }
+
+        .journal-year-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0 0 var(--space-2);
+            font-family: var(--font-secondary);
+            font-size: clamp(2.5rem, 7vw, 3.5rem);
+            line-height: 1;
+            color: var(--text-color);
+        }
+
+        /* The same squiggle as the nav's current-page mark, drawn in the accent color */
+        .journal-year-title::after {
+            content: "";
+            width: 3.5rem;
+            height: 0.6rem;
+            background: var(--accent-color);
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+            transform: rotate(-2deg);
+        }
+
+        /* Desktop: the month sits in a narrow column beside its posts */
+        .journal-month {
+            display: grid;
+            grid-template-columns: 6rem 1fr;
+            column-gap: var(--space-6);
+            align-items: baseline;
+            margin-top: var(--space-2);
+        }
+
+        .journal-month-title {
+            margin: 0;
+            text-align: right;
+            font-family: var(--font-main);
+            font-size: var(--text-sm);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--skills-color);
+        }
+
+        .journal-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .journal-snippet {
+            position: relative;
+            padding: var(--space-3) 0;
+        }
+
+        .journal-snippet-title {
+            margin: 0 0 var(--space-2);
+            font-family: var(--font-secondary);
+            font-size: var(--text-2xl);
+            line-height: var(--leading-snug);
+        }
+
+        .journal-snippet-title a {
+            /* Static so the ::after below stretches over the whole snippet */
+            position: static;
+            color: var(--accent-color);
+            opacity: 1;
+            text-decoration: none;
+            text-underline-offset: 0.2em;
+        }
+
+        /* Posts you've already read are a little quieter */
+        .journal-snippet-title a:visited {
+            color: var(--accent-color);
+            color: color-mix(in srgb, var(--accent-color) 55%, var(--skills-color));
+            opacity: 1;
+        }
+
+        /* The whole snippet is clickable; the title stays the link's name */
+        .journal-snippet-title a::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+        }
+
+        /* Underline only shows up on hover or focus */
+        .journal-snippet-title a:hover,
+        .journal-snippet-title a:focus,
+        .journal-snippet:hover .journal-snippet-title a {
             text-decoration: underline;
+            text-decoration-thickness: 2px;
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .journal-snippet-excerpt {
+            margin: 0 0 var(--space-2);
+            color: var(--text-color);
+            line-height: var(--leading-normal);
+        }
+
+        .journal-snippet-meta {
+            margin: 0;
+            font-size: var(--text-sm);
+            color: var(--skills-color);
+        }
+
+        /* Phones and small tablets: month stacks above its posts */
+        @media (max-width: 640px) {
+            .journal-month {
+                display: block;
+                margin-top: var(--space-4);
+            }
+
+            .journal-month-title {
+                text-align: left;
+            }
+        }
+
+        /* Tag filter (?tag=) */
+        .journal-filter-note {
+            margin: var(--space-6) 0 0;
+            text-align: center;
+        }
+
+        .journal-filter-note a {
+            color: var(--accent-color);
+            font-weight: 500;
         }
 
     </style>
@@ -1612,26 +1925,14 @@ function generateJournalHtml(journal) {
     <!-- Theme Toggle placeholder - loaded dynamically -->
     <div id="theme-toggle-placeholder"></div>
 
-    <div class="journal-container animate-fade-in animate-main">
+    <main class="journal-container animate-fade-in animate-main">
         <h1 class="logo animate-fade-in animate-header">Journal</h1>
-        <hr class="divider animate-fade-in animate-header" />
 
-        ${postsHtml}
+        <p class="page-intro journal-intro">Sometimes I like to write things. Pieces of life, half-thoughts, stories I don't want to lose. If you like them, maybe sign up to the <a href="/journal-feed.xml">${ICONS.rss}RSS feed</a>.</p>
 
-        <hr class="divider animate-fade-in animate-main" />
-
-        <div class="recent-posts animate-fade-in animate-footer">
-            <h3>Recent posts</h3>
-
-            <div class="recent-posts-grid">
-                ${recentEntries}
-            </div>
-
-            <div class="recent-posts-footer">
-                <a href="/archive" class="view-all">View all posts</a>
-            </div>
+        <div class="journal-archive">${archiveHtml}
         </div>
-    </div>
+    </main>
 
     <!-- Footer placeholder - loaded dynamically -->
     <div id="footer-placeholder"></div>
@@ -1640,7 +1941,6 @@ function generateJournalHtml(journal) {
     <script src="/js/theme-toggle-loader.js"></script>
     <script src="/js/footer-loader.js"></script>
     <script src="/js/app.min.js"></script>
-    <script src="/js/seasonal-loader.js" defer></script>
     <script src="/js/tag-filter.js" defer></script>
 </body>
 </html>`;
@@ -1650,157 +1950,6 @@ function generateJournalHtml(journal) {
         console.log('Journal HTML generated successfully.');
     } catch (error) {
         console.error('Error generating blog HTML:', error.message);
-    }
-}
-
-function generateArchiveHtml(journal) {
-    // Create archive directory if it doesn't exist
-    if (!fs.existsSync(ARCHIVE_DIR)) {
-        fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
-    }
-
-    const entriesByYear = journal.entries
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .reduce((acc, entry) => {
-            const entryDate = new Date(entry.date);
-            const year = entryDate.getTime() ? entryDate.getFullYear() : new Date().getFullYear();
-            if (!acc[year]) acc[year] = [];
-            acc[year].push(entry);
-            return acc;
-        }, {});
-
-    const yearsHtml = Object.entries(entriesByYear)
-        .sort(([a], [b]) => b - a)
-        .map(([year, entries]) => {
-            const entriesHtml = entries.map(entry => `
-            <div class="archive-entry">
-                <div class="entry-date">${formatDate(entry.date)}</div>
-                <h3><a href="/entry/${entry.id}.html">${entry.title}</a></h3>
-                <p class="entry-excerpt">${entry.excerpt}</p>
-            </div>`).join('');
-
-            return `
-        <div class="year-section">
-            <h2>${year}</h2>
-            ${entriesHtml}
-        </div>`;
-        }).join('');
-
-    const template = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archive - Journal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .archive-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2em;
-        }
-        
-        .logo {
-            text-align: center;
-            font-family: var(--font-secondary);
-            font-size: 5rem;
-            color: var(--accent-color);
-        }
-        
-        .year-section {
-            margin-bottom: 40px;
-        }
-        
-        .year-section h2 {
-            font-family: var(--font-secondary);
-            font-size: 2.5rem;
-            color: var(--accent-color);
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .archive-entry {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        [data-theme="light"] .archive-entry {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        
-        .entry-date {
-            color: var(--skills-color);
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        
-        .archive-entry h3 {
-            margin: 0 0 10px 0;
-        }
-        
-        .archive-entry h3 a {
-            color: var(--heading-color);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .archive-entry h3 a:hover {
-            color: var(--accent-color);
-        }
-        
-        .entry-excerpt {
-            color: var(--skills-color);
-            line-height: 1.5;
-            margin: 0;
-        }
-    </style>
-</head>
-<body>
-    <!-- Skip Navigation Link -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-
-    <!-- Navigation placeholder - loaded dynamically -->
-    <div id="navigation-placeholder"></div>
-
-    <!-- Theme Toggle placeholder - loaded dynamically -->
-    <div id="theme-toggle-placeholder"></div>
-
-    <div class="archive-container">
-        <main id="main-content" tabindex="-1">
-            <h1 class="logo">Archive</h1>
-            <hr class="divider" />
-
-            ${yearsHtml}
-
-
-        </main>
-    </div>
-
-    <!-- Footer placeholder - loaded dynamically -->
-    <div id="footer-placeholder"></div>
-
-    <script src="/js/navigation-loader.js"></script>
-    <script src="/js/theme-toggle-loader.js"></script>
-    <script src="/js/footer-loader.js"></script>
-    <script src="/js/app.min.js"></script>
-    <script src="/js/seasonal-loader.js" defer></script>
-</body>
-</html>`;
-
-    try {
-        fs.writeFileSync(ARCHIVE_HTML, template, 'utf8');
-        console.log('Archive HTML generated successfully.');
-    } catch (error) {
-        console.error('Error generating archive HTML:', error.message);
     }
 }
 
@@ -1922,8 +2071,7 @@ async function addEntry() {
 
         saveJournal(journal);
         generateJournalHtml(journal);
-        generateArchiveHtml(journal);
-        generateEntryPages(journal);
+                generateEntryPages(journal);
         generateRSSFeed(journal);
         generateAtomFeed(journal);
 
@@ -1940,8 +2088,7 @@ async function addEntry() {
 function regenerateAll() {
     const journal = loadJournal();
     generateJournalHtml(journal);
-    generateArchiveHtml(journal);
-    generateEntryPages(journal);
+        generateEntryPages(journal);
     generateRSSFeed(journal);
     generateAtomFeed(journal);
     console.log('All files regenerated successfully!');
@@ -1950,8 +2097,7 @@ function regenerateAll() {
 function syncFromStories() {
     const journal = syncStoriesFromFolder();
     generateJournalHtml(journal);
-    generateArchiveHtml(journal);
-    generateEntryPages(journal);
+        generateEntryPages(journal);
     generateRSSFeed(journal);
     generateAtomFeed(journal);
     console.log('Stories synced and all files regenerated successfully!');
@@ -1994,6 +2140,7 @@ Story File Format (/stories/YYYY-MM-DD-title.txt):
   Tags: tag1, tag2, tag3
   Excerpt: Brief description...
   Images: image1.jpg, image2.jpg
+  Image alt: What image1 shows | What image2 shows
   
   Your story content goes here...
 `);

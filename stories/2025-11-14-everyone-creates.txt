@@ -3,6 +3,7 @@ Date: 2025-11-14T18:00:00Z
 Tags: writing, personal, career, growth, longform
 Excerpt: You were always creative; you just forgot you didn't need permission to remember
 Images: /assets/images/dancing-corn-dogs-cover.png
+Image alt: Cover of Don Hahn's book Dancing Corn Dogs in the Night: a kick line of corn dogs with legs, dancing in front of a full moon
 Subtitle: Even when the system says you don't
 ---
 

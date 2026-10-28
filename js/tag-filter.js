@@ -1,136 +1,45 @@
 /**
- * Tag Filtering for Journal Pages
- * Filters journal posts by tag when ?tag= parameter is present in URL
+ * Tag Filtering for the Journal page
+ * The page already lists every entry (with its tags in data-tags), so a
+ * ?tag= in the URL just hides the ones without it, plus any month or year
+ * left empty.
  */
 
 (function () {
     'use strict';
 
     const urlParams = new URLSearchParams(window.location.search);
-    const tagFilter = urlParams.get('tag');
+    const tagFilter = (urlParams.get('tag') || '').trim().toLowerCase();
 
     if (!tagFilter) {
         return; // No tag filter, show default view
     }
 
-    // Fetch journal entries and filter by tag
-    fetch('/data/journal-entries.json')
-        .then(response => response.json())
-        .then(data => {
-            const lowerTag = tagFilter.toLowerCase();
-            const filteredEntries = data.entries.filter(entry =>
-                entry.tags && entry.tags.some(t => t.toLowerCase() === lowerTag)
-            );
+    const archive = document.querySelector('.journal-archive');
+    const title = document.querySelector('.logo');
+    if (!archive || !title) return;
 
-            if (filteredEntries.length > 0) {
-                displayFilteredPosts(filteredEntries, tagFilter);
-            } else {
-                displayNoResults(tagFilter);
-            }
-        })
-        .catch(error => console.error('Error loading journal entries:', error));
+    let matches = 0;
+    archive.querySelectorAll('.journal-item').forEach(item => {
+        const tags = (item.dataset.tags || '').split(',');
+        const match = tags.includes(tagFilter);
+        item.hidden = !match;
+        if (match) matches++;
+    });
 
-    function displayFilteredPosts(entries, tag) {
-        const container = document.querySelector('.journal-container');
-        const title = document.querySelector('.logo');
+    archive.querySelectorAll('.journal-month, .journal-year').forEach(section => {
+        section.hidden = !section.querySelector('.journal-item:not([hidden])');
+    });
 
-        if (!container || !title) return;
+    // Escape tag to prevent XSS and update title
+    const escapedTag = tagFilter.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    title.innerHTML = `Journal <span style="font-size: 0.6em; color: var(--text-color);">/ #${escapedTag}</span>`;
+    document.title = `#${tagFilter} · Journal`;
 
-        // Escape tag to prevent XSS and update title
-        const escapedTag = tag.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        title.innerHTML = `Journal <span style="font-size: 0.6em; color: var(--text-color);">/ #${escapedTag}</span>`;
-
-        // Add clear filter link
-        const clearFilter = document.createElement('div');
-        clearFilter.className = 'animate-fade-in';
-        clearFilter.style.cssText = 'text-align: center; margin-bottom: 2rem; animation-delay: 0.2s;';
-        clearFilter.innerHTML = `
-            <a href="/journal" style="color: var(--accent-color); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
-                ← View all posts
-            </a>
-        `;
-        title.after(clearFilter);
-
-        // Sort entries by date (newest first)
-        const sortedEntries = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Build filtered posts HTML using the same full "post" card style as the main journal view
-        const postsHtml = sortedEntries.map((entry, index) => {
-            const snippet = entry.excerpt || entry.subtitle || '';
-            const delay = 0.3 + (index * 0.1);
-            const dateStr = new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const wordCount = (entry.content || '').split(/\s+/).filter(Boolean).length;
-            const readTime = Math.max(1, Math.round(wordCount / 200));
-
-            return `
-                <div class="post animate-fade-in" style="animation-delay: ${delay}s">
-                    <div class="post-date"><a href="/entry/${entry.id}.html">#</a> &bull; ${dateStr} &bull; ${readTime} min read &bull; Erik Sagen</div>
-                    <h2 class="post-title"><a href="/entry/${entry.id}.html">${entry.title}</a></h2>
-                    ${entry.subtitle ? `<div class="post-subtitle">${entry.subtitle}</div>` : ''}
-                    <div class="post-content">
-                        <p>${snippet}</p>
-                        <p class="read-more"><a href="/entry/${entry.id}.html" aria-label="Read full post: ${entry.title}">Read full post →</a></p>
-                    </div>
-                </div>
-                <hr class="divider" />
-            `;
-        }).join('');
-
-        // Clean up existing content properly
-        const topDivider = container.querySelector('hr.divider');
-        const elementsToRemove = container.querySelectorAll('.post, .recent-posts, .journal-intro, .featured-post, hr.divider');
-        elementsToRemove.forEach(el => {
-            if (el !== topDivider) el.remove();
-        });
-
-        const postsContainer = document.createElement('div');
-        postsContainer.className = 'tag-filtered-posts';
-        postsContainer.innerHTML = postsHtml;
-
-        if (topDivider) {
-            topDivider.after(postsContainer);
-        } else {
-            const firstHr = container.querySelector('hr');
-            if (firstHr) {
-                firstHr.after(postsContainer);
-            } else {
-                container.appendChild(postsContainer);
-            }
-        }
-    }
-
-    function displayNoResults(tag) {
-        const container = document.querySelector('.journal-container');
-        const title = document.querySelector('.logo');
-
-        if (!container || !title) return;
-
-        const escapedTag = tag.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        title.innerHTML = `Journal <span style="font-size: 0.6em; color: var(--text-color);">/ #${escapedTag}</span>`;
-
-        const noResults = document.createElement('div');
-        noResults.className = 'animate-fade-in';
-        noResults.style.cssText = 'text-align: center; padding: 4rem 0;';
-        noResults.innerHTML = `
-            <p style="font-size: 1.2rem; color: var(--text-color); margin-bottom: 2rem;">
-                No posts found with tag "#${escapedTag}"
-            </p>
-            <a href="/journal" style="color: var(--accent-color); text-decoration: none; font-weight: 500; border: 1px solid var(--accent-color); padding: 0.5rem 1rem; border-radius: 4px;">
-                ← View all posts
-            </a>
-        `;
-
-        // Clean up existing content properly
-        const topDivider = container.querySelector('hr.divider');
-        const elementsToRemove = container.querySelectorAll('.post, .recent-posts, .journal-intro, .featured-post, hr.divider');
-        elementsToRemove.forEach(el => {
-            if (el !== topDivider) el.remove();
-        });
-
-        if (topDivider) {
-            topDivider.after(noResults);
-        } else {
-            container.appendChild(noResults);
-        }
-    }
+    const note = document.createElement('p');
+    note.className = 'journal-filter-note';
+    note.innerHTML = matches
+        ? `<a href="/journal">&larr; View all posts</a>`
+        : `No posts found with tag "#${escapedTag}". <a href="/journal">&larr; View all posts</a>`;
+    archive.before(note);
 })();

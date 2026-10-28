@@ -9,12 +9,23 @@ class MediumUI {
             'https://corsproxy.io/?',
             'https://api.codetabs.com/v1/proxy?quest='
         ];
+        this.cacheUrl = '/data/medium-cache.json'; // written by scripts/fetch-medium.js
         this.fallbackJsonUrl = '/data/medium-fallback.json';
         this.profileUrl = 'https://medium.com/@kartooner';
         this.fetchTimeoutMs = 6000;
+        this.liveCheckTimeoutMs = 4000;
     }
 
     async initialize() {
+        // Show the cached article right away, then quietly look for a newer one
+        const cached = await this.loadCache();
+        if (cached) {
+            this.render(cached);
+            this.whenIdle(() => this.checkForNewer(cached));
+            return;
+        }
+
+        // No cache: fetch the live feed through the proxies
         this.showLoading();
 
         // Try each proxy in sequence
@@ -41,6 +52,52 @@ class MediumUI {
         }
     }
 
+    async loadCache() {
+        try {
+            const response = await fetch(this.cacheUrl, { cache: 'no-cache' });
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.article ? this.toArticle(data.article) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // One proxy, short timeout; the cached article stays if anything fails.
+    // Skipped with Data Saver on, since the cached article is good enough.
+    async checkForNewer(cached) {
+        if (navigator.connection && navigator.connection.saveData) return;
+
+        try {
+            const proxyUrl = this.proxies[0] + encodeURIComponent(this.mediumRssUrl);
+            const text = await this.fetchWithTimeout(proxyUrl, { timeout: this.liveCheckTimeoutMs });
+            const latest = this.parseRss(text)[0];
+            if (latest && latest.date > cached.date) {
+                this.render(latest);
+            }
+        } catch (error) {
+            // Keep the cached article
+        }
+    }
+
+    whenIdle(callback) {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(callback, { timeout: 5000 });
+        } else {
+            setTimeout(callback, 2000);
+        }
+    }
+
+    toArticle(article) {
+        return {
+            title: article.title || 'Latest Article',
+            link: article.link || this.profileUrl,
+            excerpt: article.excerpt || '',
+            categories: article.categories || [],
+            date: article.date ? new Date(article.date) : new Date()
+        };
+    }
+
     async fetchWithTimeout(url, { timeout = 5000 } = {}) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
@@ -61,14 +118,17 @@ class MediumUI {
 
         return Array.from(xml.querySelectorAll('item')).map(item => {
             const description = (item.querySelector('description') || {}).textContent || '';
-            const content = (item.querySelector('content\\:encoded') || item.querySelector('description') || {}).textContent || '';
+            // querySelector can't match the namespaced content:encoded tag in an XML document
+            const content = (item.getElementsByTagName('content:encoded')[0] || item.querySelector('description') || {}).textContent || '';
 
-            // Extract first image from content
-            const imageMatch = content.match(/<img[^>]+src="([^">]+)"/);
-
-            // Extract plain text excerpt (remove HTML tags)
-            const textContent = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-            const excerpt = textContent.substring(0, 200) + (textContent.length > 200 ? '...' : '');
+            // Medium opens a post with its subtitle as a heading; use that when it's there,
+            // otherwise the first 200 characters of plain text
+            const subtitleMatch = content.match(/^\s*<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/);
+            const toText = html => new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+            const textContent = toText(content.replace(/<[^>]+>/g, ' '));
+            const excerpt = subtitleMatch
+                ? toText(subtitleMatch[1])
+                : textContent.substring(0, 200) + (textContent.length > 200 ? '...' : '');
 
             // Get categories/tags
             const categories = Array.from(item.querySelectorAll('category')).map(cat => cat.textContent);
@@ -76,7 +136,6 @@ class MediumUI {
             return {
                 title: (item.querySelector('title') || {}).textContent || 'Untitled',
                 link: (item.querySelector('link') || {}).textContent || this.profileUrl,
-                imageUrl: imageMatch ? imageMatch[1] : null,
                 excerpt: excerpt,
                 categories: categories,
                 date: new Date(((item.querySelector('pubDate') || {}).textContent) || Date.now())
@@ -88,15 +147,7 @@ class MediumUI {
         const response = await fetch(this.fallbackJsonUrl, { cache: 'no-cache' });
         if (!response.ok) throw new Error('Fallback JSON missing');
         const data = await response.json();
-        const article = data.article || data;
-        this.render({
-            title: article.title || 'Latest Article',
-            link: article.link || this.profileUrl,
-            imageUrl: article.imageUrl || '',
-            excerpt: article.excerpt || '',
-            categories: article.categories || [],
-            date: article.date ? new Date(article.date) : new Date()
-        });
+        this.render(this.toArticle(data.article || data));
     }
 
     showLoading() {
@@ -125,21 +176,21 @@ class MediumUI {
             article.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
             new Date(article.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Text only, like the journal column beside it, so the section stays even
         this.container.innerHTML = `
             <div class="article-entry">
-                ${article.imageUrl ? `
-                    <img src="${article.imageUrl}" 
-                         alt="${this.escapeHtml(article.title)}" 
-                         class="article-image"
-                         loading="lazy" />
-                ` : ''}
                 <div class="article-info">
-                    <h3><a href="${article.link}" target="_blank" rel="noopener noreferrer" aria-label="Read article on Medium">${this.escapeHtml(article.title)}</a></h3>
+                    <h3><a href="${this.safeUrl(article.link, this.profileUrl)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(article.title)}</a></h3>
                     <p class="article-meta">Published ${formattedDate}</p>
                     ${article.excerpt ? `<p class="article-excerpt">${this.escapeHtml(article.excerpt)}</p>` : ''}
                 </div>
             </div>
         `;
+    }
+
+    // Only http(s) URLs make it into href/src, escaped
+    safeUrl(url, fallback) {
+        return /^https?:\/\//i.test(url || '') ? this.escapeHtml(url) : fallback;
     }
 
     escapeHtml(text) {

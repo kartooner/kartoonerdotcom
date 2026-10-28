@@ -1,4 +1,9 @@
 (function() {
+    // A baked-in toggle sits above this script, so set it up right away
+    if (document.getElementById('theme-toggle')) {
+        initThemeToggle();
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', loadThemeToggle);
     } else {
@@ -7,8 +12,14 @@
 
     function loadThemeToggle() {
         const placeholder = document.getElementById('theme-toggle-placeholder');
-        if (!placeholder) return;
 
+        // Toggle baked into the page by scripts/build-partials.js
+        if (!placeholder) {
+            initThemeToggle();
+            return;
+        }
+
+        // Fallback for pages that haven't been built
         fetch('/partials/theme-toggle.html')
             .then(response => {
                 if (!response.ok) throw new Error('Theme toggle not found');
@@ -33,21 +44,14 @@
         themeToggle.dataset.initialized = 'true';
 
         const htmlElement = document.documentElement;
-        const themeIcon = themeToggle.querySelector('.theme-toggle-icon');
+        // The sun/moon icon follows data-theme in CSS; only the label changes here
         const themeText = themeToggle.querySelector('.theme-toggle-text');
+        if (!themeText) return;
 
         const savedTheme = htmlElement.getAttribute('data-theme') || 'dark';
 
         function updateToggleButton(theme) {
-            if (theme === 'light') {
-                themeIcon.textContent = '🌙';
-                themeText.textContent = 'Dark mode';
-                themeToggle.setAttribute('aria-pressed', 'true');
-            } else {
-                themeIcon.textContent = '☀️';
-                themeText.textContent = 'Light mode';
-                themeToggle.setAttribute('aria-pressed', 'false');
-            }
+            themeText.textContent = theme === 'light' ? 'Dark mode' : 'Light mode';
         }
 
         updateToggleButton(savedTheme);
@@ -56,15 +60,8 @@
             const currentTheme = htmlElement.getAttribute('data-theme') || 'dark';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             htmlElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            try { localStorage.setItem('theme', newTheme); } catch (e) {}
             updateToggleButton(newTheme);
-        });
-
-        themeToggle.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                themeToggle.click();
-            }
         });
     }
 })();

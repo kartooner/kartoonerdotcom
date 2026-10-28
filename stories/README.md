@@ -20,6 +20,7 @@ Date: 2024-08-28T12:00:00Z
 Tags: tag1, tag2, tag3
 Excerpt: Brief description that appears in archive and RSS
 Images: image1.jpg, image2.jpg
+Image alt: What the first image shows | What the second image shows
 Subtitle: Optional subtitle (appears below title)
 
 Your story content goes here. You can use simple markdown:
@@ -47,6 +48,7 @@ Paragraphs are separated by double line breaks.
 - **Tags** (optional): Comma-separated tags
 - **Excerpt** (optional): Brief description, auto-generated if not provided
 - **Images** (optional): Comma-separated image URLs
+- **Image alt** (optional): A short description of each image for people using screen readers, in the same order as Images and separated with `|`. Describe what's in the picture, not "image of". Without it, images get a generic description.
 - **Subtitle** (optional): Appears below the main title
 
 ## Building
@@ -62,7 +64,7 @@ npm run list    # List all stories
 ## Workflow
 
 1. Create new `.txt` file in this folder
-2. Run `npm run sync` to regenerate blog/archive/RSS
+2. Run `npm run sync` to regenerate the journal, entries and RSS
 3. Commit and push to deploy
 
 That's it! Your stories are now live on your blog.

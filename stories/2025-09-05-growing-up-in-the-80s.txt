@@ -3,6 +3,7 @@ Date: 2025-09-05T11:35:00Z
 Tags: writing, personal
 Excerpt: When movies, music, and games came together perfectly.
 Images: /assets/images/land-before-time-cover.jpg
+Image alt: Littlefoot and friends from The Land Before Time looking out across a hazy prehistoric valley
 Subtitle: When movies, music, and games came together perfectly.
 ---
 

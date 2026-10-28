@@ -35,11 +35,14 @@ class ReviewsUI {
     }
 
     render(movies) {
+        // Posters are optional extras, so skip them when the visitor has Data Saver on
+        const showPosters = !(navigator.connection && navigator.connection.saveData);
+
         this.container.innerHTML = movies
             .map(movie => `
                 <article class="review-card">
-                    <a href="${movie.link}" target="_blank" rel="noopener">
-                        ${movie.imageUrl ? `<img src="${movie.imageUrl}" alt="${this.escapeHtml(movie.title)}" loading="lazy">` : ''}
+                    <a href="${this.safeUrl(movie.link, this.profileUrl)}" target="_blank" rel="noopener">
+                        ${showPosters && this.safeUrl(movie.imageUrl) ? `<img src="${this.safeUrl(movie.imageUrl)}" alt="${this.escapeHtml(movie.title)}" loading="lazy">` : ''}
                         <div class="review-info">
                             <h3>${this.escapeHtml(movie.title)}</h3>
                             ${movie.stars ? `<span class="review-stars">${movie.stars}</span>` : ''}
@@ -48,6 +51,11 @@ class ReviewsUI {
                 </article>
             `)
             .join('');
+    }
+
+    // Only http(s) URLs make it into href/src, escaped
+    safeUrl(url, fallback) {
+        return /^https?:\/\//i.test(url || '') ? this.escapeHtml(url) : fallback;
     }
 
     escapeHtml(text) {

@@ -230,7 +230,6 @@ Images: Optional - Comma-separated image URLs
 
 - Journal index: `/journal/`
 - Individual entries: `/entry/story-slug.html`
-- Archive: `/archive.html`
 - RSS feed: `/journal-feed.xml`
 - Atom feed: `/journal-atom.xml`
 

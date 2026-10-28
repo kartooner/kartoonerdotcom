@@ -59,6 +59,9 @@
             }
         };
 
+        // Lets the home page apply the greeting as soon as its heading is parsed
+        window.applySeasonalGreeting = updateGreeting;
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', updateGreeting);
         } else {
@@ -97,6 +100,9 @@
                 }
             }
         };
+
+        // Lets the home page apply the greeting as soon as its heading is parsed
+        window.applySeasonalGreeting = updateGreeting;
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', updateGreeting);
@@ -174,10 +180,13 @@
             try {
                 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 if (prefersReducedMotion) return;
+                // three.js is ~600KB, so skip the ball when the visitor has Data Saver on
+                if (navigator.connection && navigator.connection.saveData) return;
                 if (document.querySelector('#discoBallCanvas')) return;
 
-                const THREE = await import('https://cdn.skypack.dev/three@0.133.1/build/three.module');
-                const BufferGeometryUtils = await import('https://cdn.skypack.dev/three@0.133.1/examples/jsm/utils/BufferGeometryUtils.js');
+                // jsDelivr's +esm builds resolve both files to the same three.js instance
+                const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.133.1/+esm');
+                const BufferGeometryUtils = await import('https://cdn.jsdelivr.net/npm/three@0.133.1/examples/jsm/utils/BufferGeometryUtils.js/+esm');
 
                 const waitForFooter = () => {
                     return new Promise((resolve) => {
@@ -227,35 +236,65 @@
                 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 10);
                 camera.position.z = 2;
 
-                new THREE.TextureLoader().load(
-                    'https://assets.codepen.io/959327/matcap-crystal.png',
-                    (texture) => {
-                        const discoBall = createDiscoBall(THREE, BufferGeometryUtils, texture);
-                        scene.add(discoBall);
+                // The CodePen matcap this used is gone (404), so paint one instead
+                ((texture) => {
+                    const discoBall = createDiscoBall(THREE, BufferGeometryUtils, texture);
+                    scene.add(discoBall);
 
-                        let animationFrameId;
-                        const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+                    let animationFrameId;
+                    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-                        const animate = () => {
-                            if (!motionQuery.matches) {
-                                animationFrameId = requestAnimationFrame(animate);
-                                discoBall.rotation.y += 0.005;
-                                discoBall.rotation.x += 0.002;
-                                renderer.render(scene, camera);
-                            }
-                        };
+                    const animate = () => {
+                        if (!motionQuery.matches) {
+                            animationFrameId = requestAnimationFrame(animate);
+                            discoBall.rotation.y += 0.005;
+                            discoBall.rotation.x += 0.002;
+                            renderer.render(scene, camera);
+                        }
+                    };
 
-                        motionQuery.addEventListener('change', (e) => {
-                            if (e.matches) {
-                                if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                            } else {
-                                animate();
-                            }
-                        });
+                    motionQuery.addEventListener('change', (e) => {
+                        if (e.matches) {
+                            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                        } else {
+                            animate();
+                        }
+                    });
 
-                        animate();
-                    }
-                );
+                    animate();
+                })(createMatcapTexture(THREE));
+
+                // A matcap is a picture of a lit sphere; each mirror tile samples it by
+                // the way it faces, so bright spots read as glints as the ball turns
+                function createMatcapTexture(THREE) {
+                    const size = 256;
+                    const paint = document.createElement('canvas');
+                    paint.width = paint.height = size;
+                    const ctx = paint.getContext('2d');
+
+                    // Cool silver body: bright upper left falling off to deep steel
+                    const body = ctx.createRadialGradient(size * 0.35, size * 0.3, size * 0.02, size * 0.5, size * 0.5, size * 0.5);
+                    body.addColorStop(0, '#ffffff');
+                    body.addColorStop(0.25, '#eef1f8');
+                    body.addColorStop(0.55, '#aab1c4');
+                    body.addColorStop(0.85, '#565c6e');
+                    body.addColorStop(1, '#22252e');
+                    ctx.fillStyle = body;
+                    ctx.fillRect(0, 0, size, size);
+
+                    // A few sparkles so tiles catch light at different angles
+                    [[0.68, 0.32, 0.07], [0.3, 0.7, 0.05], [0.75, 0.72, 0.04]].forEach(([x, y, r]) => {
+                        const glint = ctx.createRadialGradient(size * x, size * y, 0, size * x, size * y, size * r);
+                        glint.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                        glint.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        ctx.fillStyle = glint;
+                        ctx.fillRect(0, 0, size, size);
+                    });
+
+                    const texture = new THREE.CanvasTexture(paint);
+                    texture.encoding = THREE.sRGBEncoding;
+                    return texture;
+                }
 
                 function createDiscoBall(THREE, BufferGeometryUtils, texture) {
                     const dummy = new THREE.Object3D();
@@ -340,6 +379,9 @@
             }
         };
 
+        // Lets the home page apply the greeting as soon as its heading is parsed
+        window.applySeasonalGreeting = updateGreeting;
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', updateGreeting);
         } else {
@@ -378,6 +420,9 @@
                 }
             }
         };
+
+        // Lets the home page apply the greeting as soon as its heading is parsed
+        window.applySeasonalGreeting = updateGreeting;
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', updateGreeting);

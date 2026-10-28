@@ -429,27 +429,6 @@ a.timeline-company:hover {
     gap: var(--space-3);
 }
 
-.article-image {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.article-image:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="light"] .article-image {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="light"] .article-image:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
 .article-info h3 {
     font-family: var(--font-secondary);
     font-size: var(--text-xl);

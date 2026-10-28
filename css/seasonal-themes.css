@@ -63,9 +63,6 @@
 [data-fall="true"][data-theme="light"] .doodle-lines .line-2 { stroke: #6b4e71; opacity: 0.5; }
 [data-fall="true"][data-theme="light"] .doodle-lines .line-3 { stroke: #b8654a; opacity: 0.4; }
 
-[data-fall="true"] .persistent-nav { background: rgba(26, 10, 46, 0.45); }
-[data-fall="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%); }
-
 /* Mobile menu background for fall theme */
 @media (max-width: 768px) {
     [data-fall="true"] .nav-links,
@@ -87,24 +84,6 @@
     background-image: radial-gradient(circle, rgba(217, 84, 30, 0.08), rgba(107, 78, 113, 0.04));
     border: 1px solid rgba(217, 84, 30, 0.2);
     box-shadow: 0 4px 16px 0 rgba(139, 58, 0, 0.15);
-}
-
-[data-fall="true"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(255, 111, 60, 0.25) 0%,
-        rgba(255, 111, 60, 0.15) 30%,
-        rgba(255, 111, 60, 0) 70%
-    );
-}
-
-[data-fall="true"][data-theme="light"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(217, 84, 30, 0.3) 0%,
-        rgba(217, 84, 30, 0.15) 30%,
-        rgba(217, 84, 30, 0) 70%
-    );
 }
 
 [data-fall="true"] .info-section {
@@ -235,9 +214,6 @@
 [data-christmas="true"] .light:nth-child(10n+9) { animation: blink 1.5s infinite 1.05s; }
 [data-christmas="true"] .light:nth-child(10n+10) { animation: blink 1.5s infinite 1.35s; }
 
-[data-christmas="true"] .persistent-nav { background: rgba(43, 45, 49, 0.5); }
-[data-christmas="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #faf7f2 0%, #f5f0ea 100%); }
-
 /* Mobile menu background for Christmas theme */
 @media (max-width: 768px) {
     [data-christmas="true"] .nav-links,
@@ -259,24 +235,6 @@
     background-image: radial-gradient(circle, rgba(181, 77, 77, 0.08), rgba(61, 90, 76, 0.04));
     border: 1px solid rgba(181, 77, 77, 0.18);
     box-shadow: 0 4px 16px 0 rgba(139, 90, 60, 0.12);
-}
-
-[data-christmas="true"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(216, 94, 94, 0.25) 0%,
-        rgba(230, 184, 92, 0.15) 30%,
-        rgba(216, 94, 94, 0) 70%
-    );
-}
-
-[data-christmas="true"][data-theme="light"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(181, 77, 77, 0.3) 0%,
-        rgba(181, 77, 77, 0.15) 30%,
-        rgba(181, 77, 77, 0) 70%
-    );
 }
 
 [data-christmas="true"] .info-section {
@@ -353,9 +311,6 @@
 [data-spring="true"][data-theme="light"] .doodle-lines .line-2 { stroke: #e91e63; opacity: 0.5; }
 [data-spring="true"][data-theme="light"] .doodle-lines .line-3 { stroke: #66bb6a; opacity: 0.4; }
 
-[data-spring="true"] .persistent-nav { background: rgba(26, 46, 31, 0.5); }
-[data-spring="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #f7fef5 0%, #f0f8ef 100%); }
-
 /* Mobile menu background for Spring theme */
 @media (max-width: 768px) {
     [data-spring="true"] .nav-links,
@@ -377,24 +332,6 @@
     background-image: radial-gradient(circle, rgba(76, 175, 80, 0.08), rgba(233, 30, 99, 0.04));
     border: 1px solid rgba(76, 175, 80, 0.18);
     box-shadow: 0 4px 16px 0 rgba(45, 74, 47, 0.12);
-}
-
-[data-spring="true"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(125, 216, 125, 0.25) 0%,
-        rgba(255, 196, 225, 0.15) 30%,
-        rgba(125, 216, 125, 0) 70%
-    );
-}
-
-[data-spring="true"][data-theme="light"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(53, 122, 56, 0.3) 0%,
-        rgba(53, 122, 56, 0.15) 30%,
-        rgba(53, 122, 56, 0) 70%
-    );
 }
 
 [data-spring="true"] .info-section {
@@ -471,9 +408,6 @@
 [data-summer="true"][data-theme="light"] .doodle-lines .line-2 { stroke: #00bcd4; opacity: 0.5; }
 [data-summer="true"][data-theme="light"] .doodle-lines .line-3 { stroke: #ffb347; opacity: 0.4; }
 
-[data-summer="true"] .persistent-nav { background: rgba(26, 34, 51, 0.5); }
-[data-summer="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #fffbf5 0%, #fff8ed 100%); }
-
 /* Mobile menu background for Summer theme */
 @media (max-width: 768px) {
     [data-summer="true"] .nav-links,
@@ -495,24 +429,6 @@
     background-image: radial-gradient(circle, rgba(255, 152, 0, 0.08), rgba(0, 188, 212, 0.04));
     border: 1px solid rgba(255, 152, 0, 0.18);
     box-shadow: 0 4px 16px 0 rgba(230, 81, 0, 0.12);
-}
-
-[data-summer="true"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(255, 179, 71, 0.25) 0%,
-        rgba(78, 205, 196, 0.15) 30%,
-        rgba(255, 179, 71, 0) 70%
-    );
-}
-
-[data-summer="true"][data-theme="light"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(230, 81, 0, 0.3) 0%,
-        rgba(230, 81, 0, 0.15) 30%,
-        rgba(230, 81, 0, 0) 70%
-    );
 }
 
 [data-summer="true"] .info-section {
@@ -592,9 +508,6 @@
 [data-newyear="true"][data-theme="light"] .doodle-lines .line-2 { stroke: #8B7355; opacity: 0.5; }
 [data-newyear="true"][data-theme="light"] .doodle-lines .line-3 { stroke: #9b7e3c; opacity: 0.4; }
 
-[data-newyear="true"] .persistent-nav { background: rgba(26, 23, 20, 0.5); }
-[data-newyear="true"][data-theme="light"] .persistent-nav { background: linear-gradient(135deg, #fffdf7 0%, #f8f5ed 100%); }
-
 /* Mobile menu background for New Year's theme */
 @media (max-width: 768px) {
     [data-newyear="true"] .nav-links,
@@ -616,24 +529,6 @@
     background-image: radial-gradient(circle, rgba(184, 134, 11, 0.1), rgba(139, 115, 85, 0.05));
     border: 1px solid rgba(184, 134, 11, 0.2);
     box-shadow: 0 4px 16px 0 rgba(155, 126, 60, 0.15);
-}
-
-[data-newyear="true"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(212, 175, 55, 0.25) 0%,
-        rgba(232, 215, 181, 0.15) 30%,
-        rgba(212, 175, 55, 0) 70%
-    );
-}
-
-[data-newyear="true"][data-theme="light"] .top-skills-box::before {
-    background: radial-gradient(
-        circle at center,
-        rgba(184, 134, 11, 0.3) 0%,
-        rgba(184, 134, 11, 0.15) 30%,
-        rgba(184, 134, 11, 0) 70%
-    );
 }
 
 [data-newyear="true"] .info-section {

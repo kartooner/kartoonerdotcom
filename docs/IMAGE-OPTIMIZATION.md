@@ -1,148 +1,49 @@
-# Image Optimization Setup
+# Image Optimization
 
-This document explains the image optimization system implemented for kartooner.com.
+How images are made small and fast on kartooner.com. `npm run build` runs all of it.
 
-## Overview
+## Adding an image
 
-The site now includes advanced image optimization with:
-- **WebP support** with automatic fallback to original formats
-- **Enhanced progressive loading** with skeleton animations  
-- **Lazy loading** for improved Core Web Vitals
-- **Automatic optimization detection** and reporting
+1. Put the JPG or PNG in `assets/images/` (subfolders are fine).
+2. Reference the original in HTML, data or a story as usual, e.g. `/assets/images/my-cover.jpg`.
+3. Run `npm run build`.
 
-## Files Added
+That's it. Keep the originals; they're the fallback.
 
-### JavaScript
-- `enhanced-progressive-images.js` - Enhanced loader with WebP support
-- `build-js.js` - Build script for creating optimized app.min.js bundle
-- `webp-loader.js` - Standalone WebP loader (reference implementation)
+## What the build does
 
-### Image Conversion
-- `convert-to-webp.sh` - Unix/macOS image conversion script
-- `convert-to-webp.bat` - Windows image conversion script
+### 1. `scripts/optimize-images.js` (`npm run optimize-images`)
 
-### Updated
-- `app.min.js` - Now includes enhanced progressive loading with WebP support
-- `package.json` - Added `build-js` and `optimize-images` scripts
+Creates a `.webp` next to every `.jpg/.jpeg/.png` in `assets/images/`:
+- Resized to at most **1600px** wide (2x the widest content column), never upscaled
+- Photos (JPG) at quality 78; illustrations (PNG) at quality 92 so paper grain and brush texture survive
+- Skips images whose `.webp` is already newer than the original. Use `--force` to redo everything (e.g. after changing the quality settings)
 
-## Usage
+### 2. `scripts/build-images.js`
 
-### 1. Convert Images to WebP
+For every local JPG/PNG `<img>` in the site's pages:
+- Adds `width`/`height` from the original, so the browser reserves the right shape and the page doesn't jump
+- Wraps it in `<picture>` with the WebP as a `<source>`, keeping the original as the fallback
 
-**Unix/macOS/Linux:**
-```bash
-npm run optimize-images
-# or directly:
-./convert-to-webp.sh
-```
+Images already inside a `<picture>` are left alone, so it's safe to re-run.
 
-**Windows:**
-```cmd
-convert-to-webp.bat
-```
+Two base rules in `css/style.css` keep this from changing any layout:
+- `picture { display: contents; }` so the `<img>` lays out as if it were the direct child
+- `:where(img[width][height]) { height: auto; }` so images keep scaling as before (zero specificity, so component styles still win)
 
-**Prerequisites:**
-- Install WebP tools: `apt-get install webp` (Ubuntu), `brew install webp` (macOS)
-- Or download from: https://developers.google.com/speed/webp/download
+### Images rendered by JavaScript
 
-### 2. Rebuild JavaScript Bundle
+`about/about.js` builds the same `<picture>` markup for local images that come from `data/content.json`.
 
-After making changes to JS source files:
-```bash
-npm run build-js
-```
+## Loading priority
 
-This creates an optimized `app.min.js` with:
-- Theme toggle functionality
-- Enhanced progressive image loading with WebP support
-- Skeleton loading animations
-- Shimmer effects
-- Weather widget
-- RSS content loading
+- The first image in a journal entry loads eagerly with `fetchpriority="high"` (set in the entry template in `scripts/journal-cms.js`), since it's usually the largest thing on screen
+- Everything else is `loading="lazy"`
 
-### 3. HTML Usage
+## Progressive loading (`js/app.min.js`)
 
-Simply use the `data-progressive` attribute on images:
-```html
-<img src="/img/large-image.jpg" alt="Description" data-progressive loading="lazy" />
-```
+`EnhancedProgressiveImageLoader` shows a skeleton shimmer while each image loads, then fades it in. It doesn't fetch anything itself (WebP comes from the `<picture>` markup), so each image downloads once. If a WebP is ever missing, it drops the `<source>` and falls back to the original. Hovering an image served as WebP shows a small "WebP" badge.
 
-The system automatically:
-1. **Detects WebP support** in the browser
-2. **Tests for WebP versions** of images (e.g., `large-image.webp`)
-3. **Falls back gracefully** to original format if WebP unavailable
-4. **Shows skeleton loading** during image download
-5. **Displays optimization status** in console
+## Requirements
 
-## Expected Performance Gains
-
-Based on the current images:
-
-| Image | Original Size | WebP Size (est.) | Savings |
-|-------|---------------|------------------|---------|
-| xwing-ink-thumb.png | 1.6MB | ~640KB | 60% |
-| sketch-of-kcd2.JPG | 1.4MB | ~560KB | 60% |
-| og-friendly-introduction-to-svg.png | 1.3MB | ~520KB | 60% |
-| pathfinder-thumb.png | 1.1MB | ~440KB | 60% |
-| manager-thumb.jpeg | 747KB | ~300KB | 60% |
-| power-pole.jpg | 730KB | ~290KB | 60% |
-
-**Total estimated savings: ~4.5MB → ~1.8MB (60% reduction)**
-
-## Browser Support
-
-- **WebP Support**: Chrome, Firefox, Safari 14+, Edge
-- **Graceful Fallback**: All browsers (automatic fallback to JPG/PNG)
-- **Progressive Loading**: All modern browsers
-- **Lazy Loading**: All modern browsers with native `loading="lazy"`
-
-## Development Workflow
-
-1. **Add new images** to `/img/` directory (JPG/PNG format)
-2. **Run conversion script** to generate WebP versions
-3. **Use `data-progressive`** attribute in HTML
-4. **Test across browsers** to verify WebP/fallback behavior
-
-## Console Output
-
-The system logs helpful information:
-```
-Enhanced Progressive Images: Found 6 images to optimize
-WebP version available: /img/power-pole.webp  
-Enhanced image: /img/power-pole.jpg → /img/power-pole.webp (WebP: true)
-WebP support: ✅ Enabled
-💡 Tip: Convert your images to WebP format for even better performance!
-```
-
-## Troubleshooting
-
-**WebP not loading?**
-- Check if WebP files exist in `/img/` directory
-- Verify file permissions
-- Check browser console for error messages
-
-**Skeleton not showing?**
-- Ensure `data-progressive` attribute is present
-- Check that `app.min.js` is loaded
-- Verify CSS is not conflicting with `.image-skeleton` styles
-
-**Build script fails?**
-- Ensure all source JS files exist
-- Check Node.js version (requires Node 12+)
-- Verify file permissions
-
-## Technical Details
-
-### WebP Detection
-Uses a small base64-encoded WebP test image to detect browser support without network requests.
-
-### Fallback Strategy
-1. Try loading WebP version
-2. If WebP fails, automatically fall back to original
-3. If original fails, show error state with visual indicator
-
-### Performance Impact
-- **Minimal JavaScript overhead** (~2KB added to bundle)
-- **Lazy loading** reduces initial page load
-- **WebP compression** saves 40-70% bandwidth
-- **Skeleton loading** improves perceived performance
+[sharp](https://sharp.pixelplumbing.com/) (a dev dependency, installed by `npm install`). No system tools needed.

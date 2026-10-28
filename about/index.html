@@ -4,6 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        /* Apply the saved (or system) theme before first paint to avoid a flash */
+        (function () {
+            var theme;
+            try { theme = localStorage.getItem('theme'); } catch (e) {}
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <title>About - Erik Sagen</title>
     <meta name="description"
         content="Learn more about Erik Sagen - Lead Product UX Designer, illustrator, and web developer. Discover what I'm reading, watching, and exploring.">
@@ -13,14 +24,12 @@
     <link rel="dns-prefetch" href="https://api.web3forms.com">
     <link rel="preload" href="/assets/fonts/Cartridge-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/fonts/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..700&display=swap" rel="stylesheet">
     <link id="pixelify-font"
         href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"
         disabled>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
-        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
     <script src="/js/seasonal-loader.js"></script>
 
     <meta property="og:title" content="About - Erik Sagen">
@@ -62,9 +71,35 @@
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <div id="navigation-placeholder"></div>
+    <!-- partial:navigation (generated from partials/, edit there and run npm run build) -->
+    <nav class="persistent-nav" aria-label="Site navigation">
+        <button class="mobile-menu-toggle" aria-expanded="false" aria-controls="site-nav-links">
+            <span class="menu-text">Menu</span>
+        </button>
 
-    <div id="theme-toggle-placeholder"></div>
+        <div class="nav-links" id="site-nav-links">
+            <button class="mobile-close-button" aria-label="Close menu">
+                <span class="close-text">×</span>
+            </button>
+            <a href="/" data-nav="home">Home</a>
+            <a href="/about" data-nav="about" class="current" aria-current="page">About</a>
+            <a href="/journal" data-nav="journal">Journal</a>
+            <a href="/voice-acting" data-nav="voice-acting">Voice Acting</a>
+            <a href="/contact" data-nav="contact">Contact</a>
+        </div>
+    </nav>
+    <!-- /partial:navigation -->
+
+    <!-- partial:theme-toggle (generated from partials/, edit there and run npm run build) -->
+    <!-- Icons: Font Awesome Free 6.7.1 (CC BY 4.0) https://fontawesome.com/license/free -->
+    <button id="theme-toggle" class="theme-toggle">
+        <span class="theme-toggle-icon" aria-hidden="true">
+            <svg class="icon icon-moon" viewBox="0 0 384 512" focusable="false"><path d="M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/></svg>
+            <svg class="icon icon-sun" viewBox="0 0 512 512" focusable="false"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391 371.1 498.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121 140.9 13.1c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1 346.3 2.8c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zm224 0a128 128 0 1 0 -256 0 128 128 0 1 0 256 0z"/></svg>
+        </span>
+        <span class="sr-only">Switch to </span><span class="theme-toggle-text">Dark mode</span>
+    </button>
+    <!-- /partial:theme-toggle -->
 
     <div class="container">
         <main id="main-content" class="animate-fade-in animate-main" tabindex="-1">
@@ -74,8 +109,8 @@
             <div class="about-intro">
                 <div class="bio-grid">
                     <div class="avatar-column">
-                        <img src="../assets/images/erik-avatar-26.jpg" alt="Erik Sagen headshot" class="author-headshot"
-                            data-progressive loading="lazy" />
+                        <picture><source srcset="../assets/images/erik-avatar-26.webp" type="image/webp"><img src="../assets/images/erik-avatar-26.jpg" alt="Erik Sagen headshot" class="author-headshot"
+                            data-progressive loading="lazy" width="1000" height="1000" /></picture>
                     </div>
 
                     <p class="intro-text">Born in the 80s, raised in the 90s. I spent my time drawing, playing games,
@@ -184,9 +219,9 @@
                 <p class="section-intro">I read a lot of books, often several at a time, but here's one I'm currently
                     engaged with.</p>
                 <div class="book-entry">
-                    <img src="../assets/images/socrates-express-cover.jpg"
+                    <picture><source srcset="../assets/images/socrates-express-cover.webp" type="image/webp"><img src="../assets/images/socrates-express-cover.jpg"
                         alt="Book cover of The Socrates Express by Eric Weiner" class="book-cover"
-                        data-progressive />
+                        data-progressive width="591" height="900" /></picture>
                     <div class="book-info">
                         <h3><a href="https://ericweinerbooks.com/books/the-socrates-express/" target="_blank" rel="noopener noreferrer"
                                 aria-label="View book listing">The Socrates Express</a></h3>
@@ -213,7 +248,45 @@
         </main>
     </div>
 
-    <div id="footer-placeholder"></div>
+    <!-- partial:footer (generated from partials/, edit there and run npm run build) -->
+    <footer class="animate-fade-in animate-footer" role="contentinfo" aria-label="Site footer">
+        <div class="footer-content">
+            <div class="footer-icon">
+                <img src="/assets/images/joystiq-icn.gif" loading="lazy" alt="" class="icon-default" />
+                <picture><source srcset="/assets/images/pixel-pumpkin.webp" type="image/webp"><img src="/assets/images/pixel-pumpkin.png" loading="lazy" alt="" class="icon-pumpkin" width="20" height="20" /></picture>
+            </div>
+
+            <p class="changelog">
+                &copy; <span id="current-year">2026</span> Erik Sagen. Built with care in Rochester, NY. <a href="https://github.com/kartooner/kartoonerdotcom?tab=MIT-1-ov-file" target="_blank" rel="noopener noreferrer">Code licensed under MIT</a>. <a href="/thanks">Special thanks</a>. <a href="/journal-feed.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+            </p>
+
+            <!-- Icons: Font Awesome Free 6.7.1 (CC BY 4.0) https://fontawesome.com/license/free -->
+            <div class="social-icons" role="navigation" aria-label="Social media links">
+                <a href="https://bsky.app/profile/kartooner.bsky.social" target="_blank" rel="noopener noreferrer" class="social-icon bluesky">
+                    <span class="tooltip">Bluesky</span>
+                    <span class="sr-only">(opens in new tab)</span>
+                    <svg class="icon" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path d="M111.8 62.2C170.2 105.9 233 194.7 256 242.4c23-47.6 85.8-136.4 144.2-180.2c42.1-31.6 110.3-56 110.3 21.8c0 15.5-8.9 130.5-14.1 149.2C478.2 298 412 314.6 353.1 304.5c102.9 17.5 129.1 75.5 72.5 133.5c-107.4 110.2-154.3-27.6-166.3-62.9l0 0c-1.7-4.9-2.6-7.8-3.3-7.8s-1.6 3-3.3 7.8l0 0c-12 35.3-59 173.1-166.3 62.9c-56.5-58-30.4-116 72.5-133.5C100 314.6 33.8 298 15.7 233.1C10.4 214.4 1.5 99.4 1.5 83.9c0-77.8 68.2-53.4 110.3-21.8z"/></svg>
+                </a>
+                <a href="https://www.threads.net/@kartooner" target="_blank" rel="noopener noreferrer" class="social-icon threads">
+                    <span class="tooltip">Threads</span>
+                    <span class="sr-only">(opens in new tab)</span>
+                    <svg class="icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM294.2 244.3c19.5 9.3 33.7 23.5 41.2 40.9c10.4 24.3 11.4 63.9-20.2 95.4c-24.2 24.1-53.5 35-95.1 35.3h-.2c-46.8-.3-82.8-16.1-106.9-46.8C91.5 341.8 80.4 303.7 80 256v-.1-.1c.4-47.7 11.5-85.7 33-113.1c24.2-30.7 60.2-46.5 106.9-46.8h.2c46.9 .3 83.3 16 108.2 46.6c12.3 15.1 21.3 33.3 27 54.4l-26.9 7.2c-4.7-17.2-11.9-31.9-21.4-43.6c-19.4-23.9-48.7-36.1-87-36.4c-38 .3-66.8 12.5-85.5 36.2c-17.5 22.3-26.6 54.4-26.9 95.5c.3 41.1 9.4 73.3 26.9 95.5c18.7 23.8 47.4 36 85.5 36.2c34.3-.3 56.9-8.4 75.8-27.3c21.5-21.5 21.1-47.9 14.2-64c-4-9.4-11.4-17.3-21.3-23.3c-2.4 18-7.9 32.2-16.5 43.2c-11.4 14.5-27.7 22.4-48.4 23.5c-15.7 .9-30.8-2.9-42.6-10.7c-13.9-9.2-22-23.2-22.9-39.5c-1.7-32.2 23.8-55.3 63.5-57.6c14.1-.8 27.3-.2 39.5 1.9c-1.6-9.9-4.9-17.7-9.8-23.4c-6.7-7.8-17.1-11.8-30.8-11.9h-.4c-11 0-26 3.1-35.6 17.6l-23-15.8c12.8-19.4 33.6-30.1 58.5-30.1h.6c41.8 .3 66.6 26.3 69.1 71.8c1.4 .6 2.8 1.2 4.2 1.9l.1 .5zm-71.8 67.5c17-.9 36.4-7.6 39.7-48.8c-8.8-1.9-18.6-2.9-29-2.9c-3.2 0-6.4 .1-9.6 .3c-28.6 1.6-38.1 15.5-37.4 27.9c.9 16.7 19 24.5 36.4 23.6l-.1-.1z"/></svg>
+                </a>
+                <a href="https://linkedin.com/in/eriksagen" target="_blank" rel="noopener noreferrer" class="social-icon linkedin">
+                    <span class="tooltip">LinkedIn</span>
+                    <span class="sr-only">(opens in new tab)</span>
+                    <svg class="icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+                </a>
+                <a href="https://medium.com/@kartooner" target="_blank" rel="noopener noreferrer" class="social-icon medium">
+                    <span class="tooltip">Medium</span>
+                    <span class="sr-only">(opens in new tab)</span>
+                    <svg class="icon" viewBox="0 0 640 512" aria-hidden="true" focusable="false"><path d="M180.5,74.262C80.813,74.262,0,155.633,0,256S80.819,437.738,180.5,437.738,361,356.373,361,256,280.191,74.262,180.5,74.262Zm288.25,10.646c-49.845,0-90.245,76.619-90.245,171.095s40.406,171.1,90.251,171.1,90.251-76.619,90.251-171.1H559C559,161.5,518.6,84.908,468.752,84.908Zm139.506,17.821c-17.526,0-31.735,68.628-31.735,153.274s14.2,153.274,31.735,153.274S640,340.631,640,256C640,171.351,625.785,102.729,608.258,102.729Z"/></svg>
+                </a>
+            </div>
+        </div>
+
+    </footer>
+    <!-- /partial:footer -->
     <script src="/js/navigation-loader.js"></script>
     <script src="/js/theme-toggle-loader.js"></script>
     <script src="/js/footer-loader.js"></script>

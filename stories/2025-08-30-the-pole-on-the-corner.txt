@@ -3,6 +3,7 @@ Date: 2025-08-29T05:33:01Z
 Tags: writing, personal
 Excerpt: Sometimes you think you know every corner of your neighborhood—until one day you don't.
 Images: /assets/images/power-pole.jpg
+Image alt: A utility pole silhouetted against an evening sky, with wires running off in every direction
 Subtitle: Sometimes you think you know every corner of your neighborhood—until one day you don't.
 ---
 

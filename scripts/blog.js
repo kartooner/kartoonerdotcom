@@ -13,6 +13,7 @@ const { execSync } = require('child_process');
 const JOURNAL_FILE = path.join(__dirname, '..', 'data', 'journal-entries.json');
 const STORIES_DIR = path.join(__dirname, '..', 'stories');
 const CONTENT_FILE = path.join(__dirname, '..', 'data', 'content.json');
+const PARTIALS_DIR = path.join(__dirname, '..', 'partials');
 
 class BlogBuilder {
     constructor() {
@@ -41,6 +42,18 @@ class BlogBuilder {
                 console.log('📡 Generating RSS feeds...');
                 execSync('node js/generate-rss.js', { stdio: 'pipe' });
             }
+
+            // Step 4: Bake nav, theme toggle and footer into every page
+            console.log('🧩 Baking partials into pages...');
+            this.bakePartials();
+
+            // Step 5: WebP versions + <picture>/width/height markup for images
+            console.log('🖼️ Optimizing images...');
+            this.buildImages();
+
+            // Step 6: Cache the latest Medium article for the About page
+            console.log('📰 Caching latest Medium article...');
+            this.fetchMedium();
 
             console.log('✅ Build complete!');
         } catch (error) {
@@ -87,6 +100,16 @@ class BlogBuilder {
             });
         }
 
+        // Watch partials so nav/footer edits reach every page
+        if (fs.existsSync(PARTIALS_DIR)) {
+            fs.watch(PARTIALS_DIR, (eventType, filename) => {
+                if (filename && filename.endsWith('.html')) {
+                    console.log(`🧩 Partial changed: ${filename}`);
+                    this.debouncedBuild();
+                }
+            });
+        }
+
         // Handle graceful shutdown
         process.on('SIGINT', () => {
             console.log('\n🛑 Stopping blog watcher...');
@@ -107,10 +130,32 @@ class BlogBuilder {
         execSync('node scripts/journal-cms.js sync', { stdio: 'pipe' });
     }
 
+    // Regenerated pages come back with placeholders, so bake partials after any sync
+    bakePartials() {
+        execSync('node scripts/build-partials.js', { stdio: 'pipe' });
+    }
+
+    // Offline or Medium down: keep the existing cache rather than failing the build
+    fetchMedium() {
+        try {
+            execSync('node scripts/fetch-medium.js', { stdio: 'pipe' });
+        } catch (error) {
+            console.log('⚠️ Medium fetch failed, keeping the existing cache');
+        }
+    }
+
+    // Make any missing .webp files, then point the pages' <img> tags at them
+    buildImages() {
+        execSync('node scripts/optimize-images.js', { stdio: 'pipe' });
+        execSync('node scripts/build-images.js', { stdio: 'pipe' });
+    }
+
     // Quick sync without full build
     sync() {
         console.log('🔄 Quick sync...');
         this.syncStories();
+        this.bakePartials();
+        this.buildImages();
         console.log('✅ Sync complete!');
     }
 

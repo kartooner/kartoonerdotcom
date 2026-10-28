@@ -29,6 +29,9 @@
       ],
       "images": [
         "/assets/images/delivery-is-a-trap-cover.jpg"
+      ],
+      "imageAlts": [
+        "Looking up from the bottom of a deep cave at a circle of sky, with a metal walkway bolted to the rock edge"
       ]
     },
     {
@@ -47,6 +50,9 @@
       ],
       "images": [
         "/assets/images/dancing-corn-dogs-cover.png"
+      ],
+      "imageAlts": [
+        "Cover of Don Hahn's book Dancing Corn Dogs in the Night: a kick line of corn dogs with legs, dancing in front of a full moon"
       ]
     },
     {
@@ -62,6 +68,9 @@
       ],
       "images": [
         "/assets/images/land-before-time-cover.jpg"
+      ],
+      "imageAlts": [
+        "Littlefoot and friends from The Land Before Time looking out across a hazy prehistoric valley"
       ]
     },
     {
@@ -77,6 +86,9 @@
       ],
       "images": [
         "/assets/images/power-pole.jpg"
+      ],
+      "imageAlts": [
+        "A utility pole silhouetted against an evening sky, with wires running off in every direction"
       ]
     },
     {
@@ -91,6 +103,9 @@
       ],
       "images": [
         "/assets/images/sketch-of-kcd2.JPG"
+      ],
+      "imageAlts": [
+        "A red ink sketch of an old timber-framed house and tower, drawn in a spiral dot-grid notebook on a wooden table"
       ]
     }
   ]

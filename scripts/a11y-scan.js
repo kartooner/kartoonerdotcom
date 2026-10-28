@@ -10,7 +10,6 @@ const PAGES = [
     '/voice-acting/',
     '/contact/',
     '/recommended-books/',
-    '/archive/',
     '/coded/',
     '/experiments/',
     '/thanks/',

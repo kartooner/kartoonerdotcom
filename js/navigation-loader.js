@@ -7,8 +7,17 @@
 
     function loadNavigation() {
         const placeholder = document.getElementById('navigation-placeholder');
-        if (!placeholder) return;
 
+        // Navigation baked into the page by scripts/build-partials.js
+        if (!placeholder) {
+            if (document.querySelector('.persistent-nav')) {
+                setActiveNavLink();
+                initMobileNavigation();
+            }
+            return;
+        }
+
+        // Fallback for pages that haven't been built
         fetch('/partials/navigation.html')
             .then(response => {
                 if (!response.ok) throw new Error('Navigation not found');
@@ -34,7 +43,7 @@
 
             if (navType === 'home' && (currentPath === '/' || currentPath === '/index.html')) {
                 isActive = true;
-            } else if (navType === 'journal' && (currentPath.startsWith('/journal') || currentPath.startsWith('/entry') || currentPath.startsWith('/archive'))) {
+            } else if (navType === 'journal' && (currentPath.startsWith('/journal') || currentPath.startsWith('/entry'))) {
                 isActive = true;
             } else if (navType !== 'home' && currentPath.startsWith('/' + navType)) {
                 isActive = true;
@@ -42,7 +51,8 @@
 
             if (isActive) {
                 link.classList.add('current');
-                link.setAttribute('aria-current', 'page');
+                // An entry sits inside Journal but isn't the Journal page itself
+                link.setAttribute('aria-current', currentPath.startsWith('/entry') ? 'true' : 'page');
             }
         });
     }
@@ -54,80 +64,72 @@
 
         if (!mobileMenuToggle || !navLinks) return;
 
-        function toggleMobileMenu() {
-            const isOpen = mobileMenuToggle.getAttribute('aria-expanded') === 'true';
-            const newState = !isOpen;
+        // Matches the 750px breakpoint in style.css where the menu button takes over.
+        // Above it the close button is display:none, so it's already out of the
+        // tab order and hidden from screen readers.
+        const mobileQuery = window.matchMedia('(max-width: 750px)');
 
-            mobileMenuToggle.setAttribute('aria-expanded', newState);
-
-            if (newState) {
-                navLinks.classList.add('mobile-menu-open');
-            } else {
-                navLinks.classList.remove('mobile-menu-open');
-            }
+        function isOpen() {
+            return mobileMenuToggle.getAttribute('aria-expanded') === 'true';
         }
 
-        function closeMobileMenu() {
+        function openMobileMenu() {
+            mobileMenuToggle.setAttribute('aria-expanded', 'true');
+            navLinks.classList.add('mobile-menu-open');
+            // The open menu covers the button, so start keyboard focus inside it
+            (mobileCloseButton || navLinks.querySelector('a')).focus();
+        }
+
+        function closeMobileMenu(returnFocus) {
+            if (!isOpen()) return;
             mobileMenuToggle.setAttribute('aria-expanded', 'false');
             navLinks.classList.remove('mobile-menu-open');
+            if (returnFocus) mobileMenuToggle.focus();
         }
 
-        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+        mobileMenuToggle.addEventListener('click', function() {
+            if (isOpen()) {
+                closeMobileMenu(true);
+            } else {
+                openMobileMenu();
+            }
+        });
 
         if (mobileCloseButton) {
-            mobileCloseButton.addEventListener('click', closeMobileMenu);
-
-            mobileCloseButton.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    closeMobileMenu();
-                }
+            mobileCloseButton.addEventListener('click', function() {
+                closeMobileMenu(true);
             });
         }
 
-        mobileMenuToggle.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleMobileMenu();
+        // Escape closes the menu from anywhere inside it
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isOpen()) {
+                closeMobileMenu(navLinks.contains(document.activeElement) || document.activeElement === mobileMenuToggle);
             }
-            if (e.key === 'Escape') {
-                closeMobileMenu();
+        });
+
+        // Tabbing out past the last link closes it, so it never sits over the page
+        navLinks.addEventListener('focusout', function(e) {
+            if (isOpen() && e.relatedTarget && !navLinks.contains(e.relatedTarget) && e.relatedTarget !== mobileMenuToggle) {
+                closeMobileMenu(false);
             }
         });
 
         navLinks.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A') {
-                closeMobileMenu();
+            if (e.target.closest('a')) {
+                closeMobileMenu(false);
             }
         });
 
         document.addEventListener('click', function(e) {
             if (!mobileMenuToggle.contains(e.target) && !navLinks.contains(e.target)) {
-                closeMobileMenu();
+                closeMobileMenu(false);
             }
         });
 
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 500) {
-                closeMobileMenu();
-                updateCloseButtonAccessibility();
-            } else {
-                updateCloseButtonAccessibility();
-            }
+        // Widening past the breakpoint (rotating a tablet, resizing) resets the menu
+        mobileQuery.addEventListener('change', function(e) {
+            if (!e.matches) closeMobileMenu(false);
         });
-
-        function updateCloseButtonAccessibility() {
-            if (mobileCloseButton) {
-                if (window.innerWidth > 500) {
-                    mobileCloseButton.setAttribute('aria-hidden', 'true');
-                    mobileCloseButton.setAttribute('tabindex', '-1');
-                } else {
-                    mobileCloseButton.removeAttribute('aria-hidden');
-                    mobileCloseButton.removeAttribute('tabindex');
-                }
-            }
-        }
-
-        updateCloseButtonAccessibility();
     }
 })();
