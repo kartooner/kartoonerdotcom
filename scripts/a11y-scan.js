@@ -17,6 +17,7 @@ const PAGES = [
     '/entry/everyone-creates.html',
     '/entry/growing-up-in-the-80s.html',
     '/entry/here-we-go-again.html',
+    '/entry/moments-like-these.html',
     '/entry/the-pole-on-the-corner.html',
     '/entry/the-serendipity-of-noticing.html',
 ];

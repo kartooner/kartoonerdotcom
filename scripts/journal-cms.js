@@ -9,6 +9,13 @@ const STORIES_DIR = path.join(__dirname, '..', 'stories');
 const ENTRY_DIR = path.join(__dirname, '..', 'entry');
 const JOURNAL_DIR = path.join(__dirname, '..', 'journal');
 const JOURNAL_HTML = path.join(JOURNAL_DIR, 'index.html');
+// Draft previews: built for local viewing only (git ignores this folder)
+const DRAFTS_DIR = path.join(__dirname, '..', 'drafts');
+const SITE_URL = 'https://www.kartooner.com';
+// Link previews (LinkedIn, Slack, iMessage...) use a 1200x630 JPG made from an entry's
+// first image by scripts/build-share-images.js; entries without images use the avatar
+const SHARE_IMAGE = { width: 1200, height: 630 };
+const shareImagePath = entry => entry.images && entry.images.length ? `/assets/share/${entry.id}.jpg` : null;
 
 // Icons: Font Awesome Free 6.7.1 (CC BY 4.0) https://fontawesome.com/license/free
 // Inline so they follow the text color and need nothing extra to load
@@ -89,6 +96,9 @@ function parseStoryFile(filePath) {
                         // Separated with | since descriptions often have commas
                         metadata.imageAlts = value.split('|').map(alt => alt.trim());
                         break;
+                    case 'draft':
+                        metadata.draft = /^(true|yes)$/i.test(value);
+                        break;
                     case 'image caption':
                         // Same | separator as Image alt, one caption per image
                         metadata.imageCaptions = value.split('|').map(caption => caption.trim());
@@ -117,7 +127,8 @@ function parseStoryFile(filePath) {
             tags: metadata.tags || [],
             images: metadata.images,
             imageAlts: metadata.imageAlts,
-            imageCaptions: metadata.imageCaptions
+            imageCaptions: metadata.imageCaptions,
+            ...(metadata.draft && { draft: true })
         };
     } catch (error) {
         console.error(`Error parsing story file ${filePath}:`, error.message);
@@ -150,13 +161,15 @@ function syncStoriesFromFolder() {
         // Sort by date (newest first)
         entries.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        const journal = { entries };
+        // Drafts stay out of the journal, feeds and saved JSON; they only get a preview page
+        const drafts = entries.filter(entry => entry.draft);
+        const journal = { entries: entries.filter(entry => !entry.draft) };
 
         // Save to JSON file for consistency
         saveJournal(journal);
 
-        console.log(`Synced ${entries.length} stories from /stories folder`);
-        return journal;
+        console.log(`Synced ${journal.entries.length} stories from /stories folder${drafts.length ? ` (plus ${drafts.length} draft${drafts.length === 1 ? '' : 's'})` : ''}`);
+        return { ...journal, drafts };
 
     } catch (error) {
         console.error('Error syncing stories from folder:', error.message);
@@ -533,16 +546,19 @@ function placeEntryImages(html, entry, options = {}) {
     return { html: result, placed };
 }
 
-function generateEntryPages(journal) {
+// Builds a page for each of `pages` (the published entries by default). A draft preview
+// is built as if it were published: it gets related posts and older/newer links
+// among the published entries, which never link back to it
+function generateEntryPages(journal, { pages = journal.entries, dir = ENTRY_DIR } = {}) {
     // Create entry directory if it doesn't exist
-    if (!fs.existsSync(ENTRY_DIR)) {
-        fs.mkdirSync(ENTRY_DIR, { recursive: true });
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
 
-    // Newest first, for the older/newer links at the bottom of each entry
-    const chronological = journal.entries.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    journal.entries.forEach(entry => {
+    pages.forEach(entry => {
+        const others = journal.entries.filter(e => e.id !== entry.id);
+        // Newest first, for the older/newer links at the bottom of each entry
+        const chronological = others.concat(entry).sort((a, b) => new Date(b.date) - new Date(a.date));
         const position = chronological.findIndex(e => e.id === entry.id);
         const newer = chronological[position - 1];
         const older = chronological[position + 1];
@@ -583,8 +599,8 @@ function generateEntryPages(journal) {
         </div>` : '';
 
         // Find related posts based on shared tags
-        const relatedPosts = journal.entries
-            .filter(e => e.id !== entry.id && e.tags && e.tags.length > 0) // Exclude current entry
+        const relatedPosts = others
+            .filter(e => e.tags && e.tags.length > 0)
             .map(e => {
                 const sharedTags = e.tags.filter(tag => entry.tags && entry.tags.includes(tag));
                 return { entry: e, sharedCount: sharedTags.length };
@@ -622,730 +638,14 @@ function generateEntryPages(journal) {
         })();
     </script>
     <title>${entry.title} - Erik's Journal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..700&display=swap" rel="stylesheet">
+${entry.draft ? `    <meta name="robots" content="noindex">
+` : ''}${linkPreviewTags(entry)}
+    <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
     <script src="/js/seasonal-loader.js"></script>
-    <style>
-        .entry-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2em;
-        }
-        
-        h1, h2, h3 {
-            color: var(--text-color);
-        }
-
-
-        .logo {
-            text-align: center;
-            font-family: var(--font-secondary);
-            font-size: 3rem;
-            color: var(--accent-color);
-            margin-bottom: 20px;
-        }
-        
-        .logo a {
-            color: var(--accent-color);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .logo a:hover {
-            color: var(--text-color);
-        }
-        
-        /* Font Awesome glyphs (ICONS at the top of this file) */
-        .glyph {
-            margin-right: 0.35em;
-        }
-
-        /* Centered header, like the page titles on Journal and Voice Acting:
-           back link, title, subtitle, date, then a squiggle into the post */
-        .entry-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: var(--space-6);
-            text-align: center;
-        }
-
-        .entry-header::after {
-            content: "";
-            width: 4.5rem;
-            height: 0.7rem;
-            margin-top: var(--space-6);
-            background: var(--accent-color);
-            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
-        }
-
-        /* Way back to the list, before the title; styled like "Back to home" on the 404 page.
-           a. prefixes outrank the global a:link underline. */
-        a.entry-back,
-        a.entry-back:link,
-        a.entry-back:visited {
-            display: inline-block;
-            margin-bottom: var(--space-6);
-            color: var(--text-color);
-            opacity: 1;
-            font-size: var(--text-base);
-            text-decoration: none;
-        }
-
-        .entry-back span {
-            margin-right: 0.5em;
-        }
-
-        a.entry-back:hover,
-        a.entry-back:focus-visible {
-            color: var(--accent-color) !important;
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 0 var(--space-6) !important;
-            text-decoration: none !important;
-        }
-
-        /* Older and newer posts, above "View all posts" */
-        .entry-pager {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-6);
-            margin: var(--space-6) 0 0;
-        }
-
-        .entry-pager-link,
-        a.entry-pager-link:link,
-        a.entry-pager-link:visited {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-1);
-            opacity: 1;
-            text-decoration: none;
-        }
-
-        .entry-pager-newer {
-            text-align: right;
-        }
-
-        .entry-pager-label {
-            font-size: var(--text-sm);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--skills-color);
-        }
-
-        .entry-pager-title {
-            font-family: var(--font-secondary);
-            font-size: var(--text-xl);
-            line-height: var(--leading-snug);
-            color: var(--accent-color);
-        }
-
-        a.entry-pager-link:hover,
-        a.entry-pager-link:focus {
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            text-decoration: none !important;
-        }
-
-        a.entry-pager-link:hover .entry-pager-title,
-        a.entry-pager-link:focus .entry-pager-title {
-            text-decoration: underline;
-            text-decoration-thickness: 2px;
-            text-underline-offset: 0.2em;
-        }
-
-        @media (max-width: 640px) {
-            .entry-pager {
-                grid-template-columns: 1fr;
-                gap: var(--space-4);
-            }
-
-            .entry-pager-newer {
-                text-align: left;
-            }
-
-            /* Nothing on one side? Don't leave a gap */
-            span.entry-pager-link {
-                display: none;
-            }
-        }
-
-        .entry-title {
-            margin: 0 0 var(--space-4);
-            font-family: var(--font-secondary);
-            font-size: 4.5rem;
-            line-height: 0.95;
-            color: var(--accent-color);
-            text-wrap: balance;
-        }
-        
-        .entry-byline {
-            color: var(--skills-color);
-            font-size: 1rem;
-            margin-bottom: 15px;
-            font-style: italic;
-        }
-        
-        /* Subtitle type comes from .page-intro, same as the page intros */
-        .entry-subtitle {
-            text-wrap: balance;
-        }
-
-        /* Date and reading time, labeled like the months on /journal */
-        .entry-meta {
-            margin: 0;
-            font-size: var(--text-sm);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--skills-color);
-        }
-
-        .entry-content {
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-        
-        .entry-content p:first-of-type {
-            font-size: var(--text-lg);
-            line-height: var(--leading-normal);
-        }
-
-        /* Image styling */
-        .entry-content img {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-            object-position: center;
-            margin: 0 0 2rem 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        [data-theme="dark"] .entry-content img {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        @media (max-width: 768px) {
-            .entry-content img {
-                height: 250px;
-            }
-        }
-
-        /* Transparent PNGs (cutouts, scattered prints) show whole, with no frame of their own */
-        .entry-content img[src$=".png"],
-        [data-theme="dark"] .entry-content img[src$=".png"] {
-            height: auto;
-            object-fit: contain;
-            border-radius: 0;
-            box-shadow: none;
-        }
-
-        /* Captioned image: the caption sits tight under the image it describes */
-        .entry-figure {
-            margin: 0 0 2rem 0;
-        }
-
-        .entry-content .entry-figure img {
-            margin-bottom: 0;
-        }
-
-        .entry-figure figcaption {
-            max-width: 52ch;
-            margin: 0.5rem auto 0;
-            font-size: var(--text-sm);
-            line-height: var(--leading-snug);
-            color: var(--skills-color);
-            text-align: center;
-        }
-
-        /* Code styling */
-        .entry-content pre {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-            padding: 1rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-        
-        [data-theme="dark"] .entry-content pre {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .entry-content code {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
-            font-family: 'Courier New', Consolas, monospace;
-            font-size: 0.9em;
-        }
-        
-        [data-theme="dark"] .entry-content code {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .entry-content pre code {
-            background: none;
-            padding: 0;
-        }
-
-        /* Book recommendation at end */
-        .entry-content > hr:last-of-type {
-            margin: 3rem 0 2rem 0;
-        }
-
-        .entry-content > hr:last-of-type ~ p {
-            margin-top: 0;
-        }
-
-        /* Table styling */
-        .entry-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-            overflow-x: auto;
-            display: block;
-            white-space: nowrap;
-        }
-        
-        .entry-content table thead {
-            display: table-header-group;
-        }
-        
-        .entry-content table tbody {
-            display: table-row-group;
-        }
-        
-        .entry-content table tr {
-            display: table-row;
-        }
-        
-        .entry-content table th,
-        .entry-content table td {
-            display: table-cell;
-            border: 1px solid var(--skills-color);
-            padding: 0.5rem;
-            text-align: left;
-            white-space: normal;
-        }
-        
-        .entry-content table th {
-            background: rgba(0, 0, 0, 0.1);
-            font-weight: bold;
-        }
-        
-        [data-theme="dark"] .entry-content table th {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Links */
-        .entry-content a {
-            color: var(--accent-color);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s ease;
-        }
-        
-        .entry-content a:hover {
-            border-bottom-color: var(--accent-color);
-        }
-        
-        blockquote p.source {
-            font-family: var(--font-main);
-            font-size: 1rem;
-        }
-        
-        blockquote p.source::before {
-            content: "— ";
-        }
-        
-        .navigation {
-            display: flex;
-            justify-content: center;
-            margin: 40px 0;
-        }
-
-        .view-all {
-            color: var(--text-color) !important;
-            text-decoration: none !important;
-            padding: 0.5rem 1rem !important;
-            border: 1px solid var(--tertiary-color) !important;
-            border-radius: 4px !important;
-            transition: all 0.3s ease !important;
-            font-size: 1rem !important;
-            background: none !important;
-            display: inline-block !important;
-        }
-
-        .view-all:hover {
-            color: var(--accent-color) !important;
-            border-color: var(--accent-color) !important;
-            transform: translateY(-2px) !important;
-            background: none !important;
-        }
-
-        .info-section {
-            background: rgba(var(--accent-rgb), 0.08);
-            padding: 2rem;
-            border-radius: 8px;
-            margin: 2rem 0;
-        }
-
-        .info-section p {
-            text-align: left;
-            font-size: 1rem;
-            color: var(--text-color-secondary, var(--skills-color));
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-        }
-
-        .info-section-row {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .info-section a {
-            color: var(--skills-color);
-            text-decoration: none;
-            font-size: 0.8rem;
-            transition: color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-        }
-
-        .info-section a:hover {
-            color: var(--accent-color);
-        }
-
-        .info-section .material-symbols-outlined {
-            font-size: 1rem;
-        }
-
-        .info-section p .material-symbols-outlined {
-            font-size: 1.1rem;
-            margin-right: 0.5rem;
-            vertical-align: text-bottom;
-        }
-
-        /* Tags Section */
-        .tags-section {
-            margin: 2rem 0;
-            padding: 1.5rem;
-            background: rgba(var(--accent-rgb), 0.05);
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-color);
-        }
-
-        .tags-section h2 {
-            font-family: var(--font-secondary);
-            font-size: 1.2rem;
-            color: var(--heading-color);
-            margin: 0 0 1rem 0;
-        }
-
-        .tags-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .tag,
-        .tag:visited,
-        .tag:hover,
-        .tag:focus,
-        .tag:active {
-            display: inline-block;
-            padding: 0.375rem 0.875rem;
-            background: var(--accent-color) !important;
-            color: var(--bg-color) !important;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 700;
-            text-decoration: none !important;
-            opacity: 1 !important;
-            margin: 0;
-            transition: all 0.2s ease;
-        }
-
-        .tag:hover,
-        .tag:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.3);
-        }
-
-        /* Related Posts Section */
-        .related-posts-section {
-            margin: 2rem 0;
-        }
-
-        .related-posts-section h3 {
-            font-family: var(--font-secondary);
-            font-size: 1.5rem;
-            color: var(--heading-color);
-            margin: 0 0 1.5rem 0;
-        }
-
-        .related-posts-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.25rem;
-        }
-
-        .related-post-item {
-            padding: 1.25rem;
-            background: rgba(var(--accent-rgb), 0.05);
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-color);
-            transition: all 0.3s ease;
-        }
-
-        .related-post-item:hover {
-            background: rgba(var(--accent-rgb), 0.08);
-            transform: translateX(4px);
-        }
-
-        .related-post-item h4 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.25rem;
-            font-family: var(--font-secondary);
-        }
-
-        .related-post-item h4 a {
-            color: var(--text-color);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .related-post-item h4 a:hover {
-            color: var(--accent-color);
-        }
-
-        .related-post-excerpt {
-            color: var(--text-color);
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        @media (min-width: 768px) {
-            .related-posts-list {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            }
-        }
-
-        /* Table of Contents - Floating on right */
-        .table-of-contents {
-            position: fixed;
-            /* Clear of the nav (6.1rem tall) and its divider */
-            top: 7.6rem;
-            right: 2rem;
-            background: rgba(var(--accent-rgb), 0.08);
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-color);
-            z-index: 100;
-            max-width: 280px;
-        }
-
-        .toc-toggle {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 1rem 1.25rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            font-family: var(--font-secondary);
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--heading-color);
-            transition: all 0.2s ease;
-        }
-
-        .toc-toggle:hover {
-            color: var(--accent-color);
-        }
-
-        .toc-toggle-icon {
-            transition: transform 0.3s ease;
-            font-size: 0.8rem;
-            margin-right: 0.5rem;
-        }
-
-        .table-of-contents.collapsed .toc-toggle-icon {
-            transform: rotate(-90deg);
-        }
-
-        .toc-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            padding: 0 1.25rem;
-        }
-
-        .table-of-contents:not(.collapsed) .toc-content {
-            max-height: 500px;
-            padding: 0 1.25rem 1.25rem;
-        }
-
-        .toc-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .toc-list li {
-            margin-bottom: 0.625rem;
-        }
-
-        .toc-list a {
-            color: var(--text-color);
-            text-decoration: none;
-            font-size: 0.875rem;
-            line-height: 1.4;
-            transition: all 0.2s ease;
-            display: inline-block;
-            padding-left: 1rem;
-            position: relative;
-        }
-
-        .toc-list a:before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: var(--accent-color);
-            transition: transform 0.2s ease;
-            font-size: 0.875rem;
-        }
-
-        .toc-list a:hover,
-        .toc-list a:focus {
-            color: var(--accent-color);
-            transform: translateX(4px);
-            outline: 2px solid var(--accent-color);
-            outline-offset: 2px;
-        }
-
-        .toc-list a:hover:before {
-            transform: translateX(4px);
-        }
-
-        /* Mobile TOC (collapsible dropdown) */
-        .toc-mobile {
-            display: none;
-        }
-
-        .toc-mobile-toggle {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 1rem 1.25rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            font-family: var(--font-secondary);
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--heading-color);
-            transition: all 0.2s ease;
-        }
-
-        .toc-mobile-toggle:hover {
-            color: var(--accent-color);
-        }
-
-        .toc-mobile-toggle-icon {
-            transition: transform 0.3s ease;
-            font-size: 0.8rem;
-            margin-right: 0.5rem;
-        }
-
-        .toc-mobile.collapsed .toc-mobile-toggle-icon {
-            transform: rotate(-90deg);
-        }
-
-        .toc-mobile-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            padding: 0 1.25rem;
-        }
-
-        .toc-mobile:not(.collapsed) .toc-mobile-content {
-            max-height: 300px;
-            padding: 0 1.25rem 1.25rem;
-        }
-
-        .toc-select {
-            width: 100%;
-            padding: 1rem 2.5rem 1rem 1.25rem;
-            font-size: 1rem;
-            font-family: var(--font-primary);
-            color: var(--text-color);
-            background: var(--bg-color);
-            border: 2px solid var(--accent-color);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23FF6B6B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 12px;
-        }
-
-        .toc-select:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
-        }
-
-        .toc-select option {
-            padding: 0.75rem;
-        }
-
-        /* Responsive: Show dropdown on mobile/tablet at top of content */
-        @media (max-width: 1024px) {
-            .table-of-contents {
-                position: static;
-                max-width: 100%;
-                margin: 0 0 2rem 0;
-                right: auto;
-            }
-
-            .toc-desktop {
-                display: none;
-            }
-
-            .toc-mobile {
-                display: block;
-            }
-        }
-
-        /* Responsive scaling for entry title */
-        @media (max-width: 768px) {
-            .entry-title {
-                font-size: 3.5rem;
-            }
-        }
-
-        @media (max-width: 500px) {
-            .entry-title {
-                font-size: 2.8rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/entry.css">
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -1365,7 +665,8 @@ function generateEntryPages(journal) {
                 "@type": "WebPage",
                 "@id": "https://www.kartooner.com/entry/${entry.id}.html"
             },
-            "description": "${(entry.excerpt || '').replace(/"/g, '\\"')}"
+            "description": "${(entry.excerpt || '').replace(/"/g, '\\"')}",
+            "image": "${SITE_URL}${shareImagePath(entry) || '/assets/images/erik-avatar.jpg'}"
         }
     </script>
 </head>
@@ -1380,7 +681,8 @@ function generateEntryPages(journal) {
     <div id="theme-toggle-placeholder"></div>
 
     <main class="entry-container">
-        <header class="entry-header" id="main-content">
+${entry.draft ? `        <p class="entry-draft-notice"><strong>Draft preview.</strong> Not in the journal or feeds until <code>Draft: true</code> comes out of the story file.</p>
+` : ''}        <header class="entry-header" id="main-content">
             <a href="/journal" class="entry-back"><span aria-hidden="true">&larr;</span>Back to Journal</a>
             <h1 class="entry-title">${entry.title}</h1>
             ${entry.subtitle ? `<p class="entry-subtitle page-intro">${entry.subtitle}</p>` : ''}
@@ -1459,14 +761,59 @@ ${pagerHtml}
 </html>`;
 
         try {
-            const entryPath = path.join(ENTRY_DIR, `${entry.id}.html`);
+            const entryPath = path.join(dir, `${entry.id}.html`);
             fs.writeFileSync(entryPath, template, 'utf8');
         } catch (error) {
             console.error(`Error generating entry page for ${entry.id}:`, error.message);
         }
     });
 
-    console.log(`Generated ${journal.entries.length} individual entry pages`);
+    console.log(`Generated ${pages.length} ${dir === ENTRY_DIR ? 'individual entry' : 'draft preview'} page${pages.length === 1 ? '' : 's'}`);
+}
+
+// Draft previews go to /drafts/ (local only). An entry turned back into a draft
+// loses its published page, so it isn't left live at its old address
+function generateDraftPages(journal) {
+    const drafts = journal.drafts || [];
+    if (fs.existsSync(DRAFTS_DIR)) fs.rmSync(DRAFTS_DIR, { recursive: true });
+    for (const draft of drafts) {
+        const published = path.join(ENTRY_DIR, `${draft.id}.html`);
+        if (fs.existsSync(published)) {
+            fs.unlinkSync(published);
+            console.log(`Unpublished ${draft.id} (now a draft)`);
+        }
+    }
+    if (!drafts.length) return;
+    generateEntryPages(journal, { pages: drafts, dir: DRAFTS_DIR });
+    drafts.forEach(draft => console.log(`   Preview: /drafts/${draft.id}.html`));
+}
+
+// Title, description and image for link previews (LinkedIn, Slack, iMessage, ...)
+function linkPreviewTags(entry) {
+    const url = `${SITE_URL}/entry/${entry.id}.html`;
+    const description = escapeHtml(entry.excerpt || '');
+    const title = escapeHtml(entry.title);
+    const image = shareImagePath(entry);
+    const imageTags = image ? `
+    <meta property="og:image" content="${SITE_URL}${image}">
+    <meta property="og:image:width" content="${SHARE_IMAGE.width}">
+    <meta property="og:image:height" content="${SHARE_IMAGE.height}">
+    <meta property="og:image:alt" content="${escapeHtml((entry.imageAlts && entry.imageAlts[0]) || entry.title)}">
+    <meta name="twitter:card" content="summary_large_image">` : `
+    <meta property="og:image" content="${SITE_URL}/assets/images/erik-avatar.jpg">
+    <meta name="twitter:card" content="summary">`;
+    return `    <meta name="description" content="${description}">
+    <meta name="author" content="Erik Sagen">
+    <link rel="canonical" href="${url}">
+    <link rel="alternate" type="application/rss+xml" title="Erik's Journal" href="/journal-feed.xml">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Erik Sagen">
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:url" content="${url}">${imageTags}
+    <meta property="article:published_time" content="${new Date(entry.date).toISOString()}">
+    <meta property="article:author" content="Erik Sagen">${(entry.tags || []).map(tag => `
+    <meta property="article:tag" content="${escapeHtml(tag)}">`).join('')}`;
 }
 
 function generateJournalHtml(journal) {
@@ -1532,459 +879,22 @@ function generateJournalHtml(journal) {
         })();
     </script>
     <title>Journal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300..700&display=swap" rel="stylesheet">
+    <meta name="description" content="Pieces of life, half-thoughts, and stories from Erik Sagen.">
+    <link rel="canonical" href="${SITE_URL}/journal/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Erik Sagen">
+    <meta property="og:title" content="Erik Sagen's Journal">
+    <meta property="og:description" content="Pieces of life, half-thoughts, and stories from Erik Sagen.">
+    <meta property="og:url" content="${SITE_URL}/journal/">
+    <meta property="og:image" content="${SITE_URL}/assets/images/erik-avatar.jpg">
+    <meta name="twitter:card" content="summary">
+    <link rel="alternate" type="application/rss+xml" title="Erik's Journal" href="/journal-feed.xml">
+    <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
     <script src="/js/seasonal-loader.js"></script>
-    <style>
-
-        .journal-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 2em;
-        }
-        
-        h1, h2, h3 {
-            color: var(--text-color);
-        }
-
-
-        .logo {
-            text-align: center;
-            font-family: var(--font-secondary);
-            font-size: 5rem;
-            color: var(--accent-color);
-        }
-
-        .post {
-            margin-bottom: 40px;
-        }
-
-        .post-date {
-            color: var(--skills-color);
-            margin-bottom: 10px;
-        }
-
-        .post-title {
-            font-family: var(--font-secondary);
-            font-size: 2.8rem;
-            line-height: 1em;
-            margin-bottom: 10px;
-            color: var(--heading-color);
-        }
-
-        .post-title a {
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-
-        .post-title a:hover,
-        .post-title a:focus {
-            color: var(--accent-color);
-            transform: translateX(5px);
-        }
-
-        
-        .post-subtitle {
-            font-family: var(--font-secondary);
-            font-size: 1.2rem;
-            color: var(--text-color);
-            margin-bottom: 20px;
-        }
-
-        .post-content {
-            margin-bottom: 20px;
-            color: var(--text-color);
-        }
-        
-        .post-content p:first-of-type {
-            font-size: var(--text-lg);
-            line-height: var(--leading-normal);
-        }
-
-        /* Code styling */
-        .post-content pre {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 4px;
-            padding: 1rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-        
-        [data-theme="dark"] .post-content pre {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .post-content code {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
-            font-family: 'Courier New', Consolas, monospace;
-            font-size: 0.9em;
-        }
-        
-        [data-theme="dark"] .post-content code {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .post-content pre code {
-            background: none;
-            padding: 0;
-        }
-        
-        /* Table styling */
-        .post-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-            overflow-x: auto;
-            display: block;
-            white-space: nowrap;
-        }
-        
-        .post-content table thead {
-            display: table-header-group;
-        }
-        
-        .post-content table tbody {
-            display: table-row-group;
-        }
-        
-        .post-content table tr {
-            display: table-row;
-        }
-        
-        .post-content table th,
-        .post-content table td {
-            display: table-cell;
-            border: 1px solid var(--skills-color);
-            padding: 0.5rem;
-            text-align: left;
-            white-space: normal;
-        }
-        
-        .post-content table th {
-            background: rgba(0, 0, 0, 0.1);
-            font-weight: bold;
-        }
-        
-        [data-theme="dark"] .post-content table th {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Links */
-        .post-content a {
-            color: var(--accent-color);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s ease;
-        }
-        
-        .post-content a:hover {
-            border-bottom-color: var(--accent-color);
-        }
-        
-        blockquote p.source {
-            font-family: var(--font-main);
-            font-size: 1rem;
-        }
-        
-        blockquote p.source::before {
-            content: "— ";
-        }
-
-        .recent-posts {
-            font-family: var(--font-secondary);
-            margin-top: 40px;
-        }
-        
-        .recent-posts h3 {
-            font-size: 2rem;
-            color: var(--accent-color);
-            margin-bottom: 30px;
-        }
-
-        .recent-posts-grid {
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-        }
-
-        .recent-post-item {
-            display: grid;
-            grid-template-columns: 7rem 1fr auto;
-            align-items: baseline;
-            gap: 1.5rem;
-            padding: 0.85rem 0;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-            text-decoration: none;
-            transition: opacity 0.2s ease;
-        }
-
-        .recent-post-date,
-        .recent-post-meta {
-            text-decoration: none;
-        }
-
-        .recent-post-item:hover {
-            opacity: 0.7;
-        }
-
-        .recent-post-date {
-            font-size: var(--text-xs);
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--secondary-color);
-            white-space: nowrap;
-        }
-
-        .recent-post-title {
-            font-size: var(--text-base);
-            color: var(--text-color);
-            text-decoration: underline;
-            transition: color 0.2s ease;
-        }
-
-        .recent-post-item:hover .recent-post-title {
-            color: var(--accent-color);
-        }
-
-        .recent-post-meta {
-            font-size: var(--text-xs);
-            color: var(--secondary-color);
-            white-space: nowrap;
-        }
-
-        .recent-posts-footer {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2.5rem; /* 40px */
-            margin-top: 40px;
-        }
-
-        .view-all {
-            color: var(--text-color) !important;
-            text-decoration: none !important;
-            padding: 0.5rem 1rem !important;
-            border: 1px solid var(--tertiary-color) !important;
-            border-radius: 4px !important;
-            transition: all 0.3s ease !important;
-            font-size: 1rem !important;
-            background: none !important;
-            display: inline-block !important;
-        }
-
-        .view-all:hover {
-            color: var(--accent-color) !important;
-            border-color: var(--accent-color) !important;
-            transform: translateY(-2px) !important;
-            background: none !important;
-        }
-
-        .info-section {
-            background: rgba(var(--accent-rgb), 0.08);
-            padding: 2rem;
-            border-radius: 8px;
-            margin: 2rem 0;
-        }
-
-        .info-section p {
-            text-align: left;
-            font-size: 1rem;
-            color: var(--text-color-secondary, var(--skills-color));
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-        }
-
-        .info-section-row {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .info-section a {
-            color: var(--skills-color);
-            text-decoration: none;
-            font-size: 0.8rem;
-            transition: color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-        }
-
-        .info-section a:hover {
-            color: var(--accent-color);
-        }
-
-        .info-section .material-symbols-outlined {
-            font-size: 1rem;
-        }
-
-        .info-section p .material-symbols-outlined {
-            font-size: 1.1rem;
-            margin-right: 0.5rem;
-            vertical-align: text-bottom;
-        }
-
-        /* Font Awesome glyphs (ICONS at the top of this file) */
-        .glyph {
-            margin-right: 0.35em;
-        }
-
-        /* Intro under the title; type and width come from .page-intro, same as Voice Acting and Contact */
-        /* The icon has no side bearing like letters do, so give it room after "the" */
-        .journal-intro .glyph {
-            margin-left: 0.2em;
-        }
-
-        .journal-intro a {
-            color: var(--accent-color);
-            white-space: nowrap;
-        }
-
-        /* Every entry, listed by year and month */
-        .journal-archive {
-            text-align: left;
-        }
-
-        .journal-year {
-            margin-top: var(--space-8);
-        }
-
-        .journal-year-title {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 0 0 var(--space-2);
-            font-family: var(--font-secondary);
-            font-size: clamp(2.5rem, 7vw, 3.5rem);
-            line-height: 1;
-            color: var(--text-color);
-        }
-
-        /* The same squiggle as the nav's current-page mark, drawn in the accent color */
-        .journal-year-title::after {
-            content: "";
-            width: 3.5rem;
-            height: 0.6rem;
-            background: var(--accent-color);
-            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M2,6 Q10,3 20,4.5 Q30,6 40,3.5 Q50,1 60,4 Q70,7 80,3.5 Q90,0 98,5' stroke='black' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
-            transform: rotate(-2deg);
-        }
-
-        /* Desktop: the month sits in a narrow column beside its posts */
-        .journal-month {
-            display: grid;
-            grid-template-columns: 6rem 1fr;
-            column-gap: var(--space-6);
-            align-items: baseline;
-            margin-top: var(--space-2);
-        }
-
-        .journal-month-title {
-            margin: 0;
-            text-align: right;
-            font-family: var(--font-main);
-            font-size: var(--text-sm);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--skills-color);
-        }
-
-        .journal-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .journal-snippet {
-            position: relative;
-            padding: var(--space-3) 0;
-        }
-
-        .journal-snippet-title {
-            margin: 0 0 var(--space-2);
-            font-family: var(--font-secondary);
-            font-size: var(--text-2xl);
-            line-height: var(--leading-snug);
-        }
-
-        .journal-snippet-title a {
-            /* Static so the ::after below stretches over the whole snippet */
-            position: static;
-            color: var(--accent-color);
-            opacity: 1;
-            text-decoration: none;
-            text-underline-offset: 0.2em;
-        }
-
-        /* Posts you've already read are a little quieter */
-        .journal-snippet-title a:visited {
-            color: var(--accent-color);
-            color: color-mix(in srgb, var(--accent-color) 55%, var(--skills-color));
-            opacity: 1;
-        }
-
-        /* The whole snippet is clickable; the title stays the link's name */
-        .journal-snippet-title a::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-        }
-
-        /* Underline only shows up on hover or focus */
-        .journal-snippet-title a:hover,
-        .journal-snippet-title a:focus,
-        .journal-snippet:hover .journal-snippet-title a {
-            text-decoration: underline;
-            text-decoration-thickness: 2px;
-            background: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-
-        .journal-snippet-excerpt {
-            margin: 0 0 var(--space-2);
-            color: var(--text-color);
-            line-height: var(--leading-normal);
-        }
-
-        .journal-snippet-meta {
-            margin: 0;
-            font-size: var(--text-sm);
-            color: var(--skills-color);
-        }
-
-        /* Phones and small tablets: month stacks above its posts */
-        @media (max-width: 640px) {
-            .journal-month {
-                display: block;
-                margin-top: var(--space-4);
-            }
-
-            .journal-month-title {
-                text-align: left;
-            }
-        }
-
-        /* Tag filter (?tag=) */
-        .journal-filter-note {
-            margin: var(--space-6) 0 0;
-            text-align: center;
-        }
-
-        .journal-filter-note a {
-            color: var(--accent-color);
-            font-weight: 500;
-        }
-
-    </style>
+    <link rel="stylesheet" href="/css/journal.css">
 </head>
 <body>
     <!-- Navigation placeholder - loaded dynamically -->
@@ -2166,6 +1076,7 @@ function syncFromStories() {
     const journal = syncStoriesFromFolder();
     generateJournalHtml(journal);
         generateEntryPages(journal);
+    generateDraftPages(journal);
     generateRSSFeed(journal);
     generateAtomFeed(journal);
     console.log('Stories synced and all files regenerated successfully!');

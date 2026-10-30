@@ -20,3 +20,6 @@ AGENTS.md
 /playwright/.auth/
 package-lock.json
 .claude/settings.local.json
+
+# Draft previews from stories marked Draft: true (local only)
+/drafts/
