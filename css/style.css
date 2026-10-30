@@ -82,6 +82,15 @@ picture {
    Font Imports
    ========================================== */
 
+/* Body text, served from the site instead of Google Fonts: one variable file covers every weight */
+@font-face {
+    font-family: "Manrope";
+    src: url("/assets/fonts/Manrope-latin.woff2") format("woff2");
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
+
 @font-face {
     font-family: "Cartridge Rough";
     src:

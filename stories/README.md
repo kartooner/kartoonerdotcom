@@ -52,6 +52,13 @@ Paragraphs are separated by double line breaks.
 - **Image alt** (optional): A short description of each image for people using screen readers, in the same order as Images and separated with `|`. Describe what's in the picture, not "image of". Without it, images get a generic description.
 - **Image caption** (optional): A caption shown under each image, same order as Images, separated with `|`. Leave a slot empty to skip an image.
 - **Subtitle** (optional): Appears below the main title
+- **Draft** (optional): `Draft: true` keeps the story out of the journal, feeds and related posts. The build makes a preview at `/drafts/<slug>.html` instead (run `npm run serve` to view it); that folder never gets committed. Delete the line to publish. Marking a published story as a draft takes its page down.
+
+Note: the story file itself is still committed like any other, so a draft's text is visible in the repository.
+
+## Link previews
+
+When an entry is shared on LinkedIn, Slack, iMessage and similar apps, the preview card shows its title, excerpt and first image. The build makes a 1200x630 image for the card at `/assets/share/<slug>.jpg`. Entries without images show your avatar instead. Write the `Excerpt:` with that in mind: it's the line people see under the title.
 
 ## Images
 

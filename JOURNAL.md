@@ -242,7 +242,22 @@ Excerpt: Optional - Uses first 100 chars if empty
 Images: Optional - Comma-separated image URLs
 Image alt: Optional - One description per image, separated with |
 Image caption: Optional - One caption per image, separated with |
+Draft: Optional - true keeps it unpublished, with a local preview in /drafts/
 ```
+
+### Drafts
+
+Add `Draft: true` to a story to work on it without publishing. The build leaves it out of the journal, both feeds, related posts and the older/newer links, and makes a preview at `/drafts/<slug>.html` with a "Draft preview" notice. Git ignores `/drafts/`, so previews never deploy. Delete the line (or set it to `false`) to publish. If a published story is marked as a draft again, its page under `/entry/` is removed.
+
+The story file is committed like any other, so its text is visible in the repository.
+
+### Link Previews
+
+Entry pages carry Open Graph and Twitter card tags (title, excerpt, URL, publish date, tags and image), so shared links show a preview card. `scripts/build-share-images.js` makes a 1200x630 JPG for each entry from its first image at `/assets/share/<slug>.jpg`: photos are cropped to fill, transparent PNGs are placed whole on a paper-colored background. Entries without images use the avatar.
+
+### Styles
+
+Entry pages share `/css/entry.css` and the journal page uses `/css/journal.css`, so the browser downloads them once and reuses them. Edit those files directly; the generated pages just link to them.
 
 ### URL Structure
 

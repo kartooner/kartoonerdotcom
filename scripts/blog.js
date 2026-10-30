@@ -127,7 +127,8 @@ class BlogBuilder {
     // Sync stories (simplified version of journal-cms.js sync)
     syncStories() {
         // Use existing journal-cms.js sync functionality
-        execSync('node scripts/journal-cms.js sync', { stdio: 'pipe' });
+        // Shown, so draft preview addresses appear in the build output
+        execSync('node scripts/journal-cms.js sync', { stdio: 'inherit' });
     }
 
     // Regenerated pages come back with placeholders, so bake partials after any sync
@@ -144,9 +145,10 @@ class BlogBuilder {
         }
     }
 
-    // Make any missing .webp files, then point the pages' <img> tags at them
+    // Make any missing .webp files and link preview images, then point the pages' <img> tags at them
     buildImages() {
         execSync('node scripts/optimize-images.js', { stdio: 'pipe' });
+        execSync('node scripts/build-share-images.js', { stdio: 'pipe' });
         execSync('node scripts/build-images.js', { stdio: 'pipe' });
     }
 
