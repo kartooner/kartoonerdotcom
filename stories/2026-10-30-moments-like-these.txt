@@ -2,7 +2,9 @@ Title: Moments like these
 Date: 2026-10-30T14:00:00Z
 Tags: writing, personal
 Excerpt: There are moments that feel important while you're still in them. I've had a few. Most of the time, I only understood why later.
-Images:
+Images: /assets/images/moments-like-these-cover.png
+Image alt: Three faded Polaroid-style photos scattered together: a covered back patio with a blue checkered tablecloth, a light blue house with white gable trim and a front lawn, and a stone birdbath with a small child statue
+Image caption: Images originally taken in 2001 at the house I grew up in. They were not Polaroids, that’s just for effect.
 Subtitle: There are moments that feel important while you're still in them. I've had a few. Most of the time, I only understood why later.
 ---
 

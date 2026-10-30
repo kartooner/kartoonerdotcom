@@ -233,6 +233,33 @@
             }
         }
 
+        /* Transparent PNGs (cutouts, scattered prints) show whole, with no frame of their own */
+        .entry-content img[src$=".png"],
+        [data-theme="dark"] .entry-content img[src$=".png"] {
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Captioned image: the caption sits tight under the image it describes */
+        .entry-figure {
+            margin: 0 0 2rem 0;
+        }
+
+        .entry-content .entry-figure img {
+            margin-bottom: 0;
+        }
+
+        .entry-figure figcaption {
+            max-width: 52ch;
+            margin: 0.5rem auto 0;
+            font-size: var(--text-sm);
+            line-height: var(--leading-snug);
+            color: var(--skills-color);
+            text-align: center;
+        }
+
         /* Code styling */
         .entry-content pre {
             background: rgba(0, 0, 0, 0.1);
@@ -780,7 +807,7 @@
 
         <div class="entry">
             <div class="entry-content">
-                <p>The first one I remember clearly is my brother&#39;s high school graduation.</p>
+                <figure class="entry-figure"><picture><source srcset="/assets/images/moments-like-these-cover.webp" type="image/webp"><img src="/assets/images/moments-like-these-cover.png" alt="Three faded Polaroid-style photos scattered together: a covered back patio with a blue checkered tablecloth, a light blue house with white gable trim and a front lawn, and a stone birdbath with a small child statue" data-progressive loading="eager" fetchpriority="high" width="1600" height="872" /></picture><figcaption>Images originally taken in 2001 at the house I grew up in. They were not Polaroids, that’s just for effect.</figcaption></figure><p>The first one I remember clearly is my brother&#39;s high school graduation.</p>
 
 <p>My then-girlfriend, now my wife, was there. Afterward I lay down in our old room and thought this was a turning point, not only for me but for my family. I knew the four of us, my grandma who helped raise me, my dad, my brother, and me, would never all be together in that house again. So I captured it like a Polaroid.</p>
 

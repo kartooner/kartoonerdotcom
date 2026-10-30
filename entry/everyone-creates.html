@@ -233,6 +233,33 @@
             }
         }
 
+        /* Transparent PNGs (cutouts, scattered prints) show whole, with no frame of their own */
+        .entry-content img[src$=".png"],
+        [data-theme="dark"] .entry-content img[src$=".png"] {
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Captioned image: the caption sits tight under the image it describes */
+        .entry-figure {
+            margin: 0 0 2rem 0;
+        }
+
+        .entry-content .entry-figure img {
+            margin-bottom: 0;
+        }
+
+        .entry-figure figcaption {
+            max-width: 52ch;
+            margin: 0.5rem auto 0;
+            font-size: var(--text-sm);
+            line-height: var(--leading-snug);
+            color: var(--skills-color);
+            text-align: center;
+        }
+
         /* Code styling */
         .entry-content pre {
             background: rgba(0, 0, 0, 0.1);

@@ -11,7 +11,15 @@
         "writing",
         "personal"
       ],
-      "images": []
+      "images": [
+        "/assets/images/moments-like-these-cover.png"
+      ],
+      "imageAlts": [
+        "Three faded Polaroid-style photos scattered together: a covered back patio with a blue checkered tablecloth, a light blue house with white gable trim and a front lawn, and a stone birdbath with a small child statue"
+      ],
+      "imageCaptions": [
+        "Images originally taken in 2001 at the house I grew up in. They were not Polaroids, that’s just for effect."
+      ]
     },
     {
       "id": "the-serendipity-of-noticing",
