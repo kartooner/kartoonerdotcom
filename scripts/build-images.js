@@ -5,10 +5,13 @@
  * For every local .jpg/.jpeg/.png <img> in the site's pages:
  *   - adds width/height from the original file, so the browser reserves the
  *     right shape before the image arrives (no layout jump)
- *   - wraps it in <picture> with the .webp from optimize-images.js, keeping
- *     the original as the fallback
+ *   - wraps it in <picture> with the .webp files from optimize-images.js as a
+ *     srcset, keeping the original as the fallback. The browser picks the
+ *     smallest file that's sharp at the size shown: a sizes="" on the <img>
+ *     says how wide it shows, otherwise it's taken as the full viewport width
  *
- * Images already inside a <picture> are left alone, so it's safe to re-run.
+ * Pictures this script made are rebuilt on every run, so new sizes reach pages
+ * that were already built; hand-written <picture> elements are left alone.
  * Run after optimize-images.js (npm run build does both).
  *
  * Usage: node scripts/build-images.js
@@ -17,6 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
+const { VARIANT_WIDTHS, variantPath } = require('./optimize-images');
 
 const ROOT = path.join(__dirname, '..');
 const SKIP_DIRS = new Set(['node_modules', 'backups', 'scripts', 'partials', 'playwright-report', 'test-results', '.git']);
@@ -50,12 +54,27 @@ async function sizeOf(file) {
     return sizeCache.get(file);
 }
 
+// Every .webp made for this image, widest last, as srcset candidates
+async function webpSrcset(src, file) {
+    const webpFile = file.replace(/\.(jpe?g|png)$/i, '.webp');
+    const webpSrc = src.replace(/\.(jpe?g|png)(?=$|[?#])/i, '.webp');
+    const candidates = VARIANT_WIDTHS
+        .filter(width => fs.existsSync(variantPath(webpFile, width)))
+        .map(width => `${variantPath(webpSrc, width)} ${width}w`);
+    const { width } = await sizeOf(webpFile);
+    return candidates.concat(`${webpSrc} ${width}w`).join(', ');
+}
+
+// The <picture> wrapper this script writes, so a re-run can rebuild it
+const BUILT_PICTURE = /<picture><source srcset="[^"]*" type="image\/webp"(?: sizes="[^"]*")?>(<img\b[^>]*>)<\/picture>/g;
+
 function insideOpenPicture(html, index) {
     return html.lastIndexOf('<picture', index) > html.lastIndexOf('</picture>', index);
 }
 
 async function buildPage(page) {
-    const original = fs.readFileSync(page, 'utf8');
+    const before = fs.readFileSync(page, 'utf8');
+    const original = before.replace(BUILT_PICTURE, '$1');
     const tags = [...original.matchAll(/<img\b[^>]*>/g)];
     let html = '';
     let last = 0;
@@ -74,24 +93,25 @@ async function buildPage(page) {
             continue;
         }
 
-        const before = tag;
+        const unchanged = tag;
 
         if (!/\swidth="/.test(tag) && !/\sheight="/.test(tag)) {
             const { width, height } = await sizeOf(file);
             tag = tag.replace(/\s*\/?>$/, ` width="${width}" height="${height}"$&`);
         }
 
-        const webp = src.replace(/\.(jpe?g|png)(?=$|[?#])/i, '.webp');
         if (!insideOpenPicture(original, match.index) && fs.existsSync(file.replace(/\.(jpe?g|png)$/i, '.webp'))) {
-            tag = `<picture><source srcset="${webp}" type="image/webp">${tag}</picture>`;
+            const sizes = (tag.match(/\ssizes="([^"]+)"/) || [])[1] || '100vw';
+            tag = `<picture><source srcset="${await webpSrcset(src, file)}" type="image/webp" sizes="${sizes}">${tag}</picture>`;
         }
 
-        if (tag !== before) changed++;
+        if (tag !== unchanged) changed++;
         html += tag;
     }
     html += original.slice(last);
 
-    if (changed) fs.writeFileSync(page, html, 'utf8');
+    if (html === before) return 0;
+    fs.writeFileSync(page, html, 'utf8');
     return changed;
 }
 

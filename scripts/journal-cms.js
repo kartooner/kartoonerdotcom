@@ -499,6 +499,10 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+// How wide entry images show: the text column, less its side padding on phones.
+// build-images.js passes this on so phones download a smaller copy
+const ENTRY_IMAGE_SIZES = '(max-width: 800px) calc(100vw - 56px), 730px';
+
 // An entry image, wrapped in a <figure> when it has a caption. Feeds get an absolute
 // src and none of the page's progressive-loading attributes
 function entryImageHtml(entry, index, { eager = false, absolute = false } = {}) {
@@ -507,7 +511,7 @@ function entryImageHtml(entry, index, { eager = false, absolute = false } = {}) 
     const caption = entry.imageCaptions && entry.imageCaptions[index];
     const img = absolute
         ? `<img src="${src}" alt="${alt}" />`
-        : `<img src="${src}" alt="${alt}" data-progressive ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} />`;
+        : `<img src="${src}" alt="${alt}" sizes="${ENTRY_IMAGE_SIZES}" data-progressive ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} />`;
     return caption ? `<figure class="entry-figure">${img}<figcaption>${escapeHtml(caption)}</figcaption></figure>` : img;
 }
 

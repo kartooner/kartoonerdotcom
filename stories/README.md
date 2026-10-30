@@ -21,6 +21,7 @@ Tags: tag1, tag2, tag3
 Excerpt: Brief description that appears in archive and RSS
 Images: image1.jpg, image2.jpg
 Image alt: What the first image shows | What the second image shows
+Image caption: Caption under the first image | Caption under the second
 Subtitle: Optional subtitle (appears below title)
 
 Your story content goes here. You can use simple markdown:
@@ -49,7 +50,18 @@ Paragraphs are separated by double line breaks.
 - **Excerpt** (optional): Brief description, auto-generated if not provided
 - **Images** (optional): Comma-separated image URLs
 - **Image alt** (optional): A short description of each image for people using screen readers, in the same order as Images and separated with `|`. Describe what's in the picture, not "image of". Without it, images get a generic description.
+- **Image caption** (optional): A caption shown under each image, same order as Images, separated with `|`. Leave a slot empty to skip an image.
 - **Subtitle** (optional): Appears below the main title
+
+## Images
+
+Put image files in `/assets/images/` and list them in `Images:` (e.g. `/assets/images/my-photo.jpg`). They open the entry by default.
+
+To put an image partway through the text instead, add `[image 1]` on a line of its own where it should go. The number counts from the `Images:` list, so `[image 2]` is the second one.
+
+PNGs with a transparent background show whole, with no rounded corners or shadow. JPGs are cropped to a fixed height.
+
+The build makes smaller copies of every image for phones and picks the right one for each device, so use the largest original you have.
 
 ## Building
 

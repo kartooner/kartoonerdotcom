@@ -30,7 +30,9 @@ Subtitle: Optional subtitle for extra context
 Date: 2025-08-29T12:00:00Z
 Tags: personal, thoughts, life
 Excerpt: Brief description for feeds and archive
-Images: /img/photo1.jpg, /img/photo2.jpg
+Images: /assets/images/photo1.jpg, /assets/images/photo2.jpg
+Image alt: What the first photo shows | What the second photo shows
+Image caption: A caption under the first photo | A caption under the second
 
 Your story content goes here using Markdown...
 
@@ -174,13 +176,27 @@ ___
 
 ## Styling Features
 
-### Progressive Images
+### Images
 
-Images automatically get skeleton loading animations:
+List a story's images in `Images:`. By default they open the entry, above the first paragraph.
 
-```markdown
-Images: /img/photo.jpg
+**Placing an image in the text.** Put `[image N]` on a line of its own, where `N` counts from the `Images:` list. That image shows there instead of at the top, and the RSS and Atom feeds show it in the same place:
+
 ```
+So I captured it like a Polaroid.
+
+[image 1]
+
+I didn't know exactly why at the time...
+```
+
+**Alt text.** `Image alt:` describes each image for people using screen readers, in the same order as `Images:` and separated with `|`. Describe what's in the picture, not "image of".
+
+**Captions.** `Image caption:` adds a caption under each image, same order, separated with `|`. Leave a slot empty to skip one: `Image caption: | Caption for the second image`.
+
+**Transparent PNGs.** JPGs fill the column at a fixed height (400px, 250px on phones), cropped to fit, with rounded corners and a shadow. PNGs show whole, at their own shape, with no corners or shadow, so cutouts and scattered prints sit right on the page in light and dark mode.
+
+**Sizes and speed.** Put originals in `assets/images/`. The build makes a full-size `.webp` (up to 1600px wide) plus 400, 800 and 1200px copies, and each page lists them so every device downloads the smallest one that's still sharp. Phones usually get the 800px copy. Nothing to do by hand; `npm run build` handles it.
 
 ### Theme Support
 
@@ -224,6 +240,8 @@ Date: Optional - Defaults to file creation time
 Tags: Optional - Comma-separated list
 Excerpt: Optional - Uses first 100 chars if empty
 Images: Optional - Comma-separated image URLs
+Image alt: Optional - One description per image, separated with |
+Image caption: Optional - One caption per image, separated with |
 ```
 
 ### URL Structure
