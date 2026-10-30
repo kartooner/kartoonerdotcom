@@ -89,6 +89,10 @@ function parseStoryFile(filePath) {
                         // Separated with | since descriptions often have commas
                         metadata.imageAlts = value.split('|').map(alt => alt.trim());
                         break;
+                    case 'image caption':
+                        // Same | separator as Image alt, one caption per image
+                        metadata.imageCaptions = value.split('|').map(caption => caption.trim());
+                        break;
                 }
             }
         }
@@ -112,7 +116,8 @@ function parseStoryFile(filePath) {
             excerpt,
             tags: metadata.tags || [],
             images: metadata.images,
-            imageAlts: metadata.imageAlts
+            imageAlts: metadata.imageAlts,
+            imageCaptions: metadata.imageCaptions
         };
     } catch (error) {
         console.error(`Error parsing story file ${filePath}:`, error.message);
@@ -527,10 +532,15 @@ function generateEntryPages(journal) {
         // The first image opens the entry (usually the largest thing on screen), so it
         // loads right away at high priority; any others wait until they're scrolled near
         const imageAlt = index => escapeHtml((entry.imageAlts && entry.imageAlts[index]) || 'Illustration accompanying the journal entry');
-        const imagesHtml = entry.images ? entry.images.map((img, index) =>
-            index === 0
+        const imageCaption = index => entry.imageCaptions && entry.imageCaptions[index];
+        const imagesHtml = entry.images ? entry.images.map((img, index) => {
+            const imgHtml = index === 0
                 ? `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="eager" fetchpriority="high" />`
-                : `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="lazy" />`).join('\n            ') : '';
+                : `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="lazy" />`;
+            return imageCaption(index)
+                ? `<figure class="entry-figure">${imgHtml}<figcaption>${escapeHtml(imageCaption(index))}</figcaption></figure>`
+                : imgHtml;
+        }).join('\n            ') : '';
 
         // Generate "Tagged with" section with clickable tags
         const tagsHtml = entry.tags && entry.tags.length > 0 ? `
@@ -797,6 +807,33 @@ function generateEntryPages(journal) {
             .entry-content img {
                 height: 250px;
             }
+        }
+
+        /* Transparent PNGs (cutouts, scattered prints) show whole, with no frame of their own */
+        .entry-content img[src$=".png"],
+        [data-theme="dark"] .entry-content img[src$=".png"] {
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        /* Captioned image: the caption sits tight under the image it describes */
+        .entry-figure {
+            margin: 0 0 2rem 0;
+        }
+
+        .entry-content .entry-figure img {
+            margin-bottom: 0;
+        }
+
+        .entry-figure figcaption {
+            max-width: 52ch;
+            margin: 0.5rem auto 0;
+            font-size: var(--text-sm);
+            line-height: var(--leading-snug);
+            color: var(--skills-color);
+            text-align: center;
         }
 
         /* Code styling */
