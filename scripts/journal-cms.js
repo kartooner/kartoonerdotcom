@@ -499,6 +499,36 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+// An entry image, wrapped in a <figure> when it has a caption. Feeds get an absolute
+// src and none of the page's progressive-loading attributes
+function entryImageHtml(entry, index, { eager = false, absolute = false } = {}) {
+    const src = (absolute ? 'https://www.kartooner.com' : '') + entry.images[index];
+    const alt = escapeHtml((entry.imageAlts && entry.imageAlts[index]) || 'Illustration accompanying the journal entry');
+    const caption = entry.imageCaptions && entry.imageCaptions[index];
+    const img = absolute
+        ? `<img src="${src}" alt="${alt}" />`
+        : `<img src="${src}" alt="${alt}" data-progressive ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} />`;
+    return caption ? `<figure class="entry-figure">${img}<figcaption>${escapeHtml(caption)}</figcaption></figure>` : img;
+}
+
+// A story places one of its images in the body with a line of its own like [image 1],
+// numbered from its Images list. Returns the html with those lines swapped for the
+// images, and which images were placed
+function placeEntryImages(html, entry, options = {}) {
+    const placed = new Set();
+    const images = entry.images || [];
+    const result = html.replace(/<p>\[image (\d+)\]<\/p>/gi, (match, number) => {
+        const index = Number(number) - 1;
+        if (!images[index]) {
+            console.warn(`${entry.id}: [image ${number}] has no matching entry in Images`);
+            return '';
+        }
+        placed.add(index);
+        return entryImageHtml(entry, index, options);
+    });
+    return { html: result, placed };
+}
+
 function generateEntryPages(journal) {
     // Create entry directory if it doesn't exist
     if (!fs.existsSync(ENTRY_DIR)) {
@@ -529,18 +559,15 @@ function generateEntryPages(journal) {
         const tocHtml = isLongform ? generateTableOfContents(h2Headings) : '';
         const subtitleHtml = entry.subtitle ? `<h2>${entry.subtitle}</h2>` : '';
         const readingTime = calculateReadingTime(entry.content);
-        // The first image opens the entry (usually the largest thing on screen), so it
-        // loads right away at high priority; any others wait until they're scrolled near
-        const imageAlt = index => escapeHtml((entry.imageAlts && entry.imageAlts[index]) || 'Illustration accompanying the journal entry');
-        const imageCaption = index => entry.imageCaptions && entry.imageCaptions[index];
-        const imagesHtml = entry.images ? entry.images.map((img, index) => {
-            const imgHtml = index === 0
-                ? `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="eager" fetchpriority="high" />`
-                : `<img src="${img}" alt="${imageAlt(index)}" data-progressive loading="lazy" />`;
-            return imageCaption(index)
-                ? `<figure class="entry-figure">${imgHtml}<figcaption>${escapeHtml(imageCaption(index))}</figcaption></figure>`
-                : imgHtml;
-        }).join('\n            ') : '';
+        // Images placed in the body with [image N] sit there; the rest open the entry.
+        // The first opening image is usually the largest thing on screen, so it loads
+        // right away at high priority; any others wait until they're scrolled near
+        const { html: bodyHtml, placed } = placeEntryImages(contentHtml, entry);
+        const imagesHtml = (entry.images || [])
+            .map((img, index) => index)
+            .filter(index => !placed.has(index))
+            .map((index, position) => entryImageHtml(entry, index, { eager: position === 0 }))
+            .join('\n            ');
 
         // Generate "Tagged with" section with clickable tags
         const tagsHtml = entry.tags && entry.tags.length > 0 ? `
@@ -1359,7 +1386,7 @@ function generateEntryPages(journal) {
 ${tocHtml}
         <div class="entry">
             <div class="entry-content">
-                ${imagesHtml}${contentHtml}
+                ${imagesHtml}${bodyHtml}
             </div>
         </div>
 
@@ -1996,7 +2023,7 @@ function generateRSSFeed(journal) {
         .slice(0, 10); // Latest 10 entries
 
     const items = entries.map(entry => {
-        const contentHtml = convertMarkdownToHtml(entry.content);
+        const contentHtml = placeEntryImages(convertMarkdownToHtml(entry.content), entry, { absolute: true }).html;
         return `
     <item>
       <title><![CDATA[${entry.title}]]></title>
@@ -2035,7 +2062,7 @@ function generateAtomFeed(journal) {
         .slice(0, 10); // Latest 10 entries
 
     const atomEntries = entries.map(entry => {
-        const contentHtml = convertMarkdownToHtml(entry.content);
+        const contentHtml = placeEntryImages(convertMarkdownToHtml(entry.content), entry, { absolute: true }).html;
         return `
   <entry xml:lang="en">
     <title><![CDATA[${entry.title}]]></title>
