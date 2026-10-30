@@ -5,7 +5,7 @@
   <link href="https://www.kartooner.com/journal-atom.xml" rel="self" type="application/atom+xml" />
   <link href="https://www.kartooner.com/journal" />
   <generator uri="https://www.kartooner.com">Journal CMS</generator>
-  <updated>2026-10-30T14:36:34.524Z</updated>
+  <updated>2026-10-30T14:40:49.401Z</updated>
   <id>https://www.kartooner.com/journal-atom.xml</id>
   
   <entry xml:lang="en">
@@ -18,9 +18,11 @@
       <name><![CDATA[Erik Sagen]]></name>
     </author>
     <category term="Journal" />
-    <content type="html"><![CDATA[<p>There are moments that feel important while you&#39;re still in them. I&#39;ve had a few. Most of the time, I only understood why later.</p>
+    <content type="html"><![CDATA[<p>The first one I remember clearly is my brother&#39;s high school graduation.</p>
 
-<p>The first one I remember clearly is my brother&#39;s high school graduation. My then girlfriend, now my wife, was there. Afterward I lay down in our old room and thought this was a turning point, not only for me but for my family. I knew the four of us, my grandma who helped raise me, my dad, my brother, and me, would never all be together in that house again. So I captured it like a Polaroid. I didn&#39;t know exactly why at the time, but some part of me knew I&#39;d look back someday, reflect, and understand why that moment stuck.</p>
+<p>My then-girlfriend, now my wife, was there. Afterward I lay down in our old room and thought this was a turning point, not only for me but for my family. I knew the four of us, my grandma who helped raise me, my dad, my brother, and me, would never all be together in that house again. So I captured it like a Polaroid.</p>
+
+<p>I didn&#39;t know exactly why at the time, but some part of me knew I&#39;d look back someday, reflect, and understand why that moment stuck.</p>
 
 <p>That habit has shown up more than once. Driving to the hospital just before my daughter was born, I saw a shooting star far off in the distance. I was also reading Zeldman&#39;s “Designing with Web Standards” in the cafeteria, eating a lopsided burger.</p>
 
