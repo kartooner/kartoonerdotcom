@@ -919,6 +919,7 @@
             </div>
             <div id="play-button">PLAY GAME</div>
             <div id="how-to-play-button">HOW TO PLAY</div>
+            <button type="button" id="settings-button" class="settings-open">SETTINGS</button>
             <div id="copyright-notice">
                 © 1980 Erik Sagen<br>
                 MCMLXXX
@@ -1009,7 +1010,17 @@
         <div id="gameover-stats" style="display: none; color: #00ffff; font-size: 12px; text-align: center; margin-bottom: 30px; font-family: 'Press Start 2P', 'Courier New', monospace; line-height: 2;"></div>
         <button id="resume-button" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; margin-bottom: 15px; transition: all 0.15s; text-transform: uppercase; min-width: 200px;">RESUME</button>
         <button id="pause-retry-button" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; margin-bottom: 15px; transition: all 0.15s; text-transform: uppercase; min-width: 200px;">RETRY</button>
+        <button type="button" id="pause-settings-button" class="settings-open" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; transition: all 0.15s; text-transform: uppercase; min-width: 200px; margin-bottom: 15px;">SETTINGS</button>
         <button id="pause-quit-button" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; transition: all 0.15s; text-transform: uppercase; min-width: 200px;">QUIT</button>
+    </div>
+    <div id="settings-overlay" role="dialog" aria-labelledby="settings-title" hidden>
+        <h2 id="settings-title">SETTINGS</h2>
+        <div class="settings-row">
+            <span class="settings-label" id="pixel-filter-label">PIXEL FILTER</span>
+            <button type="button" id="pixel-filter-toggle" aria-labelledby="pixel-filter-label" aria-pressed="true">ON</button>
+        </div>
+        <p class="settings-note">Chunky low-res look, like a 90s console. Turning it off gives sharper lines.</p>
+        <button type="button" id="settings-back" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; transition: all 0.15s; text-transform: uppercase; min-width: 200px;">BACK</button>
     </div>
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
         <button id="pause-button" style="display: none; background: rgba(0, 20, 20, 0.85); border: 2px solid #00ffff; color: #00ffff; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; padding: 10px 24px; cursor: pointer; font-weight: bold; transition: all 0.2s;">PAUSE</button>
@@ -1070,6 +1081,89 @@
         white-space: nowrap;
         pointer-events: all;
     }
+    /* Pixel filter: the canvas renders at low resolution; scale it up without smoothing */
+    body.pixel-filter #footer-canvas canvas {
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+    }
+
+    #settings-button {
+        font-family: 'Press Start 2P', 'Courier New', monospace;
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: #888888;
+        background: none;
+        border: none;
+        padding: 12px 0;
+        margin: 4px 0 0;
+        cursor: pointer;
+        text-align: center;
+    }
+    #settings-button:hover,
+    #settings-button:focus-visible { color: #00ffff; }
+    @media (min-width: 600px), (max-width: 896px) and (max-height: 500px) and (orientation: landscape) {
+        #game-logo { grid-row: 1 / 4 !important; }
+        #start-screen-container > #settings-button { grid-column: 2; grid-row: 3; justify-self: center; align-self: start; }
+        #copyright-notice { grid-row: 4 !important; }
+        #fullscreen-hint { grid-row: 5 !important; }
+    }
+
+    #settings-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 250;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 5%;
+        box-sizing: border-box;
+        background: #001a1a; /* Opaque so the pause menu doesn't show through */
+        font-family: 'Press Start 2P', 'Courier New', monospace;
+        color: #00ffff;
+    }
+    #settings-overlay[hidden] { display: none; }
+    #settings-title {
+        font-size: 18px;
+        font-weight: normal;
+        letter-spacing: 3px;
+        margin: 0 0 40px;
+    }
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        width: 100%;
+        max-width: 420px;
+    }
+    .settings-label { font-size: 12px; letter-spacing: 2px; }
+    #pixel-filter-toggle {
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: 2px;
+        min-width: 90px;
+        padding: 12px 16px;
+        cursor: pointer;
+        color: #00ffff;
+        background: rgba(0, 255, 255, 0.15);
+        border: 2px solid #00ffff;
+    }
+    #pixel-filter-toggle[aria-pressed="false"] {
+        color: #888888;
+        background: transparent;
+        border-color: #888888;
+    }
+    .settings-note {
+        font-size: 8px;
+        line-height: 1.8;
+        color: rgba(0, 255, 255, 0.6);
+        max-width: 420px;
+        width: 100%;
+        margin: 16px 0 40px;
+    }
+    #settings-overlay button:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
+
     #back-to-experiments:hover {
         opacity: 1;
         color: rgba(0, 255, 255, 1);

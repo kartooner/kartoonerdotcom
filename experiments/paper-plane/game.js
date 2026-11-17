@@ -271,7 +271,27 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     // Clamp pixel ratio - lower for Edge, max 2 for mobile
     const maxPixelRatio = isEdge ? 1.5 : 2;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+    let basePixelRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
+
+    // PIXEL FILTER (PS1-style). Render at about 320x240, what 90s consoles
+    // drew on a TV (at least that many pixels each way, so phones in portrait
+    // don't get too coarse), and let CSS scale the canvas up without smoothing.
+    // Fewer pixels to draw, so it's cheaper than full resolution, not costlier.
+    const PIXEL_FILTER_WIDTH = 320;
+    const PIXEL_FILTER_HEIGHT = 240;
+    let pixelFilterOn = true; // On by default
+    try { pixelFilterOn = localStorage.getItem('paperPlanePixelFilter') !== 'off'; } catch (e) {}
+
+    function applyPixelRatio() {
+        const ratio = pixelFilterOn
+            ? Math.min(basePixelRatio, Math.max(
+                PIXEL_FILTER_WIDTH / Math.max(1, container.clientWidth),
+                PIXEL_FILTER_HEIGHT / Math.max(1, container.clientHeight)))
+            : basePixelRatio;
+        renderer.setPixelRatio(ratio);
+        document.body.classList.toggle('pixel-filter', pixelFilterOn);
+    }
+    applyPixelRatio();
     // Optimization: ensure efficient clearing
     renderer.autoClear = true;
     renderer.autoClearColor = true;
@@ -3444,7 +3464,9 @@
         // ESC to pause/unpause
         if (e.key === 'Escape') {
             e.preventDefault();
-            if (isPaused && !checkpointActive) {
+            if (!settingsOverlay.hidden) {
+                closeSettings(); // Back out of Settings first
+            } else if (isPaused && !checkpointActive) {
                 // Resume if already paused
                 document.getElementById('resume-button').click();
             } else if (animationRunning && !checkpointActive) {
@@ -3611,7 +3633,8 @@
             } else {
                 pixelRatio = isFullscreen ? 1.5 : 2;
             }
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio));
+            basePixelRatio = Math.min(window.devicePixelRatio, pixelRatio);
+            applyPixelRatio();
 
             // Performance optimization: Hide plane shadow in full screen mode
             shadowMesh.visible = !isFullscreen;
@@ -6236,6 +6259,38 @@
 
         renderer.render(scene, camera);
     }
+
+    // --- SETTINGS SCREEN ---
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const pixelFilterToggle = document.getElementById('pixel-filter-toggle');
+    let settingsOpener = null;
+
+    function syncPixelFilterToggle() {
+        pixelFilterToggle.setAttribute('aria-pressed', String(pixelFilterOn));
+        pixelFilterToggle.textContent = pixelFilterOn ? 'ON' : 'OFF';
+    }
+
+    function openSettings(e) {
+        settingsOpener = e && e.currentTarget;
+        syncPixelFilterToggle();
+        settingsOverlay.hidden = false;
+        pixelFilterToggle.focus();
+    }
+
+    function closeSettings() {
+        settingsOverlay.hidden = true;
+        if (settingsOpener) settingsOpener.focus();
+    }
+
+    document.querySelectorAll('.settings-open').forEach(btn => btn.addEventListener('click', openSettings));
+    document.getElementById('settings-back').addEventListener('click', closeSettings);
+    pixelFilterToggle.addEventListener('click', () => {
+        pixelFilterOn = !pixelFilterOn;
+        try { localStorage.setItem('paperPlanePixelFilter', pixelFilterOn ? 'on' : 'off'); } catch (e) {}
+        applyPixelRatio();
+        syncPixelFilterToggle();
+        renderer.render(scene, camera); // Show the change behind the menu right away
+    });
 
     // Render initial frozen frame for start screen background
     renderer.render(scene, camera);
