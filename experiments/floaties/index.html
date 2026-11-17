@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nebula Floaties</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @font-face {
             font-family: 'Cartridge';
@@ -79,6 +78,47 @@
             transform: scale(1.02);
         }
         #btn-play:active { transform: scale(0.98); }
+        #btn-play:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+        /* How-to-play: a short list under the Play button */
+        .howto {
+            list-style: none; margin: 2rem auto 0; padding: 0;
+            max-width: 26rem; text-align: left;
+            font-size: 0.8125rem; line-height: 1.5; color: #b7c6d6;
+        }
+        .howto li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.75rem; padding: 0.3rem 0; border-top: 1px solid rgba(183, 198, 214, 0.15); }
+        .howto li:first-child { border-top: 0; }
+        .howto b { color: #e8f1fa; font-weight: 600; }
+        .swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: 0.05rem; }
+
+        #hud {
+            position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; z-index: 500;
+            display: flex; gap: 1.25rem; align-items: baseline;
+            color: #e8f1fa; pointer-events: none;
+            font-variant-numeric: tabular-nums;
+        }
+        #hud[hidden] { display: none; }
+        #hud .label {
+            font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; margin-right: 0.4rem;
+        }
+        #hud .value { font-size: 1.25rem; font-weight: 700; }
+        #hud .best .value { font-size: 0.9375rem; font-weight: 500; color: #b7c6d6; }
+
+        #flash {
+            position: fixed; inset: 0; z-index: 400; pointer-events: none; opacity: 0;
+        }
+
+        #back-to-games {
+            position: fixed; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+            z-index: 1100;
+            padding: 6px 14px;
+            background: rgba(0, 8, 20, 0.5);
+            border: 1px solid rgba(0, 242, 255, 0.25); border-radius: 999px;
+            color: rgba(0, 242, 255, 0.7);
+            font-size: 11px; font-weight: 600; text-decoration: none;
+            opacity: 0.5; transition: opacity 0.2s ease;
+        }
+        #back-to-games:hover, #back-to-games:focus-visible { opacity: 1; }
     </style>
 </head>
 <body>
@@ -88,27 +128,112 @@
         <div class="subtitle">Primordial Glow</div>
         <h1 class="title" id="main-title">Nebula Floaties</h1>
         <button id="btn-play" onclick="startPlay()" aria-label="Start the simulation">Play</button>
+        <ul class="howto">
+            <li><b>Steer</b><span>Arrows / A D, drag, or tap a spot</span></li>
+            <li><b>Speed</b><span>W / ↑ boost, S / ↓ slow. Touch: two fingers to boost</span></li>
+            <li><b>Eat</b><span>Teal bits +1, amber bits +3 (they swim away)</span></li>
+            <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them.
+                <i class="swatch" style="background:#ff2a55"></i>Red: bigger, they bite.</span></li>
+        </ul>
     </div>
 </div>
 
+<div id="hud" hidden>
+    <div><span class="label">Mass</span><span class="value" id="hud-mass">10</span></div>
+    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">10</span></div>
+</div>
+<div id="flash"></div>
+<a id="back-to-games" href="/games">← Games</a>
+
 <script>
     let scene, camera, renderer, clock;
-    let snake, nutrients = [], snow = [], pillars = [], nebulaClouds = [];
-    let debris = [], bubbles = [];
-    let worldSize = 2500;
+    let snake, nutrients = [], predators = [], bubbles = [], debris = [];
+    const wrapped = [];     // meshes that repeat around the player (see updateWrapped)
+    const pointLayers = []; // particle systems that repeat around the player
+    const worldSize = 2500;
+    const BASE_FOG = 0.00065;
     let isPlaying = false;
 
-    // --- Input state (exclusive: only one mode active at a time) ---
+    // --- Input state (exclusive: only one steering mode active at a time) ---
     let inputMode = null;
     let keysDown = new Set();
+    let touchBoost = false;
     let dragWorldPos = new THREE.Vector3();
     let touchWorldPos = new THREE.Vector3();
-    let waypointPos = null;
+    let waypointPos = null, waypointMarker;
     let camTarget = new THREE.Vector3();
-    let flashes = [], cameraBank = 0;
+    let cameraBank = 0;
+
+    // --- Game state ---
+    const START_MASS = 10, MIN_MASS = 4;
+    const PREDATOR_COUNT = 5;
+    const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
+    let invulnerable = 0;         // seconds of post-bite immunity
+    let bestMass = START_MASS, shownMass = -1;
+    try { bestMass = Math.max(START_MASS, Number(localStorage.getItem('floaties-best')) || 0); } catch (e) {}
 
     const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
     const DEEP_COLORS = [0x0033ff, 0x00aaff, 0x00ffee, 0x7700ff, 0xff0077, 0x00ff88];
+    const RELATION_COLORS = {
+        threat:  { head: 0xff2a55, tail: 0x7a0030 },
+        prey:    { head: 0x7dff4a, tail: 0x1f7a3a },
+        neutral: { head: 0x9fb3c8, tail: 0x2f4058 },
+    };
+
+    const UNIT_SPHERE = new THREE.IcosahedronGeometry(1, 2);
+    const JAW_GEO = new THREE.ConeGeometry(0.25, 0.7, 3);
+    const FOOD_GEO = new THREE.TetrahedronGeometry(11, 0);
+
+    // Visual scale grows with mass, but slower and slower (mass 10 → 1x, 100 → 2.5x)
+    const sizeFromMass = (m) => Math.pow(Math.max(m, 1) / START_MASS, 0.4);
+    // Per-frame smoothing factor `a` (tuned at 60fps) made frame-rate independent
+    const lerpK = (a, dt) => 1 - Math.pow(1 - a, dt);
+    const rand = (a, b) => a + Math.random() * (b - a);
+
+    // Move a coordinate by whole periods so it sits within ±P/2 of `center`
+    function wrapNear(v, center, P) {
+        const h = P / 2;
+        while (v - center >  h) v -= P;
+        while (v - center < -h) v += P;
+        return v;
+    }
+    // 1 in the middle of a tile, fading to 0 at its edge, so repositioning is never seen
+    function seamFade(dx, dz, P) {
+        const h = P / 2;
+        return 1 - THREE.MathUtils.smoothstep(Math.max(Math.abs(dx), Math.abs(dz)), h * 0.75, h);
+    }
+    function addWrapped(mesh, period) {
+        mesh.userData.period = period;
+        mesh.userData.baseOpacity = mesh.material.opacity;
+        wrapped.push(mesh);
+        return mesh;
+    }
+    function updateWrapped(center) {
+        for (const m of wrapped) {
+            const P = m.userData.period;
+            m.position.x = wrapNear(m.position.x, center.x, P);
+            m.position.z = wrapNear(m.position.z, center.z, P);
+            m.material.opacity = m.userData.baseOpacity *
+                seamFade(m.position.x - center.x, m.position.z - center.z, P);
+        }
+    }
+    function updatePointLayers(center, dt) {
+        for (const sys of pointLayers) {
+            const { period: P, drift } = sys.userData;
+            sys.position.x += drift.x * dt;
+            sys.position.z += drift.z * dt;
+            const lx = center.x - sys.position.x, lz = center.z - sys.position.z, h = P / 2;
+            const arr = sys.geometry.attributes.position.array;
+            let changed = false;
+            for (let i = 0; i < arr.length; i += 3) {
+                if (arr[i]   - lx >  h) { arr[i]   -= P; changed = true; }
+                else if (arr[i]   - lx < -h) { arr[i]   += P; changed = true; }
+                if (arr[i+2] - lz >  h) { arr[i+2] -= P; changed = true; }
+                else if (arr[i+2] - lz < -h) { arr[i+2] += P; changed = true; }
+            }
+            if (changed) sys.geometry.attributes.position.needsUpdate = true;
+        }
+    }
 
     function createBackdrop() {
         const canvas = document.createElement('canvas');
@@ -125,79 +250,122 @@
         return new THREE.CanvasTexture(canvas);
     }
 
-    class Part {
-        constructor(radius, color, opacity, order) {
-            const geo = new THREE.IcosahedronGeometry(radius, 2);
-            this.mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-                color, transparent: true, opacity, depthTest: false
-            }));
-            this.mesh.renderOrder = order;
-            scene.add(this.mesh);
-        }
-    }
-
-    class Organism {
-        constructor() {
+    // A swimming chain of spheres that follows its own head's path.
+    // Used for both the player and the other creatures; `steer` decides where it goes.
+    class Creature {
+        constructor({ mass, segments, maxSegments = segments, growSegments = false,
+                      colors, depthTest = false, fog = true, order = 0, bodyOpacity = 0.82,
+                      pos = new THREE.Vector3(), dir = new THREE.Vector3(1, 0, 0), bobPhase = 0 }) {
+            this.baseSegments = segments;
+            this.maxSegments = maxSegments;
+            this.growSegments = growSegments;
+            this.depthTest = depthTest;
+            this.fog = fog;
+            this.order = order;
+            this.bodyOpacity = bodyOpacity;
+            this.bobPhase = bobPhase;
+            this.headColor = new THREE.Color(colors.head);
+            this.tailColor = new THREE.Color(colors.tail);
             this.nodes = [];
-            this.baseSize = 9.0;
-            this.segmentCount = 11;
-            this.segmentSpacing = 20;
             this.minPathDist = 3;
             this.swimSpeed = 2.5;
             this.isBoosting = false;
-            // Swim in +X so the trail extends in -X, camera starts behind at -X.
-            // This eliminates the U-turn doubling artifact on startup.
-            this.headVelocity = new THREE.Vector3(1, 0, 0);
+            this.headVelocity = dir.clone().setY(0).normalize();
             this.turnRate = 0;
             this.pathHistory = [];
+            this.alpha = 1;
+            this.mass = mass;
+            this._applyMass();
+            this._syncNodes();
 
-            const headColor = new THREE.Color(0x00f2ff);
-            const tailColor = new THREE.Color(0xffaa00);
-
-            for (let i = 0; i < this.segmentCount; i++) {
-                const pct = i / this.segmentCount;
-                const r = this.baseSize * (1 - pct * 0.88);
-                const color = headColor.clone().lerp(tailColor, pct);
-                const order = 20000 - i * 10;
-                const node = new Part(r, color, i === 0 ? 1.0 : 0.82, order);
-                this.nodes.push(node);
-            }
-
-            const tGeo = new THREE.ConeGeometry(this.baseSize * 0.25, this.baseSize * 0.7, 3);
-            const tMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false });
-            this.lJaw = new THREE.Mesh(tGeo, tMat);
-            this.lJaw.position.set(this.baseSize * 0.35, 0, this.baseSize * 0.5);
+            // Jaws live in the head's unit space, so they scale with it
+            this.jawMat = new THREE.MeshBasicMaterial({ color: colors.head, depthTest, fog, transparent: true });
+            this.lJaw = new THREE.Mesh(JAW_GEO, this.jawMat);
+            this.lJaw.position.set(0.35, 0, 0.5);
             this.lJaw.rotation.x = Math.PI / 2;
-            this.lJaw.renderOrder = 20100;
-            this.nodes[0].mesh.add(this.lJaw);
-
+            this.lJaw.renderOrder = order + 100;
+            this.nodes[0].add(this.lJaw);
             this.rJaw = this.lJaw.clone();
-            this.rJaw.position.x = -this.baseSize * 0.35;
-            this.rJaw.renderOrder = 20100;
-            this.nodes[0].mesh.add(this.rJaw);
+            this.rJaw.position.x = -0.35;
+            this.nodes[0].add(this.rJaw);
 
-            this._prePopulatePath();
+            this._refreshBody();
+            this.resetPath(pos, this.headVelocity);
         }
 
-        // Pre-populate path in -X direction (behind a +X-heading snake).
-        // Using Z sinuosity so the snake starts as a natural S-curve, not a grub.
-        _prePopulatePath() {
+        radiusAt(i) { return this.baseSize * (1 - (i / this.segmentCount) * 0.88); }
+
+        _applyMass() {
+            this.scale = sizeFromMass(this.mass);
+            this.baseSize = 9 * this.scale;
+            this.segmentSpacing = 20 * this.scale;
+            this.segmentCount = this.growSegments
+                ? THREE.MathUtils.clamp(this.baseSegments + Math.floor((this.mass - START_MASS) / 10), this.baseSegments, this.maxSegments)
+                : this.baseSegments;
+        }
+
+        _syncNodes() {
+            while (this.nodes.length < this.segmentCount) {
+                const mesh = new THREE.Mesh(UNIT_SPHERE, new THREE.MeshBasicMaterial({
+                    transparent: true, depthTest: this.depthTest, depthWrite: !this.depthTest, fog: this.fog
+                }));
+                const last = this.nodes[this.nodes.length - 1];
+                if (last) mesh.position.copy(last.position);
+                scene.add(mesh);
+                this.nodes.push(mesh);
+            }
+            while (this.nodes.length > this.segmentCount) {
+                const mesh = this.nodes.pop();
+                scene.remove(mesh);
+                mesh.material.dispose();
+            }
+        }
+
+        _refreshBody() {
+            this.nodes.forEach((mesh, i) => {
+                mesh.scale.setScalar(this.radiusAt(i));
+                mesh.material.color.copy(this.headColor).lerp(this.tailColor, i / this.segmentCount);
+                mesh.userData.baseOpacity = i === 0 ? 1.0 : this.bodyOpacity;
+                mesh.renderOrder = this.order - i * 10;
+            });
+            this.jawMat.color.copy(this.headColor);
+        }
+
+        setMass(m) {
+            this.mass = Math.max(MIN_MASS, m);
+            this._applyMass();
+            this._syncNodes();
+            this._refreshBody();
+        }
+
+        setColors(colors) {
+            this.headColor.setHex(colors.head);
+            this.tailColor.setHex(colors.tail);
+            this._refreshBody();
+        }
+
+        // Lay the body out behind `pos` as a gentle S-curve heading along `dir`
+        resetPath(pos, dir) {
+            this.headVelocity.copy(dir).setY(0).normalize();
+            const right = new THREE.Vector3(-this.headVelocity.z, 0, this.headVelocity.x);
             const totalLength = (this.segmentCount + 2) * this.segmentSpacing;
             const numPoints = Math.ceil(totalLength / this.minPathDist) + 10;
+            this.pathHistory = [];
             for (let i = 0; i < numPoints; i++) {
                 const s = i * this.minPathDist;
-                this.pathHistory.push(new THREE.Vector3(
-                    -s,
-                    0,
-                    Math.sin(s * 0.015) * 22
-                ));
+                this.pathHistory.push(pos.clone()
+                    .addScaledVector(this.headVelocity, -s)
+                    .addScaledVector(right, Math.sin(s * 0.015) * 22));
             }
-            for (let i = 0; i < this.segmentCount; i++) {
-                this.nodes[i].mesh.position.copy(this._samplePath(i * this.segmentSpacing));
+            for (let i = 0; i < this.nodes.length; i++) {
+                this.nodes[i].position.copy(this._samplePath(i * this.segmentSpacing));
             }
-            this.nodes[0].mesh.lookAt(
-                this.nodes[0].mesh.position.clone().add(this.headVelocity)
-            );
+            this.nodes[0].lookAt(this.nodes[0].position.clone().add(this.headVelocity));
+        }
+
+        shift(v) {
+            for (const n of this.nodes) n.position.add(v);
+            for (const p of this.pathHistory) p.add(v);
         }
 
         _samplePath(arcDist) {
@@ -213,104 +381,26 @@
             return this.pathHistory[this.pathHistory.length - 1].clone();
         }
 
-        update(t) {
-            const head = this.nodes[0].mesh;
+        update(t, dt, steer) {
+            const head = this.nodes[0];
 
             // Save velocity before steering to compute turn rate for camera banking
             const prevVelX = this.headVelocity.x;
             const prevVelZ = this.headVelocity.z;
 
-            // ── Steer ────────────────────────────────────────────────────────────
-            if (isPlaying) {
-                if (inputMode === 'keyboard') {
-                    const TURN = 0.065; // slightly snappier than before
-                    let dAngle = 0;
-                    if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
-                    if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
-                    if (dAngle !== 0) {
-                        const c = Math.cos(dAngle), s = Math.sin(dAngle);
-                        const nx = this.headVelocity.x * c - this.headVelocity.z * s;
-                        const nz = this.headVelocity.x * s + this.headVelocity.z * c;
-                        this.headVelocity.set(nx, 0, nz).normalize();
-                    }
-                } else if (inputMode === 'drag' || inputMode === 'touch') {
-                    const wp = inputMode === 'drag' ? dragWorldPos : touchWorldPos;
-                    const toTarget = new THREE.Vector3().subVectors(wp, head.position);
-                    toTarget.y = 0;
-                    if (toTarget.length() > 20) {
-                        // Angle-axis: fixed max turn rate regardless of mouse distance
-                        const targetDir = toTarget.normalize();
-                        const cross = new THREE.Vector3().crossVectors(this.headVelocity, targetDir);
-                        const angle = Math.atan2(cross.length(), this.headVelocity.dot(targetDir));
-                        if (angle > 0.001) {
-                            const q = new THREE.Quaternion().setFromAxisAngle(
-                                cross.normalize(), Math.min(angle, 0.10)
-                            );
-                            this.headVelocity.applyQuaternion(q).normalize();
-                        }
-                    }
-                } else if (inputMode === 'waypoint' && waypointPos) {
-                    const toTarget = new THREE.Vector3().subVectors(waypointPos, head.position);
-                    toTarget.y = 0;
-                    if (toTarget.length() < 40) {
-                        waypointPos = null; inputMode = null;
-                    } else {
-                        const targetDir = toTarget.normalize();
-                        const cross = new THREE.Vector3().crossVectors(this.headVelocity, targetDir);
-                        const angle = Math.atan2(cross.length(), this.headVelocity.dot(targetDir));
-                        if (angle > 0.001) {
-                            const q = new THREE.Quaternion().setFromAxisAngle(
-                                cross.normalize(), Math.min(angle, 0.07)
-                            );
-                            this.headVelocity.applyQuaternion(q).normalize();
-                        }
-                    }
-                } else {
-                    // Coasting: micro-wiggle so the snake never feels dead
-                    const wiggle = Math.sin(t * 1.1) * 0.007;
-                    const right = new THREE.Vector3(-this.headVelocity.z, 0, this.headVelocity.x);
-                    this.headVelocity.addScaledVector(right, wiggle).normalize();
-                }
-            } else {
-                // Idle: gentle sinuous drift
-                const lateral = Math.sin(t * 0.28) * 0.002;
-                const right = new THREE.Vector3(-this.headVelocity.z, 0, this.headVelocity.x);
-                this.headVelocity.addScaledVector(right, lateral).normalize();
-            }
-
-            // ── Speed ────────────────────────────────────────────────────────────
-            const isBoost = inputMode === 'keyboard' && (keysDown.has('w') || keysDown.has('arrowup'));
-            const isBrake = inputMode === 'keyboard' && (keysDown.has('s') || keysDown.has('arrowdown'));
-            const targetSpeed = isBoost ? 5.5 : isBrake ? 0.8 : 2.5;
-            this.swimSpeed += (targetSpeed - this.swimSpeed) * 0.08;
-            this.isBoosting = isBoost;
+            // ── Steer & speed ────────────────────────────────────────────────────
+            const { speed, boosting } = steer(this, t, dt);
+            this.swimSpeed += (speed - this.swimSpeed) * lerpK(0.08, dt);
+            this.isBoosting = boosting;
 
             // ── Always move forward ───────────────────────────────────────────────
-            head.position.addScaledVector(this.headVelocity, this.swimSpeed);
-
-            // ── World wrap ────────────────────────────────────────────────────────
-            const b = worldSize / 2;
-            const wrap = new THREE.Vector3();
-            if (head.position.x >  b) wrap.x = -worldSize;
-            if (head.position.x < -b) wrap.x =  worldSize;
-            if (head.position.z >  b) wrap.z = -worldSize;
-            if (head.position.z < -b) wrap.z =  worldSize;
-            if (wrap.length() > 0) {
-                head.position.add(wrap);
-                for (let i = 1; i < this.nodes.length; i++) this.nodes[i].mesh.position.add(wrap);
-                for (const p of this.pathHistory) p.add(wrap);
-                camera.position.add(wrap);
-                camTarget.add(wrap);
-                if (waypointPos) waypointPos.add(wrap);
-                dragWorldPos.add(wrap);
-                touchWorldPos.add(wrap);
-            }
+            head.position.addScaledVector(this.headVelocity, this.swimSpeed * dt);
 
             // ── Body Y-undulation: ripples through path history naturally ─────────
-            head.position.y = Math.sin(t * 3.5) * 6;
+            head.position.y = Math.sin(t * 3.5 + this.bobPhase) * 6;
 
-            // ── Head: orient with subtle pitch, subtle pulse glow ─────────────────
-            const pitchY = Math.cos(t * 3.5) * 0.15;
+            // ── Head: orient with subtle pitch ────────────────────────────────────
+            const pitchY = Math.cos(t * 3.5 + this.bobPhase) * 0.15;
             const lookDir = new THREE.Vector3(this.headVelocity.x, pitchY, this.headVelocity.z).normalize();
             head.lookAt(head.position.clone().add(lookDir));
 
@@ -323,6 +413,7 @@
             }
 
             // ── Place body segments (single O(n+m) pass) ──────────────────────────
+            const slerpK = lerpK(0.45, dt);
             let accumulated = 0, pi = 0;
             for (let i = 1; i < this.nodes.length; i++) {
                 const target = i * this.segmentSpacing;
@@ -335,42 +426,265 @@
                 if (pi >= this.pathHistory.length - 1) break;
                 const sl = this.pathHistory[pi].distanceTo(this.pathHistory[pi + 1]);
                 const frac = sl > 0 ? Math.min(1, (target - accumulated) / sl) : 0;
-                const pos = this.pathHistory[pi].clone().lerp(this.pathHistory[pi + 1], frac);
-                const seg = this.nodes[i].mesh;
-                seg.position.copy(pos);
-                const prevPos = i === 1 ? head.position : this.nodes[i - 1].mesh.position;
-                const dir = new THREE.Vector3().subVectors(prevPos, seg.position);
+                const seg = this.nodes[i];
+                seg.position.copy(this.pathHistory[pi]).lerp(this.pathHistory[pi + 1], frac);
+                const dir = new THREE.Vector3().subVectors(this.nodes[i - 1].position, seg.position);
                 if (dir.lengthSq() > 0.001) {
                     seg.quaternion.slerp(
                         new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize()),
-                        0.45
+                        slerpK
                     );
                 }
             }
 
-            // ── Turn rate (for camera banking) ───────────────────────────────────
-            const crossY = prevVelX * this.headVelocity.z - prevVelZ * this.headVelocity.x;
-            this.turnRate += (crossY - this.turnRate) * 0.18;
+            // ── Turn rate (for camera banking), normalised to a 60fps frame ──────
+            if (dt > 0) {
+                const crossY = (prevVelX * this.headVelocity.z - prevVelZ * this.headVelocity.x) / dt;
+                this.turnRate += (crossY - this.turnRate) * lerpK(0.18, dt);
+            }
 
             // ── Jaws: faster & wider when boosting ────────────────────────────────
             const jawFreq = this.isBoosting ? 18 : 11;
-            const snap = (Math.sin(t * jawFreq) + 1) * 0.5;
+            const snap = (Math.sin(t * jawFreq + this.bobPhase) + 1) * 0.5;
             this.lJaw.rotation.z =  snap * (this.isBoosting ? 1.1 : 0.8);
             this.rJaw.rotation.z = -snap * (this.isBoosting ? 1.1 : 0.8);
+
+            // ── Opacity (seam fade / hit blink) ───────────────────────────────────
+            for (const n of this.nodes) n.material.opacity = n.userData.baseOpacity * this.alpha;
+            this.jawMat.opacity = this.alpha;
+        }
+    }
+
+    // Rotate a creature's heading toward (dx, dz), at most maxA radians
+    function turnToward(c, dx, dz, maxA) {
+        const v = c.headVelocity;
+        const cur = Math.atan2(v.z, v.x);
+        let diff = Math.atan2(dz, dx) - cur;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        const a = cur + THREE.MathUtils.clamp(diff, -maxA, maxA);
+        v.set(Math.cos(a), 0, Math.sin(a));
+    }
+
+    function playerSteer(c, t, dt) {
+        const head = c.nodes[0];
+        if (isPlaying) {
+            if (inputMode === 'keyboard') {
+                const TURN = 0.065 * dt;
+                let dAngle = 0;
+                if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
+                if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
+                if (dAngle !== 0) {
+                    const cs = Math.cos(dAngle), sn = Math.sin(dAngle);
+                    const nx = c.headVelocity.x * cs - c.headVelocity.z * sn;
+                    const nz = c.headVelocity.x * sn + c.headVelocity.z * cs;
+                    c.headVelocity.set(nx, 0, nz).normalize();
+                }
+            } else if (inputMode === 'drag' || inputMode === 'touch' || (inputMode === 'waypoint' && waypointPos)) {
+                const wp = inputMode === 'drag' ? dragWorldPos : inputMode === 'touch' ? touchWorldPos : waypointPos;
+                const toTarget = new THREE.Vector3().subVectors(wp, head.position);
+                toTarget.y = 0;
+                if (inputMode === 'waypoint' && toTarget.length() < 40) {
+                    waypointPos = null; inputMode = null;
+                } else if (toTarget.length() > 20) {
+                    // Angle-axis: fixed max turn rate regardless of pointer distance
+                    const maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * dt;
+                    const targetDir = toTarget.normalize();
+                    const cross = new THREE.Vector3().crossVectors(c.headVelocity, targetDir);
+                    const angle = Math.atan2(cross.length(), c.headVelocity.dot(targetDir));
+                    if (angle > 0.001) {
+                        const q = new THREE.Quaternion().setFromAxisAngle(cross.normalize(), Math.min(angle, maxTurn));
+                        c.headVelocity.applyQuaternion(q).normalize();
+                    }
+                }
+            } else {
+                // Coasting: micro-wiggle so the snake never feels dead
+                const wiggle = Math.sin(t * 1.1) * 0.007 * dt;
+                const right = new THREE.Vector3(-c.headVelocity.z, 0, c.headVelocity.x);
+                c.headVelocity.addScaledVector(right, wiggle).normalize();
+            }
+        } else {
+            // Idle: gentle sinuous drift
+            const lateral = Math.sin(t * 0.28) * 0.002 * dt;
+            const right = new THREE.Vector3(-c.headVelocity.z, 0, c.headVelocity.x);
+            c.headVelocity.addScaledVector(right, lateral).normalize();
         }
 
-        grow(n) {
-            this.baseSize += n;
-            const s = 1 + (this.baseSize - 9.0) * 0.08;
-            this.nodes.forEach(node => node.mesh.scale.setScalar(s));
-            this.segmentSpacing = 20 * s;
+        const boost = isPlaying && (keysDown.has('w') || keysDown.has('arrowup') || touchBoost);
+        const brake = isPlaying && (keysDown.has('s') || keysDown.has('arrowdown'));
+        return { speed: boost ? 5.5 : brake ? 0.8 : 2.5, boosting: boost };
+    }
+
+    // ── Other creatures ───────────────────────────────────────────────────────────
+    function relationTo(p) {
+        const ratio = p.mass / snake.mass;
+        return ratio > 1.2 ? 'threat' : ratio < 0.83 ? 'prey' : 'neutral';
+    }
+
+    // Threats chase (faster than cruising, slower than boosting) then lose interest.
+    // Prey flee (slower than boosting). Everything else wanders.
+    function predatorSteer(p, t, dt) {
+        const ph = snake.nodes[0].position, h = p.nodes[0].position;
+        const dx = ph.x - h.x, dz = ph.z - h.z, d = Math.hypot(dx, dz);
+        p.cooldown = Math.max(0, p.cooldown - dt / 60);
+
+        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && d < 520) {
+            p.chaseTime += dt / 60;
+            if (p.chaseTime > 5) { p.cooldown = 4; p.chaseTime = 0; }
+            turnToward(p, dx, dz, 0.045 * dt);
+            return { speed: 2.9, boosting: true };
         }
+        p.chaseTime = 0;
+        if (isPlaying && p.rel === 'prey' && d < 420) {
+            turnToward(p, -dx, -dz, 0.05 * dt);
+            return { speed: 2.7, boosting: true };
+        }
+        const wander = (Math.sin(t * 0.37 + p.seed) * 0.012 + Math.sin(t * 0.11 + p.seed * 2) * 0.008) * dt;
+        const v = p.headVelocity, cs = Math.cos(wander), sn = Math.sin(wander);
+        v.set(v.x * cs - v.z * sn, 0, v.x * sn + v.z * cs).normalize();
+        return { speed: 1.5, boosting: false };
+    }
+
+    function rollPredatorMass() {
+        const r = Math.random();
+        const ratio = r < 0.45 ? rand(0.35, 0.75) : r < 0.85 ? rand(1.35, 2.4) : rand(0.9, 1.1);
+        return Math.max(MIN_MASS, snake.mass * ratio);
+    }
+
+    function spawnPredator(p, minDist, maxDist) {
+        const head = snake.nodes[0].position;
+        const a = Math.random() * Math.PI * 2, dist = rand(minDist, maxDist);
+        const pos = new THREE.Vector3(head.x + Math.cos(a) * dist, 0, head.z + Math.sin(a) * dist);
+        const ha = Math.random() * Math.PI * 2;
+        const dir = new THREE.Vector3(Math.cos(ha), 0, Math.sin(ha));
+        const mass = rollPredatorMass();
+        if (!p) {
+            p = new Creature({
+                mass, segments: 6 + Math.floor(Math.random() * 6),
+                colors: RELATION_COLORS.neutral, depthTest: true, bodyOpacity: 0.85,
+                pos, dir, bobPhase: Math.random() * Math.PI * 2
+            });
+            p.seed = Math.random() * 100;
+            predators.push(p);
+        } else {
+            p.baseSegments = 6 + Math.floor(Math.random() * 6);
+            p.setMass(mass);
+            p.resetPath(pos, dir);
+        }
+        p.cooldown = 0; p.chaseTime = 0; p.rel = null;
+        return p;
+    }
+
+    function checkPredatorContact() {
+        const head = snake.nodes[0].position;
+        for (const p of predators) {
+            if (p.rel === 'prey') {
+                for (let i = 0; i < p.nodes.length; i++) {
+                    if (head.distanceTo(p.nodes[i].position) < p.radiusAt(i) + snake.baseSize) {
+                        snake.setMass(snake.mass + Math.max(3, p.mass * 0.5));
+                        flash('#7dff4a');
+                        spawnPredator(p, 1100, 1500);
+                        break;
+                    }
+                }
+            } else if (p.rel === 'threat' && invulnerable <= 0) {
+                const ph = p.nodes[0].position;
+                for (let i = 0; i < snake.nodes.length; i++) {
+                    if (ph.distanceTo(snake.nodes[i].position) < snake.radiusAt(i) + p.baseSize * 0.9) {
+                        snake.setMass(snake.mass - Math.max(2, (snake.mass - MIN_MASS) * 0.25));
+                        invulnerable = 2;
+                        p.cooldown = 5; p.chaseTime = 0;
+                        flash('#ff2a55');
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Food ──────────────────────────────────────────────────────────────────────
+    function placeFood(f, center, minDist) {
+        // Amber "skittish" food gets more common as you grow
+        const skittish = Math.random() < Math.min(0.35, 0.08 + (snake.mass - START_MASS) / 200);
+        f.userData.skittish = skittish;
+        f.userData.value = skittish ? 3 : 1;
+        f.material.color.setHex(skittish ? 0xffaa00 : 0x00ffcc);
+        let x, z;
+        do {
+            x = center.x + (Math.random() - 0.5) * worldSize;
+            z = center.z + (Math.random() - 0.5) * worldSize;
+        } while (minDist && Math.hypot(x - center.x, z - center.z) < minDist);
+        f.position.set(x, 0, z);
+        const a = Math.random() * Math.PI * 2, s = rand(0.15, 0.4);
+        f.userData.vel.set(Math.cos(a) * s, 0, Math.sin(a) * s);
+    }
+
+    function spawnNutrients() {
+        for (let i = 0; i < 300; i++) {
+            const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
+                wireframe: true, transparent: true, opacity: 1, depthWrite: false
+            }));
+            f.renderOrder = 500;
+            f.userData.vel = new THREE.Vector3();
+            scene.add(f);
+            addWrapped(f, worldSize);
+            nutrients.push(f);
+            placeFood(f, new THREE.Vector3(), 0);
+        }
+    }
+
+    function updateFood(dt) {
+        const head = snake.nodes[0].position;
+        const fleeRadius = 150 + snake.baseSize * 2;
+        for (const f of nutrients) {
+            const u = f.userData;
+            if (isPlaying && u.skittish) {
+                const dx = f.position.x - head.x, dz = f.position.z - head.z, d = Math.hypot(dx, dz);
+                if (d < fleeRadius && d > 0.001) {
+                    f.position.x += (dx / d) * 2.2 * dt;
+                    f.position.z += (dz / d) * 2.2 * dt;
+                }
+            }
+            f.position.x += u.vel.x * dt;
+            f.position.z += u.vel.z * dt;
+
+            if (isPlaying && f.position.distanceTo(head) < snake.baseSize + 15.0) {
+                snake.setMass(snake.mass + u.value);
+                placeFood(f, head, 600); // reuse the mesh: respawn it out of view
+            }
+        }
+    }
+
+    // ── HUD ───────────────────────────────────────────────────────────────────────
+    const hudMass = document.getElementById('hud-mass');
+    const hudBest = document.getElementById('hud-best');
+    const flashEl = document.getElementById('flash');
+    hudBest.textContent = Math.round(bestMass);
+
+    function updateHud() {
+        const m = Math.round(snake.mass);
+        if (m === shownMass) return;
+        shownMass = m;
+        hudMass.textContent = m;
+        if (m > bestMass) {
+            bestMass = m;
+            hudBest.textContent = m;
+            try { localStorage.setItem('floaties-best', String(m)); } catch (e) {}
+        }
+    }
+
+    function flash(color) {
+        flashEl.style.transition = 'none';
+        flashEl.style.background = color;
+        flashEl.style.opacity = '0.22';
+        void flashEl.offsetWidth;
+        flashEl.style.transition = 'opacity 0.6s ease';
+        flashEl.style.opacity = '0';
     }
 
     function init() {
         scene = new THREE.Scene();
         clock = new THREE.Clock();
-        scene.fog = new THREE.FogExp2(0x000814, 0.00065);
+        scene.fog = new THREE.FogExp2(0x000814, BASE_FOG);
 
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 20000);
         camera.position.set(-400, 280, 0);
@@ -382,11 +696,14 @@
         renderer.setClearColor(0x000814, 1);
         document.body.appendChild(renderer.domElement);
 
-        // ── Backdrop ──────────────────────────────────────────────────────────────
-        scene.add(new THREE.Mesh(
+        // ── Backdrop (follows the camera, since the world no longer wraps) ────────
+        const backdrop = new THREE.Mesh(
             new THREE.SphereGeometry(18000, 32, 32),
             new THREE.MeshBasicMaterial({ map: createBackdrop(), side: THREE.BackSide, depthWrite: false })
-        )).renderOrder = -100;
+        );
+        backdrop.renderOrder = -100;
+        scene.add(backdrop);
+        scene.userData.backdrop = backdrop;
 
         // ── Large deep-space nebula glow volumes ──────────────────────────────────
         const glowDefs = [
@@ -407,6 +724,7 @@
             );
             glow.position.set(g.pos[0] * worldSize, 0, g.pos[1] * worldSize);
             scene.add(glow);
+            addWrapped(glow, worldSize * 4);
         });
 
         // ── Nebula cloud layers (mid-range density volumes) ───────────────────────
@@ -429,7 +747,7 @@
                 (Math.random()-0.5) * worldSize * 7
             );
             scene.add(cloud);
-            nebulaClouds.push(cloud);
+            addWrapped(cloud, worldSize * 7);
         }
 
         // ── God-ray light shafts piercing down from above ─────────────────────────
@@ -454,6 +772,7 @@
             shaft.rotation.z = (Math.random()-0.5) * 0.25;
             shaft.rotation.x = (Math.random()-0.5) * 0.15;
             scene.add(shaft);
+            addWrapped(shaft, worldSize * 2.5);
         }
 
         // ── Nebula wisps — flat luminous sheets at various orientations ───────────
@@ -481,6 +800,7 @@
                 Math.random() * 0.6
             );
             scene.add(wisp);
+            addWrapped(wisp, worldSize * 5);
         }
 
         // ── Water-current streams — long thin flowing cylinders ───────────────────
@@ -505,7 +825,7 @@
             stream.rotation.y = Math.random() * Math.PI;
             stream.rotation.z = (Math.random()-0.5) * 0.8;
             scene.add(stream);
-            pillars.push(stream);
+            addWrapped(stream, worldSize * 1.5);
         }
 
         // ── Glowing debris — slowly rotating wireframe crystals ───────────────────
@@ -532,6 +852,7 @@
             dMesh.userData.ry = (Math.random()-0.5) * 0.005;
             dMesh.renderOrder = 200;
             scene.add(dMesh);
+            addWrapped(dMesh, worldSize * 1.8);
             debris.push(dMesh);
         }
 
@@ -562,10 +883,11 @@
             bMesh.userData.rx         = (Math.random()-0.5) * 0.02;
             bMesh.userData.ry         = (Math.random()-0.5) * 0.02;
             scene.add(bMesh);
+            addWrapped(bMesh, worldSize);
             bubbles.push(bMesh);
         }
 
-        // ── Ambient star particles (existing) ─────────────────────────────────────
+        // ── Ambient star particles ────────────────────────────────────────────────
         const snowGeo = new THREE.BufferGeometry();
         const snowCount = 4000;
         const snowPos  = new Float32Array(snowCount * 3);
@@ -584,8 +906,9 @@
             transparent: true, opacity: 0.30,
             depthWrite: false, blending: THREE.AdditiveBlending
         }));
+        snowSys.userData = { period: worldSize * 8, drift: new THREE.Vector2(0.5, 0.2) };
         scene.add(snowSys);
-        snow.push(snowSys);
+        pointLayers.push(snowSys);
 
         // ── Bioluminescent motes — fine close-range particles ─────────────────────
         const dustGeo = new THREE.BufferGeometry();
@@ -607,16 +930,32 @@
             transparent: true, opacity: 0.22,
             depthWrite: false, blending: THREE.AdditiveBlending
         }));
+        dustSys.userData = { period: worldSize * 3, drift: new THREE.Vector2(-0.3, 0.4) };
         scene.add(dustSys);
-        snow.push(dustSys);
+        pointLayers.push(dustSys);
 
-        snake = new Organism();
+        // ── Player: swims in +X so the trail extends in -X, camera starts behind ──
+        snake = new Creature({
+            mass: START_MASS, segments: 11, maxSegments: 24, growSegments: true,
+            colors: { head: 0x00f2ff, tail: 0xffaa00 }, depthTest: false, order: 20000
+        });
         spawnNutrients();
+        for (let i = 0; i < PREDATOR_COUNT; i++) spawnPredator(null, 600, 1500);
+
+        // Waypoint marker: shows where a click is steering to
+        waypointMarker = new THREE.Mesh(
+            new THREE.RingGeometry(14, 18, 32),
+            new THREE.MeshBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.6, depthTest: false, side: THREE.DoubleSide })
+        );
+        waypointMarker.rotation.x = -Math.PI / 2;
+        waypointMarker.renderOrder = 19000;
+        waypointMarker.visible = false;
+        scene.add(waypointMarker);
 
         // Camera: start exactly behind the snake's initial +X heading
         const initBehind = snake.headVelocity.clone().negate().multiplyScalar(400);
         camera.position.set(initBehind.x, 280, initBehind.z);
-        camTarget.copy(snake.nodes[0].mesh.position);
+        camTarget.copy(snake.nodes[0].position);
 
         // ── Raycaster ─────────────────────────────────────────────────────────────
         const rc = new THREE.Raycaster();
@@ -640,28 +979,43 @@
             if (inputMode === 'waypoint') waypointPos = null;
             inputMode = mode;
         }
+        const onControl = (e) => e.target.closest && e.target.closest('a, button');
 
         // ── Keyboard ──────────────────────────────────────────────────────────────
-        const STEER_KEYS = new Set(['arrowleft','arrowright','arrowup','arrowdown','w','a','s','d']);
+        // Turning keys take over steering; speed keys work alongside any steering mode.
+        const TURN_KEYS = ['arrowleft', 'arrowright', 'a', 'd'];
+        const SPEED_KEYS = new Set(['arrowup', 'arrowdown', 'w', 's']);
         window.addEventListener('keydown', (e) => {
             if (!isPlaying) return;
             const key = e.key.toLowerCase();
-            if (!STEER_KEYS.has(key)) return;
-            if (!canActivate('keyboard')) return;
+            if (SPEED_KEYS.has(key)) {
+                e.preventDefault();
+                keysDown.add(key);
+                return;
+            }
+            if (!TURN_KEYS.includes(key) || !canActivate('keyboard')) return;
             e.preventDefault();
             activateMode('keyboard');
             keysDown.add(key);
         });
         window.addEventListener('keyup', (e) => {
             keysDown.delete(e.key.toLowerCase());
-            if (inputMode === 'keyboard' && keysDown.size === 0) inputMode = null;
+            if (inputMode === 'keyboard' && !TURN_KEYS.some(k => keysDown.has(k))) inputMode = null;
         });
+        // Key-up events are lost when the window loses focus; drop held keys so nothing sticks
+        const releaseAll = () => {
+            keysDown.clear();
+            touchBoost = false;
+            if (inputMode === 'keyboard') inputMode = null;
+        };
+        window.addEventListener('blur', releaseAll);
+        document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
 
         // ── Mouse ─────────────────────────────────────────────────────────────────
         let mouseDownAt = null, isDragging = false;
         const DRAG_THRESHOLD = 6;
         window.addEventListener('mousedown', (e) => {
-            if (!isPlaying || !canActivate('drag')) return;
+            if (!isPlaying || onControl(e) || !canActivate('drag')) return;
             mouseDownAt = { x: e.clientX, y: e.clientY };
             isDragging = false;
         });
@@ -692,9 +1046,11 @@
             mouseDownAt = null;
         });
 
-        // ── Touch ─────────────────────────────────────────────────────────────────
+        // ── Touch: one finger steers, a second finger boosts ──────────────────────
         window.addEventListener('touchstart', (e) => {
-            if (!isPlaying || !canActivate('touch')) return;
+            if (!isPlaying || onControl(e)) return;
+            if (e.touches.length >= 2) { touchBoost = true; return; }
+            if (!canActivate('touch')) return;
             activateMode('touch');
             screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
         }, { passive: true });
@@ -703,9 +1059,12 @@
             screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
             e.preventDefault();
         }, { passive: false });
-        window.addEventListener('touchend', () => {
-            if (inputMode === 'touch') inputMode = null;
-        }, { passive: true });
+        const onTouchEnd = (e) => {
+            if (e.touches.length < 2) touchBoost = false;
+            if (e.touches.length === 0 && inputMode === 'touch') inputMode = null;
+        };
+        window.addEventListener('touchend', onTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -716,27 +1075,12 @@
         animate();
     }
 
-    function spawnNutrients() {
-        for (let i = 0; i < 300; i++) {
-            const b = new THREE.Mesh(
-                new THREE.TetrahedronGeometry(11, 0),
-                new THREE.MeshBasicMaterial({
-                    color: 0x00ffcc, wireframe: true,
-                    transparent: true, opacity: 1, depthWrite: false
-                })
-            );
-            b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
-            b.renderOrder = 500;
-            scene.add(b);
-            nutrients.push(b);
-        }
-    }
-
     function startPlay() {
         const ui = document.getElementById('ui-root');
         ui.style.opacity = '0';
         setTimeout(() => {
             ui.style.display = 'none';
+            document.getElementById('hud').hidden = false;
             inputMode = null;
             isPlaying = true;
         }, 1000);
@@ -744,80 +1088,86 @@
 
     function animate() {
         requestAnimationFrame(animate);
-        const t = clock.getElapsedTime();
-        snake.update(t);
+        // dt = elapsed time in 60fps frames, so tuning values stay as they were
+        const dt = Math.min(clock.getDelta() * 60, 3);
+        const t = clock.elapsedTime;
 
-        const headPos = snake.nodes[0].mesh.position;
-        const h = 280 + snake.baseSize * 3;
-        const d = 420 + snake.baseSize * 3;
+        invulnerable = Math.max(0, invulnerable - dt / 60);
+        snake.alpha = invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+        snake.update(t, dt, playerSteer);
+        const headPos = snake.nodes[0].position;
 
-        // ── Chase camera with banking ─────────────────────────────────────────────
+        // ── Other creatures: keep them near the player, colour by size relation ──
+        for (const p of predators) {
+            const ph = p.nodes[0].position;
+            const nx = wrapNear(ph.x, headPos.x, PREDATOR_PERIOD), nz = wrapNear(ph.z, headPos.z, PREDATOR_PERIOD);
+            if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
+            p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD);
+            const rel = relationTo(p);
+            if (rel !== p.rel) { p.rel = rel; p.setColors(RELATION_COLORS[rel]); }
+            p.update(t, dt, predatorSteer);
+        }
+
+        updateFood(dt);
+        if (isPlaying) checkPredatorContact();
+        updateHud();
+
+        // ── Chase camera with banking; pulls back as the snake gets longer ────────
+        const extra = Math.max(0, snake.segmentCount * snake.segmentSpacing - 220);
+        const h = 280 + snake.baseSize * 3 + extra * 0.35;
+        const d = 420 + snake.baseSize * 3 + extra * 0.6;
+        // Thin the fog as the camera pulls back so the snake and nearby food stay as clear as at the start
+        scene.fog.density = BASE_FOG * Math.min(1, 560 / Math.hypot(h, d));
+
         const behind = snake.headVelocity.clone().negate().multiplyScalar(d);
         const desiredCam = headPos.clone().add(behind).add(new THREE.Vector3(0, h, 0));
-        camera.position.lerp(desiredCam, 0.08);
-        camTarget.lerp(headPos.clone().addScaledVector(snake.headVelocity, 100), 0.10);
+        camera.position.lerp(desiredCam, lerpK(0.08, dt));
+        camTarget.lerp(headPos.clone().addScaledVector(snake.headVelocity, 100), lerpK(0.10, dt));
 
         // Bank the camera into turns: tilt up-vector toward inside of curve
-        cameraBank += (-snake.turnRate * 0.9 - cameraBank) * 0.05;
+        cameraBank += (-snake.turnRate * 0.9 - cameraBank) * lerpK(0.05, dt);
         const fwd = camTarget.clone().sub(camera.position).normalize();
         const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
         camera.up.lerp(
             new THREE.Vector3(0, 1, 0).addScaledVector(right, cameraBank).normalize(),
-            0.06
+            lerpK(0.06, dt)
         );
         camera.lookAt(camTarget);
 
         // FOV widens on boost
         const targetFov = snake.isBoosting ? 66 : 50;
-        camera.fov += (targetFov - camera.fov) * 0.06;
+        camera.fov += (targetFov - camera.fov) * lerpK(0.06, dt);
         camera.updateProjectionMatrix();
+        scene.userData.backdrop.position.copy(camera.position);
 
         // ── Ambient particle drift ────────────────────────────────────────────────
-        snow.forEach((sys, idx) => {
-            sys.rotation.y += idx === 0 ? 0.0010 : -0.0006;
-            sys.position.y = Math.sin(t * 0.04 + idx) * 60;
-        });
+        pointLayers.forEach((sys, idx) => { sys.position.y = Math.sin(t * 0.04 + idx) * 60; });
+        updatePointLayers(headPos, dt);
 
         // ── Rising bubbles ────────────────────────────────────────────────────────
         bubbles.forEach(b => {
-            b.position.y += b.userData.riseSpeed;
-            b.position.x += Math.sin(t * b.userData.wobbleFreq + b.userData.wobbleOff) * b.userData.wobbleAmt * 0.04;
-            b.rotation.x += b.userData.rx;
-            b.rotation.y += b.userData.ry;
+            b.position.y += b.userData.riseSpeed * dt;
+            b.position.x += Math.sin(t * b.userData.wobbleFreq + b.userData.wobbleOff) * b.userData.wobbleAmt * 0.04 * dt;
+            b.rotation.x += b.userData.rx * dt;
+            b.rotation.y += b.userData.ry * dt;
             if (b.position.y > 700) {
                 b.position.y = -600;
-                b.position.x = (Math.random()-0.5) * worldSize;
-                b.position.z = (Math.random()-0.5) * worldSize;
+                b.position.x = headPos.x + (Math.random()-0.5) * worldSize;
+                b.position.z = headPos.z + (Math.random()-0.5) * worldSize;
             }
         });
 
         // ── Crystal debris slow rotation ──────────────────────────────────────────
-        debris.forEach(d => {
-            d.rotation.x += d.userData.rx;
-            d.rotation.y += d.userData.ry;
+        debris.forEach(m => {
+            m.rotation.x += m.userData.rx * dt;
+            m.rotation.y += m.userData.ry * dt;
         });
 
+        updateWrapped(headPos);
 
-        // ── Nutrient collection ───────────────────────────────────────────────────
-        if (isPlaying) {
-            nutrients.forEach((f, i) => {
-                if (f.position.distanceTo(headPos) < snake.baseSize + 15.0) {
-                    scene.remove(f);
-                    nutrients.splice(i, 1);
-                    const b = new THREE.Mesh(
-                        new THREE.TetrahedronGeometry(11, 0),
-                        new THREE.MeshBasicMaterial({
-                            color: 0x00ffcc, wireframe: true,
-                            transparent: true, opacity: 1, depthWrite: false
-                        })
-                    );
-                    b.position.set((Math.random()-0.5)*worldSize, 0, (Math.random()-0.5)*worldSize);
-                    b.renderOrder = 500;
-                    scene.add(b);
-                    nutrients.push(b);
-                }
-            });
-        }
+        // ── Waypoint marker ───────────────────────────────────────────────────────
+        waypointMarker.visible = isPlaying && inputMode === 'waypoint' && !!waypointPos;
+        if (waypointMarker.visible) waypointMarker.position.set(waypointPos.x, 0, waypointPos.z);
 
         renderer.render(scene, camera);
     }
