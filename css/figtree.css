@@ -1,0 +1,8 @@
+/* Figtree (SIL Open Font License), self-hosted. Variable, trimmed to weights 400-700. */
+@font-face {
+    font-family: "Figtree";
+    src: url("/assets/fonts/Figtree-latin.woff2") format("woff2");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
