@@ -98,11 +98,56 @@
             font-variant-numeric: tabular-nums;
         }
         #hud[hidden] { display: none; }
+        #hud .name { font-size: 0.8125rem; color: #b7c6d6; margin-left: 0.4rem; }
+        #hud .of { font-size: 0.8125rem; color: #8fa3b8; margin-left: 0.2rem; }
+        .bar { width: 88px; height: 3px; margin-top: 5px; background: rgba(183, 198, 214, 0.2); }
+        .bar i { display: block; height: 100%; width: 0; background: #00f2ff; }
         #hud .label {
             font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; margin-right: 0.4rem;
         }
         #hud .value { font-size: 1.25rem; font-weight: 700; }
         #hud .best .value { font-size: 0.9375rem; font-weight: 500; color: #b7c6d6; }
+
+        /* Layer name shown when a layer starts */
+        #banner {
+            position: fixed; top: 22%; left: 0; right: 0; z-index: 450; pointer-events: none;
+            text-align: center; opacity: 0; transition: opacity 0.8s ease;
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; color: #fff;
+        }
+        #banner.show { opacity: 1; }
+        #banner .kicker { display: block; font-size: 0.8125rem; letter-spacing: 0.4em; text-transform: uppercase; color: #00f2ff; margin-bottom: 0.5rem; }
+        #banner .big { font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 900; font-style: italic; }
+
+        /* Game over: same structure as Paper Plane (title, stats, retry, quit) */
+        #gameover {
+            position: fixed; inset: 0; z-index: 1050;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 2rem 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.78); color: #e8f1fa; text-align: center;
+        }
+        #gameover[hidden] { display: none; }
+        #gameover h2 {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic;
+            font-size: clamp(2rem, 6vw, 3.5rem); margin: 0 0 0.25rem; letter-spacing: -0.02em;
+        }
+        #gameover .cause { margin: 0 0 1.75rem; color: #b7c6d6; font-size: 0.9375rem; }
+        .stats { margin: 0 0 2rem; width: 100%; max-width: 20rem; font-variant-numeric: tabular-nums; }
+        .stats div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border-top: 1px solid rgba(183, 198, 214, 0.15); }
+        .stats div:first-child { border-top: 0; }
+        .stats dt { color: #8fa3b8; font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; }
+        .stats dd { margin: 0; font-weight: 600; }
+        .stats .new { color: #00ffcc; font-weight: 500; margin-left: 0.4rem; font-size: 0.75rem; }
+        .btn {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
+            background: transparent; border: 2.5px solid #00ffcc; color: #00ffcc;
+            padding: 1rem 2.5rem; font-size: 1rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.2em; cursor: pointer;
+            border-radius: 8px; min-width: 16rem;
+        }
+        .btn:hover { background: rgba(0, 255, 204, 0.1); }
+        .btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+        .btn small { display: block; margin-top: 0.35rem; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: none; color: #b7c6d6; }
+        .btn-quiet { border-color: rgba(183, 198, 214, 0.35); color: #b7c6d6; margin-top: 0.75rem; padding: 0.75rem 2.5rem; }
 
         #flash {
             position: fixed; inset: 0; z-index: 400; pointer-events: none; opacity: 0;
@@ -140,6 +185,7 @@
             <li><b>Steer</b><span>Arrows / A D, drag, or tap a spot</span></li>
             <li><b>Speed</b><span>W / ↑ boost, S / ↓ slow. Touch: two fingers to boost</span></li>
             <li><b>Eat</b><span>Teal bits +1, amber bits +3 (they swim away)</span></li>
+            <li><b>Grow</b><span>Reach 50 mass to rise to the next layer. Two bites when small and you're eaten: back one layer.</span></li>
             <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them. They tire out after a sprint (pale head).
                 <i class="swatch" style="background:#ff2a55"></i>Red: bigger, they bite.</span></li>
             <li><b>Look</b><span>P or the Pixels button: chunky, fine, off</span></li>
@@ -148,8 +194,26 @@
 </div>
 
 <div id="hud" hidden>
-    <div><span class="label">Mass</span><span class="value" id="hud-mass">10</span></div>
-    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">10</span></div>
+    <div><span class="label">Layer</span><span class="value" id="hud-layer">1</span><span class="name" id="hud-layer-name">Silt</span></div>
+    <div>
+        <span class="label">Mass</span><span class="value" id="hud-mass">10</span><span class="of">/ 50</span>
+        <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
+    </div>
+    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">1</span></div>
+</div>
+<div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span></div>
+<div id="gameover" role="dialog" aria-labelledby="gameover-title" hidden>
+    <h2 id="gameover-title">Eaten</h2>
+    <p class="cause" id="gameover-cause"></p>
+    <dl class="stats">
+        <div><dt>Layer reached</dt><dd id="go-layer"></dd></div>
+        <div><dt>Bits eaten</dt><dd id="go-food"></dd></div>
+        <div><dt>Creatures eaten</dt><dd id="go-creatures"></dd></div>
+        <div><dt>Time</dt><dd id="go-time"></dd></div>
+        <div><dt>Best layer</dt><dd id="go-best"></dd></div>
+    </dl>
+    <button type="button" class="btn" id="btn-retry">Retry<small id="retry-where"></small></button>
+    <button type="button" class="btn btn-quiet" id="btn-quit">Quit</button>
 </div>
 <div id="flash"></div>
 <div id="bottom-links">
@@ -160,6 +224,9 @@
 <script>
     let scene, camera, renderer, clock;
     let snake, nutrients = [], predators = [], bubbles = [], debris = [];
+    // Layers: the one you play on, the one shrinking/sunk below you, and an older one fading out.
+    // `nutrients` / `predators` always point at the active layer's arrays.
+    let activeLayer = null, ghostLayer = null, fadingLayer = null, ascend = null;
     const wrapped = [];     // meshes that repeat around the player (see updateWrapped)
     const pointLayers = []; // particle systems that repeat around the player
     const worldSize = 2500;
@@ -181,9 +248,18 @@
     const PREDATOR_COUNT = 5;
     const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
     const START_GRACE = 3;        // seconds of immunity at the start of a run (same as Paper Plane)
-    let invulnerable = 0;         // seconds of immunity left (run start, or after a bite)
-    let bestMass = START_MASS, shownMass = -1;
-    try { bestMass = Math.max(START_MASS, Number(localStorage.getItem('floaties-best')) || 0); } catch (e) {}
+    const ASCEND_MASS = 50;       // reach this to rise to the next layer
+    const DEATH_MASS = 5;         // a bite that would drop you below this kills you
+    const ASCEND_TIME = 2.5;      // seconds for the zoom-out between layers
+    const GHOST_DEPTH = 260;      // how far below you the previous layer sinks
+    const GHOST_ALPHA = 0.45;
+    const LAYER_NAMES = ['Silt', 'Drift', 'Current', 'Bloom', 'Reef', 'Swell', 'Surface'];
+    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky ' + (i - LAYER_NAMES.length + 2);
+    let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
+    let dying = 0;                // seconds since death (0 = alive)
+    let run = null;               // stats for the current run
+    let bestLayer = 1, shownHud = '';
+    try { bestLayer = Math.max(1, Number(localStorage.getItem('floaties-best-layer')) || 0); } catch (e) {}
 
     const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
     const DEEP_COLORS = [0x0033ff, 0x00aaff, 0x00ffee, 0x7700ff, 0xff0077, 0x00ff88];
@@ -269,7 +345,10 @@
     class Creature {
         constructor({ mass, segments, maxSegments = segments, growSegments = false,
                       colors, depthTest = false, fog = true, order = 0, bodyOpacity = 0.82,
-                      pos = new THREE.Vector3(), dir = new THREE.Vector3(1, 0, 0), bobPhase = 0 }) {
+                      pos = new THREE.Vector3(), dir = new THREE.Vector3(1, 0, 0), bobPhase = 0, parent = scene }) {
+            this.parent = parent;
+            this.scaleBoost = 1;   // extra visual scale (used during the zoom between layers)
+            this.segmentBonus = 0; // progress from earlier layers, so the body doesn't shrink when you rise
             this.baseSegments = segments;
             this.maxSegments = maxSegments;
             this.growSegments = growSegments;
@@ -310,11 +389,11 @@
         radiusAt(i) { return this.baseSize * (1 - (i / this.segmentCount) * 0.88); }
 
         _applyMass() {
-            this.scale = sizeFromMass(this.mass);
+            this.scale = sizeFromMass(this.mass) * this.scaleBoost;
             this.baseSize = 9 * this.scale;
             this.segmentSpacing = 20 * this.scale;
             this.segmentCount = this.growSegments
-                ? THREE.MathUtils.clamp(this.baseSegments + Math.floor((this.mass - START_MASS) / 10), this.baseSegments, this.maxSegments)
+                ? THREE.MathUtils.clamp(this.baseSegments + Math.floor((this.mass - START_MASS + this.segmentBonus) / 10), this.baseSegments, this.maxSegments)
                 : this.baseSegments;
         }
 
@@ -325,14 +404,20 @@
                 }));
                 const last = this.nodes[this.nodes.length - 1];
                 if (last) mesh.position.copy(last.position);
-                scene.add(mesh);
+                this.parent.add(mesh);
                 this.nodes.push(mesh);
             }
             while (this.nodes.length > this.segmentCount) {
                 const mesh = this.nodes.pop();
-                scene.remove(mesh);
+                this.parent.remove(mesh);
                 mesh.material.dispose();
             }
+        }
+
+        dispose() {
+            for (const n of this.nodes) { this.parent.remove(n); n.material.dispose(); }
+            this.jawMat.dispose();
+            this.nodes = [];
         }
 
         _refreshBody() {
@@ -574,6 +659,11 @@
             return { speed: 2.8, boosting: true };
         }
         p.stamina = Math.min(maxStamina, p.stamina + sec * 0.5);
+        return wanderSteer(p, t, dt);
+    }
+
+    // Plain wandering; also all that creatures on the layer below you do
+    function wanderSteer(p, t, dt) {
         const wander = (Math.sin(t * 0.37 + p.seed) * 0.012 + Math.sin(t * 0.11 + p.seed * 2) * 0.008) * dt;
         const v = p.headVelocity, cs = Math.cos(wander), sn = Math.sin(wander);
         v.set(v.x * cs - v.z * sn, 0, v.x * sn + v.z * cs).normalize();
@@ -586,8 +676,8 @@
         return Math.max(MIN_MASS, snake.mass * ratio);
     }
 
-    function spawnPredator(p, minDist, maxDist) {
-        const head = snake.nodes[0].position;
+    function spawnPredator(p, minDist, maxDist, layer = activeLayer, center = snake.nodes[0].position) {
+        const head = center;
         const a = Math.random() * Math.PI * 2, dist = rand(minDist, maxDist);
         const pos = new THREE.Vector3(head.x + Math.cos(a) * dist, 0, head.z + Math.sin(a) * dist);
         const ha = Math.random() * Math.PI * 2;
@@ -597,10 +687,10 @@
             p = new Creature({
                 mass, segments: 6 + Math.floor(Math.random() * 6),
                 colors: RELATION_COLORS.neutral, depthTest: true, bodyOpacity: 0.85,
-                pos, dir, bobPhase: Math.random() * Math.PI * 2
+                pos, dir, bobPhase: Math.random() * Math.PI * 2, parent: layer.group
             });
             p.seed = Math.random() * 100;
-            predators.push(p);
+            layer.creatures.push(p);
         } else {
             p.baseSegments = 6 + Math.floor(Math.random() * 6);
             p.setMass(mass);
@@ -618,6 +708,7 @@
                 for (let i = 0; i < p.nodes.length; i++) {
                     if (head.distanceTo(p.nodes[i].position) < p.radiusAt(i) + snake.baseSize) {
                         snake.setMass(snake.mass + Math.max(3, p.mass * 0.5));
+                        run.creatures++;
                         flash('#7dff4a');
                         spawnPredator(p, 1100, 1500);
                         break;
@@ -627,10 +718,12 @@
                 const ph = p.nodes[0].position;
                 for (let i = 0; i < snake.nodes.length; i++) {
                     if (ph.distanceTo(snake.nodes[i].position) < snake.radiusAt(i) + p.baseSize * 0.9) {
-                        snake.setMass(snake.mass - Math.max(2, (snake.mass - MIN_MASS) * 0.25));
-                        invulnerable = 2;
+                        const loss = Math.max(3, (snake.mass - MIN_MASS) * 0.25);
                         p.cooldown = 5; p.chaseTime = 0;
                         flash('#ff2a55');
+                        if (snake.mass - loss < DEATH_MASS) { die(); return; }
+                        snake.setMass(snake.mass - loss);
+                        invulnerable = 2;
                         break;
                     }
                 }
@@ -641,7 +734,7 @@
     // ── Food ──────────────────────────────────────────────────────────────────────
     function placeFood(f, center, minDist) {
         // Amber "skittish" food gets more common as you grow
-        const skittish = Math.random() < Math.min(0.35, 0.08 + (snake.mass - START_MASS) / 200);
+        const skittish = Math.random() < Math.min(0.35, 0.08 + (snake.mass - START_MASS + snake.segmentBonus) / 200);
         f.userData.skittish = skittish;
         f.userData.value = skittish ? 3 : 1;
         f.material.color.setHex(skittish ? 0xffaa00 : 0x00ffcc);
@@ -655,18 +748,160 @@
         f.userData.vel.set(Math.cos(a) * s, 0, Math.sin(a) * s);
     }
 
-    function spawnNutrients() {
+    function spawnNutrients(layer, center) {
         for (let i = 0; i < 300; i++) {
             const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
                 wireframe: true, transparent: true, opacity: 1, depthWrite: false
             }));
             f.renderOrder = 500;
             f.userData.vel = new THREE.Vector3();
-            scene.add(f);
-            addWrapped(f, worldSize);
-            nutrients.push(f);
-            placeFood(f, new THREE.Vector3(), 0);
+            layer.group.add(f);
+            layer.food.push(f);
+            placeFood(f, center, 120); // keep the spot you're in clear
         }
+    }
+
+    // ── Layers ────────────────────────────────────────────────────────────────────
+    // A layer is one "plane" of food and creatures. Rising a layer shrinks the old one
+    // around you and sinks it below, so it reads as the camera zooming out (like Spore).
+    function createLayer(index) {
+        const layer = { index, group: new THREE.Group(), food: [], creatures: [], alpha: 1, ghost: false };
+        scene.add(layer.group);
+        const head = snake.nodes[0].position;
+        spawnNutrients(layer, head);
+        const count = PREDATOR_COUNT + Math.min(index, 4); // a little busier each layer
+        for (let i = 0; i < count; i++) spawnPredator(null, 600, 1500, layer, head);
+        return layer;
+    }
+
+    function disposeLayer(layer) {
+        if (!layer) return;
+        for (const f of layer.food) f.material.dispose();
+        for (const p of layer.creatures) p.dispose();
+        scene.remove(layer.group);
+    }
+
+    function setActive(layer) {
+        activeLayer = layer;
+        nutrients = layer.food;
+        predators = layer.creatures;
+    }
+
+    // Shrink a layer by `s` around `anchor` and sink it by `depth`
+    function setGhostTransform(layer, s, depth) {
+        layer.group.scale.setScalar(s);
+        layer.group.position.set(layer.anchor.x * (1 - s), -depth, layer.anchor.z * (1 - s));
+    }
+
+    function makeGhost(layer, anchor) {
+        layer.ghost = true;
+        layer.anchor = anchor.clone();
+        // Freeze each creature's colour as it was relative to you on that layer
+        for (const p of layer.creatures) if (!p.rel) { p.rel = relationTo(p); p.setColors(RELATION_COLORS[p.rel]); }
+    }
+
+    // Ghost layers keep drifting (in their own, shrunken coordinates) but nothing reacts to you
+    function updateGhostLayer(layer, head, t, dt) {
+        const g = layer.group, s = g.scale.x;
+        const lx = (head.x - g.position.x) / s, lz = (head.z - g.position.z) / s;
+        for (const p of layer.creatures) {
+            const ph = p.nodes[0].position;
+            const nx = wrapNear(ph.x, lx, PREDATOR_PERIOD), nz = wrapNear(ph.z, lz, PREDATOR_PERIOD);
+            if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
+            p.alpha = seamFade(ph.x - lx, ph.z - lz, PREDATOR_PERIOD) * layer.alpha;
+            p.update(t, dt, wanderSteer);
+        }
+        for (const f of layer.food) {
+            f.position.x = wrapNear(f.position.x + f.userData.vel.x * dt, lx, worldSize);
+            f.position.z = wrapNear(f.position.z + f.userData.vel.z * dt, lz, worldSize);
+            f.material.opacity = seamFade(f.position.x - lx, f.position.z - lz, worldSize) * layer.alpha;
+        }
+    }
+
+    function startAscend() {
+        const head = snake.nodes[0].position;
+        const S = sizeFromMass(ASCEND_MASS); // how much smaller the old layer gets
+        disposeLayer(fadingLayer);
+        fadingLayer = ghostLayer;
+        if (fadingLayer) fadingLayer.fadeFrom = fadingLayer.alpha;
+        makeGhost(activeLayer, head);
+        ghostLayer = activeLayer;
+
+        // Same on-screen size, but now measured in the new layer's units
+        snake.segmentBonus += ASCEND_MASS - START_MASS;
+        snake.scaleBoost = S;
+        snake.setMass(START_MASS * snake.mass / ASCEND_MASS);
+
+        setActive(createLayer(ghostLayer.index + 1));
+        activeLayer.alpha = 0;
+        ascend = { u: 0, S };
+        invulnerable = ASCEND_TIME + START_GRACE;
+        run.layer = activeLayer.index;
+        if (activeLayer.index + 1 > bestLayer) {
+            bestLayer = activeLayer.index + 1;
+            run.newBest = true;
+            try { localStorage.setItem('floaties-best-layer', String(bestLayer)); } catch (e) {}
+        }
+        flash('#00f2ff');
+        showBanner(activeLayer.index);
+    }
+
+    function updateAscend(dt) {
+        if (!ascend) return;
+        ascend.u = Math.min(1, ascend.u + dt / 60 / ASCEND_TIME);
+        const e = THREE.MathUtils.smootherstep(ascend.u, 0, 1);
+        const s = 1 + (1 / ascend.S - 1) * e;
+        setGhostTransform(ghostLayer, s, GHOST_DEPTH * e);
+        // Shrink the player in step with the old layer: reads as the camera pulling back
+        snake.scaleBoost = ascend.S * s;
+        snake.setMass(snake.mass);
+        activeLayer.alpha = e;
+        ghostLayer.alpha = 1 - (1 - GHOST_ALPHA) * e;
+        if (fadingLayer) fadingLayer.alpha = fadingLayer.fadeFrom * (1 - e);
+        if (ascend.u >= 1) {
+            disposeLayer(fadingLayer); fadingLayer = null;
+            snake.scaleBoost = 1; snake.setMass(snake.mass);
+            ascend = null;
+        }
+    }
+
+    // Start (or restart) play on layer `index`, with the layer before it sunk below
+    function buildAt(index) {
+        disposeLayer(activeLayer); disposeLayer(ghostLayer); disposeLayer(fadingLayer);
+        activeLayer = ghostLayer = fadingLayer = null; ascend = null;
+        snake.alpha = 1;
+        snake.scaleBoost = 1;
+        snake.segmentBonus = index * (ASCEND_MASS - START_MASS);
+        snake.setMass(START_MASS);
+        const head = snake.nodes[0].position;
+        if (index > 0) {
+            const below = createLayer(index - 1);
+            setActive(below); // so its creatures get colours relative to you
+            makeGhost(below, head);
+            below.alpha = GHOST_ALPHA;
+            setGhostTransform(below, 1 / sizeFromMass(ASCEND_MASS), GHOST_DEPTH);
+            ghostLayer = below;
+        }
+        setActive(createLayer(index));
+    }
+
+    function startRun(index) {
+        buildAt(index);
+        run = { start: clock.elapsedTime, food: 0, creatures: 0, layer: index, newBest: false };
+        dying = 0;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        invulnerable = START_GRACE;
+        shownHud = '';
+        isPlaying = true;
+        showBanner(index);
+    }
+
+    function die() {
+        isPlaying = false;
+        dying = 0.0001;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        run.time = clock.elapsedTime - run.start;
+        setTimeout(showGameOver, 1100);
     }
 
     function updateFood(dt) {
@@ -684,30 +919,75 @@
             f.position.x += u.vel.x * dt;
             f.position.z += u.vel.z * dt;
 
+            f.position.x = wrapNear(f.position.x, head.x, worldSize);
+            f.position.z = wrapNear(f.position.z, head.z, worldSize);
+            f.material.opacity = seamFade(f.position.x - head.x, f.position.z - head.z, worldSize) * activeLayer.alpha;
+
             if (isPlaying && f.position.distanceTo(head) < snake.baseSize + 15.0) {
                 snake.setMass(snake.mass + u.value);
+                run.food++;
                 placeFood(f, head, 600); // reuse the mesh: respawn it out of view
             }
         }
     }
 
     // ── HUD ───────────────────────────────────────────────────────────────────────
-    const hudMass = document.getElementById('hud-mass');
-    const hudBest = document.getElementById('hud-best');
-    const flashEl = document.getElementById('flash');
-    hudBest.textContent = Math.round(bestMass);
+    const $ = (id) => document.getElementById(id);
+    const flashEl = $('flash');
+    $('hud-best').textContent = bestLayer;
 
     function updateHud() {
-        const m = Math.round(snake.mass);
-        if (m === shownMass) return;
-        shownMass = m;
-        hudMass.textContent = m;
-        if (m > bestMass) {
-            bestMass = m;
-            hudBest.textContent = m;
-            try { localStorage.setItem('floaties-best', String(m)); } catch (e) {}
-        }
+        const m = Math.round(snake.mass), L = activeLayer.index;
+        const key = m + ':' + L + ':' + bestLayer;
+        if (key === shownHud) return;
+        shownHud = key;
+        $('hud-mass').textContent = m;
+        $('hud-layer').textContent = L + 1;
+        $('hud-layer-name').textContent = layerName(L);
+        $('hud-best').textContent = bestLayer;
+        $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
     }
+
+    let bannerTimer = null;
+    function showBanner(index) {
+        $('banner-kicker').textContent = 'Layer ' + (index + 1);
+        $('banner-name').textContent = layerName(index);
+        $('banner').classList.add('show');
+        clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => $('banner').classList.remove('show'), 2200);
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function showGameOver() {
+        const L = run.layer, back = Math.max(0, L - 1);
+        $('gameover-cause').textContent = 'A bigger creature got you on ' + layerName(L) + '.';
+        $('go-layer').textContent = (L + 1) + ' · ' + layerName(L);
+        $('go-food').textContent = run.food;
+        $('go-creatures').textContent = run.creatures;
+        $('go-time').textContent = formatTime(run.time);
+        $('go-best').innerHTML = bestLayer + (run.newBest ? '<span class="new">new best</span>' : '');
+        $('retry-where').textContent = 'From layer ' + (back + 1) + ' · ' + layerName(back);
+        $('hud').hidden = true;
+        $('gameover').hidden = false;
+        $('btn-retry').focus();
+    }
+
+    $('btn-retry').addEventListener('click', () => {
+        $('gameover').hidden = true;
+        $('hud').hidden = false;
+        startRun(Math.max(0, run.layer - 1));
+    });
+    $('btn-quit').addEventListener('click', () => {
+        $('gameover').hidden = true;
+        buildAt(0);
+        const ui = $('ui-root');
+        ui.style.display = 'flex';
+        requestAnimationFrame(() => { ui.style.opacity = '1'; });
+    });
 
     function flash(color) {
         flashEl.style.transition = 'none';
@@ -1005,8 +1285,7 @@
             mass: START_MASS, segments: 11, maxSegments: 24, growSegments: true,
             colors: { head: 0x00f2ff, tail: 0xffaa00 }, depthTest: false, order: 20000
         });
-        spawnNutrients();
-        for (let i = 0; i < PREDATOR_COUNT; i++) spawnPredator(null, 600, 1500);
+        setActive(createLayer(0));
 
         // Waypoint marker: shows where a click is steering to
         waypointMarker = new THREE.Mesh(
@@ -1147,9 +1426,7 @@
         setTimeout(() => {
             ui.style.display = 'none';
             document.getElementById('hud').hidden = false;
-            inputMode = null;
-            invulnerable = START_GRACE; // a few safe seconds to get oriented
-            isPlaying = true;
+            startRun(0); // a few safe seconds to get oriented come with every run
         }, 1000);
     }
 
@@ -1160,7 +1437,13 @@
         const t = clock.elapsedTime;
 
         invulnerable = Math.max(0, invulnerable - dt / 60);
-        snake.alpha = invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+        if (dying) {
+            dying += dt / 60;
+            snake.alpha = Math.max(0, 1 - dying / 0.8); // fade out when eaten
+        } else {
+            snake.alpha = invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+        }
+        updateAscend(dt);
         snake.update(t, dt, playerSteer);
         const headPos = snake.nodes[0].position;
 
@@ -1169,7 +1452,7 @@
             const ph = p.nodes[0].position;
             const nx = wrapNear(ph.x, headPos.x, PREDATOR_PERIOD), nz = wrapNear(ph.z, headPos.z, PREDATOR_PERIOD);
             if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
-            p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD);
+            p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD) * activeLayer.alpha;
             const rel = relationTo(p);
             if (rel !== p.rel) { p.rel = rel; p.tired = 0; p.setColors(RELATION_COLORS[rel]); }
             p.update(t, dt, predatorSteer);
@@ -1178,8 +1461,12 @@
             if (p.tired > 0) p.nodes[0].material.color.lerp(TIRED_TINT, 0.6);
         }
 
+        if (ghostLayer) updateGhostLayer(ghostLayer, headPos, t, dt);
+        if (fadingLayer) updateGhostLayer(fadingLayer, headPos, t, dt);
+
         updateFood(dt);
         if (isPlaying) checkPredatorContact();
+        if (isPlaying && !ascend && snake.mass >= ASCEND_MASS) startAscend();
         updateHud();
 
         // ── Chase camera with banking; pulls back as the snake gets longer ────────
