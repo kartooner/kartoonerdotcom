@@ -1,0 +1,9 @@
+/* Pixelify Sans (SIL Open Font License), self-hosted. Variable font, weights 400-700.
+   Loaded through a disabled <link id="pixelify-font"> that the Konami code enables. */
+@font-face {
+    font-family: "Pixelify Sans";
+    src: url("/assets/fonts/PixelifySans-latin.woff2") format("woff2");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}

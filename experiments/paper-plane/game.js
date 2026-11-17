@@ -22,7 +22,9 @@
     const isEdge = /Edg/.test(navigator.userAgent); // Detect Edge browser
 
     // Game state
-    let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
+    // Storage can throw (private browsing, blocked site data); the game should still load
+    let highScore = 0;
+    try { highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0', 10) || 0; } catch (e) {}
     let currentLevel = 1;
     let crashMessage = '';
     let crashMessageTimer = 0;
@@ -269,7 +271,36 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     // Clamp pixel ratio - lower for Edge, max 2 for mobile
     const maxPixelRatio = isEdge ? 1.5 : 2;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+    let basePixelRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
+
+    // PIXEL FILTER (PS1 / A Short Hike style). Render the scene with big
+    // pixels and let CSS scale the canvas up without smoothing. Fewer pixels
+    // to draw, so it's cheaper than full resolution, not costlier.
+    // Levels: 0 Off, 1 Fine, 2 Chunky (default). Pixel size is in screen
+    // points so the look matches across devices; phones are small and held
+    // close, so they use smaller pixels. Chunky desktop is ~426x240 at 1280x720.
+    const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
+    const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
+    let pixelLevel = 2; // Chunky by default
+    try {
+        const saved = localStorage.getItem('paperPlanePixelFilter');
+        if (saved === 'off') pixelLevel = 0;
+        else if (saved === 'fine') pixelLevel = 1;
+    } catch (e) {}
+
+    function pixelFilterSize() {
+        const isSmall = Math.min(container.clientWidth, container.clientHeight) < 500;
+        return PIXEL_SIZES[isSmall ? 'phone' : 'desktop'][pixelLevel];
+    }
+
+    function applyPixelRatio() {
+        const ratio = pixelLevel > 0
+            ? Math.min(basePixelRatio, 1 / pixelFilterSize())
+            : basePixelRatio;
+        renderer.setPixelRatio(ratio);
+        document.body.classList.toggle('pixel-filter', pixelLevel > 0);
+    }
+    applyPixelRatio();
     // Optimization: ensure efficient clearing
     renderer.autoClear = true;
     renderer.autoClearColor = true;
@@ -285,7 +316,10 @@
         roughness: 0.35,  // Smoother for better reflections
         envMapIntensity: 1.2  // Enhance environment reflections
     });
-    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+    // Plane outline is white so it reads against the cyan buildings and terrain.
+    // It still flashes red on a hit (see collisionFlash).
+    const PLANE_OUTLINE_COLOR = 0xffffff;
+    const wireMat = new THREE.MeshBasicMaterial({ color: PLANE_OUTLINE_COLOR, wireframe: true });
 
     // Plane type tracking
     let currentPlaneType = 'dart';
@@ -1022,14 +1056,27 @@
     const pyramidGeometry = new THREE.ConeGeometry(2, 5, 12, 4); // 12 radial segments, 4 height segments for better wireframe depth
     const cylinderGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 8, 1); // 8 segments, low-poly
 
-    // Shared material for all building types
-    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.5 });
+    // Shared material for all building types. Kept dimmer than the plane's
+    // full-strength cyan wireframe so the player reads first; overlapping
+    // building lines add up, so this needs to sit well below the plane.
+    const BUILDING_OPACITY = 0.35;
+    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: BUILDING_OPACITY });
 
     // InstancedMesh for each geometry type (max 20 instances each for better distribution)
     const MAX_BUILDING_INSTANCES = 20;
     const boxInstancedMesh = new THREE.InstancedMesh(boxGeometry, buildMat, MAX_BUILDING_INSTANCES);
     const pyramidInstancedMesh = new THREE.InstancedMesh(pyramidGeometry, buildMat, MAX_BUILDING_INSTANCES);
     const cylinderInstancedMesh = new THREE.InstancedMesh(cylinderGeometry, buildMat, MAX_BUILDING_INSTANCES);
+
+    // Turn off frustum culling for the building meshes. three.js measures an
+    // InstancedMesh's bounds once, on the first render, and never again. Those
+    // bounds cover the starting positions far down the track, so later the
+    // whole mesh could be culled while its buildings were on screen. Every
+    // building of one shape went invisible but could still be hit. With only
+    // 20 instances per mesh, drawing them every frame costs next to nothing.
+    boxInstancedMesh.frustumCulled = false;
+    pyramidInstancedMesh.frustumCulled = false;
+    cylinderInstancedMesh.frustumCulled = false;
 
     scene.add(boxInstancedMesh);
     scene.add(pyramidInstancedMesh);
@@ -1167,6 +1214,20 @@
 
     // Function to attach rooftop detail to a building
     function attachRooftopDetail(building) {
+        // A recycled building can still hold its previous detail if it was
+        // reused before the cleanup pass ran. Release it first, or it stays
+        // visible in the world and never returns to the pool.
+        if (building.rooftopDetail) {
+            const old = building.rooftopDetail;
+            old.visible = false;
+            old.userData.active = false;
+            old.userData.parentBuilding = null;
+            old.position.set(0, 0, -1000);
+            const idx = rooftopDetails.indexOf(old);
+            if (idx > -1) rooftopDetails.splice(idx, 1);
+            building.rooftopDetail = null;
+        }
+
         // Don't add details to pyramids (they have peaked tops already)
         if (building.geometry === 'pyramid') return null;
 
@@ -1214,9 +1275,9 @@
 
         // Match building opacity for fade out
         if (building.opacity < 1) {
-            detail.material.opacity = building.opacity * 0.6;
+            detail.material.opacity = building.opacity * buildMat.opacity;
         } else {
-            detail.material.opacity = 0.6;
+            detail.material.opacity = buildMat.opacity; // Match the building
         }
 
         // Hide detail if building is inactive or far offscreen
@@ -1352,6 +1413,31 @@
             const idx = windowGrids.indexOf(grid);
             if (idx > -1) windowGrids.splice(idx, 1);
         }
+    }
+
+    // Building hit areas. Each one follows the shape the player sees, then
+    // shrinks by the same amount for every shape so near misses feel fair.
+    // Half-widths at scale 1, from the geometries above: box 2 wide, cylinder
+    // radius 1.5, cone base radius 2 narrowing to a point.
+    const BUILDING_HIT_FORGIVENESS = 0.8; // Hit area is 80% of the visible width
+    const BUILDING_HIT_TOP_MARGIN = 0.2;  // Skimming the roof doesn't count
+
+    // Fill b.box with the building's hit area. atY is the height being tested
+    // (the ship's underside, or a laser's height); cones use their width there.
+    function setBuildingHitBox(b, atY, forgiveness = BUILDING_HIT_FORGIVENESS) {
+        const bottom = b.position.y - 2.5 * b.scale.y;
+        const top = b.position.y + 2.5 * b.scale.y;
+        let half;
+        if (b.geometry === 'pyramid') {
+            const y = Math.min(Math.max(atY, bottom), top);
+            half = 2 * (top - y) / (top - bottom); // 2 at the base, 0 at the tip
+        } else {
+            half = b.geometry === 'cylinder' ? 1.5 : 1;
+        }
+        const halfX = half * b.scale.x * forgiveness;
+        const halfZ = half * b.scale.z * forgiveness;
+        b.box.min.set(b.position.x - halfX, bottom, b.position.z - halfZ);
+        b.box.max.set(b.position.x + halfX, top - BUILDING_HIT_TOP_MARGIN, b.position.z + halfZ);
     }
 
     // Reusable quaternion for matrix updates (prevents garbage collection)
@@ -2919,6 +3005,18 @@
     // Temporary boss replacement: intense building phase
     let bossActive = false; // Keep flag for phase system compatibility
 
+    // Brief invulnerability after a hit, so one crash can't cost several hearts
+    function activateGracePeriod() {
+        gracePeriodActive = true;
+        gracePeriodEndTime = Date.now() + 500; // 0.5 second grace, same as building hits
+    }
+
+    // Record a hit for the hidden difficulty system
+    function trackCollision(timestamp) {
+        difficultyMetrics.collisions.push({ time: timestamp, happened: true });
+        difficultyMetrics.lastHitTime = timestamp;
+    }
+
     // Death and respawn handler
     function handleDeath() {
         // Lose a life
@@ -3393,7 +3491,9 @@
         // ESC to pause/unpause
         if (e.key === 'Escape') {
             e.preventDefault();
-            if (isPaused && !checkpointActive) {
+            if (!settingsOverlay.hidden) {
+                closeSettings(); // Back out of Settings first
+            } else if (isPaused && !checkpointActive) {
                 // Resume if already paused
                 document.getElementById('resume-button').click();
             } else if (animationRunning && !checkpointActive) {
@@ -3499,7 +3599,7 @@
     // Set initial colors once
     renderer.setClearColor(0x000000, 1);
     terrainMat.color.setHex(0x00ffff);
-    wireMat.color.setHex(0x00ffff);
+    wireMat.color.setHex(PLANE_OUTLINE_COLOR);
 
     // UI Initialization
     const uiControls = initUI({
@@ -3560,7 +3660,8 @@
             } else {
                 pixelRatio = isFullscreen ? 1.5 : 2;
             }
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio));
+            basePixelRatio = Math.min(window.devicePixelRatio, pixelRatio);
+            applyPixelRatio();
 
             // Performance optimization: Hide plane shadow in full screen mode
             shadowMesh.visible = !isFullscreen;
@@ -4681,31 +4782,8 @@
                 return;
             }
 
-            // Calculate bounding box manually for instanced mesh
-            // All geometries are centered, so half extents are the same in all directions
-            const halfWidth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.x;
-            const halfHeight = 2.5 * b.scale.y; // Geometry is 5 units tall, half is 2.5
-            const halfDepth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.z;
-
-            b.box.min.set(
-                b.position.x - halfWidth,
-                b.position.y - halfHeight,
-                b.position.z - halfDepth
-            );
-            b.box.max.set(
-                b.position.x + halfWidth,
-                b.position.y + halfHeight,
-                b.position.z + halfDepth
-            );
-
-            // Make collision more forgiving - shrink all building hitboxes significantly
-            // Reuse temp vectors to avoid garbage collection
-            b.box.getSize(tempVec3_1);
-            b.box.getCenter(tempVec3_2);
-            // Shrink collision box by 40% for pyramids, 30% for others (more forgiving)
-            const shrinkFactor = b.geometry === 'pyramid' ? 0.60 : 0.70;
-            tempVec3_1.multiplyScalar(shrinkFactor);
-            b.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+            // Hit area that matches the building's visible shape (see setBuildingHitBox)
+            setBuildingHitBox(b, shipBox.min.y);
 
             // Track collision checks for debug metrics
             if (DEBUG_ENABLED) debugMetrics.performance.collisionChecks++;
@@ -4801,7 +4879,7 @@
                     const currentMiles = Math.floor(miles);
                     if (currentMiles > highScore) {
                         highScore = currentMiles;
-                        localStorage.setItem('paperPlaneHighScore', highScore.toString());
+                        try { localStorage.setItem('paperPlaneHighScore', highScore.toString()); } catch (e) {}
                     }
                 }
             }
@@ -5383,22 +5461,8 @@
                 // Skip inactive buildings or those too far away (prevents ghost collisions)
                 if (!building.active || building.position.z < -50 || building.position.z > 15) continue;
 
-                // Calculate bounding box manually for instanced mesh
-                // All geometries are centered, so half extents are the same in all directions
-                const halfWidth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.x;
-                const halfHeight = 2.5 * building.scale.y; // Geometry is 5 units tall, half is 2.5
-                const halfDepth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.z;
-
-                building.box.min.set(
-                    building.position.x - halfWidth,
-                    building.position.y - halfHeight,
-                    building.position.z - halfDepth
-                );
-                building.box.max.set(
-                    building.position.x + halfWidth,
-                    building.position.y + halfHeight,
-                    building.position.z + halfDepth
-                );
+                // Lasers hit the full visible shape at the laser's height
+                setBuildingHitBox(building, laser.position.y, 1);
 
                 // Check laser-building collision using tempBox
                 tempBox.setFromObject(laser);
@@ -6172,7 +6236,7 @@
                 // Collision ended - reset to normal
                 renderer.setClearColor(0x000000, 1);
                 terrainMat.color.setHex(0x00ffff);
-                wireMat.color.setHex(0x00ffff);
+                wireMat.color.setHex(PLANE_OUTLINE_COLOR);
             } else {
                 // Still flashing - use reusable color object
                 tempColor.setRGB(collisionFlash * 0.4, 0, 0);
@@ -6222,6 +6286,41 @@
 
         renderer.render(scene, camera);
     }
+
+    // --- SETTINGS SCREEN ---
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const pixelFilterSlider = document.getElementById('pixel-filter-slider');
+    const pixelFilterValue = document.getElementById('pixel-filter-value');
+    let settingsOpener = null;
+
+    function syncPixelFilterSlider() {
+        const name = PIXEL_LEVEL_NAMES[pixelLevel];
+        pixelFilterSlider.value = String(pixelLevel);
+        pixelFilterSlider.setAttribute('aria-valuetext', name);
+        pixelFilterValue.textContent = name.toUpperCase();
+    }
+
+    function openSettings(e) {
+        settingsOpener = e && e.currentTarget;
+        syncPixelFilterSlider();
+        settingsOverlay.hidden = false;
+        pixelFilterSlider.focus();
+    }
+
+    function closeSettings() {
+        settingsOverlay.hidden = true;
+        if (settingsOpener) settingsOpener.focus();
+    }
+
+    document.querySelectorAll('.settings-open').forEach(btn => btn.addEventListener('click', openSettings));
+    document.getElementById('settings-back').addEventListener('click', closeSettings);
+    pixelFilterSlider.addEventListener('input', () => {
+        pixelLevel = Math.max(0, Math.min(2, parseInt(pixelFilterSlider.value, 10) || 0));
+        try { localStorage.setItem('paperPlanePixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
+        applyPixelRatio();
+        syncPixelFilterSlider();
+        renderer.render(scene, camera);
+    });
 
     // Render initial frozen frame for start screen background
     renderer.render(scene, camera);

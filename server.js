@@ -133,6 +133,13 @@ const server = http.createServer((req, res) => {
     pathname = '/index.html';
   }
 
+  // Redirect the old /experiments index to /games
+  if (pathname === '/experiments' || pathname === '/experiments/') {
+    res.writeHead(301, { 'Location': '/games' });
+    res.end();
+    return;
+  }
+
   // Redirect /wonderz to /experiments/wonderz
   if (pathname === '/wonderz' || pathname === '/wonderz/') {
     res.writeHead(301, { 'Location': '/experiments/wonderz' });
