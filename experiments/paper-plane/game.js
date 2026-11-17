@@ -273,20 +273,20 @@
     const maxPixelRatio = isEdge ? 1.5 : 2;
     let basePixelRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
 
-    // PIXEL FILTER (PS1-style). Render at about 320x240, what 90s consoles
-    // drew on a TV (at least that many pixels each way, so phones in portrait
-    // don't get too coarse), and let CSS scale the canvas up without smoothing.
-    // Fewer pixels to draw, so it's cheaper than full resolution, not costlier.
-    const PIXEL_FILTER_WIDTH = 320;
-    const PIXEL_FILTER_HEIGHT = 240;
+    // PIXEL FILTER (PS1 / A Short Hike style). Render the scene with big
+    // pixels and let CSS scale the canvas up without smoothing. Pixel size is
+    // set in screen points so the look matches across devices: 3 points on
+    // desktop (about 426x240 at 1280x720), 2 on phones (small screens, held
+    // close). Fewer pixels to draw, so it's cheaper than full resolution.
+    function pixelFilterSize() {
+        return Math.min(container.clientWidth, container.clientHeight) < 500 ? 2 : 3;
+    }
     let pixelFilterOn = true; // On by default
     try { pixelFilterOn = localStorage.getItem('paperPlanePixelFilter') !== 'off'; } catch (e) {}
 
     function applyPixelRatio() {
         const ratio = pixelFilterOn
-            ? Math.min(basePixelRatio, Math.max(
-                PIXEL_FILTER_WIDTH / Math.max(1, container.clientWidth),
-                PIXEL_FILTER_HEIGHT / Math.max(1, container.clientHeight)))
+            ? Math.min(basePixelRatio, 1 / pixelFilterSize())
             : basePixelRatio;
         renderer.setPixelRatio(ratio);
         document.body.classList.toggle('pixel-filter', pixelFilterOn);
