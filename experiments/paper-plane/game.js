@@ -22,7 +22,9 @@
     const isEdge = /Edg/.test(navigator.userAgent); // Detect Edge browser
 
     // Game state
-    let highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0');
+    // Storage can throw (private browsing, blocked site data); the game should still load
+    let highScore = 0;
+    try { highScore = parseInt(localStorage.getItem('paperPlaneHighScore') || '0', 10) || 0; } catch (e) {}
     let currentLevel = 1;
     let crashMessage = '';
     let crashMessageTimer = 0;
@@ -1030,6 +1032,16 @@
     const boxInstancedMesh = new THREE.InstancedMesh(boxGeometry, buildMat, MAX_BUILDING_INSTANCES);
     const pyramidInstancedMesh = new THREE.InstancedMesh(pyramidGeometry, buildMat, MAX_BUILDING_INSTANCES);
     const cylinderInstancedMesh = new THREE.InstancedMesh(cylinderGeometry, buildMat, MAX_BUILDING_INSTANCES);
+
+    // Turn off frustum culling for the building meshes. three.js measures an
+    // InstancedMesh's bounds once, on the first render, and never again. Those
+    // bounds cover the starting positions far down the track, so later the
+    // whole mesh could be culled while its buildings were on screen. Every
+    // building of one shape went invisible but could still be hit. With only
+    // 20 instances per mesh, drawing them every frame costs next to nothing.
+    boxInstancedMesh.frustumCulled = false;
+    pyramidInstancedMesh.frustumCulled = false;
+    cylinderInstancedMesh.frustumCulled = false;
 
     scene.add(boxInstancedMesh);
     scene.add(pyramidInstancedMesh);
@@ -4801,7 +4813,7 @@
                     const currentMiles = Math.floor(miles);
                     if (currentMiles > highScore) {
                         highScore = currentMiles;
-                        localStorage.setItem('paperPlaneHighScore', highScore.toString());
+                        try { localStorage.setItem('paperPlaneHighScore', highScore.toString()); } catch (e) {}
                     }
                 }
             }
