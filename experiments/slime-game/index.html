@@ -41,6 +41,7 @@
     <div class="control-item"><span class="control-label">Flip:</span> Double-tap direction</div>
     <div class="control-item"><span class="control-label">Rocket flip:</span> Hold S on floor or W on ceiling for 2s, release</div>
     <div class="control-item"><span class="control-label">Grab box:</span> SPACE</div>
+    <div class="control-item"><span class="control-label">Pixel filter:</span> P</div>
   </div>
   <div class="mobile-controls">
     <div class="control-item"><span class="control-label">Movement:</span> Virtual joystick</div>
@@ -56,9 +57,38 @@
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+
+  // ── Pixel filter (same as Paper Plane): render at low resolution and let CSS
+  // scale the canvas up without smoothing. Levels: Off, Fine, Chunky (default).
+  // Pixel size is in screen pixels; phones use smaller pixels.
+  const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
+  const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
+  const pixelBtn = document.getElementById('pixel-btn');
+  let pixelLevel = 2;
+  try {
+    const saved = PIXEL_LEVEL_NAMES.indexOf(localStorage.getItem('slimeGamePixelFilter'));
+    if (saved >= 0) pixelLevel = saved;
+  } catch (e) {}
+  function applyPixelRatio() {
+    const base = Math.min(window.devicePixelRatio, 2);
+    const isSmall = Math.min(window.innerWidth, window.innerHeight) < 500;
+    const size = PIXEL_SIZES[isSmall ? 'phone' : 'desktop'][pixelLevel];
+    renderer.setPixelRatio(pixelLevel > 0 ? Math.min(base, 1 / size) : base);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.classList.toggle('pixel-filter', pixelLevel > 0);
+    const name = PIXEL_LEVEL_NAMES[pixelLevel];
+    pixelBtn.textContent = 'Pixels: ' + name[0].toUpperCase() + name.slice(1);
+  }
+  function cyclePixelFilter() {
+    pixelLevel = (pixelLevel + 1) % PIXEL_LEVEL_NAMES.length;
+    try { localStorage.setItem('slimeGamePixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
+    applyPixelRatio();
+  }
+  pixelBtn.addEventListener('click', cyclePixelFilter);
+  pixelBtn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) cyclePixelFilter(); });
+  applyPixelRatio();
 
   const worldBounds = 30;
   const getPinch = (x) => 3.9 * Math.exp(-(x * x) / (5.5 * 5.5));
@@ -283,7 +313,7 @@
     e.stopPropagation(); // Don't let the window handler spawn the joystick under this tap
     toggleGrab();
   });
-  document.getElementById('back-to-experiments').addEventListener('touchstart', e => e.stopPropagation());
+  document.getElementById('back-to-experiments').addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
 
   window.addEventListener('touchstart', e => {
     for(let t of e.changedTouches) {
@@ -811,18 +841,25 @@
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    applyPixelRatio(); // also resizes; phone/desktop pixel size can change on rotate
   });
 
   animate(performance.now());
 </script>
 <style>
-  #back-to-experiments {
+  /* Pixel filter: the canvas renders at low resolution; scale it up without smoothing */
+  body.pixel-filter canvas { image-rendering: crisp-edges; image-rendering: pixelated; }
+
+  #bottom-links {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 500;
+    display: flex;
+    gap: 8px;
+  }
+  #back-to-experiments, #pixel-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -839,13 +876,17 @@
     transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
     pointer-events: all;
+    cursor: pointer;
   }
-  #back-to-experiments:hover {
+  #back-to-experiments:hover, #pixel-btn:hover, #pixel-btn:focus-visible {
     opacity: 1;
     color: rgba(0, 255, 136, 1);
     border-color: rgba(0, 255, 136, 0.6);
   }
 </style>
-<a id="back-to-experiments" href="/games">← Games</a>
+<div id="bottom-links">
+  <a id="back-to-experiments" href="/games">← Games</a>
+  <button id="pixel-btn" type="button" title="Pixel filter (P)">Pixels: Chunky</button>
+</div>
 </body>
 </html>
