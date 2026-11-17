@@ -1053,8 +1053,11 @@
     const pyramidGeometry = new THREE.ConeGeometry(2, 5, 12, 4); // 12 radial segments, 4 height segments for better wireframe depth
     const cylinderGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 8, 1); // 8 segments, low-poly
 
-    // Shared material for all building types
-    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.5 });
+    // Shared material for all building types. Kept dimmer than the plane's
+    // full-strength cyan wireframe so the player reads first; overlapping
+    // building lines add up, so this needs to sit well below the plane.
+    const BUILDING_OPACITY = 0.35;
+    const buildMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: BUILDING_OPACITY });
 
     // InstancedMesh for each geometry type (max 20 instances each for better distribution)
     const MAX_BUILDING_INSTANCES = 20;
@@ -1269,9 +1272,9 @@
 
         // Match building opacity for fade out
         if (building.opacity < 1) {
-            detail.material.opacity = building.opacity * 0.6;
+            detail.material.opacity = building.opacity * buildMat.opacity;
         } else {
-            detail.material.opacity = 0.6;
+            detail.material.opacity = buildMat.opacity; // Match the building
         }
 
         // Hide detail if building is inactive or far offscreen
