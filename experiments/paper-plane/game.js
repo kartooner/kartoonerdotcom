@@ -274,22 +274,31 @@
     let basePixelRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
 
     // PIXEL FILTER (PS1 / A Short Hike style). Render the scene with big
-    // pixels and let CSS scale the canvas up without smoothing. Pixel size is
-    // set in screen points so the look matches across devices: 3 points on
-    // desktop (about 426x240 at 1280x720), 2 on phones (small screens, held
-    // close). Fewer pixels to draw, so it's cheaper than full resolution.
+    // pixels and let CSS scale the canvas up without smoothing. Fewer pixels
+    // to draw, so it's cheaper than full resolution, not costlier.
+    // Levels: 0 Off, 1 Fine, 2 Chunky (default). Pixel size is in screen
+    // points so the look matches across devices; phones are small and held
+    // close, so they use smaller pixels. Chunky desktop is ~426x240 at 1280x720.
+    const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
+    const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
+    let pixelLevel = 2; // Chunky by default
+    try {
+        const saved = localStorage.getItem('paperPlanePixelFilter');
+        if (saved === 'off') pixelLevel = 0;
+        else if (saved === 'fine') pixelLevel = 1;
+    } catch (e) {}
+
     function pixelFilterSize() {
-        return Math.min(container.clientWidth, container.clientHeight) < 500 ? 2 : 3;
+        const isSmall = Math.min(container.clientWidth, container.clientHeight) < 500;
+        return PIXEL_SIZES[isSmall ? 'phone' : 'desktop'][pixelLevel];
     }
-    let pixelFilterOn = true; // On by default
-    try { pixelFilterOn = localStorage.getItem('paperPlanePixelFilter') !== 'off'; } catch (e) {}
 
     function applyPixelRatio() {
-        const ratio = pixelFilterOn
+        const ratio = pixelLevel > 0
             ? Math.min(basePixelRatio, 1 / pixelFilterSize())
             : basePixelRatio;
         renderer.setPixelRatio(ratio);
-        document.body.classList.toggle('pixel-filter', pixelFilterOn);
+        document.body.classList.toggle('pixel-filter', pixelLevel > 0);
     }
     applyPixelRatio();
     // Optimization: ensure efficient clearing
@@ -6262,19 +6271,22 @@
 
     // --- SETTINGS SCREEN ---
     const settingsOverlay = document.getElementById('settings-overlay');
-    const pixelFilterToggle = document.getElementById('pixel-filter-toggle');
+    const pixelFilterSlider = document.getElementById('pixel-filter-slider');
+    const pixelFilterValue = document.getElementById('pixel-filter-value');
     let settingsOpener = null;
 
-    function syncPixelFilterToggle() {
-        pixelFilterToggle.setAttribute('aria-pressed', String(pixelFilterOn));
-        pixelFilterToggle.textContent = pixelFilterOn ? 'ON' : 'OFF';
+    function syncPixelFilterSlider() {
+        const name = PIXEL_LEVEL_NAMES[pixelLevel];
+        pixelFilterSlider.value = String(pixelLevel);
+        pixelFilterSlider.setAttribute('aria-valuetext', name);
+        pixelFilterValue.textContent = name.toUpperCase();
     }
 
     function openSettings(e) {
         settingsOpener = e && e.currentTarget;
-        syncPixelFilterToggle();
+        syncPixelFilterSlider();
         settingsOverlay.hidden = false;
-        pixelFilterToggle.focus();
+        pixelFilterSlider.focus();
     }
 
     function closeSettings() {
@@ -6284,12 +6296,12 @@
 
     document.querySelectorAll('.settings-open').forEach(btn => btn.addEventListener('click', openSettings));
     document.getElementById('settings-back').addEventListener('click', closeSettings);
-    pixelFilterToggle.addEventListener('click', () => {
-        pixelFilterOn = !pixelFilterOn;
-        try { localStorage.setItem('paperPlanePixelFilter', pixelFilterOn ? 'on' : 'off'); } catch (e) {}
+    pixelFilterSlider.addEventListener('input', () => {
+        pixelLevel = Math.max(0, Math.min(2, parseInt(pixelFilterSlider.value, 10) || 0));
+        try { localStorage.setItem('paperPlanePixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
         applyPixelRatio();
-        syncPixelFilterToggle();
-        renderer.render(scene, camera); // Show the change behind the menu right away
+        syncPixelFilterSlider();
+        renderer.render(scene, camera);
     });
 
     // Render initial frozen frame for start screen background
