@@ -1,5 +1,5 @@
 /**
- * Captures screenshots of experiments for the /experiments index page.
+ * Captures screenshots of experiments for the /games index page.
  * Run with: node scripts/screenshot-games.js
  */
 const { chromium } = require('@playwright/test');

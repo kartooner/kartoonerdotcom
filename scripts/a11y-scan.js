@@ -11,7 +11,7 @@ const PAGES = [
     '/contact/',
     '/recommended-books/',
     '/coded/',
-    '/experiments/',
+    '/games/',
     '/thanks/',
     '/entry/delivery-is-a-trap.html',
     '/entry/everyone-creates.html',
