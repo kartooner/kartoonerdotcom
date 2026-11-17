@@ -14,9 +14,17 @@
     <meta name="theme-color" content="#050505">
 
     <!-- Google Font: Press Start 2P -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Press Start 2P (SIL Open Font License), self-hosted like the site's other fonts -->
+    <link rel="preload" href="/assets/fonts/PressStart2P-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('/assets/fonts/PressStart2P-latin.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
 
     <title>ThreeJS: Paper Airplane</title>
     <style>
