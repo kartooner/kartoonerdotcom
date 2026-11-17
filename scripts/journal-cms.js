@@ -641,7 +641,7 @@ function generateEntryPages(journal, { pages = journal.entries, dir = ENTRY_DIR 
 ${entry.draft ? `    <meta name="robots" content="noindex">
 ` : ''}${linkPreviewTags(entry)}
     <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link id="pixelify-font" href="/css/pixelify.css" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
     <script src="/js/seasonal-loader.js"></script>
@@ -890,7 +890,7 @@ function generateJournalHtml(journal) {
     <meta name="twitter:card" content="summary">
     <link rel="alternate" type="application/rss+xml" title="Erik's Journal" href="/journal-feed.xml">
     <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link id="pixelify-font" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" disabled>
+    <link id="pixelify-font" href="/css/pixelify.css" rel="stylesheet" disabled>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" id="seasonal-themes" href="/css/seasonal-themes.css">
     <script src="/js/seasonal-loader.js"></script>
