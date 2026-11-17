@@ -2999,6 +2999,18 @@
     // Temporary boss replacement: intense building phase
     let bossActive = false; // Keep flag for phase system compatibility
 
+    // Brief invulnerability after a hit, so one crash can't cost several hearts
+    function activateGracePeriod() {
+        gracePeriodActive = true;
+        gracePeriodEndTime = Date.now() + 500; // 0.5 second grace, same as building hits
+    }
+
+    // Record a hit for the hidden difficulty system
+    function trackCollision(timestamp) {
+        difficultyMetrics.collisions.push({ time: timestamp, happened: true });
+        difficultyMetrics.lastHitTime = timestamp;
+    }
+
     // Death and respawn handler
     function handleDeath() {
         // Lose a life
