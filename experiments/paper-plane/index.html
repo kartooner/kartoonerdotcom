@@ -1081,6 +1081,18 @@
         white-space: nowrap;
         pointer-events: all;
     }
+    /* In-game messages (hits, level ups): a solid plate so the text keeps the
+       same contrast over moving wireframe. Cyan on this plate is about 15:1. */
+    #center-message {
+        background: #000a0a; /* Solid: no wireframe showing through the text */
+        border: 1px solid rgba(0, 255, 255, 0.4);
+        padding: 12px 18px;
+        line-height: 1.6;
+        box-sizing: border-box;
+        max-width: calc(100vw - 32px);
+    }
+    #center-message:empty { display: none; }
+
     /* Pixel filter: the canvas renders at low resolution; scale it up without smoothing */
     body.pixel-filter #footer-canvas canvas {
         image-rendering: crisp-edges;
