@@ -39,7 +39,9 @@
   <div class="desktop-controls">
     <div class="control-item"><span class="control-label">Movement:</span> WASD + Arrow keys</div>
     <div class="control-item"><span class="control-label">Flip:</span> Double-tap direction</div>
+    <div class="control-item"><span class="control-label">Rocket flip:</span> Hold S on floor or W on ceiling for 2s, release</div>
     <div class="control-item"><span class="control-label">Grab box:</span> SPACE</div>
+    <div class="control-item"><span class="control-label">Pixel filter:</span> P</div>
   </div>
   <div class="mobile-controls">
     <div class="control-item"><span class="control-label">Movement:</span> Virtual joystick</div>
@@ -55,17 +57,47 @@
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+
+  // ── Pixel filter (same as Paper Plane): render at low resolution and let CSS
+  // scale the canvas up without smoothing. Levels: Off, Fine, Chunky (default).
+  // Pixel size is in screen pixels; phones use smaller pixels.
+  const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
+  const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
+  const pixelBtn = document.getElementById('pixel-btn');
+  let pixelLevel = 2;
+  try {
+    const saved = PIXEL_LEVEL_NAMES.indexOf(localStorage.getItem('slimeGamePixelFilter'));
+    if (saved >= 0) pixelLevel = saved;
+  } catch (e) {}
+  function applyPixelRatio() {
+    const base = Math.min(window.devicePixelRatio, 2);
+    const isSmall = Math.min(window.innerWidth, window.innerHeight) < 500;
+    const size = PIXEL_SIZES[isSmall ? 'phone' : 'desktop'][pixelLevel];
+    renderer.setPixelRatio(pixelLevel > 0 ? Math.min(base, 1 / size) : base);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.classList.toggle('pixel-filter', pixelLevel > 0);
+    const name = PIXEL_LEVEL_NAMES[pixelLevel];
+    pixelBtn.textContent = 'Pixels: ' + name[0].toUpperCase() + name.slice(1);
+  }
+  function cyclePixelFilter() {
+    pixelLevel = (pixelLevel + 1) % PIXEL_LEVEL_NAMES.length;
+    try { localStorage.setItem('slimeGamePixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
+    applyPixelRatio();
+  }
+  pixelBtn.addEventListener('click', cyclePixelFilter);
+  pixelBtn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) cyclePixelFilter(); });
+  applyPixelRatio();
 
   const worldBounds = 30;
   const getPinch = (x) => 3.9 * Math.exp(-(x * x) / (5.5 * 5.5));
   const getNoise = (x, f, a) => Math.sin(x * f) * a + Math.sin(x * f * 2.2) * (a * 0.4);
 
   // Terrain variation: mix smooth, ragged, and dramatic sections
-  const getTerrainVariation = (x) => {
-    const section = Math.floor(x / 8); // Different characteristics every 8 units
+  const SECTION_WIDTH = 8;  // Different characteristics every 8 units
+  const SECTION_BLEND = 1.0; // Units over which neighbouring sections blend (prevents cliffs)
+  const getSectionVariation = (section) => {
     const sectionType = Math.abs(section) % 4;
 
     if (sectionType === 0) {
@@ -83,6 +115,23 @@
     }
   };
 
+  // Height offset of one section's style at x (dramaPhase: 0 for floor, 1.5 for ceiling)
+  const sectionShape = (x, section, dramaPhase) => {
+    const v = getSectionVariation(section);
+    const baseNoise = getNoise(x, v.frequency, v.amplitude);
+    const dramaticBump = v.drama > 0 ? Math.sin(x * 0.8 + dramaPhase) * v.drama : 0;
+    return baseNoise + dramaticBump;
+  };
+
+  // Blend the shapes (not the parameters) of adjacent sections near each boundary
+  const getTerrainShape = (x, dramaPhase) => {
+    const section = Math.floor(x / SECTION_WIDTH);
+    const intoSection = x - section * SECTION_WIDTH;
+    const here = sectionShape(x, section, dramaPhase);
+    const t = THREE.MathUtils.smoothstep(intoSection, SECTION_WIDTH - SECTION_BLEND, SECTION_WIDTH);
+    return t > 0 ? THREE.MathUtils.lerp(here, sectionShape(x, section + 1, dramaPhase), t) : here;
+  };
+
   // Add diagonal slope to terrain (makes surfaces less vertical, more angled)
   const getDiagonalSlope = (x) => {
     // Strong diagonal wave that tilts the whole cave at ~45 degrees
@@ -90,19 +139,13 @@
   };
 
   const getFloor = (x) => {
-    const variation = getTerrainVariation(x);
-    const baseNoise = getNoise(x, variation.frequency, variation.amplitude);
-    const dramaticBump = variation.drama > 0 ? Math.sin(x * 0.8) * variation.drama : 0;
     const slope = getDiagonalSlope(x) * 0.9; // Diagonal tilt
-    return -4.8 + baseNoise + getPinch(x) + dramaticBump + slope;
+    return -4.8 + getTerrainShape(x, 0) + getPinch(x) + slope;
   };
 
   const getCeil = (x) => {
-    const variation = getTerrainVariation(x);
-    const baseNoise = getNoise(x, variation.frequency, variation.amplitude);
-    const dramaticBump = variation.drama > 0 ? Math.sin(x * 0.8 + 1.5) * variation.drama : 0;
     const slope = getDiagonalSlope(x) * 0.9; // Same diagonal tilt (whole cave rotates together)
-    return 4.8 - baseNoise - getPinch(x) - dramaticBump + slope;
+    return 4.8 - getTerrainShape(x, 1.5) - getPinch(x) + slope;
   };
 
   const getWallJag = (y) => getNoise(y, 3.5, 0.3);
@@ -111,11 +154,12 @@
   const biomes = [];
   const biomeTypes = ['ferns', 'vines', 'none'];
   const sectionCount = 8;
+  const biomeWidth = (worldBounds * 2) / sectionCount; // Split the cave evenly so no biome sits outside the walls
 
   for (let i = 0; i < sectionCount; i++) {
-    const xStart = (i - sectionCount/2) * 12;
+    const xStart = -worldBounds + i * biomeWidth;
     const biomeType = biomeTypes[Math.floor(Math.random() * biomeTypes.length)];
-    biomes.push({ xStart, xEnd: xStart + 12, type: biomeType });
+    biomes.push({ xStart, xEnd: xStart + biomeWidth, type: biomeType });
   }
 
   const createRibbon = (getVal, color) => {
@@ -146,7 +190,7 @@
       for (let j = 0; j < 6; j++) {
         // First clamp X to safe bounds
         const wallPadding = 2.0;
-        let fernX = biome.xStart + Math.random() * 10;
+        let fernX = biome.xStart + Math.random() * biomeWidth;
         fernX = THREE.MathUtils.clamp(fernX, -worldBounds + wallPadding, worldBounds - wallPadding);
 
         // Then calculate floor Y at the clamped X position (plants only on floor)
@@ -189,7 +233,7 @@
       for (let j = 0; j < 6; j++) {
         // First clamp X to safe bounds
         const wallPadding = 2.0;
-        let vineX = biome.xStart + Math.random() * 10;
+        let vineX = biome.xStart + Math.random() * biomeWidth;
         vineX = THREE.MathUtils.clamp(vineX, -worldBounds + wallPadding, worldBounds - wallPadding);
 
         // Then calculate ceiling Y at the clamped X position (vines only on ceiling)
@@ -255,12 +299,21 @@
   const grabBtn = document.getElementById('grab-btn');
   let touchIdMove = null, touchIdJump = null, startYJump = 0;
 
+  // Grab toggles off any time, but only turns on when the box is within reach
+  const GRAB_REACH = slimeRadius + 1.0 + 0.8; // slime radius + half box + margin
+  function toggleGrab() {
+    if (inputs.grab) { inputs.grab = false; return; }
+    const d = Math.hypot(centerPos.x - box.userData.x, centerPos.y - box.userData.y);
+    if (d < GRAB_REACH) inputs.grab = true;
+  }
+
   // Grab button handlers
   grabBtn.addEventListener('touchstart', e => {
     e.preventDefault();
-    inputs.grab = !inputs.grab; // Toggle grab
-    grabBtn.classList.toggle('active', inputs.grab);
+    e.stopPropagation(); // Don't let the window handler spawn the joystick under this tap
+    toggleGrab();
   });
+  document.getElementById('back-to-experiments').addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
 
   window.addEventListener('touchstart', e => {
     for(let t of e.changedTouches) {
@@ -335,7 +388,7 @@
     }
     if (e.code === 'Space') {
       e.preventDefault();
-      inputs.grab = !inputs.grab; // Toggle grab (same as mobile)
+      toggleGrab(); // Toggle grab (same as mobile)
     }
   });
   window.addEventListener('keyup', e => {
@@ -397,7 +450,7 @@
     const dToBox = Math.sqrt(Math.pow(centerPos.x - box.userData.x, 2) + Math.pow(centerPos.y - box.userData.y, 2));
     const halfBox = box.userData.size / 2;
 
-    if (inputs.grab && !boxGrabbed && dToBox < slimeRadius + halfBox + 0.8) {
+    if (inputs.grab && !boxGrabbed && dToBox < GRAB_REACH) {
       // Grab the box - store the offset from slime to box
       boxGrabbed = true;
       boxGrabOffset.x = box.userData.x - centerPos.x;
@@ -465,7 +518,8 @@
 
       // NO lerp - box follows slime position EXACTLY (no lag)
       box.userData.x = targetX;
-      box.userData.y = targetY;
+      // Keep the carried box between floor and ceiling so it doesn't clip through either
+      box.userData.y = THREE.MathUtils.clamp(targetY, getFloor(targetX) + halfBox, getCeil(targetX) - halfBox);
 
       // Auto-drop box if trying to carry through squeeze zone (gap too narrow)
       const gapAtBox = getCeil(box.userData.x) - getFloor(box.userData.x);
@@ -640,7 +694,7 @@
       // Slime pushes ferns
       if (distToFern < 2.5) {
         const swayDir = (centerPos.x - fern.userData.baseX) > 0 ? 1 : -1;
-        const pushForce = (2.5 - distToFern) * 0.015;
+        const pushForce = (2.5 - distToFern) * 0.015 * dt;
         fern.userData.swayVel += swayDir * pushForce;
       }
 
@@ -648,14 +702,14 @@
       const distBoxToFern = Math.sqrt(Math.pow(box.userData.x - fern.userData.baseX, 2) + Math.pow(box.userData.y - fern.userData.baseY, 2));
       if (distBoxToFern < 2.2) {
         const swayDir = (box.userData.x - fern.userData.baseX) > 0 ? 1 : -1;
-        const pushForce = (2.2 - distBoxToFern) * 0.012;
+        const pushForce = (2.2 - distBoxToFern) * 0.012 * dt;
         fern.userData.swayVel += swayDir * pushForce;
       }
 
       // Spring physics back to neutral
       fern.userData.swayVel += -fern.userData.swayAmount * 0.08 * dt; // Spring force
       fern.userData.swayVel *= Math.pow(0.92, dt); // Damping
-      fern.userData.swayAmount += fern.userData.swayVel;
+      fern.userData.swayAmount += fern.userData.swayVel * dt;
 
       fern.rotation.z = fern.userData.swayAmount;
     }
@@ -673,14 +727,14 @@
           // Check distance to slime - apply force if close
           const distToSeg = Math.sqrt(Math.pow(centerPos.x - seg.userData.x, 2) + Math.pow(centerPos.y - seg.userData.y, 2));
           if (distToSeg < 2.0) {
-            const pushForce = (2.0 - distToSeg) * 0.008;
+            const pushForce = (2.0 - distToSeg) * 0.008 * dt;
             seg.userData.vx += (seg.userData.x - centerPos.x) * pushForce;
           }
 
           // Check distance to box - box also pushes vines
           const distBoxToSeg = Math.sqrt(Math.pow(box.userData.x - seg.userData.x, 2) + Math.pow(box.userData.y - seg.userData.y, 2));
           if (distBoxToSeg < 1.8) {
-            const pushForce = (1.8 - distBoxToSeg) * 0.007;
+            const pushForce = (1.8 - distBoxToSeg) * 0.007 * dt;
             seg.userData.vx += (seg.userData.x - box.userData.x) * pushForce;
           }
 
@@ -688,8 +742,8 @@
           seg.userData.vy -= 0.005 * dt;
 
           // Apply velocity
-          seg.userData.x += seg.userData.vx;
-          seg.userData.y += seg.userData.vy;
+          seg.userData.x += seg.userData.vx * dt;
+          seg.userData.y += seg.userData.vy * dt;
 
           // Constrain to segment above
           const parentSeg = vine.segments[i - 1];
@@ -778,20 +832,34 @@
     blob.position.set(centerPos.x, centerPos.y, 0);
     camera.position.set(THREE.MathUtils.lerp(camera.position.x, centerPos.x, 0.05 * dt), THREE.MathUtils.lerp(camera.position.y, centerPos.y * 0.2, 0.05 * dt), 25);
 
-    // Update grab button text
+    // Update grab button state
     grabBtn.textContent = boxGrabbed ? 'DROP' : 'GRAB';
+    grabBtn.classList.toggle('active', boxGrabbed);
 
     renderer.render(scene, camera);
   }
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    applyPixelRatio(); // also resizes; phone/desktop pixel size can change on rotate
+  });
+
   animate(performance.now());
 </script>
 <style>
-  #back-to-experiments {
+  /* Pixel filter: the canvas renders at low resolution; scale it up without smoothing */
+  body.pixel-filter canvas { image-rendering: crisp-edges; image-rendering: pixelated; }
+
+  #bottom-links {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 500;
+    display: flex;
+    gap: 8px;
+  }
+  #back-to-experiments, #pixel-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -808,13 +876,17 @@
     transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
     pointer-events: all;
+    cursor: pointer;
   }
-  #back-to-experiments:hover {
+  #back-to-experiments:hover, #pixel-btn:hover, #pixel-btn:focus-visible {
     opacity: 1;
     color: rgba(0, 255, 136, 1);
     border-color: rgba(0, 255, 136, 0.6);
   }
 </style>
-<a id="back-to-experiments" href="/games">← Games</a>
+<div id="bottom-links">
+  <a id="back-to-experiments" href="/games">← Games</a>
+  <button id="pixel-btn" type="button" title="Pixel filter (P)">Pixels: Chunky</button>
+</div>
 </body>
 </html>
