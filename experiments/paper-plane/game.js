@@ -316,7 +316,10 @@
         roughness: 0.35,  // Smoother for better reflections
         envMapIntensity: 1.2  // Enhance environment reflections
     });
-    const wireMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+    // Plane outline is white so it reads against the cyan buildings and terrain.
+    // It still flashes red on a hit (see collisionFlash).
+    const PLANE_OUTLINE_COLOR = 0xffffff;
+    const wireMat = new THREE.MeshBasicMaterial({ color: PLANE_OUTLINE_COLOR, wireframe: true });
 
     // Plane type tracking
     let currentPlaneType = 'dart';
@@ -3596,7 +3599,7 @@
     // Set initial colors once
     renderer.setClearColor(0x000000, 1);
     terrainMat.color.setHex(0x00ffff);
-    wireMat.color.setHex(0x00ffff);
+    wireMat.color.setHex(PLANE_OUTLINE_COLOR);
 
     // UI Initialization
     const uiControls = initUI({
@@ -6233,7 +6236,7 @@
                 // Collision ended - reset to normal
                 renderer.setClearColor(0x000000, 1);
                 terrainMat.color.setHex(0x00ffff);
-                wireMat.color.setHex(0x00ffff);
+                wireMat.color.setHex(PLANE_OUTLINE_COLOR);
             } else {
                 // Still flashing - use reusable color object
                 tempColor.setRGB(collisionFlash * 0.4, 0, 0);
