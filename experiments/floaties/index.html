@@ -140,7 +140,7 @@
             <li><b>Steer</b><span>Arrows / A D, drag, or tap a spot</span></li>
             <li><b>Speed</b><span>W / ↑ boost, S / ↓ slow. Touch: two fingers to boost</span></li>
             <li><b>Eat</b><span>Teal bits +1, amber bits +3 (they swim away)</span></li>
-            <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them.
+            <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them. They tire out after a sprint (pale head).
                 <i class="swatch" style="background:#ff2a55"></i>Red: bigger, they bite.</span></li>
             <li><b>Look</b><span>P or the Pixels button: chunky, fine, off</span></li>
         </ul>
@@ -193,6 +193,7 @@
         neutral: { head: 0x9fb3c8, tail: 0x2f4058 },
     };
 
+    const TIRED_TINT = new THREE.Color(0xffffff);
     const UNIT_SPHERE = new THREE.IcosahedronGeometry(1, 2);
     const JAW_GEO = new THREE.ConeGeometry(0.25, 0.7, 3);
     const FOOD_GEO = new THREE.TetrahedronGeometry(11, 0);
@@ -534,11 +535,26 @@
     }
 
     // Threats chase (faster than cruising, slower than boosting) then lose interest.
-    // Prey flee (slower than boosting). Everything else wanders.
+    // Prey have a tiny brain: calm → flee (zig-zag sprint that burns stamina) →
+    // tired (slow and catchable at cruising speed, head turns pale) → flee again.
+    // Stamina only partly recovers, so each sprint is shorter than the last.
+    // Everything else wanders.
+    const PREY_FLEE_RADIUS = 420;
     function predatorSteer(p, t, dt) {
         const ph = snake.nodes[0].position, h = p.nodes[0].position;
         const dx = ph.x - h.x, dz = ph.z - h.z, d = Math.hypot(dx, dz);
-        p.cooldown = Math.max(0, p.cooldown - dt / 60);
+        const sec = dt / 60;
+        p.cooldown = Math.max(0, p.cooldown - sec);
+        const fleeing = isPlaying && p.rel === 'prey' && d < PREY_FLEE_RADIUS;
+        // Bigger prey (closer to your size) can sprint longer: ~2.5s to ~4s
+        const maxStamina = 1.5 + 3 * Math.min(1, p.mass / snake.mass);
+
+        if (p.tired > 0) {
+            p.tired = Math.max(0, p.tired - sec);
+            p.stamina = Math.min(maxStamina, p.stamina + sec * 0.5);
+            if (fleeing) turnToward(p, -dx, -dz, 0.02 * dt); // limps away
+            return { speed: 1.0, boosting: false };
+        }
 
         if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && invulnerable <= 0 && d < 520) {
             p.chaseTime += dt / 60;
@@ -547,10 +563,17 @@
             return { speed: 2.9, boosting: true };
         }
         p.chaseTime = 0;
-        if (isPlaying && p.rel === 'prey' && d < 420) {
-            turnToward(p, -dx, -dz, 0.05 * dt);
-            return { speed: 2.7, boosting: true };
+        if (fleeing) {
+            p.stamina -= sec;
+            if (p.stamina <= 0) { p.stamina = 0; p.tired = rand(1.6, 2.6); return { speed: 1.0, boosting: false }; }
+            // Panicked zig-zag: veer off the straight-away line every so often
+            p.jinkTimer -= sec;
+            if (p.jinkTimer <= 0) { p.jink = rand(-0.7, 0.7); p.jinkTimer = rand(0.6, 1.4); }
+            const a = Math.atan2(-dz, -dx) + p.jink;
+            turnToward(p, Math.cos(a), Math.sin(a), 0.05 * dt);
+            return { speed: 2.8, boosting: true };
         }
+        p.stamina = Math.min(maxStamina, p.stamina + sec * 0.5);
         const wander = (Math.sin(t * 0.37 + p.seed) * 0.012 + Math.sin(t * 0.11 + p.seed * 2) * 0.008) * dt;
         const v = p.headVelocity, cs = Math.cos(wander), sn = Math.sin(wander);
         v.set(v.x * cs - v.z * sn, 0, v.x * sn + v.z * cs).normalize();
@@ -584,6 +607,7 @@
             p.resetPath(pos, dir);
         }
         p.cooldown = 0; p.chaseTime = 0; p.rel = null;
+        p.stamina = 3; p.tired = 0; p.jink = 0; p.jinkTimer = 0;
         return p;
     }
 
@@ -1147,8 +1171,11 @@
             if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
             p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD);
             const rel = relationTo(p);
-            if (rel !== p.rel) { p.rel = rel; p.setColors(RELATION_COLORS[rel]); }
+            if (rel !== p.rel) { p.rel = rel; p.tired = 0; p.setColors(RELATION_COLORS[rel]); }
             p.update(t, dt, predatorSteer);
+            // Tired prey: pale head, so you can see when to go for it
+            p.nodes[0].material.color.copy(p.headColor);
+            if (p.tired > 0) p.nodes[0].material.color.lerp(TIRED_TINT, 0.6);
         }
 
         updateFood(dt);
