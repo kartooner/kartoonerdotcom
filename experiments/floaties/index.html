@@ -180,7 +180,8 @@
     const START_MASS = 10, MIN_MASS = 4;
     const PREDATOR_COUNT = 5;
     const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
-    let invulnerable = 0;         // seconds of post-bite immunity
+    const START_GRACE = 3;        // seconds of immunity at the start of a run (same as Paper Plane)
+    let invulnerable = 0;         // seconds of immunity left (run start, or after a bite)
     let bestMass = START_MASS, shownMass = -1;
     try { bestMass = Math.max(START_MASS, Number(localStorage.getItem('floaties-best')) || 0); } catch (e) {}
 
@@ -539,7 +540,7 @@
         const dx = ph.x - h.x, dz = ph.z - h.z, d = Math.hypot(dx, dz);
         p.cooldown = Math.max(0, p.cooldown - dt / 60);
 
-        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && d < 520) {
+        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && invulnerable <= 0 && d < 520) {
             p.chaseTime += dt / 60;
             if (p.chaseTime > 5) { p.cooldown = 4; p.chaseTime = 0; }
             turnToward(p, dx, dz, 0.045 * dt);
@@ -1123,6 +1124,7 @@
             ui.style.display = 'none';
             document.getElementById('hud').hidden = false;
             inputMode = null;
+            invulnerable = START_GRACE; // a few safe seconds to get oriented
             isPlaying = true;
         }, 1000);
     }
