@@ -1179,6 +1179,20 @@
 
     // Function to attach rooftop detail to a building
     function attachRooftopDetail(building) {
+        // A recycled building can still hold its previous detail if it was
+        // reused before the cleanup pass ran. Release it first, or it stays
+        // visible in the world and never returns to the pool.
+        if (building.rooftopDetail) {
+            const old = building.rooftopDetail;
+            old.visible = false;
+            old.userData.active = false;
+            old.userData.parentBuilding = null;
+            old.position.set(0, 0, -1000);
+            const idx = rooftopDetails.indexOf(old);
+            if (idx > -1) rooftopDetails.splice(idx, 1);
+            building.rooftopDetail = null;
+        }
+
         // Don't add details to pyramids (they have peaked tops already)
         if (building.geometry === 'pyramid') return null;
 
@@ -1364,6 +1378,31 @@
             const idx = windowGrids.indexOf(grid);
             if (idx > -1) windowGrids.splice(idx, 1);
         }
+    }
+
+    // Building hit areas. Each one follows the shape the player sees, then
+    // shrinks by the same amount for every shape so near misses feel fair.
+    // Half-widths at scale 1, from the geometries above: box 2 wide, cylinder
+    // radius 1.5, cone base radius 2 narrowing to a point.
+    const BUILDING_HIT_FORGIVENESS = 0.8; // Hit area is 80% of the visible width
+    const BUILDING_HIT_TOP_MARGIN = 0.2;  // Skimming the roof doesn't count
+
+    // Fill b.box with the building's hit area. atY is the height being tested
+    // (the ship's underside, or a laser's height); cones use their width there.
+    function setBuildingHitBox(b, atY, forgiveness = BUILDING_HIT_FORGIVENESS) {
+        const bottom = b.position.y - 2.5 * b.scale.y;
+        const top = b.position.y + 2.5 * b.scale.y;
+        let half;
+        if (b.geometry === 'pyramid') {
+            const y = Math.min(Math.max(atY, bottom), top);
+            half = 2 * (top - y) / (top - bottom); // 2 at the base, 0 at the tip
+        } else {
+            half = b.geometry === 'cylinder' ? 1.5 : 1;
+        }
+        const halfX = half * b.scale.x * forgiveness;
+        const halfZ = half * b.scale.z * forgiveness;
+        b.box.min.set(b.position.x - halfX, bottom, b.position.z - halfZ);
+        b.box.max.set(b.position.x + halfX, top - BUILDING_HIT_TOP_MARGIN, b.position.z + halfZ);
     }
 
     // Reusable quaternion for matrix updates (prevents garbage collection)
@@ -4693,31 +4732,8 @@
                 return;
             }
 
-            // Calculate bounding box manually for instanced mesh
-            // All geometries are centered, so half extents are the same in all directions
-            const halfWidth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.x;
-            const halfHeight = 2.5 * b.scale.y; // Geometry is 5 units tall, half is 2.5
-            const halfDepth = (b.geometry === 'box' ? 1 : b.geometry === 'pyramid' ? 1 : 0.75) * b.scale.z;
-
-            b.box.min.set(
-                b.position.x - halfWidth,
-                b.position.y - halfHeight,
-                b.position.z - halfDepth
-            );
-            b.box.max.set(
-                b.position.x + halfWidth,
-                b.position.y + halfHeight,
-                b.position.z + halfDepth
-            );
-
-            // Make collision more forgiving - shrink all building hitboxes significantly
-            // Reuse temp vectors to avoid garbage collection
-            b.box.getSize(tempVec3_1);
-            b.box.getCenter(tempVec3_2);
-            // Shrink collision box by 40% for pyramids, 30% for others (more forgiving)
-            const shrinkFactor = b.geometry === 'pyramid' ? 0.60 : 0.70;
-            tempVec3_1.multiplyScalar(shrinkFactor);
-            b.box.setFromCenterAndSize(tempVec3_2, tempVec3_1);
+            // Hit area that matches the building's visible shape (see setBuildingHitBox)
+            setBuildingHitBox(b, shipBox.min.y);
 
             // Track collision checks for debug metrics
             if (DEBUG_ENABLED) debugMetrics.performance.collisionChecks++;
@@ -5395,22 +5411,8 @@
                 // Skip inactive buildings or those too far away (prevents ghost collisions)
                 if (!building.active || building.position.z < -50 || building.position.z > 15) continue;
 
-                // Calculate bounding box manually for instanced mesh
-                // All geometries are centered, so half extents are the same in all directions
-                const halfWidth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.x;
-                const halfHeight = 2.5 * building.scale.y; // Geometry is 5 units tall, half is 2.5
-                const halfDepth = (building.geometry === 'box' ? 1 : building.geometry === 'pyramid' ? 1 : 0.75) * building.scale.z;
-
-                building.box.min.set(
-                    building.position.x - halfWidth,
-                    building.position.y - halfHeight,
-                    building.position.z - halfDepth
-                );
-                building.box.max.set(
-                    building.position.x + halfWidth,
-                    building.position.y + halfHeight,
-                    building.position.z + halfDepth
-                );
+                // Lasers hit the full visible shape at the laser's height
+                setBuildingHitBox(building, laser.position.y, 1);
 
                 // Check laser-building collision using tempBox
                 tempBox.setFromObject(laser);
