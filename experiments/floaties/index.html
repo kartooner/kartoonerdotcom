@@ -441,6 +441,7 @@
     const LAYER_NAMES = ['Silt', 'Drift', 'Shoal', 'Kelp', 'Reef', 'Swell', 'Surface']; // distinct from condition names
     const layerName = (i) => LAYER_NAMES[i] || 'Open Sky ' + (i - LAYER_NAMES.length + 2);
     let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
+    let hitBlink = 0;             // seconds of blinking left after a hit
     let dying = 0;                // seconds since death (0 = alive)
     let run = null;               // stats for the current run
     let shownHud = '';
@@ -1071,13 +1072,13 @@
         flash('#ff2a55');
         if (snake.mass - loss < DEATH_MASS) { fatal(cause); return; }
         snake.setMass(snake.mass - loss);
-        invulnerable = 2;
+        invulnerable = 2; hitBlink = 2;
     }
 
     function fatal(cause) {
         if (windCharges > 0) {
             windCharges--;
-            invulnerable = 2.5;
+            invulnerable = 2.5; hitBlink = 2.5;
             flash('#ffffff');
             showBanner(activeLayer.index, 'Second Wind');
             return;
@@ -1314,6 +1315,7 @@
         dying = 0;
         inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
         invulnerable = START_GRACE;
+        hitBlink = 0;
         shownHud = '';
         isPlaying = true;
         showBanner(0);
@@ -2012,7 +2014,9 @@
             dying += dt / 60;
             snake.alpha = Math.max(0, 1 - dying / 0.8); // fade out when eaten
         } else {
-            snake.alpha = invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+            // Blink only after being hit; the safe start of a run or layer stays steady
+            hitBlink = Math.max(0, hitBlink - dt / 60);
+            snake.alpha = hitBlink > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
         }
         updateAscend(dt);
         snake.update(t, dt, playerSteer);
