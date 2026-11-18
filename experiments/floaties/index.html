@@ -311,7 +311,7 @@
 
         <h2>Controls</h2>
         <dl class="defs">
-            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, drag a finger.</dd>
+            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, tap left or right of your snake to turn a little, or hold and drag a finger to steer.</dd>
             <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
             <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
             <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
@@ -432,6 +432,11 @@
     let dragWorldPos = new THREE.Vector3();
     let touchWorldPos = new THREE.Vector3();
     let waypointPos = null, waypointMarker;
+    let tapNudge = null; // a quick tap turns you toward it by a limited amount, then you go straight
+    let tapStart = null; // the current touch, while it might still be a tap
+    const TAP_NUDGE = 0.6;  // max turn per tap, radians (~35°)
+    const TAP_MS = 250;     // shorter than this (and not dragged) counts as a tap
+    const isTapping = () => tapStart && !tapStart.moved && performance.now() - tapStart.at < TAP_MS;
     let camTarget = new THREE.Vector3();
     let cameraBank = 0;
 
@@ -780,15 +785,27 @@
                     waypointPos = null; inputMode = null;
                 } else if (toTarget.length() > 20) {
                     // Angle-axis: fixed max turn rate regardless of pointer distance
-                    const maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
+                    let maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
+                    // While a touch might still be a tap, cap how far it can turn you
+                    if (inputMode === 'touch' && isTapping()) maxTurn = Math.min(maxTurn, Math.max(0, TAP_NUDGE - tapStart.turned));
                     const targetDir = toTarget.normalize();
                     const cross = new THREE.Vector3().crossVectors(c.headVelocity, targetDir);
                     const angle = Math.atan2(cross.length(), c.headVelocity.dot(targetDir));
-                    if (angle > 0.001) {
+                    if (angle > 0.001 && maxTurn > 0) {
+                        if (inputMode === 'touch' && tapStart) tapStart.turned += Math.min(angle, maxTurn);
                         const q = new THREE.Quaternion().setFromAxisAngle(cross.normalize(), Math.min(angle, maxTurn));
                         c.headVelocity.applyQuaternion(q).normalize();
                     }
                 }
+            } else if (tapNudge) {
+                const toT = new THREE.Vector3().subVectors(tapNudge.target, head.position);
+                const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
+                let diff = Math.atan2(toT.z, toT.x) - cur;
+                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                const step = THREE.MathUtils.clamp(diff, -Math.min(0.1 * dt, tapNudge.left), Math.min(0.1 * dt, tapNudge.left));
+                c.headVelocity.set(Math.cos(cur + step), 0, Math.sin(cur + step));
+                tapNudge.left -= Math.abs(step);
+                if (tapNudge.left <= 0.001 || Math.abs(diff) < 0.02) tapNudge = null;
             }
             // No input: swim straight (only other creatures wander on their own)
         } else {
@@ -1316,7 +1333,7 @@
         buildAt(0);
         run = { start: clock.elapsedTime, food: 0, creatures: 0, cuts: 0, layer: 0, picked: [] };
         dying = 0;
-        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        inputMode = null; waypointPos = null; tapNudge = null; keysDown.clear(); touchBoost = false;
         invulnerable = START_GRACE;
         hitBlink = 0;
         shownHud = '';
@@ -1896,6 +1913,7 @@
             return false;
         }
         function activateMode(mode) {
+            tapNudge = null;
             if (inputMode === 'waypoint') waypointPos = null;
             inputMode = mode;
         }
@@ -1934,8 +1952,13 @@
         // ── Mouse ─────────────────────────────────────────────────────────────────
         let mouseDownAt = null, isDragging = false;
         const DRAG_THRESHOLD = 6;
+        // Touch screens send a fake mouse click after every tap. Left alone, that click
+        // set a swim-to target that kept turning the snake after the finger lifted,
+        // fighting the next tap. Ignore mouse events that follow a touch.
+        let lastTouchAt = -Infinity;
+        const fromTouch = () => performance.now() - lastTouchAt < 1000;
         window.addEventListener('mousedown', (e) => {
-            if (!isPlaying || onControl(e) || !canActivate('drag')) return;
+            if (!isPlaying || fromTouch() || onControl(e) || !canActivate('drag')) return;
             mouseDownAt = { x: e.clientX, y: e.clientY };
             isDragging = false;
         });
@@ -1968,7 +1991,10 @@
 
         // ── Touch: one finger steers, a second finger boosts ──────────────────────
         window.addEventListener('touchstart', (e) => {
+            lastTouchAt = performance.now();
             if (!isPlaying || onControl(e)) return;
+            tapStart = { at: performance.now(), x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false, turned: 0 };
+            tapNudge = null;
             if (e.touches.length >= 2) { touchBoost = true; return; }
             if (!canActivate('touch')) return;
             activateMode('touch');
@@ -1976,10 +2002,17 @@
         }, { passive: true });
         window.addEventListener('touchmove', (e) => {
             if (inputMode !== 'touch') return;
+            if (tapStart && Math.hypot(e.touches[0].clientX - tapStart.x, e.touches[0].clientY - tapStart.y) > 12) tapStart.moved = true;
             screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
             e.preventDefault();
         }, { passive: false });
         const onTouchEnd = (e) => {
+            lastTouchAt = performance.now();
+            // Quick tap (not a hold or drag): nudge toward the tapped spot
+            if (isPlaying && inputMode === 'touch' && e.touches.length === 0 && isTapping() && tapStart.turned < TAP_NUDGE) {
+                tapNudge = { target: touchWorldPos.clone(), left: TAP_NUDGE - tapStart.turned };
+            }
+            if (e.touches.length === 0) tapStart = null;
             if (e.touches.length < 2) touchBoost = false;
             if (e.touches.length === 0 && inputMode === 'touch') inputMode = null;
         };
