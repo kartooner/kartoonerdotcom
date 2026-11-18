@@ -41,9 +41,9 @@
         }
         #menu { pointer-events: auto; text-align: center; padding: 2rem 16px 4.5rem; margin: auto; } /* margin:auto centres but lets tall content scroll */
         #ui-root, #gameover, #mutate { overflow-y: auto; touch-action: pan-y; }
-        #gameover > :first-child, #mutate > :first-child { margin-top: auto; }
-        #gameover > :last-child, #mutate > :last-child { margin-bottom: auto; }
-        #gameover, #mutate { padding-bottom: 4.5rem !important; } /* clear the Games link */
+        #gameover > :first-child { margin-top: auto; }
+        #gameover > :last-child { margin-bottom: auto; }
+        #gameover { padding-bottom: 4.5rem !important; } /* clear the Games link */
         @media (max-height: 600px) {
             .title { margin-bottom: 1.25rem; }
         }
@@ -231,22 +231,30 @@
 
         /* Mutation pick: a plain numbered list, not a card grid */
         #mutate {
-            position: fixed; inset: 0; z-index: 1050;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 2rem 16px; box-sizing: border-box;
-            background: rgba(0, 8, 20, 0.72); color: #e8f1fa; text-align: center;
+            position: fixed; inset: 0; z-index: 1120; /* above the Games link */
+            display: grid; padding: 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.78); color: #e8f1fa; text-align: center;
         }
+        /* margin:auto centres the panel on any screen, and still scrolls if it's taller */
+        #mutate .panel { margin: auto; width: 100%; max-width: 28rem; display: flex; flex-direction: column; align-items: center; }
+        #mutate .hint { margin: 0.75rem 0 0; font-size: 0.8125rem; color: #8fa3b8; }
+        #mutate-apply { margin-top: 1.25rem; width: 100%; min-width: 0; }
+        #mutate-apply:disabled { opacity: 0.35; cursor: default; }
         #mutate[hidden] { display: none; }
         #mutate .kicker { margin: 0 0 0.5rem; font-size: 0.8125rem; letter-spacing: 0.3em; text-transform: uppercase; color: #00f2ff; }
         #mutate h2 { font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; font-size: clamp(1.75rem, 5vw, 2.75rem); margin: 0 0 0.25rem; }
         #mutate .cause { margin: 0 0 1.5rem; color: #ffcf6b; font-size: 0.9375rem; }
-        .choices { width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .choices { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
         .choice {
             display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
             padding: 0.85rem 1rem; border: 1px solid rgba(0, 255, 204, 0.35); border-radius: 8px;
             background: rgba(0, 20, 30, 0.6); color: #b7c6d6; font: inherit; font-size: 0.875rem; cursor: pointer;
         }
-        .choice:hover, .choice:focus-visible { border-color: #00ffcc; background: rgba(0, 255, 204, 0.08); outline: none; }
+        .choice { min-height: 64px; }
+        .choice:hover { border-color: rgba(0, 255, 204, 0.7); }
+        .choice:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .choice[aria-checked="true"] { border: 2px solid #00ffcc; background: rgba(0, 255, 204, 0.16); }
+        .choice[aria-checked="true"] kbd { background: #00ffcc; color: #001a14; }
         .choice b { display: block; color: #fff; font-size: 1rem; margin-bottom: 0.15rem; }
         .choice kbd { font-family: inherit; font-weight: 700; color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.5); border-radius: 4px; padding: 0.1rem 0.45rem; }
 
@@ -311,7 +319,7 @@
 
         <h2>Controls</h2>
         <dl class="defs">
-            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, tap left or right of your snake to turn a little, or hold and drag a finger to steer.</dd>
+            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or hold the mouse button or a finger down and point where to go: the further to the side, the sharper the turn. A quick click or tap turns you a little toward that side.</dd>
             <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
             <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
             <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
@@ -320,7 +328,7 @@
         <h2>Eating</h2>
         <dl class="defs">
             <dt>Teal bits</dt><dd>+1 mass.</dd>
-            <dt>Amber bits</dt><dd>+3 mass, but they swim away when you get close.</dd>
+            <dt>Amber bits</dt><dd>+3 mass. They dart away when you get close, then need a moment to recover: keep after them.</dd>
             <dt>Pale remains</dt><dd>What's left when a creature dies. Scattered along its body; they fade after a while.</dd>
         </dl>
 
@@ -338,7 +346,7 @@
         <p>It works the other way too: anything that hits <em>your</em> body crashes and bursts into remains. Curl around a big red creature and make it run into you.</p>
 
         <h2>Layers and mutations</h2>
-        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then pick one of three mutations. They last for the rest of the run, and some stack.</p>
+        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then choose one of three mutations: tap it, then Apply. They last for the rest of the run, and some stack.</p>
         <dl class="defs" id="manual-mutations"></dl>
 
         <h2>Layer conditions</h2>
@@ -387,10 +395,14 @@
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
 <div id="mutate" role="dialog" aria-labelledby="mutate-title" hidden>
-    <p class="kicker" id="mutate-layer"></p>
-    <h2 id="mutate-title">Choose a mutation</h2>
-    <p class="cause" id="mutate-mod"></p>
-    <div class="choices" id="mutate-choices"></div>
+    <div class="panel">
+        <p class="kicker" id="mutate-layer"></p>
+        <h2 id="mutate-title">Choose a mutation</h2>
+        <p class="cause" id="mutate-mod"></p>
+        <div class="choices" id="mutate-choices" role="radiogroup" aria-labelledby="mutate-title"></div>
+        <button type="button" class="btn" id="mutate-apply" disabled>Apply</button>
+        <p class="hint">Tap one, then Apply. Keys: 1–3, then Enter.</p>
+    </div>
 </div>
 <div id="gameover" role="dialog" aria-labelledby="gameover-title" hidden>
     <h2 id="gameover-title">Run over</h2>
@@ -425,21 +437,21 @@
     const BASE_FOG = 0.00065;
     let isPlaying = false;
 
-    // --- Input state (exclusive: only one steering mode active at a time) ---
-    let inputMode = null;
+    // --- Input state: mouse, touch and keyboard all feed one turn rate ---
+    let inputMode = null;   // last input used ('keyboard' | 'pointer'); informational only
     let keysDown = new Set();
     let touchBoost = false;
-    let dragWorldPos = new THREE.Vector3();
-    let touchWorldPos = new THREE.Vector3();
-    let waypointPos = null, waypointMarker;
-    let tapNudge = null; // a quick tap turns you toward it by a limited amount, then you go straight
-    let tapStart = null; // the current touch, while it might still be a tap
+    let waypointPos = null, waypointMarker; // click-to-swim was removed; kept null
+    let pointer = null;     // held mouse button or finger: { x, y, sx, sy, at, moved }
+    let tapNudge = null;    // heading (radians) a quick tap/click is easing you round to
+    let turnVel = 0;        // current turn speed, eased toward what the inputs want
     const TAP_NUDGE = 0.6;  // max turn per tap, radians (~35°)
-    const TAP_MS = 250;     // shorter than this (and not dragged) counts as a tap
-    const POINTER_DEADZONE = 60; // drag/touch closer than this to your head doesn't steer
-    let pointerScreen = null;    // where the held mouse / finger is on screen
+    const TAP_MS = 300;     // a press shorter than this (and not dragged) counts as a tap
+    const POINTER_DEADZONE = 60; // a held pointer this close to your head doesn't steer
+    const pointerWorld = new THREE.Vector3();
     let pointerToWorld = null;   // screen → water-plane mapping (set up in init)
-    const isTapping = () => tapStart && !tapStart.moved && performance.now() - tapStart.at < TAP_MS;
+    const isTap = (p) => !p.moved && performance.now() - p.at < TAP_MS;
+    const angleDiff = (a, b) => { const d = a - b; return Math.atan2(Math.sin(d), Math.cos(d)); };
     let camTarget = new THREE.Vector3();
     let cameraBank = 0;
 
@@ -769,69 +781,50 @@
     function playerSteer(c, t, dt) {
         const head = c.nodes[0];
         if (isPlaying) {
-            if (inputMode === 'keyboard') {
-                const TURN = 0.065 * (1 + 0.3 * mut('turn')) * dt;
-                let dAngle = 0;
-                if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
-                if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
-                if (dAngle !== 0) {
-                    const cs = Math.cos(dAngle), sn = Math.sin(dAngle);
-                    const nx = c.headVelocity.x * cs - c.headVelocity.z * sn;
-                    const nz = c.headVelocity.x * sn + c.headVelocity.z * cs;
-                    c.headVelocity.set(nx, 0, nz).normalize();
+            // Every input feeds one wanted turn rate; the actual turn eases toward it.
+            // Like Paper Plane: inputs never lock each other out, and nothing is twitchy.
+            const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
+            const maxRate = 0.065 * (1 + 0.3 * mut('turn')); // radians per 60fps frame
+            const keyL = keysDown.has('arrowleft') || keysDown.has('a');
+            const keyR = keysDown.has('arrowright') || keysDown.has('d');
+            let want = 0;
+            if (keyL || keyR) {
+                want = ((keyR ? 1 : 0) - (keyL ? 1 : 0)) * maxRate;
+                tapNudge = null;
+            } else if (pointer && pointerToWorld && isTap(pointer)) {
+                // Pressed, but could still be a tap: turn toward exactly what a tap would give,
+                // so releasing it just carries on (no pull-back)
+                pointerToWorld(pointer.sx, pointer.sy, pointerWorld);
+                const h0 = pointer.heading0;
+                const d0 = angleDiff(Math.atan2(pointerWorld.z - head.position.z, pointerWorld.x - head.position.x), h0);
+                tapNudge = h0 + THREE.MathUtils.clamp(d0, -TAP_NUDGE, TAP_NUDGE);
+                const diff = angleDiff(tapNudge, cur);
+                want = Math.abs(diff) < 0.01 ? 0 : THREE.MathUtils.clamp(diff * 0.15, -maxRate, maxRate);
+            } else if (pointer && pointerToWorld) {
+                // Held mouse/finger: a joystick. Further off-centre = sharper turn
+                tapNudge = null;
+                pointerToWorld(pointer.x, pointer.y, pointerWorld);
+                const dx = pointerWorld.x - head.position.x, dz = pointerWorld.z - head.position.z;
+                if (Math.hypot(dx, dz) > POINTER_DEADZONE) {
+                    want = THREE.MathUtils.clamp(angleDiff(Math.atan2(dz, dx), cur) * 0.12, -maxRate, maxRate);
                 }
-            } else if (inputMode === 'drag' || inputMode === 'touch' || (inputMode === 'waypoint' && waypointPos)) {
-                // A held mouse/finger steers by where it is on screen *now*: the camera turns
-                // with you, so holding it left of the snake keeps turning left, like a joystick
-                if (inputMode !== 'waypoint' && pointerScreen && pointerToWorld) {
-                    pointerToWorld(pointerScreen.x, pointerScreen.y, inputMode === 'drag' ? dragWorldPos : touchWorldPos);
-                }
-                const wp = inputMode === 'drag' ? dragWorldPos : inputMode === 'touch' ? touchWorldPos : waypointPos;
-                const toTarget = new THREE.Vector3().subVectors(wp, head.position);
-                const dist = Math.hypot(toTarget.x, toTarget.z);
-                const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
-                let diff = Math.atan2(toTarget.z, toTarget.x) - cur;
-                diff = Math.atan2(Math.sin(diff), Math.cos(diff)); // signed: + = target on your right
-                let maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
-                const turn = (limit) => {
-                    const step = THREE.MathUtils.clamp(diff, -limit, limit);
-                    c.headVelocity.set(Math.cos(cur + step), 0, Math.sin(cur + step));
-                    return Math.abs(step);
-                };
-                if (inputMode === 'waypoint') {
-                    // Click-to-swim: turn to the direction the spot was in when you clicked, then
-                    // swim straight. Turning exactly that much means no looping around a spot
-                    // that's inside your turning circle.
-                    const w = waypointPos;
-                    if (w.heading === undefined) w.heading = cur + diff;
-                    let hd = w.heading - cur;
-                    hd = Math.atan2(Math.sin(hd), Math.cos(hd));
-                    if (dist < 40 || (w.locked && Math.abs(diff) > Math.PI / 2)) {
-                        waypointPos = null; inputMode = null;          // reached it, or swam past it
-                    } else if (!w.locked) {
-                        if (Math.abs(hd) < 0.01) w.locked = true;      // facing that way: straight on
-                        else { diff = hd; turn(maxTurn); }
-                    }
-                } else if (dist > POINTER_DEADZONE) {
-                    // Drag / touch: steer toward the pointer, but not when it's right on top of
-                    // the head. Turn harder the further off-centre it is, up to the keyboard's rate.
-                    maxTurn = Math.min(0.065 * (1 + 0.3 * mut('turn')) * dt, Math.abs(diff) * 0.12 * dt);
-                    if (inputMode === 'touch' && isTapping()) maxTurn = Math.min(0.10 * dt, Math.max(0, TAP_NUDGE - tapStart.turned));
-                    if (maxTurn > 0 && Math.abs(diff) > 0.001) {
-                        const turned = turn(maxTurn);
-                        if (inputMode === 'touch' && tapStart) tapStart.turned += turned;
-                    }
-                }
-            } else if (tapNudge) {
-                const toT = new THREE.Vector3().subVectors(tapNudge.target, head.position);
-                const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
-                let diff = Math.atan2(toT.z, toT.x) - cur;
-                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                const step = THREE.MathUtils.clamp(diff, -Math.min(0.1 * dt, tapNudge.left), Math.min(0.1 * dt, tapNudge.left));
-                c.headVelocity.set(Math.cos(cur + step), 0, Math.sin(cur + step));
-                tapNudge.left -= Math.abs(step);
-                if (tapNudge.left <= 0.001 || Math.abs(diff) < 0.02) tapNudge = null;
+            } else if (tapNudge !== null) {
+                // Quick tap/click: ease round to the nudged heading, then straight on
+                const diff = angleDiff(tapNudge, cur);
+                if (Math.abs(diff) < 0.01) tapNudge = null;
+                else want = THREE.MathUtils.clamp(diff * 0.15, -maxRate, maxRate);
             }
+            turnVel += (want - turnVel) * lerpK(0.25, dt);
+            let ang = cur + turnVel * dt;
+            // Land exactly on a nudge target rather than overshooting and correcting back
+            if (tapNudge !== null) {
+                const left = angleDiff(tapNudge, cur);
+                if (Math.sign(turnVel) === Math.sign(left) && Math.abs(turnVel * dt) >= Math.abs(left)) {
+                    ang = tapNudge; turnVel = 0;
+                    if (!pointer) tapNudge = null;
+                }
+            }
+            c.headVelocity.set(Math.cos(ang), 0, Math.sin(ang));
             // No input: swim straight (only other creatures wander on their own)
         } else {
             // Idle: gentle sinuous drift
@@ -1175,6 +1168,8 @@
         f.position.set(x, 0, z);
         const a = Math.random() * Math.PI * 2, s = rand(0.15, 0.4);
         f.userData.vel.set(Math.cos(a) * s, 0, Math.sin(a) * s);
+        f.userData.drift = f.userData.vel.clone(); // the slow wander water drag returns it to
+        f.userData.dartCd = 0;
     }
 
     function makeFoodMesh(layer) {
@@ -1358,7 +1353,7 @@
         buildAt(0);
         run = { start: clock.elapsedTime, food: 0, creatures: 0, cuts: 0, layer: 0, picked: [] };
         dying = 0;
-        inputMode = null; waypointPos = null; tapNudge = null; keysDown.clear(); touchBoost = false;
+        inputMode = null; waypointPos = null; tapNudge = null; pointer = null; turnVel = 0; keysDown.clear(); touchBoost = false;
         invulnerable = START_GRACE;
         hitBlink = 0;
         shownHud = '';
@@ -1390,16 +1385,43 @@
         const magnet = mut('magnet') * 160;
         const cur = activeLayer.current;
         const sec = dt / 60;
+        const drag = lerpK(0.06, dt);
+        const bodyReach = snake.segmentCount * snake.segmentSpacing + snake.baseSize + 30;
         for (let i = nutrients.length - 1; i >= 0; i--) {
             const f = nutrients[i], u = f.userData;
             const dx = f.position.x - head.x, dz = f.position.z - head.z, d = Math.hypot(dx, dz);
-            if (isPlaying && u.skittish && d < fleeRadius && d > 0.001) {
-                f.position.x += (dx / d) * 2.2 * dt;
-                f.position.z += (dz / d) * 2.2 * dt;
+            // Every bit is a little physical object: it has velocity, and water drag eases it
+            // back to its slow drift
+            const drift = u.drift || ZERO;
+            u.vel.x += (drift.x - u.vel.x) * drag;
+            u.vel.z += (drift.z - u.vel.z) * drag;
+            // Amber bits dart away in bursts, then need a moment before they can dart again
+            if (u.skittish) {
+                u.dartCd = Math.max(0, (u.dartCd || 0) - sec);
+                if (isPlaying && d < fleeRadius && d > 0.001 && u.dartCd === 0) {
+                    const side = rand(-0.5, 0.5);
+                    u.vel.x += ((dx / d) - (dz / d) * side) * 5;
+                    u.vel.z += ((dz / d) + (dx / d) * side) * 5;
+                    u.dartCd = rand(1.1, 1.6);
+                }
             }
             if (isPlaying && magnet && d < magnet + snake.baseSize && d > 0.001 && !u.skittish) {
                 f.position.x -= (dx / d) * 1.6 * dt;
                 f.position.z -= (dz / d) * 1.6 * dt;
+            }
+            // Your body pushes bits aside as you swim through them
+            if (isPlaying && d < bodyReach) {
+                for (let n = 1; n < snake.nodes.length; n++) {
+                    const np = snake.nodes[n].position;
+                    const ox = f.position.x - np.x, oz = f.position.z - np.z, od = Math.hypot(ox, oz);
+                    const r = snake.radiusAt(n) + 10;
+                    if (od < r && od > 0.001) {
+                        f.position.x = np.x + (ox / od) * r;
+                        f.position.z = np.z + (oz / od) * r;
+                        u.vel.x += (ox / od) * 0.8;
+                        u.vel.z += (oz / od) * 0.8;
+                    }
+                }
             }
             f.position.x += (u.vel.x + cur.x) * dt;
             f.position.z += (u.vel.z + cur.z) * dt;
@@ -1453,14 +1475,36 @@
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'choice';
+            b.setAttribute('role', 'radio');
+            b.setAttribute('aria-checked', 'false');
             const level = mut(m.id) + 1;
             b.innerHTML = '<kbd>' + (i + 1) + '</kbd><span><b>' + m.name + (level > 1 ? ROMAN[level] : '') + '</b>' + m.desc + '</span>';
-            b.addEventListener('click', () => pickMutation(i));
+            b.addEventListener('click', () => selectMutation(i));
             list.appendChild(b);
         });
+        selectedMutation = -1;
+        $('mutate-apply').disabled = true;
+        $('mutate-apply').textContent = 'Apply';
+        // Drop any steering input in progress so it can't carry over into the menu
+        keysDown.clear(); pointer = null; tapNudge = null; touchBoost = false;
+        pickOpenedAt = performance.now();
+        $('banner').classList.remove('show');
         $('hud').hidden = true;
         $('mutate').hidden = false;
+        $('mutate').scrollTop = 0;
         list.firstChild.focus();
+    }
+
+    // Choosing is two steps (select, then Apply) so a stray tap can't pick by accident
+    let selectedMutation = -1, pickOpenedAt = 0;
+    function selectMutation(i) {
+        if (!paused || !mutationChoices[i]) return;
+        if (performance.now() - pickOpenedAt < 350) return; // ignore a press already under way
+        selectedMutation = i;
+        $('mutate-choices').querySelectorAll('.choice').forEach((b, k) => b.setAttribute('aria-checked', String(k === i)));
+        const apply = $('mutate-apply');
+        apply.disabled = false;
+        apply.textContent = 'Apply: ' + mutationChoices[i].name;
     }
 
     function pickMutation(i) {
@@ -1473,16 +1517,19 @@
         $('hud').hidden = false;
         shownHud = '';
         invulnerable = Math.max(invulnerable, START_GRACE);
-        keysDown.clear(); inputMode = null;
+        keysDown.clear(); inputMode = null; pointer = null; tapNudge = null;
         paused = false;
     }
     window.addEventListener('keydown', (e) => {
-        if (paused && ['1', '2', '3'].includes(e.key)) pickMutation(Number(e.key) - 1);
+        if (!paused) return;
+        if (['1', '2', '3'].includes(e.key)) { selectMutation(Number(e.key) - 1); if (selectedMutation >= 0) $('mutate-apply').focus(); }
+        else if (e.key === 'Enter' && selectedMutation >= 0 && document.activeElement !== $('mutate-apply')) { e.preventDefault(); pickMutation(selectedMutation); }
     });
 
     // ── HUD ───────────────────────────────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
     const flashEl = $('flash');
+    $('mutate-apply').addEventListener('click', () => pickMutation(selectedMutation));
 
     function updateHud() {
         const m = Math.round(snake.mass), L = activeLayer.index;
@@ -1939,117 +1986,78 @@
 
         pointerToWorld = screenToWorld;
 
-        function canActivate(mode) {
-            if (!inputMode || inputMode === mode) return true;
-            if (inputMode === 'waypoint') return true;
-            return false;
-        }
-        function activateMode(mode) {
-            tapNudge = null;
-            if (inputMode === 'waypoint') waypointPos = null;
-            inputMode = mode;
-        }
-        const onControl = (e) => e.target.closest && e.target.closest('a, button');
+        const onControl = (e) => e.target.closest && e.target.closest('a, button, input, label');
 
         // ── Keyboard ──────────────────────────────────────────────────────────────
-        // Turning keys take over steering; speed keys work alongside any steering mode.
-        const TURN_KEYS = ['arrowleft', 'arrowright', 'a', 'd'];
-        const SPEED_KEYS = new Set(['arrowup', 'arrowdown', 'w', 's']);
+        const GAME_KEYS = new Set(['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd', 'w', 's']);
         window.addEventListener('keydown', (e) => {
-            if (!isPlaying) return;
+            if (!isPlaying || paused) return;
             const key = e.key.toLowerCase();
-            if (SPEED_KEYS.has(key)) {
-                e.preventDefault();
-                keysDown.add(key);
-                return;
-            }
-            if (!TURN_KEYS.includes(key) || !canActivate('keyboard')) return;
+            if (!GAME_KEYS.has(key)) return;
             e.preventDefault();
-            activateMode('keyboard');
             keysDown.add(key);
+            inputMode = 'keyboard';
         });
-        window.addEventListener('keyup', (e) => {
-            keysDown.delete(e.key.toLowerCase());
-            if (inputMode === 'keyboard' && !TURN_KEYS.some(k => keysDown.has(k))) inputMode = null;
-        });
-        // Key-up events are lost when the window loses focus; drop held keys so nothing sticks
-        const releaseAll = () => {
-            keysDown.clear();
-            touchBoost = false;
-            if (inputMode === 'keyboard') inputMode = null;
-        };
+        window.addEventListener('keyup', (e) => { keysDown.delete(e.key.toLowerCase()); });
+        // Key-up events are lost when the window loses focus; drop held input so nothing sticks
+        const releaseAll = () => { keysDown.clear(); touchBoost = false; pointer = null; };
         window.addEventListener('blur', releaseAll);
         document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
 
-        // ── Mouse ─────────────────────────────────────────────────────────────────
-        let mouseDownAt = null, isDragging = false;
-        const DRAG_THRESHOLD = 6;
-        // Touch screens send a fake mouse click after every tap. Left alone, that click
-        // set a swim-to target that kept turning the snake after the finger lifted,
-        // fighting the next tap. Ignore mouse events that follow a touch.
+        // ── Pointer: mouse and touch behave the same ──────────────────────────────
+        // Hold = joystick steering. Quick tap/click = a ~35° nudge toward that side.
+        const pressStart = (x, y) => {
+            const v = snake.headVelocity;
+            pointer = { x, y, sx: x, sy: y, at: performance.now(), moved: false, heading0: Math.atan2(v.z, v.x) };
+            tapNudge = null;
+            inputMode = 'pointer';
+        };
+        const pressMove = (x, y) => {
+            if (!pointer) return;
+            pointer.x = x; pointer.y = y;
+            if (Math.hypot(x - pointer.sx, y - pointer.sy) > 12) pointer.moved = true;
+        };
+        const pressEnd = () => {
+            if (!pointer) return;
+            // Quick tap/click: keep easing to ~35° toward that side, measured from the heading
+            // when pressed (the same target used while it was held). A longer hold was joystick
+            // steering, so it just ends.
+            if (isPlaying && !paused && isTap(pointer)) {
+                screenToWorld(pointer.sx, pointer.sy, pointerWorld);
+                const head = snake.nodes[0].position, h0 = pointer.heading0;
+                const d0 = angleDiff(Math.atan2(pointerWorld.z - head.z, pointerWorld.x - head.x), h0);
+                tapNudge = h0 + THREE.MathUtils.clamp(d0, -TAP_NUDGE, TAP_NUDGE);
+            } else {
+                tapNudge = null;
+            }
+            pointer = null;
+        };
+
+        // Touch screens send a fake mouse click after every tap; ignore mouse events then
         let lastTouchAt = -Infinity;
         const fromTouch = () => performance.now() - lastTouchAt < 1000;
         window.addEventListener('mousedown', (e) => {
-            if (!isPlaying || fromTouch() || onControl(e) || !canActivate('drag')) return;
-            mouseDownAt = { x: e.clientX, y: e.clientY };
-            isDragging = false;
+            if (e.button !== 0 || !isPlaying || paused || fromTouch() || onControl(e)) return;
+            pressStart(e.clientX, e.clientY);
         });
-        window.addEventListener('mousemove', (e) => {
-            if (!mouseDownAt) return;
-            if (!isDragging) {
-                const dx = e.clientX - mouseDownAt.x, dy = e.clientY - mouseDownAt.y;
-                if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) {
-                    if (!canActivate('drag')) { mouseDownAt = null; return; }
-                    isDragging = true;
-                    activateMode('drag');
-                    pointerScreen = { x: e.clientX, y: e.clientY };
-                    screenToWorld(mouseDownAt.x, mouseDownAt.y, dragWorldPos);
-                }
-            }
-            if (isDragging) { pointerScreen = { x: e.clientX, y: e.clientY }; screenToWorld(e.clientX, e.clientY, dragWorldPos); }
-        });
-        window.addEventListener('mouseup', (e) => {
-            if (!mouseDownAt) return;
-            const wasDrag = isDragging;
-            isDragging = false;
-            if (inputMode === 'drag') inputMode = null;
-            if (!wasDrag && isPlaying && canActivate('drag')) {
-                const wp = new THREE.Vector3();
-                screenToWorld(e.clientX, e.clientY, wp);
-                waypointPos = wp;
-                activateMode('waypoint');
-            }
-            mouseDownAt = null;
-        });
+        window.addEventListener('mousemove', (e) => { if (!fromTouch()) pressMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => { if (!fromTouch()) pressEnd(); });
 
-        // ── Touch: one finger steers, a second finger boosts ──────────────────────
         window.addEventListener('touchstart', (e) => {
             lastTouchAt = performance.now();
-            if (!isPlaying || onControl(e)) return;
-            tapStart = { at: performance.now(), x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false, turned: 0 };
-            tapNudge = null;
+            if (!isPlaying || paused || onControl(e)) return;
             if (e.touches.length >= 2) { touchBoost = true; return; }
-            if (!canActivate('touch')) return;
-            activateMode('touch');
-            pointerScreen = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+            pressStart(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: true });
         window.addEventListener('touchmove', (e) => {
-            if (inputMode !== 'touch') return;
-            if (tapStart && Math.hypot(e.touches[0].clientX - tapStart.x, e.touches[0].clientY - tapStart.y) > 12) tapStart.moved = true;
-            pointerScreen = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+            if (!pointer) return;
+            pressMove(e.touches[0].clientX, e.touches[0].clientY);
             e.preventDefault();
         }, { passive: false });
         const onTouchEnd = (e) => {
             lastTouchAt = performance.now();
-            // Quick tap (not a hold or drag): nudge toward the tapped spot
-            if (isPlaying && inputMode === 'touch' && e.touches.length === 0 && isTapping() && tapStart.turned < TAP_NUDGE) {
-                tapNudge = { target: touchWorldPos.clone(), left: TAP_NUDGE - tapStart.turned };
-            }
-            if (e.touches.length === 0) tapStart = null;
             if (e.touches.length < 2) touchBoost = false;
-            if (e.touches.length === 0 && inputMode === 'touch') inputMode = null;
+            if (e.touches.length === 0) pressEnd();
         };
         window.addEventListener('touchend', onTouchEnd, { passive: true });
         window.addEventListener('touchcancel', onTouchEnd, { passive: true });
