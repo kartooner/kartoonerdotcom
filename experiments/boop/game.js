@@ -4,10 +4,20 @@ import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, BASKET } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
 
-const COLORS = {
-    paper: 0xf1e8d2, field: 0xfbf6ea, ink: 0x2b2622, ball: 0xfffdf7,
-    mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e,
+// Light and dark palettes. "line" is for marks drawn on the field (launcher,
+// basket, guide, pickups); "edge" is the outline on blocks, props and balls.
+const THEMES = {
+    light: {
+        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7,
+        hit: 0xd2492a, text: '#2b2622', jelloText: '#2b2622',
+    },
+    dark: {
+        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2,
+        hit: 0xff9466, text: '#ede4d3', jelloText: '#f6efe2',
+    },
 };
+const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
+let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
 const HITSTOP = 0.045;               // tiny freeze when a block pops
@@ -26,7 +36,7 @@ const hud = {
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(COLORS.paper);
+
 $('stage').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -52,10 +62,12 @@ const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts }
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
 const halfCircle = new THREE.CircleGeometry(1, 24, 0, Math.PI);
-const outlineMat = mat(COLORS.ink);
-const ballMat = mat(COLORS.ball);
+const lineMat = mat(0);         // marks on the field
+const outlineMat = mat(0);      // edges on blocks, props and balls
+const ballMat = mat(0);
+const fieldMat = mat(0);
 
-const fieldMesh = new THREE.Mesh(unitSquare, mat(COLORS.field));
+const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
 fieldMesh.scale.set(W, H, 1);
 fieldMesh.position.set(W / 2, -H / 2, -1);
 scene.add(fieldMesh);
@@ -69,10 +81,10 @@ function rect(w, h, material, x = 0, y = 0, z = 0) {
 
 // Launcher in the top-right corner.
 const launcher = new THREE.Group();
-const launcherBody = new THREE.Mesh(unitCircle, outlineMat);
+const launcherBody = new THREE.Mesh(unitCircle, lineMat);
 launcherBody.scale.setScalar(0.34);
 const barrelPivot = new THREE.Group();
-barrelPivot.add(rect(0.62, 0.2, outlineMat, 0.31));
+barrelPivot.add(rect(0.62, 0.2, lineMat, 0.31));
 launcher.add(launcherBody, barrelPivot);
 launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
@@ -83,33 +95,25 @@ const basket = new THREE.Group();
 {
     const { half, wall, depth } = BASKET;
     basket.add(
-        rect(half * 2, wall * 2, outlineMat, 0, -depth / 2),
-        rect(wall * 2, depth, outlineMat, -half + wall, 0),
-        rect(wall * 2, depth, outlineMat, half - wall, 0),
+        rect(half * 2, wall * 2, lineMat, 0, -depth / 2),
+        rect(wall * 2, depth, lineMat, -half + wall, 0),
+        rect(wall * 2, depth, lineMat, half - wall, 0),
     );
 }
 scene.add(basket);
 
-// Aim guide: dots along the predicted path, and an arc at each bounce.
-// The arc hugs the side of the ball that meets the surface, like "(" against a left wall.
-// It follows the real push of the bounce, so glancing and spinning hits tilt it.
+// Aim guide: dots along the predicted path. Where the game expects the ball to
+// hit something, that dot is bigger and in the accent colour.
 const MAX_DOTS = 260;
-const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(0xffffff, { transparent: true, opacity: 0.8 }), MAX_DOTS);
+const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(0xffffff, { transparent: true, opacity: 0.85 }), MAX_DOTS);
 dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
-for (let i = 0; i < MAX_DOTS; i++) dots.setColorAt(i, new THREE.Color(COLORS.ink));   // colour buffer must exist before first draw
+for (let i = 0; i < MAX_DOTS; i++) dots.setColorAt(i, new THREE.Color(0));   // colour buffer must exist before first draw
 scene.add(dots);
-const bounceArc = new THREE.RingGeometry(BALL_R + 0.02, BALL_R + 0.08, 20, 1, 0, Math.PI);
-const markers = [0, 1, 2].map(() => {
-    const m = new THREE.Mesh(bounceArc, outlineMat);
-    m.visible = false;
-    scene.add(m);
-    return m;
-});
 
 // ---------- text labels ----------
 
-function makeLabel(text, color = '#2b2622') {
+function makeLabel(text, color = theme.text) {
     const c = document.createElement('canvas');
     c.width = c.height = 128;
     const tex = new THREE.CanvasTexture(c);
@@ -146,6 +150,7 @@ let zoneOffset = 0;             // visual slide used when a new zone comes up
 function buildBlockView(b) {
     const group = new THREE.Group();
     const mesh = makeBlockMesh(b.cells, b.jello, (b.id * 7.31) % 50);
+    mesh.material.uniforms.uInk.value.setHex(theme.edge);
     mesh.renderOrder = 1;
     group.add(mesh);
     // Put the number on the cell closest to the block's centre.
@@ -190,8 +195,9 @@ function updateBlockView(v, b, frameDt) {
 
 function buildPickupView(pk) {
     const group = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.27, 28), outlineMat);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.27, 28), lineMat);
     const label = makeLabel('+1');
+    group.userData.label = label;
     label.scale.setScalar(0.42);
     label.position.z = 0.1;
     group.add(ring, label);
@@ -238,7 +244,7 @@ function buildPropView(pr) {
 }
 
 function addFloater(text, x, y) {
-    const m = makeLabel(text, '#2b2622');
+    const m = makeLabel(text, theme.text);
     m.scale.setScalar(0.55);
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
@@ -369,7 +375,8 @@ function consumeEvents() {
 // ---------- aim guide ----------
 
 const tmpMatrix = new THREE.Matrix4();
-const dotInk = new THREE.Color(COLORS.ink), dotFade = new THREE.Color(COLORS.field), dotColor = new THREE.Color();
+const dotInk = new THREE.Color(), dotFade = new THREE.Color(), dotHit = new THREE.Color(), dotColor = new THREE.Color();
+const dotPos = [];
 let guideAngle = null;
 
 function drawGuide(angle) {
@@ -384,7 +391,9 @@ function drawGuide(angle) {
         let t = gap - carry;
         while (t <= seg && n < MAX_DOTS) {
             const f = t / seg;
-            tmpMatrix.makeTranslation(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, 0.45);
+            const x = x0 + (x1 - x0) * f, y = y0 + (y1 - y0) * f;
+            dotPos[n] = [x, y];
+            tmpMatrix.makeTranslation(x, y, 0.45);
             dots.setMatrixAt(n++, tmpMatrix);
             t += gap;
         }
@@ -396,22 +405,25 @@ function drawGuide(angle) {
         const f = Math.max(0, (i / n - 0.66) / 0.34);
         dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * 0.85));
     }
+    // Hit points: the dot nearest each contact moves onto it, grows and changes colour.
+    for (const c of contacts) {
+        let best = -1, bestD = Infinity;
+        for (let i = 0; i < n; i++) {
+            const d = Math.hypot(dotPos[i][0] - c.x, dotPos[i][1] - c.y);
+            if (d < bestD) { bestD = d; best = i; }
+        }
+        if (best < 0) continue;
+        tmpMatrix.makeScale(1.9, 1.9, 1).setPosition(c.x, c.y, 0.46);
+        dots.setMatrixAt(best, tmpMatrix);
+        dots.setColorAt(best, dotHit);
+    }
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
-    markers.forEach((m, i) => {
-        const c = contacts[i];
-        m.visible = !!c;
-        if (!c) return;
-        // Centred on the ball, with the curve (+y) turned to face into the surface.
-        m.position.set(c.x, c.y, 0.45);
-        m.rotation.z = Math.atan2(c.nx, -c.ny);
-    });
 }
 
 function hideGuide() {
     guideAngle = null;
     dots.count = 0;
-    markers.forEach((m) => { m.visible = false; });
 }
 
 // ---------- input ----------
@@ -568,6 +580,45 @@ function frame(now) {
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
 }
+
+// ---------- light / dark ----------
+// Follows the system setting until the player picks one; the pick is remembered.
+
+const themeButton = $('theme-toggle');
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+function readThemePick() { try { return localStorage.getItem('boop-theme'); } catch { return null; } }
+function writeThemePick(v) { try { localStorage.setItem('boop-theme', v); } catch { /* storage blocked */ } }
+
+function applyTheme(name) {
+    theme = THEMES[name];
+    document.documentElement.dataset.theme = name;
+    renderer.setClearColor(theme.paper);
+    fieldMat.color.setHex(theme.field);
+    lineMat.color.setHex(theme.line);
+    outlineMat.color.setHex(theme.edge);
+    ballMat.color.setHex(theme.ball);
+    dotInk.setHex(theme.line);
+    dotFade.setHex(theme.field);
+    dotHit.setHex(theme.hit);
+    JELLO.text = theme.jelloText;
+    for (const v of blockViews.values()) {
+        v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
+        if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
+    }
+    for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
+    const next = name === 'dark' ? 'light' : 'dark';
+    themeButton.textContent = next === 'dark' ? 'Dark mode' : 'Light mode';
+    themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
+    guideAngle = null;   // redraw the guide in the new colours
+}
+const currentTheme = () => readThemePick() ?? (systemDark.matches ? 'dark' : 'light');
+systemDark.addEventListener('change', () => { if (!readThemePick()) applyTheme(currentTheme()); });
+themeButton.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    writeThemePick(next);
+    applyTheme(next);
+});
+applyTheme(currentTheme());
 
 await RAPIER.init();
 await document.fonts.load('800 64px Manrope').catch(() => {});

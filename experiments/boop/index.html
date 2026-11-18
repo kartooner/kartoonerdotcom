@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#f1e8d2">
+    <meta name="theme-color" content="#f1e8d2" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="light dark">
     <meta name="robots" content="noindex">
     <title>Boop (prototype)</title>
     <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -16,8 +18,23 @@
         }
         :root {
             --paper: #f1e8d2;
+            --panel: #fbf6ea;
             --ink: #2b2622;
             --ink-soft: #5c544c;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --paper: #15120f;
+                --panel: #221e1a;
+                --ink: #ede4d3;
+                --ink-soft: #b3a998;
+            }
+        }
+        :root[data-theme="dark"] {
+            --paper: #15120f;
+            --panel: #221e1a;
+            --ink: #ede4d3;
+            --ink-soft: #b3a998;
         }
         html, body {
             margin: 0;
@@ -65,7 +82,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 8px 12px;
-            background: #fbf6ea;
+            background: var(--panel);
             border-left: 4px solid var(--ink);
             font-size: 0.875rem;
             font-weight: 600;
@@ -79,7 +96,7 @@
             transform: translate(-50%, -50%);
             width: min(100vw - 32px, 320px);
             padding: 20px;
-            background: #fbf6ea;
+            background: var(--panel);
             border: 2px solid var(--ink);
             text-align: center;
             pointer-events: none;
@@ -87,6 +104,20 @@
         #message h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; }
         #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
         [hidden] { display: none !important; }
+        #theme-toggle {
+            position: fixed;
+            right: 16px;
+            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
+            padding: 4px 0;
+            background: none;
+            border: 0;
+            font: inherit;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--ink);
+            text-decoration: underline;
+            cursor: pointer;
+        }
         #back {
             position: fixed;
             left: 16px;
@@ -111,6 +142,7 @@
         <p id="message-body"></p>
     </div>
     <a id="back" href="/games">← Games</a>
+    <button id="theme-toggle" type="button">Dark mode</button>
 
     <script type="importmap">
         {

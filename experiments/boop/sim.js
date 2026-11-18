@@ -76,6 +76,19 @@ export function zoneSpec(d) {
     };
 }
 
+// How a zone's blocks sit together. Picked per zone so layouts vary.
+//   packed:  blocks butt up against each other
+//   airy:    every block has breathing room, some sit a little off the grid
+//   mixed:   some of each
+//   stacked: more loose blocks, more tall bars, more leaning (from zone 3)
+const STYLES = {
+    packed: { fill: 0.06, gap: 0, jitter: 0, loose: 1, tall: 1, lean: 0.12 },
+    airy: { fill: -0.08, gap: 1, jitter: 1, loose: 1, tall: 1, lean: 0.12 },
+    mixed: { fill: 0, gap: 0.5, jitter: 0.5, loose: 1, tall: 1, lean: 0.14 },
+    stacked: { fill: 0.02, gap: 0.3, jitter: 0, loose: 1.9, tall: 3, lean: 0.22 },
+};
+const MIN_PICKUP_GAP = 3.5;         // +1 pickups are always this many cells apart or more
+
 // Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
 export function blockScale(hp, hp0) {
     const bulk = 0.78 + 0.22 * Math.min(1, Math.log(hp0) / Math.log(60));
@@ -179,11 +192,11 @@ export class Sim {
     // Three kinds: pinned (held on a spring), loose (gravity only, rests on and
     // tumbles off other blocks) and jello (balls pass through).
 
-    addBlock(cells, hp, kind = 'pinned', tilt = 0) {
+    addBlock(cells, hp, kind = 'pinned', tilt = 0, dx = 0, dy = 0) {
         const { R, world, s } = this;
         const n = cells.length;
-        const cx = cells.reduce((a, [c]) => a + c + 0.5, 0) / n;
-        const cy = cells.reduce((a, [, r]) => a - (r + 0.5), 0) / n;
+        const cx = cells.reduce((a, [c]) => a + c + 0.5, 0) / n + dx;
+        const cy = cells.reduce((a, [, r]) => a - (r + 0.5), 0) / n + dy;
         let desc;
         if (kind === 'jello') desc = R.RigidBodyDesc.fixed().setTranslation(cx, cy);
         else if (kind === 'loose') desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setRotation(tilt)
@@ -195,7 +208,7 @@ export class Sim {
         const b = {
             id, body: body.handle, hp, hp0: hp, scale: 1, cols: [],
             jello: kind === 'jello', loose: kind === 'loose',
-            cells: cells.map(([c, r]) => [c + 0.5 - cx, -(r + 0.5) - cy]),
+            cells: cells.map(([c, r]) => [c + 0.5 - cx + dx, -(r + 0.5) - cy + dy]),
             anchor: [cx, cy], anchorA: 0,
         };
         s.blocks[id] = b;
@@ -366,6 +379,10 @@ export class Sim {
         if (s.depth > 1) s.volley += 1;
         const spec = zoneSpec(s.depth);
         s.note = spec.note ?? null;
+        const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : ['packed', 'airy', 'mixed', 'stacked'];
+        const styleName = names[Math.floor(this.rand() * names.length)];
+        const style = STYLES[styleName];
+        s.style = styleName;
 
         // grid[r][c] = 0 free, -1 prop, otherwise the index+1 of the planned block.
         const grid = Array.from({ length: ZONE_ROWS }, () => new Array(W).fill(0));
@@ -392,16 +409,26 @@ export class Sim {
             i++;
         }
 
+        const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
+        const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1);
+        const total = SHAPES.reduce((n, sh) => n + weight(sh), 0);
+        const touchesOther = (cells) => cells.some(([c, r]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => {
+            const cc = c + dc, rr = r + dr;
+            if (cells.some(([x, y]) => x === cc && y === rr)) return false;
+            return cc >= 0 && cc < W && rr >= 0 && rr < ZONE_ROWS && grid[rr][cc] !== 0;
+        }));
         const plan = [];
         let filled = 0;
-        const target = Math.round(W * ZONE_ROWS * spec.fill);
-        for (let tries = 0; tries < 600 && filled < target; tries++) {
-            let pick = this.rand() * SHAPE_TOTAL, shape = SHAPES[0];
-            for (const sh of SHAPES) { if ((pick -= sh.w) <= 0) { shape = sh; break; } }
+        const target = Math.round(W * ZONE_ROWS * (spec.fill + style.fill));
+        for (let tries = 0; tries < 800 && filled < target; tries++) {
+            let pick = this.rand() * total, shape = SHAPES[0];
+            for (const sh of SHAPES) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ZONE_ROWS);
             const cells = shape.c.map(([c, r]) => [col + c, row + r]);
             if (!cells.every(([c, r]) => free(c, r)) || !rowOk(cells)) continue;
-            plan.push({ cells, kind: this.rand() < spec.jello ? 'jello' : 'pinned', tilt: 0 });
+            const wantsGap = this.rand() < style.gap;
+            if (wantsGap && touchesOther(cells)) continue;
+            plan.push({ cells, kind: this.rand() < spec.jello ? 'jello' : 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap });
             cells.forEach(([c, r]) => { grid[r][c] = plan.length; });
             filled += cells.length;
         }
@@ -411,19 +438,24 @@ export class Sim {
             const g = r + 1 < ZONE_ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && plan[g - 1].kind === 'pinned';
         });
-        const wantLoose = Math.round(plan.length * spec.loose);
+        const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             if (p.kind !== 'pinned' || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
-            // Tall bars next to a neighbour start leaning on it.
-            const col = p.cells[0][0];
-            if (p.cells.length >= 2 && p.cells.every(([c]) => c === col)) {
-                const top = Math.min(...p.cells.map(([, r]) => r));
-                const side = [-1, 1].find((dc) => grid[top]?.[col + dc] > 0);
-                if (side) p.tilt = -side * 0.12;
-            }
+            // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
+            const top = Math.min(...p.cells.map(([, r]) => r));
+            const topCells = p.cells.filter(([, r]) => r === top);
+            const side = [-1, 1].find((dc) => topCells.some(([c]) => grid[top]?.[c + dc] > 0 && !p.cells.some(([x, y]) => x === c + dc && y === top)));
+            if (side) p.tilt = -side * style.lean * (0.6 + 0.8 * this.rand());
+        }
+
+        // Free-standing pinned blocks in airy layouts sit a little off the grid.
+        for (const p of plan) {
+            if (p.kind === 'loose' || !p.wantsGap || this.rand() >= style.jitter) continue;
+            p.dx = (this.rand() - 0.5) * 0.36;
+            p.dy = (this.rand() - 0.5) * 0.24;
         }
 
         for (const p of plan) {
@@ -431,15 +463,17 @@ export class Sim {
             let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (1 + 0.15 * (p.cells.length - 1));
             if (p.kind === 'jello') hp *= 0.5;
             else if (this.rand() < spec.tough) hp *= 2.5 + this.rand() * 1.5;   // a bulky one to wear down
-            this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt);
+            this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
         }
 
-        // Two +1 pickups in open cells that are open above too, so a ball can reach them.
-        const open = [];
+        // Two +1 pickups in open cells that are open above too, so a ball can reach them,
+        // and never close together.
+        let open = [];
         grid.forEach((row, r) => row.forEach((g, c) => { if (g === 0 && (r === 0 || grid[r - 1][c] === 0)) open.push([c, r]); }));
         for (let i = 0; i < 2 && open.length; i++) {
-            const [c, r] = open.splice(Math.floor(this.rand() * open.length), 1)[0];
+            const [c, r] = open[Math.floor(this.rand() * open.length)];
             this.addPickup(c + 0.5, -(r + ZONE_TOP_ROW + 0.5));
+            open = open.filter(([cc, rr]) => Math.hypot(cc - c, rr - r) >= MIN_PICKUP_GAP);
         }
 
         // Let loose blocks settle before the zone is shown. Nothing scores while this runs.
