@@ -2550,13 +2550,9 @@
             // RULE 10: Boss Gauntlet triggers at specific milestones (replaces old rotating boss)
             // Trigger at 150 miles, then every 150 miles (300, 450, 600...)
             // Boss gauntlet is EXTREME - nearly unsustainable density, constant dodging
-            if (phaseName === 'boss_gauntlet') {
-                if (milesFlown >= 150 && (milesFlown === 150 || (milesFlown - 150) % 150 === 0)) {
-                    weight *= 1000; // Virtually guarantee boss gauntlet at milestone
-                } else {
-                    weight *= 0.01; // Extremely rare otherwise
-                }
-            }
+            // Boss encounters (Sky Leviathan / gauntlet) are scheduled by maybeStartBoss()
+            // every 100 miles from 150, so never pick the gauntlet at random here.
+            if (phaseName === 'boss_gauntlet') weight = 0;
 
             // RULE 11: Intensity balancing for "extreme" phases (boss gauntlet)
             if (lastIntensity === 'extreme') {
@@ -2819,41 +2815,7 @@
 
     // --- CHRISTMAS SNOW (Seasonal: Until Jan 1st) ---
     const snowflakes = [];
-    const isChristmasSeason = () => {
-        const now = new Date();
-        const month = now.getMonth(); // 0-11
-        const day = now.getDate();
-        // Show snow from Dec 20 through Jan 1
-        return (month === 11 && day >= 20) || (month === 0 && day === 1);
-    };
-
-    if (isChristmasSeason()) {
-        const snowGeometry = new THREE.CircleGeometry(0.15, 6); // Small hexagon
-        const snowMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.6,
-            side: THREE.DoubleSide
-        });
-
-        // Pre-create 50 snowflakes for subtle effect
-        for (let i = 0; i < 50; i++) {
-            const snowflake = new THREE.Mesh(snowGeometry, snowMat.clone());
-
-            // Random starting positions spread across view
-            snowflake.position.x = (Math.random() - 0.5) * 40; // Wide spread
-            snowflake.position.y = Math.random() * 20 + 5; // High up
-            snowflake.position.z = (Math.random() - 0.5) * 100 - 50; // Depth variation
-
-            // Random fall speeds and drift
-            snowflake.userData.fallSpeed = Math.random() * 0.02 + 0.01; // 0.01-0.03
-            snowflake.userData.driftSpeed = (Math.random() - 0.5) * 0.01; // Slight horizontal drift
-            snowflake.userData.rotationSpeed = (Math.random() - 0.5) * 0.02; // Gentle rotation
-
-            scene.add(snowflake);
-            snowflakes.push(snowflake);
-        }
-    }
+    // Snow is now part of the weather system below (always on Dec 20 - Jan 1)
 
     // --- CHECKPOINT GATE ---
     const gates = [];
@@ -2897,6 +2859,481 @@
         }
 
         return gate;
+    }
+
+    // --- WEATHER -------------------------------------------------------------
+    // Rolls at each checkpoint. Snow and storm are one particle system each (one draw
+    // call, a few hundred points moved per frame); aurora is two ribbons in the sky.
+    // Each has a small, announced effect on play.
+    const WEATHER = {
+        clear:  { name: 'CLEAR SKIES', tip: '' },
+        snow:   { name: 'SNOWFALL',    tip: 'LOW VISIBILITY' },
+        storm:  { name: 'NEON STORM',  tip: 'CROSSWINDS' },
+        aurora: { name: 'AURORA',      tip: 'RINGS x2' },
+    };
+    const isHolidaySeason = () => {
+        const n = new Date(), m = n.getMonth(), d = n.getDate();
+        return (m === 11 && d >= 20) || (m === 0 && d <= 1); // Dec 20 - Jan 1: always snow
+    };
+    const weather = { type: 'clear', next: 'clear', level: 0, windDir: 1, windTimer: 4, wind: 0, flash: 0, flashTimer: 6 };
+    const WX = { minX: -22, maxX: 22, minY: -1, maxY: 14, minZ: -110, maxZ: 8 };
+    const wxRand = (a, b) => a + Math.random() * (b - a);
+    const BG_BASE = new THREE.Color(bgColor), BG_FLASH = new THREE.Color(0x2a2050);
+
+    // Snow: soft points that drift down and past you
+    const SNOW_COUNT = isMobile ? 260 : 520;
+    const snowPos = new Float32Array(SNOW_COUNT * 3), snowSeed = new Float32Array(SNOW_COUNT);
+    for (let i = 0; i < SNOW_COUNT; i++) {
+        snowPos[i * 3] = wxRand(WX.minX, WX.maxX); snowPos[i * 3 + 1] = wxRand(WX.minY, WX.maxY); snowPos[i * 3 + 2] = wxRand(WX.minZ, WX.maxZ);
+        snowSeed[i] = Math.random() * 6.283;
+    }
+    const snowGeo = new THREE.BufferGeometry();
+    snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3).setUsage(THREE.DynamicDrawUsage));
+    const snowMat = new THREE.PointsMaterial({ color: 0xdff8ff, size: isMobile ? 0.2 : 0.15, transparent: true, opacity: 0, depthWrite: false });
+    const snowPoints = new THREE.Points(snowGeo, snowMat);
+    snowPoints.frustumCulled = false; snowPoints.visible = false;
+    scene.add(snowPoints);
+
+    // Neon storm: slanted cyan/magenta rain streaks (one LineSegments)
+    const RAIN_COUNT = isMobile ? 160 : 320;
+    const rainPos = new Float32Array(RAIN_COUNT * 6), rainCol = new Float32Array(RAIN_COUNT * 6);
+    const rainHead = new Float32Array(RAIN_COUNT * 3);
+    for (let i = 0; i < RAIN_COUNT; i++) {
+        rainHead[i * 3] = wxRand(WX.minX, WX.maxX); rainHead[i * 3 + 1] = wxRand(WX.minY, WX.maxY + 6); rainHead[i * 3 + 2] = wxRand(WX.minZ, WX.maxZ);
+        const c = new THREE.Color(Math.random() < 0.7 ? 0x00f0ff : 0xff3df2);
+        for (let k = 0; k < 2; k++) { rainCol[i * 6 + k * 3] = c.r; rainCol[i * 6 + k * 3 + 1] = c.g; rainCol[i * 6 + k * 3 + 2] = c.b; }
+    }
+    const rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3).setUsage(THREE.DynamicDrawUsage));
+    rainGeo.setAttribute('color', new THREE.BufferAttribute(rainCol, 3));
+    const rainMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const rainLines = new THREE.LineSegments(rainGeo, rainMat);
+    rainLines.frustumCulled = false; rainLines.visible = false;
+    scene.add(rainLines);
+
+    // Aurora: two wavy ribbons high in the sky, unaffected by fog
+    const auroraRibbons = [];
+    for (let r = 0; r < 2; r++) {
+        const geo = new THREE.PlaneGeometry(320, 10, 32, 1);
+        const cols = new Float32Array(geo.attributes.position.count * 3);
+        for (let i = 0; i < geo.attributes.position.count; i++) {
+            const x = geo.attributes.position.getX(i), top = geo.attributes.position.getY(i) > 0;
+            const c = new THREE.Color().setHSL(0.38 + 0.12 * Math.sin(x * 0.02 + r), 1, top ? 0.08 : 0.5);
+            cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+        }
+        geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+        geo.userData.baseY = Float32Array.from({ length: geo.attributes.position.count }, (_, i) => geo.attributes.position.getY(i));
+        const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+            vertexColors: true, transparent: true, opacity: 0, depthWrite: false, fog: false,
+            side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+        }));
+        mesh.position.set(0, 36 + r * 10, -170 - r * 30);
+        mesh.rotation.x = 0.25;
+        mesh.visible = false; mesh.frustumCulled = false;
+        scene.add(mesh);
+        auroraRibbons.push(mesh);
+    }
+
+    function rollWeather(milesNow) {
+        if (isHolidaySeason()) { setWeather('snow'); return; }
+        if (milesNow < 20) { setWeather('clear'); return; } // keep the first stretch simple
+        const pool = ['clear', 'clear', 'snow', 'storm', 'storm', 'aurora'].filter(t => t !== weather.next);
+        setWeather(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    function setWeather(type, immediate = false) {
+        weather.next = type;
+        if (immediate) { weather.type = type; weather.level = type === 'clear' ? 0 : 1; announceWeather(); }
+    }
+    function announceWeather() {
+        const w = WEATHER[weather.type];
+        if (weather.type === 'clear') return;
+        levelUpMessage = w.tip ? `${w.name} - ${w.tip}` : w.name;
+        levelUpMessageTimer = 150;
+    }
+    // Multiplier the ring code uses for points
+    const weatherRingBonus = () => (weather.type === 'aurora' && weather.level > 0.5 ? 2 : 1);
+
+    function updateWeather(deltaTime, speed) {
+        const sec = deltaTime / 60;
+        // Fade out the old weather, swap, fade in the new one (~2.5s each way)
+        if (weather.next !== weather.type) {
+            weather.level = Math.max(0, weather.level - sec * 0.4);
+            if (weather.level === 0) { weather.type = weather.next; announceWeather(); }
+        } else if (weather.type !== 'clear') {
+            weather.level = Math.min(1, weather.level + sec * 0.4);
+        }
+        const L = weather.level, type = weather.type;
+
+        // Snow: shorter visibility
+        const snowL = type === 'snow' ? L : 0;
+        scene.fog.near = 60 - 22 * snowL;
+        scene.fog.far = 120 - 38 * snowL;
+        snowPoints.visible = snowL > 0.01;
+        if (snowPoints.visible) {
+            snowMat.opacity = 0.85 * snowL;
+            const t = time;
+            for (let i = 0; i < SNOW_COUNT; i++) {
+                const j = i * 3;
+                snowPos[j] += Math.sin(t * 2 + snowSeed[i]) * 0.02 * deltaTime;
+                snowPos[j + 1] -= (0.025 + (snowSeed[i] % 1) * 0.03) * deltaTime;
+                snowPos[j + 2] += speed * 0.55; // drifts past slower than the ground: depth
+                if (snowPos[j + 1] < WX.minY || snowPos[j + 2] > WX.maxZ) {
+                    snowPos[j] = wxRand(WX.minX, WX.maxX); snowPos[j + 1] = WX.maxY; snowPos[j + 2] = wxRand(WX.minZ, WX.maxZ - 20);
+                }
+            }
+            snowGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Storm: rain streaks, gusting crosswind, the odd lightning flash
+        const stormL = type === 'storm' ? L : 0;
+        rainLines.visible = stormL > 0.01;
+        if (stormL > 0) {
+            weather.windTimer -= sec;
+            if (weather.windTimer <= 0) {
+                weather.windDir = Math.random() < 0.5 ? -1 : 1;
+                weather.windTimer = wxRand(5, 9);
+                if (crashMessageTimer <= 0 && levelUpMessageTimer <= 0) {
+                    levelUpMessage = weather.windDir < 0 ? 'WIND <<<' : 'WIND >>>';
+                    levelUpMessageTimer = 60;
+                }
+            }
+            // Ease toward the gust direction; gentle enough to steer against
+            weather.wind += (weather.windDir * stormL - weather.wind) * Math.min(1, 0.02 * deltaTime);
+            targetX = Math.max(-8, Math.min(8, targetX + weather.wind * 0.025 * deltaTime));
+            weather.flashTimer -= sec;
+            if (weather.flashTimer <= 0) { weather.flash = 1; weather.flashTimer = wxRand(6, 12); }
+        } else {
+            weather.wind *= 0.9;
+        }
+        if (rainLines.visible) {
+            rainMat.opacity = 0.75 * stormL;
+            const vx = weather.wind * 0.12, vy = -0.9, vz = 0.35 + speed;
+            for (let i = 0; i < RAIN_COUNT; i++) {
+                const j = i * 3, k = i * 6;
+                rainHead[j] += vx * deltaTime; rainHead[j + 1] += vy * deltaTime; rainHead[j + 2] += vz;
+                if (rainHead[j + 1] < WX.minY || rainHead[j + 2] > WX.maxZ) {
+                    rainHead[j] = wxRand(WX.minX, WX.maxX); rainHead[j + 1] = WX.maxY + wxRand(0, 6); rainHead[j + 2] = wxRand(WX.minZ, WX.maxZ - 10);
+                }
+                rainPos[k] = rainHead[j]; rainPos[k + 1] = rainHead[j + 1]; rainPos[k + 2] = rainHead[j + 2];
+                rainPos[k + 3] = rainHead[j] - vx * 2.2; rainPos[k + 4] = rainHead[j + 1] - vy * 1.4; rainPos[k + 5] = rainHead[j + 2] - 0.6;
+            }
+            rainGeo.attributes.position.needsUpdate = true;
+        }
+        // Lightning: brief purple flash of the sky and fog
+        if (weather.flash > 0) {
+            weather.flash = Math.max(0, weather.flash - sec * 4);
+            const f = weather.flash > 0.75 ? 1 : weather.flash; // a sharp flash, then a quick fade
+            scene.background.copy(BG_BASE).lerp(BG_FLASH, f * stormL);
+            scene.fog.color.copy(scene.background);
+        } else if (scene.fog.color.getHex() !== bgColor) {
+            scene.background.copy(BG_BASE); scene.fog.color.copy(BG_BASE);
+        }
+
+        // Aurora: rings worth double while it's out
+        const auroraL = type === 'aurora' ? L : 0;
+        for (let r = 0; r < auroraRibbons.length; r++) {
+            const m = auroraRibbons[r];
+            m.visible = auroraL > 0.01;
+            if (!m.visible) continue;
+            m.material.opacity = 0.55 * auroraL;
+            const pos = m.geometry.attributes.position, baseY = m.geometry.userData.baseY;
+            for (let i = 0; i < pos.count; i++) pos.setY(i, baseY[i] + Math.sin(pos.getX(i) * 0.03 + time * 1.5 + r * 2) * 4);
+            pos.needsUpdate = true;
+        }
+    }
+
+    function resetWeather() {
+        weather.wind = 0; weather.flash = 0; weather.windTimer = 4; weather.flashTimer = 6;
+        setWeather(isHolidaySeason() ? 'snow' : 'clear', true);
+        if (weather.type === 'clear') { weather.level = 0; }
+        scene.background.copy(BG_BASE); scene.fog.color.copy(BG_BASE);
+    }
+
+    // --- BOSS: SKY LEVIATHAN ----------------------------------------------------
+    // A giant wireframe creature that hovers ahead of you, dropping spores and sweeping
+    // beams across your path. Survive until it gives up (or shoot its glowing core with
+    // lasers to drive it off sooner). Alternates with the building gauntlet every 100
+    // miles from mile 150. Built from a handful of meshes; projectiles are pooled.
+    let bossActive = false; // also pauses normal spawning (checked throughout the loop)
+    let nextBossMile = 150, bossEncounters = 0;
+    const leviathan = { phase: 'off', t: 0, duration: 35, hp: 40, maxHp: 40, attackTimer: 0, attackIdx: 0, hitFlash: 0, group: null };
+    const bossWire = new THREE.MeshBasicMaterial({ color: 0xff2bd6, wireframe: true, transparent: true, opacity: 0.9 });
+    const bossCoreMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1 });
+
+    (function buildLeviathan() {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.OctahedronGeometry(1, 1), bossWire);
+        body.scale.set(3.2, 1.2, 7);
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), bossWire);
+        head.scale.set(1.7, 1, 2.4); head.position.z = 7.5;
+        g.add(head);
+        // Wings: a swept triangle each side, flapping from the body
+        const wingGeo = new THREE.BufferGeometry();
+        wingGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, -3, 15, 0.5, 2, 0, 0, 4, 0, 0, -3, 9, 0, -5, 15, 0.5, 2]), 3));
+        const wings = [];
+        for (const side of [1, -1]) {
+            const pivot = new THREE.Group();
+            pivot.position.x = 2.4 * side;
+            const w = new THREE.Mesh(wingGeo, bossWire);
+            w.scale.x = side;
+            pivot.add(w);
+            g.add(pivot);
+            wings.push(pivot);
+        }
+        const tail = [];
+        for (let i = 0; i < 3; i++) {
+            const s = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), bossWire);
+            s.scale.set(1.3 - i * 0.3, 0.7 - i * 0.15, 2.2 - i * 0.4);
+            s.position.z = -8 - i * 3;
+            g.add(s); tail.push(s);
+        }
+        const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 0), bossCoreMat);
+        core.position.set(0, -0.6, 3.5);
+        g.add(core);
+        g.visible = false;
+        scene.add(g);
+        leviathan.group = g; leviathan.wings = wings; leviathan.tail = tail; leviathan.core = core;
+    })();
+
+    // Pooled projectiles: spores (one InstancedMesh) and sweeping beams
+    const SPORE_MAX = 32;
+    const spores = Array.from({ length: SPORE_MAX }, () => ({ alive: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, spin: 0 }));
+    const sporeMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.7, 0),
+        new THREE.MeshBasicMaterial({ color: 0xff7a1a, wireframe: true }), SPORE_MAX);
+    sporeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    sporeMesh.frustumCulled = false; sporeMesh.count = 0;
+    scene.add(sporeMesh);
+    const sporeDummy = new THREE.Object3D();
+    const beams = [0, 1].map(() => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(26, 0.45, 0.45),
+            new THREE.MeshBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0.9 }));
+        m.visible = false;
+        scene.add(m);
+        return { mesh: m, alive: false, warn: 0, y: 0, z: 0 };
+    });
+
+    // Bar at the top of the screen while the fight is on
+    const bossBar = document.createElement('div');
+    bossBar.id = 'boss-bar';
+    bossBar.hidden = true;
+    bossBar.innerHTML = '<div class="boss-name">SKY LEVIATHAN</div><div class="boss-track"><i></i></div>';
+    (container.parentElement || document.body).appendChild(bossBar);
+    const bossBarFill = bossBar.querySelector('i');
+
+    // A hit from a boss attack: same rules as crashing into a structure
+    function applyHazardHit(x, y, z) {
+        if (gracePeriodActive) return;
+        spawnCollisionDebris(x, y, z, curX, curY);
+        if (invincibilityActive) { crashMessage = 'INVINCIBLE!'; crashMessageTimer = 40; return; }
+        collisionFlash = 0.5;
+        if (shieldActive && shieldHits < maxShieldHits) {
+            shieldHits++;
+            uiControls.updateShieldBar(shieldActive, shieldHits);
+            crashMessage = `SHIELD HIT ${shieldHits}/${maxShieldHits}`;
+            crashMessageTimer = 50;
+            if (shieldHits >= maxShieldHits) { shieldActive = false; uiControls.updateShieldBar(shieldActive, shieldHits); crashMessage = 'SHIELD DOWN!'; }
+            activateGracePeriod();
+        } else if (currentHealth > 0) {
+            currentHealth--;
+            uiControls.updateHealthBar(currentHealth, maxHealth);
+            crashMessage = currentHealth > 0 ? `HIT! ${currentHealth}♥` : 'HIT!';
+            crashMessageTimer = 50;
+            activateGracePeriod();
+            if (currentHealth === 0) handleDeath();
+        }
+        trackCollision(performance.now());
+    }
+
+    function clearArenaForBoss() {
+        // Buildings are instanced: hide by zero-scaling their instance (only ones still
+        // ahead of you; anything alongside passes by naturally)
+        buildings.forEach(b => {
+            if (!b.active || b.position.z > -5) return;
+            const mesh = b.geometry === 'box' ? boxInstancedMesh : b.geometry === 'pyramid' ? pyramidInstancedMesh : cylinderInstancedMesh;
+            b.active = false; b.position.z = -500; b.scale.set(0, 0, 0);
+            updateInstanceMatrix(b, mesh, buildingInstances[b.geometry].indexOf(b));
+            if (b.rooftopDetail) { updateRooftopDetail(b.rooftopDetail, b); b.rooftopDetail = null; }
+        });
+        walls.forEach(w => { w.visible = false; w.position.z = -1000; }); walls.length = 0;
+        barrierWalls.forEach(w => { w.visible = false; w.position.z = -1000; }); barrierWalls.length = 0;
+        coins.forEach(c => { c.visible = false; c.position.z = -1000; c.userData.collected = false; }); coins.length = 0;
+    }
+
+    function startBossEncounter() {
+        bossEncounters++;
+        nextBossMile += 100;
+        if (bossEncounters % 2 === 0) {
+            // Every other one is the building gauntlet
+            currentPhase = 'boss_gauntlet';
+            phaseDuration = 30000;
+            phaseStartTime = Date.now();
+            levelUpMessage = 'BOSS GAUNTLET!';
+            levelUpMessageTimer = 120;
+            return;
+        }
+        bossActive = true;
+        clearArenaForBoss();
+        const L = leviathan;
+        L.phase = 'enter'; L.t = 0;
+        L.duration = Math.min(50, 30 + bossEncounters * 3); // a little longer each time
+        L.maxHp = 40 + bossEncounters * 8; L.hp = L.maxHp;
+        L.attackTimer = 2.5; L.attackIdx = 0; L.hitFlash = 0;
+        L.group.position.set(0, 20, -140);
+        L.group.visible = true;
+        bossBar.hidden = false;
+        levelUpMessage = 'SKY LEVIATHAN APPROACHES';
+        levelUpMessageTimer = 150;
+    }
+
+    function endBossFight(outcome) {
+        const L = leviathan;
+        bossActive = false;
+        L.phase = 'off';
+        L.group.visible = false;
+        bossBar.hidden = true;
+        spores.forEach(s => { s.alive = false; }); sporeMesh.count = 0;
+        beams.forEach(b => { b.alive = false; b.mesh.visible = false; });
+        if (outcome) {
+            const bonus = outcome === 'defeated' ? 1000 : 500;
+            score += bonus;
+            if (currentHealth > 0 && currentHealth < maxHealth) { currentHealth++; uiControls.updateHealthBar(currentHealth, maxHealth); }
+            levelUpMessage = outcome === 'defeated' ? `LEVIATHAN DEFEATED +${bonus}` : `LEVIATHAN DRIVEN OFF +${bonus}`;
+            levelUpMessageTimer = 160;
+        }
+        // A short calm after the fight
+        currentPhase = 'breather';
+        phaseDuration = 8000;
+        phaseStartTime = Date.now();
+        breatherSetup = false;
+    }
+
+    function launchSpores(count) {
+        const g = leviathan.group.position;
+        // A readable volley: an evenly spaced row at your height. Go over or under it,
+        // or slip through a gap between two spores.
+        const offsets = count === 3 ? [-3.6, 0, 3.6] : [-7.2, -3.6, 0, 3.6, 7.2];
+        const rowY = Math.max(0.8, Math.min(5.2, curY));
+        const frames = wxRand(85, 100); // time to reach you, in 60fps frames (~1.5s)
+        for (const off of offsets) {
+            const s = spores.find(p => !p.alive);
+            if (!s) break;
+            const tx = Math.max(-8.5, Math.min(8.5, curX + off));
+            const ty = rowY;
+            s.alive = true; s.x = g.x; s.y = g.y - 1; s.z = g.z + 3;
+            s.vz = (3.5 - s.z) / frames; s.vx = (tx - s.x) / frames; s.vy = (ty - s.y) / frames;
+            s.spin = Math.random() * 6;
+        }
+    }
+    function launchBeam() {
+        const b = beams.find(x => !x.alive);
+        if (!b) return;
+        b.alive = true; b.warn = 0.7; // shows faintly at the boss first, then sweeps
+        b.y = Math.random() < 0.5 ? 1.3 : 4.6; // fly over a low beam, under a high one
+        b.z = leviathan.group.position.z + 2;
+        b.mesh.position.set(0, b.y, b.z);
+        b.mesh.material.opacity = 0.25;
+        b.mesh.visible = true;
+    }
+
+    function updateBossFight(deltaTime, speed) {
+        const L = leviathan;
+        if (L.phase === 'off') return;
+        const sec = deltaTime / 60;
+        L.t += sec;
+        const g = L.group;
+        // Body animation
+        const flap = Math.sin(time * 6) * 0.35;
+        L.wings[0].rotation.z = flap; L.wings[1].rotation.z = -flap;
+        L.tail.forEach((s, i) => { s.position.x = Math.sin(time * 4 - i * 0.8) * (0.6 + i * 0.5); });
+        L.hitFlash = Math.max(0, L.hitFlash - sec * 4);
+        bossCoreMat.color.setHex(L.hitFlash > 0 ? 0xffffff : 0xffaa00);
+        L.core.scale.setScalar(1 + Math.sin(time * 10) * 0.12 + L.hitFlash * 0.4);
+
+        if (L.phase === 'enter') {
+            const u = Math.min(1, L.t / 3);
+            g.position.z = -140 + (95 * u);
+            g.position.y = 20 - 9 * u;
+            if (u >= 1) { L.phase = 'fight'; L.t = 0; }
+        } else if (L.phase === 'fight') {
+            // Weave across, leaning toward your side
+            const tx = Math.sin(L.t * 0.6) * 5 + curX * 0.35;
+            g.position.x += (tx - g.position.x) * Math.min(1, 0.03 * deltaTime);
+            g.position.y = 11 + Math.sin(L.t * 1.3) * 0.8;
+            g.rotation.z = (tx - g.position.x) * -0.04;
+            // Attacks speed up as the fight goes on
+            const progress = L.t / L.duration;
+            L.attackTimer -= sec;
+            if (L.attackTimer <= 0) {
+                L.attackIdx++;
+                if (L.attackIdx % 3 === 0) launchBeam();
+                else launchSpores(progress > 0.6 ? 5 : 3);
+                L.attackTimer = Math.max(1.4, 2.4 - progress * 0.9 - bossEncounters * 0.05);
+            }
+            // Lasers (if you bought them) can hit the core
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const lz = lasers[i].position;
+                const cx = g.position.x, cy = g.position.y - 0.6, cz = g.position.z + 3.5;
+                if (Math.abs(lz.x - cx) < 2.5 && Math.abs(lz.y - cy) < 2.5 && Math.abs(lz.z - cz) < 3) {
+                    scene.remove(lasers[i]); lasers.splice(i, 1);
+                    L.hp--; L.hitFlash = 1; score += 10;
+                }
+            }
+            if (L.hp <= 0) { L.phase = 'leave'; L.t = 0; L.outcome = 'defeated'; }
+            else if (L.t >= L.duration) { L.phase = 'leave'; L.t = 0; L.outcome = 'survived'; }
+            bossBarFill.style.width = Math.max(0, Math.min(1 - progress, L.hp / L.maxHp)) * 100 + '%';
+        } else if (L.phase === 'leave') {
+            g.position.y += 0.25 * deltaTime;
+            g.position.z -= 0.9 * deltaTime;
+            bossBarFill.style.width = '0%';
+            if (L.t > 2.5) endBossFight(L.outcome);
+        }
+
+        // Spores
+        let n = 0;
+        for (const s of spores) {
+            if (!s.alive) continue;
+            // Constant velocity, so each spore arrives exactly where it was aimed
+            s.x += s.vx * deltaTime; s.y += s.vy * deltaTime; s.z += s.vz * deltaTime;
+            s.spin += 0.1 * deltaTime;
+            if (Math.abs(s.z - 3.5) < 0.9 && Math.hypot(s.x - curX, s.y - curY) < 0.85) {
+                s.alive = false; applyHazardHit(s.x, s.y, s.z); continue;
+            }
+            if (s.z > 14) { s.alive = false; continue; }
+            sporeDummy.position.set(s.x, s.y, s.z);
+            sporeDummy.rotation.set(s.spin, s.spin * 0.7, 0);
+            sporeDummy.updateMatrix();
+            sporeMesh.setMatrixAt(n++, sporeDummy.matrix);
+        }
+        sporeMesh.count = n;
+        sporeMesh.instanceMatrix.needsUpdate = true;
+
+        // Beams: warn, then sweep toward you across the whole width
+        for (const b of beams) {
+            if (!b.alive) continue;
+            if (b.warn > 0) {
+                b.warn -= sec;
+                b.mesh.position.x = g.position.x * 0.2;
+                if (b.warn <= 0) b.mesh.material.opacity = 0.9;
+                continue;
+            }
+            b.z += (0.55 * deltaTime) + speed * 0.3; // speed already includes deltaTime
+            b.mesh.position.set(0, b.y, b.z);
+            if (Math.abs(b.z - 3.5) < 0.6 && Math.abs(curY - b.y) < 0.6) { applyHazardHit(curX, b.y, b.z); b.alive = false; b.mesh.visible = false; continue; }
+            if (b.z > 14) { b.alive = false; b.mesh.visible = false; }
+        }
+    }
+
+    // Start a fight when due (not right before a checkpoint, never during one)
+    function maybeStartBoss(milesNow) {
+        if (bossActive || checkpointActive || gates.length > 0) return;
+        if (milesNow >= nextBossMile && nextCheckpoint - milesNow > 6) startBossEncounter();
+    }
+
+    function resetBosses() {
+        if (leviathan.phase !== 'off') endBossFight(null);
+        bossActive = false;
+        nextBossMile = 150; bossEncounters = 0;
     }
 
     /* --- ROTATING BOSS (MINI-BOSS CHALLENGE) --- COMMENTED OUT - NEEDS REWORK
@@ -3002,8 +3439,6 @@
     }
     END BOSS CODE */
 
-    // Temporary boss replacement: intense building phase
-    let bossActive = false; // Keep flag for phase system compatibility
 
     // Brief invulnerability after a hit, so one crash can't cost several hearts
     function activateGracePeriod() {
@@ -3063,6 +3498,8 @@
 
     // Reset game state and start new run (for RETRY button)
     window.resetAndStartNewRun = function() {
+        resetBosses();
+        resetWeather();
         // Reset core game state
         score = 0;
         distance = 0;
@@ -3363,6 +3800,7 @@
         uiControls.closeCheckpointUI();
 
         checkpointActive = false;
+        rollWeather(distance / 5280); // weather can change at each checkpoint
 
         // Activate 3-second grace period when exiting upgrade screen
         gracePeriodActive = true;
@@ -5216,7 +5654,7 @@
                     if (distSq < ringRadiusSq) {
                         ring.userData.collected = true;
                         ring.userData.collectTime = Date.now(); // Track when collected
-                        const points = ring.userData.points || 25;
+                        const points = (ring.userData.points || 25) * weatherRingBonus(); // aurora doubles
                         score += points;
 
                         // Track ring hit for difficulty system (hidden)
@@ -5761,7 +6199,7 @@
         }
 
         // Checkpoint system - spawn gate at checkpoint
-        if (miles >= nextCheckpoint && gates.length === 0 && !checkpointActive) {
+        if (miles >= nextCheckpoint && gates.length === 0 && !checkpointActive && !bossActive) {
             createCheckpointGate();
         }
 
@@ -5793,7 +6231,12 @@
             }
         }
 
-        // Update Christmas snowflakes (seasonal)
+        // Weather and boss fights
+        updateWeather(deltaTime, speed);
+        maybeStartBoss(miles);
+        updateBossFight(deltaTime, speed);
+
+        // (old seasonal snowflakes: none are created any more)
         for (let i = 0; i < snowflakes.length; i++) {
             const snow = snowflakes[i];
 
