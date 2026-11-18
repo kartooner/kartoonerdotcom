@@ -41,6 +41,7 @@ uniform vec3 uFill;
 uniform vec3 uInk;
 uniform int uPattern;
 uniform vec2 uLabel;
+uniform vec4 uBounds;      // shape bounds (min x, min y, max x, max y), unscaled
 varying vec2 vP;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -89,6 +90,7 @@ void main() {
         d = min(d, sdBox(p - (b.xy + b.zw) * 0.5, (b.zw - b.xy) * 0.5));
     }
     d -= uR;
+    float dSmooth = d * uK;                 // the shape before the hand-drawn wobble, for lighting
     // Hand-drawn edge: a slow bend plus fine crayon grain.
     vec2 q = p + uSeed;
     float wob = (noise(q * 2.6) - 0.5) * 0.07 + (noise(q * 19.0) - 0.5) * 0.035;
@@ -104,13 +106,31 @@ void main() {
         // Pattern in a slightly darker shade of the fill; cleared around the number.
         float clear = smoothstep(0.15, 0.25, length(p - uLabel));   // small, so one-cell blocks keep their pattern
         fill = mix(fill, fill * 0.8, pattern(p, uPattern) * clear);
-    } else {
-        // Jello: a soft highlight near the top-left edge.
-        float rim = smoothstep(-0.22, -0.06, d) * smoothstep(0.6, -0.6, p.x - p.y);
-        fill = mix(fill, vec3(1.0), rim * 0.35);
     }
     vec3 col = mix(uInk, fill, fillMask);
     float alpha = inside * mix(1.0, mix(0.6, 0.4, fillMask), uJello);
+
+    if (uJello > 0.5) {
+        // Rudimentary specular: one light from the top left, fixed on screen, so the
+        // shine stays put while the jello wobbles. The edge's outward direction comes
+        // from how the distance changes across the screen.
+        vec2 n = normalize(vec2(dFdx(dSmooth), dFdy(dSmooth)) + 1e-6);
+        float facing = max(dot(n, normalize(vec2(-0.55, 0.85))), 0.0);
+        float streakBand = smoothstep(-0.3, -0.2, dSmooth) * (1.0 - smoothstep(-0.12, -0.07, dSmooth));
+        float spec = streakBand * pow(facing, 3.0) * 0.8;
+        // A small tilted oval glint tucked into the top-left corner.
+        vec2 g = p - vec2(uBounds.x + 0.24, uBounds.w - 0.22);
+        g = mat2(0.7071, -0.7071, 0.7071, 0.7071) * g;
+        spec += (1.0 - smoothstep(0.75, 1.0, length(g / vec2(0.1, 0.045)))) * fillMask;
+        // Shade on the far side gives the body some roundness.
+        float away = max(dot(n, normalize(vec2(0.55, -0.85))), 0.0);
+        float shade = streakBand * pow(away, 3.0) * fillMask;
+        col = mix(col, col * 0.78, shade * 0.6);
+        alpha = max(alpha, shade * 0.55);
+        spec *= inside;
+        col = mix(col, vec3(1.0), spec);
+        alpha = max(alpha, spec * 0.95);
+    }
     if (alpha < 0.01) discard;
     gl_FragColor = vec4(col, alpha);
     #include <colorspace_fragment>
@@ -136,6 +156,8 @@ export function makeBlockMesh(cells, jello, seed) {
     const geo = new THREE.PlaneGeometry(maxX - minX, maxY - minY);
     geo.translate((minX + maxX) / 2, (minY + maxY) / 2, 0);
 
+    const bx = cells.map(([x]) => x), by = cells.map(([, y]) => y);
+    const bounds = new THREE.Vector4(Math.min(...bx) - 0.5, Math.min(...by) - 0.5, Math.max(...bx) + 0.5, Math.max(...by) + 0.5);
     const material = new THREE.ShaderMaterial({
         vertexShader: vertex,
         fragmentShader: fragment,
@@ -152,6 +174,7 @@ export function makeBlockMesh(cells, jello, seed) {
             uInk: { value: new THREE.Color(0x2b2622) },
             uPattern: { value: 0 },
             uLabel: { value: new THREE.Vector2() },
+            uBounds: { value: bounds },
         },
     });
     return new THREE.Mesh(geo, material);
