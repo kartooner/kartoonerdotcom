@@ -166,6 +166,13 @@
             font-weight: normal;
             line-height: 1;
         }
+        /* The "!" tips over like a block knocked loose. */
+        #menu h1 .bang {
+            display: inline-block;
+            margin-left: 0.04em;
+            transform: rotate(14deg) translateY(-0.02em);
+            transform-origin: 50% 90%;
+        }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
@@ -231,7 +238,7 @@
     </div>
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <div class="screen-inner">
-            <h1 id="menu-title">Boop!</h1>
+            <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="best" id="menu-best" hidden></p>
             <div class="actions">
