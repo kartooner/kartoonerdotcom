@@ -136,7 +136,7 @@ function drawLabel(m, text) {
 
 let sim;
 const blockViews = new Map();   // id → view
-const ballViews = new Map();    // body handle → group
+const ballViews = new Map();    // body handle → { group, inner, ... }
 const pickupViews = new Map();  // id → group
 const propViews = new Map();    // id → { group, rotor? }
 const floaters = [];            // "+1" labels drifting up
@@ -255,6 +255,46 @@ function addFloater(text, x, y) {
     floaters.push({ m, t: 0 });
 }
 
+// Balls squash and stretch on screen only. The physics ball stays a circle,
+// so bounces stay predictable and the aim guide stays exact.
+const STRETCH_MAX = 0.75;       // extra length at full launch speed (a torpedo)
+const STRETCH_FROM = 3;         // below this speed a ball stays round
+const SQUASH_TIME = 0.22;
+const bounced = new Set();      // balls that hit something since the last frame
+
+function buildBallView(handle) {
+    const group = new THREE.Group();          // squash, turned to the bounce normal
+    const inner = new THREE.Group();          // stretch, turned to the direction of travel
+    const o = new THREE.Mesh(unitCircle, outlineMat); o.scale.setScalar(BALL_R);
+    const f = new THREE.Mesh(unitCircle, ballMat); f.scale.setScalar(BALL_R - 0.045); f.position.z = 0.01;
+    inner.add(o, f);
+    group.add(inner);
+    scene.add(group);
+    const v = { group, inner, prev: { x: 0, y: 0 }, squashT: Infinity, normal: 0 };
+    ballViews.set(handle, v);
+    return v;
+}
+
+function shapeBall(v, vel, frameDt) {
+    v.squashT += frameDt;
+    // Squash: flatten hard against the surface, then wobble back to round.
+    let squash = 0;
+    if (v.squashT < SQUASH_TIME) {
+        const t = v.squashT;
+        squash = Math.exp(-t * 18) * Math.cos(t * 45) * 0.42;
+    }
+    // Stretch along travel, eased off while squashed. Longer also gets a little thinner.
+    const speed = Math.hypot(vel.x, vel.y);
+    const k = Math.min(1, Math.max(0, (speed - STRETCH_FROM) / (20 - STRETCH_FROM)));
+    const stretch = 1 + STRETCH_MAX * k * k * (1 - Math.min(1, Math.abs(squash) * 2.4));
+    const travel = Math.atan2(vel.y, vel.x);
+
+    v.group.rotation.z = v.normal;
+    v.group.scale.set(1 - squash, 1 / (1 - squash), 1);
+    v.inner.rotation.z = travel - v.normal;
+    v.inner.scale.set(stretch, 1 / Math.sqrt(stretch), 1);
+}
+
 function syncView(frameDt) {
     const s = sim.s;
     for (const [id, v] of blockViews) {
@@ -292,19 +332,20 @@ function syncView(frameDt) {
     const live = new Set();
     for (const ball of s.balls) {
         live.add(ball.body);
-        let m = ballViews.get(ball.body);
-        if (!m) {
-            m = new THREE.Group();
-            const o = new THREE.Mesh(unitCircle, outlineMat); o.scale.setScalar(BALL_R);
-            const f = new THREE.Mesh(unitCircle, ballMat); f.scale.setScalar(BALL_R - 0.045); f.position.z = 0.01;
-            m.add(o, f);
-            scene.add(m);
-            ballViews.set(ball.body, m);
+        const v = ballViews.get(ball.body) ?? buildBallView(ball.body);
+        const body = sim.world.getRigidBody(ball.body);
+        const p = body.translation(), vel = body.linvel();
+        if (bounced.has(ball.body)) {
+            // The push of the bounce is the change in velocity; squash along it.
+            const dx = vel.x - v.prev.x, dy = vel.y - v.prev.y;
+            if (Math.hypot(dx, dy) > 1) { v.squashT = 0; v.normal = Math.atan2(dy, dx); }
         }
-        const p = sim.world.getRigidBody(ball.body).translation();
-        m.position.set(p.x, p.y, 0.4);
+        v.prev.x = vel.x; v.prev.y = vel.y;
+        v.group.position.set(p.x, p.y, 0.4);
+        shapeBall(v, vel, frameDt);
     }
-    for (const [h, m] of ballViews) if (!live.has(h)) { scene.remove(m); ballViews.delete(h); }
+    bounced.clear();
+    for (const [h, v] of ballViews) if (!live.has(h)) { scene.remove(v.group); ballViews.delete(h); }
 
     const bp = sim.world.getRigidBody(s.basket.body).translation();
     basket.position.set(bp.x, bp.y, 0.2);
@@ -325,6 +366,7 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
+        else if (e.t === 'contact') bounced.add(e.ball);
     }
     sim.events.length = 0;
 }
@@ -469,7 +511,7 @@ function restart() {
     for (const v of blockViews.values()) scene.remove(v.group);
     for (const g of pickupViews.values()) scene.remove(g);
     for (const v of propViews.values()) scene.remove(v.group);
-    for (const m of ballViews.values()) scene.remove(m);
+    for (const v of ballViews.values()) scene.remove(v.group);
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
     startZone();
