@@ -21,14 +21,14 @@ let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
 const HITSTOP = 0.045;               // tiny freeze when a block pops
-const AUTO_FAST = 2.5;               // speed-up once only a couple of balls are left
-const AUTO_FAST_AFTER = 360;         // steps into a turn before that kicks in
+const AUTO_FAST = 2;                 // speed-up for a ball that's been bouncing a while
+const AUTO_FAST_AFTER = 960;         // 8s in, so there's time to watch it first
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'),
+    depth: $('hud-depth'), balls: $('hud-balls'),
     msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
@@ -357,7 +357,6 @@ function syncView(frameDt) {
 
     hud.depth.textContent = s.depth;
     hud.balls.textContent = s.supply;
-    hud.volley.textContent = Math.min(s.volley, Math.max(0, s.supply));
 }
 
 function consumeEvents() {
@@ -552,7 +551,7 @@ function tick(frameDt) {
 
     if (hitstop > 0) { hitstop -= frameDt; return; }
     const s = sim.s;
-    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.balls.length <= 2 && s.turnSteps > AUTO_FAST_AFTER;
+    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.turnSteps > AUTO_FAST_AFTER;
     acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
     let n = 0;
     while (acc >= DT && n < 30) {

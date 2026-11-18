@@ -8,9 +8,10 @@ export const LAUNCHER = { x: W - 0.62, y: -0.62 };
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 20;
-export const START_SUPPLY = 40;
-export const START_VOLLEY = 5;
+export const START_SUPPLY = 15;
+export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
 export const ZONE_BONUS = 3;        // balls for clearing a zone
+const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
 const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
 export const BASKET = { y: -H + 0.45, half: 0.8, wall: 0.07, depth: 0.42 };
 
@@ -64,15 +65,15 @@ const SHAPE_TOTAL = SHAPES.reduce((n, s) => n + s.w, 0);
 // What each zone holds. New things arrive one at a time, then numbers climb.
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
 export function zoneSpec(d) {
-    if (d === 1) return { lo: 1, hi: 6, fill: 0.36, props: 0, loose: 0, jello: 0, tough: 0 };
-    if (d === 2) return { lo: 2, hi: 8, fill: 0.4, props: 1, loose: 0, jello: 0, tough: 0,
+    if (d === 1) return { lo: 1, hi: 3, fill: 0.3, props: 0, loose: 0, jello: 0, tough: 0 };
+    if (d === 2) return { lo: 1, hi: 4, fill: 0.33, props: 1, loose: 0, jello: 0, tough: 0,
         note: 'Windmills spin when hit. Mushrooms kick balls back harder.' };
-    if (d === 3) return { lo: 3, hi: 10, fill: 0.42, props: 1, loose: 0.2, jello: 0, tough: 0,
+    if (d === 3) return { lo: 2, hi: 5, fill: 0.35, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
-    if (d === 4) return { lo: 4, hi: 14, fill: 0.44, props: 2, loose: 0.18, jello: 1, tough: 0.04,
+    if (d === 4) return { lo: 2, hi: 6, fill: 0.37, props: 2, loose: 0.18, jello: 1, tough: 0.04,
         note: 'Jello: balls sink through it slowly. Each pass takes 1 off.' };
     return {
-        lo: 3 + d, hi: 6 + d * 2.6, fill: Math.min(0.54, 0.4 + d * 0.012),
+        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.46, 0.36 + d * 0.01),
         props: 1 + (d % 2), loose: 0.18, jello: 0.45, tough: Math.min(0.12, 0.04 + d * 0.008),
     };
 }
@@ -263,7 +264,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
-        if (popped && !s.quiet) this.gain(b.hp0 >= 20 ? 2 : 1, p.x, p.y);
+        if (popped && !s.quiet && b.hp0 >= REFUND_MIN_HP) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -377,7 +378,6 @@ export class Sim {
         const s = this.s;
         this.clearZoneLeftovers();
         s.depth += 1;
-        if (s.depth > 1) s.volley += 1;
         const spec = zoneSpec(s.depth);
         s.note = spec.note ?? null;
         const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : ['packed', 'airy', 'mixed', 'stacked'];
