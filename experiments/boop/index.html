@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f1e8d2" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="light dark">
+    <meta name="robots" content="noindex">
+    <title>Boop! (prototype)</title>
+    <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: 'Manrope';
+            src: url('/assets/fonts/Manrope-latin.woff2') format('woff2');
+            font-weight: 200 800;
+            font-display: swap;
+        }
+        /* Cartridge Rough: the site's display face, used for the logo and headings. */
+        @font-face {
+            font-family: 'Cartridge Rough';
+            src: url('/assets/fonts/Cartridge-Rough.woff2') format('woff2'),
+                 url('/assets/fonts/Cartridge-Rough.woff') format('woff');
+            font-display: swap;
+        }
+        :root {
+            --paper: #f1e8d2;
+            --panel: #fbf6ea;
+            --ink: #2b2622;
+            --ink-soft: #5c544c;
+            --scrim: rgba(241, 232, 210, 0.9);
+            --accent: #a8381c;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --paper: #15120f;
+                --panel: #221e1a;
+                --ink: #ede4d3;
+                --ink-soft: #b3a998;
+                --scrim: rgba(21, 18, 15, 0.9);
+                --accent: #ff9466;
+            }
+        }
+        :root[data-theme="dark"] {
+            --paper: #15120f;
+            --panel: #221e1a;
+            --ink: #ede4d3;
+            --ink-soft: #b3a998;
+            --scrim: rgba(21, 18, 15, 0.9);
+            --accent: #ff9466;
+        }
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Manrope', system-ui, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #stage, #stage canvas { position: fixed; inset: 0; display: block; }
+        #hud {
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(100vw - 32px, 420px);
+            display: flex;
+            gap: 16px;
+            pointer-events: none;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+        #hud > div { white-space: nowrap; }
+        #hud b { display: block; font-size: 1.375rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
+        #hint {
+            margin: 0 0 0 auto;
+            flex: 0 1 200px;
+            min-width: 0;
+            text-align: right;
+            font-size: 0.75rem;
+            line-height: 1.35;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+        #note {
+            position: fixed;
+            top: calc(max(10px, env(safe-area-inset-top)) + 56px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(100vw - 32px, 420px);
+            box-sizing: border-box;
+            margin: 0;
+            padding: 8px 12px;
+            background: var(--panel);
+            border-left: 4px solid var(--ink);
+            font-size: 0.875rem;
+            font-weight: 600;
+            line-height: 1.35;
+            pointer-events: none;
+        }
+        #message {
+            position: fixed;
+            left: 50%;
+            top: 40%;
+            transform: translate(-50%, -50%);
+            width: min(100vw - 32px, 320px);
+            padding: 20px;
+            background: var(--panel);
+            border: 2px solid var(--ink);
+            text-align: center;
+            pointer-events: none;
+        }
+        #message h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; }
+        #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
+        [hidden] { display: none !important; }
+        #theme-toggle {
+            position: fixed;
+            z-index: 11;
+            right: 16px;
+            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
+            padding: 4px 0;
+            background: none;
+            border: 0;
+            font: inherit;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--ink);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        /* Start screen and how-to: full screens over the game, not pop-ups. */
+        .screen {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            background: var(--scrim);
+            overflow-y: auto;
+            touch-action: pan-y;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        .screen-inner {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: max(24px, env(safe-area-inset-top)) 16px 72px;
+        }
+        #menu .screen-inner {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #menu h1 {
+            margin: 0;
+            font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
+            font-size: clamp(4rem, 22vw, 6.5rem);
+            font-weight: normal;
+            line-height: 1;
+        }
+        /* The "!" tips over like a block knocked loose. */
+        #menu h1 .bang {
+            display: inline-block;
+            margin-left: 0.04em;
+            transform: rotate(14deg) translateY(-0.02em);
+            transform-origin: 50% 90%;
+        }
+        #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
+        #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
+        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
+        .btn {
+            font: inherit;
+            font-size: 1.0625rem;
+            font-weight: 800;
+            padding: 14px 20px;
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--ink);
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-primary { background: var(--ink); color: var(--paper); }
+        .btn:focus-visible, #theme-toggle:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .link-btn {
+            font: inherit;
+            font-size: 0.9375rem;
+            font-weight: 700;
+            padding: 6px 0;
+            background: none;
+            border: 0;
+            color: var(--ink);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #howto h2, #howto h3, #message h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
+        #howto h2 { margin: 12px 0 20px; font-size: 2rem; }
+        #howto h3 { margin: 28px 0 6px; font-size: 1.25rem; }
+        #howto p, #howto li { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
+        #howto ul { margin: 0; padding-left: 20px; }
+        #howto .dot { color: var(--accent); font-weight: 800; }
+        #howto figure { margin: 14px 0 0; }
+        #howto img { display: block; width: 100%; max-width: 300px; height: auto; border: 2px solid var(--ink); border-radius: 8px; }
+        #howto figcaption { margin-top: 6px; font-size: 0.8125rem; color: var(--ink-soft); }
+        #howto .actions { margin: 32px auto 0; }
+        body.howto-open #back, body.howto-open #theme-toggle { display: none; }
+        #back {
+            position: fixed;
+            z-index: 11;
+            left: 16px;
+            bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+    </style>
+</head>
+<body>
+    <div id="stage"></div>
+    <div id="hud" aria-live="polite">
+        <div>Depth<b id="hud-depth">1</b></div>
+        <div>Balls<b id="hud-balls">40</b></div>
+        <div>Per shot<b id="hud-volley">5</b></div>
+        <p id="hint">Drag to aim, release to fire a ball, pull back to cancel.</p>
+    </div>
+    <p id="note" hidden></p>
+    <div id="message" hidden>
+        <h1 id="message-title"></h1>
+        <p id="message-body"></p>
+    </div>
+    <section id="menu" class="screen" aria-labelledby="menu-title">
+        <div class="screen-inner">
+            <h1 id="menu-title">Boop<span class="bang">!</span></h1>
+            <p class="tagline">Bounce balls, wear blocks down, dig deeper.</p>
+            <p class="best" id="menu-best" hidden></p>
+            <div class="actions">
+                <button class="btn btn-primary" id="btn-play" type="button">Play</button>
+                <button class="btn" id="btn-howto" type="button">How to play</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="howto" class="screen" aria-labelledby="howto-title" hidden>
+        <div class="screen-inner">
+            <button class="link-btn" id="btn-howto-back" type="button">← Back</button>
+            <h2 id="howto-title">How to play</h2>
+
+            <h3>Aim and fire</h3>
+            <p>Drag to aim. The dotted line shows where your first ball will go. <span class="dot">Orange dots</span> mark where it will hit something.</p>
+            <p>Release to fire a volley. Pull back to the launcher to cancel.</p>
+            <figure>
+                <img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit">
+                <figcaption>The guide bends off what it hits.</figcaption>
+            </figure>
+
+            <h3>Wear blocks down</h3>
+            <p>Each hit takes 1 off a block's number. At 0 it pops. Bigger numbers mean bigger blocks, and each number range has its own colour and pattern.</p>
+            <p>Clear every block to drop to the next zone.</p>
+
+            <h3>Keep your balls</h3>
+            <p>Your balls last the whole run. When they run out, the run ends. Get balls back by:</p>
+            <ul>
+                <li>catching them in the basket at the bottom</li>
+                <li>popping blocks</li>
+                <li>grabbing <b>+1</b> rings</li>
+                <li>clearing a zone (+3)</li>
+            </ul>
+
+            <h3>Things you'll meet</h3>
+            <ul>
+                <li><b>Windmills</b> spin when hit and swat the next ball.</li>
+                <li><b>Mushrooms</b> kick balls back harder.</li>
+                <li><b>Resting blocks</b> sit on others. Pop what holds them up and they tumble.</li>
+                <li><b>Jello</b> lets balls sink through. Each pass takes 1 off.</li>
+            </ul>
+            <figure>
+                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block, coloured patterned blocks and the basket at the bottom">
+                <figcaption>A deeper zone.</figcaption>
+            </figure>
+
+            <h3>Tip</h3>
+            <p>Hold anywhere while balls are bouncing to speed things up.</p>
+
+            <div class="actions">
+                <button class="btn btn-primary" id="btn-howto-play" type="button">Play</button>
+            </div>
+        </div>
+    </section>
+
+    <a id="back" href="/games">← Games</a>
+    <button id="theme-toggle" type="button">Dark mode</button>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs"
+            }
+        }
+    </script>
+    <script type="module" src="./game.js"></script>
+</body>
+</html>
