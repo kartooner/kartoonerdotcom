@@ -56,6 +56,22 @@
             font-weight: 600;
             color: var(--ink-soft);
         }
+        #note {
+            position: fixed;
+            top: calc(max(10px, env(safe-area-inset-top)) + 56px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(100vw - 32px, 420px);
+            box-sizing: border-box;
+            margin: 0;
+            padding: 8px 12px;
+            background: #fbf6ea;
+            border-left: 4px solid var(--ink);
+            font-size: 0.875rem;
+            font-weight: 600;
+            line-height: 1.35;
+            pointer-events: none;
+        }
         #message {
             position: fixed;
             left: 50%;
@@ -89,6 +105,7 @@
         <div>Per shot<b id="hud-volley">5</b></div>
         <p id="hint">Drag to aim, release to fire. Drag back to the launcher to cancel. Hold to speed up.</p>
     </div>
+    <p id="note" hidden></p>
     <div id="message" hidden>
         <h1 id="message-title"></h1>
         <p id="message-body"></p>

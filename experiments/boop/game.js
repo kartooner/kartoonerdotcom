@@ -13,7 +13,10 @@ const COLORS = {
 };
 const tierColor = (hp) => COLORS.tiers.find(([max]) => hp <= max)[1];
 
-const MAX_SETTLE_STEPS = 180;
+const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
+const HITSTOP = 0.045;               // tiny freeze when a block pops
+const AUTO_FAST = 2.5;               // speed-up once only a couple of balls are left
+const AUTO_FAST_AFTER = 360;         // steps into a turn before that kicks in
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
@@ -95,9 +98,10 @@ scene.add(basket);
 // The arc hugs the side of the ball that meets the surface, like "(" against a left wall.
 // It follows the real push of the bounce, so glancing and spinning hits tilt it.
 const MAX_DOTS = 260;
-const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(COLORS.ink, { transparent: true, opacity: 0.75 }), MAX_DOTS);
+const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(0xffffff, { transparent: true, opacity: 0.8 }), MAX_DOTS);
 dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
+for (let i = 0; i < MAX_DOTS; i++) dots.setColorAt(i, new THREE.Color(COLORS.ink));   // colour buffer must exist before first draw
 scene.add(dots);
 const bounceArc = new THREE.RingGeometry(BALL_R + 0.02, BALL_R + 0.08, 20, 1, 0, Math.PI);
 const markers = [0, 1, 2].map(() => {
@@ -306,7 +310,7 @@ function syncView(frameDt) {
         updateBlockView(v, b, frameDt);
         const body = sim.world.getRigidBody(b.body);
         const p = body.translation();
-        v.group.position.set(p.x, p.y + zoneOffset, b.falling ? 0.3 : 0);
+        v.group.position.set(p.x, p.y + zoneOffset, b.loose ? 0.05 : 0);
         v.group.rotation.z = body.rotation();
     }
 
@@ -367,6 +371,10 @@ function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
         else if (e.t === 'contact') bounced.add(e.ball);
+        else if (e.t === 'pop' && !fastForward && performance.now() - lastHitstop > 150) {
+            hitstop = HITSTOP;
+            lastHitstop = performance.now();
+        } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
     }
     sim.events.length = 0;
 }
@@ -374,6 +382,7 @@ function consumeEvents() {
 // ---------- aim guide ----------
 
 const tmpMatrix = new THREE.Matrix4();
+const dotInk = new THREE.Color(COLORS.ink), dotFade = new THREE.Color(COLORS.field), dotColor = new THREE.Color();
 let guideAngle = null;
 
 function drawGuide(angle) {
@@ -395,7 +404,13 @@ function drawGuide(angle) {
         carry = seg - (t - gap);
     }
     dots.count = n;
+    // The last third of the line fades out instead of stopping dead.
+    for (let i = 0; i < n; i++) {
+        const f = Math.max(0, (i / n - 0.66) / 0.34);
+        dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * 0.85));
+    }
     dots.instanceMatrix.needsUpdate = true;
+    if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
     markers.forEach((m, i) => {
         const c = contacts[i];
         m.visible = !!c;
@@ -457,6 +472,7 @@ canvas.addEventListener('pointerup', (ev) => {
     sim.fire(a);
     phase = 'play';
     $('hint').hidden = true;
+    $('note').hidden = true;
 });
 canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
 
@@ -469,7 +485,7 @@ function updateAim(ev) {
 
 // ---------- turn flow ----------
 
-let acc = 0, settleSteps = 0, descendT = 0;
+let acc = 0, settleSteps = 0, descendT = 0, hitstop = 0, lastHitstop = 0, shake = 0;
 
 function showMessage(title, body) {
     hud.msgTitle.textContent = title;
@@ -501,6 +517,7 @@ function endTurn() {
 }
 
 function readyToAim() {
+    if (sim.blockCount() === 0) { startZone(); return; }   // the last blocks tumbled out
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
 }
@@ -522,12 +539,20 @@ function tick(frameDt) {
         descendT += frameDt;
         const t = Math.min(1, descendT / DESCEND_TIME);
         zoneOffset = -H * (1 - t) ** 3;
-        if (t >= 1) { zoneOffset = 0; readyToAim(); }
+        if (t >= 1) {
+            zoneOffset = 0;
+            // First time something new shows up, say what it does in one line.
+            if (sim.s.note) { $('note').textContent = sim.s.note; $('note').hidden = false; }
+            readyToAim();
+        }
         return;
     }
     if (phase !== 'play' && phase !== 'settle') return;
 
-    acc += frameDt * (fastForward ? FAST_FORWARD : 1);
+    if (hitstop > 0) { hitstop -= frameDt; return; }
+    const s = sim.s;
+    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.balls.length <= 2 && s.turnSteps > AUTO_FAST_AFTER;
+    acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
@@ -548,6 +573,9 @@ function frame(now) {
         if (aiming && phase === 'aim') drawGuide(aimAngle);
         syncView(frameDt);
     }
+    // Short shake when a tumbling block lands hard.
+    shake = Math.max(0, shake - frameDt * 0.6);
+    camera.position.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
 }
@@ -558,4 +586,13 @@ restart();
 requestAnimationFrame(frame);
 
 // For automated checks.
-window.__boop = { get sim() { return sim; }, get phase() { return phase; } };
+window.__boop = {
+    get sim() { return sim; },
+    get phase() { return phase; },
+    // Screen position of a point in the field, so tests can aim with real pointer input.
+    toScreen(x, y) {
+        const v = new THREE.Vector3(x, y, 0).project(camera);
+        const r = renderer.domElement.getBoundingClientRect();
+        return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+    },
+};
