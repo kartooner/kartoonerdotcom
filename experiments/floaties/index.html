@@ -342,7 +342,7 @@
         <p>It works the other way too: anything that hits <em>your</em> body crashes and bursts into remains. Curl around a big red creature and make it run into you.</p>
 
         <h2>Layers and mutations</h2>
-        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then choose one of three mutations: tap it, then Apply. They last for the rest of the run, and some stack.</p>
+        <p>Fill the bar to rise to the next layer: 50 mass on layer 1, and 5 more on each layer after. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then choose one of three mutations: tap it, then Apply. They last for the rest of the run, and some stack.</p>
         <dl class="defs" id="manual-mutations"></dl>
 
         <h2>Layer conditions</h2>
@@ -350,7 +350,7 @@
         <dl class="defs" id="manual-mods"></dl>
 
         <h2>Runs and unlocks</h2>
-        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
         <dl class="defs" id="manual-unlocks"></dl>
 
         <button type="button" class="btn-secondary page-back">Back</button>
@@ -455,13 +455,14 @@
     const PREDATOR_COUNT = 5;
     const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
     const START_GRACE = 3;        // seconds of immunity at the start of a run (same as Paper Plane)
-    const ASCEND_MASS = 50;       // reach this to rise to the next layer
+    const ASCEND_MASS = 50;       // mass to rise from layer 1; each layer after needs +5 (see difficulty)
+    const FINAL_LAYER = 19;       // layer 20 (0-based 19): fill it to win the run
     const DEATH_MASS = 5;         // a bite that would drop you below this kills you
     const ASCEND_TIME = 2.5;      // seconds for the zoom-out between layers
     const GHOST_DEPTH = 260;      // how far below you the previous layer sinks
     const GHOST_ALPHA = 0.45;
     const LAYER_NAMES = ['Silt', 'Drift', 'Shoal', 'Kelp', 'Reef', 'Swell', 'Surface']; // distinct from condition names
-    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky'; // the layer number is always shown next to it
+    const layerName = (i) => i === FINAL_LAYER ? 'Nebula Heart' : LAYER_NAMES[i] || 'Open Sky'; // number shown beside it
     let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
     let hitBlink = 0;             // seconds of blinking left after a hit
     let dying = 0;                // seconds since death (0 = alive)
@@ -875,6 +876,7 @@
         { id: 'orchid', name: 'Orchid', head: 0xff66ff, tail: 0x6633ff, need: 'Cut off 10 creatures', test: m => m.cuts >= 10 },
         { id: 'abyss',  name: 'Abyss',  head: 0x4dd2ff, tail: 0x1a1a66, need: 'Eat 1,000 bits',       test: m => m.bits >= 1000 },
         { id: 'gold',   name: 'Gold',   head: 0xffe066, tail: 0xff9d00, need: 'Reach layer 5',        test: m => m.bestLayer >= 5 },
+        { id: 'nebula', name: 'Nebula', head: 0xffffff, tail: 0xff4fd8, need: 'Finish layer 20',      test: m => (m.wins || 0) >= 1 },
     ];
     const HEAD_START = { name: 'Head start', need: 'Reach layer 4', desc: 'Pick a mutation at the start of every run', test: m => m.bestLayer >= 4 };
     const unlockedNames = (m) => [...SKINS.filter(s => s.test && s.test(m)).map(s => s.name + ' body'), ...(HEAD_START.test(m) ? [HEAD_START.name] : [])];
@@ -1238,22 +1240,26 @@
     // climb until around layer 6, where a run is likely to end.
     const FATAL_CRASH_FROM = 2; // layer index (0-based): crashes end the run from layer 3
     function difficulty(index) {
-        const t = THREE.MathUtils.clamp((index - 1) / 4, 0, 1); // 0 on layers 1-2, 1 by layer 6
-        const L = (a, b) => a + (b - a) * t;
+        const t = THREE.MathUtils.clamp((index - 1) / 4, 0, 1);            // 0 on layers 1-2, 1 by layer 6
+        const t2 = THREE.MathUtils.clamp((index - 5) / (FINAL_LAYER - 5), 0, 1); // keeps climbing, slower, to layer 20
+        const L = (a, b, c) => a + (b - a) * t + (c - b) * t2;
         return {
             crashFatal: index >= FATAL_CRASH_FROM,
-            threatShare: L(0.25, 0.5),  // share of creatures that are bigger hunters
-            chaseSpeed: L(2.6, 3.1),    // you cruise at 2.5 and boost at 5.5
-            notice: L(420, 600),
-            chaseTime: L(3.5, 6),
-            biteFrac: L(0.2, 0.3), biteMin: index < FATAL_CRASH_FROM ? 2 : 3,
-            rivalCut: L(3.0, 3.9),
+            need: ASCEND_MASS + 5 * index, // mass to fill this layer: 50, 55, 60 … 145 on layer 20
+            threatShare: L(0.25, 0.5, 0.6),  // share of creatures that are bigger hunters
+            chaseSpeed: L(2.6, 3.1, 3.6),    // you cruise at 2.5 and boost at 5.5
+            notice: L(420, 600, 750),
+            chaseTime: L(3.5, 6, 8),
+            biteFrac: L(0.2, 0.3, 0.4), biteMin: index < FATAL_CRASH_FROM ? 2 : 3,
+            rivalCut: L(3.0, 3.9, 4.6),
+            extraCreatures: Math.min(index, 4) + Math.floor(4 * t2), // up to 8 more than layer 1
         };
     }
 
     // Gentle conditions early; Murk and Famine from layer 3, Leviathan from layer 5
     function rollLayerMod(index) {
         if (index === 0) return LAYER_MODS[0];
+        if (index === FINAL_LAYER) return LAYER_MODS.find(m => m.id === 'leviathan'); // the last layer has a giant
         const ids = index === 1 ? ['calm', 'calm', 'current', 'bloom', 'swarm']
             : index < 4 ? ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk']
             : ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk', 'leviathan', 'leviathan'];
@@ -1272,7 +1278,7 @@
         createFoodBatch(layer);
         const head = snake.nodes[0].position;
         spawnNutrients(layer, head);
-        const count = PREDATOR_COUNT + Math.min(index, 4); // a little busier each layer
+        const count = PREDATOR_COUNT + difficulty(index).extraCreatures; // busier each layer
         for (let i = 0; i < count; i++) spawnPredator(null, 600, 1500, layer, head, 'basic');
         const rivals = index === 0 ? 1 : index < 3 ? 2 : 3;
         for (let i = 0; i < rivals; i++) spawnPredator(null, 700, 1500, layer, head, 'rival');
@@ -1335,7 +1341,8 @@
 
     function startAscend() {
         const head = snake.nodes[0].position;
-        const S = sizeFromMass(ASCEND_MASS); // how much smaller the old layer gets
+        const need = activeLayer.diff.need;
+        const S = sizeFromMass(need); // how much smaller the old layer gets
         disposeLayer(fadingLayer);
         fadingLayer = ghostLayer;
         if (fadingLayer) fadingLayer.fadeFrom = fadingLayer.alpha;
@@ -1343,9 +1350,9 @@
         ghostLayer = activeLayer;
 
         // Same on-screen size, but now measured in the new layer's units
-        snake.segmentBonus += ASCEND_MASS - START_MASS;
+        snake.segmentBonus += need - START_MASS;
         snake.scaleBoost = S;
-        snake.setMass(START_MASS * snake.mass / ASCEND_MASS);
+        snake.setMass(START_MASS * snake.mass / need);
 
         setActive(createLayer(ghostLayer.index + 1));
         activeLayer.alpha = 0;
@@ -1382,7 +1389,7 @@
         activeLayer = ghostLayer = fadingLayer = null; ascend = null;
         snake.alpha = 1;
         snake.scaleBoost = 1;
-        snake.segmentBonus = index * (ASCEND_MASS - START_MASS);
+        snake.segmentBonus = 0;
         snake.setMass(START_MASS);
         setActive(createLayer(index));
     }
@@ -1406,21 +1413,36 @@
         if (HEAD_START.test(meta)) openMutationPick('Head start: choose a mutation');
     }
 
-    function die(cause) {
-        burst(snake, snake.mass * 0.5); // you spill too
+    function endRun(cause, won) {
         isPlaying = false;
-        dying = 0.0001;
-        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false; pointer = null; tapNudge = null;
         run.time = clock.elapsedTime - run.start;
         run.cause = cause;
+        run.won = won;
         // Fold the run into the totals that unlock things
         const before = unlockedNames(meta);
         run.newBest = run.layer + 1 > meta.bestLayer;
         meta.bestLayer = Math.max(meta.bestLayer, run.layer + 1);
         meta.bits += run.food; meta.creatures += run.creatures; meta.cuts += run.cuts; meta.runs++;
+        if (won) meta.wins = (meta.wins || 0) + 1;
         run.unlocked = unlockedNames(meta).filter(n => !before.includes(n));
         saveMeta();
+    }
+
+    function die(cause) {
+        burst(snake, snake.mass * 0.5); // you spill too
+        endRun(cause, false);
+        dying = 0.0001;
         setTimeout(showGameOver, 1100);
+    }
+
+    // Filled the final layer: the run is won
+    function win() {
+        endRun('You rose through all ' + (FINAL_LAYER + 1) + ' layers of the nebula', true);
+        invulnerable = 1e9;
+        flash('#ffffff');
+        showBanner(FINAL_LAYER, 'You made it');
+        setTimeout(showGameOver, 2600);
     }
 
     function updateFood(dt) {
@@ -1583,22 +1605,22 @@
 
     function updateHud() {
         const m = Math.round(snake.mass), L = activeLayer.index;
-        const key = m + ':' + L;
+        const key = m + ':' + L + ':' + activeLayer.diff.need;
         if (key === shownHud) return;
         shownHud = key;
-        $('hud-mass').textContent = m + ' / ' + ASCEND_MASS;
+        $('hud-mass').textContent = m + ' / ' + activeLayer.diff.need;
         $('hud-layer').textContent = L + 1;
         $('hud-layer-name').textContent = layerName(L);
-        $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
+        $('hud-bar').style.width = Math.min(100, (snake.mass / activeLayer.diff.need) * 100) + '%';
     }
 
     let bannerTimer = null;
     function showBanner(index, override) {
-        $('banner-kicker').textContent = override ? 'Saved' : 'Layer ' + (index + 1);
+        $('banner-kicker').textContent = override ? (override === 'You made it' ? 'Layer ' + (index + 1) + ' filled' : 'Saved') : 'Layer ' + (index + 1);
         $('banner-name').textContent = override || layerName(index);
         const mod = activeLayer && activeLayer.index === index ? activeLayer.mod : null;
         $('banner-mod').textContent = !override && mod && mod.id !== 'calm' ? mod.name + ': ' + mod.desc : '';
-        $('banner-note').textContent = !override && index === FATAL_CRASH_FROM ? 'Crashes now end the run' : '';
+        $('banner-note').textContent = override ? '' : index === FATAL_CRASH_FROM ? 'Crashes now end the run' : index === FINAL_LAYER ? 'Final layer: fill it to finish' : '';
         const el = $('banner');
         el.classList.remove('show');
         void el.offsetWidth; // restart the animation
@@ -1614,7 +1636,8 @@
 
     function showGameOver() {
         const L = run.layer;
-        $('gameover-cause').textContent = run.cause + ' on ' + layerName(L) + '.';
+        $('gameover-title').textContent = run.won ? 'You made it' : 'Run over';
+        $('gameover-cause').textContent = run.won ? run.cause + '.' : run.cause + ' on ' + layerName(L) + '.';
         $('go-layer').textContent = (L + 1) + ' · ' + layerName(L);
         $('go-food').textContent = run.food;
         $('go-creatures').textContent = run.creatures;
@@ -2171,7 +2194,9 @@
         if (ghostLayer) drawFood(ghostLayer);
         if (fadingLayer) drawFood(fadingLayer);
         if (isPlaying) resolveCollisions();
-        if (isPlaying && !ascend && snake.mass >= ASCEND_MASS) startAscend();
+        if (isPlaying && !ascend && snake.mass >= activeLayer.diff.need) {
+            if (activeLayer.index === FINAL_LAYER) win(); else startAscend();
+        }
         updateHud();
 
         // ── Chase camera with banking; pulls back as the snake gets longer ────────
