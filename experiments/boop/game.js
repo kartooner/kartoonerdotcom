@@ -620,9 +620,35 @@ themeButton.addEventListener('click', () => {
 });
 applyTheme(currentTheme());
 
+// ---------- start screen ----------
+// The first zone builds behind the start screen; Play just lifts the screen.
+
+const menu = $('menu'), howto = $('howto');
+function showScreen(which, moveFocus = true) {
+    menu.hidden = which !== 'menu';
+    howto.hidden = which !== 'howto';
+    document.body.classList.toggle('howto-open', which === 'howto');
+    if (which === 'menu') {
+        const best = readBest();
+        $('menu-best').hidden = best === 0;
+        $('menu-best').textContent = `Best depth: ${best}`;
+        if (moveFocus) $('btn-play').focus();
+    } else if (which === 'howto') {
+        howto.scrollTop = 0;
+        $('btn-howto-back').focus();
+    }
+}
+function play() { showScreen(null); }
+$('btn-play').addEventListener('click', play);
+$('btn-howto-play').addEventListener('click', play);
+$('btn-howto').addEventListener('click', () => showScreen('howto'));
+$('btn-howto-back').addEventListener('click', () => showScreen('menu'));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.hidden) showScreen('menu'); });
+
 await RAPIER.init();
 await document.fonts.load('800 64px Manrope').catch(() => {});
 restart();
+showScreen('menu', false);
 requestAnimationFrame(frame);
 
 // For automated checks.
