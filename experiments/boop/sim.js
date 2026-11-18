@@ -62,17 +62,18 @@ const SHAPES = [
 const SHAPE_TOTAL = SHAPES.reduce((n, s) => n + s.w, 0);
 
 // What each zone holds. New things arrive one at a time, then numbers climb.
+// jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
 export function zoneSpec(d) {
     if (d === 1) return { lo: 1, hi: 6, fill: 0.36, props: 0, loose: 0, jello: 0, tough: 0 };
     if (d === 2) return { lo: 2, hi: 8, fill: 0.4, props: 1, loose: 0, jello: 0, tough: 0,
         note: 'Windmills spin when hit. Mushrooms kick balls back harder.' };
     if (d === 3) return { lo: 3, hi: 10, fill: 0.42, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
-    if (d === 4) return { lo: 4, hi: 14, fill: 0.44, props: 2, loose: 0.18, jello: 0.12, tough: 0.04,
+    if (d === 4) return { lo: 4, hi: 14, fill: 0.44, props: 2, loose: 0.18, jello: 1, tough: 0.04,
         note: 'Jello: balls sink through it slowly. Each pass takes 1 off.' };
     return {
         lo: 3 + d, hi: 6 + d * 2.6, fill: Math.min(0.54, 0.4 + d * 0.012),
-        props: 1 + (d % 2), loose: 0.18, jello: 0.1, tough: Math.min(0.12, 0.04 + d * 0.008),
+        props: 1 + (d % 2), loose: 0.18, jello: 0.45, tough: Math.min(0.12, 0.04 + d * 0.008),
     };
 }
 
@@ -428,9 +429,18 @@ export class Sim {
             if (!cells.every(([c, r]) => free(c, r)) || !rowOk(cells)) continue;
             const wantsGap = this.rand() < style.gap;
             if (wantsGap && touchesOther(cells)) continue;
-            plan.push({ cells, kind: this.rand() < spec.jello ? 'jello' : 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap });
+            plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap });
             cells.forEach(([c, r]) => { grid[r][c] = plan.length; });
             filled += cells.length;
+        }
+
+        // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
+        if (this.rand() < spec.jello) {
+            const count = s.depth >= 7 && this.rand() < 0.3 ? 2 : 1;
+            const small = plan.filter((p) => p.cells.length <= 3);
+            for (let i = 0; i < count && small.length; i++) {
+                small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
+            }
         }
 
         // Some pinned blocks become loose ones resting on a pinned block below.
