@@ -225,6 +225,26 @@
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
 
+        /* Pause: button top-right during play, menu centred */
+        #btn-pause {
+            position: fixed; z-index: 520;
+            top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right));
+            width: 44px; height: 44px; display: grid; place-items: center; padding: 0; cursor: pointer;
+            background: rgba(0, 8, 20, 0.55); color: #e8f1fa;
+            border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 10px;
+        }
+        #btn-pause[hidden] { display: none; }
+        #btn-pause:hover, #btn-pause:focus-visible { border-color: #00ffcc; outline: none; }
+        #pausemenu {
+            position: fixed; inset: 0; z-index: 1120; display: grid; padding: 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.82); color: #e8f1fa; text-align: center; overflow-y: auto; touch-action: pan-y;
+        }
+        #pausemenu[hidden] { display: none; }
+        #pausemenu .panel { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; width: 100%; max-width: 20rem; }
+        #pausemenu h2 { font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; font-size: clamp(2rem, 6vw, 3rem); margin: 0; padding: 0.1em 0.3em; }
+        #pausemenu .cause { margin: 0 0 0.75rem; color: #b7c6d6; }
+        #pausemenu .btn, #pausemenu .btn-secondary { width: 100%; min-width: 0; margin: 0; }
+
         /* Mutation pick: a plain numbered list, not a card grid */
         #mutate {
             position: fixed; inset: 0; z-index: 1120; /* above the Games link */
@@ -318,6 +338,7 @@
             <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or hold the mouse button or a finger down and point where to go: the further to the side, the sharper the turn. A quick click or tap turns you a little toward that side.</dd>
             <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
             <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
+            <dt>Pause</dt><dd>The pause button in the top-right corner, or <kbd>Esc</kbd>. The game also pauses by itself if you switch apps or tabs.</dd>
             <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
         </dl>
 
@@ -383,6 +404,19 @@
     <div class="progress" aria-label="Mass toward the next layer">
         <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
         <span id="hud-mass">10 / 50</span>
+    </div>
+</div>
+<button type="button" id="btn-pause" aria-label="Pause" hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
+</button>
+<div id="pausemenu" role="dialog" aria-labelledby="pause-title" hidden>
+    <div class="panel">
+        <h2 id="pause-title">Paused</h2>
+        <p class="cause" id="pause-where"></p>
+        <button type="button" class="btn" id="btn-resume">Resume</button>
+        <button type="button" class="btn-secondary" id="btn-pause-howto">How to play</button>
+        <button type="button" class="btn-secondary" id="btn-pause-settings">Settings</button>
+        <button type="button" class="btn btn-quiet" id="btn-pause-quit">Quit run</button>
     </div>
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
@@ -1398,6 +1432,7 @@
 
     function startRun() {
         closeMutationPick();
+        pauseMenuOpen = false; $('pausemenu').hidden = true;
         mutations = {}; windCharges = 0;
         const skin = currentSkin();
         snake.setColors({ head: skin.head, tail: skin.tail });
@@ -1416,7 +1451,7 @@
     function endRun(cause, won) {
         isPlaying = false;
         inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false; pointer = null; tapNudge = null;
-        run.time = clock.elapsedTime - run.start;
+        run.time = clock.elapsedTime - run.start - (run.pausedFor || 0);
         run.cause = cause;
         run.won = won;
         // Fold the run into the totals that unlock things
@@ -1669,6 +1704,42 @@
         requestAnimationFrame(() => { ui.style.opacity = '1'; });
     });
 
+    // ── Pause (button, Esc, and automatically when the app goes to the background) ──
+    let pauseMenuOpen = false, pausedAt = 0;
+    function canPause() { return isPlaying && !paused && !dying; }
+    function openPause() {
+        if (!canPause()) return;
+        paused = true; pauseMenuOpen = true; pausedAt = performance.now();
+        keysDown.clear(); pointer = null; tapNudge = null; touchBoost = false;
+        $('pause-where').textContent = 'Layer ' + (activeLayer.index + 1) + ' · ' + layerName(activeLayer.index);
+        $('btn-pause').hidden = true;
+        $('pausemenu').hidden = false;
+        $('btn-resume').focus();
+    }
+    function resume() {
+        if (!pauseMenuOpen) return;
+        pauseMenuOpen = false; paused = false;
+        if (run) run.pausedFor = (run.pausedFor || 0) + (performance.now() - pausedAt) / 1000;
+        $('pausemenu').hidden = true;
+        $('btn-pause').hidden = false;
+    }
+    $('btn-pause').addEventListener('click', openPause);
+    $('btn-resume').addEventListener('click', resume);
+    $('btn-pause-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
+    $('btn-pause-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
+    $('btn-pause-quit').addEventListener('click', () => {
+        // Abandon the run without recording it, back to the title screen
+        pauseMenuOpen = false; paused = false; isPlaying = false;
+        $('pausemenu').hidden = true; $('hud').hidden = true;
+        buildAt(0);
+        renderSkins();
+        const ui = $('ui-root');
+        ui.style.display = 'flex';
+        requestAnimationFrame(() => { ui.style.opacity = '1'; });
+    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) openPause(); });
+    window.addEventListener('pagehide', openPause);
+
     // ── How to play / Settings pages ──────────────────────────────────────────────
     let pageOpener = null;
     function openPage(id, opener) {
@@ -1688,7 +1759,12 @@
     $('btn-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
     $('btn-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
     document.querySelectorAll('.page-close, .page-back').forEach(b => b.addEventListener('click', closePages));
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePages(); });
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.querySelector('.page:not([hidden])')) closePages();
+        else if (pauseMenuOpen) resume();
+        else openPause();
+    });
 
     const defRows = (rows) => rows.map(([dt, dd, cls]) => '<div' + (cls ? ' class="' + cls + '"' : '') + ' style="display:contents"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>').join('');
     function renderManual() {
@@ -2194,6 +2270,9 @@
         if (ghostLayer) drawFood(ghostLayer);
         if (fadingLayer) drawFood(fadingLayer);
         if (isPlaying) resolveCollisions();
+        // Pause button only while actually playing (not on menus, picks or after a run ends)
+        const showPause = isPlaying && !paused && !dying && !$('hud').hidden;
+        if (showPause === $('btn-pause').hidden) $('btn-pause').hidden = !showPause;
         if (isPlaying && !ascend && snake.mass >= activeLayer.diff.need) {
             if (activeLayer.index === FINAL_LAYER) win(); else startAscend();
         }
