@@ -427,6 +427,9 @@
     const pointLayers = []; // particle systems that repeat around the player
     const worldSize = 2500;
     const BASE_FOG = 0.00065;
+    // Phones and tablets get half the decorative scenery (gameplay is unchanged)
+    const LITE = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 500;
+    const Q = (n) => Math.round(LITE ? n * 0.5 : n);
     let isPlaying = false;
 
     // --- Input state: mouse, touch and keyboard all feed one turn rate ---
@@ -474,6 +477,8 @@
     };
 
     const TIRED_TINT = new THREE.Color(0xffffff);
+    // Scratch objects reused every frame (avoids garbage-collection hitches on phones)
+    const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _Z = new THREE.Vector3(0, 0, 1);
     const UNIT_SPHERE = new THREE.IcosahedronGeometry(1, 2);
     const JAW_GEO = new THREE.ConeGeometry(0.25, 0.7, 3);
     const FOOD_GEO = new THREE.TetrahedronGeometry(11, 0);
@@ -706,15 +711,17 @@
 
             // ── Head: orient with subtle pitch ────────────────────────────────────
             const pitchY = Math.cos(t * 3.5 + this.bobPhase) * 0.15;
-            const lookDir = new THREE.Vector3(this.headVelocity.x, pitchY, this.headVelocity.z).normalize();
-            head.lookAt(head.position.clone().add(lookDir));
+            _v1.set(this.headVelocity.x, pitchY, this.headVelocity.z).normalize().add(head.position);
+            head.lookAt(_v1);
 
             // ── Record path ───────────────────────────────────────────────────────
             if (!this.pathHistory.length ||
                 head.position.distanceTo(this.pathHistory[0]) >= this.minPathDist) {
-                this.pathHistory.unshift(head.position.clone());
                 const maxLen = Math.ceil(this.segmentCount * this.segmentSpacing / this.minPathDist) + 20;
                 if (this.pathHistory.length > maxLen) this.pathHistory.length = maxLen;
+                // Recycle the oldest point instead of allocating a new one
+                const v = this.pathHistory.length === maxLen ? this.pathHistory.pop() : new THREE.Vector3();
+                this.pathHistory.unshift(v.copy(head.position));
             }
 
             // ── Place body segments (single O(n+m) pass) ──────────────────────────
@@ -733,12 +740,9 @@
                 const frac = sl > 0 ? Math.min(1, (target - accumulated) / sl) : 0;
                 const seg = this.nodes[i];
                 seg.position.copy(this.pathHistory[pi]).lerp(this.pathHistory[pi + 1], frac);
-                const dir = new THREE.Vector3().subVectors(this.nodes[i - 1].position, seg.position);
+                const dir = _v2.subVectors(this.nodes[i - 1].position, seg.position);
                 if (dir.lengthSq() > 0.001) {
-                    seg.quaternion.slerp(
-                        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize()),
-                        slerpK
-                    );
+                    seg.quaternion.slerp(_q1.setFromUnitVectors(_Z, dir.normalize()), slerpK);
                 }
             }
 
@@ -806,7 +810,9 @@
                 if (Math.abs(diff) < 0.01) tapNudge = null;
                 else want = THREE.MathUtils.clamp(diff * 0.15, -maxRate, maxRate);
             }
-            turnVel += (want - turnVel) * lerpK(0.25, dt);
+            // Snappy into a turn (or reversing it); a short glide out when you let go
+            const easing = (want !== 0 && (Math.sign(want) !== Math.sign(turnVel) || Math.abs(want) > Math.abs(turnVel))) ? 0.35 : 0.18;
+            turnVel += (want - turnVel) * lerpK(easing, dt);
             let ang = cur + turnVel * dt;
             // Land exactly on a nudge target rather than overshooting and correcting back
             if (tapNudge !== null) {
@@ -1118,29 +1124,39 @@
 
     // ── Remains: dead creatures scatter bits along where their body was ──────────
     const REMAINS_COLOR = 0xfff2b3;
-    function burst(p, total) {
-        const layer = activeLayer;
-        const n = p.nodes.length;
-        for (let i = 0; i < n; i++) {
+    // Death spill: the body bursts into chunks that fly out, tumble and slow in the water.
+    // Each chunk takes its segment's colour, washed pale.
+    function burst(p, total, layer = activeLayer) {
+        const nodes = p.nodes, n = nodes.length;
+        const per = 2;                       // chunks per segment
+        const count = n * per;
+        const cx = nodes.reduce((a, q) => a + q.position.x, 0) / n, cz = nodes.reduce((a, q) => a + q.position.z, 0) / n;
+        const kick = 2.5 + Math.min(4, Math.sqrt(p.mass) * 0.35); // bigger bodies spill harder
+        for (let i = 0; i < count; i++) {
+            const node = nodes[Math.floor(i / per)];
             const f = makeFoodMesh(layer);
-            f.userData.remains = true;
-            f.userData.ttl = 25;
-            f.userData.skittish = false;
-            f.userData.value = Math.max(0.5, total / n);
-            f.material.color.setHex(REMAINS_COLOR);
-            f.position.copy(p.nodes[i].position).setY(0);
-            f.position.x += rand(-8, 8); f.position.z += rand(-8, 8);
-            f.scale.setScalar(0.8 + Math.min(1, f.userData.value / 4) * 0.6);
-            const a = Math.random() * Math.PI * 2;
-            f.userData.vel.set(Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1);
+            if (!f) break;
+            const u = f.userData;
+            u.remains = true; u.ttl = 25; u.skittish = false;
+            u.value = Math.max(0.5, total / count);
+            f.material.color.copy(node.material.color).lerp(_col.set(REMAINS_COLOR), 0.45);
+            f.position.set(node.position.x + rand(-6, 6), 0, node.position.z + rand(-6, 6));
+            f.scale.setScalar(0.6 + Math.min(1, u.value / 4) * 0.6);
+            f.rotation.set(rand(0, 6.28), rand(0, 6.28), rand(0, 6.28));
+            // Outward from the body's middle, plus some scatter
+            let ox = f.position.x - cx, oz = f.position.z - cz; const ol = Math.hypot(ox, oz) || 1;
+            ox /= ol; oz /= ol;
+            const a = rand(-0.8, 0.8), sp = kick * rand(0.5, 1.3);
+            u.vel.set((ox * Math.cos(a) - oz * Math.sin(a)) * sp, 0, (ox * Math.sin(a) + oz * Math.cos(a)) * sp);
+            u.drift = ZERO;
+            u.spin = rand(0.15, 0.4) * (Math.random() < 0.5 ? -1 : 1);
         }
     }
 
     function removeFood(layer, f) {
         const i = layer.food.indexOf(f);
         if (i >= 0) layer.food.splice(i, 1);
-        layer.group.remove(f);
-        f.material.dispose();
+        f.parent = null;
     }
 
     // ── Food ──────────────────────────────────────────────────────────────────────
@@ -1164,16 +1180,50 @@
         f.userData.dartCd = 0;
     }
 
+    // Bits are plain objects (position/rotation/scale/colour/opacity) drawn with one
+    // InstancedMesh per layer: one draw call for all of a layer's food instead of hundreds.
+    const FOOD_CAP = 640;  // 300 bits + room for remains
+    const REMAINS_CAP = 300;
     function makeFoodMesh(layer) {
-        const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
-            wireframe: true, transparent: true, opacity: 1, depthWrite: false
-        }));
-        f.renderOrder = 500;
-        f.userData.vel = new THREE.Vector3();
-        f.userData.layer = layer;
-        layer.group.add(f);
+        if (layer.food.length >= FOOD_CAP) {
+            const oldest = layer.food.find(x => x.userData.remains); // make room: drop the oldest remains
+            if (oldest) removeFood(layer, oldest); else return null;
+        }
+        const f = {
+            position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: new THREE.Vector3(1, 1, 1),
+            material: { color: new THREE.Color(), opacity: 1 },
+            userData: { vel: new THREE.Vector3(), layer }, parent: layer.group,
+        };
         layer.food.push(f);
         return f;
+    }
+
+    const _dummy = new THREE.Object3D(), _col = new THREE.Color();
+    function createFoodBatch(layer) {
+        const mat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, depthWrite: false });
+        const inst = new THREE.InstancedMesh(FOOD_GEO, mat, FOOD_CAP);
+        inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        inst.setColorAt(0, _col.set(0xffffff)); // creates the per-bit colour buffer
+        inst.instanceColor.setUsage(THREE.DynamicDrawUsage);
+        inst.frustumCulled = false; // bits are spread far beyond the geometry's bounds
+        inst.renderOrder = 500;
+        inst.count = 0;
+        layer.foodBatch = inst;
+        layer.group.add(inst);
+    }
+
+    function drawFood(layer) {
+        const inst = layer.foodBatch, food = layer.food, n = Math.min(food.length, FOOD_CAP);
+        for (let i = 0; i < n; i++) {
+            const f = food[i];
+            _dummy.position.copy(f.position); _dummy.rotation.copy(f.rotation); _dummy.scale.copy(f.scale);
+            _dummy.updateMatrix();
+            inst.setMatrixAt(i, _dummy.matrix);
+            inst.setColorAt(i, _col.copy(f.material.color).multiplyScalar(f.material.opacity)); // fade = darken
+        }
+        inst.count = n;
+        inst.instanceMatrix.needsUpdate = true;
+        inst.instanceColor.needsUpdate = true;
     }
 
     function spawnNutrients(layer, center) {
@@ -1219,6 +1269,7 @@
             layer.current = new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.7);
         }
         scene.add(layer.group);
+        createFoodBatch(layer);
         const head = snake.nodes[0].position;
         spawnNutrients(layer, head);
         const count = PREDATOR_COUNT + Math.min(index, 4); // a little busier each layer
@@ -1232,7 +1283,8 @@
 
     function disposeLayer(layer) {
         if (!layer) return;
-        for (const f of layer.food) f.material.dispose();
+        layer.foodBatch.material.dispose();
+        layer.foodBatch.dispose && layer.foodBatch.dispose();
         for (const p of layer.creatures) p.dispose();
         scene.remove(layer.group);
     }
@@ -1355,6 +1407,7 @@
     }
 
     function die(cause) {
+        burst(snake, snake.mass * 0.5); // you spill too
         isPlaying = false;
         dying = 0.0001;
         inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
@@ -1421,6 +1474,11 @@
             f.position.x = wrapNear(f.position.x, head.x, worldSize);
             f.position.z = wrapNear(f.position.z, head.z, worldSize);
             let alpha = seamFade(f.position.x - head.x, f.position.z - head.z, worldSize) * activeLayer.alpha;
+            if (u.spin) {
+                f.rotation.x += u.spin * dt; f.rotation.y += u.spin * 0.7 * dt;
+                u.spin *= Math.pow(0.97, dt); // tumble slows with the chunk
+                if (Math.abs(u.spin) < 0.002) u.spin = 0;
+            }
             if (u.remains) {
                 u.ttl -= sec;
                 if (u.ttl <= 0) { removeFood(activeLayer, f); continue; }
@@ -1476,7 +1534,7 @@
         });
         selectedMutation = -1;
         $('mutate-apply').disabled = true;
-        $('mutate-apply').textContent = 'Apply';
+        $('mutate-apply').removeAttribute('aria-label');
         // Drop any steering input in progress so it can't carry over into the menu
         keysDown.clear(); pointer = null; tapNudge = null; touchBoost = false;
         pickOpenedAt = performance.now();
@@ -1496,7 +1554,7 @@
         $('mutate-choices').querySelectorAll('.choice').forEach((b, k) => b.setAttribute('aria-checked', String(k === i)));
         const apply = $('mutate-apply');
         apply.disabled = false;
-        apply.textContent = 'Apply: ' + mutationChoices[i].name;
+        apply.setAttribute('aria-label', 'Apply ' + mutationChoices[i].name);
     }
 
     function pickMutation(i) {
@@ -1661,7 +1719,7 @@
         camera.position.set(-400, 280, 0);
         camera.up.set(0, 1, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer = new THREE.WebGLRenderer({ antialias: !LITE, powerPreference: 'high-performance' });
         renderer.setClearColor(0x000814, 1);
         document.body.appendChild(renderer.domElement);
 
@@ -1726,7 +1784,7 @@
         });
 
         // ── Nebula cloud layers (mid-range density volumes) ───────────────────────
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < Q(80); i++) {
             const size = 800 + Math.random() * 3500;
             const col = Math.random() > 0.5
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
@@ -1774,7 +1832,7 @@
         }
 
         // ── Nebula wisps — flat luminous sheets at various orientations ───────────
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < Q(40); i++) {
             const col = Math.random() > 0.5
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
                 : DEEP_COLORS[Math.floor(Math.random() * DEEP_COLORS.length)];
@@ -1827,7 +1885,7 @@
         }
 
         // ── Glowing debris — slowly rotating wireframe crystals ───────────────────
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < Q(100); i++) {
             const size = 5 + Math.random() * 22;
             const col = Math.random() > 0.4
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
@@ -1855,7 +1913,7 @@
         }
 
         // ── Rising bubbles — the water-like feel ──────────────────────────────────
-        for (let i = 0; i < 65; i++) {
+        for (let i = 0; i < Q(65); i++) {
             const r = 4 + Math.random() * 18;
             const isWire = Math.random() > 0.45;
             const bMesh = new THREE.Mesh(
@@ -1887,7 +1945,7 @@
 
         // ── Ambient star particles ────────────────────────────────────────────────
         const snowGeo = new THREE.BufferGeometry();
-        const snowCount = 4000;
+        const snowCount = Q(4000);
         const snowPos  = new Float32Array(snowCount * 3);
         const snowCols = new Float32Array(snowCount * 3);
         for (let i = 0; i < snowCount; i++) {
@@ -1910,7 +1968,7 @@
 
         // ── Bioluminescent motes — fine close-range particles ─────────────────────
         const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 6000;
+        const dustCount = Q(6000);
         const dustPos = new Float32Array(dustCount * 3);
         const dustCols = new Float32Array(dustCount * 3);
         for (let i = 0; i < dustCount; i++) {
@@ -2109,6 +2167,9 @@
         if (fadingLayer) updateGhostLayer(fadingLayer, headPos, t, dt);
 
         updateFood(dt);
+        drawFood(activeLayer);
+        if (ghostLayer) drawFood(ghostLayer);
+        if (fadingLayer) drawFood(fadingLayer);
         if (isPlaying) resolveCollisions();
         if (isPlaying && !ascend && snake.mass >= ASCEND_MASS) startAscend();
         updateHud();
