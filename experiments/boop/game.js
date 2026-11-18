@@ -1,10 +1,11 @@
 // Boop gray-box: rendering, input and turn flow. Physics and rules live in sim.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, RISE, LOSE_Y } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, BASKET } from './sim.js';
 
 const COLORS = {
     paper: 0xf1e8d2, field: 0xfbf6ea, ink: 0x2b2622, ball: 0xfffdf7,
+    jello: 0xa9dccf, jelloEdge: 0xb2ada4, mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e,
     // Fill by number: low → high. Crayon-ish, all readable with ink numbers.
     tiers: [
         [4, 0x9cc77a], [12, 0xf2c14e], [25, 0xf0954b], [50, 0xe06b4a], [Infinity, 0xb85a4a],
@@ -12,13 +13,15 @@ const COLORS = {
 };
 const tierColor = (hp) => COLORS.tiers.find(([max]) => hp <= max)[1];
 
-const RISE_STEPS = 48;
 const MAX_SETTLE_STEPS = 180;
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
-const hud = { depth: $('hud-depth'), balls: $('hud-balls'), msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body') };
+const hud = {
+    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'),
+    msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
+};
 
 // ---------- three.js setup ----------
 
@@ -49,32 +52,44 @@ fitCamera();
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
+const halfCircle = new THREE.CircleGeometry(1, 24, 0, Math.PI);
+const outlineMat = mat(COLORS.ink);
+const ballMat = mat(COLORS.ball);
 
-// Field background and the lose line.
 const fieldMesh = new THREE.Mesh(unitSquare, mat(COLORS.field));
 fieldMesh.scale.set(W, H, 1);
 fieldMesh.position.set(W / 2, -H / 2, -1);
 scene.add(fieldMesh);
 
-const loseLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, LOSE_Y, -0.5), new THREE.Vector3(W, LOSE_Y, -0.5)]),
-    new THREE.LineDashedMaterial({ color: COLORS.ink, dashSize: 0.18, gapSize: 0.14, transparent: true, opacity: 0.35 }));
-loseLine.computeLineDistances();
-scene.add(loseLine);
+function rect(w, h, material, x = 0, y = 0, z = 0) {
+    const m = new THREE.Mesh(unitSquare, material);
+    m.scale.set(w, h, 1);
+    m.position.set(x, y, z);
+    return m;
+}
 
 // Launcher in the top-right corner.
 const launcher = new THREE.Group();
-const launcherBody = new THREE.Mesh(unitCircle, mat(COLORS.ink));
+const launcherBody = new THREE.Mesh(unitCircle, outlineMat);
 launcherBody.scale.setScalar(0.34);
-const barrel = new THREE.Mesh(unitSquare, mat(COLORS.ink));
-barrel.scale.set(0.62, 0.2, 1);
-barrel.position.x = 0.31;
 const barrelPivot = new THREE.Group();
-barrelPivot.add(barrel);
+barrelPivot.add(rect(0.62, 0.2, outlineMat, 0.31));
 launcher.add(launcherBody, barrelPivot);
 launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
 scene.add(launcher);
+
+// Catch basket: an open U in ink.
+const basket = new THREE.Group();
+{
+    const { half, wall, depth } = BASKET;
+    basket.add(
+        rect(half * 2, wall * 2, outlineMat, 0, -depth / 2),
+        rect(wall * 2, depth, outlineMat, -half + wall, 0),
+        rect(wall * 2, depth, outlineMat, half - wall, 0),
+    );
+}
+scene.add(basket);
 
 // Aim guide: dots along the predicted path, and a half circle at each bounce.
 // The flat side sits on the surface the ball hits; the dome points back out.
@@ -83,35 +98,35 @@ const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(CO
 dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
 scene.add(dots);
-const halfDisc = new THREE.CircleGeometry(0.15, 20, 0, Math.PI);
 const markers = [0, 1, 2].map(() => {
-    const m = new THREE.Mesh(halfDisc, mat(COLORS.ink));
+    const m = new THREE.Mesh(halfCircle, outlineMat);
+    m.scale.setScalar(0.15);
     m.visible = false;
     scene.add(m);
     return m;
 });
 
-// ---------- number labels ----------
+// ---------- text labels ----------
 
-function makeLabel(text) {
+function makeLabel(text, color = '#2b2622') {
     const c = document.createElement('canvas');
     c.width = c.height = 128;
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const m = new THREE.Mesh(unitSquare, new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    m.userData = { c, tex };
+    m.userData = { c, tex, color };
     drawLabel(m, text);
     return m;
 }
 function drawLabel(m, text) {
-    const { c, tex } = m.userData;
+    const { c, tex, color } = m.userData;
     const g = c.getContext('2d');
     g.clearRect(0, 0, 128, 128);
     const size = text.length >= 3 ? 52 : text.length === 2 ? 66 : 78;
     g.font = `800 ${size}px Manrope, system-ui, sans-serif`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillStyle = '#2b2622';
+    g.fillStyle = color;
     g.fillText(text, 64, 68);
     tex.needsUpdate = true;
 }
@@ -119,22 +134,24 @@ function drawLabel(m, text) {
 // ---------- view of the sim ----------
 
 let sim;
-const blockViews = new Map();   // id → { group, fills, outlines, label, hp, punch }
-const ballViews = new Map();    // body handle → mesh
+const blockViews = new Map();   // id → view
+const ballViews = new Map();    // body handle → group
 const pickupViews = new Map();  // id → group
+const propViews = new Map();    // id → { group, rotor? }
+const floaters = [];            // "+1" labels drifting up
 let zoneOffset = 0;             // visual slide used when a new zone comes up
 
-const outlineMat = mat(COLORS.ink);
-const ballMat = mat(COLORS.ball);
+// Jello is drawn opaque in pale colours: see-through fills would show the seams between cells.
+const jelloOutlineMat = mat(COLORS.jelloEdge);
 
 function buildBlockView(b) {
     const group = new THREE.Group();
-    const fillMat = mat(tierColor(b.hp));
+    const fillMat = mat(b.jello ? COLORS.jello : tierColor(b.hp));
     const outlines = [], fills = [];
     for (const [x, y] of b.cells) {
-        const o = new THREE.Mesh(unitSquare, outlineMat);
-        o.position.set(x, y, 0);
+        const o = new THREE.Mesh(unitSquare, b.jello ? jelloOutlineMat : outlineMat);
         const f = new THREE.Mesh(unitSquare, fillMat);
+        o.position.set(x, y, 0);
         f.position.set(x, y, 0.1);
         outlines.push(o); fills.push(f);
         group.add(o, f);
@@ -147,27 +164,36 @@ function buildBlockView(b) {
     label.position.z = 0.2;
     group.add(label);
     scene.add(group);
-    const v = { group, fills, outlines, label, fillMat, hp: -1, punch: 0, cells: b.cells };
+    const v = { group, fills, outlines, label, fillMat, hp: -1, punch: 0, cells: b.cells, jello: b.jello };
     blockViews.set(b.id, v);
     return v;
 }
 
-function updateBlockView(v, b) {
+function updateBlockView(v, b, frameDt) {
     const k = b.scale;
     if (v.hp !== b.hp) {
+        if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
         drawLabel(v.label, String(b.hp));
-        v.fillMat.color.setHex(tierColor(b.hp));
+        if (!v.jello) v.fillMat.color.setHex(tierColor(b.hp));
     }
     v.cells.forEach(([x, y], i) => {
         v.outlines[i].position.set(x * k, y * k, 0);
-        v.outlines[i].scale.setScalar(k + 0.09);
+        v.outlines[i].scale.setScalar(k + (v.jello ? 0.05 : 0.09));
         v.fills[i].position.set(x * k, y * k, 0.1);
         v.fills[i].scale.setScalar(k);
     });
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
     v.label.scale.setScalar(Math.max(0.62, k * 0.92));
+    v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
+    if (v.jello) {
+        // Jello wobbles: squash one way, stretch the other, fading out.
+        const w = Math.sin(performance.now() / 45) * 0.08 * v.punch;
+        v.group.scale.set(1 + w, 1 - w, 1);
+    } else {
+        v.group.scale.setScalar(1 + 0.07 * v.punch);
+    }
 }
 
 function buildPickupView(pk) {
@@ -182,6 +208,52 @@ function buildPickupView(pk) {
     return group;
 }
 
+function buildPropView(pr) {
+    const group = new THREE.Group();
+    const v = { group };
+    if (pr.kind === 'windmill') {
+        const rotor = new THREE.Group();
+        const fill = mat(COLORS.windmill);
+        for (const rot of [0, Math.PI / 2]) {
+            const arm = new THREE.Group();
+            arm.add(rect(1.7 + 0.08, 0.18 + 0.08, outlineMat), rect(1.7, 0.18, fill, 0, 0, 0.05));
+            arm.rotation.z = rot;
+            rotor.add(arm);
+        }
+        const pin = new THREE.Mesh(unitCircle, outlineMat);
+        pin.scale.setScalar(0.12);
+        pin.position.z = 0.1;
+        rotor.add(pin);
+        group.add(rotor);
+        group.position.set(pr.x, pr.y, 0.05);
+        v.rotor = rotor;
+    } else {
+        // Mushroom: stem plus a domed cap, each with an ink edge.
+        const stemFill = mat(COLORS.stem), capFill = mat(COLORS.mushroom);
+        group.add(rect(0.28 + 0.08, pr.capY + 0.04, outlineMat, 0, pr.capY / 2), rect(0.28, pr.capY, stemFill, 0, pr.capY / 2, 0.05));
+        const capOut = new THREE.Mesh(halfCircle, outlineMat);
+        capOut.scale.set(pr.r + 0.045, (pr.r + 0.045) * 0.75, 1);
+        capOut.position.set(0, pr.capY - 0.03, 0.06);
+        const cap = new THREE.Mesh(halfCircle, capFill);
+        cap.scale.set(pr.r, pr.r * 0.75, 1);
+        cap.position.set(0, pr.capY, 0.07);
+        group.add(capOut, cap);
+        group.position.set(pr.x, pr.y, 0.05);
+    }
+    scene.add(group);
+    propViews.set(pr.id, v);
+    return v;
+}
+
+function addFloater(text, x, y) {
+    const m = makeLabel(text, '#2b2622');
+    m.scale.setScalar(0.55);
+    m.position.set(x, y, 0.8);
+    m.material.opacity = 1;
+    scene.add(m);
+    floaters.push({ m, t: 0 });
+}
+
 function syncView(frameDt) {
     const s = sim.s;
     for (const [id, v] of blockViews) {
@@ -190,13 +262,11 @@ function syncView(frameDt) {
     for (const id in s.blocks) {
         const b = s.blocks[id];
         const v = blockViews.get(b.id) ?? buildBlockView(b);
-        updateBlockView(v, b);
+        updateBlockView(v, b, frameDt);
         const body = sim.world.getRigidBody(b.body);
         const p = body.translation();
-        v.group.position.set(p.x, p.y + zoneOffset, 0);
+        v.group.position.set(p.x, p.y + zoneOffset, b.falling ? 0.3 : 0);
         v.group.rotation.z = body.rotation();
-        v.punch = Math.max(0, v.punch - frameDt * 8);
-        v.group.scale.setScalar(1 + 0.07 * v.punch);
     }
 
     for (const [id, g] of pickupViews) {
@@ -206,6 +276,16 @@ function syncView(frameDt) {
         const pk = s.pickups[id];
         const g = pickupViews.get(pk.id) ?? buildPickupView(pk);
         g.position.set(pk.x, pk.y + zoneOffset, 0.3);
+    }
+
+    for (const [id, v] of propViews) {
+        if (!s.props[id]) { scene.remove(v.group); propViews.delete(id); }
+    }
+    for (const id in s.props) {
+        const pr = s.props[id];
+        const v = propViews.get(pr.id) ?? buildPropView(pr);
+        v.group.position.y = pr.y + zoneOffset;
+        if (v.rotor) v.rotor.rotation.z = sim.world.getRigidBody(pr.rotor).rotation();
     }
 
     const live = new Set();
@@ -225,13 +305,25 @@ function syncView(frameDt) {
     }
     for (const [h, m] of ballViews) if (!live.has(h)) { scene.remove(m); ballViews.delete(h); }
 
+    const bp = sim.world.getRigidBody(s.basket.body).translation();
+    basket.position.set(bp.x, bp.y, 0.2);
+
+    for (let i = floaters.length - 1; i >= 0; i--) {
+        const f = floaters[i];
+        f.t += frameDt;
+        f.m.position.y += frameDt * 0.9;
+        f.m.material.opacity = Math.max(0, 1 - f.t / 0.9);
+        if (f.t > 0.9) { scene.remove(f.m); f.m.material.map.dispose(); floaters.splice(i, 1); }
+    }
+
     hud.depth.textContent = s.depth;
-    hud.balls.textContent = s.ballCount;
+    hud.balls.textContent = s.supply;
+    hud.volley.textContent = Math.min(s.volley, Math.max(0, s.supply));
 }
 
 function consumeEvents() {
     for (const e of sim.events) {
-        if (e.t === 'hit') { const v = blockViews.get(e.id); if (v) v.punch = 1; }
+        if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
     }
     sim.events.length = 0;
 }
@@ -245,7 +337,6 @@ function drawGuide(angle) {
     if (angle === guideAngle) return;
     guideAngle = angle;
     const { path, contacts } = predict(sim, angle);
-    // Dots at even spacing along the path.
     let n = 0, carry = 0;
     const gap = 0.26;
     for (let i = 1; i < path.length && n < MAX_DOTS; i++) {
@@ -280,7 +371,7 @@ function hideGuide() {
 
 // ---------- input ----------
 
-let phase = 'loading';  // aim | play | rise | settle | descend | over
+let phase = 'loading';  // aim | play | settle | descend | over
 let aiming = false;
 let aimAngle = -2.2;
 let fastForward = false;
@@ -309,7 +400,7 @@ canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'over') { restart(); return; }
     if (phase === 'aim') { aiming = true; updateAim(ev); return; }
-    if (phase === 'play' || phase === 'rise' || phase === 'settle') fastForward = true;
+    if (phase === 'play' || phase === 'settle') fastForward = true;
 });
 canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
 canvas.addEventListener('pointerup', (ev) => {
@@ -335,7 +426,7 @@ function updateAim(ev) {
 
 // ---------- turn flow ----------
 
-let acc = 0, riseLeft = 0, settleSteps = 0, descendT = 0;
+let acc = 0, settleSteps = 0, descendT = 0;
 
 function showMessage(title, body) {
     hud.msgTitle.textContent = title;
@@ -346,6 +437,13 @@ function showMessage(title, body) {
 function readBest() { try { return Number(localStorage.getItem('boop-best-depth')) || 0; } catch { return 0; } }
 function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d)); } catch { /* storage blocked */ } }
 
+function gameOver() {
+    const d = sim.s.depth, best = Math.max(readBest(), d);
+    writeBest(best);
+    phase = 'over';
+    showMessage(`Out of balls at depth ${d}`, `Best: ${best}. Tap to play again.`);
+}
+
 function startZone() {
     sim.genZone();
     zoneOffset = -H;
@@ -355,18 +453,12 @@ function startZone() {
 
 function endTurn() {
     if (sim.blockCount() === 0) { startZone(); return; }
-    riseLeft = RISE_STEPS;
-    phase = 'rise';
+    settleSteps = 0;
+    phase = 'settle';
 }
 
-function afterSettle() {
-    if (sim.highestTop() > LOSE_Y) {
-        const d = sim.s.depth, best = Math.max(readBest(), d);
-        writeBest(best);
-        phase = 'over';
-        showMessage(`Reached depth ${d}`, `Best: ${best}. Tap to play again.`);
-        return;
-    }
+function readyToAim() {
+    if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
 }
 
@@ -375,8 +467,9 @@ function restart() {
     if (sim) sim.free();
     for (const v of blockViews.values()) scene.remove(v.group);
     for (const g of pickupViews.values()) scene.remove(g);
+    for (const v of propViews.values()) scene.remove(v.group);
     for (const m of ballViews.values()) scene.remove(m);
-    blockViews.clear(); pickupViews.clear(); ballViews.clear();
+    blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
     startZone();
 }
@@ -386,22 +479,18 @@ function tick(frameDt) {
         descendT += frameDt;
         const t = Math.min(1, descendT / DESCEND_TIME);
         zoneOffset = -H * (1 - t) ** 3;
-        if (t >= 1) { zoneOffset = 0; phase = 'aim'; }
+        if (t >= 1) { zoneOffset = 0; readyToAim(); }
         return;
     }
-    if (phase !== 'play' && phase !== 'rise' && phase !== 'settle') return;
+    if (phase !== 'play' && phase !== 'settle') return;
 
     acc += frameDt * (fastForward ? FAST_FORWARD : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
-        if (phase === 'rise') {
-            sim.raise(RISE / RISE_STEPS);
-            if (--riseLeft <= 0) { phase = 'settle'; settleSteps = 0; }
-        }
         sim.step();
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
-        if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { afterSettle(); break; }
+        if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
     }
     if (n >= 30) acc = 0;   // tab was in the background; don't try to catch up
     consumeEvents();
