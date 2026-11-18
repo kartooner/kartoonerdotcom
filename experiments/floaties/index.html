@@ -789,12 +789,8 @@
                         c.headVelocity.applyQuaternion(q).normalize();
                     }
                 }
-            } else {
-                // Coasting: micro-wiggle so the snake never feels dead
-                const wiggle = Math.sin(t * 1.1) * 0.007 * dt;
-                const right = new THREE.Vector3(-c.headVelocity.z, 0, c.headVelocity.x);
-                c.headVelocity.addScaledVector(right, wiggle).normalize();
             }
+            // No input: swim straight (only other creatures wander on their own)
         } else {
             // Idle: gentle sinuous drift
             const lateral = Math.sin(t * 0.28) * 0.002 * dt;
