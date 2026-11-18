@@ -183,7 +183,15 @@
             padding: 0.08em 0.3em; /* keep the italic overhang inside the box */
             text-shadow: 0 0 50px rgba(255, 170, 0, 0.6), 0 4px 0 rgba(0, 8, 20, 0.6);
         }
-        #banner .note { display: block; margin-top: 0.4rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 600; color: #ff6b85; text-shadow: 0 1px 6px rgba(0, 8, 20, 0.95), 0 0 2px rgba(0, 8, 20, 0.9); }
+        /* Condition and warning lines sit on a solid plate so they read over any background */
+        #banner .mod, #banner .note {
+            display: block; margin-top: 0.5rem; padding: 0.45rem 0.9rem; border-radius: 6px;
+            background: rgba(0, 8, 20, 0.88); text-shadow: none;
+            font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(1rem, 2.2vw, 1.25rem); font-weight: 600;
+        }
+        #banner .mod { color: #ffd27a; margin-top: 0.9rem; }
+        #banner .note { color: #ff8095; border: 1px solid rgba(255, 128, 149, 0.5); }
+        #banner .mod:empty, #banner .note:empty { display: none; }
 
         /* Game over: same structure as Paper Plane (title, stats, retry, quit) */
         #gameover {
@@ -218,7 +226,6 @@
 
         #hud .mod { font-size: 0.75rem; color: #ffcf6b; margin-top: 4px; }
         #hud { flex-wrap: wrap; max-width: calc(100vw - 32px); }
-        #banner .mod { display: block; margin-top: 0.75rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 1.0625rem; color: #ffcf6b; text-shadow: 0 1px 6px rgba(0, 8, 20, 0.9); }
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
 
