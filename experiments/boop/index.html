@@ -7,13 +7,21 @@
     <meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
     <meta name="robots" content="noindex">
-    <title>Boop (prototype)</title>
+    <title>Boop! (prototype)</title>
     <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/Cartridge-Rough.woff2" as="font" type="font/woff2" crossorigin>
     <style>
         @font-face {
             font-family: 'Manrope';
             src: url('/assets/fonts/Manrope-latin.woff2') format('woff2');
             font-weight: 200 800;
+            font-display: swap;
+        }
+        /* Cartridge Rough: the site's display face, used for the logo and headings. */
+        @font-face {
+            font-family: 'Cartridge Rough';
+            src: url('/assets/fonts/Cartridge-Rough.woff2') format('woff2'),
+                 url('/assets/fonts/Cartridge-Rough.woff') format('woff');
             font-display: swap;
         }
         :root {
@@ -148,17 +156,19 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
         }
         #menu h1 {
             margin: 0;
-            font-size: clamp(3.5rem, 18vw, 5.5rem);
-            font-weight: 800;
-            letter-spacing: -0.03em;
+            font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
+            font-size: clamp(4rem, 22vw, 6.5rem);
+            font-weight: normal;
             line-height: 1;
         }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
-        .actions { display: flex; flex-direction: column; gap: 12px; max-width: 280px; }
+        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         .btn {
             font: inherit;
             font-size: 1.0625rem;
@@ -184,15 +194,16 @@
             text-decoration: underline;
             cursor: pointer;
         }
-        #howto h2 { margin: 12px 0 20px; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.01em; }
-        #howto h3 { margin: 28px 0 6px; font-size: 1.0625rem; font-weight: 800; }
+        #howto h2, #howto h3, #message h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
+        #howto h2 { margin: 12px 0 20px; font-size: 2rem; }
+        #howto h3 { margin: 28px 0 6px; font-size: 1.25rem; }
         #howto p, #howto li { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
         #howto ul { margin: 0; padding-left: 20px; }
         #howto .dot { color: var(--accent); font-weight: 800; }
         #howto figure { margin: 14px 0 0; }
         #howto img { display: block; width: 100%; max-width: 300px; height: auto; border: 2px solid var(--ink); border-radius: 8px; }
         #howto figcaption { margin-top: 6px; font-size: 0.8125rem; color: var(--ink-soft); }
-        #howto .actions { margin-top: 32px; }
+        #howto .actions { margin: 32px auto 0; }
         body.howto-open #back, body.howto-open #theme-toggle { display: none; }
         #back {
             position: fixed;
@@ -220,7 +231,7 @@
     </div>
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <div class="screen-inner">
-            <h1 id="menu-title">Boop</h1>
+            <h1 id="menu-title">Boop!</h1>
             <p class="tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="best" id="menu-best" hidden></p>
             <div class="actions">
