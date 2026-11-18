@@ -41,9 +41,9 @@
         }
         #menu { pointer-events: auto; text-align: center; padding: 2rem 16px 4.5rem; margin: auto; } /* margin:auto centres but lets tall content scroll */
         #ui-root, #gameover, #mutate { overflow-y: auto; touch-action: pan-y; }
-        #gameover > :first-child, #mutate > :first-child { margin-top: auto; }
-        #gameover > :last-child, #mutate > :last-child { margin-bottom: auto; }
-        #gameover, #mutate { padding-bottom: 4.5rem !important; } /* clear the Games link */
+        #gameover > :first-child { margin-top: auto; }
+        #gameover > :last-child { margin-bottom: auto; }
+        #gameover { padding-bottom: 4.5rem !important; } /* clear the Games link */
         @media (max-height: 600px) {
             .title { margin-bottom: 1.25rem; }
         }
@@ -140,22 +140,20 @@
 
         .swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: 0.05rem; }
 
+        /* HUD: just where you are and how close you are to the next layer */
         #hud {
-            position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; z-index: 500;
-            display: flex; gap: 1.25rem; align-items: baseline;
-            color: #e8f1fa; pointer-events: none;
-            font-variant-numeric: tabular-nums;
+            position: fixed; z-index: 500; pointer-events: none;
+            top: max(14px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
+            display: flex; flex-direction: column; gap: 6px;
+            color: #e8f1fa; font-variant-numeric: tabular-nums;
+            text-shadow: 0 1px 4px rgba(0, 8, 20, 0.8);
         }
         #hud[hidden] { display: none; }
-        #hud .name { font-size: 0.8125rem; color: #b7c6d6; margin-left: 0.4rem; }
-        #hud .of { font-size: 0.8125rem; color: #8fa3b8; margin-left: 0.2rem; }
-        .bar { width: 88px; height: 3px; margin-top: 5px; background: rgba(183, 198, 214, 0.2); }
+        #hud .where { font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.01em; }
+        #hud .where span { font-weight: 500; color: #b7c6d6; }
+        #hud .progress { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #b7c6d6; }
+        .bar { width: 104px; height: 4px; border-radius: 2px; background: rgba(183, 198, 214, 0.22); overflow: hidden; }
         .bar i { display: block; height: 100%; width: 0; background: #00f2ff; }
-        #hud .label {
-            font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; margin-right: 0.4rem;
-        }
-        #hud .value { font-size: 1.25rem; font-weight: 700; }
-        #hud .best .value { font-size: 0.9375rem; font-weight: 500; color: #b7c6d6; }
 
         /* Layer title card: big, centred, pops in, holds, then fades */
         #banner {
@@ -224,29 +222,35 @@
         .btn small { display: block; margin-top: 0.35rem; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: none; color: #b7c6d6; }
         .btn-quiet { border-color: rgba(183, 198, 214, 0.35); color: #b7c6d6; margin-top: 0.75rem; padding: 0.75rem 2.5rem; }
 
-        #hud .mod { font-size: 0.75rem; color: #ffcf6b; margin-top: 4px; }
-        #hud { flex-wrap: wrap; max-width: calc(100vw - 32px); }
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
 
         /* Mutation pick: a plain numbered list, not a card grid */
         #mutate {
-            position: fixed; inset: 0; z-index: 1050;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 2rem 16px; box-sizing: border-box;
-            background: rgba(0, 8, 20, 0.72); color: #e8f1fa; text-align: center;
+            position: fixed; inset: 0; z-index: 1120; /* above the Games link */
+            display: grid; padding: 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.78); color: #e8f1fa; text-align: center;
         }
+        /* margin:auto centres the panel on any screen, and still scrolls if it's taller */
+        #mutate .panel { margin: auto; width: 100%; max-width: 28rem; display: flex; flex-direction: column; align-items: center; }
+        #mutate .hint { margin: 0.75rem 0 0; font-size: 0.8125rem; color: #8fa3b8; }
+        #mutate-apply { margin-top: 1.25rem; width: 100%; min-width: 0; }
+        #mutate-apply:disabled { opacity: 0.35; cursor: default; }
         #mutate[hidden] { display: none; }
         #mutate .kicker { margin: 0 0 0.5rem; font-size: 0.8125rem; letter-spacing: 0.3em; text-transform: uppercase; color: #00f2ff; }
         #mutate h2 { font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; font-size: clamp(1.75rem, 5vw, 2.75rem); margin: 0 0 0.25rem; }
         #mutate .cause { margin: 0 0 1.5rem; color: #ffcf6b; font-size: 0.9375rem; }
-        .choices { width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .choices { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
         .choice {
             display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
             padding: 0.85rem 1rem; border: 1px solid rgba(0, 255, 204, 0.35); border-radius: 8px;
             background: rgba(0, 20, 30, 0.6); color: #b7c6d6; font: inherit; font-size: 0.875rem; cursor: pointer;
         }
-        .choice:hover, .choice:focus-visible { border-color: #00ffcc; background: rgba(0, 255, 204, 0.08); outline: none; }
+        .choice { min-height: 64px; }
+        .choice:hover { border-color: rgba(0, 255, 204, 0.7); }
+        .choice:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .choice[aria-checked="true"] { border: 2px solid #00ffcc; background: rgba(0, 255, 204, 0.16); }
+        .choice[aria-checked="true"] kbd { background: #00ffcc; color: #001a14; }
         .choice b { display: block; color: #fff; font-size: 1rem; margin-bottom: 0.15rem; }
         .choice kbd { font-family: inherit; font-weight: 700; color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.5); border-radius: 4px; padding: 0.1rem 0.45rem; }
 
@@ -311,7 +315,7 @@
 
         <h2>Controls</h2>
         <dl class="defs">
-            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, tap left or right of your snake to turn a little, or hold and drag a finger to steer.</dd>
+            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or hold the mouse button or a finger down and point where to go: the further to the side, the sharper the turn. A quick click or tap turns you a little toward that side.</dd>
             <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
             <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
             <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
@@ -320,7 +324,7 @@
         <h2>Eating</h2>
         <dl class="defs">
             <dt>Teal bits</dt><dd>+1 mass.</dd>
-            <dt>Amber bits</dt><dd>+3 mass, but they swim away when you get close.</dd>
+            <dt>Amber bits</dt><dd>+3 mass. They dart away when you get close, then need a moment to recover: keep after them.</dd>
             <dt>Pale remains</dt><dd>What's left when a creature dies. Scattered along its body; they fade after a while.</dd>
         </dl>
 
@@ -338,7 +342,7 @@
         <p>It works the other way too: anything that hits <em>your</em> body crashes and bursts into remains. Curl around a big red creature and make it run into you.</p>
 
         <h2>Layers and mutations</h2>
-        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then pick one of three mutations. They last for the rest of the run, and some stack.</p>
+        <p>Fill the bar to rise to the next layer: 50 mass on layer 1, and 5 more on each layer after. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then choose one of three mutations: tap it, then Apply. They last for the rest of the run, and some stack.</p>
         <dl class="defs" id="manual-mutations"></dl>
 
         <h2>Layer conditions</h2>
@@ -346,7 +350,7 @@
         <dl class="defs" id="manual-mods"></dl>
 
         <h2>Runs and unlocks</h2>
-        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
         <dl class="defs" id="manual-unlocks"></dl>
 
         <button type="button" class="btn-secondary page-back">Back</button>
@@ -375,22 +379,22 @@
 </div>
 
 <div id="hud" hidden>
-    <div>
-        <span class="label">Layer</span><span class="value" id="hud-layer">1</span><span class="name" id="hud-layer-name">Silt</span>
-        <div class="mod" id="hud-mod"></div>
-    </div>
-    <div>
-        <span class="label">Mass</span><span class="value" id="hud-mass">10</span><span class="of">/ 50</span>
+    <div class="where">Layer <b id="hud-layer">1</b> <span>· <span id="hud-layer-name">Silt</span></span></div>
+    <div class="progress" aria-label="Mass toward the next layer">
         <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
+        <span id="hud-mass">10 / 50</span>
     </div>
-    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">1</span></div>
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
 <div id="mutate" role="dialog" aria-labelledby="mutate-title" hidden>
-    <p class="kicker" id="mutate-layer"></p>
-    <h2 id="mutate-title">Choose a mutation</h2>
-    <p class="cause" id="mutate-mod"></p>
-    <div class="choices" id="mutate-choices"></div>
+    <div class="panel">
+        <p class="kicker" id="mutate-layer"></p>
+        <h2 id="mutate-title">Choose a mutation</h2>
+        <p class="cause" id="mutate-mod"></p>
+        <div class="choices" id="mutate-choices" role="radiogroup" aria-labelledby="mutate-title"></div>
+        <button type="button" class="btn" id="mutate-apply" disabled>Apply</button>
+        <p class="hint">Tap one, then Apply. Keys: 1–3, then Enter.</p>
+    </div>
 </div>
 <div id="gameover" role="dialog" aria-labelledby="gameover-title" hidden>
     <h2 id="gameover-title">Run over</h2>
@@ -423,20 +427,26 @@
     const pointLayers = []; // particle systems that repeat around the player
     const worldSize = 2500;
     const BASE_FOG = 0.00065;
+    // Phones and tablets get half the decorative scenery (gameplay is unchanged)
+    const LITE = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 500;
+    const Q = (n) => Math.round(LITE ? n * 0.5 : n);
     let isPlaying = false;
 
-    // --- Input state (exclusive: only one steering mode active at a time) ---
-    let inputMode = null;
+    // --- Input state: mouse, touch and keyboard all feed one turn rate ---
+    let inputMode = null;   // last input used ('keyboard' | 'pointer'); informational only
     let keysDown = new Set();
     let touchBoost = false;
-    let dragWorldPos = new THREE.Vector3();
-    let touchWorldPos = new THREE.Vector3();
-    let waypointPos = null, waypointMarker;
-    let tapNudge = null; // a quick tap turns you toward it by a limited amount, then you go straight
-    let tapStart = null; // the current touch, while it might still be a tap
+    let waypointPos = null, waypointMarker; // click-to-swim was removed; kept null
+    let pointer = null;     // held mouse button or finger: { x, y, sx, sy, at, moved }
+    let tapNudge = null;    // heading (radians) a quick tap/click is easing you round to
+    let turnVel = 0;        // current turn speed, eased toward what the inputs want
     const TAP_NUDGE = 0.6;  // max turn per tap, radians (~35°)
-    const TAP_MS = 250;     // shorter than this (and not dragged) counts as a tap
-    const isTapping = () => tapStart && !tapStart.moved && performance.now() - tapStart.at < TAP_MS;
+    const TAP_MS = 300;     // a press shorter than this (and not dragged) counts as a tap
+    const POINTER_DEADZONE = 60; // a held pointer this close to your head doesn't steer
+    const pointerWorld = new THREE.Vector3();
+    let pointerToWorld = null;   // screen → water-plane mapping (set up in init)
+    const isTap = (p) => !p.moved && performance.now() - p.at < TAP_MS;
+    const angleDiff = (a, b) => { const d = a - b; return Math.atan2(Math.sin(d), Math.cos(d)); };
     let camTarget = new THREE.Vector3();
     let cameraBank = 0;
 
@@ -445,13 +455,14 @@
     const PREDATOR_COUNT = 5;
     const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
     const START_GRACE = 3;        // seconds of immunity at the start of a run (same as Paper Plane)
-    const ASCEND_MASS = 50;       // reach this to rise to the next layer
+    const ASCEND_MASS = 50;       // mass to rise from layer 1; each layer after needs +5 (see difficulty)
+    const FINAL_LAYER = 19;       // layer 20 (0-based 19): fill it to win the run
     const DEATH_MASS = 5;         // a bite that would drop you below this kills you
     const ASCEND_TIME = 2.5;      // seconds for the zoom-out between layers
     const GHOST_DEPTH = 260;      // how far below you the previous layer sinks
     const GHOST_ALPHA = 0.45;
     const LAYER_NAMES = ['Silt', 'Drift', 'Shoal', 'Kelp', 'Reef', 'Swell', 'Surface']; // distinct from condition names
-    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky ' + (i - LAYER_NAMES.length + 2);
+    const layerName = (i) => i === FINAL_LAYER ? 'Nebula Heart' : LAYER_NAMES[i] || 'Open Sky'; // number shown beside it
     let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
     let hitBlink = 0;             // seconds of blinking left after a hit
     let dying = 0;                // seconds since death (0 = alive)
@@ -467,6 +478,8 @@
     };
 
     const TIRED_TINT = new THREE.Color(0xffffff);
+    // Scratch objects reused every frame (avoids garbage-collection hitches on phones)
+    const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _Z = new THREE.Vector3(0, 0, 1);
     const UNIT_SPHERE = new THREE.IcosahedronGeometry(1, 2);
     const JAW_GEO = new THREE.ConeGeometry(0.25, 0.7, 3);
     const FOOD_GEO = new THREE.TetrahedronGeometry(11, 0);
@@ -699,15 +712,17 @@
 
             // ── Head: orient with subtle pitch ────────────────────────────────────
             const pitchY = Math.cos(t * 3.5 + this.bobPhase) * 0.15;
-            const lookDir = new THREE.Vector3(this.headVelocity.x, pitchY, this.headVelocity.z).normalize();
-            head.lookAt(head.position.clone().add(lookDir));
+            _v1.set(this.headVelocity.x, pitchY, this.headVelocity.z).normalize().add(head.position);
+            head.lookAt(_v1);
 
             // ── Record path ───────────────────────────────────────────────────────
             if (!this.pathHistory.length ||
                 head.position.distanceTo(this.pathHistory[0]) >= this.minPathDist) {
-                this.pathHistory.unshift(head.position.clone());
                 const maxLen = Math.ceil(this.segmentCount * this.segmentSpacing / this.minPathDist) + 20;
                 if (this.pathHistory.length > maxLen) this.pathHistory.length = maxLen;
+                // Recycle the oldest point instead of allocating a new one
+                const v = this.pathHistory.length === maxLen ? this.pathHistory.pop() : new THREE.Vector3();
+                this.pathHistory.unshift(v.copy(head.position));
             }
 
             // ── Place body segments (single O(n+m) pass) ──────────────────────────
@@ -726,12 +741,9 @@
                 const frac = sl > 0 ? Math.min(1, (target - accumulated) / sl) : 0;
                 const seg = this.nodes[i];
                 seg.position.copy(this.pathHistory[pi]).lerp(this.pathHistory[pi + 1], frac);
-                const dir = new THREE.Vector3().subVectors(this.nodes[i - 1].position, seg.position);
+                const dir = _v2.subVectors(this.nodes[i - 1].position, seg.position);
                 if (dir.lengthSq() > 0.001) {
-                    seg.quaternion.slerp(
-                        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize()),
-                        slerpK
-                    );
+                    seg.quaternion.slerp(_q1.setFromUnitVectors(_Z, dir.normalize()), slerpK);
                 }
             }
 
@@ -766,47 +778,52 @@
     function playerSteer(c, t, dt) {
         const head = c.nodes[0];
         if (isPlaying) {
-            if (inputMode === 'keyboard') {
-                const TURN = 0.065 * (1 + 0.3 * mut('turn')) * dt;
-                let dAngle = 0;
-                if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
-                if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
-                if (dAngle !== 0) {
-                    const cs = Math.cos(dAngle), sn = Math.sin(dAngle);
-                    const nx = c.headVelocity.x * cs - c.headVelocity.z * sn;
-                    const nz = c.headVelocity.x * sn + c.headVelocity.z * cs;
-                    c.headVelocity.set(nx, 0, nz).normalize();
+            // Every input feeds one wanted turn rate; the actual turn eases toward it.
+            // Like Paper Plane: inputs never lock each other out, and nothing is twitchy.
+            const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
+            const maxRate = 0.065 * (1 + 0.3 * mut('turn')); // radians per 60fps frame
+            const keyL = keysDown.has('arrowleft') || keysDown.has('a');
+            const keyR = keysDown.has('arrowright') || keysDown.has('d');
+            let want = 0;
+            if (keyL || keyR) {
+                want = ((keyR ? 1 : 0) - (keyL ? 1 : 0)) * maxRate;
+                tapNudge = null;
+            } else if (pointer && pointerToWorld && isTap(pointer)) {
+                // Pressed, but could still be a tap: turn toward exactly what a tap would give,
+                // so releasing it just carries on (no pull-back)
+                pointerToWorld(pointer.sx, pointer.sy, pointerWorld);
+                const h0 = pointer.heading0;
+                const d0 = angleDiff(Math.atan2(pointerWorld.z - head.position.z, pointerWorld.x - head.position.x), h0);
+                tapNudge = h0 + THREE.MathUtils.clamp(d0, -TAP_NUDGE, TAP_NUDGE);
+                const diff = angleDiff(tapNudge, cur);
+                want = Math.abs(diff) < 0.01 ? 0 : THREE.MathUtils.clamp(diff * 0.15, -maxRate, maxRate);
+            } else if (pointer && pointerToWorld) {
+                // Held mouse/finger: a joystick. Further off-centre = sharper turn
+                tapNudge = null;
+                pointerToWorld(pointer.x, pointer.y, pointerWorld);
+                const dx = pointerWorld.x - head.position.x, dz = pointerWorld.z - head.position.z;
+                if (Math.hypot(dx, dz) > POINTER_DEADZONE) {
+                    want = THREE.MathUtils.clamp(angleDiff(Math.atan2(dz, dx), cur) * 0.12, -maxRate, maxRate);
                 }
-            } else if (inputMode === 'drag' || inputMode === 'touch' || (inputMode === 'waypoint' && waypointPos)) {
-                const wp = inputMode === 'drag' ? dragWorldPos : inputMode === 'touch' ? touchWorldPos : waypointPos;
-                const toTarget = new THREE.Vector3().subVectors(wp, head.position);
-                toTarget.y = 0;
-                if (inputMode === 'waypoint' && toTarget.length() < 40) {
-                    waypointPos = null; inputMode = null;
-                } else if (toTarget.length() > 20) {
-                    // Angle-axis: fixed max turn rate regardless of pointer distance
-                    let maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
-                    // While a touch might still be a tap, cap how far it can turn you
-                    if (inputMode === 'touch' && isTapping()) maxTurn = Math.min(maxTurn, Math.max(0, TAP_NUDGE - tapStart.turned));
-                    const targetDir = toTarget.normalize();
-                    const cross = new THREE.Vector3().crossVectors(c.headVelocity, targetDir);
-                    const angle = Math.atan2(cross.length(), c.headVelocity.dot(targetDir));
-                    if (angle > 0.001 && maxTurn > 0) {
-                        if (inputMode === 'touch' && tapStart) tapStart.turned += Math.min(angle, maxTurn);
-                        const q = new THREE.Quaternion().setFromAxisAngle(cross.normalize(), Math.min(angle, maxTurn));
-                        c.headVelocity.applyQuaternion(q).normalize();
-                    }
-                }
-            } else if (tapNudge) {
-                const toT = new THREE.Vector3().subVectors(tapNudge.target, head.position);
-                const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
-                let diff = Math.atan2(toT.z, toT.x) - cur;
-                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                const step = THREE.MathUtils.clamp(diff, -Math.min(0.1 * dt, tapNudge.left), Math.min(0.1 * dt, tapNudge.left));
-                c.headVelocity.set(Math.cos(cur + step), 0, Math.sin(cur + step));
-                tapNudge.left -= Math.abs(step);
-                if (tapNudge.left <= 0.001 || Math.abs(diff) < 0.02) tapNudge = null;
+            } else if (tapNudge !== null) {
+                // Quick tap/click: ease round to the nudged heading, then straight on
+                const diff = angleDiff(tapNudge, cur);
+                if (Math.abs(diff) < 0.01) tapNudge = null;
+                else want = THREE.MathUtils.clamp(diff * 0.15, -maxRate, maxRate);
             }
+            // Snappy into a turn (or reversing it); a short glide out when you let go
+            const easing = (want !== 0 && (Math.sign(want) !== Math.sign(turnVel) || Math.abs(want) > Math.abs(turnVel))) ? 0.35 : 0.18;
+            turnVel += (want - turnVel) * lerpK(easing, dt);
+            let ang = cur + turnVel * dt;
+            // Land exactly on a nudge target rather than overshooting and correcting back
+            if (tapNudge !== null) {
+                const left = angleDiff(tapNudge, cur);
+                if (Math.sign(turnVel) === Math.sign(left) && Math.abs(turnVel * dt) >= Math.abs(left)) {
+                    ang = tapNudge; turnVel = 0;
+                    if (!pointer) tapNudge = null;
+                }
+            }
+            c.headVelocity.set(Math.cos(ang), 0, Math.sin(ang));
             // No input: swim straight (only other creatures wander on their own)
         } else {
             // Idle: gentle sinuous drift
@@ -859,6 +876,7 @@
         { id: 'orchid', name: 'Orchid', head: 0xff66ff, tail: 0x6633ff, need: 'Cut off 10 creatures', test: m => m.cuts >= 10 },
         { id: 'abyss',  name: 'Abyss',  head: 0x4dd2ff, tail: 0x1a1a66, need: 'Eat 1,000 bits',       test: m => m.bits >= 1000 },
         { id: 'gold',   name: 'Gold',   head: 0xffe066, tail: 0xff9d00, need: 'Reach layer 5',        test: m => m.bestLayer >= 5 },
+        { id: 'nebula', name: 'Nebula', head: 0xffffff, tail: 0xff4fd8, need: 'Finish layer 20',      test: m => (m.wins || 0) >= 1 },
     ];
     const HEAD_START = { name: 'Head start', need: 'Reach layer 4', desc: 'Pick a mutation at the start of every run', test: m => m.bestLayer >= 4 };
     const unlockedNames = (m) => [...SKINS.filter(s => s.test && s.test(m)).map(s => s.name + ' body'), ...(HEAD_START.test(m) ? [HEAD_START.name] : [])];
@@ -1108,29 +1126,39 @@
 
     // ── Remains: dead creatures scatter bits along where their body was ──────────
     const REMAINS_COLOR = 0xfff2b3;
-    function burst(p, total) {
-        const layer = activeLayer;
-        const n = p.nodes.length;
-        for (let i = 0; i < n; i++) {
+    // Death spill: the body bursts into chunks that fly out, tumble and slow in the water.
+    // Each chunk takes its segment's colour, washed pale.
+    function burst(p, total, layer = activeLayer) {
+        const nodes = p.nodes, n = nodes.length;
+        const per = 2;                       // chunks per segment
+        const count = n * per;
+        const cx = nodes.reduce((a, q) => a + q.position.x, 0) / n, cz = nodes.reduce((a, q) => a + q.position.z, 0) / n;
+        const kick = 2.5 + Math.min(4, Math.sqrt(p.mass) * 0.35); // bigger bodies spill harder
+        for (let i = 0; i < count; i++) {
+            const node = nodes[Math.floor(i / per)];
             const f = makeFoodMesh(layer);
-            f.userData.remains = true;
-            f.userData.ttl = 25;
-            f.userData.skittish = false;
-            f.userData.value = Math.max(0.5, total / n);
-            f.material.color.setHex(REMAINS_COLOR);
-            f.position.copy(p.nodes[i].position).setY(0);
-            f.position.x += rand(-8, 8); f.position.z += rand(-8, 8);
-            f.scale.setScalar(0.8 + Math.min(1, f.userData.value / 4) * 0.6);
-            const a = Math.random() * Math.PI * 2;
-            f.userData.vel.set(Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1);
+            if (!f) break;
+            const u = f.userData;
+            u.remains = true; u.ttl = 25; u.skittish = false;
+            u.value = Math.max(0.5, total / count);
+            f.material.color.copy(node.material.color).lerp(_col.set(REMAINS_COLOR), 0.45);
+            f.position.set(node.position.x + rand(-6, 6), 0, node.position.z + rand(-6, 6));
+            f.scale.setScalar(0.6 + Math.min(1, u.value / 4) * 0.6);
+            f.rotation.set(rand(0, 6.28), rand(0, 6.28), rand(0, 6.28));
+            // Outward from the body's middle, plus some scatter
+            let ox = f.position.x - cx, oz = f.position.z - cz; const ol = Math.hypot(ox, oz) || 1;
+            ox /= ol; oz /= ol;
+            const a = rand(-0.8, 0.8), sp = kick * rand(0.5, 1.3);
+            u.vel.set((ox * Math.cos(a) - oz * Math.sin(a)) * sp, 0, (ox * Math.sin(a) + oz * Math.cos(a)) * sp);
+            u.drift = ZERO;
+            u.spin = rand(0.15, 0.4) * (Math.random() < 0.5 ? -1 : 1);
         }
     }
 
     function removeFood(layer, f) {
         const i = layer.food.indexOf(f);
         if (i >= 0) layer.food.splice(i, 1);
-        layer.group.remove(f);
-        f.material.dispose();
+        f.parent = null;
     }
 
     // ── Food ──────────────────────────────────────────────────────────────────────
@@ -1150,18 +1178,54 @@
         f.position.set(x, 0, z);
         const a = Math.random() * Math.PI * 2, s = rand(0.15, 0.4);
         f.userData.vel.set(Math.cos(a) * s, 0, Math.sin(a) * s);
+        f.userData.drift = f.userData.vel.clone(); // the slow wander water drag returns it to
+        f.userData.dartCd = 0;
     }
 
+    // Bits are plain objects (position/rotation/scale/colour/opacity) drawn with one
+    // InstancedMesh per layer: one draw call for all of a layer's food instead of hundreds.
+    const FOOD_CAP = 640;  // 300 bits + room for remains
+    const REMAINS_CAP = 300;
     function makeFoodMesh(layer) {
-        const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
-            wireframe: true, transparent: true, opacity: 1, depthWrite: false
-        }));
-        f.renderOrder = 500;
-        f.userData.vel = new THREE.Vector3();
-        f.userData.layer = layer;
-        layer.group.add(f);
+        if (layer.food.length >= FOOD_CAP) {
+            const oldest = layer.food.find(x => x.userData.remains); // make room: drop the oldest remains
+            if (oldest) removeFood(layer, oldest); else return null;
+        }
+        const f = {
+            position: new THREE.Vector3(), rotation: new THREE.Euler(), scale: new THREE.Vector3(1, 1, 1),
+            material: { color: new THREE.Color(), opacity: 1 },
+            userData: { vel: new THREE.Vector3(), layer }, parent: layer.group,
+        };
         layer.food.push(f);
         return f;
+    }
+
+    const _dummy = new THREE.Object3D(), _col = new THREE.Color();
+    function createFoodBatch(layer) {
+        const mat = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true, depthWrite: false });
+        const inst = new THREE.InstancedMesh(FOOD_GEO, mat, FOOD_CAP);
+        inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        inst.setColorAt(0, _col.set(0xffffff)); // creates the per-bit colour buffer
+        inst.instanceColor.setUsage(THREE.DynamicDrawUsage);
+        inst.frustumCulled = false; // bits are spread far beyond the geometry's bounds
+        inst.renderOrder = 500;
+        inst.count = 0;
+        layer.foodBatch = inst;
+        layer.group.add(inst);
+    }
+
+    function drawFood(layer) {
+        const inst = layer.foodBatch, food = layer.food, n = Math.min(food.length, FOOD_CAP);
+        for (let i = 0; i < n; i++) {
+            const f = food[i];
+            _dummy.position.copy(f.position); _dummy.rotation.copy(f.rotation); _dummy.scale.copy(f.scale);
+            _dummy.updateMatrix();
+            inst.setMatrixAt(i, _dummy.matrix);
+            inst.setColorAt(i, _col.copy(f.material.color).multiplyScalar(f.material.opacity)); // fade = darken
+        }
+        inst.count = n;
+        inst.instanceMatrix.needsUpdate = true;
+        inst.instanceColor.needsUpdate = true;
     }
 
     function spawnNutrients(layer, center) {
@@ -1176,22 +1240,26 @@
     // climb until around layer 6, where a run is likely to end.
     const FATAL_CRASH_FROM = 2; // layer index (0-based): crashes end the run from layer 3
     function difficulty(index) {
-        const t = THREE.MathUtils.clamp((index - 1) / 4, 0, 1); // 0 on layers 1-2, 1 by layer 6
-        const L = (a, b) => a + (b - a) * t;
+        const t = THREE.MathUtils.clamp((index - 1) / 4, 0, 1);            // 0 on layers 1-2, 1 by layer 6
+        const t2 = THREE.MathUtils.clamp((index - 5) / (FINAL_LAYER - 5), 0, 1); // keeps climbing, slower, to layer 20
+        const L = (a, b, c) => a + (b - a) * t + (c - b) * t2;
         return {
             crashFatal: index >= FATAL_CRASH_FROM,
-            threatShare: L(0.25, 0.5),  // share of creatures that are bigger hunters
-            chaseSpeed: L(2.6, 3.1),    // you cruise at 2.5 and boost at 5.5
-            notice: L(420, 600),
-            chaseTime: L(3.5, 6),
-            biteFrac: L(0.2, 0.3), biteMin: index < FATAL_CRASH_FROM ? 2 : 3,
-            rivalCut: L(3.0, 3.9),
+            need: ASCEND_MASS + 5 * index, // mass to fill this layer: 50, 55, 60 … 145 on layer 20
+            threatShare: L(0.25, 0.5, 0.6),  // share of creatures that are bigger hunters
+            chaseSpeed: L(2.6, 3.1, 3.6),    // you cruise at 2.5 and boost at 5.5
+            notice: L(420, 600, 750),
+            chaseTime: L(3.5, 6, 8),
+            biteFrac: L(0.2, 0.3, 0.4), biteMin: index < FATAL_CRASH_FROM ? 2 : 3,
+            rivalCut: L(3.0, 3.9, 4.6),
+            extraCreatures: Math.min(index, 4) + Math.floor(4 * t2), // up to 8 more than layer 1
         };
     }
 
     // Gentle conditions early; Murk and Famine from layer 3, Leviathan from layer 5
     function rollLayerMod(index) {
         if (index === 0) return LAYER_MODS[0];
+        if (index === FINAL_LAYER) return LAYER_MODS.find(m => m.id === 'leviathan'); // the last layer has a giant
         const ids = index === 1 ? ['calm', 'calm', 'current', 'bloom', 'swarm']
             : index < 4 ? ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk']
             : ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk', 'leviathan', 'leviathan'];
@@ -1207,9 +1275,10 @@
             layer.current = new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.7);
         }
         scene.add(layer.group);
+        createFoodBatch(layer);
         const head = snake.nodes[0].position;
         spawnNutrients(layer, head);
-        const count = PREDATOR_COUNT + Math.min(index, 4); // a little busier each layer
+        const count = PREDATOR_COUNT + difficulty(index).extraCreatures; // busier each layer
         for (let i = 0; i < count; i++) spawnPredator(null, 600, 1500, layer, head, 'basic');
         const rivals = index === 0 ? 1 : index < 3 ? 2 : 3;
         for (let i = 0; i < rivals; i++) spawnPredator(null, 700, 1500, layer, head, 'rival');
@@ -1220,7 +1289,8 @@
 
     function disposeLayer(layer) {
         if (!layer) return;
-        for (const f of layer.food) f.material.dispose();
+        layer.foodBatch.material.dispose();
+        layer.foodBatch.dispose && layer.foodBatch.dispose();
         for (const p of layer.creatures) p.dispose();
         scene.remove(layer.group);
     }
@@ -1271,7 +1341,8 @@
 
     function startAscend() {
         const head = snake.nodes[0].position;
-        const S = sizeFromMass(ASCEND_MASS); // how much smaller the old layer gets
+        const need = activeLayer.diff.need;
+        const S = sizeFromMass(need); // how much smaller the old layer gets
         disposeLayer(fadingLayer);
         fadingLayer = ghostLayer;
         if (fadingLayer) fadingLayer.fadeFrom = fadingLayer.alpha;
@@ -1279,9 +1350,9 @@
         ghostLayer = activeLayer;
 
         // Same on-screen size, but now measured in the new layer's units
-        snake.segmentBonus += ASCEND_MASS - START_MASS;
+        snake.segmentBonus += need - START_MASS;
         snake.scaleBoost = S;
-        snake.setMass(START_MASS * snake.mass / ASCEND_MASS);
+        snake.setMass(START_MASS * snake.mass / need);
 
         setActive(createLayer(ghostLayer.index + 1));
         activeLayer.alpha = 0;
@@ -1318,7 +1389,7 @@
         activeLayer = ghostLayer = fadingLayer = null; ascend = null;
         snake.alpha = 1;
         snake.scaleBoost = 1;
-        snake.segmentBonus = index * (ASCEND_MASS - START_MASS);
+        snake.segmentBonus = 0;
         snake.setMass(START_MASS);
         setActive(createLayer(index));
     }
@@ -1333,7 +1404,7 @@
         buildAt(0);
         run = { start: clock.elapsedTime, food: 0, creatures: 0, cuts: 0, layer: 0, picked: [] };
         dying = 0;
-        inputMode = null; waypointPos = null; tapNudge = null; keysDown.clear(); touchBoost = false;
+        inputMode = null; waypointPos = null; tapNudge = null; pointer = null; turnVel = 0; keysDown.clear(); touchBoost = false;
         invulnerable = START_GRACE;
         hitBlink = 0;
         shownHud = '';
@@ -1342,20 +1413,36 @@
         if (HEAD_START.test(meta)) openMutationPick('Head start: choose a mutation');
     }
 
-    function die(cause) {
+    function endRun(cause, won) {
         isPlaying = false;
-        dying = 0.0001;
-        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false; pointer = null; tapNudge = null;
         run.time = clock.elapsedTime - run.start;
         run.cause = cause;
+        run.won = won;
         // Fold the run into the totals that unlock things
         const before = unlockedNames(meta);
         run.newBest = run.layer + 1 > meta.bestLayer;
         meta.bestLayer = Math.max(meta.bestLayer, run.layer + 1);
         meta.bits += run.food; meta.creatures += run.creatures; meta.cuts += run.cuts; meta.runs++;
+        if (won) meta.wins = (meta.wins || 0) + 1;
         run.unlocked = unlockedNames(meta).filter(n => !before.includes(n));
         saveMeta();
+    }
+
+    function die(cause) {
+        burst(snake, snake.mass * 0.5); // you spill too
+        endRun(cause, false);
+        dying = 0.0001;
         setTimeout(showGameOver, 1100);
+    }
+
+    // Filled the final layer: the run is won
+    function win() {
+        endRun('You rose through all ' + (FINAL_LAYER + 1) + ' layers of the nebula', true);
+        invulnerable = 1e9;
+        flash('#ffffff');
+        showBanner(FINAL_LAYER, 'You made it');
+        setTimeout(showGameOver, 2600);
     }
 
     function updateFood(dt) {
@@ -1365,16 +1452,43 @@
         const magnet = mut('magnet') * 160;
         const cur = activeLayer.current;
         const sec = dt / 60;
+        const drag = lerpK(0.06, dt);
+        const bodyReach = snake.segmentCount * snake.segmentSpacing + snake.baseSize + 30;
         for (let i = nutrients.length - 1; i >= 0; i--) {
             const f = nutrients[i], u = f.userData;
             const dx = f.position.x - head.x, dz = f.position.z - head.z, d = Math.hypot(dx, dz);
-            if (isPlaying && u.skittish && d < fleeRadius && d > 0.001) {
-                f.position.x += (dx / d) * 2.2 * dt;
-                f.position.z += (dz / d) * 2.2 * dt;
+            // Every bit is a little physical object: it has velocity, and water drag eases it
+            // back to its slow drift
+            const drift = u.drift || ZERO;
+            u.vel.x += (drift.x - u.vel.x) * drag;
+            u.vel.z += (drift.z - u.vel.z) * drag;
+            // Amber bits dart away in bursts, then need a moment before they can dart again
+            if (u.skittish) {
+                u.dartCd = Math.max(0, (u.dartCd || 0) - sec);
+                if (isPlaying && d < fleeRadius && d > 0.001 && u.dartCd === 0) {
+                    const side = rand(-0.5, 0.5);
+                    u.vel.x += ((dx / d) - (dz / d) * side) * 5;
+                    u.vel.z += ((dz / d) + (dx / d) * side) * 5;
+                    u.dartCd = rand(1.1, 1.6);
+                }
             }
             if (isPlaying && magnet && d < magnet + snake.baseSize && d > 0.001 && !u.skittish) {
                 f.position.x -= (dx / d) * 1.6 * dt;
                 f.position.z -= (dz / d) * 1.6 * dt;
+            }
+            // Your body pushes bits aside as you swim through them
+            if (isPlaying && d < bodyReach) {
+                for (let n = 1; n < snake.nodes.length; n++) {
+                    const np = snake.nodes[n].position;
+                    const ox = f.position.x - np.x, oz = f.position.z - np.z, od = Math.hypot(ox, oz);
+                    const r = snake.radiusAt(n) + 10;
+                    if (od < r && od > 0.001) {
+                        f.position.x = np.x + (ox / od) * r;
+                        f.position.z = np.z + (oz / od) * r;
+                        u.vel.x += (ox / od) * 0.8;
+                        u.vel.z += (oz / od) * 0.8;
+                    }
+                }
             }
             f.position.x += (u.vel.x + cur.x) * dt;
             f.position.z += (u.vel.z + cur.z) * dt;
@@ -1382,6 +1496,11 @@
             f.position.x = wrapNear(f.position.x, head.x, worldSize);
             f.position.z = wrapNear(f.position.z, head.z, worldSize);
             let alpha = seamFade(f.position.x - head.x, f.position.z - head.z, worldSize) * activeLayer.alpha;
+            if (u.spin) {
+                f.rotation.x += u.spin * dt; f.rotation.y += u.spin * 0.7 * dt;
+                u.spin *= Math.pow(0.97, dt); // tumble slows with the chunk
+                if (Math.abs(u.spin) < 0.002) u.spin = 0;
+            }
             if (u.remains) {
                 u.ttl -= sec;
                 if (u.ttl <= 0) { removeFood(activeLayer, f); continue; }
@@ -1428,14 +1547,36 @@
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'choice';
+            b.setAttribute('role', 'radio');
+            b.setAttribute('aria-checked', 'false');
             const level = mut(m.id) + 1;
             b.innerHTML = '<kbd>' + (i + 1) + '</kbd><span><b>' + m.name + (level > 1 ? ROMAN[level] : '') + '</b>' + m.desc + '</span>';
-            b.addEventListener('click', () => pickMutation(i));
+            b.addEventListener('click', () => selectMutation(i));
             list.appendChild(b);
         });
+        selectedMutation = -1;
+        $('mutate-apply').disabled = true;
+        $('mutate-apply').removeAttribute('aria-label');
+        // Drop any steering input in progress so it can't carry over into the menu
+        keysDown.clear(); pointer = null; tapNudge = null; touchBoost = false;
+        pickOpenedAt = performance.now();
+        $('banner').classList.remove('show');
         $('hud').hidden = true;
         $('mutate').hidden = false;
+        $('mutate').scrollTop = 0;
         list.firstChild.focus();
+    }
+
+    // Choosing is two steps (select, then Apply) so a stray tap can't pick by accident
+    let selectedMutation = -1, pickOpenedAt = 0;
+    function selectMutation(i) {
+        if (!paused || !mutationChoices[i]) return;
+        if (performance.now() - pickOpenedAt < 350) return; // ignore a press already under way
+        selectedMutation = i;
+        $('mutate-choices').querySelectorAll('.choice').forEach((b, k) => b.setAttribute('aria-checked', String(k === i)));
+        const apply = $('mutate-apply');
+        apply.disabled = false;
+        apply.setAttribute('aria-label', 'Apply ' + mutationChoices[i].name);
     }
 
     function pickMutation(i) {
@@ -1448,37 +1589,38 @@
         $('hud').hidden = false;
         shownHud = '';
         invulnerable = Math.max(invulnerable, START_GRACE);
-        keysDown.clear(); inputMode = null;
+        keysDown.clear(); inputMode = null; pointer = null; tapNudge = null;
         paused = false;
     }
     window.addEventListener('keydown', (e) => {
-        if (paused && ['1', '2', '3'].includes(e.key)) pickMutation(Number(e.key) - 1);
+        if (!paused) return;
+        if (['1', '2', '3'].includes(e.key)) { selectMutation(Number(e.key) - 1); if (selectedMutation >= 0) $('mutate-apply').focus(); }
+        else if (e.key === 'Enter' && selectedMutation >= 0 && document.activeElement !== $('mutate-apply')) { e.preventDefault(); pickMutation(selectedMutation); }
     });
 
     // ── HUD ───────────────────────────────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
     const flashEl = $('flash');
+    $('mutate-apply').addEventListener('click', () => pickMutation(selectedMutation));
 
     function updateHud() {
         const m = Math.round(snake.mass), L = activeLayer.index;
-        const key = m + ':' + L + ':' + meta.bestLayer;
+        const key = m + ':' + L + ':' + activeLayer.diff.need;
         if (key === shownHud) return;
         shownHud = key;
-        $('hud-mass').textContent = m;
+        $('hud-mass').textContent = m + ' / ' + activeLayer.diff.need;
         $('hud-layer').textContent = L + 1;
         $('hud-layer-name').textContent = layerName(L);
-        $('hud-mod').textContent = activeLayer.mod.id === 'calm' ? '' : activeLayer.mod.name;
-        $('hud-best').textContent = Math.max(meta.bestLayer, L + 1);
-        $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
+        $('hud-bar').style.width = Math.min(100, (snake.mass / activeLayer.diff.need) * 100) + '%';
     }
 
     let bannerTimer = null;
     function showBanner(index, override) {
-        $('banner-kicker').textContent = override ? 'Saved' : 'Layer ' + (index + 1);
+        $('banner-kicker').textContent = override ? (override === 'You made it' ? 'Layer ' + (index + 1) + ' filled' : 'Saved') : 'Layer ' + (index + 1);
         $('banner-name').textContent = override || layerName(index);
         const mod = activeLayer && activeLayer.index === index ? activeLayer.mod : null;
         $('banner-mod').textContent = !override && mod && mod.id !== 'calm' ? mod.name + ': ' + mod.desc : '';
-        $('banner-note').textContent = !override && index === FATAL_CRASH_FROM ? 'Crashes now end the run' : '';
+        $('banner-note').textContent = override ? '' : index === FATAL_CRASH_FROM ? 'Crashes now end the run' : index === FINAL_LAYER ? 'Final layer: fill it to finish' : '';
         const el = $('banner');
         el.classList.remove('show');
         void el.offsetWidth; // restart the animation
@@ -1494,7 +1636,8 @@
 
     function showGameOver() {
         const L = run.layer;
-        $('gameover-cause').textContent = run.cause + ' on ' + layerName(L) + '.';
+        $('gameover-title').textContent = run.won ? 'You made it' : 'Run over';
+        $('gameover-cause').textContent = run.won ? run.cause + '.' : run.cause + ' on ' + layerName(L) + '.';
         $('go-layer').textContent = (L + 1) + ' · ' + layerName(L);
         $('go-food').textContent = run.food;
         $('go-creatures').textContent = run.creatures;
@@ -1599,7 +1742,7 @@
         camera.position.set(-400, 280, 0);
         camera.up.set(0, 1, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer = new THREE.WebGLRenderer({ antialias: !LITE, powerPreference: 'high-performance' });
         renderer.setClearColor(0x000814, 1);
         document.body.appendChild(renderer.domElement);
 
@@ -1664,7 +1807,7 @@
         });
 
         // ── Nebula cloud layers (mid-range density volumes) ───────────────────────
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < Q(80); i++) {
             const size = 800 + Math.random() * 3500;
             const col = Math.random() > 0.5
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
@@ -1712,7 +1855,7 @@
         }
 
         // ── Nebula wisps — flat luminous sheets at various orientations ───────────
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < Q(40); i++) {
             const col = Math.random() > 0.5
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
                 : DEEP_COLORS[Math.floor(Math.random() * DEEP_COLORS.length)];
@@ -1765,7 +1908,7 @@
         }
 
         // ── Glowing debris — slowly rotating wireframe crystals ───────────────────
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < Q(100); i++) {
             const size = 5 + Math.random() * 22;
             const col = Math.random() > 0.4
                 ? PHM_COLORS[Math.floor(Math.random() * PHM_COLORS.length)]
@@ -1793,7 +1936,7 @@
         }
 
         // ── Rising bubbles — the water-like feel ──────────────────────────────────
-        for (let i = 0; i < 65; i++) {
+        for (let i = 0; i < Q(65); i++) {
             const r = 4 + Math.random() * 18;
             const isWire = Math.random() > 0.45;
             const bMesh = new THREE.Mesh(
@@ -1825,7 +1968,7 @@
 
         // ── Ambient star particles ────────────────────────────────────────────────
         const snowGeo = new THREE.BufferGeometry();
-        const snowCount = 4000;
+        const snowCount = Q(4000);
         const snowPos  = new Float32Array(snowCount * 3);
         const snowCols = new Float32Array(snowCount * 3);
         for (let i = 0; i < snowCount; i++) {
@@ -1848,7 +1991,7 @@
 
         // ── Bioluminescent motes — fine close-range particles ─────────────────────
         const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 6000;
+        const dustCount = Q(6000);
         const dustPos = new Float32Array(dustCount * 3);
         const dustCols = new Float32Array(dustCount * 3);
         for (let i = 0; i < dustCount; i++) {
@@ -1904,117 +2047,88 @@
                 (y / window.innerHeight) * -2 + 1
             );
             rc.setFromCamera(ndc, camera);
-            rc.ray.intersectPlane(groundPlane, out);
+            if (rc.ray.intersectPlane(groundPlane, out)) return;
+            // Above the horizon (easy while boosting): the ray never meets the water, so
+            // treat it as "far away in that direction" rather than leaving a stale point
+            const flat = new THREE.Vector3(rc.ray.direction.x, 0, rc.ray.direction.z);
+            if (flat.lengthSq() < 1e-8) return;
+            out.set(rc.ray.origin.x, 0, rc.ray.origin.z).addScaledVector(flat.normalize(), 5000);
         }
 
-        function canActivate(mode) {
-            if (!inputMode || inputMode === mode) return true;
-            if (inputMode === 'waypoint') return true;
-            return false;
-        }
-        function activateMode(mode) {
-            tapNudge = null;
-            if (inputMode === 'waypoint') waypointPos = null;
-            inputMode = mode;
-        }
-        const onControl = (e) => e.target.closest && e.target.closest('a, button');
+        pointerToWorld = screenToWorld;
+
+        const onControl = (e) => e.target.closest && e.target.closest('a, button, input, label');
 
         // ── Keyboard ──────────────────────────────────────────────────────────────
-        // Turning keys take over steering; speed keys work alongside any steering mode.
-        const TURN_KEYS = ['arrowleft', 'arrowright', 'a', 'd'];
-        const SPEED_KEYS = new Set(['arrowup', 'arrowdown', 'w', 's']);
+        const GAME_KEYS = new Set(['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd', 'w', 's']);
         window.addEventListener('keydown', (e) => {
-            if (!isPlaying) return;
+            if (!isPlaying || paused) return;
             const key = e.key.toLowerCase();
-            if (SPEED_KEYS.has(key)) {
-                e.preventDefault();
-                keysDown.add(key);
-                return;
-            }
-            if (!TURN_KEYS.includes(key) || !canActivate('keyboard')) return;
+            if (!GAME_KEYS.has(key)) return;
             e.preventDefault();
-            activateMode('keyboard');
             keysDown.add(key);
+            inputMode = 'keyboard';
         });
-        window.addEventListener('keyup', (e) => {
-            keysDown.delete(e.key.toLowerCase());
-            if (inputMode === 'keyboard' && !TURN_KEYS.some(k => keysDown.has(k))) inputMode = null;
-        });
-        // Key-up events are lost when the window loses focus; drop held keys so nothing sticks
-        const releaseAll = () => {
-            keysDown.clear();
-            touchBoost = false;
-            if (inputMode === 'keyboard') inputMode = null;
-        };
+        window.addEventListener('keyup', (e) => { keysDown.delete(e.key.toLowerCase()); });
+        // Key-up events are lost when the window loses focus; drop held input so nothing sticks
+        const releaseAll = () => { keysDown.clear(); touchBoost = false; pointer = null; };
         window.addEventListener('blur', releaseAll);
         document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
 
-        // ── Mouse ─────────────────────────────────────────────────────────────────
-        let mouseDownAt = null, isDragging = false;
-        const DRAG_THRESHOLD = 6;
-        // Touch screens send a fake mouse click after every tap. Left alone, that click
-        // set a swim-to target that kept turning the snake after the finger lifted,
-        // fighting the next tap. Ignore mouse events that follow a touch.
+        // ── Pointer: mouse and touch behave the same ──────────────────────────────
+        // Hold = joystick steering. Quick tap/click = a ~35° nudge toward that side.
+        const pressStart = (x, y) => {
+            const v = snake.headVelocity;
+            pointer = { x, y, sx: x, sy: y, at: performance.now(), moved: false, heading0: Math.atan2(v.z, v.x) };
+            tapNudge = null;
+            inputMode = 'pointer';
+        };
+        const pressMove = (x, y) => {
+            if (!pointer) return;
+            pointer.x = x; pointer.y = y;
+            if (Math.hypot(x - pointer.sx, y - pointer.sy) > 12) pointer.moved = true;
+        };
+        const pressEnd = () => {
+            if (!pointer) return;
+            // Quick tap/click: keep easing to ~35° toward that side, measured from the heading
+            // when pressed (the same target used while it was held). A longer hold was joystick
+            // steering, so it just ends.
+            if (isPlaying && !paused && isTap(pointer)) {
+                screenToWorld(pointer.sx, pointer.sy, pointerWorld);
+                const head = snake.nodes[0].position, h0 = pointer.heading0;
+                const d0 = angleDiff(Math.atan2(pointerWorld.z - head.z, pointerWorld.x - head.x), h0);
+                tapNudge = h0 + THREE.MathUtils.clamp(d0, -TAP_NUDGE, TAP_NUDGE);
+            } else {
+                tapNudge = null;
+            }
+            pointer = null;
+        };
+
+        // Touch screens send a fake mouse click after every tap; ignore mouse events then
         let lastTouchAt = -Infinity;
         const fromTouch = () => performance.now() - lastTouchAt < 1000;
         window.addEventListener('mousedown', (e) => {
-            if (!isPlaying || fromTouch() || onControl(e) || !canActivate('drag')) return;
-            mouseDownAt = { x: e.clientX, y: e.clientY };
-            isDragging = false;
+            if (e.button !== 0 || !isPlaying || paused || fromTouch() || onControl(e)) return;
+            pressStart(e.clientX, e.clientY);
         });
-        window.addEventListener('mousemove', (e) => {
-            if (!mouseDownAt) return;
-            if (!isDragging) {
-                const dx = e.clientX - mouseDownAt.x, dy = e.clientY - mouseDownAt.y;
-                if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) {
-                    if (!canActivate('drag')) { mouseDownAt = null; return; }
-                    isDragging = true;
-                    activateMode('drag');
-                    screenToWorld(mouseDownAt.x, mouseDownAt.y, dragWorldPos);
-                }
-            }
-            if (isDragging) screenToWorld(e.clientX, e.clientY, dragWorldPos);
-        });
-        window.addEventListener('mouseup', (e) => {
-            if (!mouseDownAt) return;
-            const wasDrag = isDragging;
-            isDragging = false;
-            if (inputMode === 'drag') inputMode = null;
-            if (!wasDrag && isPlaying && canActivate('drag')) {
-                const wp = new THREE.Vector3();
-                screenToWorld(e.clientX, e.clientY, wp);
-                waypointPos = wp;
-                activateMode('waypoint');
-            }
-            mouseDownAt = null;
-        });
+        window.addEventListener('mousemove', (e) => { if (!fromTouch()) pressMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => { if (!fromTouch()) pressEnd(); });
 
-        // ── Touch: one finger steers, a second finger boosts ──────────────────────
         window.addEventListener('touchstart', (e) => {
             lastTouchAt = performance.now();
-            if (!isPlaying || onControl(e)) return;
-            tapStart = { at: performance.now(), x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false, turned: 0 };
-            tapNudge = null;
+            if (!isPlaying || paused || onControl(e)) return;
             if (e.touches.length >= 2) { touchBoost = true; return; }
-            if (!canActivate('touch')) return;
-            activateMode('touch');
-            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+            pressStart(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: true });
         window.addEventListener('touchmove', (e) => {
-            if (inputMode !== 'touch') return;
-            if (tapStart && Math.hypot(e.touches[0].clientX - tapStart.x, e.touches[0].clientY - tapStart.y) > 12) tapStart.moved = true;
-            screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
+            if (!pointer) return;
+            pressMove(e.touches[0].clientX, e.touches[0].clientY);
             e.preventDefault();
         }, { passive: false });
         const onTouchEnd = (e) => {
             lastTouchAt = performance.now();
-            // Quick tap (not a hold or drag): nudge toward the tapped spot
-            if (isPlaying && inputMode === 'touch' && e.touches.length === 0 && isTapping() && tapStart.turned < TAP_NUDGE) {
-                tapNudge = { target: touchWorldPos.clone(), left: TAP_NUDGE - tapStart.turned };
-            }
-            if (e.touches.length === 0) tapStart = null;
             if (e.touches.length < 2) touchBoost = false;
-            if (e.touches.length === 0 && inputMode === 'touch') inputMode = null;
+            if (e.touches.length === 0) pressEnd();
         };
         window.addEventListener('touchend', onTouchEnd, { passive: true });
         window.addEventListener('touchcancel', onTouchEnd, { passive: true });
@@ -2076,8 +2190,13 @@
         if (fadingLayer) updateGhostLayer(fadingLayer, headPos, t, dt);
 
         updateFood(dt);
+        drawFood(activeLayer);
+        if (ghostLayer) drawFood(ghostLayer);
+        if (fadingLayer) drawFood(fadingLayer);
         if (isPlaying) resolveCollisions();
-        if (isPlaying && !ascend && snake.mass >= ASCEND_MASS) startAscend();
+        if (isPlaying && !ascend && snake.mass >= activeLayer.diff.need) {
+            if (activeLayer.index === FINAL_LAYER) win(); else startAscend();
+        }
         updateHud();
 
         // ── Chase camera with banking; pulls back as the snake gets longer ────────
