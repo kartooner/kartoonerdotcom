@@ -34,20 +34,27 @@
         #ui-root {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 1000; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 1000;
             background: rgba(0, 8, 20, 0.45);
             transition: opacity 1s ease;
         }
-        #menu { pointer-events: auto; text-align: center; padding: 2rem; }
+        #menu { pointer-events: auto; text-align: center; padding: 2rem 16px 4.5rem; margin: auto; } /* margin:auto centres but lets tall content scroll */
+        #ui-root, #gameover, #mutate { overflow-y: auto; touch-action: pan-y; }
+        #gameover > :first-child, #mutate > :first-child { margin-top: auto; }
+        #gameover > :last-child, #mutate > :last-child { margin-bottom: auto; }
+        #gameover, #mutate { padding-bottom: 4.5rem !important; } /* clear the Games link */
+        @media (max-height: 600px) {
+            .title { margin-bottom: 1.25rem; }
+        }
 
         @keyframes floatSubtitle {
             0%, 100% { transform: translateY(0) rotate(0.5deg); opacity: 0.7; }
             50% { transform: translateY(-10px) rotate(-0.5deg); opacity: 1; }
         }
         @keyframes floatTitle {
-            0%, 100% { transform: translateY(0) rotate(-0.5deg); filter: blur(0px); }
-            50% { transform: translateY(-12px) rotate(0.5deg); filter: blur(0.8px); }
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+            50% { transform: translateY(-12px) rotate(0.5deg); }
         }
         .subtitle {
             font-family: 'Cartridge', ui-sans-serif, sans-serif;
@@ -60,7 +67,8 @@
         .title {
             font-family: 'Cartridge', ui-sans-serif, sans-serif;
             font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #fff; font-style: italic;
-            letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 2.5rem;
+            letter-spacing: -0.04em; line-height: 1; margin: 0 0 2.25rem;
+            padding: 0.1em 0.3em; /* the box must contain the italic overhang and tall letters */
             text-shadow: 0 0 60px rgba(255, 170, 0, 0.7), 0 0 120px rgba(255, 100, 0, 0.3);
             animation: floatTitle 8s ease-in-out infinite;
             display: block;
@@ -79,16 +87,57 @@
         }
         #btn-play:active { transform: scale(0.98); }
         #btn-play:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-
-        /* How-to-play: a short list under the Play button */
-        .howto {
-            list-style: none; margin: 2rem auto 0; padding: 0;
-            max-width: 26rem; text-align: left;
-            font-size: 0.8125rem; line-height: 1.5; color: #b7c6d6;
+        .menu-actions { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .menu-actions #btn-play { min-width: 17rem; }
+        .btn-secondary {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
+            min-width: 17rem; padding: 0.8rem 2rem; border-radius: 8px; cursor: pointer;
+            background: rgba(0, 8, 20, 0.4); border: 1.5px solid rgba(183, 198, 214, 0.35); color: #d6e2ee;
+            font-size: 0.875rem; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase;
         }
-        .howto li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.75rem; padding: 0.3rem 0; border-top: 1px solid rgba(183, 198, 214, 0.15); }
-        .howto li:first-child { border-top: 0; }
-        .howto b { color: #e8f1fa; font-weight: 600; }
+        .btn-secondary:hover { border-color: #00ffcc; color: #00ffcc; }
+        .btn-secondary:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+        /* Full-screen pages opened from the title: How to Play, Settings */
+        .page {
+            position: fixed; inset: 0; z-index: 1150; overflow-y: auto; touch-action: pan-y;
+            background: #000814; color: #c9d6e3; /* opaque, so the title doesn't show through */
+        }
+        .page[hidden] { display: none; }
+        .page-inner { max-width: 40rem; margin: 0 auto; padding: 3.5rem 20px 5rem; line-height: 1.6; font-size: 0.9375rem; }
+        .page h1 {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; color: #fff;
+            font-size: clamp(2rem, 6vw, 3rem); margin: 0 0 0.25rem; padding: 0.1em 0.2em 0.1em 0;
+        }
+        .page .lede { color: #b7c6d6; margin: 0 0 2rem; font-size: 1.0625rem; }
+        .page h2 {
+            font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: #00f2ff;
+            margin: 2.25rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid rgba(183, 198, 214, 0.15);
+        }
+        .page p { margin: 0 0 0.75rem; }
+        .page b, .page strong { color: #fff; font-weight: 600; }
+        .page kbd { font: inherit; font-size: 0.8125rem; color: #fff; border: 1px solid rgba(183, 198, 214, 0.4); border-radius: 4px; padding: 0 0.35rem; }
+        .defs { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: 0.35rem 1.25rem; margin: 0; }
+        .defs dt { color: #fff; font-weight: 600; }
+        .defs dd { margin: 0; }
+        @media (max-width: 480px) { .defs { grid-template-columns: 1fr; } .defs dd { margin-bottom: 0.5rem; } }
+        .defs .locked dt { color: #8fa3b8; }
+        .page-close {
+            position: fixed; top: 12px; right: 12px; z-index: 1; width: 44px; height: 44px;
+            background: rgba(0, 8, 20, 0.8); border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 8px;
+            color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer;
+        }
+        .page-close:hover, .page-close:focus-visible { border-color: #00ffcc; outline: none; }
+        .page-back { margin-top: 2.5rem; }
+        .seg { display: inline-flex; border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 8px; overflow: hidden; }
+        .seg label { position: relative; }
+        .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+        .seg span { display: block; padding: 0.55rem 1.1rem; font-size: 0.875rem; color: #b7c6d6; border-left: 1px solid rgba(183, 198, 214, 0.25); }
+        .seg label:first-child span { border-left: 0; }
+        .seg input:checked + span { background: rgba(0, 255, 204, 0.14); color: #00ffcc; font-weight: 600; }
+        .seg input:focus-visible + span { outline: 2px solid #fff; outline-offset: -2px; }
+        .hint { font-size: 0.8125rem; color: #8fa3b8; margin-top: 0.5rem; }
+
         .swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: 0.05rem; }
 
         #hud {
@@ -98,11 +147,123 @@
             font-variant-numeric: tabular-nums;
         }
         #hud[hidden] { display: none; }
+        #hud .name { font-size: 0.8125rem; color: #b7c6d6; margin-left: 0.4rem; }
+        #hud .of { font-size: 0.8125rem; color: #8fa3b8; margin-left: 0.2rem; }
+        .bar { width: 88px; height: 3px; margin-top: 5px; background: rgba(183, 198, 214, 0.2); }
+        .bar i { display: block; height: 100%; width: 0; background: #00f2ff; }
         #hud .label {
             font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; margin-right: 0.4rem;
         }
         #hud .value { font-size: 1.25rem; font-weight: 700; }
         #hud .best .value { font-size: 0.9375rem; font-weight: 500; color: #b7c6d6; }
+
+        /* Layer title card: big, centred, pops in, holds, then fades */
+        #banner {
+            position: fixed; inset: 0; z-index: 450; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 0 16px; text-align: center; opacity: 0;
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; color: #fff;
+        }
+        #banner.show { animation: titleCard 2.8s ease-out forwards; }
+        @keyframes titleCard {
+            0%   { opacity: 0; transform: scale(1.35); }
+            12%  { opacity: 1; transform: scale(1); }
+            70%  { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            @keyframes titleCard { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+        }
+        #banner .kicker {
+            display: block; font-size: clamp(0.875rem, 2vw, 1.25rem); letter-spacing: 0.45em; text-transform: uppercase;
+            color: #00f2ff; margin-bottom: 0.25rem; text-shadow: 0 0 20px rgba(0, 242, 255, 0.7);
+        }
+        #banner .big {
+            display: block; font-size: clamp(3.5rem, 13vw, 9rem); font-weight: 900; font-style: italic; line-height: 1;
+            padding: 0.08em 0.3em; /* keep the italic overhang inside the box */
+            text-shadow: 0 0 50px rgba(255, 170, 0, 0.6), 0 4px 0 rgba(0, 8, 20, 0.6);
+        }
+        /* Condition and warning lines sit on a solid plate so they read over any background */
+        #banner .mod, #banner .note {
+            display: block; margin-top: 0.5rem; padding: 0.45rem 0.9rem; border-radius: 6px;
+            background: rgba(0, 8, 20, 0.88); text-shadow: none;
+            font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(1rem, 2.2vw, 1.25rem); font-weight: 600;
+        }
+        #banner .mod { color: #ffd27a; margin-top: 0.9rem; }
+        #banner .note { color: #ff8095; border: 1px solid rgba(255, 128, 149, 0.5); }
+        #banner .mod:empty, #banner .note:empty { display: none; }
+
+        /* Game over: same structure as Paper Plane (title, stats, retry, quit) */
+        #gameover {
+            position: fixed; inset: 0; z-index: 1050;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 2rem 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.78); color: #e8f1fa; text-align: center;
+        }
+        #gameover[hidden] { display: none; }
+        #gameover h2 {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic;
+            font-size: clamp(2rem, 6vw, 3.5rem); margin: 0 0 0.25rem; letter-spacing: -0.02em;
+        }
+        #gameover .cause { margin: 0 0 1.75rem; color: #b7c6d6; font-size: 0.9375rem; }
+        .stats { margin: 0 0 2rem; width: 100%; max-width: 20rem; font-variant-numeric: tabular-nums; }
+        .stats div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border-top: 1px solid rgba(183, 198, 214, 0.15); }
+        .stats div:first-child { border-top: 0; }
+        .stats dt { color: #8fa3b8; font-size: 0.8125rem; letter-spacing: 0.08em; text-transform: uppercase; }
+        .stats dd { margin: 0; font-weight: 600; }
+        .stats .new { color: #00ffcc; font-weight: 500; margin-left: 0.4rem; font-size: 0.75rem; }
+        .btn {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
+            background: transparent; border: 2.5px solid #00ffcc; color: #00ffcc;
+            padding: 1rem 2.5rem; font-size: 1rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.2em; cursor: pointer;
+            border-radius: 8px; min-width: 16rem;
+        }
+        .btn:hover { background: rgba(0, 255, 204, 0.1); }
+        .btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+        .btn small { display: block; margin-top: 0.35rem; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: none; color: #b7c6d6; }
+        .btn-quiet { border-color: rgba(183, 198, 214, 0.35); color: #b7c6d6; margin-top: 0.75rem; padding: 0.75rem 2.5rem; }
+
+        #hud .mod { font-size: 0.75rem; color: #ffcf6b; margin-top: 4px; }
+        #hud { flex-wrap: wrap; max-width: calc(100vw - 32px); }
+        .stats dd { text-align: right; }
+        .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
+
+        /* Mutation pick: a plain numbered list, not a card grid */
+        #mutate {
+            position: fixed; inset: 0; z-index: 1050;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 2rem 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.72); color: #e8f1fa; text-align: center;
+        }
+        #mutate[hidden] { display: none; }
+        #mutate .kicker { margin: 0 0 0.5rem; font-size: 0.8125rem; letter-spacing: 0.3em; text-transform: uppercase; color: #00f2ff; }
+        #mutate h2 { font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; font-size: clamp(1.75rem, 5vw, 2.75rem); margin: 0 0 0.25rem; }
+        #mutate .cause { margin: 0 0 1.5rem; color: #ffcf6b; font-size: 0.9375rem; }
+        .choices { width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .choice {
+            display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
+            padding: 0.85rem 1rem; border: 1px solid rgba(0, 255, 204, 0.35); border-radius: 8px;
+            background: rgba(0, 20, 30, 0.6); color: #b7c6d6; font: inherit; font-size: 0.875rem; cursor: pointer;
+        }
+        .choice:hover, .choice:focus-visible { border-color: #00ffcc; background: rgba(0, 255, 204, 0.08); outline: none; }
+        .choice b { display: block; color: #fff; font-size: 1rem; margin-bottom: 0.15rem; }
+        .choice kbd { font-family: inherit; font-weight: 700; color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.5); border-radius: 4px; padding: 0.1rem 0.45rem; }
+
+        /* Start-screen body picker */
+        .skins { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .skin {
+            display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.6rem;
+            border: 1px solid rgba(183, 198, 214, 0.25); border-radius: 6px; background: transparent;
+            color: #e8f1fa; font: inherit; font-size: 0.8125rem; cursor: pointer; text-align: left;
+        }
+        .skin i { width: 1.4rem; height: 0.5rem; border-radius: 4px; flex: none; }
+        .skin small { display: block; font-size: 0.6875rem; color: #8fa3b8; }
+        .skin[aria-pressed="true"] { border-color: #00ffcc; }
+        .skin:disabled { cursor: default; color: #8fa3b8; }
+        .skin:disabled i { opacity: 0.35; }
+        .skin:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .headstart { margin: 0.6rem 0 0; font-size: 0.75rem; color: #8fa3b8; }
 
         #flash {
             position: fixed; inset: 0; z-index: 400; pointer-events: none; opacity: 0;
@@ -116,7 +277,7 @@
             z-index: 1100;
             display: flex; gap: 8px;
         }
-        #back-to-games, #pixel-btn {
+        #back-to-games {
             padding: 6px 14px;
             font-family: inherit; cursor: pointer; white-space: nowrap;
             background: rgba(0, 8, 20, 0.5);
@@ -125,8 +286,7 @@
             font-size: 11px; font-weight: 600; text-decoration: none;
             opacity: 0.5; transition: opacity 0.2s ease;
         }
-        #back-to-games:hover, #back-to-games:focus-visible,
-        #pixel-btn:hover, #pixel-btn:focus-visible { opacity: 1; }
+        #back-to-games:hover, #back-to-games:focus-visible { opacity: 1; }
     </style>
 </head>
 <body>
@@ -135,31 +295,130 @@
     <div id="menu" role="dialog" aria-labelledby="main-title">
         <div class="subtitle">Primordial Glow</div>
         <h1 class="title" id="main-title">Nebula Floaties</h1>
-        <button id="btn-play" onclick="startPlay()" aria-label="Start the simulation">Play</button>
-        <ul class="howto">
-            <li><b>Steer</b><span>Arrows / A D, drag, or tap a spot</span></li>
-            <li><b>Speed</b><span>W / ↑ boost, S / ↓ slow. Touch: two fingers to boost</span></li>
-            <li><b>Eat</b><span>Teal bits +1, amber bits +3 (they swim away)</span></li>
-            <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them.
-                <i class="swatch" style="background:#ff2a55"></i>Red: bigger, they bite.</span></li>
-            <li><b>Look</b><span>P or the Pixels button: chunky, fine, off</span></li>
-        </ul>
+        <div class="menu-actions">
+            <button id="btn-play" onclick="startPlay()">Play</button>
+            <button type="button" class="btn-secondary" id="btn-howto">How to play</button>
+            <button type="button" class="btn-secondary" id="btn-settings">Settings</button>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="manual" role="dialog" aria-labelledby="manual-title" hidden>
+    <button type="button" class="page-close" aria-label="Close how to play">×</button>
+    <div class="page-inner">
+        <h1 id="manual-title">How to play</h1>
+        <p class="lede">You're a tiny glowing snake in the deep. Eat, grow, and rise up through the layers of the nebula. One life per run: see how high you can get.</p>
+
+        <h2>Controls</h2>
+        <dl class="defs">
+            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, drag a finger.</dd>
+            <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
+            <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
+            <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
+        </dl>
+
+        <h2>Eating</h2>
+        <dl class="defs">
+            <dt>Teal bits</dt><dd>+1 mass.</dd>
+            <dt>Amber bits</dt><dd>+3 mass, but they swim away when you get close.</dd>
+            <dt>Pale remains</dt><dd>What's left when a creature dies. Scattered along its body; they fade after a while.</dd>
+        </dl>
+
+        <h2>Other creatures</h2>
+        <p>Their head colour tells you how they compare to you, and it changes as you grow.</p>
+        <dl class="defs">
+            <dt><i class="swatch" style="background:#7dff4a"></i>Green</dt><dd>Smaller than you. Swim into any part of them to eat them. They sprint away, then tire out: a pale head means now's your chance.</dd>
+            <dt><i class="swatch" style="background:#ff2a55"></i>Red</dt><dd>Bigger than you. They chase you for a while. Meet one head on and it bites a chunk of your mass.</dd>
+            <dt><i class="swatch" style="background:#9fb3c8"></i>Grey</dt><dd>About your size. They mind their own business.</dd>
+            <dt><i class="swatch" style="background:#8a5cff"></i>Violet tail</dt><dd>A rival snake. Rivals eat bits and grow like you do, and when they're bigger they try to cut across your path.</dd>
+        </dl>
+
+        <h2>Bodies are walls</h2>
+        <p>Swim your head into the body of anything that isn't green and you crash. On layers 1 and 2 a crash just costs you mass, like a bite. From layer 3 on, a crash ends the run.</p>
+        <p>It works the other way too: anything that hits <em>your</em> body crashes and bursts into remains. Curl around a big red creature and make it run into you.</p>
+
+        <h2>Layers and mutations</h2>
+        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then pick one of three mutations. They last for the rest of the run, and some stack.</p>
+        <dl class="defs" id="manual-mutations"></dl>
+
+        <h2>Layer conditions</h2>
+        <p>The first layer is always calm. Every layer after that rolls one of these:</p>
+        <dl class="defs" id="manual-mods"></dl>
+
+        <h2>Runs and unlocks</h2>
+        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <dl class="defs" id="manual-unlocks"></dl>
+
+        <button type="button" class="btn-secondary page-back">Back</button>
+    </div>
+</div>
+
+<div class="page" id="settings" role="dialog" aria-labelledby="settings-title" hidden>
+    <button type="button" class="page-close" aria-label="Close settings">×</button>
+    <div class="page-inner">
+        <h1 id="settings-title">Settings</h1>
+
+        <h2 id="pixel-label">Pixel filter</h2>
+        <div class="seg" role="radiogroup" aria-labelledby="pixel-label">
+            <label><input type="radio" name="pixel" value="0"><span>Off</span></label>
+            <label><input type="radio" name="pixel" value="1"><span>Fine</span></label>
+            <label><input type="radio" name="pixel" value="2"><span>Chunky</span></label>
+        </div>
+        <p class="hint">A low-res look, like a 90s console. <kbd>P</kbd> switches it during play.</p>
+
+        <h2>Body</h2>
+        <div class="skins" id="skins"></div>
+        <p class="hint" id="headstart"></p>
+
+        <button type="button" class="btn-secondary page-back">Back</button>
     </div>
 </div>
 
 <div id="hud" hidden>
-    <div><span class="label">Mass</span><span class="value" id="hud-mass">10</span></div>
-    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">10</span></div>
+    <div>
+        <span class="label">Layer</span><span class="value" id="hud-layer">1</span><span class="name" id="hud-layer-name">Silt</span>
+        <div class="mod" id="hud-mod"></div>
+    </div>
+    <div>
+        <span class="label">Mass</span><span class="value" id="hud-mass">10</span><span class="of">/ 50</span>
+        <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
+    </div>
+    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">1</span></div>
+</div>
+<div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
+<div id="mutate" role="dialog" aria-labelledby="mutate-title" hidden>
+    <p class="kicker" id="mutate-layer"></p>
+    <h2 id="mutate-title">Choose a mutation</h2>
+    <p class="cause" id="mutate-mod"></p>
+    <div class="choices" id="mutate-choices"></div>
+</div>
+<div id="gameover" role="dialog" aria-labelledby="gameover-title" hidden>
+    <h2 id="gameover-title">Run over</h2>
+    <p class="cause" id="gameover-cause"></p>
+    <dl class="stats">
+        <div><dt>Layer reached</dt><dd id="go-layer"></dd></div>
+        <div><dt>Bits eaten</dt><dd id="go-food"></dd></div>
+        <div><dt>Creatures eaten</dt><dd id="go-creatures"></dd></div>
+        <div><dt>Cut off</dt><dd id="go-cuts"></dd></div>
+        <div><dt>Time</dt><dd id="go-time"></dd></div>
+        <div><dt>Mutations</dt><dd id="go-muts"></dd></div>
+        <div><dt>Best layer</dt><dd id="go-best"></dd></div>
+    </dl>
+    <p class="unlocked" id="go-unlocks" hidden></p>
+    <button type="button" class="btn" id="btn-retry">New run<small>From layer 1 · Silt</small></button>
+    <button type="button" class="btn btn-quiet" id="btn-quit">Quit</button>
 </div>
 <div id="flash"></div>
 <div id="bottom-links">
     <a id="back-to-games" href="/games">← Games</a>
-    <button id="pixel-btn" type="button" title="Pixel filter (P)">Pixels: Chunky</button>
 </div>
 
 <script>
     let scene, camera, renderer, clock;
     let snake, nutrients = [], predators = [], bubbles = [], debris = [];
+    // Layers: the one you play on, the one shrinking/sunk below you, and an older one fading out.
+    // `nutrients` / `predators` always point at the active layer's arrays.
+    let activeLayer = null, ghostLayer = null, fadingLayer = null, ascend = null;
     const wrapped = [];     // meshes that repeat around the player (see updateWrapped)
     const pointLayers = []; // particle systems that repeat around the player
     const worldSize = 2500;
@@ -181,9 +440,18 @@
     const PREDATOR_COUNT = 5;
     const PREDATOR_PERIOD = 3200; // creatures stay within this tile around the player
     const START_GRACE = 3;        // seconds of immunity at the start of a run (same as Paper Plane)
-    let invulnerable = 0;         // seconds of immunity left (run start, or after a bite)
-    let bestMass = START_MASS, shownMass = -1;
-    try { bestMass = Math.max(START_MASS, Number(localStorage.getItem('floaties-best')) || 0); } catch (e) {}
+    const ASCEND_MASS = 50;       // reach this to rise to the next layer
+    const DEATH_MASS = 5;         // a bite that would drop you below this kills you
+    const ASCEND_TIME = 2.5;      // seconds for the zoom-out between layers
+    const GHOST_DEPTH = 260;      // how far below you the previous layer sinks
+    const GHOST_ALPHA = 0.45;
+    const LAYER_NAMES = ['Silt', 'Drift', 'Shoal', 'Kelp', 'Reef', 'Swell', 'Surface']; // distinct from condition names
+    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky ' + (i - LAYER_NAMES.length + 2);
+    let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
+    let hitBlink = 0;             // seconds of blinking left after a hit
+    let dying = 0;                // seconds since death (0 = alive)
+    let run = null;               // stats for the current run
+    let shownHud = '';
 
     const PHM_COLORS = [0xffaa00, 0x00f2ff, 0xff00cc, 0x00ffaa, 0x5500ff, 0xff7700];
     const DEEP_COLORS = [0x0033ff, 0x00aaff, 0x00ffee, 0x7700ff, 0xff0077, 0x00ff88];
@@ -193,6 +461,7 @@
         neutral: { head: 0x9fb3c8, tail: 0x2f4058 },
     };
 
+    const TIRED_TINT = new THREE.Color(0xffffff);
     const UNIT_SPHERE = new THREE.IcosahedronGeometry(1, 2);
     const JAW_GEO = new THREE.ConeGeometry(0.25, 0.7, 3);
     const FOOD_GEO = new THREE.TetrahedronGeometry(11, 0);
@@ -268,7 +537,10 @@
     class Creature {
         constructor({ mass, segments, maxSegments = segments, growSegments = false,
                       colors, depthTest = false, fog = true, order = 0, bodyOpacity = 0.82,
-                      pos = new THREE.Vector3(), dir = new THREE.Vector3(1, 0, 0), bobPhase = 0 }) {
+                      pos = new THREE.Vector3(), dir = new THREE.Vector3(1, 0, 0), bobPhase = 0, parent = scene }) {
+            this.parent = parent;
+            this.scaleBoost = 1;   // extra visual scale (used during the zoom between layers)
+            this.segmentBonus = 0; // progress from earlier layers, so the body doesn't shrink when you rise
             this.baseSegments = segments;
             this.maxSegments = maxSegments;
             this.growSegments = growSegments;
@@ -287,6 +559,7 @@
             this.turnRate = 0;
             this.pathHistory = [];
             this.alpha = 1;
+            this.drift = null; // layer current, if any
             this.mass = mass;
             this._applyMass();
             this._syncNodes();
@@ -309,11 +582,11 @@
         radiusAt(i) { return this.baseSize * (1 - (i / this.segmentCount) * 0.88); }
 
         _applyMass() {
-            this.scale = sizeFromMass(this.mass);
+            this.scale = sizeFromMass(this.mass) * this.scaleBoost;
             this.baseSize = 9 * this.scale;
             this.segmentSpacing = 20 * this.scale;
             this.segmentCount = this.growSegments
-                ? THREE.MathUtils.clamp(this.baseSegments + Math.floor((this.mass - START_MASS) / 10), this.baseSegments, this.maxSegments)
+                ? THREE.MathUtils.clamp(this.baseSegments + Math.floor((this.mass - START_MASS + this.segmentBonus) / 10), this.baseSegments, this.maxSegments)
                 : this.baseSegments;
         }
 
@@ -324,14 +597,20 @@
                 }));
                 const last = this.nodes[this.nodes.length - 1];
                 if (last) mesh.position.copy(last.position);
-                scene.add(mesh);
+                this.parent.add(mesh);
                 this.nodes.push(mesh);
             }
             while (this.nodes.length > this.segmentCount) {
                 const mesh = this.nodes.pop();
-                scene.remove(mesh);
+                this.parent.remove(mesh);
                 mesh.material.dispose();
             }
+        }
+
+        dispose() {
+            for (const n of this.nodes) { this.parent.remove(n); n.material.dispose(); }
+            this.jawMat.dispose();
+            this.nodes = [];
         }
 
         _refreshBody() {
@@ -408,6 +687,7 @@
 
             // ── Always move forward ───────────────────────────────────────────────
             head.position.addScaledVector(this.headVelocity, this.swimSpeed * dt);
+            if (this.drift) head.position.addScaledVector(this.drift, dt);
 
             // ── Body Y-undulation: ripples through path history naturally ─────────
             head.position.y = Math.sin(t * 3.5 + this.bobPhase) * 6;
@@ -482,7 +762,7 @@
         const head = c.nodes[0];
         if (isPlaying) {
             if (inputMode === 'keyboard') {
-                const TURN = 0.065 * dt;
+                const TURN = 0.065 * (1 + 0.3 * mut('turn')) * dt;
                 let dAngle = 0;
                 if (keysDown.has('arrowleft')  || keysDown.has('a')) dAngle -= TURN;
                 if (keysDown.has('arrowright') || keysDown.has('d')) dAngle += TURN;
@@ -500,7 +780,7 @@
                     waypointPos = null; inputMode = null;
                 } else if (toTarget.length() > 20) {
                     // Angle-axis: fixed max turn rate regardless of pointer distance
-                    const maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * dt;
+                    const maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
                     const targetDir = toTarget.normalize();
                     const cross = new THREE.Vector3().crossVectors(c.headVelocity, targetDir);
                     const angle = Math.atan2(cross.length(), c.headVelocity.dot(targetDir));
@@ -524,102 +804,330 @@
 
         const boost = isPlaying && (keysDown.has('w') || keysDown.has('arrowup') || touchBoost);
         const brake = isPlaying && (keysDown.has('s') || keysDown.has('arrowdown'));
-        return { speed: boost ? 5.5 : brake ? 0.8 : 2.5, boosting: boost };
+        const cruise = 2.5 * (1 + 0.12 * mut('stream'));
+        return { speed: boost ? 5.5 * (1 + 0.25 * mut('fins')) : brake ? 0.8 : cruise, boosting: boost };
     }
 
+    // ── Run modifiers: mutations (picked per layer) ───────────────────────────────
+    const MUTATIONS = [
+        { id: 'fins',   name: 'Jet Fins',    desc: 'Boost 25% faster',                 max: 3 },
+        { id: 'stream', name: 'Streamline',  desc: 'Cruise 12% faster',                max: 3 },
+        { id: 'turn',   name: 'Tight Turns', desc: 'Turn 30% sharper',                 max: 2 },
+        { id: 'jaw',    name: 'Wide Jaw',    desc: 'Eat from 35% farther away',        max: 2 },
+        { id: 'magnet', name: 'Magnet',      desc: 'Nearby bits drift toward you',     max: 2 },
+        { id: 'gut',    name: 'Fast Gut',    desc: 'Bits are worth 50% more',          max: 2 },
+        { id: 'hunter', name: 'Hunter',      desc: 'Prey tire out twice as fast',      max: 1 },
+        { id: 'quiet',  name: 'Quiet',       desc: 'Hunters notice you 35% later',     max: 2 },
+        { id: 'hide',   name: 'Thick Hide',  desc: 'Bites take 40% less mass',         max: 2 },
+        { id: 'wind',   name: 'Second Wind', desc: 'Survive one fatal hit per layer',  max: 1 },
+    ];
+    let mutations = {};   // id → stacks
+    let windCharges = 0;  // Second Wind uses left on this layer
+    let paused = false;   // true while choosing a mutation
+    const mut = (id) => mutations[id] || 0;
+    const ROMAN = ['', '', ' II', ' III'];
+
+    // ── Layer modifiers (rolled per layer; layer 1 is always calm) ─────────────────
+    const LAYER_MODS = [
+        { id: 'calm',      name: 'Calm waters',    desc: 'Nothing unusual' },
+        { id: 'current',   name: 'Strong current', desc: 'Everything drifts one way' },
+        { id: 'famine',    name: 'Famine',         desc: 'Half the bits, each worth double' },
+        { id: 'swarm',     name: 'Swarm',          desc: 'Lots of small prey' },
+        { id: 'leviathan', name: 'Leviathan',      desc: 'One giant hunter roams here' },
+        { id: 'bloom',     name: 'Amber bloom',    desc: 'Most bits are amber and skittish' },
+        { id: 'murk',      name: 'Murk',           desc: "You can't see as far" },
+    ];
+    const ZERO = new THREE.Vector3();
+
+    // ── Unlocks that carry across runs ────────────────────────────────────────────
+    const SKINS = [
+        { id: 'primordial', name: 'Primordial', head: 0x00f2ff, tail: 0xffaa00 },
+        { id: 'ice',    name: 'Ice',    head: 0xe8fbff, tail: 0x3aa0ff, need: 'Reach layer 3',        test: m => m.bestLayer >= 3 },
+        { id: 'orchid', name: 'Orchid', head: 0xff66ff, tail: 0x6633ff, need: 'Cut off 10 creatures', test: m => m.cuts >= 10 },
+        { id: 'abyss',  name: 'Abyss',  head: 0x4dd2ff, tail: 0x1a1a66, need: 'Eat 1,000 bits',       test: m => m.bits >= 1000 },
+        { id: 'gold',   name: 'Gold',   head: 0xffe066, tail: 0xff9d00, need: 'Reach layer 5',        test: m => m.bestLayer >= 5 },
+    ];
+    const HEAD_START = { name: 'Head start', need: 'Reach layer 4', desc: 'Pick a mutation at the start of every run', test: m => m.bestLayer >= 4 };
+    const unlockedNames = (m) => [...SKINS.filter(s => s.test && s.test(m)).map(s => s.name + ' body'), ...(HEAD_START.test(m) ? [HEAD_START.name] : [])];
+    let meta = { bestLayer: 1, bits: 0, creatures: 0, cuts: 0, runs: 0, skin: 'primordial' };
+    try {
+        Object.assign(meta, JSON.parse(localStorage.getItem('floaties-meta') || '{}'));
+        meta.bestLayer = Math.max(meta.bestLayer, Number(localStorage.getItem('floaties-best-layer')) || 0);
+    } catch (e) {}
+    const saveMeta = () => { try { localStorage.setItem('floaties-meta', JSON.stringify(meta)); } catch (e) {} };
+    const currentSkin = () => SKINS.find(s => s.id === meta.skin && (!s.test || s.test(meta))) || SKINS[0];
+
     // ── Other creatures ───────────────────────────────────────────────────────────
+    // kind: 'basic' wanders/flees/chases, 'rival' forages and tries to cut you off,
+    // 'leviathan' is one giant hunter (Leviathan layers only).
+    const RIVAL_TAIL = 0x8a5cff;
     function relationTo(p) {
+        if (p.kind === 'leviathan') return 'threat';
         const ratio = p.mass / snake.mass;
         return ratio > 1.2 ? 'threat' : ratio < 0.83 ? 'prey' : 'neutral';
     }
+    function colorsFor(p) {
+        const c = RELATION_COLORS[p.rel];
+        return p.kind === 'rival' ? { head: c.head, tail: RIVAL_TAIL } : c;
+    }
+
+    // Prey have a tiny brain: calm → flee (zig-zag sprint that burns stamina) →
+    // tired (slow and catchable at cruising speed, head turns pale) → flee again.
+    // Stamina only partly recovers, so each sprint is shorter than the last.
+    const PREY_FLEE_RADIUS = 420;
+    function preyFlee(p, dx, dz, dt, fleeing) {
+        const sec = dt / 60;
+        // Bigger prey (closer to your size) can sprint longer: ~2.5s to ~4s
+        const maxStamina = 1.5 + 3 * Math.min(1, p.mass / snake.mass);
+        if (p.tired > 0) {
+            p.tired = Math.max(0, p.tired - sec);
+            p.stamina = Math.min(maxStamina, p.stamina + sec * 0.5);
+            if (fleeing) turnToward(p, -dx, -dz, 0.02 * dt); // limps away
+            return { speed: 1.0, boosting: false };
+        }
+        if (!fleeing) { p.stamina = Math.min(maxStamina, p.stamina + sec * 0.5); return null; }
+        p.stamina -= sec * (mut('hunter') ? 2 : 1);
+        if (p.stamina <= 0) { p.stamina = 0; p.tired = rand(1.6, 2.6); return { speed: 1.0, boosting: false }; }
+        // Panicked zig-zag: veer off the straight-away line every so often
+        p.jinkTimer -= sec;
+        if (p.jinkTimer <= 0) { p.jink = rand(-0.7, 0.7); p.jinkTimer = rand(0.6, 1.4); }
+        const a = Math.atan2(-dz, -dx) + p.jink;
+        turnToward(p, Math.cos(a), Math.sin(a), 0.05 * dt);
+        return { speed: 2.8, boosting: true };
+    }
 
     // Threats chase (faster than cruising, slower than boosting) then lose interest.
-    // Prey flee (slower than boosting). Everything else wanders.
     function predatorSteer(p, t, dt) {
         const ph = snake.nodes[0].position, h = p.nodes[0].position;
         const dx = ph.x - h.x, dz = ph.z - h.z, d = Math.hypot(dx, dz);
         p.cooldown = Math.max(0, p.cooldown - dt / 60);
+        const fleeing = isPlaying && p.rel === 'prey' && d < PREY_FLEE_RADIUS;
+        if (p.tired > 0 || fleeing) { const r = preyFlee(p, dx, dz, dt, fleeing); if (r) return r; }
 
-        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && invulnerable <= 0 && d < 520) {
+        const big = p.kind === 'leviathan';
+        const diff = activeLayer.diff;
+        const notice = (big ? 700 : diff.notice) * (1 - 0.35 * mut('quiet'));
+        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && invulnerable <= 0 && d < notice) {
             p.chaseTime += dt / 60;
-            if (p.chaseTime > 5) { p.cooldown = 4; p.chaseTime = 0; }
-            turnToward(p, dx, dz, 0.045 * dt);
-            return { speed: 2.9, boosting: true };
+            if (p.chaseTime > (big ? 8 : diff.chaseTime)) { p.cooldown = 4; p.chaseTime = 0; }
+            turnToward(p, dx, dz, (big ? 0.03 : 0.045) * dt);
+            return { speed: big ? 3.0 : diff.chaseSpeed, boosting: true };
         }
         p.chaseTime = 0;
-        if (isPlaying && p.rel === 'prey' && d < 420) {
-            turnToward(p, -dx, -dz, 0.05 * dt);
-            return { speed: 2.7, boosting: true };
+        preyFlee(p, dx, dz, dt, false); // recover stamina
+        return wanderSteer(p, t, dt);
+    }
+
+    // Rivals play like you: forage, grow, and when bigger try to cut across your path
+    function rivalSteer(p, t, dt) {
+        const ph = snake.nodes[0].position, h = p.nodes[0].position;
+        const dx = ph.x - h.x, dz = ph.z - h.z, d = Math.hypot(dx, dz);
+        p.cooldown = Math.max(0, p.cooldown - dt / 60);
+        const fleeing = isPlaying && p.rel === 'prey' && d < PREY_FLEE_RADIUS;
+        if (p.tired > 0 || fleeing) { const r = preyFlee(p, dx, dz, dt, fleeing); if (r) return r; }
+
+        if (isPlaying && p.rel === 'threat' && p.cooldown === 0 && invulnerable <= 0 && d < 650 * (1 - 0.35 * mut('quiet'))) {
+            p.chaseTime += dt / 60;
+            if (p.chaseTime > 6) { p.cooldown = 5; p.chaseTime = 0; }
+            // Aim ahead of your head so its body ends up across your path
+            const lead = 140 + d * 0.4;
+            turnToward(p, ph.x + snake.headVelocity.x * lead - h.x, ph.z + snake.headVelocity.z * lead - h.z, 0.055 * dt);
+            return { speed: activeLayer.diff.rivalCut, boosting: true };
         }
+        p.chaseTime = 0;
+        preyFlee(p, dx, dz, dt, false);
+        // Forage: head for the nearest bit, re-picking every so often
+        p.forageTimer = (p.forageTimer || 0) - dt / 60;
+        if (!p.target || p.forageTimer <= 0 || !p.target.parent) {
+            p.forageTimer = 0.5;
+            let best = null, bd = 500;
+            for (const f of nutrients) { const fd = Math.hypot(f.position.x - h.x, f.position.z - h.z); if (fd < bd) { bd = fd; best = f; } }
+            p.target = best;
+        }
+        if (p.target) {
+            turnToward(p, p.target.position.x - h.x, p.target.position.z - h.z, 0.05 * dt);
+            return { speed: 2.3, boosting: false };
+        }
+        return wanderSteer(p, t, dt);
+    }
+
+    // Plain wandering; also all that creatures on the layer below you do
+    function wanderSteer(p, t, dt) {
         const wander = (Math.sin(t * 0.37 + p.seed) * 0.012 + Math.sin(t * 0.11 + p.seed * 2) * 0.008) * dt;
         const v = p.headVelocity, cs = Math.cos(wander), sn = Math.sin(wander);
         v.set(v.x * cs - v.z * sn, 0, v.x * sn + v.z * cs).normalize();
         return { speed: 1.5, boosting: false };
     }
 
-    function rollPredatorMass() {
+    function rollMass(kind, layer) {
+        if (kind === 'leviathan') return snake.mass * rand(4.5, 5.5);
+        if (kind === 'swarm') return Math.max(MIN_MASS, snake.mass * rand(0.3, 0.6));
+        const threat = layer.diff.threatShare, prey = (1 - threat) * 0.75; // the rest are your size
         const r = Math.random();
-        const ratio = r < 0.45 ? rand(0.35, 0.75) : r < 0.85 ? rand(1.35, 2.4) : rand(0.9, 1.1);
+        const ratio = r < prey ? rand(0.35, 0.75) : r < prey + threat ? rand(1.35, 2.4) : rand(0.9, 1.1);
         return Math.max(MIN_MASS, snake.mass * ratio);
     }
 
-    function spawnPredator(p, minDist, maxDist) {
-        const head = snake.nodes[0].position;
+    function segmentsFor(kind) {
+        return kind === 'leviathan' ? 16 : kind === 'rival' ? 9 : 6 + Math.floor(Math.random() * 6);
+    }
+
+    function spawnPredator(p, minDist, maxDist, layer = activeLayer, center = snake.nodes[0].position, kind = p ? p.kind : 'basic') {
         const a = Math.random() * Math.PI * 2, dist = rand(minDist, maxDist);
-        const pos = new THREE.Vector3(head.x + Math.cos(a) * dist, 0, head.z + Math.sin(a) * dist);
+        const pos = new THREE.Vector3(center.x + Math.cos(a) * dist, 0, center.z + Math.sin(a) * dist);
         const ha = Math.random() * Math.PI * 2;
         const dir = new THREE.Vector3(Math.cos(ha), 0, Math.sin(ha));
-        const mass = rollPredatorMass();
+        const mass = rollMass(kind, layer);
+        const bodyKind = kind === 'swarm' ? 'basic' : kind;
         if (!p) {
             p = new Creature({
-                mass, segments: 6 + Math.floor(Math.random() * 6),
+                mass, segments: segmentsFor(bodyKind), maxSegments: bodyKind === 'rival' ? 20 : undefined,
+                growSegments: bodyKind === 'rival',
                 colors: RELATION_COLORS.neutral, depthTest: true, bodyOpacity: 0.85,
-                pos, dir, bobPhase: Math.random() * Math.PI * 2
+                pos, dir, bobPhase: Math.random() * Math.PI * 2, parent: layer.group
             });
+            if (bodyKind !== 'rival') p.maxSegments = p.baseSegments;
             p.seed = Math.random() * 100;
-            predators.push(p);
+            p.kind = bodyKind;
+            layer.creatures.push(p);
         } else {
-            p.baseSegments = 6 + Math.floor(Math.random() * 6);
+            p.baseSegments = segmentsFor(p.kind);
             p.setMass(mass);
             p.resetPath(pos, dir);
         }
-        p.cooldown = 0; p.chaseTime = 0; p.rel = null;
+        p.cooldown = 0; p.chaseTime = 0; p.rel = null; p.target = null;
+        p.stamina = 3; p.tired = 0; p.jink = 0; p.jinkTimer = 0;
         return p;
     }
 
-    function checkPredatorContact() {
+    // ── Bodies are walls ──────────────────────────────────────────────────────────
+    // Your head: into green (smaller) anything = eat it; into the head of a red = bitten;
+    // into the body of anything else = you crash. Anything whose head hits your body
+    // crashes. Rivals crash into other creatures' bodies too.
+    function resolveCollisions() {
         const head = snake.nodes[0].position;
+        const jaw = 1 + 0.35 * mut('jaw');
+        // Creature heads into your body
         for (const p of predators) {
-            if (p.rel === 'prey') {
-                for (let i = 0; i < p.nodes.length; i++) {
-                    if (head.distanceTo(p.nodes[i].position) < p.radiusAt(i) + snake.baseSize) {
-                        snake.setMass(snake.mass + Math.max(3, p.mass * 0.5));
-                        flash('#7dff4a');
-                        spawnPredator(p, 1100, 1500);
-                        break;
-                    }
-                }
-            } else if (p.rel === 'threat' && invulnerable <= 0) {
-                const ph = p.nodes[0].position;
-                for (let i = 0; i < snake.nodes.length; i++) {
-                    if (ph.distanceTo(snake.nodes[i].position) < snake.radiusAt(i) + p.baseSize * 0.9) {
-                        snake.setMass(snake.mass - Math.max(2, (snake.mass - MIN_MASS) * 0.25));
-                        invulnerable = 2;
-                        p.cooldown = 5; p.chaseTime = 0;
-                        flash('#ff2a55');
-                        break;
-                    }
-                }
+            const ph = p.nodes[0].position;
+            for (let i = 0; i < snake.nodes.length; i++) {
+                if (ph.distanceTo(snake.nodes[i].position) >= snake.radiusAt(i) + p.baseSize * 0.6) continue;
+                if (i >= 2) { killCreature(p, 'cut'); return; }
+                if (p.rel === 'threat' && invulnerable <= 0) { bitten(p); return; }
+                break;
+            }
+        }
+        // Your head into creatures
+        for (const p of predators) {
+            for (let i = 0; i < p.nodes.length; i++) {
+                const reach = p.rel === 'prey' ? snake.baseSize * jaw : snake.baseSize * 0.6;
+                if (head.distanceTo(p.nodes[i].position) >= p.radiusAt(i) + reach) continue;
+                if (p.rel === 'prey') { eatCreature(p); return; }
+                if (invulnerable > 0) break;
+                if (i <= 1) { if (p.rel === 'threat') { bitten(p); return; } break; }
+                const cause = 'You crashed into ' + describe(p) + "'s body";
+                if (activeLayer.diff.crashFatal) fatal(cause); else loseMass(p, cause);
+                return;
+            }
+        }
+        // Rivals against everyone else
+        for (const r of predators) {
+            if (r.kind !== 'rival') continue;
+            for (const q of predators) {
+                if (q === r) continue;
+                const hit = (a, b) => {
+                    const ah = a.nodes[0].position;
+                    for (let i = 2; i < b.nodes.length; i++) if (ah.distanceTo(b.nodes[i].position) < b.radiusAt(i) + a.baseSize * 0.6) return true;
+                    return false;
+                };
+                if (hit(r, q)) { killCreature(r, 'crash'); return; }
+                if (hit(q, r)) { killCreature(q, 'crash'); return; }
             }
         }
     }
 
+    function describe(p) {
+        if (p.kind === 'leviathan') return 'the Leviathan';
+        if (p.kind === 'rival') return 'a rival';
+        return p.rel === 'threat' ? 'a bigger creature' : 'a creature';
+    }
+
+    function eatCreature(p) {
+        // Part straight to you, the rest scattered along its body to swim through
+        snake.setMass(snake.mass + p.mass * 0.35);
+        burst(p, p.mass * 0.35);
+        run.creatures++;
+        flash('#7dff4a');
+        spawnPredator(p, 1100, 1500);
+    }
+
+    function killCreature(p, how) {
+        burst(p, p.mass * 0.7);
+        if (how === 'cut' && isPlaying) { run.cuts++; flash('#00f2ff'); }
+        spawnPredator(p, 1100, 1500);
+    }
+
+    function bitten(p) {
+        loseMass(p, 'Bitten by ' + describe(p));
+    }
+
+    // A bite, or a crash on the forgiving early layers: lose a chunk of mass
+    function loseMass(p, cause) {
+        const diff = activeLayer.diff;
+        const loss = Math.max(diff.biteMin, (snake.mass - MIN_MASS) * diff.biteFrac) * (1 - 0.4 * mut('hide'));
+        p.cooldown = 5; p.chaseTime = 0;
+        flash('#ff2a55');
+        if (snake.mass - loss < DEATH_MASS) { fatal(cause); return; }
+        snake.setMass(snake.mass - loss);
+        invulnerable = 2; hitBlink = 2;
+    }
+
+    function fatal(cause) {
+        if (windCharges > 0) {
+            windCharges--;
+            invulnerable = 2.5; hitBlink = 2.5;
+            flash('#ffffff');
+            showBanner(activeLayer.index, 'Second Wind');
+            return;
+        }
+        die(cause);
+    }
+
+    // ── Remains: dead creatures scatter bits along where their body was ──────────
+    const REMAINS_COLOR = 0xfff2b3;
+    function burst(p, total) {
+        const layer = activeLayer;
+        const n = p.nodes.length;
+        for (let i = 0; i < n; i++) {
+            const f = makeFoodMesh(layer);
+            f.userData.remains = true;
+            f.userData.ttl = 25;
+            f.userData.skittish = false;
+            f.userData.value = Math.max(0.5, total / n);
+            f.material.color.setHex(REMAINS_COLOR);
+            f.position.copy(p.nodes[i].position).setY(0);
+            f.position.x += rand(-8, 8); f.position.z += rand(-8, 8);
+            f.scale.setScalar(0.8 + Math.min(1, f.userData.value / 4) * 0.6);
+            const a = Math.random() * Math.PI * 2;
+            f.userData.vel.set(Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1);
+        }
+    }
+
+    function removeFood(layer, f) {
+        const i = layer.food.indexOf(f);
+        if (i >= 0) layer.food.splice(i, 1);
+        layer.group.remove(f);
+        f.material.dispose();
+    }
+
     // ── Food ──────────────────────────────────────────────────────────────────────
     function placeFood(f, center, minDist) {
+        const layer = f.userData.layer;
+        const mod = layer.mod.id;
         // Amber "skittish" food gets more common as you grow
-        const skittish = Math.random() < Math.min(0.35, 0.08 + (snake.mass - START_MASS) / 200);
+        const skittish = Math.random() < (mod === 'bloom' ? 0.6 : Math.min(0.35, 0.08 + (snake.mass - START_MASS + snake.segmentBonus) / 200));
         f.userData.skittish = skittish;
-        f.userData.value = skittish ? 3 : 1;
+        f.userData.value = (skittish ? 3 : 1) * (mod === 'famine' ? 2 : 1);
         f.material.color.setHex(skittish ? 0xffaa00 : 0x00ffcc);
         let x, z;
         do {
@@ -631,58 +1139,433 @@
         f.userData.vel.set(Math.cos(a) * s, 0, Math.sin(a) * s);
     }
 
-    function spawnNutrients() {
-        for (let i = 0; i < 300; i++) {
-            const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
-                wireframe: true, transparent: true, opacity: 1, depthWrite: false
-            }));
-            f.renderOrder = 500;
-            f.userData.vel = new THREE.Vector3();
-            scene.add(f);
-            addWrapped(f, worldSize);
-            nutrients.push(f);
-            placeFood(f, new THREE.Vector3(), 0);
+    function makeFoodMesh(layer) {
+        const f = new THREE.Mesh(FOOD_GEO, new THREE.MeshBasicMaterial({
+            wireframe: true, transparent: true, opacity: 1, depthWrite: false
+        }));
+        f.renderOrder = 500;
+        f.userData.vel = new THREE.Vector3();
+        f.userData.layer = layer;
+        layer.group.add(f);
+        layer.food.push(f);
+        return f;
+    }
+
+    function spawnNutrients(layer, center) {
+        const count = layer.mod.id === 'famine' ? 150 : 300;
+        for (let i = 0; i < count; i++) placeFood(makeFoodMesh(layer), center, 120); // keep your spot clear
+    }
+
+    // ── Layers ────────────────────────────────────────────────────────────────────
+    // A layer is one "plane" of food and creatures. Rising a layer shrinks the old one
+    // around you and sinks it below, so it reads as the camera zooming out (like Spore).
+    // Difficulty curve (Nintendo-style): layers 1-2 let you learn, then the stakes
+    // climb until around layer 6, where a run is likely to end.
+    const FATAL_CRASH_FROM = 2; // layer index (0-based): crashes end the run from layer 3
+    function difficulty(index) {
+        const t = THREE.MathUtils.clamp((index - 1) / 4, 0, 1); // 0 on layers 1-2, 1 by layer 6
+        const L = (a, b) => a + (b - a) * t;
+        return {
+            crashFatal: index >= FATAL_CRASH_FROM,
+            threatShare: L(0.25, 0.5),  // share of creatures that are bigger hunters
+            chaseSpeed: L(2.6, 3.1),    // you cruise at 2.5 and boost at 5.5
+            notice: L(420, 600),
+            chaseTime: L(3.5, 6),
+            biteFrac: L(0.2, 0.3), biteMin: index < FATAL_CRASH_FROM ? 2 : 3,
+            rivalCut: L(3.0, 3.9),
+        };
+    }
+
+    // Gentle conditions early; Murk and Famine from layer 3, Leviathan from layer 5
+    function rollLayerMod(index) {
+        if (index === 0) return LAYER_MODS[0];
+        const ids = index === 1 ? ['calm', 'calm', 'current', 'bloom', 'swarm']
+            : index < 4 ? ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk']
+            : ['calm', 'current', 'bloom', 'swarm', 'famine', 'murk', 'leviathan', 'leviathan'];
+        const id = ids[Math.floor(Math.random() * ids.length)];
+        return LAYER_MODS.find(m => m.id === id);
+    }
+
+    function createLayer(index) {
+        const mod = rollLayerMod(index);
+        const layer = { index, mod, diff: difficulty(index), group: new THREE.Group(), food: [], creatures: [], alpha: 1, ghost: false, current: ZERO };
+        if (mod.id === 'current') {
+            const a = Math.random() * Math.PI * 2;
+            layer.current = new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.7);
         }
+        scene.add(layer.group);
+        const head = snake.nodes[0].position;
+        spawnNutrients(layer, head);
+        const count = PREDATOR_COUNT + Math.min(index, 4); // a little busier each layer
+        for (let i = 0; i < count; i++) spawnPredator(null, 600, 1500, layer, head, 'basic');
+        const rivals = index === 0 ? 1 : index < 3 ? 2 : 3;
+        for (let i = 0; i < rivals; i++) spawnPredator(null, 700, 1500, layer, head, 'rival');
+        if (mod.id === 'swarm') for (let i = 0; i < 6; i++) spawnPredator(null, 500, 1400, layer, head, 'swarm');
+        if (mod.id === 'leviathan') spawnPredator(null, 1100, 1500, layer, head, 'leviathan');
+        return layer;
+    }
+
+    function disposeLayer(layer) {
+        if (!layer) return;
+        for (const f of layer.food) f.material.dispose();
+        for (const p of layer.creatures) p.dispose();
+        scene.remove(layer.group);
+    }
+
+    function setActive(layer) {
+        activeLayer = layer;
+        nutrients = layer.food;
+        predators = layer.creatures;
+        snake.drift = layer.current;
+        for (const p of layer.creatures) p.drift = layer.current;
+    }
+
+    // Shrink a layer by `s` around `anchor` and sink it by `depth`
+    function setGhostTransform(layer, s, depth) {
+        layer.group.scale.setScalar(s);
+        layer.group.position.set(layer.anchor.x * (1 - s), -depth, layer.anchor.z * (1 - s));
+    }
+
+    function makeGhost(layer, anchor) {
+        layer.ghost = true;
+        layer.anchor = anchor.clone();
+        for (const f of [...layer.food]) if (f.userData.remains) removeFood(layer, f);
+        for (const p of layer.creatures) {
+            p.drift = ZERO;
+            // Freeze each creature's colour as it was relative to you on that layer
+            if (!p.rel) p.rel = relationTo(p);
+            p.setColors(colorsFor(p));
+        }
+    }
+
+    // Ghost layers keep drifting (in their own, shrunken coordinates) but nothing reacts to you
+    function updateGhostLayer(layer, head, t, dt) {
+        const g = layer.group, s = g.scale.x;
+        const lx = (head.x - g.position.x) / s, lz = (head.z - g.position.z) / s;
+        for (const p of layer.creatures) {
+            const ph = p.nodes[0].position;
+            const nx = wrapNear(ph.x, lx, PREDATOR_PERIOD), nz = wrapNear(ph.z, lz, PREDATOR_PERIOD);
+            if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
+            p.alpha = seamFade(ph.x - lx, ph.z - lz, PREDATOR_PERIOD) * layer.alpha;
+            p.update(t, dt, wanderSteer);
+        }
+        for (const f of layer.food) {
+            f.position.x = wrapNear(f.position.x + f.userData.vel.x * dt, lx, worldSize);
+            f.position.z = wrapNear(f.position.z + f.userData.vel.z * dt, lz, worldSize);
+            f.material.opacity = seamFade(f.position.x - lx, f.position.z - lz, worldSize) * layer.alpha;
+        }
+    }
+
+    function startAscend() {
+        const head = snake.nodes[0].position;
+        const S = sizeFromMass(ASCEND_MASS); // how much smaller the old layer gets
+        disposeLayer(fadingLayer);
+        fadingLayer = ghostLayer;
+        if (fadingLayer) fadingLayer.fadeFrom = fadingLayer.alpha;
+        makeGhost(activeLayer, head);
+        ghostLayer = activeLayer;
+
+        // Same on-screen size, but now measured in the new layer's units
+        snake.segmentBonus += ASCEND_MASS - START_MASS;
+        snake.scaleBoost = S;
+        snake.setMass(START_MASS * snake.mass / ASCEND_MASS);
+
+        setActive(createLayer(ghostLayer.index + 1));
+        activeLayer.alpha = 0;
+        ascend = { u: 0, S };
+        invulnerable = ASCEND_TIME + START_GRACE;
+        run.layer = activeLayer.index;
+        flash('#00f2ff');
+        showBanner(activeLayer.index);
+    }
+
+    function updateAscend(dt) {
+        if (!ascend) return;
+        ascend.u = Math.min(1, ascend.u + dt / 60 / ASCEND_TIME);
+        const e = THREE.MathUtils.smootherstep(ascend.u, 0, 1);
+        const s = 1 + (1 / ascend.S - 1) * e;
+        setGhostTransform(ghostLayer, s, GHOST_DEPTH * e);
+        // Shrink the player in step with the old layer: reads as the camera pulling back
+        snake.scaleBoost = ascend.S * s;
+        snake.setMass(snake.mass);
+        activeLayer.alpha = e;
+        ghostLayer.alpha = 1 - (1 - GHOST_ALPHA) * e;
+        if (fadingLayer) fadingLayer.alpha = fadingLayer.fadeFrom * (1 - e);
+        if (ascend.u >= 1) {
+            disposeLayer(fadingLayer); fadingLayer = null;
+            snake.scaleBoost = 1; snake.setMass(snake.mass);
+            ascend = null;
+            openMutationPick('Choose a mutation');
+        }
+    }
+
+    // Start a run on layer 1: fresh layer, no mutations
+    function buildAt(index) {
+        disposeLayer(activeLayer); disposeLayer(ghostLayer); disposeLayer(fadingLayer);
+        activeLayer = ghostLayer = fadingLayer = null; ascend = null;
+        snake.alpha = 1;
+        snake.scaleBoost = 1;
+        snake.segmentBonus = index * (ASCEND_MASS - START_MASS);
+        snake.setMass(START_MASS);
+        setActive(createLayer(index));
+    }
+
+    function closeMutationPick() { $('mutate').hidden = true; paused = false; }
+
+    function startRun() {
+        closeMutationPick();
+        mutations = {}; windCharges = 0;
+        const skin = currentSkin();
+        snake.setColors({ head: skin.head, tail: skin.tail });
+        buildAt(0);
+        run = { start: clock.elapsedTime, food: 0, creatures: 0, cuts: 0, layer: 0, picked: [] };
+        dying = 0;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        invulnerable = START_GRACE;
+        hitBlink = 0;
+        shownHud = '';
+        isPlaying = true;
+        showBanner(0);
+        if (HEAD_START.test(meta)) openMutationPick('Head start: choose a mutation');
+    }
+
+    function die(cause) {
+        isPlaying = false;
+        dying = 0.0001;
+        inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false;
+        run.time = clock.elapsedTime - run.start;
+        run.cause = cause;
+        // Fold the run into the totals that unlock things
+        const before = unlockedNames(meta);
+        run.newBest = run.layer + 1 > meta.bestLayer;
+        meta.bestLayer = Math.max(meta.bestLayer, run.layer + 1);
+        meta.bits += run.food; meta.creatures += run.creatures; meta.cuts += run.cuts; meta.runs++;
+        run.unlocked = unlockedNames(meta).filter(n => !before.includes(n));
+        saveMeta();
+        setTimeout(showGameOver, 1100);
     }
 
     function updateFood(dt) {
         const head = snake.nodes[0].position;
         const fleeRadius = 150 + snake.baseSize * 2;
-        for (const f of nutrients) {
-            const u = f.userData;
-            if (isPlaying && u.skittish) {
-                const dx = f.position.x - head.x, dz = f.position.z - head.z, d = Math.hypot(dx, dz);
-                if (d < fleeRadius && d > 0.001) {
-                    f.position.x += (dx / d) * 2.2 * dt;
-                    f.position.z += (dz / d) * 2.2 * dt;
-                }
+        const eatRadius = (snake.baseSize + 15.0) * (1 + 0.35 * mut('jaw'));
+        const magnet = mut('magnet') * 160;
+        const cur = activeLayer.current;
+        const sec = dt / 60;
+        for (let i = nutrients.length - 1; i >= 0; i--) {
+            const f = nutrients[i], u = f.userData;
+            const dx = f.position.x - head.x, dz = f.position.z - head.z, d = Math.hypot(dx, dz);
+            if (isPlaying && u.skittish && d < fleeRadius && d > 0.001) {
+                f.position.x += (dx / d) * 2.2 * dt;
+                f.position.z += (dz / d) * 2.2 * dt;
             }
-            f.position.x += u.vel.x * dt;
-            f.position.z += u.vel.z * dt;
+            if (isPlaying && magnet && d < magnet + snake.baseSize && d > 0.001 && !u.skittish) {
+                f.position.x -= (dx / d) * 1.6 * dt;
+                f.position.z -= (dz / d) * 1.6 * dt;
+            }
+            f.position.x += (u.vel.x + cur.x) * dt;
+            f.position.z += (u.vel.z + cur.z) * dt;
 
-            if (isPlaying && f.position.distanceTo(head) < snake.baseSize + 15.0) {
-                snake.setMass(snake.mass + u.value);
-                placeFood(f, head, 600); // reuse the mesh: respawn it out of view
+            f.position.x = wrapNear(f.position.x, head.x, worldSize);
+            f.position.z = wrapNear(f.position.z, head.z, worldSize);
+            let alpha = seamFade(f.position.x - head.x, f.position.z - head.z, worldSize) * activeLayer.alpha;
+            if (u.remains) {
+                u.ttl -= sec;
+                if (u.ttl <= 0) { removeFood(activeLayer, f); continue; }
+                alpha *= Math.min(1, u.ttl / 5);
+            }
+            f.material.opacity = alpha;
+
+            if (isPlaying && f.position.distanceTo(head) < eatRadius) {
+                snake.setMass(snake.mass + u.value * (1 + 0.5 * mut('gut')));
+                run.food++;
+                if (u.remains) removeFood(activeLayer, f);
+                else placeFood(f, head, 600); // reuse the mesh: respawn it out of view
+                continue;
+            }
+            // Rivals eat bits too
+            for (const r of predators) {
+                if (r.kind !== 'rival') continue;
+                const rh = r.nodes[0].position;
+                if (Math.hypot(f.position.x - rh.x, f.position.z - rh.z) < r.baseSize + 12) {
+                    r.setMass(r.mass + u.value * 0.7);
+                    r.target = null;
+                    if (u.remains) removeFood(activeLayer, f); else placeFood(f, head, 600);
+                    break;
+                }
             }
         }
     }
 
+    // ── Mutation pick (pauses the game) ───────────────────────────────────────────
+    let mutationChoices = [];
+    function openMutationPick(title) {
+        const open = MUTATIONS.filter(m => mut(m.id) < m.max);
+        mutationChoices = [];
+        while (mutationChoices.length < 3 && open.length) mutationChoices.push(open.splice(Math.floor(Math.random() * open.length), 1)[0]);
+        if (!mutationChoices.length) { windCharges = mut('wind'); return; }
+        paused = true;
+        const L = activeLayer.index;
+        $('mutate-layer').textContent = 'Layer ' + (L + 1) + ' · ' + layerName(L);
+        $('mutate-title').textContent = title;
+        $('mutate-mod').textContent = activeLayer.mod.name + ': ' + activeLayer.mod.desc;
+        const list = $('mutate-choices');
+        list.innerHTML = '';
+        mutationChoices.forEach((m, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'choice';
+            const level = mut(m.id) + 1;
+            b.innerHTML = '<kbd>' + (i + 1) + '</kbd><span><b>' + m.name + (level > 1 ? ROMAN[level] : '') + '</b>' + m.desc + '</span>';
+            b.addEventListener('click', () => pickMutation(i));
+            list.appendChild(b);
+        });
+        $('hud').hidden = true;
+        $('mutate').hidden = false;
+        list.firstChild.focus();
+    }
+
+    function pickMutation(i) {
+        const m = mutationChoices[i];
+        if (!m || !paused) return;
+        mutations[m.id] = mut(m.id) + 1;
+        run.picked.push(m.name);
+        windCharges = mut('wind');
+        $('mutate').hidden = true;
+        $('hud').hidden = false;
+        shownHud = '';
+        invulnerable = Math.max(invulnerable, START_GRACE);
+        keysDown.clear(); inputMode = null;
+        paused = false;
+    }
+    window.addEventListener('keydown', (e) => {
+        if (paused && ['1', '2', '3'].includes(e.key)) pickMutation(Number(e.key) - 1);
+    });
+
     // ── HUD ───────────────────────────────────────────────────────────────────────
-    const hudMass = document.getElementById('hud-mass');
-    const hudBest = document.getElementById('hud-best');
-    const flashEl = document.getElementById('flash');
-    hudBest.textContent = Math.round(bestMass);
+    const $ = (id) => document.getElementById(id);
+    const flashEl = $('flash');
 
     function updateHud() {
-        const m = Math.round(snake.mass);
-        if (m === shownMass) return;
-        shownMass = m;
-        hudMass.textContent = m;
-        if (m > bestMass) {
-            bestMass = m;
-            hudBest.textContent = m;
-            try { localStorage.setItem('floaties-best', String(m)); } catch (e) {}
+        const m = Math.round(snake.mass), L = activeLayer.index;
+        const key = m + ':' + L + ':' + meta.bestLayer;
+        if (key === shownHud) return;
+        shownHud = key;
+        $('hud-mass').textContent = m;
+        $('hud-layer').textContent = L + 1;
+        $('hud-layer-name').textContent = layerName(L);
+        $('hud-mod').textContent = activeLayer.mod.id === 'calm' ? '' : activeLayer.mod.name;
+        $('hud-best').textContent = Math.max(meta.bestLayer, L + 1);
+        $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
+    }
+
+    let bannerTimer = null;
+    function showBanner(index, override) {
+        $('banner-kicker').textContent = override ? 'Saved' : 'Layer ' + (index + 1);
+        $('banner-name').textContent = override || layerName(index);
+        const mod = activeLayer && activeLayer.index === index ? activeLayer.mod : null;
+        $('banner-mod').textContent = !override && mod && mod.id !== 'calm' ? mod.name + ': ' + mod.desc : '';
+        $('banner-note').textContent = !override && index === FATAL_CRASH_FROM ? 'Crashes now end the run' : '';
+        const el = $('banner');
+        el.classList.remove('show');
+        void el.offsetWidth; // restart the animation
+        el.classList.add('show');
+        clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => el.classList.remove('show'), 2900);
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function showGameOver() {
+        const L = run.layer;
+        $('gameover-cause').textContent = run.cause + ' on ' + layerName(L) + '.';
+        $('go-layer').textContent = (L + 1) + ' · ' + layerName(L);
+        $('go-food').textContent = run.food;
+        $('go-creatures').textContent = run.creatures;
+        $('go-cuts').textContent = run.cuts;
+        $('go-time').textContent = formatTime(run.time);
+        const taken = MUTATIONS.filter(m => mut(m.id)).map(m => m.name + ROMAN[mut(m.id)]);
+        $('go-muts').textContent = taken.length ? taken.join(', ') : 'None';
+        $('go-best').innerHTML = meta.bestLayer + (run.newBest ? '<span class="new">new best</span>' : '');
+        $('go-unlocks').hidden = !run.unlocked.length;
+        $('go-unlocks').textContent = run.unlocked.length ? 'Unlocked: ' + run.unlocked.join(', ') : '';
+        $('hud').hidden = true;
+        $('gameover').hidden = false;
+        renderSkins();
+        $('btn-retry').focus();
+    }
+
+    $('btn-retry').addEventListener('click', () => {
+        $('gameover').hidden = true;
+        $('hud').hidden = false;
+        startRun();
+    });
+    $('btn-quit').addEventListener('click', () => {
+        $('gameover').hidden = true;
+        closeMutationPick();
+        buildAt(0);
+        renderSkins();
+        const ui = $('ui-root');
+        ui.style.display = 'flex';
+        requestAnimationFrame(() => { ui.style.opacity = '1'; });
+    });
+
+    // ── How to play / Settings pages ──────────────────────────────────────────────
+    let pageOpener = null;
+    function openPage(id, opener) {
+        pageOpener = opener;
+        if (id === 'manual') renderManual();
+        if (id === 'settings') renderSkins();
+        $(id).hidden = false;
+        $(id).scrollTop = 0;
+        $(id).querySelector('.page-close').focus();
+    }
+    function closePages() {
+        const open = document.querySelector('.page:not([hidden])');
+        if (!open) return;
+        open.hidden = true;
+        if (pageOpener) pageOpener.focus();
+    }
+    $('btn-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
+    $('btn-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
+    document.querySelectorAll('.page-close, .page-back').forEach(b => b.addEventListener('click', closePages));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePages(); });
+
+    const defRows = (rows) => rows.map(([dt, dd, cls]) => '<div' + (cls ? ' class="' + cls + '"' : '') + ' style="display:contents"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>').join('');
+    function renderManual() {
+        $('manual-mutations').innerHTML = defRows(MUTATIONS.map(m => [m.name, m.desc + '.' + (m.max > 1 ? ' Stacks up to ' + m.max + '.' : '')]));
+        $('manual-mods').innerHTML = defRows(LAYER_MODS.filter(m => m.id !== 'calm').map(m => [m.name, m.desc + '.']));
+        const items = [...SKINS.filter(s => s.test).map(s => [s.name + ' body', s.need + '.', s.test(meta) ? '' : 'locked']),
+            [HEAD_START.name, HEAD_START.desc + '. ' + HEAD_START.need + '.', HEAD_START.test(meta) ? '' : 'locked']];
+        $('manual-unlocks').innerHTML = defRows(items.map(([a, b, c]) => [a + (c ? '' : ' ✓'), b, c]));
+    }
+
+    // Settings: body picker and head start status
+    function renderSkins() {
+        const row = $('skins');
+        row.innerHTML = '';
+        for (const s of SKINS) {
+            const open = !s.test || s.test(meta);
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'skin';
+            b.disabled = !open;
+            b.setAttribute('aria-pressed', String(currentSkin().id === s.id));
+            const hex = (c) => '#' + c.toString(16).padStart(6, '0');
+            b.innerHTML = '<i style="background:linear-gradient(90deg,' + hex(s.head) + ',' + hex(s.tail) + ')"></i>' +
+                '<span>' + s.name + (open ? '' : '<small>' + s.need + '</small>') + '</span>';
+            if (open) b.addEventListener('click', () => {
+                meta.skin = s.id; saveMeta(); renderSkins();
+                snake.setColors({ head: s.head, tail: s.tail });
+            });
+            row.appendChild(b);
         }
+        $('headstart').textContent = HEAD_START.test(meta)
+            ? HEAD_START.name + ': on. ' + HEAD_START.desc + '.'
+            : HEAD_START.name + ' (locked): ' + HEAD_START.need + ' to ' + HEAD_START.desc.toLowerCase() + '.';
     }
 
     function flash(color) {
@@ -712,7 +1595,7 @@
         // Pixel size is in screen pixels; phones use smaller pixels.
         const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
         const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
-        const pixelBtn = document.getElementById('pixel-btn');
+        const pixelRadios = document.querySelectorAll('input[name="pixel"]');
         let pixelLevel = 2;
         try {
           const saved = PIXEL_LEVEL_NAMES.indexOf(localStorage.getItem('floatiesPixelFilter'));
@@ -725,17 +1608,15 @@
           renderer.setPixelRatio(pixelLevel > 0 ? Math.min(base, 1 / size) : base);
           renderer.setSize(window.innerWidth, window.innerHeight);
           document.body.classList.toggle('pixel-filter', pixelLevel > 0);
-          const name = PIXEL_LEVEL_NAMES[pixelLevel];
-          pixelBtn.textContent = 'Pixels: ' + name[0].toUpperCase() + name.slice(1);
+          pixelRadios.forEach(r => { r.checked = Number(r.value) === pixelLevel; });
         }
-        function cyclePixelFilter() {
-          pixelLevel = (pixelLevel + 1) % PIXEL_LEVEL_NAMES.length;
+        function setPixelLevel(level) {
+          pixelLevel = level;
           try { localStorage.setItem('floatiesPixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
           applyPixelRatio();
         }
-        pixelBtn.addEventListener('click', cyclePixelFilter);
-        pixelBtn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
-        window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) cyclePixelFilter(); });
+        pixelRadios.forEach(r => r.addEventListener('change', () => setPixelLevel(Number(r.value))));
+        window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) setPixelLevel((pixelLevel + 1) % PIXEL_LEVEL_NAMES.length); });
         applyPixelRatio();
 
         // ── Backdrop (follows the camera, since the world no longer wraps) ────────
@@ -981,8 +1862,9 @@
             mass: START_MASS, segments: 11, maxSegments: 24, growSegments: true,
             colors: { head: 0x00f2ff, tail: 0xffaa00 }, depthTest: false, order: 20000
         });
-        spawnNutrients();
-        for (let i = 0; i < PREDATOR_COUNT; i++) spawnPredator(null, 600, 1500);
+        snake.setColors({ head: currentSkin().head, tail: currentSkin().tail });
+        setActive(createLayer(0));
+        renderSkins();
 
         // Waypoint marker: shows where a click is steering to
         waypointMarker = new THREE.Mesh(
@@ -1123,9 +2005,7 @@
         setTimeout(() => {
             ui.style.display = 'none';
             document.getElementById('hud').hidden = false;
-            inputMode = null;
-            invulnerable = START_GRACE; // a few safe seconds to get oriented
-            isPlaying = true;
+            startRun(); // a few safe seconds to get oriented come with every run
         }, 1000);
     }
 
@@ -1134,9 +2014,18 @@
         // dt = elapsed time in 60fps frames, so tuning values stay as they were
         const dt = Math.min(clock.getDelta() * 60, 3);
         const t = clock.elapsedTime;
+        if (paused) { renderer.render(scene, camera); return; } // choosing a mutation
 
         invulnerable = Math.max(0, invulnerable - dt / 60);
-        snake.alpha = invulnerable > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+        if (dying) {
+            dying += dt / 60;
+            snake.alpha = Math.max(0, 1 - dying / 0.8); // fade out when eaten
+        } else {
+            // Blink only after being hit; the safe start of a run or layer stays steady
+            hitBlink = Math.max(0, hitBlink - dt / 60);
+            snake.alpha = hitBlink > 0 && Math.floor(t * 12) % 2 ? 0.3 : 1;
+        }
+        updateAscend(dt);
         snake.update(t, dt, playerSteer);
         const headPos = snake.nodes[0].position;
 
@@ -1145,14 +2034,21 @@
             const ph = p.nodes[0].position;
             const nx = wrapNear(ph.x, headPos.x, PREDATOR_PERIOD), nz = wrapNear(ph.z, headPos.z, PREDATOR_PERIOD);
             if (nx !== ph.x || nz !== ph.z) p.shift(new THREE.Vector3(nx - ph.x, 0, nz - ph.z));
-            p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD);
+            p.alpha = seamFade(ph.x - headPos.x, ph.z - headPos.z, PREDATOR_PERIOD) * activeLayer.alpha;
             const rel = relationTo(p);
-            if (rel !== p.rel) { p.rel = rel; p.setColors(RELATION_COLORS[rel]); }
-            p.update(t, dt, predatorSteer);
+            if (rel !== p.rel) { p.rel = rel; p.tired = 0; p.setColors(colorsFor(p)); }
+            p.update(t, dt, p.kind === 'rival' ? rivalSteer : predatorSteer);
+            // Tired prey: pale head, so you can see when to go for it
+            p.nodes[0].material.color.copy(p.headColor);
+            if (p.tired > 0) p.nodes[0].material.color.lerp(TIRED_TINT, 0.6);
         }
 
+        if (ghostLayer) updateGhostLayer(ghostLayer, headPos, t, dt);
+        if (fadingLayer) updateGhostLayer(fadingLayer, headPos, t, dt);
+
         updateFood(dt);
-        if (isPlaying) checkPredatorContact();
+        if (isPlaying) resolveCollisions();
+        if (isPlaying && !ascend && snake.mass >= ASCEND_MASS) startAscend();
         updateHud();
 
         // ── Chase camera with banking; pulls back as the snake gets longer ────────
@@ -1160,7 +2056,7 @@
         const h = 280 + snake.baseSize * 3 + extra * 0.35;
         const d = 420 + snake.baseSize * 3 + extra * 0.6;
         // Thin the fog as the camera pulls back so the snake and nearby food stay as clear as at the start
-        scene.fog.density = BASE_FOG * Math.min(1, 560 / Math.hypot(h, d));
+        scene.fog.density = BASE_FOG * Math.min(1, 560 / Math.hypot(h, d)) * (activeLayer.mod.id === 'murk' ? 2.2 : 1);
 
         const behind = snake.headVelocity.clone().negate().multiplyScalar(d);
         const desiredCam = headPos.clone().add(behind).add(new THREE.Vector3(0, h, 0));
