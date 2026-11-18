@@ -14,7 +14,10 @@ export const ZONE_BONUS = 4;        // balls for clearing a zone
 const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
 const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
 
-const GRAVITY = -15;
+// Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
+// Blocks keep a solid, heavy fall through their own gravity scale.
+const GRAVITY = -5;
+const BLOCK_FALL = 3;               // loose blocks fall as if gravity were -15
 const SHOT_GAP = 8;                 // steps between balls in a volley
 const HIT_COOLDOWN = 10;            // steps before the same pair can hit again
 const MIN_IMPACT = 3;               // a hit only counts if the bounce really changed the ball's speed
@@ -25,7 +28,7 @@ const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
-const HEAVY_AFTER = 480;            // after 4s a ball slowly gets heavier so turns end
+const HEAVY_AFTER = 360;            // after 3s a ball steadily gets heavier so turns end
 const TURN_CAP = 30 * 120;          // after 30s any balls still out come home
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
@@ -172,7 +175,7 @@ export class Sim {
         const cy = cells.reduce((a, [, r]) => a - (r + 0.5), 0) / n + dy;
         let desc;
         if (kind === 'jello') desc = R.RigidBodyDesc.fixed().setTranslation(cx, cy);
-        else if (kind === 'loose') desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setRotation(tilt)
+        else if (kind === 'loose') desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setRotation(tilt).setGravityScale(BLOCK_FALL)
             .setLinearDamping(0.05).setAngularDamping(0.15);
         else desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setGravityScale(0)
             .setLinearDamping(0.4).setAngularDamping(0.6);
@@ -254,7 +257,7 @@ export class Sim {
     snap(b) {
         const body = this.world.getRigidBody(b.body);
         b.loose = true;
-        body.setGravityScale(1, true);
+        body.setGravityScale(BLOCK_FALL, true);
         body.setLinearDamping(0.05);
         body.setAngularDamping(0.15);
         this.shapeBlock(b);
@@ -720,7 +723,7 @@ export class Sim {
             }
             ball.age += 1;
             if (ball.age > HEAVY_AFTER && ball.age % 30 === 0) {
-                body.setGravityScale(1 + (ball.age - HEAVY_AFTER) / 240, false);
+                body.setGravityScale(1 + (ball.age - HEAVY_AFTER) / 60, false);
             }
             const v = body.linvel();
             ball.still = Math.hypot(v.x, v.y) < STUCK_SPEED && !ball.jello.length ? ball.still + 1 : 0;
