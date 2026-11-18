@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f1e8d2">
+    <meta name="robots" content="noindex">
+    <title>Boop (prototype)</title>
+    <link rel="preload" href="/assets/fonts/Manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: 'Manrope';
+            src: url('/assets/fonts/Manrope-latin.woff2') format('woff2');
+            font-weight: 200 800;
+            font-display: swap;
+        }
+        :root {
+            --paper: #f1e8d2;
+            --ink: #2b2622;
+            --ink-soft: #5c544c;
+        }
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Manrope', system-ui, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #stage, #stage canvas { position: fixed; inset: 0; display: block; }
+        #hud {
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(100vw - 32px, 420px);
+            display: flex;
+            gap: 20px;
+            pointer-events: none;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+        #hud b { display: block; font-size: 1.375rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
+        #hint {
+            margin: 0 0 0 auto;
+            max-width: 210px;
+            text-align: right;
+            font-size: 0.75rem;
+            line-height: 1.35;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+        #message {
+            position: fixed;
+            left: 50%;
+            top: 40%;
+            transform: translate(-50%, -50%);
+            width: min(100vw - 32px, 320px);
+            padding: 20px;
+            background: #fbf6ea;
+            border: 2px solid var(--ink);
+            text-align: center;
+            pointer-events: none;
+        }
+        #message h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; }
+        #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
+        [hidden] { display: none !important; }
+        #back {
+            position: fixed;
+            left: 16px;
+            bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+    </style>
+</head>
+<body>
+    <div id="stage"></div>
+    <div id="hud" aria-live="polite">
+        <div>Depth<b id="hud-depth">1</b></div>
+        <div>Balls<b id="hud-balls">5</b></div>
+        <p id="hint">Drag to aim, release to fire. Drag back to the launcher to cancel. Hold to speed up.</p>
+    </div>
+    <div id="message" hidden>
+        <h1 id="message-title"></h1>
+        <p id="message-body"></p>
+    </div>
+    <a id="back" href="/games">← Games</a>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs"
+            }
+        }
+    </script>
+    <script type="module" src="./game.js"></script>
+</body>
+</html>
