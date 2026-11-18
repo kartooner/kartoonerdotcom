@@ -436,6 +436,9 @@
     let tapStart = null; // the current touch, while it might still be a tap
     const TAP_NUDGE = 0.6;  // max turn per tap, radians (~35°)
     const TAP_MS = 250;     // shorter than this (and not dragged) counts as a tap
+    const POINTER_DEADZONE = 60; // drag/touch closer than this to your head doesn't steer
+    let pointerScreen = null;    // where the held mouse / finger is on screen
+    let pointerToWorld = null;   // screen → water-plane mapping (set up in init)
     const isTapping = () => tapStart && !tapStart.moved && performance.now() - tapStart.at < TAP_MS;
     let camTarget = new THREE.Vector3();
     let cameraBank = 0;
@@ -778,23 +781,45 @@
                     c.headVelocity.set(nx, 0, nz).normalize();
                 }
             } else if (inputMode === 'drag' || inputMode === 'touch' || (inputMode === 'waypoint' && waypointPos)) {
+                // A held mouse/finger steers by where it is on screen *now*: the camera turns
+                // with you, so holding it left of the snake keeps turning left, like a joystick
+                if (inputMode !== 'waypoint' && pointerScreen && pointerToWorld) {
+                    pointerToWorld(pointerScreen.x, pointerScreen.y, inputMode === 'drag' ? dragWorldPos : touchWorldPos);
+                }
                 const wp = inputMode === 'drag' ? dragWorldPos : inputMode === 'touch' ? touchWorldPos : waypointPos;
                 const toTarget = new THREE.Vector3().subVectors(wp, head.position);
-                toTarget.y = 0;
-                if (inputMode === 'waypoint' && toTarget.length() < 40) {
-                    waypointPos = null; inputMode = null;
-                } else if (toTarget.length() > 20) {
-                    // Angle-axis: fixed max turn rate regardless of pointer distance
-                    let maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
-                    // While a touch might still be a tap, cap how far it can turn you
-                    if (inputMode === 'touch' && isTapping()) maxTurn = Math.min(maxTurn, Math.max(0, TAP_NUDGE - tapStart.turned));
-                    const targetDir = toTarget.normalize();
-                    const cross = new THREE.Vector3().crossVectors(c.headVelocity, targetDir);
-                    const angle = Math.atan2(cross.length(), c.headVelocity.dot(targetDir));
-                    if (angle > 0.001 && maxTurn > 0) {
-                        if (inputMode === 'touch' && tapStart) tapStart.turned += Math.min(angle, maxTurn);
-                        const q = new THREE.Quaternion().setFromAxisAngle(cross.normalize(), Math.min(angle, maxTurn));
-                        c.headVelocity.applyQuaternion(q).normalize();
+                const dist = Math.hypot(toTarget.x, toTarget.z);
+                const cur = Math.atan2(c.headVelocity.z, c.headVelocity.x);
+                let diff = Math.atan2(toTarget.z, toTarget.x) - cur;
+                diff = Math.atan2(Math.sin(diff), Math.cos(diff)); // signed: + = target on your right
+                let maxTurn = (inputMode === 'waypoint' ? 0.07 : 0.10) * (1 + 0.3 * mut('turn')) * dt;
+                const turn = (limit) => {
+                    const step = THREE.MathUtils.clamp(diff, -limit, limit);
+                    c.headVelocity.set(Math.cos(cur + step), 0, Math.sin(cur + step));
+                    return Math.abs(step);
+                };
+                if (inputMode === 'waypoint') {
+                    // Click-to-swim: turn to the direction the spot was in when you clicked, then
+                    // swim straight. Turning exactly that much means no looping around a spot
+                    // that's inside your turning circle.
+                    const w = waypointPos;
+                    if (w.heading === undefined) w.heading = cur + diff;
+                    let hd = w.heading - cur;
+                    hd = Math.atan2(Math.sin(hd), Math.cos(hd));
+                    if (dist < 40 || (w.locked && Math.abs(diff) > Math.PI / 2)) {
+                        waypointPos = null; inputMode = null;          // reached it, or swam past it
+                    } else if (!w.locked) {
+                        if (Math.abs(hd) < 0.01) w.locked = true;      // facing that way: straight on
+                        else { diff = hd; turn(maxTurn); }
+                    }
+                } else if (dist > POINTER_DEADZONE) {
+                    // Drag / touch: steer toward the pointer, but not when it's right on top of
+                    // the head. Turn harder the further off-centre it is, up to the keyboard's rate.
+                    maxTurn = Math.min(0.065 * (1 + 0.3 * mut('turn')) * dt, Math.abs(diff) * 0.12 * dt);
+                    if (inputMode === 'touch' && isTapping()) maxTurn = Math.min(0.10 * dt, Math.max(0, TAP_NUDGE - tapStart.turned));
+                    if (maxTurn > 0 && Math.abs(diff) > 0.001) {
+                        const turned = turn(maxTurn);
+                        if (inputMode === 'touch' && tapStart) tapStart.turned += turned;
                     }
                 }
             } else if (tapNudge) {
@@ -1904,8 +1929,15 @@
                 (y / window.innerHeight) * -2 + 1
             );
             rc.setFromCamera(ndc, camera);
-            rc.ray.intersectPlane(groundPlane, out);
+            if (rc.ray.intersectPlane(groundPlane, out)) return;
+            // Above the horizon (easy while boosting): the ray never meets the water, so
+            // treat it as "far away in that direction" rather than leaving a stale point
+            const flat = new THREE.Vector3(rc.ray.direction.x, 0, rc.ray.direction.z);
+            if (flat.lengthSq() < 1e-8) return;
+            out.set(rc.ray.origin.x, 0, rc.ray.origin.z).addScaledVector(flat.normalize(), 5000);
         }
+
+        pointerToWorld = screenToWorld;
 
         function canActivate(mode) {
             if (!inputMode || inputMode === mode) return true;
@@ -1970,10 +2002,11 @@
                     if (!canActivate('drag')) { mouseDownAt = null; return; }
                     isDragging = true;
                     activateMode('drag');
+                    pointerScreen = { x: e.clientX, y: e.clientY };
                     screenToWorld(mouseDownAt.x, mouseDownAt.y, dragWorldPos);
                 }
             }
-            if (isDragging) screenToWorld(e.clientX, e.clientY, dragWorldPos);
+            if (isDragging) { pointerScreen = { x: e.clientX, y: e.clientY }; screenToWorld(e.clientX, e.clientY, dragWorldPos); }
         });
         window.addEventListener('mouseup', (e) => {
             if (!mouseDownAt) return;
@@ -1998,11 +2031,13 @@
             if (e.touches.length >= 2) { touchBoost = true; return; }
             if (!canActivate('touch')) return;
             activateMode('touch');
+            pointerScreen = { x: e.touches[0].clientX, y: e.touches[0].clientY };
             screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
         }, { passive: true });
         window.addEventListener('touchmove', (e) => {
             if (inputMode !== 'touch') return;
             if (tapStart && Math.hypot(e.touches[0].clientX - tapStart.x, e.touches[0].clientY - tapStart.y) > 12) tapStart.moved = true;
+            pointerScreen = { x: e.touches[0].clientX, y: e.touches[0].clientY };
             screenToWorld(e.touches[0].clientX, e.touches[0].clientY, touchWorldPos);
             e.preventDefault();
         }, { passive: false });
