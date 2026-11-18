@@ -43,10 +43,9 @@
         #ui-root, #gameover, #mutate { overflow-y: auto; touch-action: pan-y; }
         #gameover > :first-child, #mutate > :first-child { margin-top: auto; }
         #gameover > :last-child, #mutate > :last-child { margin-bottom: auto; }
-        #gameover, #mutate { padding-bottom: 4.5rem !important; } /* clear the Games / Pixels links */
-        @media (max-height: 900px) {
-            .title { margin-bottom: 1.5rem; }
-            .howto { margin-top: 1.25rem; }
+        #gameover, #mutate { padding-bottom: 4.5rem !important; } /* clear the Games link */
+        @media (max-height: 600px) {
+            .title { margin-bottom: 1.25rem; }
         }
 
         @keyframes floatSubtitle {
@@ -54,8 +53,8 @@
             50% { transform: translateY(-10px) rotate(-0.5deg); opacity: 1; }
         }
         @keyframes floatTitle {
-            0%, 100% { transform: translateY(0) rotate(-0.5deg); filter: blur(0px); }
-            50% { transform: translateY(-12px) rotate(0.5deg); filter: blur(0.8px); }
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+            50% { transform: translateY(-12px) rotate(0.5deg); }
         }
         .subtitle {
             font-family: 'Cartridge', ui-sans-serif, sans-serif;
@@ -68,7 +67,8 @@
         .title {
             font-family: 'Cartridge', ui-sans-serif, sans-serif;
             font-size: clamp(2.5rem, 8vw, 5.5rem); font-weight: 900; color: #fff; font-style: italic;
-            letter-spacing: -0.04em; line-height: 0.9; margin-bottom: 2.5rem;
+            letter-spacing: -0.04em; line-height: 1; margin: 0 0 2.25rem;
+            padding: 0.1em 0.3em; /* the box must contain the italic overhang and tall letters */
             text-shadow: 0 0 60px rgba(255, 170, 0, 0.7), 0 0 120px rgba(255, 100, 0, 0.3);
             animation: floatTitle 8s ease-in-out infinite;
             display: block;
@@ -87,16 +87,57 @@
         }
         #btn-play:active { transform: scale(0.98); }
         #btn-play:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-
-        /* How-to-play: a short list under the Play button */
-        .howto {
-            list-style: none; margin: 2rem auto 0; padding: 0;
-            max-width: 26rem; text-align: left;
-            font-size: 0.8125rem; line-height: 1.5; color: #b7c6d6;
+        .menu-actions { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .menu-actions #btn-play { min-width: 17rem; }
+        .btn-secondary {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif;
+            min-width: 17rem; padding: 0.8rem 2rem; border-radius: 8px; cursor: pointer;
+            background: rgba(0, 8, 20, 0.4); border: 1.5px solid rgba(183, 198, 214, 0.35); color: #d6e2ee;
+            font-size: 0.875rem; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase;
         }
-        .howto li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.75rem; padding: 0.3rem 0; border-top: 1px solid rgba(183, 198, 214, 0.15); }
-        .howto li:first-child { border-top: 0; }
-        .howto b { color: #e8f1fa; font-weight: 600; }
+        .btn-secondary:hover { border-color: #00ffcc; color: #00ffcc; }
+        .btn-secondary:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+        /* Full-screen pages opened from the title: How to Play, Settings */
+        .page {
+            position: fixed; inset: 0; z-index: 1150; overflow-y: auto; touch-action: pan-y;
+            background: #000814; color: #c9d6e3; /* opaque, so the title doesn't show through */
+        }
+        .page[hidden] { display: none; }
+        .page-inner { max-width: 40rem; margin: 0 auto; padding: 3.5rem 20px 5rem; line-height: 1.6; font-size: 0.9375rem; }
+        .page h1 {
+            font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; color: #fff;
+            font-size: clamp(2rem, 6vw, 3rem); margin: 0 0 0.25rem; padding: 0.1em 0.2em 0.1em 0;
+        }
+        .page .lede { color: #b7c6d6; margin: 0 0 2rem; font-size: 1.0625rem; }
+        .page h2 {
+            font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: #00f2ff;
+            margin: 2.25rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid rgba(183, 198, 214, 0.15);
+        }
+        .page p { margin: 0 0 0.75rem; }
+        .page b, .page strong { color: #fff; font-weight: 600; }
+        .page kbd { font: inherit; font-size: 0.8125rem; color: #fff; border: 1px solid rgba(183, 198, 214, 0.4); border-radius: 4px; padding: 0 0.35rem; }
+        .defs { display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: 0.35rem 1.25rem; margin: 0; }
+        .defs dt { color: #fff; font-weight: 600; }
+        .defs dd { margin: 0; }
+        @media (max-width: 480px) { .defs { grid-template-columns: 1fr; } .defs dd { margin-bottom: 0.5rem; } }
+        .defs .locked dt { color: #8fa3b8; }
+        .page-close {
+            position: fixed; top: 12px; right: 12px; z-index: 1; width: 44px; height: 44px;
+            background: rgba(0, 8, 20, 0.8); border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 8px;
+            color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer;
+        }
+        .page-close:hover, .page-close:focus-visible { border-color: #00ffcc; outline: none; }
+        .page-back { margin-top: 2.5rem; }
+        .seg { display: inline-flex; border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 8px; overflow: hidden; }
+        .seg label { position: relative; }
+        .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+        .seg span { display: block; padding: 0.55rem 1.1rem; font-size: 0.875rem; color: #b7c6d6; border-left: 1px solid rgba(183, 198, 214, 0.25); }
+        .seg label:first-child span { border-left: 0; }
+        .seg input:checked + span { background: rgba(0, 255, 204, 0.14); color: #00ffcc; font-weight: 600; }
+        .seg input:focus-visible + span { outline: 2px solid #fff; outline-offset: -2px; }
+        .hint { font-size: 0.8125rem; color: #8fa3b8; margin-top: 0.5rem; }
+
         .swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: 0.05rem; }
 
         #hud {
@@ -158,7 +199,6 @@
         .btn-quiet { border-color: rgba(183, 198, 214, 0.35); color: #b7c6d6; margin-top: 0.75rem; padding: 0.75rem 2.5rem; }
 
         #hud .mod { font-size: 0.75rem; color: #ffcf6b; margin-top: 4px; }
-        #hud .muts { flex-basis: 100%; font-size: 0.75rem; color: #b7c6d6; margin-top: -0.5rem; }
         #hud { flex-wrap: wrap; max-width: calc(100vw - 32px); }
         #banner .mod { display: block; margin-top: 0.6rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; color: #ffcf6b; }
         .stats dd { text-align: right; }
@@ -186,8 +226,6 @@
         .choice kbd { font-family: inherit; font-weight: 700; color: #00ffcc; border: 1px solid rgba(0, 255, 204, 0.5); border-radius: 4px; padding: 0.1rem 0.45rem; }
 
         /* Start-screen body picker */
-        .unlocks { margin: 1.75rem auto 0; max-width: 26rem; text-align: left; }
-        .unlocks h2 { font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; font-weight: 600; margin: 0 0 0.5rem; }
         .skins { display: flex; flex-wrap: wrap; gap: 0.4rem; }
         .skin {
             display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.6rem;
@@ -214,7 +252,7 @@
             z-index: 1100;
             display: flex; gap: 8px;
         }
-        #back-to-games, #pixel-btn {
+        #back-to-games {
             padding: 6px 14px;
             font-family: inherit; cursor: pointer; white-space: nowrap;
             background: rgba(0, 8, 20, 0.5);
@@ -223,8 +261,7 @@
             font-size: 11px; font-weight: 600; text-decoration: none;
             opacity: 0.5; transition: opacity 0.2s ease;
         }
-        #back-to-games:hover, #back-to-games:focus-visible,
-        #pixel-btn:hover, #pixel-btn:focus-visible { opacity: 1; }
+        #back-to-games:hover, #back-to-games:focus-visible { opacity: 1; }
     </style>
 </head>
 <body>
@@ -233,23 +270,82 @@
     <div id="menu" role="dialog" aria-labelledby="main-title">
         <div class="subtitle">Primordial Glow</div>
         <h1 class="title" id="main-title">Nebula Floaties</h1>
-        <button id="btn-play" onclick="startPlay()" aria-label="Start the simulation">Play</button>
-        <ul class="howto">
-            <li><b>Steer</b><span>Arrows / A D, drag, or tap a spot</span></li>
-            <li><b>Speed</b><span>W / ↑ boost, S / ↓ slow. Touch: two fingers to boost</span></li>
-            <li><b>Eat</b><span>Teal bits +1, amber +3 (they swim away), pale remains of fallen creatures</span></li>
-            <li><b>Bodies</b><span>Your head into any body that isn't green: you crash. Anything that hits your body crashes and bursts.</span></li>
-            <li><b>Grow</b><span>Reach 50 mass to rise a layer and pick a mutation. One death ends the run.</span></li>
-            <li><b>Others</b><span><i class="swatch" style="background:#7dff4a"></i>Green: smaller, eat them. They tire out after a sprint (pale head).
-                <i class="swatch" style="background:#ff2a55"></i>Red: bigger, they bite.
-                <i class="swatch" style="background:#8a5cff"></i>Violet tail: rival snake.</span></li>
-            <li><b>Look</b><span>P or the Pixels button: chunky, fine, off</span></li>
-        </ul>
-        <section class="unlocks" aria-labelledby="unlocks-title">
-            <h2 id="unlocks-title">Body</h2>
-            <div class="skins" id="skins"></div>
-            <p class="headstart" id="headstart"></p>
-        </section>
+        <div class="menu-actions">
+            <button id="btn-play" onclick="startPlay()">Play</button>
+            <button type="button" class="btn-secondary" id="btn-howto">How to play</button>
+            <button type="button" class="btn-secondary" id="btn-settings">Settings</button>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="manual" role="dialog" aria-labelledby="manual-title" hidden>
+    <button type="button" class="page-close" aria-label="Close how to play">×</button>
+    <div class="page-inner">
+        <h1 id="manual-title">How to play</h1>
+        <p class="lede">You're a tiny glowing snake in the deep. Eat, grow, and rise up through the layers of the nebula. One life per run: see how high you can get.</p>
+
+        <h2>Controls</h2>
+        <dl class="defs">
+            <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or drag with the mouse, or click a spot to swim there. On touch, drag a finger.</dd>
+            <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
+            <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
+            <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
+        </dl>
+
+        <h2>Eating</h2>
+        <dl class="defs">
+            <dt>Teal bits</dt><dd>+1 mass.</dd>
+            <dt>Amber bits</dt><dd>+3 mass, but they swim away when you get close.</dd>
+            <dt>Pale remains</dt><dd>What's left when a creature dies. Scattered along its body; they fade after a while.</dd>
+        </dl>
+
+        <h2>Other creatures</h2>
+        <p>Their head colour tells you how they compare to you, and it changes as you grow.</p>
+        <dl class="defs">
+            <dt><i class="swatch" style="background:#7dff4a"></i>Green</dt><dd>Smaller than you. Swim into any part of them to eat them. They sprint away, then tire out: a pale head means now's your chance.</dd>
+            <dt><i class="swatch" style="background:#ff2a55"></i>Red</dt><dd>Bigger than you. They chase you for a while. Meet one head on and it bites a chunk of your mass.</dd>
+            <dt><i class="swatch" style="background:#9fb3c8"></i>Grey</dt><dd>About your size. They mind their own business.</dd>
+            <dt><i class="swatch" style="background:#8a5cff"></i>Violet tail</dt><dd>A rival snake. Rivals eat bits and grow like you do, and when they're bigger they try to cut across your path.</dd>
+        </dl>
+
+        <h2>Bodies are walls</h2>
+        <p>Swim your head into the body of anything that isn't green and you crash. That ends the run.</p>
+        <p>It works the other way too: anything that hits <em>your</em> body crashes and bursts into remains. Curl around a big red creature and make it run into you.</p>
+
+        <h2>Layers and mutations</h2>
+        <p>Reach 50 mass to rise to the next layer. The camera pulls back, the layer you were on sinks below you, and a new layer full of bigger things begins. Then pick one of three mutations. They last for the rest of the run, and some stack.</p>
+        <dl class="defs" id="manual-mutations"></dl>
+
+        <h2>Layer conditions</h2>
+        <p>The first layer is always calm. Every layer after that rolls one of these:</p>
+        <dl class="defs" id="manual-mods"></dl>
+
+        <h2>Runs and unlocks</h2>
+        <p>Two bites when you're small, or one crash, ends the run. You start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <dl class="defs" id="manual-unlocks"></dl>
+
+        <button type="button" class="btn-secondary page-back">Back</button>
+    </div>
+</div>
+
+<div class="page" id="settings" role="dialog" aria-labelledby="settings-title" hidden>
+    <button type="button" class="page-close" aria-label="Close settings">×</button>
+    <div class="page-inner">
+        <h1 id="settings-title">Settings</h1>
+
+        <h2 id="pixel-label">Pixel filter</h2>
+        <div class="seg" role="radiogroup" aria-labelledby="pixel-label">
+            <label><input type="radio" name="pixel" value="0"><span>Off</span></label>
+            <label><input type="radio" name="pixel" value="1"><span>Fine</span></label>
+            <label><input type="radio" name="pixel" value="2"><span>Chunky</span></label>
+        </div>
+        <p class="hint">A low-res look, like a 90s console. <kbd>P</kbd> switches it during play.</p>
+
+        <h2>Body</h2>
+        <div class="skins" id="skins"></div>
+        <p class="hint" id="headstart"></p>
+
+        <button type="button" class="btn-secondary page-back">Back</button>
     </div>
 </div>
 
@@ -263,7 +359,6 @@
         <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
     </div>
     <div class="best"><span class="label">Best</span><span class="value" id="hud-best">1</span></div>
-    <div class="muts" id="hud-muts"></div>
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span></div>
 <div id="mutate" role="dialog" aria-labelledby="mutate-title" hidden>
@@ -291,7 +386,6 @@
 <div id="flash"></div>
 <div id="bottom-links">
     <a id="back-to-games" href="/games">← Games</a>
-    <button id="pixel-btn" type="button" title="Pixel filter (P)">Pixels: Chunky</button>
 </div>
 
 <script>
@@ -1298,8 +1392,7 @@
 
     function updateHud() {
         const m = Math.round(snake.mass), L = activeLayer.index;
-        const muts = MUTATIONS.filter(x => mut(x.id)).map(x => x.name + ROMAN[mut(x.id)]).join(' · ');
-        const key = m + ':' + L + ':' + meta.bestLayer + ':' + muts + ':' + windCharges;
+        const key = m + ':' + L + ':' + meta.bestLayer;
         if (key === shownHud) return;
         shownHud = key;
         $('hud-mass').textContent = m;
@@ -1308,7 +1401,6 @@
         $('hud-mod').textContent = activeLayer.mod.id === 'calm' ? '' : activeLayer.mod.name;
         $('hud-best').textContent = Math.max(meta.bestLayer, L + 1);
         $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
-        $('hud-muts').textContent = muts + (mut('wind') ? (windCharges ? '' : ' (used)') : '');
     }
 
     let bannerTimer = null;
@@ -1361,7 +1453,37 @@
         requestAnimationFrame(() => { ui.style.opacity = '1'; });
     });
 
-    // Start-screen body picker and unlock list
+    // ── How to play / Settings pages ──────────────────────────────────────────────
+    let pageOpener = null;
+    function openPage(id, opener) {
+        pageOpener = opener;
+        if (id === 'manual') renderManual();
+        if (id === 'settings') renderSkins();
+        $(id).hidden = false;
+        $(id).scrollTop = 0;
+        $(id).querySelector('.page-close').focus();
+    }
+    function closePages() {
+        const open = document.querySelector('.page:not([hidden])');
+        if (!open) return;
+        open.hidden = true;
+        if (pageOpener) pageOpener.focus();
+    }
+    $('btn-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
+    $('btn-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
+    document.querySelectorAll('.page-close, .page-back').forEach(b => b.addEventListener('click', closePages));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePages(); });
+
+    const defRows = (rows) => rows.map(([dt, dd, cls]) => '<div' + (cls ? ' class="' + cls + '"' : '') + ' style="display:contents"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>').join('');
+    function renderManual() {
+        $('manual-mutations').innerHTML = defRows(MUTATIONS.map(m => [m.name, m.desc + '.' + (m.max > 1 ? ' Stacks up to ' + m.max + '.' : '')]));
+        $('manual-mods').innerHTML = defRows(LAYER_MODS.filter(m => m.id !== 'calm').map(m => [m.name, m.desc + '.']));
+        const items = [...SKINS.filter(s => s.test).map(s => [s.name + ' body', s.need + '.', s.test(meta) ? '' : 'locked']),
+            [HEAD_START.name, HEAD_START.desc + '. ' + HEAD_START.need + '.', HEAD_START.test(meta) ? '' : 'locked']];
+        $('manual-unlocks').innerHTML = defRows(items.map(([a, b, c]) => [a + (c ? '' : ' ✓'), b, c]));
+    }
+
+    // Settings: body picker and head start status
     function renderSkins() {
         const row = $('skins');
         row.innerHTML = '';
@@ -1413,7 +1535,7 @@
         // Pixel size is in screen pixels; phones use smaller pixels.
         const PIXEL_LEVEL_NAMES = ['off', 'fine', 'chunky'];
         const PIXEL_SIZES = { desktop: [1, 2, 3], phone: [1, 1.5, 2] };
-        const pixelBtn = document.getElementById('pixel-btn');
+        const pixelRadios = document.querySelectorAll('input[name="pixel"]');
         let pixelLevel = 2;
         try {
           const saved = PIXEL_LEVEL_NAMES.indexOf(localStorage.getItem('floatiesPixelFilter'));
@@ -1426,17 +1548,15 @@
           renderer.setPixelRatio(pixelLevel > 0 ? Math.min(base, 1 / size) : base);
           renderer.setSize(window.innerWidth, window.innerHeight);
           document.body.classList.toggle('pixel-filter', pixelLevel > 0);
-          const name = PIXEL_LEVEL_NAMES[pixelLevel];
-          pixelBtn.textContent = 'Pixels: ' + name[0].toUpperCase() + name.slice(1);
+          pixelRadios.forEach(r => { r.checked = Number(r.value) === pixelLevel; });
         }
-        function cyclePixelFilter() {
-          pixelLevel = (pixelLevel + 1) % PIXEL_LEVEL_NAMES.length;
+        function setPixelLevel(level) {
+          pixelLevel = level;
           try { localStorage.setItem('floatiesPixelFilter', PIXEL_LEVEL_NAMES[pixelLevel]); } catch (e) {}
           applyPixelRatio();
         }
-        pixelBtn.addEventListener('click', cyclePixelFilter);
-        pixelBtn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
-        window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) cyclePixelFilter(); });
+        pixelRadios.forEach(r => r.addEventListener('change', () => setPixelLevel(Number(r.value))));
+        window.addEventListener('keydown', e => { if (e.code === 'KeyP' && !e.repeat) setPixelLevel((pixelLevel + 1) % PIXEL_LEVEL_NAMES.length); });
         applyPixelRatio();
 
         // ── Backdrop (follows the camera, since the world no longer wraps) ────────
