@@ -2,16 +2,12 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, BASKET } from './sim.js';
+import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
 
 const COLORS = {
     paper: 0xf1e8d2, field: 0xfbf6ea, ink: 0x2b2622, ball: 0xfffdf7,
-    jello: 0xa9dccf, jelloEdge: 0xb2ada4, mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e,
-    // Fill by number: low → high. Crayon-ish, all readable with ink numbers.
-    tiers: [
-        [4, 0x9cc77a], [12, 0xf2c14e], [25, 0xf0954b], [50, 0xe06b4a], [Infinity, 0xb85a4a],
-    ],
+    mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e,
 };
-const tierColor = (hp) => COLORS.tiers.find(([max]) => hp <= max)[1];
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
 const HITSTOP = 0.045;               // tiny freeze when a block pops
@@ -146,48 +142,39 @@ const propViews = new Map();    // id → { group, rotor? }
 const floaters = [];            // "+1" labels drifting up
 let zoneOffset = 0;             // visual slide used when a new zone comes up
 
-// Jello is drawn opaque in pale colours: see-through fills would show the seams between cells.
-const jelloOutlineMat = mat(COLORS.jelloEdge);
 
 function buildBlockView(b) {
     const group = new THREE.Group();
-    const fillMat = mat(b.jello ? COLORS.jello : tierColor(b.hp));
-    const outlines = [], fills = [];
-    for (const [x, y] of b.cells) {
-        const o = new THREE.Mesh(unitSquare, b.jello ? jelloOutlineMat : outlineMat);
-        const f = new THREE.Mesh(unitSquare, fillMat);
-        o.position.set(x, y, 0);
-        f.position.set(x, y, 0.1);
-        outlines.push(o); fills.push(f);
-        group.add(o, f);
-    }
+    const mesh = makeBlockMesh(b.cells, b.jello, (b.id * 7.31) % 50);
+    mesh.renderOrder = 1;
+    group.add(mesh);
     // Put the number on the cell closest to the block's centre.
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2; if (d < bestD) { bestD = d; best = c; } }
+    mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
     const label = makeLabel(String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
+    label.renderOrder = 2;
     group.add(label);
     scene.add(group);
-    const v = { group, fills, outlines, label, fillMat, hp: -1, punch: 0, cells: b.cells, jello: b.jello };
+    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello };
     blockViews.set(b.id, v);
     return v;
 }
 
 function updateBlockView(v, b, frameDt) {
-    const k = b.scale;
+    const u = v.mesh.material.uniforms;
     if (v.hp !== b.hp) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
+        const look = b.jello ? JELLO : tierFor(b.hp);
+        v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
-        if (!v.jello) v.fillMat.color.setHex(tierColor(b.hp));
+        if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
     }
-    v.cells.forEach(([x, y], i) => {
-        v.outlines[i].position.set(x * k, y * k, 0);
-        v.outlines[i].scale.setScalar(k + (v.jello ? 0.05 : 0.09));
-        v.fills[i].position.set(x * k, y * k, 0.1);
-        v.fills[i].scale.setScalar(k);
-    });
+    const k = b.scale;
+    u.uK.value = k;
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
     v.label.scale.setScalar(Math.max(0.62, k * 0.92));
@@ -517,7 +504,9 @@ function endTurn() {
 }
 
 function readyToAim() {
-    if (sim.blockCount() === 0) { startZone(); return; }   // the last blocks tumbled out
+    sim.crumbleLeftovers();
+    consumeEvents();
+    if (sim.blockCount() === 0) { startZone(); return; }   // cleared, or the last scraps crumbled
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
 }

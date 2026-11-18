@@ -10,6 +10,8 @@ export const BALL_R = 0.17;
 export const BALL_SPEED = 20;
 export const START_SUPPLY = 40;
 export const START_VOLLEY = 5;
+export const ZONE_BONUS = 3;        // balls for clearing a zone
+const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
 export const BASKET = { y: -H + 0.45, half: 0.8, wall: 0.07, depth: 0.42 };
 
 const GRAVITY = -15;
@@ -35,7 +37,7 @@ const SNAP_DIST = 0.22;             // pushed this far off its spot, a pinned bl
 const SNAP_ANGLE = 0.35;
 
 // Jello: balls pass through, slowed hard while inside.
-const JELLO_DRAG = 0.955;           // velocity kept per step inside jello
+const JELLO_DRAG = 0.97;            // velocity kept per step inside jello
 
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, BASKET: 32, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
@@ -322,6 +324,20 @@ export class Sim {
         return true;
     }
 
+    // Between turns: if all that's left is a couple of nearly-done blocks, they crumble.
+    // Chasing the last 1s around the field isn't fun. Returns true if it happened.
+    crumbleLeftovers() {
+        const left = Object.values(this.s.blocks);
+        if (!left.length || left.length > CRUMBLE_BLOCKS) return false;
+        if (left.reduce((n, b) => n + b.hp, 0) > CRUMBLE_HP) return false;
+        for (const b of left) {
+            const p = this.world.getRigidBody(b.body).translation();
+            this.events.push({ t: 'crumble', id: b.id, x: p.x, y: p.y });
+            this.removeBlock(b, true);
+        }
+        return true;
+    }
+
     blockCount() {
         return Object.keys(this.s.blocks).length;
     }
@@ -434,6 +450,7 @@ export class Sim {
         }
         s.quiet = false;
         this.events.length = 0;
+        if (s.depth > 1) this.gain(ZONE_BONUS, W / 2, -2.5);
     }
 
     addPickup(x, y) {

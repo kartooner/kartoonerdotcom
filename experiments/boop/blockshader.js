@@ -1,0 +1,158 @@
+// Boop: how a block is drawn. One quad per block; the shader works out the
+// block's whole outline from its cells, so there are no seams between cells.
+// It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
+// fill so the number tiers can be told apart without colour.
+import * as THREE from 'three';
+
+// Tiers by the number on the block. Each has a colour AND a pattern.
+// Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
+export const TIERS = [
+    { max: 2, fill: 0x9fcb7c, pattern: 0, text: '#2b2622' },        // green, dots
+    { max: 4, fill: 0x8fc3e3, pattern: 1, text: '#2b2622' },        // sky, diagonal stripes
+    { max: 6, fill: 0x6dbcae, pattern: 7, text: '#2b2622' },        // teal, plus signs
+    { max: 9, fill: 0xf2c552, pattern: 2, text: '#2b2622' },        // yellow, dashes
+    { max: 14, fill: 0xf39e62, pattern: 3, text: '#2b2622' },       // apricot, crosshatch
+    { max: 24, fill: 0xe8806a, pattern: 4, text: '#2b2622' },       // coral, rings
+    { max: 39, fill: 0xe094a8, pattern: 5, text: '#2b2622' },       // rose, zigzag
+    { max: Infinity, fill: 0x9a5e57, pattern: 6, text: '#fffaf0' }, // brown, vertical stripes
+];
+export const JELLO = { fill: 0x8fd6c4, text: '#2b2622' };
+export const tierFor = (hp) => TIERS.find((t) => hp <= t.max);
+
+const CORNER = 0.14;        // corner rounding for blocks, in cells
+const JELLO_CORNER = 0.32;  // jello is softer
+const MARGIN = 0.2;         // room around the shape for the wobble and outline
+
+const vertex = /* glsl */`
+varying vec2 vP;
+void main() {
+    vP = position.xy;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const fragment = /* glsl */`
+uniform vec4 uBox[4];
+uniform int uCount;
+uniform float uK;          // current size (blocks shrink as they wear down)
+uniform float uR;          // corner radius
+uniform float uSeed;
+uniform float uJello;
+uniform vec3 uFill;
+uniform vec3 uInk;
+uniform int uPattern;
+uniform vec2 uLabel;
+varying vec2 vP;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float sdBox(vec2 p, vec2 b) {
+    vec2 d = abs(p) - b;
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+// Soft-edged step, so patterns stay clean at any zoom.
+float aastep(float t, float x) {
+    float w = fwidth(x) * 0.75;
+    return smoothstep(t - w, t + w, x);
+}
+float band(float lo, float hi, float x) { return aastep(lo, x) - aastep(hi, x); }
+
+float pattern(vec2 p, int id) {
+    if (id == 0) { vec2 g = fract(p * 5.0) - 0.5; return 1.0 - aastep(0.13, length(g)); }               // dots
+    if (id == 1) { return band(0.6, 0.85, fract((p.x + p.y) * 3.5)); }                                   // diagonal stripes
+    if (id == 2) {                                                                                        // dashes
+        vec2 g = p * vec2(3.5, 4.5);
+        g.x += mod(floor(g.y), 2.0) * 0.5;
+        vec2 f = fract(g);
+        return band(0.45, 0.7, f.y) * band(0.15, 0.7, f.x);
+    }
+    if (id == 3) { return max(band(0.78, 0.95, fract((p.x + p.y) * 3.0)), band(0.78, 0.95, fract((p.x - p.y) * 3.0))); } // crosshatch
+    if (id == 4) { vec2 g = fract(p * 2.5) - 0.5; return band(0.24, 0.33, length(g)); }                    // rings
+    if (id == 5) { float y = p.y * 4.0 + abs(fract(p.x * 2.5) - 0.5) * 1.8; return band(0.65, 0.9, fract(y)); } // zigzag
+    if (id == 6) { return band(0.62, 0.86, fract(p.x * 4.0)); }                                           // vertical stripes
+    if (id == 7) {                                                                                        // plus signs
+        vec2 f = fract(p * 3.0);
+        return max(band(0.44, 0.56, f.x) * band(0.25, 0.75, f.y), band(0.44, 0.56, f.y) * band(0.25, 0.75, f.x));
+    }
+    return 0.0;
+}
+
+void main() {
+    vec2 p = vP / uK;                       // unscaled cell units: shape and pattern shrink together
+    float d = 1e3;
+    for (int i = 0; i < 4; i++) {
+        if (i >= uCount) break;
+        vec4 b = uBox[i];
+        d = min(d, sdBox(p - (b.xy + b.zw) * 0.5, (b.zw - b.xy) * 0.5));
+    }
+    d -= uR;
+    // Hand-drawn edge: a slow bend plus fine crayon grain.
+    vec2 q = p + uSeed;
+    float wob = (noise(q * 2.6) - 0.5) * 0.07 + (noise(q * 19.0) - 0.5) * 0.035;
+    d = (d + wob) * uK;
+
+    float aa = fwidth(d);
+    float inside = 1.0 - smoothstep(-aa, aa, d);
+    float edgeW = mix(0.065, 0.045, uJello) + (noise(q * 31.0) - 0.5) * 0.02;
+    float fillMask = 1.0 - smoothstep(-aa, aa, d + edgeW);
+
+    vec3 fill = uFill;
+    if (uJello < 0.5) {
+        // Pattern in a slightly darker shade of the fill; cleared around the number.
+        float clear = smoothstep(0.15, 0.25, length(p - uLabel));   // small, so one-cell blocks keep their pattern
+        fill = mix(fill, fill * 0.8, pattern(p, uPattern) * clear);
+    } else {
+        // Jello: a soft highlight near the top-left edge.
+        float rim = smoothstep(-0.22, -0.06, d) * smoothstep(0.6, -0.6, p.x - p.y);
+        fill = mix(fill, vec3(1.0), rim * 0.35);
+    }
+    vec3 col = mix(uInk, fill, fillMask);
+    float alpha = inside * mix(1.0, mix(0.6, 0.4, fillMask), uJello);
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(col, alpha);
+    #include <colorspace_fragment>
+}`;
+
+// cells: block-local cell centres (unscaled). Returns a mesh whose material
+// uniforms the caller updates as the block wears down.
+export function makeBlockMesh(cells, jello, seed) {
+    const has = (x, y) => cells.some(([cx, cy]) => Math.abs(cx - x) < 0.01 && Math.abs(cy - y) < 0.01);
+    const r = jello ? JELLO_CORNER : CORNER;
+    // Each cell box pulls in by the corner radius on open sides and reaches into
+    // neighbours on joined sides; rounding then adds the radius back on the outside.
+    const boxes = cells.map(([x, y]) => new THREE.Vector4(
+        x - (has(x - 1, y) ? 0.52 : 0.5 - r),
+        y - (has(x, y - 1) ? 0.52 : 0.5 - r),
+        x + (has(x + 1, y) ? 0.52 : 0.5 - r),
+        y + (has(x, y + 1) ? 0.52 : 0.5 - r)));
+    while (boxes.length < 4) boxes.push(new THREE.Vector4(0, 0, 0, 0));
+
+    const xs = cells.map(([x]) => x), ys = cells.map(([, y]) => y);
+    const minX = Math.min(...xs) - 0.5 - MARGIN, maxX = Math.max(...xs) + 0.5 + MARGIN;
+    const minY = Math.min(...ys) - 0.5 - MARGIN, maxY = Math.max(...ys) + 0.5 + MARGIN;
+    const geo = new THREE.PlaneGeometry(maxX - minX, maxY - minY);
+    geo.translate((minX + maxX) / 2, (minY + maxY) / 2, 0);
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader: vertex,
+        fragmentShader: fragment,
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+            uBox: { value: boxes },
+            uCount: { value: cells.length },
+            uK: { value: 1 },
+            uR: { value: r },
+            uSeed: { value: seed },
+            uJello: { value: jello ? 1 : 0 },
+            uFill: { value: new THREE.Color(jello ? JELLO.fill : TIERS[0].fill) },
+            uInk: { value: new THREE.Color(0x2b2622) },
+            uPattern: { value: 0 },
+            uLabel: { value: new THREE.Vector2() },
+        },
+    });
+    return new THREE.Mesh(geo, material);
+}
