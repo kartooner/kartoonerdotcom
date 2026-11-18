@@ -140,22 +140,20 @@
 
         .swatch { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.35rem; vertical-align: 0.05rem; }
 
+        /* HUD: just where you are and how close you are to the next layer */
         #hud {
-            position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; z-index: 500;
-            display: flex; gap: 1.25rem; align-items: baseline;
-            color: #e8f1fa; pointer-events: none;
-            font-variant-numeric: tabular-nums;
+            position: fixed; z-index: 500; pointer-events: none;
+            top: max(14px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
+            display: flex; flex-direction: column; gap: 6px;
+            color: #e8f1fa; font-variant-numeric: tabular-nums;
+            text-shadow: 0 1px 4px rgba(0, 8, 20, 0.8);
         }
         #hud[hidden] { display: none; }
-        #hud .name { font-size: 0.8125rem; color: #b7c6d6; margin-left: 0.4rem; }
-        #hud .of { font-size: 0.8125rem; color: #8fa3b8; margin-left: 0.2rem; }
-        .bar { width: 88px; height: 3px; margin-top: 5px; background: rgba(183, 198, 214, 0.2); }
+        #hud .where { font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.01em; }
+        #hud .where span { font-weight: 500; color: #b7c6d6; }
+        #hud .progress { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #b7c6d6; }
+        .bar { width: 104px; height: 4px; border-radius: 2px; background: rgba(183, 198, 214, 0.22); overflow: hidden; }
         .bar i { display: block; height: 100%; width: 0; background: #00f2ff; }
-        #hud .label {
-            font-size: 0.6875rem; letter-spacing: 0.15em; text-transform: uppercase; color: #8fa3b8; margin-right: 0.4rem;
-        }
-        #hud .value { font-size: 1.25rem; font-weight: 700; }
-        #hud .best .value { font-size: 0.9375rem; font-weight: 500; color: #b7c6d6; }
 
         /* Layer title card: big, centred, pops in, holds, then fades */
         #banner {
@@ -224,8 +222,6 @@
         .btn small { display: block; margin-top: 0.35rem; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: none; color: #b7c6d6; }
         .btn-quiet { border-color: rgba(183, 198, 214, 0.35); color: #b7c6d6; margin-top: 0.75rem; padding: 0.75rem 2.5rem; }
 
-        #hud .mod { font-size: 0.75rem; color: #ffcf6b; margin-top: 4px; }
-        #hud { flex-wrap: wrap; max-width: calc(100vw - 32px); }
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
 
@@ -383,15 +379,11 @@
 </div>
 
 <div id="hud" hidden>
-    <div>
-        <span class="label">Layer</span><span class="value" id="hud-layer">1</span><span class="name" id="hud-layer-name">Silt</span>
-        <div class="mod" id="hud-mod"></div>
-    </div>
-    <div>
-        <span class="label">Mass</span><span class="value" id="hud-mass">10</span><span class="of">/ 50</span>
+    <div class="where">Layer <b id="hud-layer">1</b> <span>· <span id="hud-layer-name">Silt</span></span></div>
+    <div class="progress" aria-label="Mass toward the next layer">
         <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
+        <span id="hud-mass">10 / 50</span>
     </div>
-    <div class="best"><span class="label">Best</span><span class="value" id="hud-best">1</span></div>
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
 <div id="mutate" role="dialog" aria-labelledby="mutate-title" hidden>
@@ -466,7 +458,7 @@
     const GHOST_DEPTH = 260;      // how far below you the previous layer sinks
     const GHOST_ALPHA = 0.45;
     const LAYER_NAMES = ['Silt', 'Drift', 'Shoal', 'Kelp', 'Reef', 'Swell', 'Surface']; // distinct from condition names
-    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky ' + (i - LAYER_NAMES.length + 2);
+    const layerName = (i) => LAYER_NAMES[i] || 'Open Sky'; // the layer number is always shown next to it
     let invulnerable = 0;         // seconds of immunity left (run start, layer change, or after a bite)
     let hitBlink = 0;             // seconds of blinking left after a hit
     let dying = 0;                // seconds since death (0 = alive)
@@ -1533,14 +1525,12 @@
 
     function updateHud() {
         const m = Math.round(snake.mass), L = activeLayer.index;
-        const key = m + ':' + L + ':' + meta.bestLayer;
+        const key = m + ':' + L;
         if (key === shownHud) return;
         shownHud = key;
-        $('hud-mass').textContent = m;
+        $('hud-mass').textContent = m + ' / ' + ASCEND_MASS;
         $('hud-layer').textContent = L + 1;
         $('hud-layer-name').textContent = layerName(L);
-        $('hud-mod').textContent = activeLayer.mod.id === 'calm' ? '' : activeLayer.mod.name;
-        $('hud-best').textContent = Math.max(meta.bestLayer, L + 1);
         $('hud-bar').style.width = Math.min(100, (snake.mass / ASCEND_MASS) * 100) + '%';
     }
 
