@@ -2861,6 +2861,11 @@
         return gate;
     }
 
+    // --- ASSISTED MODE (Settings): no game over, gentler pace, no bosses, weather is
+    // just scenery. For younger pilots or a relaxed, endless flight.
+    let assistedMode = false;
+    try { assistedMode = localStorage.getItem('paperPlaneAssisted') === 'on'; } catch (e) {}
+
     // --- WEATHER -------------------------------------------------------------
     // Rolls at each checkpoint. Snow and storm are one particle system each (one draw
     // call, a few hundred points moved per frame); aurora is two ribbons in the sky.
@@ -2936,7 +2941,7 @@
 
     function rollWeather(milesNow) {
         if (isHolidaySeason()) { setWeather('snow'); return; }
-        if (milesNow < 20) { setWeather('clear'); return; } // keep the first stretch simple
+        if (milesNow < 50) { setWeather('clear'); return; } // weather is a mid-game thing (from the 2nd checkpoint)
         const pool = ['clear', 'clear', 'snow', 'storm', 'storm', 'aurora'].filter(t => t !== weather.next);
         setWeather(pool[Math.floor(Math.random() * pool.length)]);
     }
@@ -2947,7 +2952,8 @@
     function announceWeather() {
         const w = WEATHER[weather.type];
         if (weather.type === 'clear') return;
-        levelUpMessage = w.tip ? `${w.name} - ${w.tip}` : w.name;
+        const effects = !assistedMode && distance / 5280 >= 50;
+        levelUpMessage = w.tip && (effects || weather.type === 'aurora') ? `${w.name} - ${w.tip}` : w.name;
         levelUpMessageTimer = 150;
     }
     // Multiplier the ring code uses for points
@@ -2963,11 +2969,15 @@
             weather.level = Math.min(1, weather.level + sec * 0.4);
         }
         const L = weather.level, type = weather.type;
+        // Weather only changes play from mile 50, and never in Assisted Mode (holiday snow
+        // before then is just for looks)
+        const effects = !assistedMode && distance / 5280 >= 50;
 
         // Snow: shorter visibility
         const snowL = type === 'snow' ? L : 0;
-        scene.fog.near = 60 - 22 * snowL;
-        scene.fog.far = 120 - 38 * snowL;
+        const fogL = effects ? snowL : 0;
+        scene.fog.near = 60 - 22 * fogL;
+        scene.fog.far = 120 - 38 * fogL;
         snowPoints.visible = snowL > 0.01;
         if (snowPoints.visible) {
             snowMat.opacity = 0.85 * snowL;
@@ -2992,14 +3002,14 @@
             if (weather.windTimer <= 0) {
                 weather.windDir = Math.random() < 0.5 ? -1 : 1;
                 weather.windTimer = wxRand(5, 9);
-                if (crashMessageTimer <= 0 && levelUpMessageTimer <= 0) {
+                if (effects && crashMessageTimer <= 0 && levelUpMessageTimer <= 0) {
                     levelUpMessage = weather.windDir < 0 ? 'WIND <<<' : 'WIND >>>';
                     levelUpMessageTimer = 60;
                 }
             }
             // Ease toward the gust direction; gentle enough to steer against
             weather.wind += (weather.windDir * stormL - weather.wind) * Math.min(1, 0.02 * deltaTime);
-            targetX = Math.max(-8, Math.min(8, targetX + weather.wind * 0.025 * deltaTime));
+            if (effects) targetX = Math.max(-8, Math.min(8, targetX + weather.wind * 0.025 * deltaTime));
             weather.flashTimer -= sec;
             if (weather.flashTimer <= 0) { weather.flash = 1; weather.flashTimer = wxRand(6, 12); }
         } else {
@@ -3050,15 +3060,18 @@
     }
 
     // --- BOSS: SKY LEVIATHAN ----------------------------------------------------
-    // A giant wireframe creature that hovers ahead of you, dropping spores and sweeping
-    // beams across your path. Survive until it gives up (or shoot its glowing core with
-    // lasers to drive it off sooner). Alternates with the building gauntlet every 100
-    // miles from mile 150. Built from a handful of meshes; projectiles are pooled.
+    // A giant wireframe creature far off in the distance, glowing through the fog. The
+    // path is cleared (nothing else spawns) and it drops hazards onto it that come at you
+    // with the world. It also sheds energy orbs: fly through one and your plane fires a
+    // homing pulse back at it. That's how anyone beats it; the laser upgrade adds steady
+    // extra damage. Alternates with the building gauntlet every 100 miles from mile 150.
     let bossActive = false; // also pauses normal spawning (checked throughout the loop)
     let nextBossMile = 150, bossEncounters = 0;
-    const leviathan = { phase: 'off', t: 0, duration: 35, hp: 40, maxHp: 40, attackTimer: 0, attackIdx: 0, hitFlash: 0, group: null };
-    const bossWire = new THREE.MeshBasicMaterial({ color: 0xff2bd6, wireframe: true, transparent: true, opacity: 0.9 });
-    const bossCoreMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1 });
+    const BOSS_Z = -125, BOSS_Y = 16, BOSS_MAX_TIME = 75; // seconds before it gives up
+    const ORB_DAMAGE = 14, LASER_DAMAGE = 0.5;
+    const leviathan = { phase: 'off', t: 0, hp: 100, maxHp: 100, attackTimer: 0, attackIdx: 0, hitFlash: 0, group: null, outcome: null };
+    const bossWire = new THREE.MeshBasicMaterial({ color: 0xff2bd6, wireframe: true, transparent: true, opacity: 0.95, fog: false });
+    const bossCoreMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1, fog: false });
 
     (function buildLeviathan() {
         const g = new THREE.Group();
@@ -3068,7 +3081,6 @@
         const head = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), bossWire);
         head.scale.set(1.7, 1, 2.4); head.position.z = 7.5;
         g.add(head);
-        // Wings: a swept triangle each side, flapping from the body
         const wingGeo = new THREE.BufferGeometry();
         wingGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, -3, 15, 0.5, 2, 0, 0, 4, 0, 0, -3, 9, 0, -5, 15, 0.5, 2]), 3));
         const wings = [];
@@ -3077,9 +3089,7 @@
             pivot.position.x = 2.4 * side;
             const w = new THREE.Mesh(wingGeo, bossWire);
             w.scale.x = side;
-            pivot.add(w);
-            g.add(pivot);
-            wings.push(pivot);
+            pivot.add(w); g.add(pivot); wings.push(pivot);
         }
         const tail = [];
         for (let i = 0; i < 3; i++) {
@@ -3091,37 +3101,41 @@
         const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 0), bossCoreMat);
         core.position.set(0, -0.6, 3.5);
         g.add(core);
+        g.scale.setScalar(2.2); // big, because it's far away
         g.visible = false;
         scene.add(g);
         leviathan.group = g; leviathan.wings = wings; leviathan.tail = tail; leviathan.core = core;
     })();
 
-    // Pooled projectiles: spores (one InstancedMesh) and sweeping beams
-    const SPORE_MAX = 32;
-    const spores = Array.from({ length: SPORE_MAX }, () => ({ alive: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, spin: 0 }));
-    const sporeMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.7, 0),
-        new THREE.MeshBasicMaterial({ color: 0xff7a1a, wireframe: true }), SPORE_MAX);
+    // Everything it drops. Hazards and orbs fly out of it, settle into place on the path,
+    // then come at you with the world. They ignore fog so you can watch them fall.
+    const drops = [];
+    const sporeGeo = new THREE.IcosahedronGeometry(0.7, 0);
+    const SPORE_MAX = 40;
+    const sporeMesh = new THREE.InstancedMesh(sporeGeo, new THREE.MeshBasicMaterial({ color: 0xff7a1a, wireframe: true, fog: false }), SPORE_MAX);
     sporeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     sporeMesh.frustumCulled = false; sporeMesh.count = 0;
     scene.add(sporeMesh);
-    const sporeDummy = new THREE.Object3D();
-    const beams = [0, 1].map(() => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(26, 0.45, 0.45),
-            new THREE.MeshBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0.9 }));
-        m.visible = false;
-        scene.add(m);
-        return { mesh: m, alive: false, warn: 0, y: 0, z: 0 };
+    const dropDummy = new THREE.Object3D();
+    const makePool = (n, geo, color, opacity = 0.9) => Array.from({ length: n }, () => {
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, fog: false }));
+        m.visible = false; scene.add(m); return m;
     });
+    const pylonPool = makePool(8, new THREE.BoxGeometry(0.7, 7, 0.7), 0xff2bd6, 0.75);  // full-height pillars
+    const fencePool = makePool(3, new THREE.BoxGeometry(26, 0.45, 0.45), 0xff2bd6, 0.9); // full-width bars
+    const orbPool = makePool(4, new THREE.IcosahedronGeometry(0.75, 1), 0x00ffe1, 0.95); // energy you catch
+    const pulsePool = makePool(4, new THREE.IcosahedronGeometry(0.4, 0), 0x00ffe1, 1);   // fired back at it
+    const pulses = [];
 
-    // Bar at the top of the screen while the fight is on
+    // Bar at the top of the screen: its health
     const bossBar = document.createElement('div');
     bossBar.id = 'boss-bar';
     bossBar.hidden = true;
-    bossBar.innerHTML = '<div class="boss-name">SKY LEVIATHAN</div><div class="boss-track"><i></i></div>';
+    bossBar.innerHTML = '<div class="boss-name">SKY LEVIATHAN</div><div class="boss-track"><i></i></div><div class="boss-tip">FLY THROUGH ITS ENERGY</div>';
     (container.parentElement || document.body).appendChild(bossBar);
     const bossBarFill = bossBar.querySelector('i');
 
-    // A hit from a boss attack: same rules as crashing into a structure
+    // A hit from a boss hazard: same rules as crashing into a structure
     function applyHazardHit(x, y, z) {
         if (gracePeriodActive) return;
         spawnCollisionDebris(x, y, z, curX, curY);
@@ -3145,19 +3159,26 @@
         trackCollision(performance.now());
     }
 
+    // Clear the path: nothing else ahead of you, and nothing new spawns while it's here
     function clearArenaForBoss() {
-        // Buildings are instanced: hide by zero-scaling their instance (only ones still
-        // ahead of you; anything alongside passes by naturally)
         buildings.forEach(b => {
-            if (!b.active || b.position.z > -5) return;
+            if (!b.active || b.position.z > -5) return; // anything alongside passes by naturally
             const mesh = b.geometry === 'box' ? boxInstancedMesh : b.geometry === 'pyramid' ? pyramidInstancedMesh : cylinderInstancedMesh;
             b.active = false; b.position.z = -500; b.scale.set(0, 0, 0);
             updateInstanceMatrix(b, mesh, buildingInstances[b.geometry].indexOf(b));
             if (b.rooftopDetail) { updateRooftopDetail(b.rooftopDetail, b); b.rooftopDetail = null; }
         });
-        walls.forEach(w => { w.visible = false; w.position.z = -1000; }); walls.length = 0;
-        barrierWalls.forEach(w => { w.visible = false; w.position.z = -1000; }); barrierWalls.length = 0;
-        coins.forEach(c => { c.visible = false; c.position.z = -1000; c.userData.collected = false; }); coins.length = 0;
+        const clearAhead = (list) => {
+            for (let i = list.length - 1; i >= 0; i--) {
+                const o = list[i];
+                if (o.position.z > -5) continue;
+                o.visible = false; o.position.z = -1000;
+                if (o.userData) o.userData.collected = false;
+                list.splice(i, 1);
+            }
+        };
+        clearAhead(walls); clearAhead(barrierWalls); clearAhead(coins); clearAhead(rings);
+        clearAhead(shieldPickups); clearAhead(windGusts);
     }
 
     function startBossEncounter() {
@@ -3175,15 +3196,20 @@
         bossActive = true;
         clearArenaForBoss();
         const L = leviathan;
-        L.phase = 'enter'; L.t = 0;
-        L.duration = Math.min(50, 30 + bossEncounters * 3); // a little longer each time
-        L.maxHp = 40 + bossEncounters * 8; L.hp = L.maxHp;
-        L.attackTimer = 2.5; L.attackIdx = 0; L.hitFlash = 0;
-        L.group.position.set(0, 20, -140);
+        L.phase = 'enter'; L.t = 0; L.outcome = null;
+        L.maxHp = 100 + (bossEncounters - 1) * 20; L.hp = L.maxHp; // a bit tougher each time
+        L.attackTimer = 1.5; L.attackIdx = 0; L.hitFlash = 0;
+        L.group.position.set(0, 34, BOSS_Z - 60);
         L.group.visible = true;
+        bossBarFill.style.width = '100%';
         bossBar.hidden = false;
-        levelUpMessage = 'SKY LEVIATHAN APPROACHES';
-        levelUpMessageTimer = 150;
+        levelUpMessage = 'SKY LEVIATHAN - CATCH ITS ENERGY';
+        levelUpMessageTimer = 180;
+    }
+
+    function freeDrop(d) {
+        d.alive = false;
+        if (d.mesh) d.mesh.visible = false;
     }
 
     function endBossFight(outcome) {
@@ -3192,13 +3218,13 @@
         L.phase = 'off';
         L.group.visible = false;
         bossBar.hidden = true;
-        spores.forEach(s => { s.alive = false; }); sporeMesh.count = 0;
-        beams.forEach(b => { b.alive = false; b.mesh.visible = false; });
+        drops.forEach(freeDrop); drops.length = 0; sporeMesh.count = 0;
+        pulses.forEach(p => { p.mesh.visible = false; }); pulses.length = 0;
         if (outcome) {
-            const bonus = outcome === 'defeated' ? 1000 : 500;
+            const bonus = outcome === 'defeated' ? 1000 : 300;
             score += bonus;
-            if (currentHealth > 0 && currentHealth < maxHealth) { currentHealth++; uiControls.updateHealthBar(currentHealth, maxHealth); }
-            levelUpMessage = outcome === 'defeated' ? `LEVIATHAN DEFEATED +${bonus}` : `LEVIATHAN DRIVEN OFF +${bonus}`;
+            if (outcome === 'defeated' && currentHealth > 0 && currentHealth < maxHealth) { currentHealth++; uiControls.updateHealthBar(currentHealth, maxHealth); }
+            levelUpMessage = outcome === 'defeated' ? `LEVIATHAN DEFEATED +${bonus}` : `IT FLEW OFF +${bonus}`;
             levelUpMessageTimer = 160;
         }
         // A short calm after the fight
@@ -3208,32 +3234,57 @@
         breatherSetup = false;
     }
 
-    function launchSpores(count) {
+    // Spawn one drop. kind: 'spore' | 'pylon' | 'fence' | 'orb'
+    function addDrop(kind, x, y, extra = {}) {
+        let mesh = null;
+        if (kind === 'pylon') mesh = pylonPool.find(m => !m.visible);
+        else if (kind === 'fence') mesh = fencePool.find(m => !m.visible);
+        else if (kind === 'orb') mesh = orbPool.find(m => !m.visible);
+        else if (drops.filter(d => d.kind === 'spore').length >= SPORE_MAX) return;
+        if (kind !== 'spore' && !mesh) return;
         const g = leviathan.group.position;
-        // A readable volley: an evenly spaced row at your height. Go over or under it,
-        // or slip through a gap between two spores.
-        const offsets = count === 3 ? [-3.6, 0, 3.6] : [-7.2, -3.6, 0, 3.6, 7.2];
-        const rowY = Math.max(0.8, Math.min(5.2, curY));
-        const frames = wxRand(85, 100); // time to reach you, in 60fps frames (~1.5s)
-        for (const off of offsets) {
-            const s = spores.find(p => !p.alive);
-            if (!s) break;
-            const tx = Math.max(-8.5, Math.min(8.5, curX + off));
-            const ty = rowY;
-            s.alive = true; s.x = g.x; s.y = g.y - 1; s.z = g.z + 3;
-            s.vz = (3.5 - s.z) / frames; s.vx = (tx - s.x) / frames; s.vy = (ty - s.y) / frames;
-            s.spin = Math.random() * 6;
-        }
+        const d = { kind, alive: true, mesh, x, y, sx: g.x, sy: g.y - 2, z: g.z + 6, age: 0, spin: Math.random() * 6, ...extra };
+        if (mesh) { mesh.visible = true; mesh.position.set(d.sx, d.sy, d.z); }
+        drops.push(d);
     }
-    function launchBeam() {
-        const b = beams.find(x => !x.alive);
-        if (!b) return;
-        b.alive = true; b.warn = 0.7; // shows faintly at the boss first, then sweeps
-        b.y = Math.random() < 0.5 ? 1.3 : 4.6; // fly over a low beam, under a high one
-        b.z = leviathan.group.position.z + 2;
-        b.mesh.position.set(0, b.y, b.z);
-        b.mesh.material.opacity = 0.25;
-        b.mesh.visible = true;
+
+    // Attack patterns (positions are where they settle on the path)
+    function dropSporeRow() {
+        // A full-width row at your height with one gap: find the gap, or go over/under it
+        const rowY = Math.max(0.8, Math.min(5.2, curY));
+        const lanes = [-8, -6, -4, -2, 0, 2, 4, 6, 8];
+        const gap = Math.floor(Math.random() * (lanes.length - 1));
+        lanes.forEach((x, i) => { if (i !== gap && i !== gap + 1) addDrop('spore', x, rowY); });
+    }
+    function dropPylons() {
+        // 2-3 full-height pillars on lanes near you: dodge sideways
+        const near = Math.max(-6, Math.min(6, Math.round(curX / 2) * 2));
+        const picks = [near, near + (Math.random() < 0.5 ? -4 : 4)];
+        if (Math.random() < 0.5) picks.push(near + (picks[1] > near ? -6 : 6));
+        picks.filter(x => x >= -8 && x <= 8).forEach(x => addDrop('pylon', x, 3.5));
+    }
+    function dropFence() {
+        // A full-width bar: fly over a low one, under a high one
+        addDrop('fence', 0, Math.random() < 0.5 ? 1.3 : 4.6);
+    }
+    function dropOrb() {
+        // Somewhere you can reach, away from where hazards just went
+        addDrop('orb', Math.max(-7, Math.min(7, curX + (Math.random() - 0.5) * 8)), 1.5 + Math.random() * 3);
+    }
+
+    function firePulse() {
+        const m = pulsePool.find(x => !x.visible);
+        if (!m) return;
+        m.visible = true; m.position.set(curX, curY, 3.5);
+        pulses.push({ mesh: m, t: 0, x0: curX, y0: curY });
+    }
+
+    function damageBoss(amount, big) {
+        const L = leviathan;
+        if (L.phase !== 'fight') return;
+        L.hp = Math.max(0, L.hp - amount);
+        L.hitFlash = big ? 1 : Math.max(L.hitFlash, 0.4);
+        if (L.hp <= 0) { L.phase = 'leave'; L.t = 0; L.outcome = 'defeated'; }
     }
 
     function updateBossFight(deltaTime, speed) {
@@ -3242,91 +3293,100 @@
         const sec = deltaTime / 60;
         L.t += sec;
         const g = L.group;
-        // Body animation
         const flap = Math.sin(time * 6) * 0.35;
         L.wings[0].rotation.z = flap; L.wings[1].rotation.z = -flap;
         L.tail.forEach((s, i) => { s.position.x = Math.sin(time * 4 - i * 0.8) * (0.6 + i * 0.5); });
-        L.hitFlash = Math.max(0, L.hitFlash - sec * 4);
-        bossCoreMat.color.setHex(L.hitFlash > 0 ? 0xffffff : 0xffaa00);
-        L.core.scale.setScalar(1 + Math.sin(time * 10) * 0.12 + L.hitFlash * 0.4);
+        L.hitFlash = Math.max(0, L.hitFlash - sec * 3);
+        bossCoreMat.color.setHex(L.hitFlash > 0.3 ? 0xffffff : 0xffaa00);
+        bossWire.color.setHex(L.hitFlash > 0.6 ? 0xffffff : 0xff2bd6);
+        L.core.scale.setScalar(1 + Math.sin(time * 10) * 0.12 + L.hitFlash * 0.5);
 
         if (L.phase === 'enter') {
-            const u = Math.min(1, L.t / 3);
-            g.position.z = -140 + (95 * u);
-            g.position.y = 20 - 9 * u;
+            const u = Math.min(1, L.t / 3.5);
+            g.position.z = BOSS_Z - 60 * (1 - u);
+            g.position.y = BOSS_Y + 18 * (1 - u);
             if (u >= 1) { L.phase = 'fight'; L.t = 0; }
         } else if (L.phase === 'fight') {
-            // Weave across, leaning toward your side
-            const tx = Math.sin(L.t * 0.6) * 5 + curX * 0.35;
-            g.position.x += (tx - g.position.x) * Math.min(1, 0.03 * deltaTime);
-            g.position.y = 11 + Math.sin(L.t * 1.3) * 0.8;
-            g.rotation.z = (tx - g.position.x) * -0.04;
-            // Attacks speed up as the fight goes on
-            const progress = L.t / L.duration;
+            g.position.x = Math.sin(L.t * 0.4) * 6;
+            g.position.y = BOSS_Y + Math.sin(L.t * 1.1) * 1.2;
+            g.rotation.z = Math.cos(L.t * 0.4) * -0.12;
+            // Pattern: hazards with an energy orb after most of them; faster when it's hurt
+            const hurt = 1 - L.hp / L.maxHp;
             L.attackTimer -= sec;
             if (L.attackTimer <= 0) {
-                L.attackIdx++;
-                if (L.attackIdx % 3 === 0) launchBeam();
-                else launchSpores(progress > 0.6 ? 5 : 3);
-                L.attackTimer = Math.max(1.4, 2.4 - progress * 0.9 - bossEncounters * 0.05);
+                const seq = ['row', 'orb', 'pylons', 'orb', 'fence', 'row', 'orb', 'pylons', 'fence', 'orb'];
+                const a = seq[L.attackIdx++ % seq.length];
+                if (a === 'row') dropSporeRow(); else if (a === 'pylons') dropPylons(); else if (a === 'fence') dropFence(); else dropOrb();
+                L.attackTimer = Math.max(1.2, 2.1 - hurt * 0.7 - bossEncounters * 0.03);
             }
-            // Lasers (if you bought them) can hit the core
+            // Lasers (if you bought them) fly on and chip at it
             for (let i = lasers.length - 1; i >= 0; i--) {
-                const lz = lasers[i].position;
-                const cx = g.position.x, cy = g.position.y - 0.6, cz = g.position.z + 3.5;
-                if (Math.abs(lz.x - cx) < 2.5 && Math.abs(lz.y - cy) < 2.5 && Math.abs(lz.z - cz) < 3) {
-                    scene.remove(lasers[i]); lasers.splice(i, 1);
-                    L.hp--; L.hitFlash = 1; score += 10;
-                }
+                const lp = lasers[i].position;
+                if (lp.z < -40 && Math.abs(lp.x - g.position.x) < 9) { scene.remove(lasers[i]); lasers.splice(i, 1); damageBoss(LASER_DAMAGE, false); }
             }
-            if (L.hp <= 0) { L.phase = 'leave'; L.t = 0; L.outcome = 'defeated'; }
-            else if (L.t >= L.duration) { L.phase = 'leave'; L.t = 0; L.outcome = 'survived'; }
-            bossBarFill.style.width = Math.max(0, Math.min(1 - progress, L.hp / L.maxHp)) * 100 + '%';
+            if (L.phase === 'fight' && L.t >= BOSS_MAX_TIME) { L.phase = 'leave'; L.t = 0; L.outcome = 'survived'; }
+            bossBarFill.style.width = (L.hp / L.maxHp) * 100 + '%';
         } else if (L.phase === 'leave') {
-            g.position.y += 0.25 * deltaTime;
-            g.position.z -= 0.9 * deltaTime;
-            bossBarFill.style.width = '0%';
-            if (L.t > 2.5) endBossFight(L.outcome);
+            g.position.y += 0.3 * deltaTime;
+            g.position.z -= 1.2 * deltaTime;
+            if (L.outcome === 'defeated') g.rotation.z += 0.04 * deltaTime; // tumbles away
+            bossBarFill.style.width = (L.hp / L.maxHp) * 100 + '%';
+            if (L.t > 2.5) { endBossFight(L.outcome); return; }
         }
 
-        // Spores
+        // Drops: fly out of it and settle (first ~50 frames), then ride the world toward you
         let n = 0;
-        for (const s of spores) {
-            if (!s.alive) continue;
-            // Constant velocity, so each spore arrives exactly where it was aimed
-            s.x += s.vx * deltaTime; s.y += s.vy * deltaTime; s.z += s.vz * deltaTime;
-            s.spin += 0.1 * deltaTime;
-            if (Math.abs(s.z - 3.5) < 0.9 && Math.hypot(s.x - curX, s.y - curY) < 0.85) {
-                s.alive = false; applyHazardHit(s.x, s.y, s.z); continue;
+        for (let i = drops.length - 1; i >= 0; i--) {
+            const d = drops[i];
+            d.age += deltaTime;
+            d.z += speed + 0.25 * deltaTime;
+            const settle = Math.max(0, 1 - d.age / 50), ease = settle * settle;
+            const px = d.x + (d.sx - d.x) * ease, py = d.y + (d.sy - d.y) * ease;
+            const near = Math.abs(d.z - 3.5) < 0.9;
+            if (d.kind === 'spore') {
+                if (near && Math.hypot(px - curX, py - curY) < 0.85) { applyHazardHit(px, py, d.z); drops.splice(i, 1); continue; }
+                d.spin += 0.08 * deltaTime;
+                dropDummy.position.set(px, py, d.z); dropDummy.rotation.set(d.spin, d.spin * 0.7, 0); dropDummy.updateMatrix();
+                if (n < SPORE_MAX) sporeMesh.setMatrixAt(n++, dropDummy.matrix);
+            } else {
+                d.mesh.position.set(d.kind === 'fence' ? 0 : px, d.kind === 'pylon' ? py * (1 - ease) + d.sy * ease : py, d.z);
+                if (d.kind === 'orb') { d.spin += 0.05 * deltaTime; d.mesh.rotation.set(d.spin, d.spin, 0); d.mesh.scale.setScalar(1 + Math.sin(time * 12) * 0.15); }
+                if (near) {
+                    const hit = d.kind === 'pylon' ? Math.abs(px - curX) < 0.8
+                        : d.kind === 'fence' ? Math.abs(py - curY) < 0.6
+                        : Math.hypot(px - curX, py - curY) < 1.4;
+                    if (hit) {
+                        if (d.kind === 'orb') { firePulse(); levelUpMessage = 'ENERGY CAUGHT!'; levelUpMessageTimer = 40; }
+                        else applyHazardHit(px, py, d.z);
+                        freeDrop(d); drops.splice(i, 1); continue;
+                    }
+                }
             }
-            if (s.z > 14) { s.alive = false; continue; }
-            sporeDummy.position.set(s.x, s.y, s.z);
-            sporeDummy.rotation.set(s.spin, s.spin * 0.7, 0);
-            sporeDummy.updateMatrix();
-            sporeMesh.setMatrixAt(n++, sporeDummy.matrix);
+            if (d.z > 14) { freeDrop(d); drops.splice(i, 1); }
         }
         sporeMesh.count = n;
         sporeMesh.instanceMatrix.needsUpdate = true;
 
-        // Beams: warn, then sweep toward you across the whole width
-        for (const b of beams) {
-            if (!b.alive) continue;
-            if (b.warn > 0) {
-                b.warn -= sec;
-                b.mesh.position.x = g.position.x * 0.2;
-                if (b.warn <= 0) b.mesh.material.opacity = 0.9;
-                continue;
+        // Homing pulses: arc from your plane to its core
+        for (let i = pulses.length - 1; i >= 0; i--) {
+            const p = pulses[i];
+            p.t += sec / 0.8;
+            const cx = g.position.x, cy = g.position.y - 1.3, cz = g.position.z + 7.7;
+            const u = Math.min(1, p.t);
+            p.mesh.position.set(p.x0 + (cx - p.x0) * u, p.y0 + (cy - p.y0) * u + Math.sin(u * Math.PI) * 6, 3.5 + (cz - 3.5) * u);
+            if (u >= 1) {
+                p.mesh.visible = false; pulses.splice(i, 1);
+                damageBoss(ORB_DAMAGE, true);
+                score += 50;
+                levelUpMessage = leviathan.phase === 'leave' ? levelUpMessage : 'DIRECT HIT!';
+                levelUpMessageTimer = 50;
             }
-            b.z += (0.55 * deltaTime) + speed * 0.3; // speed already includes deltaTime
-            b.mesh.position.set(0, b.y, b.z);
-            if (Math.abs(b.z - 3.5) < 0.6 && Math.abs(curY - b.y) < 0.6) { applyHazardHit(curX, b.y, b.z); b.alive = false; b.mesh.visible = false; continue; }
-            if (b.z > 14) { b.alive = false; b.mesh.visible = false; }
         }
     }
 
-    // Start a fight when due (not right before a checkpoint, never during one)
+    // Start a fight when due (not right before a checkpoint, never during one; never in Assisted Mode)
     function maybeStartBoss(milesNow) {
-        if (bossActive || checkpointActive || gates.length > 0) return;
+        if (assistedMode || bossActive || checkpointActive || gates.length > 0) return;
         if (milesNow >= nextBossMile && nextCheckpoint - milesNow > 6) startBossEncounter();
     }
 
@@ -3443,7 +3503,7 @@
     // Brief invulnerability after a hit, so one crash can't cost several hearts
     function activateGracePeriod() {
         gracePeriodActive = true;
-        gracePeriodEndTime = Date.now() + 500; // 0.5 second grace, same as building hits
+        gracePeriodEndTime = Date.now() + (assistedMode ? 1500 : 500); // 0.5s grace (1.5s in Assisted Mode)
     }
 
     // Record a hit for the hidden difficulty system
@@ -3454,6 +3514,16 @@
 
     // Death and respawn handler
     function handleDeath() {
+        if (assistedMode) {
+            // Assisted Mode: no lives lost, no game over. Hearts refill and you keep flying.
+            currentHealth = maxHealth;
+            uiControls.updateHealthBar(currentHealth, maxHealth);
+            crashMessage = 'KEEP FLYING!';
+            crashMessageTimer = 90;
+            gracePeriodActive = true;
+            gracePeriodEndTime = Date.now() + 3000;
+            return;
+        }
         // Lose a life
         currentLives--;
         uiControls.updateLivesDisplay(currentLives, maxLives);
@@ -4285,7 +4355,7 @@
         const totalSpeedMultiplier = speedBoostMultiplier + nearMissBoost + ringBoost;
 
         // Apply difficulty scalar and warm-up cap to base speed (hidden systems)
-        const adjustedBaseSpeed = baseSpeed * difficultyScalar * warmupSpeedCap;
+        const adjustedBaseSpeed = baseSpeed * difficultyScalar * warmupSpeedCap * (assistedMode ? 0.85 : 1);
         let speed = adjustedBaseSpeed * totalSpeedMultiplier * deltaTime;
 
         // Enforce minimum forward speed (prevent game from stopping)
@@ -4600,7 +4670,7 @@
 
         if (distFromLastCheck < campingPositionThreshold) {
             campingTimer++;
-            if (campingTimer > campingDetectionThreshold && !campingDetected) {
+            if (campingTimer > campingDetectionThreshold && !campingDetected && !bossActive) { // the boss keeps you moving
                 campingDetected = true;
 
                 // Spawn alternating wall pattern to force movement
@@ -4624,7 +4694,7 @@
         playerLane = getPlayerLane(curX);
         if (playerLane === lastPlayerLane) {
             timeInSameLane += 16.67; // Approximate ms per frame (60fps)
-            if (timeInSameLane > campingThreshold && !antiCampingActive) {
+            if (timeInSameLane > campingThreshold && !antiCampingActive && !bossActive) {
                 antiCampingActive = true;
 
                 // Spawn a super tall building directly in player's lane to prevent camping
@@ -4752,7 +4822,7 @@
         const timeSinceGameStart = timestamp - gameStartTime;
         const orientationPeriodOver = timeSinceGameStart > 2000; // 2 seconds
 
-        if (activeBuildingCount < 10 && canSpawnBuildings && !bossActive && orientationPeriodOver) {
+        if (activeBuildingCount < (assistedMode ? 6 : 10) && canSpawnBuildings && !bossActive && orientationPeriodOver) {
             // Spawn multiple waves to fill the view (spawn 8 distinct pattern sets for denser early game)
             for (let waveNum = 0; waveNum < 8; waveNum++) {
                 const patternName = getWavePattern(levelDifficulty);
@@ -6093,7 +6163,7 @@
         END BOSS SPAWNING TRIGGER */
 
         // Try to spawn shield pickup periodically if player needs it
-        if (Math.random() < 0.01) { // 1% chance per frame when conditions are met
+        if (Math.random() < 0.01 && !bossActive) { // 1% chance per frame when conditions are met
             trySpawnShieldPickup();
         }
 
@@ -6110,7 +6180,7 @@
         const windGustChance = isBreatherMoment ? 0.003 : (isHighIntensityPhase ? 0.0005 : 0);
 
         // Only spawn wind gusts after mile 15 AND if chance triggers
-        if (miles >= 15 && windGusts.length === 0 && Math.random() < windGustChance) {
+        if (miles >= 15 && windGusts.length === 0 && !bossActive && Math.random() < windGustChance) {
             // Breather: sometimes 2-3 gusts, High intensity: always just 1 (rare bonus)
             const gustCount = isBreatherMoment && Math.random() < 0.3 ? (Math.floor(Math.random() * 2) + 2) : 1;
 
@@ -6764,6 +6834,21 @@
         syncPixelFilterSlider();
         renderer.render(scene, camera);
     });
+
+    // Assisted Mode toggle (takes effect immediately, even mid-run from the pause menu)
+    const assistedToggle = document.getElementById('assisted-toggle');
+    function syncAssistedToggle() {
+        assistedToggle.setAttribute('aria-checked', String(assistedMode));
+        assistedToggle.textContent = assistedMode ? 'ON' : 'OFF';
+    }
+    assistedToggle.addEventListener('click', () => {
+        assistedMode = !assistedMode;
+        try { localStorage.setItem('paperPlaneAssisted', assistedMode ? 'on' : 'off'); } catch (e) {}
+        if (assistedMode && leviathan.phase !== 'off') endBossFight(null); // no bosses in Assisted Mode
+        if (assistedMode && currentPhase === 'boss_gauntlet') phaseDuration = 0;
+        syncAssistedToggle();
+    });
+    syncAssistedToggle();
 
     // Render initial frozen frame for start screen background
     renderer.render(scene, camera);

@@ -961,6 +961,7 @@
 
             <h2>DISPLAY</h2>
             <p><strong>Full screen (Desktop):</strong> Press F to toggle full screen mode.</p>
+            <p><strong>Assisted Mode:</strong> In Settings. No game over (crashes refill your hearts and you keep flying), a gentler pace, no bosses, and weather is just scenery. Great for younger pilots or an endless, relaxed flight.</p>
             <p><strong>Pixel filter:</strong> The game has a chunky, low-res look by default. Change it in Settings (on the start screen or the pause menu): Off, Fine or Chunky.</p>
 
             <h2>THE GAME LOOP</h2>
@@ -992,11 +993,11 @@
                 <li><strong>Cool crashes:</strong> When you hit buildings and walls, they break into pieces!</li>
                 <li><strong>Bosses:</strong> At 150 miles, and every 100 miles after, a boss arrives. It alternates between the <strong>Sky Leviathan</strong> and a <strong>building gauntlet</strong>.
                     <ul>
-                        <li><strong>Sky Leviathan:</strong> a giant wireframe creature that hovers ahead of you. Its orange spores fly at you: dodge sideways. Its pink beams sweep across the whole sky: fly over a low one, under a high one. Survive until the bar at the top runs out, or shoot its glowing core with lasers to drive it off sooner. You get bonus points and a heart back.</li>
+                        <li><strong>Sky Leviathan:</strong> a giant wireframe creature far off in the distance. The path clears, and it drops hazards onto it: a row of orange spores at your height (find the gap, or go over or under), pink pillars (dodge sideways) and pink bars (fly over a low one, under a high one). It also sheds glowing <strong>cyan energy</strong>. Fly through it and your plane fires it back. About 8 direct hits bring it down: +1000 and a heart back. Lasers, if you have them, chip away at it too. If it takes too long, it flies off.</li>
                         <li><strong>Gauntlet:</strong> 30 seconds of dense buildings. Survive the barrage!</li>
                     </ul>
                 </li>
-                <li><strong>Weather:</strong> The weather can change at each checkpoint. Each kind changes things a little, and the game tells you when it arrives.
+                <li><strong>Weather:</strong> From the second checkpoint (50 miles), the weather can change at each checkpoint. Each kind changes things a little, and the game tells you when it arrives.
                     <ul>
                         <li><strong>Snowfall:</strong> you can't see as far ahead. Around the holidays (Dec 20 to Jan 1) it always snows.</li>
                         <li><strong>Neon storm:</strong> crosswinds push your plane sideways (the screen shows which way), with flashes of lightning. Steer against it.</li>
@@ -1044,6 +1045,11 @@
             <div class="settings-ticks" aria-hidden="true"><span>OFF</span><span>FINE</span><span>CHUNKY</span></div>
         </div>
         <p class="settings-note">A low-res look, like a 90s console. Slide left for sharper lines.</p>
+        <div class="settings-row">
+            <span class="settings-label" id="assisted-label">ASSISTED MODE</span>
+            <button type="button" id="assisted-toggle" class="settings-toggle" role="switch" aria-checked="false" aria-labelledby="assisted-label">OFF</button>
+        </div>
+        <p class="settings-note">No game over: crashes refill your hearts and you keep flying. A gentler pace, no bosses, and weather is just scenery. Good for younger pilots, or a relaxed endless flight.</p>
         <button type="button" id="settings-back" style="background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: #00ffff; padding: 16px 40px; cursor: pointer; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 13px; letter-spacing: 2px; transition: all 0.15s; text-transform: uppercase; min-width: 200px;">BACK</button>
     </div>
     <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
@@ -1215,6 +1221,13 @@
         margin: 16px 0 40px;
     }
     #settings-overlay button:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
+    .settings-toggle {
+        font-family: 'Press Start 2P', 'Courier New', monospace; font-size: 12px; letter-spacing: 2px;
+        min-width: 92px; padding: 10px 14px; cursor: pointer;
+        background: rgba(0, 20, 20, 0.6); border: 2px solid rgba(0, 255, 255, 0.5); color: rgba(0, 255, 255, 0.7);
+    }
+    .settings-toggle[aria-checked="true"] { background: #00ffff; border-color: #00ffff; color: #001a1a; }
+    #boss-bar .boss-tip { font-size: 7px; letter-spacing: 1px; color: #00ffe1; margin-top: 6px; }
 
     #back-to-experiments:hover {
         opacity: 1;
