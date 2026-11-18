@@ -8,12 +8,11 @@ export const LAUNCHER = { x: W - 0.62, y: -0.62 };
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 20;
-export const START_SUPPLY = 15;
+export const START_SUPPLY = 18;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-export const ZONE_BONUS = 3;        // balls for clearing a zone
+export const ZONE_BONUS = 4;        // balls for clearing a zone
 const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
 const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
-export const BASKET = { y: -H + 0.45, half: 0.6, wall: 0.07, depth: 0.42 };
 
 const GRAVITY = -15;
 const SHOT_GAP = 8;                 // steps between balls in a volley
@@ -30,8 +29,7 @@ const HEAVY_AFTER = 480;            // after 4s a ball slowly gets heavier so tu
 const TURN_CAP = 30 * 120;          // after 30s any balls still out come home
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
-const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 are the basket lane
-const BASKET_PERIOD = 420;          // steps for one trip across and back (3.5s)
+const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
 const PRESETTLE_STEPS = 720;        // a new zone is run until still before you see it
 
 // Springs that hold pinned blocks near their spot. Per unit of mass, so heavy
@@ -44,9 +42,9 @@ const SNAP_ANGLE = 0.35;
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.97;            // velocity kept per step inside jello
 
-const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, BASKET: 32, PROP: 64, JELLO: 128 };
+const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
-const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.BASKET | G.PROP | G.JELLO;
+const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 const SHAPES = [
@@ -101,11 +99,6 @@ export function blockScale(hp, hp0) {
     return bulk * (0.82 + 0.18 * Math.max(0, hp) / hp0);
 }
 
-export function basketX(step) {
-    const span = W / 2 - BASKET.half - 0.15;
-    return W / 2 + span * Math.sin((step / BASKET_PERIOD) * Math.PI * 2);
-}
-
 export class Sim {
     constructor(R, world, s) {
         this.R = R;
@@ -122,11 +115,9 @@ export class Sim {
             step: 0, rng: seed | 0, nextId: 1, depth: 0, note: null,
             supply: START_SUPPLY, volley: START_VOLLEY, quiet: false, turnSteps: 0,
             blocks: {}, pickups: {}, props: {}, owner: {}, balls: [], shots: null, cool: {},
-            basket: null,
         };
         const sim = new Sim(R, world, s);
         sim.buildWalls();
-        sim.buildBasket();
         return sim;
     }
 
@@ -168,30 +159,6 @@ export class Sim {
         wall(0.5, H / 2 + 2, -0.5, -H / 2);
         wall(0.5, H / 2 + 2, W + 0.5, -H / 2);
         wall(W / 2 + 1, 0.5, W / 2, 0.5);
-    }
-
-    // A U-shaped basket sliding along the bottom. Balls that drop in come back.
-    buildBasket() {
-        const { R, world, s } = this;
-        const { y, half, wall, depth } = BASKET;
-        const body = world.createRigidBody(
-            R.RigidBodyDesc.kinematicPositionBased().setTranslation(basketX(0), y));
-        const solid = (hx, hy, x, yy) => {
-            const c = world.createCollider(
-                R.ColliderDesc.cuboid(hx, hy).setTranslation(x, yy)
-                    .setRestitution(0.4).setFriction(0.6)
-                    .setCollisionGroups(groups(G.BASKET, G.BALL)), body);
-            s.owner[c.handle] = { t: 'basket' };
-        };
-        solid(half, wall, 0, -depth / 2);
-        solid(wall, depth / 2, -half + wall, 0);
-        solid(wall, depth / 2, half - wall, 0);
-        const inside = world.createCollider(
-            R.ColliderDesc.cuboid(half - wall * 2 - 0.02, depth / 2 - wall).setTranslation(0, wall / 2)
-                .setSensor(true).setCollisionGroups(groups(G.BASKET, G.BALL))
-                .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
-        s.owner[inside.handle] = { t: 'catch' };
-        s.basket = { body: body.handle };
     }
 
     // ---------- blocks ----------
@@ -603,8 +570,7 @@ export class Sim {
         this.s.turnSteps = 0;
     }
 
-    // Bonus balls (the extra ones from a multishot upgrade) add damage but can't be
-    // caught back into the supply, so upgrades don't snowball.
+    // Bonus balls are the extra ones from a multishot upgrade.
     spawnBall(angle, bonus = false) {
         const { R, world, s } = this;
         const body = world.createRigidBody(
@@ -664,7 +630,6 @@ export class Sim {
             const v = world.getRigidBody(ball.body).linvel();
             ball.pv = [v.x, v.y];               // velocity going into this step, to measure impacts
         }
-        world.getRigidBody(s.basket.body).setNextKinematicTranslation({ x: basketX(s.step + 1), y: BASKET.y });
         world.step(this.queue);
         s.step += 1;
 
@@ -732,12 +697,6 @@ export class Sim {
         if (!started) return;
         if (b.t === 'ball') { this.events.push({ t: 'clack', x: p.x, y: p.y }); return; }
         if (b.t === 'pickup') { this.collectPickup(b.id); return; }
-        if (b.t === 'catch') {
-            this.removeBall(a.body);
-            if (!ball?.bonus) this.gain(1, p.x, p.y);
-            this.events.push({ t: 'catch', x: p.x, y: p.y });
-            return;
-        }
         this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: b.t });
         if (b.t === 'block') {
             // Little hops on top of a block don't count; only a real bounce does.

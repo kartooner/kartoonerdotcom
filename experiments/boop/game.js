@@ -1,11 +1,11 @@
 // Boop gray-box: rendering, input and turn flow. Physics and rules live in sim.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, BASKET } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
 
 // Light and dark palettes. "line" is for marks drawn on the field (launcher,
-// basket, guide, pickups); "edge" is the outline on blocks, props and balls.
+// guide, pickups); "edge" is the outline on blocks, props and balls.
 const THEMES = {
     light: {
         paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7,
@@ -90,17 +90,6 @@ launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
 scene.add(launcher);
 
-// Catch basket: an open U in ink.
-const basket = new THREE.Group();
-{
-    const { half, wall, depth } = BASKET;
-    basket.add(
-        rect(half * 2, wall * 2, lineMat, 0, -depth / 2),
-        rect(wall * 2, depth, lineMat, -half + wall, 0),
-        rect(wall * 2, depth, lineMat, half - wall, 0),
-    );
-}
-scene.add(basket);
 
 // Aim guide: dots along the predicted path. Where the game expects the ball to
 // hit something, that dot is bigger and in the accent colour.
@@ -344,8 +333,6 @@ function syncView(frameDt) {
     bounced.clear();
     for (const [h, v] of ballViews) if (!live.has(h)) { scene.remove(v.group); ballViews.delete(h); }
 
-    const bp = sim.world.getRigidBody(s.basket.body).translation();
-    basket.position.set(bp.x, bp.y, 0.2);
 
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
@@ -724,6 +711,7 @@ requestAnimationFrame(frame);
 window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
+    get aim() { return shownAngle(); },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

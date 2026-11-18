@@ -191,6 +191,12 @@
             margin-left: 0.04em;
             transform: rotate(14deg) translateY(-0.02em);
             transform-origin: 50% 90%;
+            /* Ink stem, orange dot: the glyph is filled with a hard two-colour split. */
+            background: linear-gradient(to bottom, var(--ink) 0 var(--bang-split), var(--accent) var(--bang-split) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            --bang-split: 63%;
         }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
@@ -285,14 +291,13 @@
             <p>Clear every block to drop to the next zone.</p>
 
             <h3>Keep your balls</h3>
-            <p>Your balls last the whole run. When they run out, the run ends. Get balls back by:</p>
+            <p>Each shot costs 1 ball. Your balls last the whole run, and when they run out, the run ends. Earn more by:</p>
             <ul>
-                <li>catching them in the basket at the bottom</li>
-                <li>popping blocks that started at 8 or more</li>
                 <li>grabbing <b>+1</b> rings</li>
-                <li>clearing a zone (+3)</li>
+                <li>popping bigger blocks</li>
+                <li>clearing a zone (+4)</li>
             </ul>
-            <p>Every few zones your launcher upgrades to fire one more ball per shot. A shot still costs 1 ball, but the extra balls can't be caught.</p>
+            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 ball.</p>
 
             <h3>Things you'll meet</h3>
             <ul>
@@ -302,7 +307,7 @@
                 <li><b>Jello</b> lets balls sink through. Each pass takes 1 off.</li>
             </ul>
             <figure>
-                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block, coloured patterned blocks and the basket at the bottom">
+                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block and coloured, patterned blocks">
                 <figcaption>A deeper zone.</figcaption>
             </figure>
 
