@@ -224,6 +224,7 @@
 
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
+        .unlocked[hidden] { display: none; }
 
         /* Pause: button top-right during play, menu centred */
         #btn-pause {
@@ -283,7 +284,17 @@
         }
         .skin i { width: 1.4rem; height: 0.5rem; border-radius: 4px; flex: none; }
         .skin small { display: block; font-size: 0.6875rem; color: #8fa3b8; }
-        .skin[aria-pressed="true"] { border-color: #00ffcc; }
+        .skin[aria-pressed="true"] { border: 2px solid #00ffcc; background: rgba(0, 255, 204, 0.1); }
+        .skin .inuse { display: block; font-size: 0.6875rem; color: #00ffcc; font-weight: 600; }
+        .badge {
+            display: inline-block; margin-left: 0.6rem; padding: 0.1rem 0.45rem; border-radius: 999px; vertical-align: 0.1rem;
+            background: #00ffcc; color: #001a14; font-family: ui-sans-serif, system-ui, sans-serif;
+            font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .badge[hidden] { display: none; }
+        .unlocked p { margin: 0 0 0.6rem; }
+        #go-equip { min-width: 0; padding: 0.6rem 1.25rem; font-size: 0.75rem; margin-bottom: 0.5rem; }
+        #go-equip:disabled { border-color: #00ffcc; color: #00ffcc; cursor: default; }
         .skin:disabled { cursor: default; color: #8fa3b8; }
         .skin:disabled i { opacity: 0.35; }
         .skin:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -322,7 +333,7 @@
         <div class="menu-actions">
             <button id="btn-play" onclick="startPlay()">Play</button>
             <button type="button" class="btn-secondary" id="btn-howto">How to play</button>
-            <button type="button" class="btn-secondary" id="btn-settings">Settings</button>
+            <button type="button" class="btn-secondary" id="btn-settings">Settings<span class="badge" id="settings-new" hidden>New</span></button>
         </div>
     </div>
 </div>
@@ -371,7 +382,7 @@
         <dl class="defs" id="manual-mods"></dl>
 
         <h2>Runs and unlocks</h2>
-        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs. Choose your body in Settings (from the title screen or the pause menu):</p>
         <dl class="defs" id="manual-unlocks"></dl>
 
         <button type="button" class="btn-secondary page-back">Back</button>
@@ -391,7 +402,8 @@
         </div>
         <p class="hint">A low-res look, like a 90s console. <kbd>P</kbd> switches it during play.</p>
 
-        <h2>Body</h2>
+        <h2>Your snake</h2>
+        <p class="hint" style="margin-top:0">Tap a body to swim as it. Locked ones show how to earn them.</p>
         <div class="skins" id="skins"></div>
         <p class="hint" id="headstart"></p>
 
@@ -442,7 +454,10 @@
         <div><dt>Mutations</dt><dd id="go-muts"></dd></div>
         <div><dt>Best layer</dt><dd id="go-best"></dd></div>
     </dl>
-    <p class="unlocked" id="go-unlocks" hidden></p>
+    <div class="unlocked" id="go-unlocks" hidden>
+        <p id="go-unlocks-text"></p>
+        <button type="button" class="btn-secondary" id="go-equip" hidden></button>
+    </div>
     <button type="button" class="btn" id="btn-retry">New run<small>From layer 1 · Silt</small></button>
     <button type="button" class="btn btn-quiet" id="btn-quit">Quit</button>
 </div>
@@ -1455,12 +1470,13 @@
         run.cause = cause;
         run.won = won;
         // Fold the run into the totals that unlock things
-        const before = unlockedNames(meta);
+        const before = unlockedNames(meta), skinsBefore = unlockedSkinIds(meta);
         run.newBest = run.layer + 1 > meta.bestLayer;
         meta.bestLayer = Math.max(meta.bestLayer, run.layer + 1);
         meta.bits += run.food; meta.creatures += run.creatures; meta.cuts += run.cuts; meta.runs++;
         if (won) meta.wins = (meta.wins || 0) + 1;
         run.unlocked = unlockedNames(meta).filter(n => !before.includes(n));
+        run.newSkins = unlockedSkinIds(meta).filter(id => !skinsBefore.includes(id));
         saveMeta();
     }
 
@@ -1682,7 +1698,18 @@
         $('go-muts').textContent = taken.length ? taken.join(', ') : 'None';
         $('go-best').innerHTML = meta.bestLayer + (run.newBest ? '<span class="new">new best</span>' : '');
         $('go-unlocks').hidden = !run.unlocked.length;
-        $('go-unlocks').textContent = run.unlocked.length ? 'Unlocked: ' + run.unlocked.join(', ') : '';
+        $('go-unlocks-text').textContent = run.unlocked.length ? 'Unlocked: ' + run.unlocked.join(', ') : '';
+        // Offer the newest body right here, so it's obvious how to use it
+        const newest = SKINS.find(k => k.id === run.newSkins[run.newSkins.length - 1]);
+        const equip = $('go-equip');
+        equip.hidden = !newest;
+        if (newest) {
+            const using = () => { equip.disabled = true; equip.textContent = 'Swimming as ' + newest.name + ' ✓'; };
+            equip.disabled = false;
+            equip.textContent = 'Swim as ' + newest.name;
+            equip.onclick = () => { equipSkin(newest.id); meta.seenSkins = unlockedSkinIds(meta); saveMeta(); updateNewBadge(); using(); };
+            if (currentSkin().id === newest.id) using();
+        }
         $('hud').hidden = true;
         $('gameover').hidden = false;
         renderSkins();
@@ -1745,7 +1772,7 @@
     function openPage(id, opener) {
         pageOpener = opener;
         if (id === 'manual') renderManual();
-        if (id === 'settings') renderSkins();
+        if (id === 'settings') { meta.seenSkins = unlockedSkinIds(meta); saveMeta(); renderSkins(); }
         $(id).hidden = false;
         $(id).scrollTop = 0;
         $(id).querySelector('.page-close').focus();
@@ -1776,7 +1803,23 @@
     }
 
     // Settings: body picker and head start status
+    function equipSkin(id) {
+        const s = SKINS.find(k => k.id === id);
+        if (!s || (s.test && !s.test(meta))) return;
+        meta.skin = s.id; saveMeta();
+        snake.setColors({ head: s.head, tail: s.tail });
+        renderSkins();
+    }
+
+    // Unlocked bodies you haven't looked at in Settings yet get a "New" badge on the title
+    const unlockedSkinIds = (m) => SKINS.filter(s => s.test && s.test(m)).map(s => s.id);
+    function updateNewBadge() {
+        const seen = meta.seenSkins || [];
+        $('settings-new').hidden = !unlockedSkinIds(meta).some(id => !seen.includes(id));
+    }
+
     function renderSkins() {
+        updateNewBadge();
         const row = $('skins');
         row.innerHTML = '';
         for (const s of SKINS) {
@@ -1788,11 +1831,8 @@
             b.setAttribute('aria-pressed', String(currentSkin().id === s.id));
             const hex = (c) => '#' + c.toString(16).padStart(6, '0');
             b.innerHTML = '<i style="background:linear-gradient(90deg,' + hex(s.head) + ',' + hex(s.tail) + ')"></i>' +
-                '<span>' + s.name + (open ? '' : '<small>' + s.need + '</small>') + '</span>';
-            if (open) b.addEventListener('click', () => {
-                meta.skin = s.id; saveMeta(); renderSkins();
-                snake.setColors({ head: s.head, tail: s.tail });
-            });
+                '<span>' + s.name + (!open ? '<small>' + s.need + '</small>' : currentSkin().id === s.id ? '<span class="inuse">In use</span>' : '') + '</span>';
+            if (open) b.addEventListener('click', () => equipSkin(s.id));
             row.appendChild(b);
         }
         $('headstart').textContent = HEAD_START.test(meta)
