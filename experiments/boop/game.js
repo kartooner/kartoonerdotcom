@@ -76,17 +76,19 @@ launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
 scene.add(launcher);
 
-// Aim guide: dots along the predicted path, a bigger dot where it bounces.
+// Aim guide: dots along the predicted path, and a half circle at each bounce.
+// The flat side sits on the surface the ball hits; the dome points back out.
 const MAX_DOTS = 260;
 const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(COLORS.ink, { transparent: true, opacity: 0.75 }), MAX_DOTS);
 dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
 scene.add(dots);
-const rings = [0, 1, 2].map(() => {
-    const r = new THREE.Mesh(new THREE.CircleGeometry(0.12, 20), mat(COLORS.ink));
-    r.visible = false;
-    scene.add(r);
-    return r;
+const halfDisc = new THREE.CircleGeometry(0.15, 20, 0, Math.PI);
+const markers = [0, 1, 2].map(() => {
+    const m = new THREE.Mesh(halfDisc, mat(COLORS.ink));
+    m.visible = false;
+    scene.add(m);
+    return m;
 });
 
 // ---------- number labels ----------
@@ -260,16 +262,20 @@ function drawGuide(angle) {
     }
     dots.count = n;
     dots.instanceMatrix.needsUpdate = true;
-    rings.forEach((r, i) => {
-        r.visible = i < contacts.length;
-        if (r.visible) r.position.set(contacts[i][0], contacts[i][1], 0.45);
+    markers.forEach((m, i) => {
+        const c = contacts[i];
+        m.visible = !!c;
+        if (!c) return;
+        // Ball centre minus one radius along the normal = the surface point.
+        m.position.set(c.x - c.nx * BALL_R, c.y - c.ny * BALL_R, 0.45);
+        m.rotation.z = Math.atan2(c.ny, c.nx) - Math.PI / 2;   // dome (+y) faces along the normal
     });
 }
 
 function hideGuide() {
     guideAngle = null;
     dots.count = 0;
-    rings.forEach((r) => { r.visible = false; });
+    markers.forEach((m) => { m.visible = false; });
 }
 
 // ---------- input ----------

@@ -385,21 +385,36 @@ export class Sim {
 }
 
 // Run one ball forward in a copy of the world and return its path.
+// Each contact carries the surface normal, worked out from how the ball's
+// direction changed across the bounce.
 export function predict(sim, angle, maxContacts = 3, maxSteps = 600) {
     const p = sim.clone();
     p.fire(angle, 1);
     const path = [[LAUNCHER.x, LAUNCHER.y]];
-    const contacts = [];
-    for (let i = 0; i < maxSteps; i++) {
+    const hits = [];            // path index right after each bounce
+    let stopAt = maxSteps;
+    for (let i = 0; i < maxSteps && path.length <= stopAt; i++) {
         p.step();
         const ball = p.s.balls[0];
         if (!ball) break;
         const t = p.world.getRigidBody(ball.body).translation();
         path.push([t.x, t.y]);
-        for (const e of p.events) if (e.t === 'contact') contacts.push([e.x, e.y]);
+        for (const e of p.events) {
+            if (e.t === 'contact' && hits.length < maxContacts) hits.push(path.length - 1);
+        }
         p.events.length = 0;
-        if (contacts.length >= maxContacts) break;
+        // Run two steps past the last bounce so its normal can be measured.
+        if (hits.length >= maxContacts && stopAt === maxSteps) stopAt = path.length + 1;
     }
     p.free();
+    const contacts = hits.map((i) => {
+        const a = path[Math.max(0, i - 2)], b = path[i - 1], c = path[i], d = path[Math.min(path.length - 1, i + 1)];
+        let nx = (d[0] - c[0]) - (b[0] - a[0]), ny = (d[1] - c[1]) - (b[1] - a[1]);
+        const len = Math.hypot(nx, ny) || 1;
+        nx /= len; ny /= len;
+        return { x: c[0], y: c[1], nx, ny };
+    });
+    // Trim the extra steps so the dotted line ends at the last bounce.
+    if (hits.length >= maxContacts) path.length = hits[maxContacts - 1] + 1;
     return { path, contacts };
 }
