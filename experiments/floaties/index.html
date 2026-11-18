@@ -224,6 +224,27 @@
 
         .stats dd { text-align: right; }
         .unlocked { margin: -1rem 0 1.5rem; color: #00ffcc; font-size: 0.875rem; }
+        .unlocked[hidden] { display: none; }
+
+        /* Pause: button top-right during play, menu centred */
+        #btn-pause {
+            position: fixed; z-index: 520;
+            top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right));
+            width: 44px; height: 44px; display: grid; place-items: center; padding: 0; cursor: pointer;
+            background: rgba(0, 8, 20, 0.55); color: #e8f1fa;
+            border: 1px solid rgba(183, 198, 214, 0.35); border-radius: 10px;
+        }
+        #btn-pause[hidden] { display: none; }
+        #btn-pause:hover, #btn-pause:focus-visible { border-color: #00ffcc; outline: none; }
+        #pausemenu {
+            position: fixed; inset: 0; z-index: 1120; display: grid; padding: 16px; box-sizing: border-box;
+            background: rgba(0, 8, 20, 0.82); color: #e8f1fa; text-align: center; overflow-y: auto; touch-action: pan-y;
+        }
+        #pausemenu[hidden] { display: none; }
+        #pausemenu .panel { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; width: 100%; max-width: 20rem; }
+        #pausemenu h2 { font-family: 'Cartridge', ui-sans-serif, sans-serif; font-weight: 900; font-style: italic; font-size: clamp(2rem, 6vw, 3rem); margin: 0; padding: 0.1em 0.3em; }
+        #pausemenu .cause { margin: 0 0 0.75rem; color: #b7c6d6; }
+        #pausemenu .btn, #pausemenu .btn-secondary { width: 100%; min-width: 0; margin: 0; }
 
         /* Mutation pick: a plain numbered list, not a card grid */
         #mutate {
@@ -263,7 +284,17 @@
         }
         .skin i { width: 1.4rem; height: 0.5rem; border-radius: 4px; flex: none; }
         .skin small { display: block; font-size: 0.6875rem; color: #8fa3b8; }
-        .skin[aria-pressed="true"] { border-color: #00ffcc; }
+        .skin[aria-pressed="true"] { border: 2px solid #00ffcc; background: rgba(0, 255, 204, 0.1); }
+        .skin .inuse { display: block; font-size: 0.6875rem; color: #00ffcc; font-weight: 600; }
+        .badge {
+            display: inline-block; margin-left: 0.6rem; padding: 0.1rem 0.45rem; border-radius: 999px; vertical-align: 0.1rem;
+            background: #00ffcc; color: #001a14; font-family: ui-sans-serif, system-ui, sans-serif;
+            font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .badge[hidden] { display: none; }
+        .unlocked p { margin: 0 0 0.6rem; }
+        #go-equip { min-width: 0; padding: 0.6rem 1.25rem; font-size: 0.75rem; margin-bottom: 0.5rem; }
+        #go-equip:disabled { border-color: #00ffcc; color: #00ffcc; cursor: default; }
         .skin:disabled { cursor: default; color: #8fa3b8; }
         .skin:disabled i { opacity: 0.35; }
         .skin:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -302,7 +333,7 @@
         <div class="menu-actions">
             <button id="btn-play" onclick="startPlay()">Play</button>
             <button type="button" class="btn-secondary" id="btn-howto">How to play</button>
-            <button type="button" class="btn-secondary" id="btn-settings">Settings</button>
+            <button type="button" class="btn-secondary" id="btn-settings">Settings<span class="badge" id="settings-new" hidden>New</span></button>
         </div>
     </div>
 </div>
@@ -318,6 +349,7 @@
             <dt>Steer</dt><dd><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd>. Or hold the mouse button or a finger down and point where to go: the further to the side, the sharper the turn. A quick click or tap turns you a little toward that side.</dd>
             <dt>Boost</dt><dd><kbd>W</kbd> or <kbd>↑</kbd>. On touch, put a second finger down.</dd>
             <dt>Slow down</dt><dd><kbd>S</kbd> or <kbd>↓</kbd></dd>
+            <dt>Pause</dt><dd>The pause button in the top-right corner, or <kbd>Esc</kbd>. The game also pauses by itself if you switch apps or tabs.</dd>
             <dt>Pixel filter</dt><dd><kbd>P</kbd> switches chunky, fine and off. Also in Settings.</dd>
         </dl>
 
@@ -350,7 +382,7 @@
         <dl class="defs" id="manual-mods"></dl>
 
         <h2>Runs and unlocks</h2>
-        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs:</p>
+        <p>The first two layers go easy on you while you learn. After that, hunters get more common, faster and hungrier, bites take more, and the harsher conditions show up. It keeps getting harder all the way up. Layer 20, the Nebula Heart, is the last: fill it and you've won the run. Run out of mass, or crash from layer 3 on, and the run is over: you start again from layer 1 with no mutations. Some things stay unlocked between runs. Choose your body in Settings (from the title screen or the pause menu):</p>
         <dl class="defs" id="manual-unlocks"></dl>
 
         <button type="button" class="btn-secondary page-back">Back</button>
@@ -370,7 +402,8 @@
         </div>
         <p class="hint">A low-res look, like a 90s console. <kbd>P</kbd> switches it during play.</p>
 
-        <h2>Body</h2>
+        <h2>Your snake</h2>
+        <p class="hint" style="margin-top:0">Tap a body to swim as it. Locked ones show how to earn them.</p>
         <div class="skins" id="skins"></div>
         <p class="hint" id="headstart"></p>
 
@@ -383,6 +416,19 @@
     <div class="progress" aria-label="Mass toward the next layer">
         <div class="bar" aria-hidden="true"><i id="hud-bar"></i></div>
         <span id="hud-mass">10 / 50</span>
+    </div>
+</div>
+<button type="button" id="btn-pause" aria-label="Pause" hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
+</button>
+<div id="pausemenu" role="dialog" aria-labelledby="pause-title" hidden>
+    <div class="panel">
+        <h2 id="pause-title">Paused</h2>
+        <p class="cause" id="pause-where"></p>
+        <button type="button" class="btn" id="btn-resume">Resume</button>
+        <button type="button" class="btn-secondary" id="btn-pause-howto">How to play</button>
+        <button type="button" class="btn-secondary" id="btn-pause-settings">Settings</button>
+        <button type="button" class="btn btn-quiet" id="btn-pause-quit">Quit run</button>
     </div>
 </div>
 <div id="banner" aria-live="polite"><span class="kicker" id="banner-kicker"></span><span class="big" id="banner-name"></span><span class="mod" id="banner-mod"></span><span class="note" id="banner-note"></span></div>
@@ -408,7 +454,10 @@
         <div><dt>Mutations</dt><dd id="go-muts"></dd></div>
         <div><dt>Best layer</dt><dd id="go-best"></dd></div>
     </dl>
-    <p class="unlocked" id="go-unlocks" hidden></p>
+    <div class="unlocked" id="go-unlocks" hidden>
+        <p id="go-unlocks-text"></p>
+        <button type="button" class="btn-secondary" id="go-equip" hidden></button>
+    </div>
     <button type="button" class="btn" id="btn-retry">New run<small>From layer 1 · Silt</small></button>
     <button type="button" class="btn btn-quiet" id="btn-quit">Quit</button>
 </div>
@@ -1398,6 +1447,7 @@
 
     function startRun() {
         closeMutationPick();
+        pauseMenuOpen = false; $('pausemenu').hidden = true;
         mutations = {}; windCharges = 0;
         const skin = currentSkin();
         snake.setColors({ head: skin.head, tail: skin.tail });
@@ -1416,16 +1466,17 @@
     function endRun(cause, won) {
         isPlaying = false;
         inputMode = null; waypointPos = null; keysDown.clear(); touchBoost = false; pointer = null; tapNudge = null;
-        run.time = clock.elapsedTime - run.start;
+        run.time = clock.elapsedTime - run.start - (run.pausedFor || 0);
         run.cause = cause;
         run.won = won;
         // Fold the run into the totals that unlock things
-        const before = unlockedNames(meta);
+        const before = unlockedNames(meta), skinsBefore = unlockedSkinIds(meta);
         run.newBest = run.layer + 1 > meta.bestLayer;
         meta.bestLayer = Math.max(meta.bestLayer, run.layer + 1);
         meta.bits += run.food; meta.creatures += run.creatures; meta.cuts += run.cuts; meta.runs++;
         if (won) meta.wins = (meta.wins || 0) + 1;
         run.unlocked = unlockedNames(meta).filter(n => !before.includes(n));
+        run.newSkins = unlockedSkinIds(meta).filter(id => !skinsBefore.includes(id));
         saveMeta();
     }
 
@@ -1647,7 +1698,18 @@
         $('go-muts').textContent = taken.length ? taken.join(', ') : 'None';
         $('go-best').innerHTML = meta.bestLayer + (run.newBest ? '<span class="new">new best</span>' : '');
         $('go-unlocks').hidden = !run.unlocked.length;
-        $('go-unlocks').textContent = run.unlocked.length ? 'Unlocked: ' + run.unlocked.join(', ') : '';
+        $('go-unlocks-text').textContent = run.unlocked.length ? 'Unlocked: ' + run.unlocked.join(', ') : '';
+        // Offer the newest body right here, so it's obvious how to use it
+        const newest = SKINS.find(k => k.id === run.newSkins[run.newSkins.length - 1]);
+        const equip = $('go-equip');
+        equip.hidden = !newest;
+        if (newest) {
+            const using = () => { equip.disabled = true; equip.textContent = 'Swimming as ' + newest.name + ' ✓'; };
+            equip.disabled = false;
+            equip.textContent = 'Swim as ' + newest.name;
+            equip.onclick = () => { equipSkin(newest.id); meta.seenSkins = unlockedSkinIds(meta); saveMeta(); updateNewBadge(); using(); };
+            if (currentSkin().id === newest.id) using();
+        }
         $('hud').hidden = true;
         $('gameover').hidden = false;
         renderSkins();
@@ -1669,12 +1731,48 @@
         requestAnimationFrame(() => { ui.style.opacity = '1'; });
     });
 
+    // ── Pause (button, Esc, and automatically when the app goes to the background) ──
+    let pauseMenuOpen = false, pausedAt = 0;
+    function canPause() { return isPlaying && !paused && !dying; }
+    function openPause() {
+        if (!canPause()) return;
+        paused = true; pauseMenuOpen = true; pausedAt = performance.now();
+        keysDown.clear(); pointer = null; tapNudge = null; touchBoost = false;
+        $('pause-where').textContent = 'Layer ' + (activeLayer.index + 1) + ' · ' + layerName(activeLayer.index);
+        $('btn-pause').hidden = true;
+        $('pausemenu').hidden = false;
+        $('btn-resume').focus();
+    }
+    function resume() {
+        if (!pauseMenuOpen) return;
+        pauseMenuOpen = false; paused = false;
+        if (run) run.pausedFor = (run.pausedFor || 0) + (performance.now() - pausedAt) / 1000;
+        $('pausemenu').hidden = true;
+        $('btn-pause').hidden = false;
+    }
+    $('btn-pause').addEventListener('click', openPause);
+    $('btn-resume').addEventListener('click', resume);
+    $('btn-pause-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
+    $('btn-pause-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
+    $('btn-pause-quit').addEventListener('click', () => {
+        // Abandon the run without recording it, back to the title screen
+        pauseMenuOpen = false; paused = false; isPlaying = false;
+        $('pausemenu').hidden = true; $('hud').hidden = true;
+        buildAt(0);
+        renderSkins();
+        const ui = $('ui-root');
+        ui.style.display = 'flex';
+        requestAnimationFrame(() => { ui.style.opacity = '1'; });
+    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) openPause(); });
+    window.addEventListener('pagehide', openPause);
+
     // ── How to play / Settings pages ──────────────────────────────────────────────
     let pageOpener = null;
     function openPage(id, opener) {
         pageOpener = opener;
         if (id === 'manual') renderManual();
-        if (id === 'settings') renderSkins();
+        if (id === 'settings') { meta.seenSkins = unlockedSkinIds(meta); saveMeta(); renderSkins(); }
         $(id).hidden = false;
         $(id).scrollTop = 0;
         $(id).querySelector('.page-close').focus();
@@ -1688,7 +1786,12 @@
     $('btn-howto').addEventListener('click', (e) => openPage('manual', e.currentTarget));
     $('btn-settings').addEventListener('click', (e) => openPage('settings', e.currentTarget));
     document.querySelectorAll('.page-close, .page-back').forEach(b => b.addEventListener('click', closePages));
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePages(); });
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.querySelector('.page:not([hidden])')) closePages();
+        else if (pauseMenuOpen) resume();
+        else openPause();
+    });
 
     const defRows = (rows) => rows.map(([dt, dd, cls]) => '<div' + (cls ? ' class="' + cls + '"' : '') + ' style="display:contents"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>').join('');
     function renderManual() {
@@ -1700,7 +1803,23 @@
     }
 
     // Settings: body picker and head start status
+    function equipSkin(id) {
+        const s = SKINS.find(k => k.id === id);
+        if (!s || (s.test && !s.test(meta))) return;
+        meta.skin = s.id; saveMeta();
+        snake.setColors({ head: s.head, tail: s.tail });
+        renderSkins();
+    }
+
+    // Unlocked bodies you haven't looked at in Settings yet get a "New" badge on the title
+    const unlockedSkinIds = (m) => SKINS.filter(s => s.test && s.test(m)).map(s => s.id);
+    function updateNewBadge() {
+        const seen = meta.seenSkins || [];
+        $('settings-new').hidden = !unlockedSkinIds(meta).some(id => !seen.includes(id));
+    }
+
     function renderSkins() {
+        updateNewBadge();
         const row = $('skins');
         row.innerHTML = '';
         for (const s of SKINS) {
@@ -1712,11 +1831,8 @@
             b.setAttribute('aria-pressed', String(currentSkin().id === s.id));
             const hex = (c) => '#' + c.toString(16).padStart(6, '0');
             b.innerHTML = '<i style="background:linear-gradient(90deg,' + hex(s.head) + ',' + hex(s.tail) + ')"></i>' +
-                '<span>' + s.name + (open ? '' : '<small>' + s.need + '</small>') + '</span>';
-            if (open) b.addEventListener('click', () => {
-                meta.skin = s.id; saveMeta(); renderSkins();
-                snake.setColors({ head: s.head, tail: s.tail });
-            });
+                '<span>' + s.name + (!open ? '<small>' + s.need + '</small>' : currentSkin().id === s.id ? '<span class="inuse">In use</span>' : '') + '</span>';
+            if (open) b.addEventListener('click', () => equipSkin(s.id));
             row.appendChild(b);
         }
         $('headstart').textContent = HEAD_START.test(meta)
@@ -2194,6 +2310,9 @@
         if (ghostLayer) drawFood(ghostLayer);
         if (fadingLayer) drawFood(fadingLayer);
         if (isPlaying) resolveCollisions();
+        // Pause button only while actually playing (not on menus, picks or after a run ends)
+        const showPause = isPlaying && !paused && !dying && !$('hud').hidden;
+        if (showPause === $('btn-pause').hidden) $('btn-pause').hidden = !showPause;
         if (isPlaying && !ascend && snake.mass >= activeLayer.diff.need) {
             if (activeLayer.index === FINAL_LAYER) win(); else startAscend();
         }
