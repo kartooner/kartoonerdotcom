@@ -91,16 +91,17 @@ const basket = new THREE.Group();
 }
 scene.add(basket);
 
-// Aim guide: dots along the predicted path, and a half circle at each bounce.
-// The flat side sits on the surface the ball hits; the dome points back out.
+// Aim guide: dots along the predicted path, and an arc at each bounce.
+// The arc hugs the side of the ball that meets the surface, like "(" against a left wall.
+// It follows the real push of the bounce, so glancing and spinning hits tilt it.
 const MAX_DOTS = 260;
 const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.055, 10), mat(COLORS.ink, { transparent: true, opacity: 0.75 }), MAX_DOTS);
 dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
 scene.add(dots);
+const bounceArc = new THREE.RingGeometry(BALL_R + 0.02, BALL_R + 0.08, 20, 1, 0, Math.PI);
 const markers = [0, 1, 2].map(() => {
-    const m = new THREE.Mesh(halfCircle, outlineMat);
-    m.scale.setScalar(0.15);
+    const m = new THREE.Mesh(bounceArc, outlineMat);
     m.visible = false;
     scene.add(m);
     return m;
@@ -357,9 +358,9 @@ function drawGuide(angle) {
         const c = contacts[i];
         m.visible = !!c;
         if (!c) return;
-        // Ball centre minus one radius along the normal = the surface point.
-        m.position.set(c.x - c.nx * BALL_R, c.y - c.ny * BALL_R, 0.45);
-        m.rotation.z = Math.atan2(c.ny, c.nx) - Math.PI / 2;   // dome (+y) faces along the normal
+        // Centred on the ball, with the curve (+y) turned to face into the surface.
+        m.position.set(c.x, c.y, 0.45);
+        m.rotation.z = Math.atan2(c.nx, -c.ny);
     });
 }
 
