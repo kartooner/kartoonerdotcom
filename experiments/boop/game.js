@@ -12,7 +12,7 @@ import { makeCrumbs } from './crumbs.js';
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.0.8';
+const BUILD = '1.0.9';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -604,7 +604,7 @@ function placeNote() {
     const c = window.__boop.toScreen(t.x, t.y);
     const edge = window.__boop.toScreen(t.x + t.r, t.y);
     // A tip about the whole board is said by the block buddy, standing under the bubble.
-    const rPx = t.buddy ? 26 : Math.abs(edge.x - c.x);
+    const rPx = t.buddy ? 30 : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
     if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
