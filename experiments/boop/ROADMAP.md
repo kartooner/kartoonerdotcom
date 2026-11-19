@@ -8,10 +8,13 @@
 - No card on /games while it's in active testing
 
 ## v1.1
-- Nails on pinned blocks, so it's clear what can tumble; the nails pop out when a block is knocked loose
+- Nails: everything fixed in place (pinned, jelly, grey) is nailed; resting blocks have none
+- Knock nails out by hitting near them (from depth 3): with one left the block hangs and swings from it, with none it falls (jelly too). Grey blocks' and single squares' nails stay put
+- Pinned blocks are firmer when hit; resting blocks move freely
 - Resting blocks drop into place as a new zone slides in
 - Ball fuse: a ball greys as it goes without hitting a block, and brightens again on a hit
 - The block buddy (mascot): breathes, blinks and looks around, wiggles when tapped
+- Buddy tour: launching, hits, grey balls, last stretch, shots, nails, explained as they come up, one at a time; How to play trimmed to a short reference
 
 ## v1.2
 - **Sound:** a soft "boop" on hits, a pop when a block breaks, a chime for +1, a zone-clear sting.

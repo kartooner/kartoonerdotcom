@@ -77,6 +77,16 @@ const BLOCK_DENSITY = 1.5;
 // Pinned (nailed) blocks are heavier, so a ball nudges them less: a firm bump that
 // springs back. Resting blocks keep the lighter density and move freely.
 const PINNED_DENSITY = 3;
+// Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
+// A ball hitting close to a nail wears it down; a nail lasts about a fifth of the
+// block's starting number in hits (at least 2; NAIL_SHARE). With one nail left the block swings
+// down and hangs from it; with none it falls and becomes a resting block. Grey blocks'
+// and single squares' nails never come out (hp -1).
+const NAIL_INSET = 0.17;
+const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
+const NAIL_SHARE = 0.3;
+const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
+const PINNED_KNOCK = 0.5;            // pinned blocks get half the knock of a resting one
 const ZONE_TOP_ROW = 4;
 const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
 const PRESETTLE_STEPS = 720;        // a new zone is run until still before you see it
@@ -88,13 +98,6 @@ const TWIST_K = 130, TWIST_C = 7;
 // Mushroom stems: a springy hinge (stiffness, damping), light enough to wobble when hit.
 const MUSH_K = 360, MUSH_C = 6, MUSH_DENSITY = 1.2;
 const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most 2.5s
-// A pinned block breaks loose when it's knocked hard (off its spot AND moving fast),
-// or when it's pushed very far (a worn block that can't hold its load any more).
-// A steady sag under the weight of a resting block doesn't count.
-// (Scaled to the heavier pinned blocks, which move about half as far, so a hard enough
-// knock still pops the nails now and then.)
-const SNAP_DIST = 0.15, SNAP_SPEED = 0.8, GIVE_WAY_DIST = 0.3;
-const SNAP_ANGLE = 0.24, SNAP_SPIN = 1.0, GIVE_WAY_ANGLE = 0.42;
 
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
@@ -104,7 +107,7 @@ const JELLO_MIN_SPEED = 4;          // but never slower than this, so balls alwa
 // over a few steps instead of snapping, so it reads as smooth, not jerky.
 const SPEED_EASE = 0.15;
 
-const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
+const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128, JELLY_BODY: 256 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
 const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
@@ -183,7 +186,7 @@ export class Sim {
             const c = world.createCollider(
                 R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
                     .setRestitution(0.9).setFriction(0.2)
-                    .setCollisionGroups(groups(G.WALL, G.BALL | G.LOOSE)), body);
+                    .setCollisionGroups(groups(G.WALL, G.BALL | G.LOOSE | G.JELLY_BODY)), body);
             s.owner[c.handle] = { t: 'wall' };
         };
         wall(0.5, H / 2 + 2, -0.5, -H / 2);
@@ -216,6 +219,17 @@ export class Sim {
             cells: cells.map(([c, r]) => [c + 0.5 - cx + dx, -(r + 0.5) - cy + dy]),
             anchor: [cx, cy], anchorA: 0,
         };
+        if (kind !== 'loose') {
+            const top = Math.max(...b.cells.map(([, y]) => y));
+            const row = b.cells.filter(([, y]) => y === top).map(([x]) => x);
+            // Nails can be knocked out from depth 3, where resting blocks first show up.
+            const forever = kind === 'neutral' || n === 1 || s.depth < 3;
+            const nhp = forever ? -1 : Math.max(2, Math.round(hp * NAIL_SHARE));
+            b.nails = [
+                { id: 0, x: Math.min(...row) - 0.5 + NAIL_INSET, y: top + 0.5 - NAIL_INSET, hp: nhp, hp0: nhp },
+                { id: 1, x: Math.max(...row) + 0.5 - NAIL_INSET, y: top + 0.5 - NAIL_INSET, hp: nhp, hp0: nhp },
+            ];
+        } else b.nails = [];
         s.blocks[id] = b;
         this.shapeBlock(b);
         return b;
@@ -232,23 +246,95 @@ export class Sim {
         }
         const k = b.neutral ? 0.96 : blockScale(b.hp, b.hp0);
         b.scale = k;
+        const extra = [];
         b.cols = b.cells.map(([x, y]) => {
             let d = R.ColliderDesc.cuboid(0.5 * k, 0.5 * k).setTranslation(x * k, y * k);
             if (b.jello) {
                 d = d.setSensor(true).setCollisionGroups(groups(G.JELLO, G.BALL))
                     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
-            } else if (b.loose) {
+                if (b.hanging || b.loose) {
+                    // Balls still pass through, but it lands on things and they land on it.
+                    const solid = world.createCollider(R.ColliderDesc.cuboid(0.5 * k, 0.5 * k).setTranslation(x * k, y * k)
+                        .setDensity(BLOCK_DENSITY).setRestitution(0.35).setFriction(0.6)
+                        .setCollisionGroups(groups(G.JELLY_BODY, G.BLOCK | G.LOOSE | G.WALL | G.JELLY_BODY)), body);
+                    s.owner[solid.handle] = { t: 'block', id: b.id };
+                    extra.push(solid.handle);
+                }
+            } else if (b.loose || b.hanging) {   // hanging from one nail: it swings into things like a loose block
                 d = d.setDensity(BLOCK_DENSITY).setRestitution(0.2).setFriction(0.8)
-                    .setCollisionGroups(groups(G.LOOSE, G.BALL | G.BLOCK | G.LOOSE | G.WALL | G.PROP))
+                    .setCollisionGroups(groups(G.LOOSE, G.BALL | G.BLOCK | G.LOOSE | G.WALL | G.PROP | G.JELLY_BODY))
                     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
             } else {
                 d = d.setDensity(PINNED_DENSITY).setRestitution(0.9).setFriction(0.6)
-                    .setCollisionGroups(groups(G.BLOCK, G.BALL | G.LOOSE));
+                    .setCollisionGroups(groups(G.BLOCK, G.BALL | G.LOOSE | G.JELLY_BODY));
             }
             const c = world.createCollider(d, body);
             s.owner[c.handle] = { t: 'block', id: b.id };
             return c.handle;
         });
+        b.cols.push(...extra);
+    }
+
+    // Where a nail is now (world), and where it was driven in (its anchor).
+    nailPoint(b, n) {
+        const body = this.world.getRigidBody(b.body);
+        const p = body.translation(), a = body.rotation(), k = b.scale;
+        return [p.x + (n.x * Math.cos(a) - n.y * Math.sin(a)) * k, p.y + (n.x * Math.sin(a) + n.y * Math.cos(a)) * k];
+    }
+    nailAnchor(b, n) {
+        const a = b.anchorA, k = b.scale;
+        return [b.anchor[0] + (n.x * Math.cos(a) - n.y * Math.sin(a)) * k, b.anchor[1] + (n.x * Math.sin(a) + n.y * Math.cos(a)) * k];
+    }
+
+    // A ball (at p) hit block b: if it landed close to a nail that can come out, wear it down.
+    hitNail(b, p, n) {
+        if (!b.nails?.length || this.s.quiet) return;
+        let best = null, bestD = Infinity;
+        for (const nail of b.nails) {
+            if (nail.hp < 0) continue;
+            const [x, y] = this.nailPoint(b, nail);
+            const d = Math.hypot(p.x - x, p.y - y);
+            if (d < bestD) { bestD = d; best = nail; }
+        }
+        if (!best || bestD > BALL_R + NAIL_REACH) return;
+        best.hp -= n;
+        const [x, y] = this.nailPoint(b, best);
+        if (best.hp > 0) { this.events.push({ t: 'nailhit', id: b.id, nail: best.id, x, y }); return; }
+        b.nails = b.nails.filter((q) => q !== best);
+        this.events.push({ t: 'nailpop', id: b.id, nail: best.id, x, y });
+        if (b.nails.length === 1) this.hang(b);
+        else if (b.nails.length === 0) this.unpin(b);
+    }
+
+    // One nail left: the block swings down and hangs from it.
+    hang(b) {
+        const { R, world } = this;
+        const body = world.getRigidBody(b.body);
+        b.hanging = true;
+        if (b.jello) body.setBodyType(R.RigidBodyType.Dynamic, true);
+        body.setGravityScale(BLOCK_FALL, true);
+        body.setLinearDamping(0.2);
+        body.setAngularDamping(0.35);
+        this.shapeBlock(b);
+        body.wakeUp();
+    }
+
+    // No nails left: it falls and from now on rests like any loose block.
+    unpin(b) {
+        const { R, world } = this;
+        const body = world.getRigidBody(b.body);
+        b.hanging = false;
+        if (b.jello) {
+            if (body.bodyType() !== R.RigidBodyType.Dynamic) body.setBodyType(R.RigidBodyType.Dynamic, true);
+            b.loose = true;
+            body.setGravityScale(BLOCK_FALL, true);
+            body.setLinearDamping(0.05);
+            body.setAngularDamping(0.15);
+            this.shapeBlock(b);
+            body.wakeUp();
+            const p = body.translation();
+            this.events.push({ t: 'snap', id: b.id, x: p.x, y: p.y });
+        } else this.snap(b);
     }
 
     // Anything that changes a block's shape can leave loose blocks unsupported.
@@ -302,7 +388,9 @@ export class Sim {
         const { world, s } = this;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (b.jello || b.loose || b.neutral) continue;
+            if (b.loose || b.neutral) continue;
+            if (b.hanging) { this.hangSpring(b); continue; }
+            if (b.jello) continue;
             const body = world.getRigidBody(b.body);
             if (body.isSleeping()) continue;
             const p = body.translation(), v = body.linvel();
@@ -317,24 +405,31 @@ export class Sim {
         }
     }
 
+    // The hinge: pull the last nail's point back to where it was driven in.
+    hangSpring(b) {
+        const body = this.world.getRigidBody(b.body);
+        const nail = b.nails[0];
+        const [px, py] = this.nailPoint(b, nail), [ax, ay] = this.nailAnchor(b, nail);
+        const c = body.translation(), v = body.linvel(), w = body.angvel();
+        const vx = v.x - w * (py - c.y), vy = v.y + w * (px - c.x);   // velocity of the nail point
+        const m = body.mass();
+        body.applyImpulseAtPoint({
+            x: m * DT * (HANG_K * (ax - px) - HANG_C * vx),
+            y: m * DT * (HANG_K * (ay - py) - HANG_C * vy),
+        }, { x: px, y: py }, true);
+    }
+
     updateBlocks() {
         const { world, s } = this;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (b.jello || b.neutral) continue;
+            if ((b.jello && !b.loose) || b.neutral) continue;
             const body = world.getRigidBody(b.body);
             const p = body.translation();
             if (b.loose) {
                 if (p.y < -H - 2) this.removeBlock(b, true);
-            } else {
-                const off = Math.hypot(p.x - b.anchor[0], p.y - b.anchor[1]);
-                const v = body.linvel(), speed = Math.hypot(v.x, v.y);
-                const turn = Math.abs(body.rotation() - b.anchorA), spin = Math.abs(body.angvel());
-                // One-square blocks never snap loose (they'd end up on the floor, too hard to hit).
-                if (b.cells.length === 1) continue;
-                if ((off > SNAP_DIST && speed > SNAP_SPEED) || off > GIVE_WAY_DIST ||
-                    (turn > SNAP_ANGLE && spin > SNAP_SPIN) || turn > GIVE_WAY_ANGLE) this.snap(b);
             }
+            // Pinned blocks no longer snap loose from a hard knock: only their nails let go.
         }
     }
 
@@ -344,7 +439,7 @@ export class Sim {
         for (const id in s.props) if (s.props[id].falling) return false;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (b.jello) continue;
+            if (b.jello && !b.loose && !b.hanging) continue;
             const body = world.getRigidBody(b.body);
             if (body.isSleeping()) continue;
             const v = body.linvel();
@@ -970,7 +1065,12 @@ export class Sim {
             this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
-                if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, s.stretch ? 2 : 1); this.scored(ball); }
+                if (this.cooled(a.body + ':' + b.id)) {
+                    const n = s.stretch ? 2 : 1, blk = s.blocks[b.id];
+                    this.damageBlock(b.id, n);
+                    if (s.blocks[b.id]) this.hitNail(blk, p, n);
+                    this.scored(ball);
+                }
             } else {
                 ball.jello = ball.jello.filter((j) => j !== b.id);
             }
@@ -990,11 +1090,16 @@ export class Sim {
                 // Push along the ball's incoming direction.
                 const bb = world.getRigidBody(blk.body);
                 const sp = Math.hypot(ball.pv[0], ball.pv[1]) || 1;
-                const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass();
+                const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass() * (blk.loose || blk.hanging ? 1 : PINNED_KNOCK);
                 bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
             // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
-            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, ballPower(ball) * (s.stretch ? 2 : 1)); this.scored(ball); }
+            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) {
+                const n = ballPower(ball) * (s.stretch ? 2 : 1);
+                this.damageBlock(b.id, n);
+                if (s.blocks[b.id]) this.hitNail(blk, p, n);
+                this.scored(ball);
+            }
         }
     }
 
@@ -1046,7 +1151,7 @@ export class Sim {
                 continue;
             }
             if (ball.idle > idleLimit(ball)) {
-                this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y });
+                this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true });
                 this.removeBall(ball.body);
                 continue;
             }

@@ -13,7 +13,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.1';
+const BUILD = '1.1.4';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -158,51 +158,52 @@ function buildBlockView(b) {
     label.renderOrder = 2;
     label.visible = !b.neutral;
     group.add(label);
-    // Everything fixed in place (pinned, jelly, grey) is nailed: two small nail heads near
-    // the top corners, a darker shade of the block's own colour so they don't shout.
-    // Resting blocks have none, so you can tell at a glance what can tumble.
-    let nails = null;
-    if (!b.loose) {
-        const top = Math.max(...b.cells.map(([, y]) => y));
-        const row = b.cells.filter(([, y]) => y === top).map(([x]) => x);
-        const inset = 0.17;           // tucked into the corners, clear of the number
-        nails = [[Math.min(...row) - 0.5 + inset, top + 0.5 - inset], [Math.max(...row) + 0.5 - inset, top + 0.5 - inset]].map(([x, y], i) => {
-            const m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.062], edge: 0, wob: 0.2, fill: 0x000000, seed: b.id * 3 + i, margin: 0.04 });
-            m.userData.at = [x, y];
-            m.renderOrder = 2;
-            group.add(m);
-            return m;
-        });
-    }
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
     scene.add(group);
-    const v = { group, mesh, label, nails, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
 
-const NAIL_SHADE = 0.6;         // nail heads: the block's colour, this much darker
+// Nails: what holds a fixed block in place. Steel heads with an ink outline, like a
+// tack in a drawing. They tilt and lift as they wear down, jolt when hit, and pop out.
+const NAIL = 0xb7b0a6;
+function updateNails(v, b, frameDt) {
+    const live = new Set();
+    for (const n of b.nails ?? []) {
+        live.add(n.id);
+        let m = v.nails.get(n.id);
+        if (!m) {
+            m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.078], edge: 0.032, wob: 0.25, fill: NAIL, seed: b.id * 3 + n.id, margin: 0.05 });
+            m.renderOrder = 2;
+            v.group.add(m);
+            v.nails.set(n.id, m);
+        }
+        const worn = n.hp < 0 ? 0 : 1 - n.hp / n.hp0;
+        const wobT = (v.nailWob[n.id] = (v.nailWob[n.id] ?? 9) + frameDt);
+        const jolt = Math.exp(-wobT * 14) * Math.sin(wobT * 60) * 0.06;
+        const side = n.id === 0 ? -1 : 1;
+        m.position.set(n.x * b.scale + side * worn * 0.03, n.y * b.scale + worn * 0.04 + jolt, 0.15);
+        m.scale.set(1 + worn * 0.25, 1 - worn * 0.25, 1);       // a worn nail tips and shows its side
+        m.rotation.z = side * worn * 0.5;
+    }
+    for (const [id, m] of v.nails) {
+        if (live.has(id)) continue;
+        // Popped: a little spray of steel and ink from where it was.
+        v.group.updateMatrixWorld();
+        const w = m.getWorldPosition(new THREE.Vector3());
+        crumbs.spray([[w.x, w.y]], [NAIL, theme.edge, NAIL]);
+        v.group.remove(m); forgetSketch(m);
+        v.nails.delete(id);
+    }
+}
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
-    if (v.nails) {
-        if (b.loose) {
-            // Knocked loose: the nails pop out, and from here on it can tumble.
-            v.group.updateMatrixWorld();
-            const pts = v.nails.map((n) => { const w = n.getWorldPosition(new THREE.Vector3()); return [w.x, w.y]; });
-            crumbs.spray(pts, [u.uFill.value.clone().multiplyScalar(NAIL_SHADE), theme.edge]);
-            for (const n of v.nails) { v.group.remove(n); forgetSketch(n); }
-            v.nails = null;
-        } else {
-            for (const n of v.nails) {
-                n.position.set(n.userData.at[0] * b.scale, n.userData.at[1] * b.scale, 0.15);
-                n.material.uniforms.uFill.value.copy(u.uFill.value).multiplyScalar(NAIL_SHADE);
-            }
-        }
-    }
+    updateNails(v, b, frameDt);
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
@@ -445,15 +446,19 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'stretch') {
+        else if (e.t === 'hit' && runStarted) {
+            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.', { now: true });
+        } else if (e.t === 'out' && e.faded) {
+            tourTip('fuse', 'Balls turn grey and fade when they stop hitting blocks.', { now: true });
+        } else if (e.t === 'nailpop') {
+            tourTip('nailpop', 'Nail out! Knock out both and the block falls.', { now: true });
+        } else if (e.t === 'nailhit') {
+            const v = blockViews.get(e.id);
+            if (v) v.nailWob[e.nail] = 0;
+        } else if (e.t === 'stretch') {
             // Last few blocks: hits count double. Say so once per device; a small mark every time.
             addFloater('Hits ×2', W / 2, -2.6);
-            if (!sim.s.seen?.stretch) {
-                sim.s.seen = { ...sim.s.seen, stretch: true };
-                writeTips({ ...readTips(), stretch: true });
-                sim.s.noteTarget = { kind: 'open' };
-                showNote('Last few blocks: every hit counts double.');
-            }
+            tourTip('stretch', 'Last few blocks: every hit counts double.', { now: true });
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
@@ -667,7 +672,13 @@ function placeNote() {
         : document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
-    const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
+    let top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
+    if (t.buddy) {
+        // Keep the bubble clear of the pause button; the buddy moves down with it.
+        const pb = document.getElementById('btn-pause').getBoundingClientRect();
+        const dy = pb.height ? pb.bottom + 4 - top : 0;
+        if (dy > 0) { top += dy; buddy.style.top = `${c.y + dy}px`; }
+    }
     note.style.left = `${left}px`;
     note.style.top = `${top}px`;
     note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
@@ -677,14 +688,36 @@ function placeNote() {
 // their own after a few seconds; tips pointing at something stay until you aim.
 const BUDDY_TIP_MS = 4000, FADE_MS = 300;
 let noteTimer = 0, fadeTimer = 0;
-function showNote(text) {
+function showNote(text, stay = false) {
     clearTimeout(noteTimer); clearTimeout(fadeTimer);
     note.textContent = text;
     note.hidden = false;
     note.classList.remove('fading'); buddy.classList.remove('fading');
     noteShown = true;
     placeNote();
-    if (noteTargetPoint()?.buddy) noteTimer = setTimeout(hideNote, BUDDY_TIP_MS);
+    if (noteTargetPoint()?.buddy && !stay) noteTimer = setTimeout(hideNote, BUDDY_TIP_MS);
+}
+
+// ---------- the buddy's tour ----------
+// The basics, told by the block buddy the first time each comes up (once per device),
+// instead of a long read up front. Tips that come mid-turn show right away; the rest
+// wait for a quiet moment (the start of a turn with nothing else on screen).
+const tipQueue = [];
+function sayBuddy(text, stay = false) {
+    sim.s.noteTarget = { kind: 'open' };
+    showNote(text, stay);
+}
+function tourTip(key, text, { now = false, stay = false } = {}) {
+    const seen = readTips();
+    if (seen[key]) return;
+    writeTips({ ...seen, [key]: true });
+    sim.s.seen = { ...sim.s.seen, [key]: true };
+    // Only one tip at a time: if something's already showing, this one waits its turn.
+    if (now && !noteShown) sayBuddy(text, stay);
+    else tipQueue.push([text, stay]);
+}
+function nextTip() {
+    if (!noteShown && tipQueue.length && phase === 'aim') sayBuddy(...tipQueue.shift());
 }
 function hideNote() {
     clearTimeout(noteTimer);
@@ -722,6 +755,7 @@ function gameOver() {
 const CLEAR_BEAT = 0.5;
 let clearT = 0;
 function zoneCleared() {
+    tourTip('shots', 'Shots are limited. Clearing zones, beating par and +1 rings earn more.');
     sim.endShots();
     clearT = 0;
     phase = 'cleared';
@@ -746,6 +780,7 @@ function readyToAim() {
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
     if (runStarted) saveRun();
+    nextTip();
 }
 
 // ---------- saving ----------
@@ -983,6 +1018,8 @@ function showScreen(which, moveFocus = true) {
 }
 function play() {
     showScreen(null);
+    // First game ever: the buddy says how to launch, and stays until you start aiming.
+    if (phase === 'aim' && !runStarted) tourTip('aim', 'Drag anywhere to aim, then let go to fire!', { now: true, stay: true });
     fromSave = false;      // from here on, the start screen is just the pause screen
     canvas.focus({ preventScroll: true });   // so the keyboard goes straight to aiming
 }
