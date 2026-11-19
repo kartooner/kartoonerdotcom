@@ -4,13 +4,14 @@ import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
-import { makeSketch, SHAPE, setSketchInk, forgetSketch } from './sketch.js';
+import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
 import { THEMES, COLORS } from './theme.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
+import { makeCrumbs } from './crumbs.js';
 
 let theme = THEMES.light;
-const makeLabel = (text, color = theme.text) => labelMesh(text, color);
+const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
 function buildBallView(handle) {
@@ -40,6 +41,7 @@ renderer.setPixelRatio(PIXEL_RATIOS[0]);
 $('stage').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+const crumbs = makeCrumbs(scene);   // crayon bits when a block pops
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -80,7 +82,7 @@ const unitCircle = new THREE.CircleGeometry(1, 32);
 const lineMat = mat(0);         // marks on the field
 const outlineMat = mat(0);      // edges on blocks, props and balls
 const ballMat = mat(0);
-const fieldMat = mat(0);
+const fieldMat = makeFieldMaterial(H);   // field colour plus faint crayon hatching low down
 
 const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
 fieldMesh.scale.set(W, H, 1);
@@ -124,7 +126,8 @@ let sim;
 const blockViews = new Map();   // id → view
 const ballViews = new Map();    // body handle → { group, inner, ... }
 const pickupViews = new Map();  // id → group
-const propViews = new Map();    // id → { group, rotor? }
+const propViews = new Map();    // id → { group, rotor?, body? }
+const fadingProps = [];
 const floaters = [];            // "+1" labels drifting up
 let zoneOffset = 0;             // visual slide used when a new zone comes up
 
@@ -150,7 +153,7 @@ function buildBlockView(b) {
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
     scene.add(group);
-    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [] };
+    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -212,10 +215,10 @@ function updateBlockView(v, b, frameDt) {
 
 function buildPickupView(pk) {
     const group = new THREE.Group();
-    const ring = makeSketch({ kind: SHAPE.RING, size: [0.235], ring: 0.075, edge: 0, role: 'line', inkFill: true, wob: 0.5, seed: pk.id * 3.1, margin: 0.12 });
-    const label = makeLabel('+1');
+    const ring = makeSketch({ kind: SHAPE.RING, size: [0.25], ring: 0.045, edge: 0, role: 'line', inkFill: true, wob: 0.35, seed: pk.id * 3.1, margin: 0.12 });
+    const label = makeLabel('+1', theme.text, 'hand');
     group.userData.label = label;
-    label.scale.setScalar(0.42);
+    label.scale.setScalar(0.46);
     label.position.z = 0.1;
     group.add(ring, label);
     scene.add(group);
@@ -253,6 +256,7 @@ function buildPropView(pr) {
         cap.renderOrder = 2;
         group.add(stem, cap);
         group.position.set(pr.x, pr.y, 0.05);
+        v.body = pr.body;
     }
     scene.add(group);
     propViews.set(pr.id, v);
@@ -260,8 +264,8 @@ function buildPropView(pr) {
 }
 
 function addFloater(text, x, y) {
-    const m = makeLabel(text, theme.text);
-    m.scale.setScalar(0.55);
+    const m = makeLabel(text, theme.text, 'hand');
+    m.scale.setScalar(0.62);
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
     m.material.depthWrite = false;   // never block see-through things (jello) behind it
@@ -296,13 +300,31 @@ function syncView(frameDt) {
     }
 
     for (const [id, v] of propViews) {
-        if (!s.props[id]) { scene.remove(v.group); forgetSketch(v.group); propViews.delete(id); }
+        if (s.props[id]) continue;
+        propViews.delete(id);
+        // A fallen mushroom fades out; anything else (a cleared zone) just goes.
+        if (v.falling) fadingProps.push({ v, t: 0 });
+        else { scene.remove(v.group); forgetSketch(v.group); }
+    }
+    for (let i = fadingProps.length - 1; i >= 0; i--) {
+        const f = fadingProps[i];
+        f.t += frameDt;
+        const a = Math.max(0, 1 - f.t / 0.35);
+        f.v.group.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = a; });
+        if (a <= 0) { scene.remove(f.v.group); forgetSketch(f.v.group); fadingProps.splice(i, 1); }
     }
     for (const id in s.props) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         v.group.position.y = pr.y + zoneOffset;
         if (v.rotor) v.rotor.rotation.z = sim.world.getRigidBody(pr.rotor).rotation();
+        if (v.body != null) {
+            const body = sim.world.getRigidBody(v.body);
+            const p = body.translation();
+            v.group.position.set(p.x, p.y + zoneOffset, 0.05);
+            v.group.rotation.z = body.rotation();
+            v.falling = pr.falling > 0;
+        }
     }
 
     const live = new Set();
@@ -361,7 +383,13 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'contact') {
+        else if (e.t === 'pop' && e.popped) {
+            const v = blockViews.get(e.id);
+            if (v) {
+                const u = v.mesh.material.uniforms;
+                crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
+            }
+        } else if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
         } else if (e.t === 'jelly') {
@@ -443,11 +471,23 @@ function hideGuide() {
 
 // ---------- input ----------
 
-let phase = 'loading';  // aim | play | settle | descend | over
+let phase = 'loading';  // aim | play | settle | cleared | descend | over
 let aiming = false;
 let aimAngle = -2.2;      // what the barrel and guide show (smoothed)
 let aimTarget = -2.2;     // where the finger points
 let aimCancel = false;
+let runStarted = false;   // a shot has been fired this run (the start screen then offers Resume)
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+// Keyboard aiming: ← → turn the launcher (hold Shift for fine aim), Space or Enter fires.
+let keyAim = false;       // the guide is up because of the keyboard
+let keyTurn = 0;          // -1 left, 1 right, 0 still
+let keyFine = false;
+const KEY_TURN = 0.9, KEY_TURN_FINE = 0.15;   // radians per second
+function keyboardAim(dt) {
+    if (!keyTurn) return;
+    aimTarget = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, aimTarget + keyTurn * (keyFine ? KEY_TURN_FINE : KEY_TURN) * dt));
+}
 // Steadier aiming: the shown angle eases toward the finger and snaps to small
 // steps, so tiny twitches don't make the guide jump around.
 const AIM_EASE = 18;           // higher = follows the finger faster
@@ -468,10 +508,14 @@ function angleFromDrag(dx, dy) {
 }
 
 const canvas = renderer.domElement;
+canvas.tabIndex = 0;
+canvas.setAttribute('role', 'application');
+canvas.setAttribute('aria-label', 'Game board. Left and right arrows aim, Space fires, Escape pauses.');
 canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'over') { restart(); return; }
     if (phase === 'aim') {
+        keyAim = false;
         aiming = true;
         aimCancel = true;                       // not aimed until the finger actually moves
         dragStart = { x: ev.clientX, y: ev.clientY };
@@ -486,10 +530,15 @@ canvas.addEventListener('pointerup', () => {
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
     if (aimCancel || phase !== 'aim') return;
-    sim.fire(drawn);
+    fire(drawn);
+});
+
+function fire(angle) {
+    sim.fire(angle);
+    runStarted = true;
     phase = 'play';
     hideNote();
-});
+}
 canvas.addEventListener('pointercancel', () => { aiming = false; hideGuide(); });
 
 function updateAim(ev) {
@@ -526,7 +575,10 @@ function noteTargetPoint() {
     }
     if (t.kind === 'prop' && sim.s.props[t.id]) {
         const pr = sim.s.props[t.id];
-        return pr.kind === 'mushroom' ? { x: pr.x, y: pr.y + 0.45, r: 0.5 } : { x: pr.x, y: pr.y, r: 0.95 };
+        if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
+        // The cap's middle, out along the way the mushroom points.
+        const body = sim.world.getRigidBody(pr.body), p = body.translation(), a = body.rotation();
+        return { x: p.x - Math.sin(a) * 0.45, y: p.y + Math.cos(a) * 0.45, r: 0.5 };
     }
     return null;
 }
@@ -578,8 +630,19 @@ function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d))
 function gameOver() {
     const d = sim.s.depth, best = Math.max(readBest(), d);
     writeBest(best);
+    clearSave();
     phase = 'over';
-    showMessage(`Out of shots at depth ${d}`, `Best: ${best}. Tap to play again.`);
+    showMessage(`Out of shots at depth ${d}`, `Best: ${best}. ${finePointer ? 'Click or press Space' : 'Tap'} to play again.`);
+}
+
+// The last block popped: no waiting for the balls to finish. A short beat for the
+// crayon bits, then the next zone comes up.
+const CLEAR_BEAT = 0.5;
+let clearT = 0;
+function zoneCleared() {
+    sim.endShots();
+    clearT = 0;
+    phase = 'cleared';
 }
 
 function startZone() {
@@ -600,23 +663,80 @@ function readyToAim() {
     if (sim.blockCount() === 0) { startZone(); return; }   // cleared (the last blocks may have tumbled out)
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
+    if (runStarted) saveRun();
 }
 
-function restart() {
+// ---------- saving ----------
+// The run is saved in this browser at the start of every turn (board settled, nothing
+// in flight): the physics world as bytes, the game state as JSON. Closing the page
+// mid-shot loses only that shot. Game over or New game clears it.
+const SAVE_KEY = 'boop-save-v1';
+let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
+
+function toBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+}
+function fromBase64(text) {
+    const bin = atob(text), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+function saveRun() {
+    try {
+        const { world, s } = sim.save();
+        localStorage.setItem(SAVE_KEY, JSON.stringify({ depth: sim.s.depth, world: toBase64(world), s }));
+    } catch { /* storage full or blocked: the game just isn't saved */ }
+}
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage blocked */ } }
+function loadRun() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return Sim.load(RAPIER, fromBase64(data.world), data.s);
+    } catch {
+        clearSave();      // unreadable (an older version, say): start fresh
+        return null;
+    }
+}
+
+function restart(saved = null) {
     hud.msg.hidden = true;
     if (sim) sim.free();
     for (const v of blockViews.values()) scene.remove(v.group);
     for (const g of pickupViews.values()) scene.remove(g);
     for (const v of propViews.values()) scene.remove(v.group);
+    for (const f of fadingProps) scene.remove(f.v.group);
+    fadingProps.length = 0;
     for (const v of ballViews.values()) scene.remove(v.group);
     for (const f of fadingBalls) scene.remove(f.group);
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
+    crumbs.clear();
+    keyAim = false;
+    if (saved) {
+        sim = saved;
+        runStarted = true;
+        fromSave = true;
+        zoneOffset = 0;
+        phase = 'aim';
+        return;
+    }
+    clearSave();
+    runStarted = false;
+    fromSave = false;
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
     startZone();
 }
 
 function tick(frameDt) {
+    if (phase === 'cleared') {
+        clearT += frameDt;
+        if (clearT >= CLEAR_BEAT) startZone();
+        return;
+    }
     if (phase === 'descend') {
         descendT += frameDt;
         const t = Math.min(1, descendT / DESCEND_TIME);
@@ -639,6 +759,7 @@ function tick(frameDt) {
         prevBallPos.clear();
         for (const b of s.balls) { const t = sim.world.getRigidBody(b.body).translation(); prevBallPos.set(b.body, [t.x, t.y]); }
         sim.step();
+        if (phase === 'play' && sim.blockCount() === 0) { zoneCleared(); break; }
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
         if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
     }
@@ -670,13 +791,18 @@ function frame(now) {
     last = now;
     if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
     if (sim) {
-        tick(frameDt);
-        if (aiming && phase === 'aim') {
-            easeAim(frameDt);
-            if (!aimCancel) drawGuide(shownAngle());
+        // Paused while the start screen or how-to is up: the board stays as it was.
+        // (A new zone still slides into place, so the board behind the start screen is ready.)
+        const dt = paused() && phase !== 'descend' ? 0 : frameDt;
+        tick(dt);
+        if (keyAim && phase === 'aim') keyboardAim(dt);
+        if ((aiming || keyAim) && phase === 'aim') {
+            easeAim(dt);
+            if (keyAim || !aimCancel) drawGuide(shownAngle());
         }
         if (noteShown) placeNote();
-        syncView(frameDt);
+        syncView(dt);
+        crumbs.update(dt);
     }
     // Short shake when a tumbling block lands hard.
     shake = Math.max(0, shake - frameDt * 0.6);
@@ -698,7 +824,9 @@ function applyTheme(name) {
     theme = THEMES[name];
     document.documentElement.dataset.theme = name;
     renderer.setClearColor(theme.paper);
-    fieldMat.color.setHex(theme.field);
+    fieldMat.uniforms.uField.value.setHex(theme.field);
+    fieldMat.uniforms.uHatch.value.setHex(theme.line);
+    fieldMat.uniforms.uStrength.value = name === 'dark' ? 0.08 : 0.12;   // light paper needs a touch more to show
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
@@ -731,34 +859,95 @@ applyTheme(currentTheme());
 // The first zone builds behind the start screen; Play just lifts the screen.
 
 const menu = $('menu'), howto = $('howto');
+const paused = () => !menu.hidden || !howto.hidden;
 function showScreen(which, moveFocus = true) {
+    if (which) {                          // stop any aim in progress
+        aiming = false; keyAim = false; keyTurn = 0;
+        hideGuide();
+    }
     menu.hidden = which !== 'menu';
     howto.hidden = which !== 'howto';
     document.body.classList.toggle('howto-open', which === 'howto');
     document.body.classList.toggle('playing', !which);
     if (which === 'menu') {
+        // Mid-run, the start screen is the pause screen: Resume, or start over.
         const best = readBest();
-        $('menu-best').hidden = best === 0;
-        $('menu-best').textContent = `Best depth: ${best}`;
+        $('menu-best').hidden = !runStarted && best === 0;
+        $('menu-best').textContent = !runStarted ? `Best depth: ${best}`
+            : fromSave ? `Saved run at depth ${sim.s.depth}` : `Paused at depth ${sim.s.depth}`;
+        $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-new').hidden = !runStarted;
+        $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
         if (moveFocus) $('btn-play').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
+        $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-howto-back').focus();
     }
 }
-function play() { showScreen(null); }
+function play() {
+    showScreen(null);
+    fromSave = false;      // from here on, the start screen is just the pause screen
+    canvas.focus({ preventScroll: true });   // so the keyboard goes straight to aiming
+}
 $('btn-play').addEventListener('click', play);
 $('btn-howto-play').addEventListener('click', play);
 $('btn-howto').addEventListener('click', () => showScreen('howto'));
 $('btn-howto-back').addEventListener('click', () => showScreen('menu'));
 $('btn-howto-close').addEventListener('click', () => showScreen('menu'));
 $('btn-menu-close').addEventListener('click', play);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.hidden) showScreen('menu'); });
+// Pause: the button, Escape or P, or leaving the tab mid-run all bring up the start screen.
+$('btn-pause').addEventListener('click', () => showScreen('menu'));
+$('btn-new').addEventListener('click', () => { restart(); play(); });
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && runStarted && document.body.classList.contains('playing')) showScreen('menu', false);
+});
+
+const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (!howto.hidden) showScreen('menu');
+        else if (!menu.hidden) play();
+        else showScreen('menu');
+        return;
+    }
+    if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
+    // Let buttons and links (pause, theme, Games) handle their own keys.
+    if (e.target.closest?.('button, a, input')) return;
+    if (e.key === 'p' || e.key === 'P') { showScreen('menu'); return; }
+    keyFine = e.shiftKey;
+    if (e.key in AIM_KEYS) {
+        e.preventDefault();
+        if (phase !== 'aim') return;
+        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); }
+        keyTurn = AIM_KEYS[e.key];
+        return;
+    }
+    if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (e.repeat) return;
+        if (phase === 'over') { restart(); return; }
+        if (phase !== 'aim') return;
+        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); return; }   // first press shows the guide
+        const drawn = guideAngle ?? shownAngle();
+        keyAim = false;
+        keyTurn = 0;
+        hideGuide();
+        fire(drawn);
+    }
+});
+document.addEventListener('keyup', (e) => {
+    keyFine = e.shiftKey;
+    if (e.key in AIM_KEYS && AIM_KEYS[e.key] === keyTurn) keyTurn = 0;
+});
 
 await RAPIER.init();
-await document.fonts.load('800 64px Manrope').catch(() => {});
+await Promise.all([
+    document.fonts.load('800 64px Manrope'),
+    document.fonts.load("64px 'Cartridge Rough'"),   // for the +1 labels
+]).catch(() => {});
 fitCamera();   // the HUD's height is final once its font has loaded
-restart();
+restart(loadRun());
 showScreen('menu', false);
 requestAnimationFrame(frame);
 
@@ -766,6 +955,7 @@ requestAnimationFrame(frame);
 window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
+    fire: (angle) => fire(angle),
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },

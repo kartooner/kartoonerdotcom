@@ -67,6 +67,9 @@ const PRESETTLE_STEPS = 720;        // a new zone is run until still before you 
 // and light blocks wobble at the same rate. Worn-down blocks get weaker springs.
 const SPRING_K = 190, SPRING_C = 9.5;
 const TWIST_K = 130, TWIST_C = 7;
+// Mushroom stems: a springy hinge (stiffness, damping), light enough to wobble when hit.
+const MUSH_K = 360, MUSH_C = 6, MUSH_DENSITY = 1.2;
+const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most 2.5s
 // A pinned block breaks loose when it's knocked hard (off its spot AND moving fast),
 // or when it's pushed very far (a worn block that can't hold its load any more).
 // A steady sag under the weight of a resting block doesn't count.
@@ -117,6 +120,19 @@ export class Sim {
         const world = this.R.World.restoreSnapshot(this.world.takeSnapshot());
         world.timestep = DT;
         return new Sim(this.R, world, structuredClone(this.s));
+    }
+
+    // Saving a run: the physics world as bytes plus the plain game state as JSON text.
+    // Only taken between turns, when nothing is in flight.
+    save() {
+        return { world: this.world.takeSnapshot(), s: JSON.stringify(this.s) };
+    }
+
+    static load(R, world, s) {
+        const w = R.World.restoreSnapshot(world);
+        if (!w) throw new Error('bad save');
+        w.timestep = DT;
+        return new Sim(R, w, JSON.parse(s));
     }
 
     free() {
@@ -228,7 +244,7 @@ export class Sim {
         for (const h of b.cols) delete s.owner[h];
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
-        this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
+        this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
         if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
@@ -298,6 +314,8 @@ export class Sim {
 
     settled() {
         const { world, s } = this;
+        // A mushroom that lost its block finishes falling before the next shot.
+        for (const id in s.props) if (s.props[id].falling) return false;
         for (const id in s.blocks) {
             const b = s.blocks[id];
             if (b.jello) continue;
@@ -373,15 +391,20 @@ export class Sim {
             return true;
         };
 
-        // Props first, so blocks fill in around them.
-        for (let i = 0, tries = 0; i < spec.props && tries < 50; tries++) {
-            const windmill = this.rand() < 0.5;
+        // Props first, so blocks fill in around them. Windmills take open space; mushrooms
+        // grow off a wall or a block, so they're placed once the blocks are planned.
+        // At most two mushrooms a zone.
+        let mushrooms = 0, windmills = 0;
+        for (let i = 0; i < spec.props; i++) {
+            if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
+            else windmills += 1;
+        }
+        for (let i = 0, tries = 0; i < windmills && tries < 50; tries++) {
             const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ZONE_ROWS - 1));
-            const cells = windmill ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]];
+            const cells = [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]];
             if (!cells.every(([cc, rr]) => free(cc, rr))) continue;
             cells.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
-            if (windmill) this.addWindmill(c + 1, -(r + 1 + ZONE_TOP_ROW));
-            else this.addMushroom(c + 0.5, -(r + 1 + ZONE_TOP_ROW));
+            this.addWindmill(c + 1, -(r + 1 + ZONE_TOP_ROW));
             i++;
         }
 
@@ -495,6 +518,33 @@ export class Sim {
             p.dy = (this.rand() - 0.5) * 0.24;
         }
 
+        // Where the mushrooms grow: about half off a side wall, the rest off the side or top
+        // of a fixed block (never a resting or jelly one), always into an empty cell.
+        const mushSpots = [];
+        const SIDES = [[-1, 0, Math.PI / 2], [1, 0, -Math.PI / 2], [0, -1, 0]];
+        for (let i = 0; i < mushrooms; i++) {
+            let spot = null;
+            if (this.rand() < 0.5) {
+                const hosts = plan.filter((p) => (p.kind === 'pinned' || p.kind === 'neutral') && !p.cup);
+                for (let tries = 0; tries < 30 && hosts.length && !spot; tries++) {
+                    const p = hosts[Math.floor(this.rand() * hosts.length)];
+                    const [c, r] = p.cells[Math.floor(this.rand() * p.cells.length)];
+                    const [dc, dr, dir] = SIDES[Math.floor(this.rand() * 3)];
+                    if (!free(c + dc, r + dr)) continue;
+                    spot = { p, c, r, dc, dr, dir, cell: [c + dc, r + dr] };
+                }
+            }
+            for (let tries = 0; tries < 40 && !spot; tries++) {
+                const right = this.rand() < 0.5, c = right ? W - 1 : 0;
+                const r = Math.floor(this.rand() * ZONE_ROWS);
+                if (!free(c, r)) continue;
+                spot = { p: null, c, r, dir: right ? Math.PI / 2 : -Math.PI / 2, right, cell: [c, r] };
+            }
+            if (!spot) continue;
+            grid[spot.cell[1]][spot.cell[0]] = -1;
+            mushSpots.push(spot);
+        }
+
         for (const p of plan) {
             const t = this.rand();
             // Bigger blocks carry bigger numbers: a 3x2 is about three times a single cell.
@@ -503,7 +553,13 @@ export class Sim {
             hp *= hpScale(s.depth);
             if (p.kind === 'jello') hp *= 0.5;
             else if (this.rand() < spec.tough) hp *= 1.8 + this.rand() * 0.8;   // a bulky one to wear down
-            this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
+            p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
+        }
+        for (const m of mushSpots) {
+            if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + ZONE_TOP_ROW + 0.5), m.dir); continue; }
+            // The cell's centre in the block's own space, nudged out to the face it grows from.
+            const b = m.p.block, i = m.p.cells.findIndex(([c, r]) => c === m.c && r === m.r);
+            this.addMushroom(b, b.cells[i][0] + m.dc * 0.5, b.cells[i][1] - m.dr * 0.5, m.dir);
         }
 
         // Two +1 pickups in open cells that are open above too, so a ball can reach them,
@@ -530,6 +586,16 @@ export class Sim {
         }
         s.quiet = false;
         this.events.length = 0;
+        // Mushrooms start the zone still, not mid-wobble from the settling.
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind !== 'mushroom' || pr.falling) continue;
+            const body = this.world.getRigidBody(pr.body);
+            const hostA = pr.host == null ? 0 : this.world.getRigidBody(s.blocks[pr.host].body).rotation();
+            body.setRotation(hostA + pr.rel, true);
+            body.setAngvel(0, true);
+            body.setLinvel({ x: 0, y: 0 }, true);
+        }
 
         // Zone 3 is where resting blocks are introduced: make sure at least one survived settling.
         if (s.depth === 3 && !Object.values(s.blocks).some((b) => b.loose) && (s.retries = (s.retries ?? 0) + 1) < 8) {
@@ -615,27 +681,91 @@ export class Sim {
         s.props[id] = { id, kind: 'windmill', x, y, rotor: rotor.handle, bodies: [rotor.handle, pin.handle], cols };
     }
 
-    // A springy mushroom cap that kicks balls back harder than they came in.
-    addMushroom(x, yBase) {
+    // A mushroom grows off a wall or a block. Its cap kicks balls back harder than they
+    // came in, and the stem is a springy hinge, so a hit makes it wobble. It hangs on to
+    // its block as the block jiggles or shrinks; if the block pops, it falls.
+    // host: a block, or null for a wall. (lx, ly): where it grows from, in the host's
+    // unscaled cell space (or the world, for a wall). dir: the way it points (radians,
+    // 0 = up, -PI/2 = right, PI/2 = left).
+    addMushroom(host, lx, ly, dir) {
         const { R, world, s } = this;
         const id = s.nextId++;
-        const body = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, yBase));
+        const k = host ? host.scale : 1;
+        let hostBody, x = lx, y = ly;
+        if (host) {
+            hostBody = world.getRigidBody(host.body);
+            const p = hostBody.translation(), a = hostBody.rotation();
+            x = p.x + (lx * Math.cos(a) - ly * Math.sin(a)) * k;
+            y = p.y + (lx * Math.sin(a) + ly * Math.cos(a)) * k;
+        } else {
+            hostBody = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y));
+        }
+        const body = world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x, y).setRotation(dir)
+            .setGravityScale(0).setLinearDamping(0.3).setAngularDamping(0.3).setCanSleep(false));
         const pts = [];
-        const r = 0.46, capY = 0.42;
+        const r = 0.46, capY = 0.4;
         for (let i = 0; i <= 10; i++) {
             const a = (Math.PI * i) / 10;
             pts.push(Math.cos(a) * r, capY + Math.sin(a) * r * 0.75);
         }
+        // Only balls touch a growing mushroom: a resting block leaning on one would bend it flat.
+        const hit = groups(G.PROP, G.BALL);
         const cap = world.createCollider(
-            R.ColliderDesc.convexHull(new Float32Array(pts)).setRestitution(1.3)
+            R.ColliderDesc.convexHull(new Float32Array(pts)).setDensity(MUSH_DENSITY).setRestitution(1.3)
                 .setRestitutionCombineRule(R.CoefficientCombineRule.Max).setFriction(0.2)
-                .setCollisionGroups(groups(G.PROP, G.BALL | G.LOOSE)), body);
+                .setCollisionGroups(hit), body);
         const stem = world.createCollider(
-            R.ColliderDesc.cuboid(0.14, capY / 2).setTranslation(0, capY / 2).setRestitution(0.5)
-                .setCollisionGroups(groups(G.PROP, G.BALL | G.LOOSE)), body);
+            R.ColliderDesc.cuboid(0.14, capY / 2).setTranslation(0, capY / 2).setDensity(MUSH_DENSITY).setRestitution(0.5)
+                .setCollisionGroups(hit), body);
         s.owner[cap.handle] = { t: 'prop', id };
         s.owner[stem.handle] = { t: 'prop', id };
-        s.props[id] = { id, kind: 'mushroom', x, y: yBase, bodies: [body.handle], cols: [cap.handle, stem.handle], r, capY };
+        const rel = dir - hostBody.rotation();
+        const joint = world.createImpulseJoint(R.JointData.revolute(
+            { x: host ? lx * k : 0, y: host ? ly * k : 0 }, { x: 0, y: 0 }), hostBody, body, true);
+        joint.setContactsEnabled(false);
+        joint.configureMotorPosition(rel, MUSH_K, MUSH_C);
+        const bodies = host ? [body.handle] : [body.handle, hostBody.handle];
+        s.props[id] = { id, kind: 'mushroom', x, y, bodies, cols: [cap.handle, stem.handle], r, capY,
+            body: body.handle, joint: joint.handle, host: host?.id ?? null, lx, ly, k, rel, falling: 0 };
+    }
+
+    // Mushrooms keep hold of their block as it shrinks, and fall when it pops.
+    updateMushrooms() {
+        const { world, s } = this;
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind !== 'mushroom') continue;
+            const body = world.getRigidBody(pr.body);
+            if (pr.falling) {
+                pr.falling += 1;
+                const v = body.linvel();
+                if (body.translation().y < -H - 2 || pr.falling > MUSH_FALL_MAX ||
+                    (pr.falling > 60 && Math.abs(v.x) + Math.abs(v.y) < 0.1)) this.removeProp(pr);
+                continue;
+            }
+            if (pr.host == null) continue;
+            const host = s.blocks[pr.host];
+            if (!host) {
+                // The block popped (its joint went with it): the mushroom drops.
+                pr.falling = 1;
+                body.setGravityScale(BLOCK_FALL, true);
+                body.setAngularDamping(0.15);
+                for (const h of pr.cols) world.getCollider(h).setCollisionGroups(groups(G.LOOSE, G.BALL | G.BLOCK | G.LOOSE | G.WALL | G.PROP));
+                this.events.push({ t: 'mushfall', id: pr.id });
+                continue;
+            }
+            if (host.scale !== pr.k) {
+                pr.k = host.scale;
+                world.getImpulseJoint(pr.joint).setAnchor1({ x: pr.lx * pr.k, y: pr.ly * pr.k });
+            }
+        }
+    }
+
+    removeProp(pr) {
+        const { world, s } = this;
+        for (const h of pr.bodies) world.removeRigidBody(world.getRigidBody(h));
+        for (const h of pr.cols) delete s.owner[h];
+        delete s.props[pr.id];
     }
 
     // ---------- balls ----------
@@ -665,6 +795,12 @@ export class Sim {
             pv: [Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED],
             home: [LAUNCHER.x, LAUNCHER.y], homeT: 0, idle: 0,
         });
+    }
+
+    // The zone is cleared mid-shot: balls still flying (and any not yet fired) are done.
+    endShots() {
+        if (this.s.shots) this.s.shots.left = 0;
+        for (const b of [...this.s.balls]) this.removeBall(b.body);
     }
 
     removeBall(handle) {
@@ -726,6 +862,7 @@ export class Sim {
         for (const [h1, h2, started] of contacts) this.onContact(h1, h2, started);
         this.updateBalls();
         this.updateBlocks();
+        this.updateMushrooms();
 
         if (s.balls.length && ++s.turnSteps > TURN_CAP) {
             // Safety net: a turn that won't end just ends. The shot was spent; no refund.

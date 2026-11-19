@@ -82,6 +82,20 @@
         .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
         .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
         .stat-main { align-items: center; text-align: center; }
+        /* Pause sits above Depth, in the corner, out of the way of aiming. */
+        #btn-pause {
+            pointer-events: auto;
+            align-self: flex-start;
+            width: 40px; height: 40px;
+            margin: -10px 0 -4px -10px;
+            padding: 10px;
+            border: 0; background: none;
+            color: var(--ink);
+            cursor: pointer;
+        }
+        #btn-pause svg { display: block; width: 20px; height: 20px; }
+        #btn-pause:focus-visible, #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+        #stage canvas:focus { outline: none; }
         .stat-main b { font-size: 2rem; line-height: 1; }
         .stat-par { align-items: flex-end; text-align: right; }
         .stat-par.over b { color: var(--ink-soft); }
@@ -108,13 +122,16 @@
             box-sizing: border-box;
             margin: 0;
             padding: 8px 12px;
-            background: var(--panel);
-            border: 2px solid var(--ink);
-            border-radius: 10px;
+            isolation: isolate;
             font-size: 0.8125rem;
             font-weight: 600;
             line-height: 1.35;
             pointer-events: none;
+        }
+        #note::before, #message::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
+            filter: url(#sketchy);
         }
         #note::after {
             content: '';
@@ -128,6 +145,7 @@
             border-right: 2px solid var(--ink);
             border-bottom: 2px solid var(--ink);
             transform: rotate(45deg);
+            filter: url(#sketchy);
         }
         #note.below::after {
             bottom: auto;
@@ -141,12 +159,11 @@
             transform: translate(-50%, -50%);
             width: min(100vw - 32px, 320px);
             padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--ink);
+            isolation: isolate;
             text-align: center;
             pointer-events: none;
         }
-        #message h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; }
+        #message h1 { margin: 0 0 6px; font-size: 1.75rem; }
         #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
         [hidden] { display: none !important; }
         #theme-toggle {
@@ -213,6 +230,8 @@
         }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); text-wrap: balance; }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
+        #menu .feedback { margin-top: 20px; }
+        #menu .version { margin: 12px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
            behind the label, roughed up by the #sketchy SVG filter; the text stays crisp. */
@@ -316,8 +335,10 @@
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
             position: fixed;
-            top: max(12px, env(safe-area-inset-top));
-            right: calc(var(--board-left, 8px) + 4px);   /* lines up with the board's right edge */
+            /* Pulled in from the board's right edge by the screens' side padding,
+               level with How to play's Back link. */
+            top: calc(max(32px, env(safe-area-inset-top)) - 6px);
+            right: calc(var(--board-left, 16px) + clamp(28px, 8vw, 44px) - 12px);
             z-index: 12;
             width: 44px;
             height: 44px;
@@ -385,7 +406,10 @@
 <body>
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
-        <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
+        <div class="stat stat-depth">
+            <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+            <span>Depth</span><b id="hud-depth">1</b>
+        </div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
@@ -404,7 +428,10 @@
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
                 <button class="btn" id="btn-howto" type="button">How to play</button>
+                <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
+            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
+            <p class="version">v1</p>
         </div>
     </section>
 
@@ -424,10 +451,12 @@
                 </ol>
                 <figure class="tilt">
                     <span class="pic"><img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit"></span>
-                    <figcaption>The guide bends off what it hits.</figcaption>
+                    <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
-            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. Clear every block to drop to the next zone.</p>
+            <p class="note">Your run saves itself after every shot, in this browser. Close the page and pick it up later with Continue.</p>
+            <p class="note"><b>On a keyboard:</b> ← and → aim (hold Shift for fine aim), Space fires, Esc or P pauses.</p>
+            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. Pop the last block and the next zone comes up right away.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -456,7 +485,7 @@
             <ul class="meet">
                 <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Colour and pattern show how tough a block is for its zone.</div></li>
                 <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b>Spin when hit and swat the next ball.</div></li>
-                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Kick balls back harder than they came in.</div></li>
+                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder. If their block pops, they fall.</div></li>
                 <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b>Fly a ball through one for an extra shot.</div></li>
                 <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>Pop what holds them up and they tumble down.</div></li>
                 <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b>Balls pass through, slowed down. Each pass takes 1 off.</div></li>
@@ -497,6 +526,7 @@
     <link rel="modulepreload" href="./balls.js">
     <link rel="modulepreload" href="./labels.js">
     <link rel="modulepreload" href="./theme.js">
+    <link rel="modulepreload" href="./crumbs.js">
     <script type="module" src="./game.js"></script>
 </body>
 </html>
