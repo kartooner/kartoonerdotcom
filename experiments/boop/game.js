@@ -124,7 +124,8 @@ let sim;
 const blockViews = new Map();   // id → view
 const ballViews = new Map();    // body handle → { group, inner, ... }
 const pickupViews = new Map();  // id → group
-const propViews = new Map();    // id → { group, rotor? }
+const propViews = new Map();    // id → { group, rotor?, body? }
+const fadingProps = [];
 const floaters = [];            // "+1" labels drifting up
 let zoneOffset = 0;             // visual slide used when a new zone comes up
 
@@ -253,6 +254,7 @@ function buildPropView(pr) {
         cap.renderOrder = 2;
         group.add(stem, cap);
         group.position.set(pr.x, pr.y, 0.05);
+        v.body = pr.body;
     }
     scene.add(group);
     propViews.set(pr.id, v);
@@ -296,13 +298,31 @@ function syncView(frameDt) {
     }
 
     for (const [id, v] of propViews) {
-        if (!s.props[id]) { scene.remove(v.group); forgetSketch(v.group); propViews.delete(id); }
+        if (s.props[id]) continue;
+        propViews.delete(id);
+        // A fallen mushroom fades out; anything else (a cleared zone) just goes.
+        if (v.falling) fadingProps.push({ v, t: 0 });
+        else { scene.remove(v.group); forgetSketch(v.group); }
+    }
+    for (let i = fadingProps.length - 1; i >= 0; i--) {
+        const f = fadingProps[i];
+        f.t += frameDt;
+        const a = Math.max(0, 1 - f.t / 0.35);
+        f.v.group.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = a; });
+        if (a <= 0) { scene.remove(f.v.group); forgetSketch(f.v.group); fadingProps.splice(i, 1); }
     }
     for (const id in s.props) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         v.group.position.y = pr.y + zoneOffset;
         if (v.rotor) v.rotor.rotation.z = sim.world.getRigidBody(pr.rotor).rotation();
+        if (v.body != null) {
+            const body = sim.world.getRigidBody(v.body);
+            const p = body.translation();
+            v.group.position.set(p.x, p.y + zoneOffset, 0.05);
+            v.group.rotation.z = body.rotation();
+            v.falling = pr.falling > 0;
+        }
     }
 
     const live = new Set();
@@ -526,7 +546,10 @@ function noteTargetPoint() {
     }
     if (t.kind === 'prop' && sim.s.props[t.id]) {
         const pr = sim.s.props[t.id];
-        return pr.kind === 'mushroom' ? { x: pr.x, y: pr.y + 0.45, r: 0.5 } : { x: pr.x, y: pr.y, r: 0.95 };
+        if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
+        // The cap's middle, out along the way the mushroom points.
+        const body = sim.world.getRigidBody(pr.body), p = body.translation(), a = body.rotation();
+        return { x: p.x - Math.sin(a) * 0.45, y: p.y + Math.cos(a) * 0.45, r: 0.5 };
     }
     return null;
 }
@@ -608,6 +631,8 @@ function restart() {
     for (const v of blockViews.values()) scene.remove(v.group);
     for (const g of pickupViews.values()) scene.remove(g);
     for (const v of propViews.values()) scene.remove(v.group);
+    for (const f of fadingProps) scene.remove(f.v.group);
+    fadingProps.length = 0;
     for (const v of ballViews.values()) scene.remove(v.group);
     for (const f of fadingBalls) scene.remove(f.group);
     fadingBalls.length = 0;

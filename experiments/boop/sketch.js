@@ -23,6 +23,7 @@ uniform float uFilled;     // 1 = fill + outline, 0 = outline only
 uniform float uSeed;
 uniform vec3 uFill;
 uniform vec3 uInk;
+uniform float uAlpha;      // fades a shape out (a fallen mushroom)
 varying vec2 vP;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -58,7 +59,7 @@ void main() {
     float a = mix(inside - fillMask, inside, uFilled);
     if (a < 0.01) discard;
     vec3 col = mix(uInk, uFill, fillMask * uFilled);
-    gl_FragColor = vec4(col, a);
+    gl_FragColor = vec4(col, a * uAlpha);
     #include <colorspace_fragment>
 }`;
 
@@ -89,6 +90,7 @@ export function makeSketch({ kind, size, round = 0, ring = 0.07, edge = 0.06, wo
             uSeed: { value: seed },
             uFill: { value: new THREE.Color(inkFill ? ink[role] : fill) },
             uInk: { value: new THREE.Color(ink[role]) },
+            uAlpha: { value: 1 },
         },
     });
     material.userData.role = role;

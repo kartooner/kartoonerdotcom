@@ -54,7 +54,7 @@ export const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
 export const PROP_NOTES = {
     windmill: 'Windmills spin when hit and swat the next ball.',
-    mushroom: 'Mushrooms kick balls back harder than they came in.',
+    mushroom: 'Mushrooms grow off walls and blocks. Their caps kick balls back harder.',
 };
 
 export function zoneSpec(d) {
