@@ -630,6 +630,7 @@ function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d))
 function gameOver() {
     const d = sim.s.depth, best = Math.max(readBest(), d);
     writeBest(best);
+    clearSave();
     phase = 'over';
     showMessage(`Out of shots at depth ${d}`, `Best: ${best}. ${finePointer ? 'Click or press Space' : 'Tap'} to play again.`);
 }
@@ -662,9 +663,46 @@ function readyToAim() {
     if (sim.blockCount() === 0) { startZone(); return; }   // cleared (the last blocks may have tumbled out)
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
+    if (runStarted) saveRun();
 }
 
-function restart() {
+// ---------- saving ----------
+// The run is saved in this browser at the start of every turn (board settled, nothing
+// in flight): the physics world as bytes, the game state as JSON. Closing the page
+// mid-shot loses only that shot. Game over or New game clears it.
+const SAVE_KEY = 'boop-save-v1';
+let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
+
+function toBase64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+}
+function fromBase64(text) {
+    const bin = atob(text), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+function saveRun() {
+    try {
+        const { world, s } = sim.save();
+        localStorage.setItem(SAVE_KEY, JSON.stringify({ depth: sim.s.depth, world: toBase64(world), s }));
+    } catch { /* storage full or blocked: the game just isn't saved */ }
+}
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage blocked */ } }
+function loadRun() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        return Sim.load(RAPIER, fromBase64(data.world), data.s);
+    } catch {
+        clearSave();      // unreadable (an older version, say): start fresh
+        return null;
+    }
+}
+
+function restart(saved = null) {
     hud.msg.hidden = true;
     if (sim) sim.free();
     for (const v of blockViews.values()) scene.remove(v.group);
@@ -677,8 +715,18 @@ function restart() {
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
-    runStarted = false;
     keyAim = false;
+    if (saved) {
+        sim = saved;
+        runStarted = true;
+        fromSave = true;
+        zoneOffset = 0;
+        phase = 'aim';
+        return;
+    }
+    clearSave();
+    runStarted = false;
+    fromSave = false;
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
     startZone();
 }
@@ -825,19 +873,21 @@ function showScreen(which, moveFocus = true) {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
         const best = readBest();
         $('menu-best').hidden = !runStarted && best === 0;
-        $('menu-best').textContent = runStarted ? `Paused at depth ${sim.s.depth}` : `Best depth: ${best}`;
-        $('btn-play').textContent = runStarted ? 'Resume' : 'Play';
+        $('menu-best').textContent = !runStarted ? `Best depth: ${best}`
+            : fromSave ? `Saved run at depth ${sim.s.depth}` : `Paused at depth ${sim.s.depth}`;
+        $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-new').hidden = !runStarted;
         $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
         if (moveFocus) $('btn-play').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
-        $('btn-howto-play').textContent = runStarted ? 'Resume' : 'Play';
+        $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-howto-back').focus();
     }
 }
 function play() {
     showScreen(null);
+    fromSave = false;      // from here on, the start screen is just the pause screen
     canvas.focus({ preventScroll: true });   // so the keyboard goes straight to aiming
 }
 $('btn-play').addEventListener('click', play);
@@ -897,7 +947,7 @@ await Promise.all([
     document.fonts.load("64px 'Cartridge Rough'"),   // for the +1 labels
 ]).catch(() => {});
 fitCamera();   // the HUD's height is final once its font has loaded
-restart();
+restart(loadRun());
 showScreen('menu', false);
 requestAnimationFrame(frame);
 

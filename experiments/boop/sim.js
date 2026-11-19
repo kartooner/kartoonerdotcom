@@ -122,6 +122,19 @@ export class Sim {
         return new Sim(this.R, world, structuredClone(this.s));
     }
 
+    // Saving a run: the physics world as bytes plus the plain game state as JSON text.
+    // Only taken between turns, when nothing is in flight.
+    save() {
+        return { world: this.world.takeSnapshot(), s: JSON.stringify(this.s) };
+    }
+
+    static load(R, world, s) {
+        const w = R.World.restoreSnapshot(world);
+        if (!w) throw new Error('bad save');
+        w.timestep = DT;
+        return new Sim(R, w, JSON.parse(s));
+    }
+
     free() {
         this.world.free();
         this.queue.free();
