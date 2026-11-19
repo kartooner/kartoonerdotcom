@@ -100,20 +100,6 @@
             transform-origin: left;
             transition: transform 0.25s ease-out;
         }
-        /* First-shot hint floats just below the HUD, inside the field's empty top,
-           so the layout doesn't move when it hides. */
-        #hint {
-            position: absolute;
-            top: calc(100% + 22px);
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(220px, 58vw);    /* stays inside the field and clear of the launcher */
-            margin: 0;
-            text-align: center;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--ink-soft);
-        }
         /* Callout: points at the new thing it describes. Placed from game.js. */
         #note {
             position: fixed;
@@ -301,7 +287,6 @@
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
-        <p id="hint">Drag to aim, release to fire, pull back to cancel.</p>
     </div>
     <p id="note" hidden></p>
     <div id="message" hidden>

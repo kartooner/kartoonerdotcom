@@ -550,7 +550,6 @@ canvas.addEventListener('pointerup', (ev) => {
     if (angleFrom(ev) === null || phase !== 'aim') return;
     sim.fire(drawn);
     phase = 'play';
-    $('hint').hidden = true;
     hideNote();
 });
 canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
