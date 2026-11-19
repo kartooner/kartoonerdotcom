@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.0.11">
+<html lang="en" data-build="1.1.7">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -184,8 +184,8 @@
         #buddy {
             position: fixed;
             z-index: 5;
-            width: 54px;
-            height: 58px;
+            width: 40px;               /* smaller in the game than on the start screen */
+            height: 43px;
             transform: translate(-50%, -50%) rotate(-7deg);
         }
         #note::before {
@@ -485,7 +485,7 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1 · by Erik Sagen</p>
+            <p class="version">v1.1 · by Erik Sagen</p>
         </div>
     </section>
 
@@ -507,23 +507,21 @@
         <div class="screen-inner">
             <button class="link-btn" id="btn-howto-back" type="button">← Back</button>
             <h2 id="howto-title">How to play</h2>
-            <p class="intro">Boop! is a game where you shoot balls at numbered blocks to wear them down and clear each zone. Clear one and you drop deeper, where the blocks get bigger and new things show up. Your shots are limited, so make each one count. It never ends: see how deep you can go.</p>
+            <p class="intro">Shoot balls at numbered blocks. Each hit takes 1 off, and at 0 a block pops. Clear a zone to dig deeper. Shots are limited, so make them count.</p>
 
             <h3>A shot, step by step</h3>
             <div class="shot-split">
                 <ol class="steps">
-                    <li><b>Drag anywhere.</b> Drag the way you want to shoot. You don't need to start at the launcher, and dragging further gives finer aim.</li>
-                    <li><b>Read the guide.</b> The dotted line shows your ball's path, and <span class="dot">orange dots</span> mark what it will hit.</li>
-                    <li><b>Let go to fire.</b> Each hit takes 1 off a block's number, and at 0 it pops.</li>
+                    <li><b>Drag anywhere</b> the way you want to shoot.</li>
+                    <li><b>Read the guide.</b> <span class="dot">Orange dots</span> mark each hit.</li>
+                    <li><b>Let go</b> to fire.</li>
                 </ol>
                 <figure class="tilt">
-                    <span class="pic"><img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit"></span>
+                    <span class="pic"><img src="img/howto-aim.webp" width="600" height="1054" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit"></span>
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
-            <p class="note">Your run saves itself after every shot, in this browser. Close the page and pick it up later with Continue.</p>
-            <p class="note"><b>On a keyboard:</b> ← and → aim (hold Shift for fine aim), Space fires, Esc or P pauses.</p>
-            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. When a zone is down to its last 3 blocks, every hit counts double. Pop the last block and the next zone comes up right away.</p>
+            <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires, Esc pauses.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -543,23 +541,22 @@
             <ul class="tags">
                 <li>Grab a <b>+1</b> ring</li>
                 <li>Pop a big block</li>
-                <li>Clear a zone: <b>+4</b> (fewer deeper down)</li>
+                <li>Clear a zone: <b>+5</b> (fewer deeper down)</li>
                 <li>Beat <b>par</b>: saved shots come back</li>
             </ul>
-            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 shot. Numbers grow a little too, so each upgrade is a real step up.</p>
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
-                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Colour and pattern show how tough a block is for its zone.</div></li>
+                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</div></li>
                 <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b>Spin when hit and swat the next ball.</div></li>
-                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder. If their block pops, they fall.</div></li>
+                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder.</div></li>
                 <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b>Fly a ball through one for an extra shot.</div></li>
-                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>Pop what holds them up and they tumble down.</div></li>
+                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>No nails. Knock out what holds them up and they tumble.</div></li>
                 <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b>Balls pass through, slowed down. Each pass takes 1 off.</div></li>
                 <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b>Drop a ball in to grab the +1 and rattle around.</div></li>
-                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken. Use them to bank shots.</div></li>
+                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken, but their nails can. Bank shots off them.</div></li>
             </ul>
-            <p class="note">A tip pops up the first time each of these shows up, once per device. <button class="link-btn" id="btn-tips-reset" type="button">Show tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
+            <p class="note">The buddy explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
                 <button class="btn btn-primary" id="btn-howto-play" type="button">Play</button>
@@ -585,29 +582,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.0.11",
-                "./zones.js": "./zones.js?v=1.0.11",
-                "./blockshader.js": "./blockshader.js?v=1.0.11",
-                "./sketch.js": "./sketch.js?v=1.0.11",
-                "./balls.js": "./balls.js?v=1.0.11",
-                "./labels.js": "./labels.js?v=1.0.11",
-                "./theme.js": "./theme.js?v=1.0.11",
-                "./crumbs.js": "./crumbs.js?v=1.0.11",
-                "./buddy.js": "./buddy.js?v=1.0.11"
+                "./sim.js": "./sim.js?v=1.1.7",
+                "./zones.js": "./zones.js?v=1.1.7",
+                "./blockshader.js": "./blockshader.js?v=1.1.7",
+                "./sketch.js": "./sketch.js?v=1.1.7",
+                "./balls.js": "./balls.js?v=1.1.7",
+                "./labels.js": "./labels.js?v=1.1.7",
+                "./theme.js": "./theme.js?v=1.1.7",
+                "./crumbs.js": "./crumbs.js?v=1.1.7",
+                "./buddy.js": "./buddy.js?v=1.1.7"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.0.11">
-    <link rel="modulepreload" href="./sim.js?v=1.0.11">
-    <link rel="modulepreload" href="./zones.js?v=1.0.11">
-    <link rel="modulepreload" href="./blockshader.js?v=1.0.11">
-    <link rel="modulepreload" href="./sketch.js?v=1.0.11">
-    <link rel="modulepreload" href="./balls.js?v=1.0.11">
-    <link rel="modulepreload" href="./labels.js?v=1.0.11">
-    <link rel="modulepreload" href="./theme.js?v=1.0.11">
-    <link rel="modulepreload" href="./buddy.js?v=1.0.11">
-    <link rel="modulepreload" href="./crumbs.js?v=1.0.11">
-    <script type="module" src="./game.js?v=1.0.11"></script>
+    <link rel="modulepreload" href="./game.js?v=1.1.7">
+    <link rel="modulepreload" href="./sim.js?v=1.1.7">
+    <link rel="modulepreload" href="./zones.js?v=1.1.7">
+    <link rel="modulepreload" href="./blockshader.js?v=1.1.7">
+    <link rel="modulepreload" href="./sketch.js?v=1.1.7">
+    <link rel="modulepreload" href="./balls.js?v=1.1.7">
+    <link rel="modulepreload" href="./labels.js?v=1.1.7">
+    <link rel="modulepreload" href="./theme.js?v=1.1.7">
+    <link rel="modulepreload" href="./buddy.js?v=1.1.7">
+    <link rel="modulepreload" href="./crumbs.js?v=1.1.7">
+    <script type="module" src="./game.js?v=1.1.7"></script>
 </body>
 </html>

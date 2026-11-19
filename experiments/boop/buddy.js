@@ -1,7 +1,8 @@
 // Boop!: the block buddy's little life. He always breathes (CSS). Every few seconds,
 // at random, he opens his eyes and either blinks or glances around, then settles.
 // Tap him and he wiggles.
-// Each buddy on the page keeps its own timing. Nothing happens with reduced motion.
+// Each buddy on the page keeps its own timing. With reduced motion he doesn't breathe
+// or wiggle, but still blinks and glances: small, and nothing on screen moves around.
 
 const still = window.matchMedia('(prefers-reduced-motion: reduce)');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -68,7 +69,7 @@ async function live(face) {
     await wait(between(800, 3000));            // don't start in step with the other buddy
     for (;;) {
         await wait(between(2500, 7000));
-        if (still.matches || document.hidden || busy.has(face)) continue;
+        if (document.hidden || busy.has(face)) continue;
         face.dataset.acting = '1';
         await open(face);
         if (Math.random() < 0.45) await blinkAWhile(face);

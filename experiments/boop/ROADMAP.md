@@ -1,6 +1,6 @@
 # Boop! roadmap
 
-## v1 (in testing)
+## v1
 - Crayon bits when a block pops
 - Next zone comes up as soon as the last block pops
 - Pause (button, Esc or P, and automatically when the tab is hidden)
@@ -8,6 +8,15 @@
 - No card on /games while it's in active testing
 
 ## v1.1
+- Nails: everything fixed in place (pinned, jelly, grey) is nailed; resting blocks have none
+- Knock nails out by hitting near them (from depth 3): with one left the block hangs and swings from it, with none it falls (jelly too). Grey blocks' and single squares' nails stay put
+- Pinned blocks are firmer when hit; resting blocks move freely
+- Resting blocks drop into place as a new zone slides in
+- Ball fuse: a ball greys as it goes without hitting a block, and brightens again on a hit
+- The block buddy (mascot): breathes, blinks and looks around, wiggles when tapped
+- Buddy tour: launching, hits, grey balls, last stretch, shots, nails, explained as they come up, one at a time; How to play trimmed to a short reference
+
+## v1.2
 - **Sound:** a soft "boop" on hits, a pop when a block breaks, a chime for +1, a zone-clear sting.
 - **Haptics:** light taps on hits and pops on phones that support it.
 - **Mute:** a sound on/off toggle that's always within reach and remembered between visits. Haptics follow the same toggle or get their own.

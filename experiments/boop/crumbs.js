@@ -51,6 +51,22 @@ export function makeCrumbs(scene) {
         }
     }
 
+    // A few bits flying from given world points (nails popping out of a block).
+    function spray(points, colors) {
+        for (const [x, y] of points) {
+            for (let i = 0; i < 3; i++) {
+                if (bits.length >= MAX) bits.shift();
+                const dir = Math.PI * (0.15 + 0.7 * Math.random()), speed = 3 + Math.random() * 3;
+                bits.push({
+                    x, y, vx: Math.cos(dir) * speed, vy: Math.sin(dir) * speed,
+                    a: Math.random() * Math.PI, va: (Math.random() - 0.5) * 24,
+                    size: 0.45 + Math.random() * 0.3,
+                    color: new THREE.Color(colors[i % colors.length]), t: 0,
+                });
+            }
+        }
+    }
+
     function update(dt, yOffset = 0) {
         for (let i = bits.length - 1; i >= 0; i--) {
             const b = bits[i];
@@ -76,5 +92,5 @@ export function makeCrumbs(scene) {
 
     function clear() { bits.length = 0; mesh.count = 0; }
 
-    return { burst, update, clear };
+    return { burst, spray, update, clear };
 }
