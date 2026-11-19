@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-build="1.0.4">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -516,24 +516,35 @@
     </svg>
     <button id="theme-toggle" type="button">Dark mode</button>
 
+    <!-- Build stamp: every game file is loaded with ?v=BUILD so a cached old script can't
+         run against a newer page (or the reverse). When any .js file changes, bump it here
+         (importmap, preloads, the script tag, data-build on <html>) and BUILD in game.js. -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs"
+                "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
+                "./sim.js": "./sim.js?v=1.0.4",
+                "./zones.js": "./zones.js?v=1.0.4",
+                "./blockshader.js": "./blockshader.js?v=1.0.4",
+                "./sketch.js": "./sketch.js?v=1.0.4",
+                "./balls.js": "./balls.js?v=1.0.4",
+                "./labels.js": "./labels.js?v=1.0.4",
+                "./theme.js": "./theme.js?v=1.0.4",
+                "./crumbs.js": "./crumbs.js?v=1.0.4"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js">
-    <link rel="modulepreload" href="./sim.js">
-    <link rel="modulepreload" href="./zones.js">
-    <link rel="modulepreload" href="./blockshader.js">
-    <link rel="modulepreload" href="./sketch.js">
-    <link rel="modulepreload" href="./balls.js">
-    <link rel="modulepreload" href="./labels.js">
-    <link rel="modulepreload" href="./theme.js">
-    <link rel="modulepreload" href="./crumbs.js">
-    <script type="module" src="./game.js"></script>
+    <link rel="modulepreload" href="./game.js?v=1.0.4">
+    <link rel="modulepreload" href="./sim.js?v=1.0.4">
+    <link rel="modulepreload" href="./zones.js?v=1.0.4">
+    <link rel="modulepreload" href="./blockshader.js?v=1.0.4">
+    <link rel="modulepreload" href="./sketch.js?v=1.0.4">
+    <link rel="modulepreload" href="./balls.js?v=1.0.4">
+    <link rel="modulepreload" href="./labels.js?v=1.0.4">
+    <link rel="modulepreload" href="./theme.js?v=1.0.4">
+    <link rel="modulepreload" href="./crumbs.js?v=1.0.4">
+    <script type="module" src="./game.js?v=1.0.4"></script>
 </body>
 </html>

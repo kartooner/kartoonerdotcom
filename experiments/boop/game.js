@@ -10,6 +10,15 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
 
+// Must match data-build on the page. If they differ, the browser has mixed a cached
+// page with newer scripts (or the reverse): reload once to get a matching set.
+const BUILD = '1.0.4';
+if (document.documentElement.dataset.build !== BUILD) {
+    let tried = false;
+    try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
+    if (!tried) { location.reload(); throw new Error('Boop: page and scripts out of step, reloading'); }
+}
+
 let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
