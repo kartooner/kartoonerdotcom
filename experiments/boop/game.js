@@ -60,6 +60,10 @@ function fitCamera() {
     camera.left = W / 2 - vw / 2; camera.right = W / 2 + vw / 2;
     camera.top = top; camera.bottom = top - vh;
     camera.updateProjectionMatrix();
+    // The HUD and the links under the field line up with the field's frame, edge to edge.
+    const boardPx = (W + 0.16) * scale;
+    document.documentElement.style.setProperty('--board-w', `${boardPx}px`);
+    document.documentElement.style.setProperty('--board-left', `${(w - boardPx) / 2}px`);
 }
 window.addEventListener('resize', fitCamera);
 fitCamera();
@@ -508,24 +512,30 @@ const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
 let fastForward = false;
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
-const CANCEL_RADIUS = 0.55;
 
-function toWorld(ev) {
-    const r = renderer.domElement.getBoundingClientRect();
-    const v = new THREE.Vector3(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1, 0);
-    v.unproject(camera);
-    return v;
-}
+// Aiming, slingshot-free "drag anywhere": touch anywhere on the field and drag in the
+// direction you want to shoot. Your finger never has to sit on the guide, and the
+// further you drag, the finer the aim. Slide back near where you started to cancel.
+const CANCEL_PX = 28;
+let dragStart = null;
+let hasAimed = false;            // dragged out at least once this touch (so "cancel" makes sense)
+const dragUi = { root: $('drag'), anchor: $('drag-anchor'), line: $('drag-line'), label: $('drag-label') };
 
-// Returns an angle, or null when the pointer is on the launcher (cancel).
-function angleFrom(ev) {
-    const p = toWorld(ev);
-    const dx = p.x - LAUNCHER.x, dy = p.y - LAUNCHER.y;
-    if (Math.hypot(dx, dy) < CANCEL_RADIUS) return null;
-    let a = Math.atan2(dy, dx);
-    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;   // pointing up: pin to the nearest side
+function angleFromDrag(dx, dy) {
+    let a = Math.atan2(-dy, dx);                                // screen y points down
+    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // dragging upward: pin to the nearest side
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
 }
+
+function showDrag(x, y) {
+    dragUi.root.removeAttribute('hidden');   // an SVG element has no .hidden property
+    dragUi.anchor.setAttribute('cx', dragStart.x); dragUi.anchor.setAttribute('cy', dragStart.y);
+    dragUi.line.setAttribute('x1', dragStart.x); dragUi.line.setAttribute('y1', dragStart.y);
+    dragUi.line.setAttribute('x2', x); dragUi.line.setAttribute('y2', y);
+    dragUi.root.classList.toggle('cancel', aimCancel && hasAimed);
+    dragUi.label.setAttribute('x', dragStart.x); dragUi.label.setAttribute('y', dragStart.y - CANCEL_PX - 10);
+}
+function hideDrag() { dragUi.root.setAttribute('hidden', ''); }
 
 const canvas = renderer.domElement;
 canvas.addEventListener('pointerdown', (ev) => {
@@ -533,32 +543,42 @@ canvas.addEventListener('pointerdown', (ev) => {
     if (phase === 'over') { restart(); return; }
     if (phase === 'aim') {
         aiming = true;
+        hasAimed = false;
+        aimCancel = true;
+        dragStart = { x: ev.clientX, y: ev.clientY };
         hideNote();                             // read it already; don't let it cover the guide
-        updateAim(ev);
-        if (!aimCancel) aimAngle = aimTarget;   // first touch jumps straight there
+        showDrag(ev.clientX, ev.clientY);
         return;
     }
     if (phase === 'play' || phase === 'settle') fastForward = true;
 });
 canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
-canvas.addEventListener('pointerup', (ev) => {
+canvas.addEventListener('pointerup', () => {
     fastForward = false;
     if (!aiming) return;
     aiming = false;
+    hideDrag();
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
-    if (angleFrom(ev) === null || phase !== 'aim') return;
+    if (aimCancel || phase !== 'aim') return;
     sim.fire(drawn);
     phase = 'play';
     hideNote();
 });
-canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
+canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); hideDrag(); });
 
 function updateAim(ev) {
-    const a = angleFrom(ev);
-    aimCancel = a === null;
-    if (aimCancel) { hideGuide(); return; }
-    aimTarget = a;
+    const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
+    const wasCancel = aimCancel;
+    aimCancel = Math.hypot(dx, dy) < CANCEL_PX;
+    if (!aimCancel) {
+        aimTarget = angleFromDrag(dx, dy);
+        if (wasCancel) aimAngle = aimTarget;   // leaving the start spot: jump straight to the new aim
+        hasAimed = true;
+    } else {
+        hideGuide();
+    }
+    showDrag(ev.clientX, ev.clientY);
 }
 
 function easeAim(frameDt) {
@@ -593,7 +613,7 @@ function placeNote() {
     const rPx = Math.abs(edge.x - c.x);
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
-    const hudBottom = 72;                       // keep clear of the HUD
+    const hudBottom = document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
     const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
