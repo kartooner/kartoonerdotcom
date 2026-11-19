@@ -125,7 +125,7 @@ export function zoneSpec(d) {
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.32, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
     if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.33, props: 2, loose: 0.2, jello: 1, tough: 0.04,
-        note: 'Jello: balls pass right through, slowed down. Each pass takes 1 off.' };
+        note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.' };
     // Past the intro, everything that's been introduced keeps showing up more.
     return {
         ...base,

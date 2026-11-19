@@ -62,27 +62,34 @@
             -webkit-user-select: none;
         }
         #stage, #stage canvas { position: fixed; inset: 0; display: block; }
+        /* HUD: depth on the left, shots (what you spend) in the middle and largest,
+           this zone's shots against par on the right, progress bar underneath. */
         #hud {
             position: fixed;
             top: max(10px, env(safe-area-inset-top));
             left: 50%;
             transform: translateX(-50%);
             width: min(100vw - 32px, 420px);
-            display: flex;
-            gap: 16px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: end;
+            row-gap: 8px;
             pointer-events: none;
-            font-size: 0.8125rem;
-            font-weight: 600;
             color: var(--ink-soft);
         }
-        #hud { flex-wrap: wrap; row-gap: 6px; }
-        #hud > div { white-space: nowrap; }
+        .stat { display: flex; flex-direction: column; line-height: 1.1; }
+        .stat span { font-size: 0.75rem; font-weight: 600; }
+        .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
+        .stat-main { align-items: center; text-align: center; }
+        .stat-main b { font-size: 2rem; line-height: 1; }
+        .stat-par { align-items: flex-end; text-align: right; }
+        .stat-par.over b { color: var(--ink-soft); }
         /* Zone progress: how much of the zone's numbers you've cleared. */
         #progress {
-            flex: 1 0 100%;
-            order: 10;
-            height: 4px;
-            border-radius: 2px;
+            grid-column: 1 / -1;
+            height: 5px;
+            border-radius: 3px;
             background: color-mix(in srgb, var(--ink) 15%, transparent);
             overflow: hidden;
         }
@@ -93,14 +100,17 @@
             transform-origin: left;
             transition: transform 0.25s ease-out;
         }
-        #hud b { display: block; font-size: 1.375rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
+        /* First-shot hint floats just below the HUD, inside the field's empty top,
+           so the layout doesn't move when it hides. */
         #hint {
-            margin: 0 0 0 auto;
-            flex: 0 1 200px;
-            min-width: 0;
-            text-align: right;
-            font-size: 0.75rem;
-            line-height: 1.35;
+            position: absolute;
+            top: calc(100% + 22px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(220px, 58vw);    /* stays inside the field and clear of the launcher */
+            margin: 0;
+            text-align: center;
+            font-size: 0.8125rem;
             font-weight: 600;
             color: var(--ink-soft);
         }
@@ -287,12 +297,11 @@
 <body>
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
-        <div>Depth<b id="hud-depth">1</b></div>
-        <div>Shots<b id="hud-shots">22</b></div>
-        <div>Balls<b id="hud-volley">1</b></div>
-        <div>Par<b id="hud-par">0/5</b></div>
+        <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
+        <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
+        <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
-        <p id="hint">Drag to aim, release to fire a ball, pull back to cancel.</p>
+        <p id="hint">Drag to aim, release to fire, pull back to cancel.</p>
     </div>
     <p id="note" hidden></p>
     <div id="message" hidden>
@@ -346,12 +355,12 @@
                 <li><b>Windmills</b> spin when hit and swat the next ball.</li>
                 <li><b>Mushrooms</b> kick balls back harder.</li>
                 <li><b>Resting blocks</b> sit on others. Pop what holds them up and they tumble.</li>
-                <li><b>Jello</b> lets balls pass through, slowing them down. Each pass takes 1 off.</li>
+                <li><b>Jelly blocks</b> let balls pass through, slowing them down. Each pass takes 1 off.</li>
                 <li><b>Grey blocks</b> (deeper down) can't be broken. Bounce off them.</li>
                 <li><b>Traps:</b> a ball caught bouncing in a pocket keeps going as long as it keeps hitting. Some zones have a cup with a +1 inside.</li>
             </ul>
             <figure>
-                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block and coloured, patterned blocks">
+                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jelly block and coloured, patterned blocks">
                 <figcaption>A deeper zone.</figcaption>
             </figure>
 

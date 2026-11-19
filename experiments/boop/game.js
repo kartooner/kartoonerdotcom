@@ -28,7 +28,7 @@ const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), progress: $('progress-fill'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), progress: $('progress-fill'),
     msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
@@ -48,14 +48,17 @@ const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
-    const pad = 0.3, top = 1.3;                 // room for the HUD above the field
-    const fw = W + pad * 2, fh = H + top + pad;
-    const aspect = w / h;
-    let vw, vh;
-    if (aspect > fw / fh) { vh = fh; vw = fh * aspect; } else { vw = fw; vh = fw / aspect; }
-    const cx = W / 2, cy = (top - H - pad) / 2;
-    camera.left = cx - vw / 2; camera.right = cx + vw / 2;
-    camera.top = cy + vh / 2; camera.bottom = cy - vh / 2;
+    // The field sits just below the HUD, using the HUD's real height, and is as large
+    // as fits: full width on a phone, full height on a wide screen.
+    const hudEl = document.getElementById('hud');
+    const topPx = (hudEl ? hudEl.getBoundingClientRect().bottom : 60) + 10;
+    const bottomPx = 44;                        // room for the Games / theme links
+    const pad = 0.25;
+    const scale = Math.min(w / (W + pad * 2), (h - topPx - bottomPx) / (H + pad * 2));   // px per cell
+    const vw = w / scale, vh = h / scale;
+    const top = pad + topPx / scale;            // view top, in cells above the field's top edge
+    camera.left = W / 2 - vw / 2; camera.right = W / 2 + vw / 2;
+    camera.top = top; camera.bottom = top - vh;
     camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', fitCamera);
@@ -74,6 +77,20 @@ const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
 fieldMesh.scale.set(W, H, 1);
 fieldMesh.position.set(W / 2, -H / 2, -1);
 scene.add(fieldMesh);
+
+// A solid frame around the playfield, so it reads as a board, not a blank panel.
+const FRAME = 0.08;
+for (const [w, h, x, y] of [
+    [W + FRAME * 2, FRAME, W / 2, FRAME / 2],          // top
+    [W + FRAME * 2, FRAME, W / 2, -H - FRAME / 2],     // bottom
+    [FRAME, H, -FRAME / 2, -H / 2],                    // left
+    [FRAME, H, W + FRAME / 2, -H / 2],                 // right
+]) {
+    const m = new THREE.Mesh(unitSquare, lineMat);
+    m.scale.set(w, h, 1);
+    m.position.set(x, y, -0.5);
+    scene.add(m);
+}
 
 function rect(w, h, material, x = 0, y = 0, z = 0) {
     const m = new THREE.Mesh(unitSquare, material);
@@ -386,8 +403,10 @@ function syncView(frameDt) {
 
     hud.depth.textContent = s.depth;
     hud.shots.textContent = s.supply;
-    hud.volley.textContent = s.volley;
-    hud.par.textContent = `${s.zoneShots ?? 0}/${s.par ?? '-'}`;
+    hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+    const used = s.zoneShots ?? 0;
+    hud.par.textContent = `${used}/${s.par ?? '-'}`;
+    hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
     const done = s.zoneHp0 ? 1 - sim.hpLeft() / s.zoneHp0 : 0;
     hud.progress.style.transform = `scaleX(${Math.max(0, Math.min(1, done))})`;
 }
@@ -791,6 +810,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.h
 
 await RAPIER.init();
 await document.fonts.load('800 64px Manrope').catch(() => {});
+fitCamera();   // the HUD's height is final once its font has loaded
 restart();
 showScreen('menu', false);
 requestAnimationFrame(frame);
