@@ -8,11 +8,11 @@ import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
 // guide, pickups); "edge" is the outline on blocks, props and balls.
 const THEMES = {
     light: {
-        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7,
+        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7, guideEnd: 0xa59d92,
         hit: 0xd2492a, text: '#2b2622', jelloText: '#2b2622',
     },
     dark: {
-        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2,
+        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2, guideEnd: 0x6f685f,
         hit: 0xff9466, text: '#ede4d3', jelloText: '#f6efe2',
     },
 };
@@ -20,8 +20,9 @@ const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
 let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
-const AUTO_FAST = 2;                 // speed-up for a ball that's been bouncing a while
-const AUTO_FAST_AFTER = 960;         // 8s in, so there's time to watch it first
+// Long turns (a ball caught in a trap) fast-forward in stages, so traps are fun to
+// watch, not a wait: [seconds into the turn, speed].
+const AUTO_FAST = [[20, 4], [12, 3], [6, 2]];
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
@@ -177,12 +178,24 @@ function updateBlockView(v, b, frameDt) {
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
     v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
-        // Jello wobbles hard each time a ball goes in or out: a springy squash that
-        // rings for about half a second. The ball's direction decides which way it squashes.
+        // Jello wobbles hard each time a ball goes in or out, and keeps jiggling the whole
+        // time a ball is inside, bulging around it. The ball's direction sets the squash axis.
+        const inside = sim.s.balls.find((ball) => ball.jello.includes(b.id));
+        v.pokeAmt = Math.max(0, Math.min(1, (v.pokeAmt ?? 0) + (inside ? 8 : -5) * frameDt));
+        if (inside) {
+            const bp = sim.world.getRigidBody(inside.body).translation();
+            const k = b.scale;
+            u.uPoke.value.set((bp.x - v.group.position.x) / k, (bp.y - (v.group.position.y)) / k, v.pokeAmt);
+        } else {
+            u.uPoke.value.z = v.pokeAmt;
+        }
         const t = v.wobbleT;
-        const w = t < 0.7 ? Math.sin(t * 38) * Math.exp(-t * 6) * 0.13 : 0;
+        const kick = t < 0.7 ? Math.sin(t * 38) * Math.exp(-t * 6) * 0.13 : 0;
+        const hum = Math.sin(performance.now() / 1000 * 34) * 0.07 * v.pokeAmt;
+        const w = kick + hum;
         const across = Math.abs(Math.cos(v.wobbleDir ?? 0)) > 0.7 ? 1 : -1;   // sideways hit squashes the other way
         v.group.scale.set(1 + w * across, 1 - w * across, 1);
+        u.uWobble.value = w;
     } else {
         // Every bounce off a block gives it a quick squash-and-recover wobble on screen,
         // on top of the small physical knock; a hit that takes a point off also pops a little.
@@ -416,8 +429,9 @@ function drawGuide(angle) {
     dots.count = n;
     // The last third of the line fades out instead of stopping dead.
     for (let i = 0; i < n; i++) {
-        const f = Math.max(0, (i / n - 0.66) / 0.34);
-        dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * 0.85));
+        // Solid ink near the launcher, tapering to grey toward the end.
+        const f = Math.min(1, Math.max(0, (i / n - 0.2) / 0.7));
+        dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * f * (3 - 2 * f)));
     }
     // Hit points: the dot nearest each contact moves onto it, grows and changes colour.
     for (const c of contacts) {
@@ -633,8 +647,9 @@ function tick(frameDt) {
     if (phase !== 'play' && phase !== 'settle') return;
 
     const s = sim.s;
-    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.turnSteps > AUTO_FAST_AFTER;
-    acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
+    const turnSec = phase === 'play' && !(s.shots && s.shots.left > 0) ? s.turnSteps * DT : 0;
+    const auto = AUTO_FAST.find(([after]) => turnSec > after)?.[1] ?? 1;
+    acc += frameDt * Math.max(auto, fastForward ? FAST_FORWARD : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
@@ -704,7 +719,7 @@ function applyTheme(name) {
     outlineMat.color.setHex(theme.edge);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
-    dotFade.setHex(theme.field);
+    dotFade.setHex(theme.guideEnd);
     dotHit.setHex(theme.hit);
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
@@ -749,6 +764,8 @@ $('btn-play').addEventListener('click', play);
 $('btn-howto-play').addEventListener('click', play);
 $('btn-howto').addEventListener('click', () => showScreen('howto'));
 $('btn-howto-back').addEventListener('click', () => showScreen('menu'));
+$('btn-howto-close').addEventListener('click', () => showScreen('menu'));
+$('btn-menu-close').addEventListener('click', play);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.hidden) showScreen('menu'); });
 
 await RAPIER.init();

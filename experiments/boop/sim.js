@@ -26,14 +26,16 @@ const MIN_IMPACT = 3;               // a hit only counts if the bounce really ch
 const KNOCK = 0.04;                 // block speed per unit of impact
 const KNOCK_MAX = 0.75;
 const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
-const BOXED_STEPS = 150;            // ...for this long (1.25s) is stuck bouncing in place and gets kicked free
+const BOXED_STEPS = 150;            // ...for this long (1.25s) without scoring is stuck, and gets kicked free
 // The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
 const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
-const HEAVY_AFTER = 360;            // after 3s a ball steadily gets heavier so turns end
-const TURN_CAP = 30 * 120;          // after 30s any balls still out come home
+// Traps: a ball that keeps scoring hits keeps going. Only a ball that hasn't hit
+// anything for a while gets heavier (so turns still end) or gets kicked free.
+const HEAVY_AFTER = 300;            // 2.5s without a scoring hit, then it steadily gets heavier
+const TURN_CAP = 45 * 120;          // after 45s any balls still out come home
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
 const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
@@ -86,7 +88,7 @@ const SHAPE_TOTAL = SHAPES.reduce((n, s) => n + s.w, 0);
 // What each zone holds. New things arrive one at a time, then numbers climb.
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
 export function zoneSpec(d) {
-    if (d === 1) return { lo: 1, hi: 3, fill: 0.3, props: 0, loose: 0, jello: 0, tough: 0 };
+    if (d === 1) return { lo: 1, hi: 2.5, fill: 0.3, props: 0, loose: 0, jello: 0, tough: 0 };
     if (d === 2) return { lo: 1, hi: 4, fill: 0.33, props: 1, loose: 0, jello: 0, tough: 0,
         note: 'Windmills spin when hit. Mushrooms kick balls back harder.' };
     if (d === 3) return { lo: 2, hi: 5, fill: 0.35, props: 1, loose: 0.2, jello: 0, tough: 0,
@@ -398,7 +400,8 @@ export class Sim {
         }
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
-        const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1);
+        const bigMul = Math.min(2.5, 0.5 + 0.2 * s.depth);   // big shapes get more common as you go down
+        const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1) * (sh.c.length >= 5 ? bigMul : 1);
         const total = SHAPES.reduce((n, sh) => n + weight(sh), 0);
         const touchesOther = (cells) => cells.some(([c, r]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => {
             const cc = c + dc, rr = r + dr;
@@ -408,6 +411,31 @@ export class Sim {
         const plan = [];
         let filled = 0;
         const target = Math.round(W * ZONE_ROWS * (spec.fill + style.fill));
+
+        let cupPrize = null;
+        // Now and then a cup: two walls and a floor with a gap inside. A ball that drops
+        // in rattles around, hitting all three. A trap worth aiming for.
+        if (s.depth >= 2 && this.rand() < 0.45) {
+            for (let tries = 0; tries < 30; tries++) {
+                const c = Math.floor(this.rand() * (W - 3)), r = 2 + Math.floor(this.rand() * (ZONE_ROWS - 6));
+                const parts = [
+                    [[c, r], [c, r + 1], [c, r + 2]],
+                    [[c + 3, r], [c + 3, r + 1], [c + 3, r + 2]],
+                    [[c, r + 3], [c + 1, r + 3], [c + 2, r + 3], [c + 3, r + 3]],
+                ];
+                const inside = [[c + 1, r], [c + 2, r], [c + 1, r + 1], [c + 2, r + 1], [c + 1, r + 2], [c + 2, r + 2]];
+                if (!parts.flat().concat(inside).every(([cc, rr]) => free(cc, rr))) continue;
+                if (!rowOk(parts.flat())) continue;
+                for (const cells of parts) {
+                    plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap: false, cup: true });
+                    cells.forEach(([cc, rr]) => { grid[rr][cc] = plan.length; });
+                    filled += cells.length;
+                }
+                inside.forEach(([cc, rr]) => { grid[rr][cc] = -1; });   // keep the inside clear
+                cupPrize = [c + 1.5, r + 2.5];                            // a +1 ring sits in the cup
+                break;
+            }
+        }
         for (let tries = 0; tries < 800 && filled < target; tries++) {
             let pick = this.rand() * total, shape = SHAPES[0];
             for (const sh of SHAPES) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
@@ -424,7 +452,7 @@ export class Sim {
         // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
         if (this.rand() < spec.jello) {
             const count = s.depth >= 7 && this.rand() < 0.3 ? 2 : 1;
-            const small = plan.filter((p) => p.cells.length <= 3);
+            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup);
             for (let i = 0; i < count && small.length; i++) {
                 small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
             }
@@ -438,7 +466,7 @@ export class Sim {
         const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
-            if (p.kind !== 'pinned' || !solidBelow(p)) continue;
+            if (p.kind !== 'pinned' || p.cup || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
             // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
@@ -457,7 +485,8 @@ export class Sim {
 
         for (const p of plan) {
             const t = this.rand();
-            let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (1 + 0.15 * (p.cells.length - 1));
+            // Bigger blocks carry bigger numbers: a 3x2 is about three times a single cell.
+            let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length);
             hp *= 1 + (s.volley - 1) * 0.7;          // numbers grow to match multishot
             if (p.kind === 'jello') hp *= 0.5;
             else if (this.rand() < spec.tough) hp *= 2.5 + this.rand() * 1.5;   // a bulky one to wear down
@@ -468,7 +497,13 @@ export class Sim {
         // and never close together.
         let open = [];
         grid.forEach((row, r) => row.forEach((g, c) => { if (g === 0 && (r === 0 || grid[r - 1][c] === 0)) open.push([c, r]); }));
-        for (let i = 0; i < 2 && open.length; i++) {
+        let placed = 0;
+        if (cupPrize) {
+            this.addPickup(cupPrize[0], -(cupPrize[1] + ZONE_TOP_ROW));
+            open = open.filter(([cc, rr]) => Math.hypot(cc + 0.5 - cupPrize[0], rr + 0.5 - cupPrize[1]) >= MIN_PICKUP_GAP);
+            placed = 1;
+        }
+        for (let i = placed; i < 2 && open.length; i++) {
             const [c, r] = open[Math.floor(this.rand() * open.length)];
             this.addPickup(c + 0.5, -(r + ZONE_TOP_ROW + 0.5));
             open = open.filter(([cc, rr]) => Math.hypot(cc - c, rr - r) >= MIN_PICKUP_GAP);
@@ -587,7 +622,7 @@ export class Sim {
                 .setCcdEnabled(true).setCanSleep(false));
         const c = world.createCollider(
             R.ColliderDesc.ball(BALL_R).setDensity(1)
-                .setRestitution(0.9).setRestitutionCombineRule(R.CoefficientCombineRule.Max)
+                .setRestitution(0.92).setRestitutionCombineRule(R.CoefficientCombineRule.Max)
                 .setFriction(0.35)
                 .setCollisionGroups(groups(G.BALL, BALL_FILTER))
                 .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
@@ -595,7 +630,7 @@ export class Sim {
         s.balls.push({
             body: body.handle, col: c.handle, still: 0, age: 0, jello: [], bonus,
             pv: [Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED],
-            home: [LAUNCHER.x, LAUNCHER.y], homeT: 0,
+            home: [LAUNCHER.x, LAUNCHER.y], homeT: 0, idle: 0,
         });
     }
 
@@ -701,7 +736,7 @@ export class Sim {
             this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
-                if (this.cooled(a.body + ':' + b.id)) this.damageBlock(b.id);
+                if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id); this.scored(ball); }
             } else {
                 ball.jello = ball.jello.filter((j) => j !== b.id);
             }
@@ -724,8 +759,15 @@ export class Sim {
                 const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass();
                 bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
-            if (this.cooled(a.body + ':' + b.id)) this.damageBlock(b.id);
+            if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id); this.scored(ball); }
         }
+    }
+
+    // A ball that just scored is "working": it loses any extra weight and keeps going.
+    scored(ball) {
+        if (!ball) return;
+        if (ball.idle > HEAVY_AFTER) this.world.getRigidBody(ball.body).setGravityScale(1, true);
+        ball.idle = 0;
     }
 
     updateBalls() {
@@ -740,8 +782,9 @@ export class Sim {
                 continue;
             }
             ball.age += 1;
-            if (ball.age > HEAVY_AFTER && ball.age % 30 === 0) {
-                body.setGravityScale(1 + (ball.age - HEAVY_AFTER) / 60, false);
+            ball.idle += 1;
+            if (ball.idle > HEAVY_AFTER && ball.idle % 30 === 0) {
+                body.setGravityScale(1 + (ball.idle - HEAVY_AFTER) / 60, false);
             }
             const v = body.linvel();
             ball.still = Math.hypot(v.x, v.y) < STUCK_SPEED && !ball.jello.length ? ball.still + 1 : 0;
@@ -756,7 +799,7 @@ export class Sim {
             if (Math.hypot(p.x - ball.home[0], p.y - ball.home[1]) > BOXED_RADIUS) {
                 ball.home = [p.x, p.y];
                 ball.homeT = 0;
-            } else if (++ball.homeT > BOXED_STEPS && !ball.jello.length) {
+            } else if (++ball.homeT > BOXED_STEPS && ball.idle > 60 && !ball.jello.length) {
                 const side = p.x < W / 2 ? 1 : -1;
                 body.setLinvel({ x: side * (4 + 3 * this.rand()), y: 3 }, true);
                 ball.homeT = 0;

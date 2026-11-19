@@ -236,6 +236,25 @@
         #howto img { display: block; width: 100%; max-width: 300px; height: auto; border: 2px solid var(--ink); border-radius: 8px; }
         #howto figcaption { margin-top: 6px; font-size: 0.8125rem; color: var(--ink-soft); }
         #howto .actions { margin: 32px auto 0; }
+        /* Close X: top-right of each screen, a full 44px tap target. */
+        .close-x {
+            position: fixed;
+            top: max(8px, env(safe-area-inset-top));
+            right: 8px;
+            z-index: 12;
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            background: none;
+            border: 0;
+            border-radius: 50%;
+            color: var(--ink);
+            cursor: pointer;
+        }
+        .close-x svg { width: 20px; height: 20px; }
+        .close-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
         body.howto-open #back, body.howto-open #theme-toggle { display: none; }
         #back {
             position: fixed;
@@ -262,6 +281,7 @@
         <p id="message-body"></p>
     </div>
     <section id="menu" class="screen" aria-labelledby="menu-title">
+        <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline">Bounce balls, wear blocks down, dig deeper.</p>
@@ -274,6 +294,7 @@
     </section>
 
     <section id="howto" class="screen" aria-labelledby="howto-title" hidden>
+        <button class="close-x" id="btn-howto-close" type="button" aria-label="Close how to play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
             <button class="link-btn" id="btn-howto-back" type="button">← Back</button>
             <h2 id="howto-title">How to play</h2>
@@ -305,6 +326,7 @@
                 <li><b>Mushrooms</b> kick balls back harder.</li>
                 <li><b>Resting blocks</b> sit on others. Pop what holds them up and they tumble.</li>
                 <li><b>Jello</b> lets balls pass through, slowing them down. Each pass takes 1 off.</li>
+                <li><b>Traps:</b> a ball caught bouncing in a pocket keeps going as long as it keeps hitting. Some zones have a cup with a +1 inside.</li>
             </ul>
             <figure>
                 <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block and coloured, patterned blocks">

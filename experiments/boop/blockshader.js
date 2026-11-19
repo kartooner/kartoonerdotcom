@@ -42,6 +42,8 @@ uniform vec3 uInk;
 uniform int uPattern;
 uniform vec2 uLabel;
 uniform vec4 uBounds;      // shape bounds (min x, min y, max x, max y), unscaled
+uniform vec3 uPoke;        // jello: a ball inside it (x, y in unscaled cells, strength 0-1)
+uniform float uWobble;     // jello: current wobble, to slide the shine around
 varying vec2 vP;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -90,6 +92,9 @@ void main() {
         d = min(d, sdBox(p - (b.xy + b.zw) * 0.5, (b.zw - b.xy) * 0.5));
     }
     d -= uR;
+    // Jello bulges out around a ball passing through it.
+    float pokeDist = length(p - uPoke.xy);
+    d -= uJello * uPoke.z * 0.11 * exp(-pokeDist * pokeDist / 0.18);
     float dSmooth = d * uK;                 // the shape before the hand-drawn wobble, for lighting
     // Hand-drawn edge: a slow bend plus fine crayon grain.
     vec2 q = p + uSeed;
@@ -115,7 +120,9 @@ void main() {
         // shine stays put while the jello wobbles. The edge's outward direction comes
         // from how the distance changes across the screen.
         vec2 n = normalize(vec2(dFdx(dSmooth), dFdy(dSmooth)) + 1e-6);
-        float facing = max(dot(n, normalize(vec2(-0.55, 0.85))), 0.0);
+        // The light swings a little with the wobble, so the shine slides as it jiggles.
+        float la = 2.14 + uWobble * 4.0;
+        float facing = max(dot(n, vec2(cos(la), sin(la))), 0.0);
         float streakBand = smoothstep(-0.3, -0.2, dSmooth) * (1.0 - smoothstep(-0.12, -0.07, dSmooth));
         float spec = streakBand * pow(facing, 3.0) * 0.8;
         // A small tilted oval glint tucked into the top-left corner.
@@ -123,7 +130,11 @@ void main() {
         g = mat2(0.7071, -0.7071, 0.7071, 0.7071) * g;
         spec += (1.0 - smoothstep(0.75, 1.0, length(g / vec2(0.1, 0.045)))) * fillMask;
         // Shade on the far side gives the body some roundness.
-        float away = max(dot(n, normalize(vec2(0.55, -0.85))), 0.0);
+        float away = max(dot(n, -vec2(cos(la), sin(la))), 0.0);
+        // A faint bright ring around the ball inside, like light bending through the goo.
+        float ring = exp(-pow(pokeDist - 0.24, 2.0) / 0.003) * uPoke.z * fillMask;
+        col = mix(col, vec3(1.0), ring * 0.45);
+        alpha = max(alpha, ring * 0.5);
         float shade = streakBand * pow(away, 3.0) * fillMask;
         col = mix(col, col * 0.78, shade * 0.6);
         alpha = max(alpha, shade * 0.55);
@@ -175,6 +186,8 @@ export function makeBlockMesh(cells, jello, seed) {
             uPattern: { value: 0 },
             uLabel: { value: new THREE.Vector2() },
             uBounds: { value: bounds },
+            uPoke: { value: new THREE.Vector3(0, 0, 0) },
+            uWobble: { value: 0 },
         },
     });
     return new THREE.Mesh(geo, material);
