@@ -33,7 +33,7 @@ const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
 // Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
 // Eased in over the first zones so zone 1 stays friendly.
-const hpScale = (d) => Math.min(3, 1.5 + 0.5 * (d - 1));
+const hpScale = (d) => Math.min(4.5, 1.8 + 0.75 * (d - 1));
 const parHpPerShot = (d) => (3.5 + 0.7 * d) * hpScale(d);   // a good shot does more deeper down (bigger blocks, more traps)
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
@@ -43,7 +43,7 @@ const STUCK_STEPS = 60;
 // long as it keeps hitting blocks (jelly counts). Walls, the floor, props and grey
 // blocks don't count: a ball that's only been bouncing off those for RETIRE_IDLE
 // is in a loop and fades out.
-const RETIRE_IDLE = 240;            // 2s without hitting a block
+const RETIRE_IDLE = 480;            // 4s without hitting a block
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
@@ -304,7 +304,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
-        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7)) this.gain(1, p.x, p.y);
+        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
