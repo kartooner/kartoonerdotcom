@@ -14,7 +14,7 @@ export const BALL_SPEED = 18;      // balls always travel at this speed (jelly a
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
 // Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
-export const zoneBonus = (d) => (d <= 10 ? 4 : d <= 15 ? 3 : 2);
+export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : 2);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
