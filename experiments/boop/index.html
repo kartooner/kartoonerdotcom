@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.0.7">
+<html lang="en" data-build="1.0.8">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -132,6 +132,9 @@
             line-height: 1.35;
             pointer-events: none;
         }
+        #note, #buddy { transition: opacity 0.3s ease-out; }
+        #note.fading, #buddy.fading { opacity: 0; }
+        @media (prefers-reduced-motion: reduce) { #note, #buddy { transition: none; } }
         #buddy {
             position: fixed;
             z-index: 5;
@@ -544,27 +547,27 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.0.7",
-                "./zones.js": "./zones.js?v=1.0.7",
-                "./blockshader.js": "./blockshader.js?v=1.0.7",
-                "./sketch.js": "./sketch.js?v=1.0.7",
-                "./balls.js": "./balls.js?v=1.0.7",
-                "./labels.js": "./labels.js?v=1.0.7",
-                "./theme.js": "./theme.js?v=1.0.7",
-                "./crumbs.js": "./crumbs.js?v=1.0.7"
+                "./sim.js": "./sim.js?v=1.0.8",
+                "./zones.js": "./zones.js?v=1.0.8",
+                "./blockshader.js": "./blockshader.js?v=1.0.8",
+                "./sketch.js": "./sketch.js?v=1.0.8",
+                "./balls.js": "./balls.js?v=1.0.8",
+                "./labels.js": "./labels.js?v=1.0.8",
+                "./theme.js": "./theme.js?v=1.0.8",
+                "./crumbs.js": "./crumbs.js?v=1.0.8"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.0.7">
-    <link rel="modulepreload" href="./sim.js?v=1.0.7">
-    <link rel="modulepreload" href="./zones.js?v=1.0.7">
-    <link rel="modulepreload" href="./blockshader.js?v=1.0.7">
-    <link rel="modulepreload" href="./sketch.js?v=1.0.7">
-    <link rel="modulepreload" href="./balls.js?v=1.0.7">
-    <link rel="modulepreload" href="./labels.js?v=1.0.7">
-    <link rel="modulepreload" href="./theme.js?v=1.0.7">
-    <link rel="modulepreload" href="./crumbs.js?v=1.0.7">
-    <script type="module" src="./game.js?v=1.0.7"></script>
+    <link rel="modulepreload" href="./game.js?v=1.0.8">
+    <link rel="modulepreload" href="./sim.js?v=1.0.8">
+    <link rel="modulepreload" href="./zones.js?v=1.0.8">
+    <link rel="modulepreload" href="./blockshader.js?v=1.0.8">
+    <link rel="modulepreload" href="./sketch.js?v=1.0.8">
+    <link rel="modulepreload" href="./balls.js?v=1.0.8">
+    <link rel="modulepreload" href="./labels.js?v=1.0.8">
+    <link rel="modulepreload" href="./theme.js?v=1.0.8">
+    <link rel="modulepreload" href="./crumbs.js?v=1.0.8">
+    <script type="module" src="./game.js?v=1.0.8"></script>
 </body>
 </html>

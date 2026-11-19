@@ -12,7 +12,7 @@ import { makeCrumbs } from './crumbs.js';
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.0.7';
+const BUILD = '1.0.8';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -583,7 +583,7 @@ const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: 3.2, y: -3.9, r: 0, buddy: true };   // open space top-left, clear of the launcher and pause
+    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // the buddy, centred, below the pause and launcher
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -619,16 +619,25 @@ function placeNote() {
     note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
     note.classList.toggle('below', below);
 }
+// Tips fade away rather than blink off. The buddy's board-wide tips also leave on
+// their own after a few seconds; tips pointing at something stay until you aim.
+const BUDDY_TIP_MS = 4000, FADE_MS = 300;
+let noteTimer = 0, fadeTimer = 0;
 function showNote(text) {
+    clearTimeout(noteTimer); clearTimeout(fadeTimer);
     note.textContent = text;
     note.hidden = false;
+    note.classList.remove('fading'); buddy.classList.remove('fading');
     noteShown = true;
     placeNote();
+    if (noteTargetPoint()?.buddy) noteTimer = setTimeout(hideNote, BUDDY_TIP_MS);
 }
 function hideNote() {
-    note.hidden = true;
-    buddy.setAttribute('hidden', '');
+    clearTimeout(noteTimer);
+    if (!noteShown) return;
     noteShown = false;
+    note.classList.add('fading'); buddy.classList.add('fading');
+    fadeTimer = setTimeout(() => { note.hidden = true; buddy.setAttribute('hidden', ''); }, FADE_MS);
 }
 
 // ---------- turn flow ----------
