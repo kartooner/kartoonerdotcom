@@ -74,6 +74,9 @@ const GRACE_RANGE = 5;              // ...unless it's heading at a block within 
 const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
 const BLOCK_DENSITY = 1.5;
+// Pinned (nailed) blocks are heavier, so a ball nudges them less: a firm bump that
+// springs back. Resting blocks keep the lighter density and move freely.
+const PINNED_DENSITY = 3;
 const ZONE_TOP_ROW = 4;
 const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
 const PRESETTLE_STEPS = 720;        // a new zone is run until still before you see it
@@ -88,8 +91,10 @@ const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most
 // A pinned block breaks loose when it's knocked hard (off its spot AND moving fast),
 // or when it's pushed very far (a worn block that can't hold its load any more).
 // A steady sag under the weight of a resting block doesn't count.
-const SNAP_DIST = 0.22, SNAP_SPEED = 1.2, GIVE_WAY_DIST = 0.45;
-const SNAP_ANGLE = 0.35, SNAP_SPIN = 1.5, GIVE_WAY_ANGLE = 0.6;
+// (Scaled to the heavier pinned blocks, which move about half as far, so a hard enough
+// knock still pops the nails now and then.)
+const SNAP_DIST = 0.15, SNAP_SPEED = 0.8, GIVE_WAY_DIST = 0.3;
+const SNAP_ANGLE = 0.24, SNAP_SPIN = 1.0, GIVE_WAY_ANGLE = 0.42;
 
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
@@ -237,7 +242,7 @@ export class Sim {
                     .setCollisionGroups(groups(G.LOOSE, G.BALL | G.BLOCK | G.LOOSE | G.WALL | G.PROP))
                     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
             } else {
-                d = d.setDensity(BLOCK_DENSITY).setRestitution(0.9).setFriction(0.6)
+                d = d.setDensity(PINNED_DENSITY).setRestitution(0.9).setFriction(0.6)
                     .setCollisionGroups(groups(G.BLOCK, G.BALL | G.LOOSE));
             }
             const c = world.createCollider(d, body);

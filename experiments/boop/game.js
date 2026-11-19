@@ -13,7 +13,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.0';
+const BUILD = '1.1.1';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -158,15 +158,16 @@ function buildBlockView(b) {
     label.renderOrder = 2;
     label.visible = !b.neutral;
     group.add(label);
-    // Pinned blocks are nailed in place: two nail heads near the top corners. Resting
-    // blocks have none, so you can tell at a glance what can tumble.
+    // Everything fixed in place (pinned, jelly, grey) is nailed: two small nail heads near
+    // the top corners, a darker shade of the block's own colour so they don't shout.
+    // Resting blocks have none, so you can tell at a glance what can tumble.
     let nails = null;
-    if (!b.loose && !b.neutral && !b.jello) {
+    if (!b.loose) {
         const top = Math.max(...b.cells.map(([, y]) => y));
         const row = b.cells.filter(([, y]) => y === top).map(([x]) => x);
         const inset = 0.17;           // tucked into the corners, clear of the number
         nails = [[Math.min(...row) - 0.5 + inset, top + 0.5 - inset], [Math.max(...row) + 0.5 - inset, top + 0.5 - inset]].map(([x, y], i) => {
-            const m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.068], edge: 0.03, wob: 0.25, fill: NAIL, seed: b.id * 3 + i, margin: 0.05 });
+            const m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.062], edge: 0, wob: 0.2, fill: 0x000000, seed: b.id * 3 + i, margin: 0.04 });
             m.userData.at = [x, y];
             m.renderOrder = 2;
             group.add(m);
@@ -183,7 +184,7 @@ function buildBlockView(b) {
     return v;
 }
 
-const NAIL = 0xb7b0a6;          // nail heads: a steel grey that reads on every block colour
+const NAIL_SHADE = 0.6;         // nail heads: the block's colour, this much darker
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
@@ -192,11 +193,14 @@ function updateBlockView(v, b, frameDt) {
             // Knocked loose: the nails pop out, and from here on it can tumble.
             v.group.updateMatrixWorld();
             const pts = v.nails.map((n) => { const w = n.getWorldPosition(new THREE.Vector3()); return [w.x, w.y]; });
-            crumbs.spray(pts, [NAIL, theme.edge]);
+            crumbs.spray(pts, [u.uFill.value.clone().multiplyScalar(NAIL_SHADE), theme.edge]);
             for (const n of v.nails) { v.group.remove(n); forgetSketch(n); }
             v.nails = null;
         } else {
-            for (const n of v.nails) n.position.set(n.userData.at[0] * b.scale, n.userData.at[1] * b.scale, 0.15);
+            for (const n of v.nails) {
+                n.position.set(n.userData.at[0] * b.scale, n.userData.at[1] * b.scale, 0.15);
+                n.material.uniforms.uFill.value.copy(u.uFill.value).multiplyScalar(NAIL_SHADE);
+            }
         }
     }
     if (v.hp !== b.hp && !b.neutral) {
