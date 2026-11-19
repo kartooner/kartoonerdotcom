@@ -132,7 +132,7 @@
             line-height: 1.35;
             pointer-events: none;
         }
-        #note::before, #message::before {
+        #note::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
             filter: url(#sketchy);
@@ -156,19 +156,6 @@
             top: -8px;
             transform: rotate(-135deg);
         }
-        #message {
-            position: fixed;
-            left: 50%;
-            top: 40%;
-            transform: translate(-50%, -50%);
-            width: min(100vw - 32px, 320px);
-            padding: 20px;
-            isolation: isolate;
-            text-align: center;
-            pointer-events: none;
-        }
-        #message h1 { margin: 0 0 6px; font-size: 1.75rem; }
-        #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
         [hidden] { display: none !important; }
         #theme-toggle {
             position: fixed;
@@ -203,7 +190,7 @@
             margin: 0 auto;
             padding: max(32px, env(safe-area-inset-top)) clamp(28px, 8vw, 44px) 80px;
         }
-        #menu .screen-inner {
+        #menu .screen-inner, #over .screen-inner {
             min-height: 100%;
             display: flex;
             flex-direction: column;
@@ -233,8 +220,16 @@
             --bang-split: 63%;
         }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); text-wrap: balance; }
+        /* Paused or saved: the tagline becomes the state, a step up in weight. */
+        #menu .tagline.state { color: var(--ink); font-size: 1.25rem; font-weight: 700; }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
         #menu .feedback { margin-top: 20px; }
+        /* Game over: same centred layout as the start screen. */
+        #over h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 3.25rem); line-height: 1.05; }
+        #over .result { margin: 14px 0 6px; font-size: 1.125rem; font-weight: 600; }
+        #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
+        #over .best.new { color: var(--accent); }
+        #over .feedback { margin-top: 20px; }
         #menu .version { margin: 12px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
@@ -276,7 +271,7 @@
             text-decoration: underline;
             cursor: pointer;
         }
-        #howto h2, #howto h3, #message h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
+        #howto h2, #howto h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
         #howto h2 { margin: 12px 0 12px; font-size: 2.25rem; }
         #howto .intro { font-size: 1.125rem; line-height: 1.5; margin-bottom: 4px; }
         #howto h3 { margin: 36px 0 12px; font-size: 1.375rem; }
@@ -418,15 +413,11 @@
     </div>
     <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
     <p id="note" hidden></p>
-    <div id="message" hidden>
-        <h1 id="message-title"></h1>
-        <p id="message-body"></p>
-    </div>
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
-            <p class="tagline">Bounce balls, wear blocks down, dig deeper.</p>
+            <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="best" id="menu-best" hidden></p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
@@ -434,7 +425,20 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1</p>
+            <p class="version">v1 · by Erik Sagen</p>
+        </div>
+    </section>
+
+    <section id="over" class="screen" aria-labelledby="over-title" hidden>
+        <div class="screen-inner">
+            <h1 id="over-title">Out of shots</h1>
+            <p class="result" id="over-result"></p>
+            <p class="best" id="over-best"></p>
+            <div class="actions">
+                <button class="btn btn-primary" id="btn-again" type="button">Play again</button>
+                <button class="btn" id="btn-over-menu" type="button">Main menu</button>
+            </div>
+            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
         </div>
     </section>
 
