@@ -559,7 +559,7 @@
         // Links from games can say what the message is about, e.g. /contact/?about=boop
         (function () {
             var about = new URLSearchParams(location.search).get('about');
-            var games = { boop: 'Boop!' };
+            var games = { boop: 'Boop!', 'paper-plane': 'Paper Airplane' };
             if (!games[about]) return;
             var subject = document.querySelector('#contactForm input[name="subject"]');
             var message = document.getElementById('message');
