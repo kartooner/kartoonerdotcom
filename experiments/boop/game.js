@@ -513,13 +513,11 @@ const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
 let fastForward = false;
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
 
-// Aiming, slingshot-free "drag anywhere": touch anywhere on the field and drag in the
-// direction you want to shoot. Your finger never has to sit on the guide, and the
-// further you drag, the finer the aim. Slide back near where you started to cancel.
-const CANCEL_PX = 28;
+// Aiming, "drag anywhere": touch anywhere on the field and drag in the direction you
+// want to shoot. Your finger never has to sit on the guide, and the further you drag,
+// the finer the aim. Release fires. A tap without a drag does nothing (nothing is aimed yet).
+const AIM_START_PX = 8;          // movement needed before a drag counts as aiming
 let dragStart = null;
-let hasAimed = false;            // dragged out at least once this touch (so "cancel" makes sense)
-const dragUi = { root: $('drag'), anchor: $('drag-anchor'), line: $('drag-line'), label: $('drag-label') };
 
 function angleFromDrag(dx, dy) {
     let a = Math.atan2(-dy, dx);                                // screen y points down
@@ -527,27 +525,15 @@ function angleFromDrag(dx, dy) {
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
 }
 
-function showDrag(x, y) {
-    dragUi.root.removeAttribute('hidden');   // an SVG element has no .hidden property
-    dragUi.anchor.setAttribute('cx', dragStart.x); dragUi.anchor.setAttribute('cy', dragStart.y);
-    dragUi.line.setAttribute('x1', dragStart.x); dragUi.line.setAttribute('y1', dragStart.y);
-    dragUi.line.setAttribute('x2', x); dragUi.line.setAttribute('y2', y);
-    dragUi.root.classList.toggle('cancel', aimCancel && hasAimed);
-    dragUi.label.setAttribute('x', dragStart.x); dragUi.label.setAttribute('y', dragStart.y - CANCEL_PX - 10);
-}
-function hideDrag() { dragUi.root.setAttribute('hidden', ''); }
-
 const canvas = renderer.domElement;
 canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'over') { restart(); return; }
     if (phase === 'aim') {
         aiming = true;
-        hasAimed = false;
-        aimCancel = true;
+        aimCancel = true;                       // not aimed until the finger actually moves
         dragStart = { x: ev.clientX, y: ev.clientY };
         hideNote();                             // read it already; don't let it cover the guide
-        showDrag(ev.clientX, ev.clientY);
         return;
     }
     if (phase === 'play' || phase === 'settle') fastForward = true;
@@ -557,7 +543,6 @@ canvas.addEventListener('pointerup', () => {
     fastForward = false;
     if (!aiming) return;
     aiming = false;
-    hideDrag();
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
     if (aimCancel || phase !== 'aim') return;
@@ -565,20 +550,20 @@ canvas.addEventListener('pointerup', () => {
     phase = 'play';
     hideNote();
 });
-canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); hideDrag(); });
+canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
 
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
-    const wasCancel = aimCancel;
-    aimCancel = Math.hypot(dx, dy) < CANCEL_PX;
-    if (!aimCancel) {
-        aimTarget = angleFromDrag(dx, dy);
-        if (wasCancel) aimAngle = aimTarget;   // leaving the start spot: jump straight to the new aim
-        hasAimed = true;
-    } else {
-        hideGuide();
+    const dist = Math.hypot(dx, dy);
+    if (aimCancel) {
+        if (dist < AIM_START_PX) return;
+        aimCancel = false;
+        aimTarget = aimAngle = angleFromDrag(dx, dy);    // first real movement: jump straight to the aim
+        return;
     }
-    showDrag(ev.clientX, ev.clientY);
+    // Once aiming, keep the last direction while the finger is very near its start point,
+    // where tiny wobbles would swing the angle wildly.
+    if (dist >= AIM_START_PX) aimTarget = angleFromDrag(dx, dy);
 }
 
 function easeAim(frameDt) {

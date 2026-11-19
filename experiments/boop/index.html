@@ -100,16 +100,6 @@
             transform-origin: left;
             transition: transform 0.25s ease-out;
         }
-        /* Drag-to-aim marker: where your touch started, and a thin line to your finger.
-           Back inside the start ring, the shot is cancelled. */
-        #drag { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; overflow: visible; }
-        #drag circle { fill: none; stroke: var(--ink); stroke-width: 2; opacity: 0.45; }
-        #drag line { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; opacity: 0.3; }
-        #drag text { display: none; fill: var(--ink); font: 700 13px Manrope, system-ui, sans-serif; text-anchor: middle;
-            paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }   /* halo: readable over blocks */
-        #drag.cancel circle { stroke: var(--accent); opacity: 1; stroke-dasharray: 5 4; }
-        #drag.cancel line { display: none; }
-        #drag.cancel text { display: block; }
         /* Callout: points at the new thing it describes. Placed from game.js. */
         #note {
             position: fixed;
@@ -185,12 +175,12 @@
             -webkit-user-select: text;
             user-select: text;
         }
+        /* Screens sit inside the framed board with generous room on every side. */
         .screen-inner {
             box-sizing: border-box;
-            width: 100%;
-            max-width: 480px;
+            width: min(480px, var(--board-w, calc(100vw - 32px)));
             margin: 0 auto;
-            padding: max(24px, env(safe-area-inset-top)) 16px 72px;
+            padding: max(32px, env(safe-area-inset-top)) clamp(28px, 8vw, 44px) 80px;
         }
         #menu .screen-inner {
             min-height: 100%;
@@ -221,7 +211,7 @@
             color: transparent;
             --bang-split: 63%;
         }
-        #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
+        #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); text-wrap: balance; }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         .btn {
@@ -262,8 +252,8 @@
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
             position: fixed;
-            top: max(8px, env(safe-area-inset-top));
-            right: 8px;
+            top: max(12px, env(safe-area-inset-top));
+            right: calc(var(--board-left, 8px) + 4px);   /* lines up with the board's right edge */
             z-index: 12;
             width: 44px;
             height: 44px;
@@ -298,11 +288,6 @@
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
-    <svg id="drag" hidden aria-hidden="true">
-        <line id="drag-line"></line>
-        <circle id="drag-anchor" r="28"></circle>
-        <text id="drag-label">Release to cancel</text>
-    </svg>
     <p id="note" hidden></p>
     <div id="message" hidden>
         <h1 id="message-title"></h1>
@@ -330,7 +315,7 @@
             <h3>Aim and fire</h3>
             <p>Touch anywhere and drag the way you want to shoot. You don't need to start at the launcher, and dragging further gives finer aim.</p>
             <p>The dotted line shows where your ball will go. <span class="dot">Orange dots</span> mark where it will hit something.</p>
-            <p>Release to fire. To cancel, slide back to where you started and let go.</p>
+            <p>Release to fire.</p>
             <figure>
                 <img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit">
                 <figcaption>The guide bends off what it hits.</figcaption>
