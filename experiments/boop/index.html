@@ -75,7 +75,24 @@
             font-weight: 600;
             color: var(--ink-soft);
         }
+        #hud { flex-wrap: wrap; row-gap: 6px; }
         #hud > div { white-space: nowrap; }
+        /* Zone progress: how much of the zone's numbers you've cleared. */
+        #progress {
+            flex: 1 0 100%;
+            order: 10;
+            height: 4px;
+            border-radius: 2px;
+            background: color-mix(in srgb, var(--ink) 15%, transparent);
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.25s ease-out;
+        }
         #hud b { display: block; font-size: 1.375rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
         #hint {
             margin: 0 0 0 auto;
@@ -271,8 +288,10 @@
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
         <div>Depth<b id="hud-depth">1</b></div>
-        <div>Balls<b id="hud-balls">15</b></div>
-        <div id="hud-volley-box" hidden>Per shot<b id="hud-volley">1</b></div>
+        <div>Shots<b id="hud-shots">22</b></div>
+        <div>Balls<b id="hud-volley">1</b></div>
+        <div>Par<b id="hud-par">0/5</b></div>
+        <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
         <p id="hint">Drag to aim, release to fire a ball, pull back to cancel.</p>
     </div>
     <p id="note" hidden></p>
@@ -311,14 +330,16 @@
             <p>Each hit takes 1 off a block's number. At 0 it pops. Bigger numbers mean bigger blocks, and each number range has its own colour and pattern.</p>
             <p>Clear every block to drop to the next zone.</p>
 
-            <h3>Keep your balls</h3>
-            <p>Each shot costs 1 ball. Your balls last the whole run, and when they run out, the run ends. Earn more by:</p>
+            <h3>Make your shots count</h3>
+            <p><b>Shots</b> are what you spend: one per launch. When they run out, the run ends. Earn more by:</p>
             <ul>
                 <li>grabbing <b>+1</b> rings</li>
                 <li>popping bigger blocks</li>
                 <li>clearing a zone (+5)</li>
+                <li>clearing it under <b>par</b>: the shots you saved come back</li>
             </ul>
-            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 ball.</p>
+            <p><b>Balls</b> is how many each shot fires. Every few zones your launcher upgrades to fire one more, and the numbers grow to match.</p>
+            <p>The bar under the counters shows how much of the zone you've cleared.</p>
 
             <h3>Things you'll meet</h3>
             <ul>
@@ -326,6 +347,7 @@
                 <li><b>Mushrooms</b> kick balls back harder.</li>
                 <li><b>Resting blocks</b> sit on others. Pop what holds them up and they tumble.</li>
                 <li><b>Jello</b> lets balls pass through, slowing them down. Each pass takes 1 off.</li>
+                <li><b>Grey blocks</b> (deeper down) can't be broken. Bounce off them.</li>
                 <li><b>Traps:</b> a ball caught bouncing in a pocket keeps going as long as it keeps hitting. Some zones have a cup with a +1 inside.</li>
             </ul>
             <figure>

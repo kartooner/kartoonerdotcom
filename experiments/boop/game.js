@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 
 // Light and dark palettes. "line" is for marks drawn on the field (launcher,
 // guide, pickups); "edge" is the outline on blocks, props and balls.
@@ -28,7 +28,7 @@ const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'), volleyBox: $('hud-volley-box'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), progress: $('progress-fill'),
     msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
@@ -149,20 +149,25 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2; if (d < bestD) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(String(b.hp));
+    const label = makeLabel(b.neutral ? '' : String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
+    label.visible = !b.neutral;
     group.add(label);
+    if (b.neutral) {
+        mesh.material.uniforms.uNeutral.value = 1;
+        mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
+    }
     scene.add(group);
-    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, big: b.cells.length >= 5 };
+    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [] };
     blockViews.set(b.id, v);
     return v;
 }
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
-    if (v.hp !== b.hp) {
+    if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
         const look = b.jello ? JELLO : tierFor(b.hp);
@@ -185,10 +190,20 @@ function updateBlockView(v, b, frameDt) {
         if (inside) {
             const bp = sim.world.getRigidBody(inside.body).translation();
             const k = b.scale;
-            u.uPoke.value.set((bp.x - v.group.position.x) / k, (bp.y - (v.group.position.y)) / k, v.pokeAmt);
+            const lx = (bp.x - v.group.position.x) / k, ly = (bp.y - v.group.position.y) / k;
+            u.uPoke.value.set(lx, ly, v.pokeAmt);
+            // Leave a tunnel behind the ball: a new point every short step.
+            const lastPt = v.trail[v.trail.length - 1];
+            if (!lastPt || Math.hypot(lastPt[0] - lx, lastPt[1] - ly) > 0.1) {
+                v.trail.push([lx, ly, 1]);
+                if (v.trail.length > 10) v.trail.shift();
+            }
         } else {
             u.uPoke.value.z = v.pokeAmt;
         }
+        // The tunnel closes up over about two seconds.
+        for (const pt of v.trail) pt[2] = Math.max(0, pt[2] - frameDt * 0.5);
+        u.uTrail.value.forEach((vec, i) => { const pt = v.trail[i]; vec.set(pt ? pt[0] : 0, pt ? pt[1] : 0, pt ? pt[2] : 0); });
         const t = v.wobbleT;
         const kick = t < 0.7 ? Math.sin(t * 38) * Math.exp(-t * 6) * 0.13 : 0;
         const hum = Math.sin(performance.now() / 1000 * 34) * 0.07 * v.pokeAmt;
@@ -260,6 +275,8 @@ function addFloater(text, x, y) {
     m.scale.setScalar(0.55);
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
+    m.material.depthWrite = false;   // never block see-through things (jello) behind it
+    m.renderOrder = 5;
     scene.add(m);
     floaters.push({ m, t: 0 });
 }
@@ -368,9 +385,11 @@ function syncView(frameDt) {
     }
 
     hud.depth.textContent = s.depth;
-    hud.balls.textContent = s.supply;
-    hud.volleyBox.hidden = s.volley <= 1;
+    hud.shots.textContent = s.supply;
     hud.volley.textContent = s.volley;
+    hud.par.textContent = `${s.zoneShots ?? 0}/${s.par ?? '-'}`;
+    const done = s.zoneHp0 ? 1 - sim.hpLeft() / s.zoneHp0 : 0;
+    hud.progress.style.transform = `scaleX(${Math.max(0, Math.min(1, done))})`;
 }
 
 function consumeEvents() {
@@ -596,7 +615,7 @@ function gameOver() {
     const d = sim.s.depth, best = Math.max(readBest(), d);
     writeBest(best);
     phase = 'over';
-    showMessage(`Out of balls at depth ${d}`, `Best: ${best}. Tap to play again.`);
+    showMessage(`Out of shots at depth ${d}`, `Best: ${best}. Tap to play again.`);
 }
 
 function startZone() {
@@ -710,6 +729,7 @@ const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 function readThemePick() { try { return localStorage.getItem('boop-theme'); } catch { return null; } }
 function writeThemePick(v) { try { localStorage.setItem('boop-theme', v); } catch { /* storage blocked */ } }
 
+function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
 function applyTheme(name) {
     theme = THEMES[name];
     document.documentElement.dataset.theme = name;
@@ -724,6 +744,7 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
+        if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }

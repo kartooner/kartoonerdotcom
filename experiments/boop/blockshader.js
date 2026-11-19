@@ -17,6 +17,7 @@ export const TIERS = [
     { max: Infinity, fill: 0x9a5e57, pattern: 6, text: '#fffaf0' }, // brown, vertical stripes
 ];
 export const JELLO = { fill: 0x8fd6c4, text: '#2b2622' };
+export const NEUTRAL = { light: 0xcdc4b5, dark: 0x6e665c };
 export const tierFor = (hp) => TIERS.find((t) => hp <= t.max);
 
 const CORNER = 0.14;        // corner rounding for blocks, in cells
@@ -44,6 +45,8 @@ uniform vec2 uLabel;
 uniform vec4 uBounds;      // shape bounds (min x, min y, max x, max y), unscaled
 uniform vec3 uPoke;        // jello: a ball inside it (x, y in unscaled cells, strength 0-1)
 uniform float uWobble;     // jello: current wobble, to slide the shine around
+uniform vec3 uTrail[10];   // jello: recent ball positions (x, y, strength) - a tunnel that heals
+uniform float uNeutral;    // 1 for unbreakable blocks: plain fill, no pattern
 varying vec2 vP;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -107,7 +110,9 @@ void main() {
     float fillMask = 1.0 - smoothstep(-aa, aa, d + edgeW);
 
     vec3 fill = uFill;
-    if (uJello < 0.5) {
+    if (uNeutral > 0.5) {
+        // Neutral: a plain solid fill, so it reads as different from every numbered block.
+    } else if (uJello < 0.5) {
         // Pattern in a slightly darker shade of the fill; cleared around the number.
         float clear = smoothstep(0.15, 0.25, length(p - uLabel));   // small, so one-cell blocks keep their pattern
         fill = mix(fill, fill * 0.8, pattern(p, uPattern) * clear);
@@ -131,6 +136,19 @@ void main() {
         spec += (1.0 - smoothstep(0.75, 1.0, length(g / vec2(0.1, 0.045)))) * fillMask;
         // Shade on the far side gives the body some roundness.
         float away = max(dot(n, -vec2(cos(la), sin(la))), 0.0);
+        // The ball's path leaves a clearer tunnel through the goo that slowly closes up.
+        float tunnel = 0.0;
+        for (int i = 0; i < 10; i++) {
+            vec2 dp = p - uTrail[i].xy;
+            tunnel = max(tunnel, uTrail[i].z * exp(-dot(dp, dp) / 0.016));
+        }
+        tunnel *= fillMask;
+        // Clearer in the middle, with a slightly darker wall so it reads on light backgrounds too.
+        float wall = clamp(tunnel * (1.0 - tunnel) * 4.0, 0.0, 1.0);
+        col = mix(col, vec3(1.0), tunnel * 0.3);
+        col = mix(col, uFill * 0.62, wall * 0.55);
+        alpha = mix(alpha, 0.85, wall * 0.6);
+        alpha *= 1.0 - smoothstep(0.55, 1.0, tunnel) * 0.7;
         // A faint bright ring around the ball inside, like light bending through the goo.
         float ring = exp(-pow(pokeDist - 0.24, 2.0) / 0.003) * uPoke.z * fillMask;
         col = mix(col, vec3(1.0), ring * 0.45);
@@ -188,6 +206,8 @@ export function makeBlockMesh(cells, jello, seed) {
             uBounds: { value: bounds },
             uPoke: { value: new THREE.Vector3(0, 0, 0) },
             uWobble: { value: 0 },
+            uTrail: { value: Array.from({ length: 10 }, () => new THREE.Vector3(0, 0, 0)) },
+            uNeutral: { value: 0 },
         },
     });
     return new THREE.Mesh(geo, material);
