@@ -13,8 +13,8 @@ export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-export const ZONE_BONUS = 5;        // balls for clearing a zone
-const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
+export const ZONE_BONUS = 3;        // shots for clearing a zone
+const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
 // Blocks keep a solid, heavy fall through their own gravity scale.
@@ -53,6 +53,9 @@ const POWER_EVERY = 720;
 // How much bigger numbers get with each multishot upgrade. Less than the extra balls
 // add, so an upgrade feels like a step up instead of just keeping pace.
 const multishotGrowth = (volley) => 1 + (volley - 1) * 0.35;
+// Last stretch: once a zone is down to its last few breakable blocks, every hit
+// counts double, so the end of a zone doesn't drag.
+const STRETCH_BLOCKS = 3;
 const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
 // After 6s alive, the time a ball may go without a hit shrinks, to 1.5s by about 14s:
 // a busy trap keeps going; one that only now and then finds a block winds down.
@@ -93,8 +96,10 @@ const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.
 
 // Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
 export function blockScale(hp, hp0) {
-    const bulk = 0.78 + 0.22 * Math.min(1, Math.log(hp0) / Math.log(60));
-    return bulk * (0.82 + 0.18 * Math.max(0, hp) / hp0);
+    // Bigger numbers look a bit bulkier, and a block shrinks a little as it wears down,
+    // but never below about 85%: the last blocks of a zone shouldn't turn into slivers.
+    const bulk = 0.9 + 0.1 * Math.min(1, Math.log(hp0) / Math.log(60));
+    return bulk * (0.94 + 0.06 * Math.max(0, hp) / hp0);
 }
 
 export class Sim {
@@ -248,6 +253,10 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
+        if (popped && !s.quiet && !s.stretch && this.blockCount() > 0 && this.blockCount() <= STRETCH_BLOCKS) {
+            s.stretch = true;
+            this.events.push({ t: 'stretch' });
+        }
         if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
@@ -366,6 +375,7 @@ export class Sim {
         if (!s.retries) s.pendingPar = s.par ? Math.min(PAR_BONUS_MAX, Math.max(0, s.par - s.zoneShots)) : 0;
         this.clearZoneLeftovers();
         s.depth += 1;
+        s.stretch = false;
         const spec = zoneSpec(s.depth);
         // Tips (what's new) show once: s.seen holds what's been explained, by key. The
         // game fills it from earlier runs on this device. Upgrades are news, so always shown.
@@ -566,6 +576,7 @@ export class Sim {
             // Only big blocks can be the extra-tough one.
             p.w = p.cells.length ** 1.4 * (0.8 + 0.4 * this.rand());
             if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.4 + this.rand() * 0.4;
+            if (p.kind === 'loose') p.w *= 0.5;    // resting blocks can tumble somewhere awkward
             weights += p.w;
         }
         // No runaway block: none holds more than twice the next biggest. What's trimmed
@@ -940,7 +951,7 @@ export class Sim {
             this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
-                if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id); this.scored(ball); }
+                if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, s.stretch ? 2 : 1); this.scored(ball); }
             } else {
                 ball.jello = ball.jello.filter((j) => j !== b.id);
             }
@@ -964,7 +975,7 @@ export class Sim {
                 bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
             // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
-            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, ballPower(ball)); this.scored(ball); }
+            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, ballPower(ball) * (s.stretch ? 2 : 1)); this.scored(ball); }
         }
     }
 

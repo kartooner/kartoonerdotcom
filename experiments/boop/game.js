@@ -391,7 +391,16 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'pop' && e.popped) {
+        else if (e.t === 'stretch') {
+            // Last few blocks: hits count double. Say so once per device; a small mark every time.
+            addFloater('Hits ×2', W / 2, -2.6);
+            if (!sim.s.seen?.stretch) {
+                sim.s.seen = { ...sim.s.seen, stretch: true };
+                writeTips({ ...readTips(), stretch: true });
+                sim.s.noteTarget = { kind: 'open' };
+                showNote('Last few blocks: every hit counts double.');
+            }
+        } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
                 const u = v.mesh.material.uniforms;
@@ -574,7 +583,7 @@ const note = $('note');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: 2.6, y: -1.2, r: 0 };   // the empty top-left, clear of the launcher
+    if (t?.kind === 'open') return { x: 3.2, y: -3.2, r: 0 };   // open space top-left, clear of the launcher and pause
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
