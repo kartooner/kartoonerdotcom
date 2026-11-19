@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.1.7">
+<html lang="en" data-build="1.1.8">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -50,6 +50,8 @@
             --scrim: rgba(21, 18, 15, 0.9);
             --accent: #ff9466;
         }
+        /* iOS Safari enlarges text when the phone turns sideways; keep it as designed. */
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         html, body {
             margin: 0;
             height: 100%;
@@ -428,6 +430,7 @@
             pointer-events: none;
         }
         body.playing #brand { display: block; }
+        body.playing.narrow-board #brand { display: none; }
         #brand .bang {
             display: inline-block;
             margin-left: 0.04em;
@@ -444,7 +447,7 @@
             left: var(--hud-left);
             top: var(--board-top);
             transform: none;
-            width: 200px;
+            width: var(--hud-w, 200px);
             grid-template-columns: 1fr;
             row-gap: 18px;
         }
@@ -582,29 +585,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.1.7",
-                "./zones.js": "./zones.js?v=1.1.7",
-                "./blockshader.js": "./blockshader.js?v=1.1.7",
-                "./sketch.js": "./sketch.js?v=1.1.7",
-                "./balls.js": "./balls.js?v=1.1.7",
-                "./labels.js": "./labels.js?v=1.1.7",
-                "./theme.js": "./theme.js?v=1.1.7",
-                "./crumbs.js": "./crumbs.js?v=1.1.7",
-                "./buddy.js": "./buddy.js?v=1.1.7"
+                "./sim.js": "./sim.js?v=1.1.8",
+                "./zones.js": "./zones.js?v=1.1.8",
+                "./blockshader.js": "./blockshader.js?v=1.1.8",
+                "./sketch.js": "./sketch.js?v=1.1.8",
+                "./balls.js": "./balls.js?v=1.1.8",
+                "./labels.js": "./labels.js?v=1.1.8",
+                "./theme.js": "./theme.js?v=1.1.8",
+                "./crumbs.js": "./crumbs.js?v=1.1.8",
+                "./buddy.js": "./buddy.js?v=1.1.8"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.1.7">
-    <link rel="modulepreload" href="./sim.js?v=1.1.7">
-    <link rel="modulepreload" href="./zones.js?v=1.1.7">
-    <link rel="modulepreload" href="./blockshader.js?v=1.1.7">
-    <link rel="modulepreload" href="./sketch.js?v=1.1.7">
-    <link rel="modulepreload" href="./balls.js?v=1.1.7">
-    <link rel="modulepreload" href="./labels.js?v=1.1.7">
-    <link rel="modulepreload" href="./theme.js?v=1.1.7">
-    <link rel="modulepreload" href="./buddy.js?v=1.1.7">
-    <link rel="modulepreload" href="./crumbs.js?v=1.1.7">
-    <script type="module" src="./game.js?v=1.1.7"></script>
+    <link rel="modulepreload" href="./game.js?v=1.1.8">
+    <link rel="modulepreload" href="./sim.js?v=1.1.8">
+    <link rel="modulepreload" href="./zones.js?v=1.1.8">
+    <link rel="modulepreload" href="./blockshader.js?v=1.1.8">
+    <link rel="modulepreload" href="./sketch.js?v=1.1.8">
+    <link rel="modulepreload" href="./balls.js?v=1.1.8">
+    <link rel="modulepreload" href="./labels.js?v=1.1.8">
+    <link rel="modulepreload" href="./theme.js?v=1.1.8">
+    <link rel="modulepreload" href="./buddy.js?v=1.1.8">
+    <link rel="modulepreload" href="./crumbs.js?v=1.1.8">
+    <script type="module" src="./game.js?v=1.1.8"></script>
 </body>
 </html>

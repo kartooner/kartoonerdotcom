@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.7';
+const BUILD = '1.1.8';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -59,7 +59,8 @@ function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
     const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
-    const hudW = 200, hudGap = 28;
+    // A phone on its side is short: give the side HUD a narrower column so it fits too.
+    const hudW = h < 520 ? 140 : 200, hudGap = h < 520 ? 20 : 28;
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
     // the HUD in a column beside it and give the board the full height.
     const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
@@ -83,8 +84,31 @@ function fitCamera() {
     root.setProperty('--board-left', `${boardLeft}px`);
     root.setProperty('--board-top', `${topPx + pad * scale}px`);
     root.setProperty('--hud-left', `${boardLeft - hudW - hudGap}px`);
+    root.setProperty('--hud-w', `${hudW}px`);
+    // Too narrow for three links under the board: drop the Boop! mark between them.
+    document.body.classList.toggle('narrow-board', boardPx < 260);
 }
-window.addEventListener('resize', fitCamera);
+// Re-fit whenever the screen changes. On iPhone, turning the phone fires these events
+// before Safari has settled on the new size (and Safari can stay zoomed in after the
+// turn), so fit again a few times as it settles and nudge the viewport back to 1x.
+let refitTimers = [];
+function refit() {
+    fitCamera();
+    refitTimers.forEach(clearTimeout);
+    refitTimers = [120, 350, 800].map((ms) => setTimeout(fitCamera, ms));
+}
+function resetZoom() {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    const content = meta.getAttribute('content');
+    meta.setAttribute('content', content + ', minimum-scale=1');   // a change makes Safari re-apply it
+    setTimeout(() => meta.setAttribute('content', content), 50);
+}
+window.addEventListener('resize', refit);
+window.addEventListener('orientationchange', () => { resetZoom(); refit(); });
+window.visualViewport?.addEventListener('resize', refit);
+// iOS ignores user-scalable=no for pinches; stop them here so the board can't be zoomed.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
 fitCamera();
 
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
