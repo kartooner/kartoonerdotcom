@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
-import { makeSketch, SHAPE, setSketchInk, forgetSketch } from './sketch.js';
+import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
 import { THEMES, COLORS } from './theme.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
@@ -80,7 +80,7 @@ const unitCircle = new THREE.CircleGeometry(1, 32);
 const lineMat = mat(0);         // marks on the field
 const outlineMat = mat(0);      // edges on blocks, props and balls
 const ballMat = mat(0);
-const fieldMat = mat(0);
+const fieldMat = makeFieldMaterial(H);   // field colour plus faint crayon hatching low down
 
 const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
 fieldMesh.scale.set(W, H, 1);
@@ -698,7 +698,9 @@ function applyTheme(name) {
     theme = THEMES[name];
     document.documentElement.dataset.theme = name;
     renderer.setClearColor(theme.paper);
-    fieldMat.color.setHex(theme.field);
+    fieldMat.uniforms.uField.value.setHex(theme.field);
+    fieldMat.uniforms.uHatch.value.setHex(theme.line);
+    fieldMat.uniforms.uStrength.value = name === 'dark' ? 0.08 : 0.12;   // light paper needs a touch more to show
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);

@@ -116,3 +116,60 @@ export function forgetSketch(object) {
         if (i >= 0) sketchMats.splice(i, 1);
     });
 }
+
+// The board's background: the plain field colour with faint crayon hatching that
+// builds up toward the bottom, like shading on the underside of a drawn cloud.
+// Strokes are short, slightly wavy diagonals broken up by noise; very low contrast.
+const fieldFragment = /* glsl */`
+uniform vec3 uField;
+uniform vec3 uHatch;
+uniform float uStrength;   // how strong the darkest strokes get (0-1)
+uniform float uHeight;     // board height in cells
+varying vec2 vW;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+
+void main() {
+    // 0 above about a third of the way down, rising to 1 at the floor.
+    float depth = clamp((-vW.y - uHeight * 0.33) / (uHeight * 0.67), 0.0, 1.0);
+    // Diagonal strokes about a fifth of a cell apart, with a slight wave.
+    float across = (vW.x + vW.y) * 4.5 + (noise(vW * 1.7) - 0.5) * 0.6;
+    float along = (vW.x - vW.y) * 1.2;
+    float lane = floor(across);
+    float f = fract(across);
+    float w = fwidth(across);
+    float line = smoothstep(0.38 - w, 0.38 + w, f) - smoothstep(0.58 - w, 0.58 + w, f);
+    // Break each lane into strokes; deeper down, more of each lane is drawn.
+    float stroke = noise(vec2(along + lane * 7.13, lane * 3.7));
+    float drawn = smoothstep(1.0 - depth * 0.85, 1.0 - depth * 0.85 + 0.12, stroke + 0.1);
+    // Crayon grain inside the stroke.
+    float grain = 0.6 + 0.4 * noise(vW * 22.0);
+    float a = line * drawn * grain * depth * uStrength;
+    gl_FragColor = vec4(mix(uField, uHatch, a), 1.0);
+    #include <colorspace_fragment>
+}`;
+
+const fieldVertex = /* glsl */`
+varying vec2 vW;
+void main() {
+    vW = (modelMatrix * vec4(position, 1.0)).xy;
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+}`;
+
+export function makeFieldMaterial(height) {
+    return new THREE.ShaderMaterial({
+        vertexShader: fieldVertex,
+        fragmentShader: fieldFragment,
+        uniforms: {
+            uField: { value: new THREE.Color(0xfbf6ea) },
+            uHatch: { value: new THREE.Color(0x2b2622) },
+            uStrength: { value: 0.07 },
+            uHeight: { value: height },
+        },
+    });
+}
