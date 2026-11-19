@@ -555,6 +555,18 @@
             initDarkwingPeek();
         });
     </script>
+    <script>
+        // Links from games can say what the message is about, e.g. /contact/?about=boop
+        (function () {
+            var about = new URLSearchParams(location.search).get('about');
+            var games = { boop: 'Boop!' };
+            if (!games[about]) return;
+            var subject = document.querySelector('#contactForm input[name="subject"]');
+            var message = document.getElementById('message');
+            if (subject) subject.value = 'Feedback on ' + games[about];
+            if (message) message.placeholder = 'What did you think of ' + games[about] + '? What was fun, what was frustrating, any bugs?';
+        })();
+    </script>
     <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 
