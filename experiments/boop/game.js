@@ -2,17 +2,17 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 
 // Light and dark palettes. "line" is for marks drawn on the field (launcher,
 // guide, pickups); "edge" is the outline on blocks, props and balls.
 const THEMES = {
     light: {
-        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7,
+        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7, guideEnd: 0xa59d92,
         hit: 0xd2492a, text: '#2b2622', jelloText: '#2b2622',
     },
     dark: {
-        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2,
+        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2, guideEnd: 0x6f685f,
         hit: 0xff9466, text: '#ede4d3', jelloText: '#f6efe2',
     },
 };
@@ -20,22 +20,25 @@ const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
 let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
-const HITSTOP = 0.045;               // tiny freeze when a block pops
-const AUTO_FAST = 2;                 // speed-up for a ball that's been bouncing a while
-const AUTO_FAST_AFTER = 960;         // 8s in, so there's time to watch it first
+// Long turns (a ball caught in a trap) fast-forward in stages, so traps are fun to
+// watch, not a wait: [seconds into the turn, speed].
+const AUTO_FAST = [[20, 4], [12, 3], [6, 2]];
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'), volleyBox: $('hud-volley-box'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), progress: $('progress-fill'),
     msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
 // ---------- three.js setup ----------
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Resolution steps down if frames run slow (the hand-drawn block shader runs on every pixel).
+const PIXEL_RATIOS = [2, 1.5, 1].filter((r) => r <= Math.max(1, window.devicePixelRatio));
+let pixelStep = 0;
+renderer.setPixelRatio(PIXEL_RATIOS[0]);
 
 $('stage').appendChild(renderer.domElement);
 
@@ -45,15 +48,22 @@ const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
-    const pad = 0.3, top = 1.3;                 // room for the HUD above the field
-    const fw = W + pad * 2, fh = H + top + pad;
-    const aspect = w / h;
-    let vw, vh;
-    if (aspect > fw / fh) { vh = fh; vw = fh * aspect; } else { vw = fw; vh = fw / aspect; }
-    const cx = W / 2, cy = (top - H - pad) / 2;
-    camera.left = cx - vw / 2; camera.right = cx + vw / 2;
-    camera.top = cy + vh / 2; camera.bottom = cy - vh / 2;
+    // The field sits just below the HUD, using the HUD's real height, and is as large
+    // as fits: full width on a phone, full height on a wide screen.
+    const hudEl = document.getElementById('hud');
+    const topPx = (hudEl ? hudEl.getBoundingClientRect().bottom : 60) + 10;
+    const bottomPx = 44;                        // room for the Games / theme links
+    const pad = 0.25;
+    const scale = Math.min(w / (W + pad * 2), (h - topPx - bottomPx) / (H + pad * 2));   // px per cell
+    const vw = w / scale, vh = h / scale;
+    const top = pad + topPx / scale;            // view top, in cells above the field's top edge
+    camera.left = W / 2 - vw / 2; camera.right = W / 2 + vw / 2;
+    camera.top = top; camera.bottom = top - vh;
     camera.updateProjectionMatrix();
+    // The HUD and the links under the field line up with the field's frame, edge to edge.
+    const boardPx = (W + 0.16) * scale;
+    document.documentElement.style.setProperty('--board-w', `${boardPx}px`);
+    document.documentElement.style.setProperty('--board-left', `${(w - boardPx) / 2}px`);
 }
 window.addEventListener('resize', fitCamera);
 fitCamera();
@@ -71,6 +81,20 @@ const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
 fieldMesh.scale.set(W, H, 1);
 fieldMesh.position.set(W / 2, -H / 2, -1);
 scene.add(fieldMesh);
+
+// A solid frame around the playfield, so it reads as a board, not a blank panel.
+const FRAME = 0.08;
+for (const [w, h, x, y] of [
+    [W + FRAME * 2, FRAME, W / 2, FRAME / 2],          // top
+    [W + FRAME * 2, FRAME, W / 2, -H - FRAME / 2],     // bottom
+    [FRAME, H, -FRAME / 2, -H / 2],                    // left
+    [FRAME, H, W + FRAME / 2, -H / 2],                 // right
+]) {
+    const m = new THREE.Mesh(unitSquare, lineMat);
+    m.scale.set(w, h, 1);
+    m.position.set(x, y, -0.5);
+    scene.add(m);
+}
 
 function rect(w, h, material, x = 0, y = 0, z = 0) {
     const m = new THREE.Mesh(unitSquare, material);
@@ -146,20 +170,25 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2; if (d < bestD) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(String(b.hp));
+    const label = makeLabel(b.neutral ? '' : String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
+    label.visible = !b.neutral;
     group.add(label);
+    if (b.neutral) {
+        mesh.material.uniforms.uNeutral.value = 1;
+        mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
+    }
     scene.add(group);
-    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello };
+    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [] };
     blockViews.set(b.id, v);
     return v;
 }
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
-    if (v.hp !== b.hp) {
+    if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
         const look = b.jello ? JELLO : tierFor(b.hp);
@@ -171,14 +200,44 @@ function updateBlockView(v, b, frameDt) {
     u.uK.value = k;
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
-    v.label.scale.setScalar(Math.max(0.62, k * 0.92));
+    v.label.scale.setScalar(Math.max(0.62, k * 0.92) * (v.big ? 1.35 : 1));   // big blocks get bigger numbers
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
+    v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
-        // Jello wobbles: squash one way, stretch the other, fading out.
-        const w = Math.sin(performance.now() / 45) * 0.08 * v.punch;
-        v.group.scale.set(1 + w, 1 - w, 1);
+        // Jello wobbles hard each time a ball goes in or out, and keeps jiggling the whole
+        // time a ball is inside, bulging around it. The ball's direction sets the squash axis.
+        const inside = sim.s.balls.find((ball) => ball.jello.includes(b.id));
+        v.pokeAmt = Math.max(0, Math.min(1, (v.pokeAmt ?? 0) + (inside ? 8 : -5) * frameDt));
+        if (inside) {
+            const bp = sim.world.getRigidBody(inside.body).translation();
+            const k = b.scale;
+            const lx = (bp.x - v.group.position.x) / k, ly = (bp.y - v.group.position.y) / k;
+            u.uPoke.value.set(lx, ly, v.pokeAmt);
+            // Leave a tunnel behind the ball: a new point every short step.
+            const lastPt = v.trail[v.trail.length - 1];
+            if (!lastPt || Math.hypot(lastPt[0] - lx, lastPt[1] - ly) > 0.1) {
+                v.trail.push([lx, ly, 1]);
+                if (v.trail.length > 10) v.trail.shift();
+            }
+        } else {
+            u.uPoke.value.z = v.pokeAmt;
+        }
+        // The tunnel closes up over about two seconds.
+        for (const pt of v.trail) pt[2] = Math.max(0, pt[2] - frameDt * 0.5);
+        u.uTrail.value.forEach((vec, i) => { const pt = v.trail[i]; vec.set(pt ? pt[0] : 0, pt ? pt[1] : 0, pt ? pt[2] : 0); });
+        const t = v.wobbleT;
+        const kick = t < 0.7 ? Math.sin(t * 38) * Math.exp(-t * 6) * 0.13 : 0;
+        const hum = Math.sin(performance.now() / 1000 * 34) * 0.07 * v.pokeAmt;
+        const w = kick + hum;
+        const across = Math.abs(Math.cos(v.wobbleDir ?? 0)) > 0.7 ? 1 : -1;   // sideways hit squashes the other way
+        v.group.scale.set(1 + w * across, 1 - w * across, 1);
+        u.uWobble.value = w;
     } else {
-        v.group.scale.setScalar(1 + 0.07 * v.punch);
+        // Every bounce off a block gives it a quick squash-and-recover wobble on screen,
+        // on top of the small physical knock; a hit that takes a point off also pops a little.
+        const w = v.wobbleT < 0.35 ? Math.sin(v.wobbleT * 55) * Math.exp(-v.wobbleT * 11) * 0.06 : 0;
+        const k = 1 + 0.06 * v.punch;
+        v.group.scale.set(k * (1 + w), k * (1 - w), 1);
     }
 }
 
@@ -237,6 +296,8 @@ function addFloater(text, x, y) {
     m.scale.setScalar(0.55);
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
+    m.material.depthWrite = false;   // never block see-through things (jello) behind it
+    m.renderOrder = 5;
     scene.add(m);
     floaters.push({ m, t: 0 });
 }
@@ -327,7 +388,9 @@ function syncView(frameDt) {
             if (Math.hypot(dx, dy) > 1) { v.squashT = 0; v.normal = Math.atan2(dy, dx); }
         }
         v.prev.x = vel.x; v.prev.y = vel.y;
-        v.group.position.set(p.x, p.y, 0.4);
+        const prev = (phase === 'play' || phase === 'settle') ? prevBallPos.get(ball.body) : null;
+        if (prev) v.group.position.set(prev[0] + (p.x - prev[0]) * stepAlpha, prev[1] + (p.y - prev[1]) * stepAlpha, 0.4);
+        else v.group.position.set(p.x, p.y, 0.4);
         shapeBall(v, vel, frameDt);
     }
     bounced.clear();
@@ -343,18 +406,24 @@ function syncView(frameDt) {
     }
 
     hud.depth.textContent = s.depth;
-    hud.balls.textContent = s.supply;
-    hud.volleyBox.hidden = s.volley <= 1;
-    hud.volley.textContent = s.volley;
+    hud.shots.textContent = s.supply;
+    hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+    const used = s.zoneShots ?? 0;
+    hud.par.textContent = `${used}/${s.par ?? '-'}`;
+    hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
+    const done = s.zoneHp0 ? 1 - sim.hpLeft() / s.zoneHp0 : 0;
+    hud.progress.style.transform = `scaleX(${Math.max(0, Math.min(1, done))})`;
 }
 
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'contact') bounced.add(e.ball);
-        else if (e.t === 'pop' && !fastForward && performance.now() - lastHitstop > 150) {
-            hitstop = HITSTOP;
-            lastHitstop = performance.now();
+        else if (e.t === 'contact') {
+            bounced.add(e.ball);
+            if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
+        } else if (e.t === 'jelly') {
+            const v = blockViews.get(e.id);
+            if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
     }
     sim.events.length = 0;
@@ -367,10 +436,22 @@ const dotInk = new THREE.Color(), dotFade = new THREE.Color(), dotHit = new THRE
 const dotPos = [];
 let guideAngle = null;
 
+// On slower phones a guide can take a while to work out. If the last one was slow,
+// skip a frame before the next, so aiming stays responsive. The shot always fires
+// the angle the guide on screen was drawn for.
+let guideCost = 0, guideSkip = 0;
+let lastContacts = [];
 function drawGuide(angle) {
     if (angle === guideAngle) return;
+    if (guideSkip > 0) { guideSkip -= 1; return; }
+    const t0 = performance.now();
     guideAngle = angle;
-    const { path, contacts } = predict(sim, angle);
+    const result = predict(sim, angle);
+    // Stop the guide at the bottom of the field, where the ball leaves.
+    const cut = result.path.findIndex(([, y]) => y < -H);
+    const path = cut > 0 ? result.path.slice(0, cut) : result.path;
+    const contacts = result.contacts.filter((c) => c.y >= -H);
+    lastContacts = contacts;
     let n = 0, carry = 0;
     const gap = 0.26;
     for (let i = 1; i < path.length && n < MAX_DOTS; i++) {
@@ -390,8 +471,9 @@ function drawGuide(angle) {
     dots.count = n;
     // The last third of the line fades out instead of stopping dead.
     for (let i = 0; i < n; i++) {
-        const f = Math.max(0, (i / n - 0.66) / 0.34);
-        dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * 0.85));
+        // Solid ink near the launcher, tapering to grey toward the end.
+        const f = Math.min(1, Math.max(0, (i / n - 0.2) / 0.7));
+        dots.setColorAt(i, dotColor.copy(dotInk).lerp(dotFade, f * f * (3 - 2 * f)));
     }
     // Hit points: the dot nearest each contact moves onto it, grows and changes colour.
     for (const c of contacts) {
@@ -407,6 +489,8 @@ function drawGuide(angle) {
     }
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
+    guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
+    guideSkip = guideCost > 9 ? 1 : 0;
 }
 
 function hideGuide() {
@@ -428,24 +512,30 @@ const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
 let fastForward = false;
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
-const CANCEL_RADIUS = 0.55;
 
-function toWorld(ev) {
-    const r = renderer.domElement.getBoundingClientRect();
-    const v = new THREE.Vector3(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1, 0);
-    v.unproject(camera);
-    return v;
-}
+// Aiming, slingshot-free "drag anywhere": touch anywhere on the field and drag in the
+// direction you want to shoot. Your finger never has to sit on the guide, and the
+// further you drag, the finer the aim. Slide back near where you started to cancel.
+const CANCEL_PX = 28;
+let dragStart = null;
+let hasAimed = false;            // dragged out at least once this touch (so "cancel" makes sense)
+const dragUi = { root: $('drag'), anchor: $('drag-anchor'), line: $('drag-line'), label: $('drag-label') };
 
-// Returns an angle, or null when the pointer is on the launcher (cancel).
-function angleFrom(ev) {
-    const p = toWorld(ev);
-    const dx = p.x - LAUNCHER.x, dy = p.y - LAUNCHER.y;
-    if (Math.hypot(dx, dy) < CANCEL_RADIUS) return null;
-    let a = Math.atan2(dy, dx);
-    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;   // pointing up: pin to the nearest side
+function angleFromDrag(dx, dy) {
+    let a = Math.atan2(-dy, dx);                                // screen y points down
+    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // dragging upward: pin to the nearest side
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
 }
+
+function showDrag(x, y) {
+    dragUi.root.removeAttribute('hidden');   // an SVG element has no .hidden property
+    dragUi.anchor.setAttribute('cx', dragStart.x); dragUi.anchor.setAttribute('cy', dragStart.y);
+    dragUi.line.setAttribute('x1', dragStart.x); dragUi.line.setAttribute('y1', dragStart.y);
+    dragUi.line.setAttribute('x2', x); dragUi.line.setAttribute('y2', y);
+    dragUi.root.classList.toggle('cancel', aimCancel && hasAimed);
+    dragUi.label.setAttribute('x', dragStart.x); dragUi.label.setAttribute('y', dragStart.y - CANCEL_PX - 10);
+}
+function hideDrag() { dragUi.root.setAttribute('hidden', ''); }
 
 const canvas = renderer.domElement;
 canvas.addEventListener('pointerdown', (ev) => {
@@ -453,33 +543,42 @@ canvas.addEventListener('pointerdown', (ev) => {
     if (phase === 'over') { restart(); return; }
     if (phase === 'aim') {
         aiming = true;
+        hasAimed = false;
+        aimCancel = true;
+        dragStart = { x: ev.clientX, y: ev.clientY };
         hideNote();                             // read it already; don't let it cover the guide
-        updateAim(ev);
-        if (!aimCancel) aimAngle = aimTarget;   // first touch jumps straight there
+        showDrag(ev.clientX, ev.clientY);
         return;
     }
     if (phase === 'play' || phase === 'settle') fastForward = true;
 });
 canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
-canvas.addEventListener('pointerup', (ev) => {
+canvas.addEventListener('pointerup', () => {
     fastForward = false;
     if (!aiming) return;
     aiming = false;
+    hideDrag();
+    const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
-    if (angleFrom(ev) === null || phase !== 'aim') return;
-    // Fire exactly what the guide was showing.
-    sim.fire(shownAngle());
+    if (aimCancel || phase !== 'aim') return;
+    sim.fire(drawn);
     phase = 'play';
-    $('hint').hidden = true;
     hideNote();
 });
-canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
+canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); hideDrag(); });
 
 function updateAim(ev) {
-    const a = angleFrom(ev);
-    aimCancel = a === null;
-    if (aimCancel) { hideGuide(); return; }
-    aimTarget = a;
+    const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
+    const wasCancel = aimCancel;
+    aimCancel = Math.hypot(dx, dy) < CANCEL_PX;
+    if (!aimCancel) {
+        aimTarget = angleFromDrag(dx, dy);
+        if (wasCancel) aimAngle = aimTarget;   // leaving the start spot: jump straight to the new aim
+        hasAimed = true;
+    } else {
+        hideGuide();
+    }
+    showDrag(ev.clientX, ev.clientY);
 }
 
 function easeAim(frameDt) {
@@ -514,7 +613,7 @@ function placeNote() {
     const rPx = Math.abs(edge.x - c.x);
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
-    const hudBottom = 72;                       // keep clear of the HUD
+    const hudBottom = document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
     const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
@@ -536,7 +635,10 @@ function hideNote() {
 
 // ---------- turn flow ----------
 
-let acc = 0, settleSteps = 0, descendT = 0, hitstop = 0, lastHitstop = 0, shake = 0;
+let acc = 0, settleSteps = 0, descendT = 0, shake = 0;
+// Ball positions before the latest step, so drawing can glide between steps.
+const prevBallPos = new Map();
+let stepAlpha = 1;
 
 function showMessage(title, body) {
     hud.msgTitle.textContent = title;
@@ -551,7 +653,7 @@ function gameOver() {
     const d = sim.s.depth, best = Math.max(readBest(), d);
     writeBest(best);
     phase = 'over';
-    showMessage(`Out of balls at depth ${d}`, `Best: ${best}. Tap to play again.`);
+    showMessage(`Out of shots at depth ${d}`, `Best: ${best}. Tap to play again.`);
 }
 
 function startZone() {
@@ -568,9 +670,8 @@ function endTurn() {
 }
 
 function readyToAim() {
-    sim.crumbleLeftovers();
     consumeEvents();
-    if (sim.blockCount() === 0) { startZone(); return; }   // cleared, or the last scraps crumbled
+    if (sim.blockCount() === 0) { startZone(); return; }   // cleared (the last blocks may have tumbled out)
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
 }
@@ -602,25 +703,46 @@ function tick(frameDt) {
     }
     if (phase !== 'play' && phase !== 'settle') return;
 
-    if (hitstop > 0) { hitstop -= frameDt; return; }
     const s = sim.s;
-    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.turnSteps > AUTO_FAST_AFTER;
-    acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
+    const turnSec = phase === 'play' && !(s.shots && s.shots.left > 0) ? s.turnSteps * DT : 0;
+    const auto = AUTO_FAST.find(([after]) => turnSec > after)?.[1] ?? 1;
+    acc += frameDt * Math.max(auto, fastForward ? FAST_FORWARD : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
+        prevBallPos.clear();
+        for (const b of s.balls) { const t = sim.world.getRigidBody(b.body).translation(); prevBallPos.set(b.body, [t.x, t.y]); }
         sim.step();
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
         if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
     }
     if (n >= 30) acc = 0;   // tab was in the background; don't try to catch up
+    // How far we are toward the next step: draw balls that far between their last two positions.
+    // Without this, screens faster than the physics (90/120 Hz) show balls moving in uneven hops.
+    stepAlpha = Math.min(1, acc / DT);
     consumeEvents();
 }
 
 let last = performance.now();
+let slowFrames = 0, timedFrames = 0;
+function watchFrameRate(rawDt) {
+    // Over each 60 frames, if half or more missed ~45fps, drop to the next resolution step.
+    timedFrames += 1;
+    if (rawDt > 1 / 45) slowFrames += 1;
+    if (timedFrames < 60) return;
+    if (slowFrames >= 30 && pixelStep < PIXEL_RATIOS.length - 1) {
+        pixelStep += 1;
+        renderer.setPixelRatio(PIXEL_RATIOS[pixelStep]);
+        fitCamera();
+    }
+    slowFrames = 0;
+    timedFrames = 0;
+}
 function frame(now) {
-    const frameDt = Math.min(0.05, (now - last) / 1000);
+    const rawDt = (now - last) / 1000;
+    const frameDt = Math.min(0.05, rawDt);
     last = now;
+    if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
     if (sim) {
         tick(frameDt);
         if (aiming && phase === 'aim') {
@@ -645,6 +767,7 @@ const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 function readThemePick() { try { return localStorage.getItem('boop-theme'); } catch { return null; } }
 function writeThemePick(v) { try { localStorage.setItem('boop-theme', v); } catch { /* storage blocked */ } }
 
+function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
 function applyTheme(name) {
     theme = THEMES[name];
     document.documentElement.dataset.theme = name;
@@ -654,11 +777,12 @@ function applyTheme(name) {
     outlineMat.color.setHex(theme.edge);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
-    dotFade.setHex(theme.field);
+    dotFade.setHex(theme.guideEnd);
     dotHit.setHex(theme.hit);
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
+        if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
@@ -699,10 +823,13 @@ $('btn-play').addEventListener('click', play);
 $('btn-howto-play').addEventListener('click', play);
 $('btn-howto').addEventListener('click', () => showScreen('howto'));
 $('btn-howto-back').addEventListener('click', () => showScreen('menu'));
+$('btn-howto-close').addEventListener('click', () => showScreen('menu'));
+$('btn-menu-close').addEventListener('click', play);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.hidden) showScreen('menu'); });
 
 await RAPIER.init();
 await document.fonts.load('800 64px Manrope').catch(() => {});
+fitCamera();   // the HUD's height is final once its font has loaded
 restart();
 showScreen('menu', false);
 requestAnimationFrame(frame);
@@ -712,6 +839,8 @@ window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
     get aim() { return shownAngle(); },
+    get pixelRatio() { return renderer.getPixelRatio(); },
+    get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);
