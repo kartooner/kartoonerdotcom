@@ -369,6 +369,8 @@ export class Sim {
                 const off = Math.hypot(p.x - b.anchor[0], p.y - b.anchor[1]);
                 const v = body.linvel(), speed = Math.hypot(v.x, v.y);
                 const turn = Math.abs(body.rotation() - b.anchorA), spin = Math.abs(body.angvel());
+                // One-square blocks never snap loose (they'd end up on the floor, too hard to hit).
+                if (b.cells.length === 1) continue;
                 if ((off > SNAP_DIST && speed > SNAP_SPEED) || off > GIVE_WAY_DIST ||
                     (turn > SNAP_ANGLE && spin > SNAP_SPIN) || turn > GIVE_WAY_ANGLE) this.snap(b);
             }
@@ -549,7 +551,8 @@ export class Sim {
         const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
-            if (p.kind !== 'pinned' || p.cup || !solidBelow(p)) continue;
+            // One-square blocks never rest loose: on the floor they'd be too hard to hit.
+            if (p.kind !== 'pinned' || p.cup || p.cells.length === 1 || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
             // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
