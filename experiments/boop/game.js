@@ -6,6 +6,7 @@ import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
 import { THEMES, COLORS } from './theme.js';
+import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
@@ -13,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.4';
+const BUILD = '1.1.5';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -168,16 +169,17 @@ function buildBlockView(b) {
     return v;
 }
 
-// Nails: what holds a fixed block in place. Steel heads with an ink outline, like a
-// tack in a drawing. They tilt and lift as they wear down, jolt when hit, and pop out.
-const NAIL = 0xb7b0a6;
+// Nails: what holds a fixed block in place. Heads with an ink outline, like a tack in a
+// drawing. Bright ones can be knocked out: they tilt and lift as they wear down, jolt
+// when hit, and pop out. Grey ones (single squares) never come out.
+const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
 function updateNails(v, b, frameDt) {
     const live = new Set();
     for (const n of b.nails ?? []) {
         live.add(n.id);
         let m = v.nails.get(n.id);
         if (!m) {
-            m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.078], edge: 0.032, wob: 0.25, fill: NAIL, seed: b.id * 3 + n.id, margin: 0.05 });
+            m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.078], edge: 0.032, wob: 0.25, fill: n.hp < 0 ? NAIL_FIXED : NAIL, seed: b.id * 3 + n.id, margin: 0.05 });
             m.renderOrder = 2;
             v.group.add(m);
             v.nails.set(n.id, m);
@@ -195,7 +197,7 @@ function updateNails(v, b, frameDt) {
         // Popped: a little spray of steel and ink from where it was.
         v.group.updateMatrixWorld();
         const w = m.getWorldPosition(new THREE.Vector3());
-        crumbs.spray([[w.x, w.y]], [NAIL, theme.edge, NAIL]);
+        crumbs.spray([[w.x, w.y]], [0xb7b0a6, theme.edge, NAIL]);
         v.group.remove(m); forgetSketch(m);
         v.nails.delete(id);
     }
@@ -447,7 +449,7 @@ function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
         else if (e.t === 'hit' && runStarted) {
-            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.', { now: true });
+            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.', { now: true, first: true });
         } else if (e.t === 'out' && e.faded) {
             tourTip('fuse', 'Balls turn grey and fade when they stop hitting blocks.', { now: true });
         } else if (e.t === 'nailpop') {
@@ -648,6 +650,10 @@ function noteTargetPoint() {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
         return { x: p.x, y: p.y, r: 0.7 };
     }
+    if (t.kind === 'pickup' && sim.s.pickups[t.id]) {
+        const pk = sim.s.pickups[t.id];
+        return { x: pk.x, y: pk.y, r: 0.35 };
+    }
     if (t.kind === 'prop' && sim.s.props[t.id]) {
         const pr = sim.s.props[t.id];
         if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
@@ -663,7 +669,7 @@ function placeNote() {
     const c = window.__boop.toScreen(t.x, t.y);
     const edge = window.__boop.toScreen(t.x + t.r, t.y);
     // A tip about the whole board is said by the block buddy, standing under the bubble.
-    const rPx = t.buddy ? 30 : Math.abs(edge.x - c.x);
+    const rPx = t.buddy ? 23 : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
     if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
@@ -698,26 +704,62 @@ function showNote(text, stay = false) {
     if (noteTargetPoint()?.buddy && !stay) noteTimer = setTimeout(hideNote, BUDDY_TIP_MS);
 }
 
-// ---------- the buddy's tour ----------
-// The basics, told by the block buddy the first time each comes up (once per device),
-// instead of a long read up front. Tips that come mid-turn show right away; the rest
-// wait for a quiet moment (the start of a turn with nothing else on screen).
+// ---------- tips ----------
+// Every tip shows once per device, one at a time. Two kinds:
+//  - things: the first time a windmill, jelly block, +1 ring... shows up, a callout points
+//    at it and stays until you aim;
+//  - the buddy's tour: game-wide basics (launching, nails, shots...), said by the block buddy
+//    when they first come up; these fade on their own.
+// Tips wait in a queue for a quiet moment (nothing else on screen, at the start of a turn)
+// unless they're about something happening right now.
 const tipQueue = [];
-function sayBuddy(text, stay = false) {
-    sim.s.noteTarget = { kind: 'open' };
-    showNote(text, stay);
+function showTip(tip) {
+    sim.s.noteTarget = tip.target ?? { kind: 'open' };
+    showNote(tip.text, tip.stay);
+    if (tip.key) {
+        writeTips({ ...readTips(), [tip.key]: true });
+        sim.s.seen = { ...sim.s.seen, [tip.key]: true };
+    }
 }
-function tourTip(key, text, { now = false, stay = false } = {}) {
-    const seen = readTips();
-    if (seen[key]) return;
-    writeTips({ ...seen, [key]: true });
-    sim.s.seen = { ...sim.s.seen, [key]: true };
-    // Only one tip at a time: if something's already showing, this one waits its turn.
-    if (now && !noteShown) sayBuddy(text, stay);
-    else tipQueue.push([text, stay]);
-}
+const tipDue = (tip) => !tip.key || !readTips()[tip.key];
+const targetLives = (t) => !t || t.kind === 'open' || t.kind === 'launcher'
+    || (t.kind === 'block' && sim.s.blocks[t.id]) || (t.kind === 'prop' && sim.s.props[t.id]) || (t.kind === 'pickup' && sim.s.pickups[t.id]);
 function nextTip() {
-    if (!noteShown && tipQueue.length && phase === 'aim') sayBuddy(...tipQueue.shift());
+    if (noteShown || phase !== 'aim' || paused()) return;
+    while (tipQueue.length) {
+        const tip = tipQueue.shift();
+        if (!tipDue(tip)) continue;
+        if (!targetLives(tip.target)) continue;     // gone already; it'll be introduced next time one shows up
+        showTip(tip);
+        return;
+    }
+}
+function tourTip(key, text, { now = false, stay = false, first = false } = {}) {
+    const tip = { key, text, stay };
+    if (!tipDue(tip) || tipQueue.some((t) => t.key === key)) return;
+    // Things on the board get introduced first; a tour tip only jumps in when none are waiting.
+    // (The very basics, launching and hits, always go first.)
+    if (now && !noteShown && (first || !tipQueue.some((t) => t.target && tipDue(t)))) showTip(tip);
+    else tipQueue.push(tip);
+}
+// A new zone: introduce, in order, each kind of thing in it that hasn't been explained yet,
+// pointing at the first one. They go ahead of anything else waiting.
+function queueZoneTips() {
+    const s = sim.s, tips = [];
+    if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
+    const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
+    const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
+    const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
+    const prop = (k) => { const p = props.find((x) => x.kind === k); return p && { kind: 'prop', id: p.id }; };
+    add('ring', pickups[0] && { kind: 'pickup', id: pickups[0].id });
+    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello));
+    add('resting', block((b) => b.loose));
+    add('jelly', block((b) => b.jello));
+    add('grey', block((b) => b.neutral));
+    add('cup', block((b) => b.cup));
+    add('windmill', prop('windmill'));
+    add('mushroom', prop('mushroom'));
+    tipQueue.unshift(...tips);
 }
 function hideNote() {
     clearTimeout(noteTimer);
@@ -867,7 +909,7 @@ function tick(frameDt) {
         if (t >= 1) {
             zoneOffset = 0;
             // First time something new shows up, say what it does in one line.
-            if (sim.s.note) showNote(sim.s.note);
+            queueZoneTips();
             writeTips({ ...readTips(), ...sim.s.seen });
             readyToAim();
         }
@@ -1019,7 +1061,13 @@ function showScreen(which, moveFocus = true) {
 function play() {
     showScreen(null);
     // First game ever: the buddy says how to launch, and stays until you start aiming.
-    if (phase === 'aim' && !runStarted) tourTip('aim', 'Drag anywhere to aim, then let go to fire!', { now: true, stay: true });
+    if (phase === 'aim' && !runStarted) {
+        tourTip('aim', 'Drag anywhere to aim, then let go to fire!', { now: true, stay: true, first: true });
+        // Next in the tour, ahead of the things on the board: what nails mean.
+        const nails = { key: 'nails', text: 'Nailed blocks stay put until you knock their nails out. Blocks without nails can tumble.' };
+        if (tipDue(nails) && !tipQueue.some((t) => t.key === 'nails')) tipQueue.unshift(nails);
+    }
+    nextTip();
     fromSave = false;      // from here on, the start screen is just the pause screen
     canvas.focus({ preventScroll: true });   // so the keyboard goes straight to aiming
 }

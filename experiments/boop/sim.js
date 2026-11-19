@@ -2,7 +2,7 @@
 // The aim preview clones this whole sim and runs it forward, so the guide line
 // uses the exact same code and numbers as the real shot.
 
-import { SHAPES, SHAPE_VARIANTS, PROP_NOTES, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
+import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -80,11 +80,12 @@ const PINNED_DENSITY = 3;
 // Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
 // A ball hitting close to a nail wears it down; a nail lasts about a fifth of the
 // block's starting number in hits (at least 2; NAIL_SHARE). With one nail left the block swings
-// down and hangs from it; with none it falls and becomes a resting block. Grey blocks'
-// and single squares' nails never come out (hp -1).
+// down and hangs from it; with none it falls and becomes a resting block. Only single
+// squares' nails never come out (hp -1).
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
 const NAIL_SHARE = 0.3;
+const NAIL_GREY_HP = 6;               // grey blocks have no number: their nails take this many hits
 const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
 const PINNED_KNOCK = 0.5;            // pinned blocks get half the knock of a resting one
 const ZONE_TOP_ROW = 4;
@@ -220,15 +221,17 @@ export class Sim {
             anchor: [cx, cy], anchorA: 0,
         };
         if (kind !== 'loose') {
-            const top = Math.max(...b.cells.map(([, y]) => y));
-            const row = b.cells.filter(([, y]) => y === top).map(([x]) => x);
-            // Nails can be knocked out from depth 3, where resting blocks first show up.
-            const forever = kind === 'neutral' || n === 1 || s.depth < 3;
-            const nhp = forever ? -1 : Math.max(2, Math.round(hp * NAIL_SHARE));
-            b.nails = [
-                { id: 0, x: Math.min(...row) - 0.5 + NAIL_INSET, y: top + 0.5 - NAIL_INSET, hp: nhp, hp0: nhp },
-                { id: 1, x: Math.max(...row) + 0.5 - NAIL_INSET, y: top + 0.5 - NAIL_INSET, hp: nhp, hp0: nhp },
-            ];
+            // Kitty-corner: one nail at a top corner, the other at the opposite bottom corner,
+            // so knocking out either one leaves the block hinged on the other.
+            const ys = b.cells.map(([, y]) => y), top = Math.max(...ys), bot = Math.min(...ys);
+            const topX = b.cells.filter(([, y]) => y === top).map(([x]) => x);
+            const botX = b.cells.filter(([, y]) => y === bot).map(([x]) => x);
+            const i = NAIL_INSET, flip = id % 2 === 1;
+            const a = flip ? [Math.max(...topX) + 0.5 - i, top + 0.5 - i] : [Math.min(...topX) - 0.5 + i, top + 0.5 - i];
+            const c = flip ? [Math.min(...botX) - 0.5 + i, bot - 0.5 + i] : [Math.max(...botX) + 0.5 - i, bot - 0.5 + i];
+            // Single squares' nails never come out (a lone square on the floor is no fun to chase).
+            const nhp = n === 1 ? -1 : kind === 'neutral' ? NAIL_GREY_HP : Math.max(2, Math.round(hp * NAIL_SHARE));
+            b.nails = [{ id: 0, x: a[0], y: a[1], hp: nhp, hp0: nhp }, { id: 1, x: c[0], y: c[1], hp: nhp, hp0: nhp }];
         } else b.nails = [];
         s.blocks[id] = b;
         this.shapeBlock(b);
@@ -311,7 +314,7 @@ export class Sim {
         const { R, world } = this;
         const body = world.getRigidBody(b.body);
         b.hanging = true;
-        if (b.jello) body.setBodyType(R.RigidBodyType.Dynamic, true);
+        if (body.bodyType() !== R.RigidBodyType.Dynamic) body.setBodyType(R.RigidBodyType.Dynamic, true);   // jelly and grey
         body.setGravityScale(BLOCK_FALL, true);
         body.setLinearDamping(0.2);
         body.setAngularDamping(0.35);
@@ -324,7 +327,7 @@ export class Sim {
         const { R, world } = this;
         const body = world.getRigidBody(b.body);
         b.hanging = false;
-        if (b.jello) {
+        if (b.jello || b.neutral) {
             if (body.bodyType() !== R.RigidBodyType.Dynamic) body.setBodyType(R.RigidBodyType.Dynamic, true);
             b.loose = true;
             body.setGravityScale(BLOCK_FALL, true);
@@ -388,9 +391,9 @@ export class Sim {
         const { world, s } = this;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (b.loose || b.neutral) continue;
+            if (b.loose) continue;
             if (b.hanging) { this.hangSpring(b); continue; }
-            if (b.jello) continue;
+            if (b.jello || b.neutral) continue;
             const body = world.getRigidBody(b.body);
             if (body.isSleeping()) continue;
             const p = body.translation(), v = body.linvel();
@@ -423,7 +426,7 @@ export class Sim {
         const { world, s } = this;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if ((b.jello && !b.loose) || b.neutral) continue;
+            if ((b.jello || b.neutral) && !b.loose) continue;
             const body = world.getRigidBody(b.body);
             const p = body.translation();
             if (b.loose) {
@@ -439,7 +442,7 @@ export class Sim {
         for (const id in s.props) if (s.props[id].falling) return false;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (b.jello && !b.loose && !b.hanging) continue;
+            if ((b.jello || b.neutral) && !b.loose && !b.hanging) continue;
             const body = world.getRigidBody(b.body);
             if (body.isSleeping()) continue;
             const v = body.linvel();
@@ -486,11 +489,9 @@ export class Sim {
         s.depth += 1;
         s.stretch = false;
         const spec = zoneSpec(s.depth);
-        // Tips (what's new) show once: s.seen holds what's been explained, by key. The
-        // game fills it from earlier runs on this device. Upgrades are news, so always shown.
-        s.seen ??= {};
-        s.note = spec.note && !s.seen[spec.noteKey] ? spec.note : null;
-        if (s.note) s.seen[spec.noteKey] = true;
+        // The game introduces each new thing itself (see game.js). The sim only announces
+        // launcher upgrades, which are news about the run.
+        s.note = null;
         s.noteTarget = null;
         const upgrade = MULTISHOT_AT[s.depth];
         if (upgrade) {
@@ -705,6 +706,7 @@ export class Sim {
         for (const p of plan) {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
+            if (p.cup) p.block.cup = true;
         }
         for (const m of mushSpots) {
             if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + ZONE_TOP_ROW + 0.5), m.dir); continue; }
@@ -752,7 +754,6 @@ export class Sim {
         if (s.depth === 3 && !Object.values(s.blocks).some((b) => b.loose) && (s.retries = (s.retries ?? 0) + 1) < 8) {
             for (const id in s.blocks) this.removeBlock(s.blocks[id], false);
             this.events.length = 0;
-            if (spec.noteKey && s.note === spec.note) delete s.seen[spec.noteKey];   // the redo still gets its tip
             s.depth -= 1;
             this.genZone();
             return;
@@ -768,25 +769,6 @@ export class Sim {
         s.par = Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(s.depth) * s.volley))));
         s.zoneShots = 0;
 
-        // Props introduce themselves the first time each kind shows up, one per zone,
-        // when the zone doesn't already have something else to explain.
-        if (!s.note) {
-            const fresh = Object.values(s.props).find((p) => !s.seen[p.kind]);
-            if (fresh) {
-                s.note = PROP_NOTES[fresh.kind];
-                s.noteTarget = { kind: 'prop', id: fresh.id };
-                s.seen[fresh.kind] = true;
-            }
-        }
-
-        // Point the zone's note at the first example of the new thing.
-        if (s.note && !s.noteTarget) {
-            const blocks = Object.values(s.blocks), props = Object.values(s.props);
-            const b = s.depth === 4 ? blocks.find((x) => x.jello) : s.depth === 3 ? blocks.find((x) => x.loose)
-                : s.depth === 7 ? blocks.find((x) => x.neutral) : null;
-            if (b) s.noteTarget = { kind: 'block', id: b.id };
-            else s.noteTarget = { kind: 'open' };
-        }
     }
 
     addPickup(x, y) {
@@ -1094,7 +1076,8 @@ export class Sim {
                 bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
             // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
-            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) {
+            if (blk?.neutral && this.cooled(a.body + ':' + b.id)) this.hitNail(blk, p, 1);
+            else if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) {
                 const n = ballPower(ball) * (s.stretch ? 2 : 1);
                 this.damageBlock(b.id, n);
                 if (s.blocks[b.id]) this.hitNail(blk, p, n);

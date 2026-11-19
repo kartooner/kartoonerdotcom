@@ -52,9 +52,16 @@ export const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
 
 // What each zone holds. New things arrive one at a time, then numbers climb.
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
-export const PROP_NOTES = {
+// What each thing says the first time it shows up. The tip points at it (see game.js).
+export const THING_TIPS = {
     windmill: 'Windmills spin when hit and swat the next ball.',
     mushroom: 'Mushrooms grow off walls and blocks. Their caps kick balls back harder.',
+    ring: 'Fly a ball through a +1 ring for an extra shot.',
+    resting: 'No nails: this block just rests. Knock out what holds it up and it tumbles.',
+    jelly: 'Jelly: balls pass right through, slowed down. Each pass takes 1 off.',
+    grey: "Grey blocks can't be broken, but their nails can. Bank shots off them.",
+    cup: 'A cup: drop a ball in to grab the +1 and rattle around.',
+    single: 'Grey nails never come out. This one stays put until you pop it.',
 };
 
 export function zoneSpec(d) {
@@ -64,10 +71,8 @@ export function zoneSpec(d) {
     };
     if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.4, props: 0, loose: 0, jello: 0, tough: 0 };
     if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
-    if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0,
-        note: 'Blocks without nails just rest on others. Knock out what holds them up and they tumble.', noteKey: 'resting' };
-    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 1, tough: 0.04,
-        note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.', noteKey: 'jelly' };
+    if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0 };
+    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 1, tough: 0.04 };
     // Past the intro, everything that's been introduced keeps showing up more.
     // Numbers keep climbing, but more slowly past depth 8 so they stay readable.
     const n = d <= 8 ? d : 8 + (d - 8) * 0.6;
@@ -79,8 +84,6 @@ export function zoneSpec(d) {
         loose: Math.min(0.36, 0.16 + d * 0.015),
         jello: Math.min(0.85, 0.35 + d * 0.04),
         tough: Math.min(0.12, 0.04 + d * 0.008),
-        note: d === 7 ? 'Grey blocks can\'t be broken. Use them to bounce shots where you want.' : undefined,
-        noteKey: d === 7 ? 'grey' : undefined,
     };
 }
 
