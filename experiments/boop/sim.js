@@ -33,7 +33,7 @@ const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
 // Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
 // Eased in over the first zones so zone 1 stays friendly.
-const hpScale = (d) => Math.min(3, 1.5 + 0.5 * (d - 1));
+const hpScale = (d) => Math.min(4.5, 1.8 + 0.75 * (d - 1));
 const parHpPerShot = (d) => (3.5 + 0.7 * d) * hpScale(d);   // a good shot does more deeper down (bigger blocks, more traps)
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
@@ -43,7 +43,9 @@ const STUCK_STEPS = 60;
 // long as it keeps hitting blocks (jelly counts). Walls, the floor, props and grey
 // blocks don't count: a ball that's only been bouncing off those for RETIRE_IDLE
 // is in a loop and fades out.
-const RETIRE_IDLE = 240;            // 2s without hitting a block
+const RETIRE_IDLE = 480;            // 4s without hitting a block
+const GRACE_RANGE = 5;              // ...unless it's heading at a block within this many cells
+const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
@@ -123,14 +125,18 @@ const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
 
 // What each zone holds. New things arrive one at a time, then numbers climb.
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
+const PROP_NOTES = {
+    windmill: 'Windmills spin when hit and swat the next ball.',
+    mushroom: 'Mushrooms kick balls back harder than they came in.',
+};
+
 export function zoneSpec(d) {
     const base = {
         cups: d >= 2 ? Math.min(0.8, 0.25 + d * 0.04) : 0,
         neutral: d >= 7 ? Math.min(4, 1 + Math.floor((d - 7) / 3)) : 0,
     };
     if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.28, props: 0, loose: 0, jello: 0, tough: 0 };
-    if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.3, props: 1, loose: 0, jello: 0, tough: 0,
-        note: 'Windmills spin when hit. Mushrooms kick balls back harder.' };
+    if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.3, props: 1, loose: 0, jello: 0, tough: 0 };
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.32, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
     if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.33, props: 2, loose: 0.2, jello: 1, tough: 0.04,
@@ -304,7 +310,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
-        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7)) this.gain(1, p.x, p.y);
+        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -363,6 +369,8 @@ export class Sim {
                 const off = Math.hypot(p.x - b.anchor[0], p.y - b.anchor[1]);
                 const v = body.linvel(), speed = Math.hypot(v.x, v.y);
                 const turn = Math.abs(body.rotation() - b.anchorA), spin = Math.abs(body.angvel());
+                // One-square blocks never snap loose (they'd end up on the floor, too hard to hit).
+                if (b.cells.length === 1) continue;
                 if ((off > SNAP_DIST && speed > SNAP_SPEED) || off > GIVE_WAY_DIST ||
                     (turn > SNAP_ANGLE && spin > SNAP_SPIN) || turn > GIVE_WAY_ANGLE) this.snap(b);
             }
@@ -543,7 +551,8 @@ export class Sim {
         const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
-            if (p.kind !== 'pinned' || p.cup || !solidBelow(p)) continue;
+            // One-square blocks never rest loose: on the floor they'd be too hard to hit.
+            if (p.kind !== 'pinned' || p.cup || p.cells.length === 1 || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
             // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
@@ -612,13 +621,24 @@ export class Sim {
         s.par = Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(s.depth) * s.volley))));
         s.zoneShots = 0;
 
+        // Props introduce themselves the first time each kind shows up, one per zone,
+        // when the zone doesn't already have something else to explain.
+        s.seen ??= {};
+        if (!s.note) {
+            const fresh = Object.values(s.props).find((p) => !s.seen[p.kind]);
+            if (fresh) {
+                s.note = PROP_NOTES[fresh.kind];
+                s.noteTarget = { kind: 'prop', id: fresh.id };
+                s.seen[fresh.kind] = true;
+            }
+        }
+
         // Point the zone's note at the first example of the new thing.
         if (s.note && !s.noteTarget) {
             const blocks = Object.values(s.blocks), props = Object.values(s.props);
             const b = s.depth === 4 ? blocks.find((x) => x.jello) : s.depth === 3 ? blocks.find((x) => x.loose)
                 : s.depth === 7 ? blocks.find((x) => x.neutral) : null;
             if (b) s.noteTarget = { kind: 'block', id: b.id };
-            else if (s.depth === 2 && props.length) s.noteTarget = { kind: 'prop', id: props[0].id };
             else s.noteTarget = { kind: 'open' };
         }
     }
@@ -856,8 +876,30 @@ export class Sim {
     }
 
     // A ball that just scored is "working": it loses any extra weight and keeps going.
+    // Is a ball at p moving along v aimed at a block (not a grey one) within GRACE_RANGE cells?
+    headingAtBlock(p, v) {
+        const sp = Math.hypot(v.x, v.y);
+        if (sp < 0.01) return false;
+        const dx = v.x / sp, dy = v.y / sp;
+        for (const id in this.s.blocks) {
+            const b = this.s.blocks[id];
+            if (b.neutral) continue;
+            const c = this.world.getRigidBody(b.body).translation();
+            for (const [x, y] of b.cells) {
+                // Each cell as a circle: is it in front of the ball, within range, close to the line?
+                const cx = c.x + x * b.scale - p.x, cy = c.y + y * b.scale - p.y;
+                const along = cx * dx + cy * dy;
+                if (along <= 0 || along > GRACE_RANGE) continue;
+                const off = Math.abs(cx * dy - cy * dx);
+                if (off < 0.5 * b.scale + 0.2) return true;
+            }
+        }
+        return false;
+    }
+
     scored(ball) {
         if (!ball) return;
+        ball.grace = 0;
         ball.idle = 0;
     }
 
@@ -874,6 +916,12 @@ export class Sim {
             }
             ball.age += 1;
             ball.idle += 1;
+            // Grace: a ball about to time out that's heading straight at a block nearby gets
+            // a little longer to get there (never more than GRACE_MAX in a row).
+            if (ball.idle > RETIRE_IDLE && (ball.grace ?? 0) < GRACE_MAX && this.headingAtBlock(p, body.linvel())) {
+                ball.grace = (ball.grace ?? 0) + 1;
+                continue;
+            }
             if (ball.idle > RETIRE_IDLE) {
                 this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y });
                 this.removeBall(ball.body);
