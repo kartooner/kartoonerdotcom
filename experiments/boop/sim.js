@@ -2,6 +2,9 @@
 // The aim preview clones this whole sim and runs it forward, so the guide line
 // uses the exact same code and numbers as the real shot.
 
+import { SHAPES, SHAPE_VARIANTS, PROP_NOTES, zoneSpec, STYLES, MIN_PICKUP_GAP } from './zones.js';
+export { zoneSpec };
+
 export const W = 9;                 // field width in cells
 export const H = 16;                // field height in cells (y runs 0 → -H)
 export const LAUNCHER = { x: W - 0.62, y: -0.62 };
@@ -45,12 +48,13 @@ const STUCK_STEPS = 60;
 // is in a loop and fades out.
 const RETIRE_IDLE = 480;            // 4s without hitting a block
 // A ball that's been going a while hits harder, so a long trap chews through blocks
-// instead of dragging on: +1 damage per 8s alive, up to 4 per hit.
-const POWER_EVERY = 960;
+// instead of dragging on: +1 damage per 6s alive, up to 4 per hit.
+const POWER_EVERY = 720;
 const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
-// After 10s alive, the time a ball may go without a hit shrinks, to 1.5s by 20s:
+// After 6s alive, the time a ball may go without a hit shrinks, to 1.5s by about 14s:
 // a busy trap keeps going; one that only now and then finds a block winds down.
-const idleLimit = (ball) => ball.age < 1200 ? RETIRE_IDLE : Math.max(180, RETIRE_IDLE - (ball.age - 1200) * 0.25);
+// Keeps the wait between shots short.
+const idleLimit = (ball) => ball.age < 720 ? RETIRE_IDLE : Math.max(180, RETIRE_IDLE - (ball.age - 720) * 0.3);
 const GRACE_RANGE = 5;              // ...unless it's heading at a block within this many cells
 const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
@@ -80,98 +84,6 @@ const SPEED_EASE = 0.15;
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
 const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
-
-// Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
-const SHAPES = [
-    { w: 6, c: [[0, 0]] },
-    { w: 4, c: [[0, 0], [1, 0]] },
-    { w: 4, c: [[0, 0], [0, 1]] },
-    { w: 3, c: [[0, 0], [1, 0], [0, 1], [1, 1]] },
-    { w: 2, c: [[0, 0], [1, 0], [2, 0]] },
-    { w: 2, c: [[0, 0], [0, 1], [0, 2]] },
-    { w: 2, c: [[0, 0], [0, 1], [1, 1]] },
-    { w: 2, c: [[0, 0], [1, 0], [1, 1]] },
-    { w: 2, c: [[1, 0], [0, 1], [1, 1]] },
-    { w: 2, c: [[0, 0], [1, 0], [0, 1]] },
-    { w: 1, c: [[0, 0], [1, 0], [2, 0], [1, 1]] },
-    { w: 1, c: [[0, 0], [0, 1], [0, 2], [1, 2]] },
-    { w: 1, c: [[0, 0], [1, 0], [1, 1], [2, 1]] },
-    // Big ones, so zones mix large and small: easy to hit, with numbers to chip away at.
-    { w: 2, c: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]] },              // 3x2
-    { w: 2, c: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]] },              // 2x3
-    { w: 1, c: [[0, 0], [1, 0], [2, 0], [3, 0]] },                              // long bar
-    { w: 1, c: [[0, 0], [0, 1], [0, 2], [0, 3]] },                              // tall bar
-    { w: 1, c: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2]] },                      // big L
-    { w: 1, c: [[0, 0], [1, 0], [2, 0], [1, 1], [1, 2]] },                      // big T
-    { w: 0.6, c: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]] }, // 3x3
-];
-// Every shape can appear rotated or mirrored, so the same piece rarely looks the same twice.
-// "canon" names a shape whatever way it's turned, for the repeat limits below.
-function normCells(cells) {
-    const mx = Math.min(...cells.map(([x]) => x)), my = Math.min(...cells.map(([, y]) => y));
-    return cells.map(([x, y]) => [x - mx, y - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-}
-const cellKey = (cells) => cells.map((c) => c.join(',')).join(' ');
-function variantsOf(cells) {
-    const out = new Map();
-    for (const start of [cells, cells.map(([x, y]) => [-x, y])]) {
-        let cur = start;
-        for (let r = 0; r < 4; r++) {
-            const n = normCells(cur);
-            out.set(cellKey(n), n);
-            cur = cur.map(([x, y]) => [-y, x]);
-        }
-    }
-    return [...out.values()];
-}
-const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
-    const vs = variantsOf(sh.c);
-    const canon = [...vs.map(cellKey)].sort()[0];
-    return vs.map((c) => ({ c, w: sh.w / vs.length, canon, size: c.length }));
-});
-
-// What each zone holds. New things arrive one at a time, then numbers climb.
-// jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
-const PROP_NOTES = {
-    windmill: 'Windmills spin when hit and swat the next ball.',
-    mushroom: 'Mushrooms kick balls back harder than they came in.',
-};
-
-export function zoneSpec(d) {
-    const base = {
-        cups: d >= 2 ? Math.min(0.8, 0.25 + d * 0.04) : 0,
-        neutral: d >= 7 ? Math.min(4, 1 + Math.floor((d - 7) / 3)) : 0,
-    };
-    if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.4, props: 0, loose: 0, jello: 0, tough: 0 };
-    if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
-    if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0,
-        note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
-    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 2, loose: 0.2, jello: 1, tough: 0.04,
-        note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.' };
-    // Past the intro, everything that's been introduced keeps showing up more.
-    return {
-        ...base,
-        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
-        props: Math.min(4, 1 + Math.floor((d - 1) / 3)),
-        loose: Math.min(0.36, 0.16 + d * 0.015),
-        jello: Math.min(0.85, 0.35 + d * 0.04),
-        tough: Math.min(0.12, 0.04 + d * 0.008),
-        note: d === 7 ? 'Grey blocks can\'t be broken. Use them to bounce shots where you want.' : undefined,
-    };
-}
-
-// How a zone's blocks sit together. Picked per zone so layouts vary.
-//   packed:  blocks butt up against each other
-//   airy:    every block has breathing room, some sit a little off the grid
-//   mixed:   some of each
-//   stacked: more loose blocks, more tall bars, more leaning (from zone 3)
-const STYLES = {
-    packed: { fill: 0.06, gap: 0, jitter: 0, loose: 1, tall: 1, lean: 0.12 },
-    airy: { fill: -0.04, gap: 0.6, jitter: 1, loose: 1, tall: 1, lean: 0.12 },
-    mixed: { fill: 0, gap: 0.5, jitter: 0.5, loose: 1, tall: 1, lean: 0.14 },
-    stacked: { fill: 0.02, gap: 0.3, jitter: 0, loose: 1.9, tall: 3, lean: 0.22 },
-};
-const MIN_PICKUP_GAP = 3.5;         // +1 pickups are always this many cells apart or more
 
 // Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
 export function blockScale(hp, hp0) {

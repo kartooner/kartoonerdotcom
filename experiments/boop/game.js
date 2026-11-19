@@ -1,23 +1,24 @@
-// Boop gray-box: rendering, input and turn flow. Physics and rules live in sim.js.
+// Boop!: the game loop, rendering of the board, input and turn flow.
+// Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
+import { makeSketch, SHAPE, setSketchInk, forgetSketch } from './sketch.js';
+import { THEMES, COLORS } from './theme.js';
+import { makeLabel as labelMesh, drawLabel } from './labels.js';
+import { makeBallView, shapeBall } from './balls.js';
 
-// Light and dark palettes. "line" is for marks drawn on the field (launcher,
-// guide, pickups); "edge" is the outline on blocks, props and balls.
-const THEMES = {
-    light: {
-        paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7, guideEnd: 0xa59d92,
-        hit: 0xd2492a, text: '#2b2622', jelloText: '#2b2622',
-    },
-    dark: {
-        paper: 0x15120f, field: 0x221e1a, line: 0xede4d3, edge: 0x0f0c0a, ball: 0xf6efe2, guideEnd: 0x6f685f,
-        hit: 0xff9466, text: '#ede4d3', jelloText: '#f6efe2',
-    },
-};
-const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
 let theme = THEMES.light;
+const makeLabel = (text, color = theme.text) => labelMesh(text, color);
+const bounced = new Set();      // balls that hit something since the last frame
+const fadingBalls = [];         // balls whose shot just ended, shrinking away
+function buildBallView(handle) {
+    const v = makeBallView(outlineMat, ballMat);
+    scene.add(v.group);
+    ballViews.set(handle, v);
+    return v;
+}
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
 const DESCEND_TIME = 0.9;
@@ -44,12 +45,17 @@ const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
-    // The field sits just below the HUD, using the HUD's real height, and is as large
-    // as fits: full width on a phone, full height on a wide screen.
+    const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
+    const hudW = 200, hudGap = 28;
+    // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
+    // the HUD in a column beside it and give the board the full height.
+    const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
+    const wideBoard = (W + 0.16) * wideScale;
+    const wide = w > h * 1.05 && (w - wideBoard) / 2 >= hudW + hudGap + 16;
+    document.body.classList.toggle('wide', wide);
+    // Otherwise the field sits just below the HUD, using the HUD's real height.
     const hudEl = document.getElementById('hud');
-    const topPx = (hudEl ? hudEl.getBoundingClientRect().bottom : 60) + 10;
-    const bottomPx = 44;                        // room for the Games / theme links
-    const pad = 0.25;
+    const topPx = wide ? 16 : (hudEl ? hudEl.getBoundingClientRect().bottom : 60) + 10;
     const scale = Math.min(w / (W + pad * 2), (h - topPx - bottomPx) / (H + pad * 2));   // px per cell
     const vw = w / scale, vh = h / scale;
     const top = pad + topPx / scale;            // view top, in cells above the field's top edge
@@ -58,8 +64,12 @@ function fitCamera() {
     camera.updateProjectionMatrix();
     // The HUD and the links under the field line up with the field's frame, edge to edge.
     const boardPx = (W + 0.16) * scale;
-    document.documentElement.style.setProperty('--board-w', `${boardPx}px`);
-    document.documentElement.style.setProperty('--board-left', `${(w - boardPx) / 2}px`);
+    const boardLeft = (w - boardPx) / 2;
+    const root = document.documentElement.style;
+    root.setProperty('--board-w', `${boardPx}px`);
+    root.setProperty('--board-left', `${boardLeft}px`);
+    root.setProperty('--board-top', `${topPx + pad * scale}px`);
+    root.setProperty('--hud-left', `${boardLeft - hudW - hudGap}px`);
 }
 window.addEventListener('resize', fitCamera);
 fitCamera();
@@ -67,7 +77,6 @@ fitCamera();
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
-const halfCircle = new THREE.CircleGeometry(1, 24, 0, Math.PI);
 const lineMat = mat(0);         // marks on the field
 const outlineMat = mat(0);      // edges on blocks, props and balls
 const ballMat = mat(0);
@@ -78,33 +87,21 @@ fieldMesh.scale.set(W, H, 1);
 fieldMesh.position.set(W / 2, -H / 2, -1);
 scene.add(fieldMesh);
 
-// A solid frame around the playfield, so it reads as a board, not a blank panel.
-const FRAME = 0.08;
-for (const [w, h, x, y] of [
-    [W + FRAME * 2, FRAME, W / 2, FRAME / 2],          // top
-    [W + FRAME * 2, FRAME, W / 2, -H - FRAME / 2],     // bottom
-    [FRAME, H, -FRAME / 2, -H / 2],                    // left
-    [FRAME, H, W + FRAME / 2, -H / 2],                 // right
-]) {
-    const m = new THREE.Mesh(unitSquare, lineMat);
-    m.scale.set(w, h, 1);
-    m.position.set(x, y, -0.5);
-    scene.add(m);
-}
+// A hand-drawn frame around the playfield, so it reads as a board someone sketched.
+const boardFrame = makeSketch({ kind: SHAPE.BOX, size: [W / 2 + 0.05, H / 2 + 0.05], round: 0.06, edge: 0.09,
+    filled: false, role: 'line', wob: 0.8, margin: 0.25, seed: 7 });
+boardFrame.position.set(W / 2, -H / 2, -0.5);
+boardFrame.renderOrder = 0;
+scene.add(boardFrame);
 
-function rect(w, h, material, x = 0, y = 0, z = 0) {
-    const m = new THREE.Mesh(unitSquare, material);
-    m.scale.set(w, h, 1);
-    m.position.set(x, y, z);
-    return m;
-}
 
 // Launcher in the top-right corner.
 const launcher = new THREE.Group();
-const launcherBody = new THREE.Mesh(unitCircle, lineMat);
-launcherBody.scale.setScalar(0.34);
+const launcherBody = makeSketch({ kind: SHAPE.CIRCLE, size: [0.34], role: 'line', inkFill: true, wob: 0.6, seed: 3 });
 const barrelPivot = new THREE.Group();
-barrelPivot.add(rect(0.62, 0.2, lineMat, 0.31));
+const barrel = makeSketch({ kind: SHAPE.BOX, size: [0.31, 0.1], round: 0.04, role: 'line', inkFill: true, wob: 0.35, seed: 5, margin: 0.12 });
+barrel.position.x = 0.31;
+barrelPivot.add(barrel);
 launcher.add(launcherBody, barrelPivot);
 launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
@@ -120,30 +117,6 @@ dots.frustumCulled = false;   // instances move every aim; the cached bounds wou
 for (let i = 0; i < MAX_DOTS; i++) dots.setColorAt(i, new THREE.Color(0));   // colour buffer must exist before first draw
 scene.add(dots);
 
-// ---------- text labels ----------
-
-function makeLabel(text, color = theme.text) {
-    const c = document.createElement('canvas');
-    c.width = c.height = 128;
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(unitSquare, new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
-    m.userData = { c, tex, color };
-    drawLabel(m, text);
-    return m;
-}
-function drawLabel(m, text) {
-    const { c, tex, color } = m.userData;
-    const g = c.getContext('2d');
-    g.clearRect(0, 0, 128, 128);
-    const size = text.length >= 3 ? 52 : text.length === 2 ? 66 : 78;
-    g.font = `800 ${size}px Manrope, system-ui, sans-serif`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillStyle = color;
-    g.fillText(text, 64, 68);
-    tex.needsUpdate = true;
-}
 
 // ---------- view of the sim ----------
 
@@ -239,7 +212,7 @@ function updateBlockView(v, b, frameDt) {
 
 function buildPickupView(pk) {
     const group = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.27, 28), lineMat);
+    const ring = makeSketch({ kind: SHAPE.RING, size: [0.235], ring: 0.075, edge: 0, role: 'line', inkFill: true, wob: 0.5, seed: pk.id * 3.1, margin: 0.12 });
     const label = makeLabel('+1');
     group.userData.label = label;
     label.scale.setScalar(0.42);
@@ -255,31 +228,30 @@ function buildPropView(pr) {
     const v = { group };
     if (pr.kind === 'windmill') {
         const rotor = new THREE.Group();
-        const fill = mat(COLORS.windmill);
         for (const rot of [0, Math.PI / 2]) {
-            const arm = new THREE.Group();
-            arm.add(rect(1.7 + 0.08, 0.18 + 0.08, outlineMat), rect(1.7, 0.18, fill, 0, 0, 0.05));
+            const arm = makeSketch({ kind: SHAPE.BOX, size: [0.89, 0.13], round: 0.05, edge: 0.05, wob: 0.35,
+                fill: COLORS.windmill, seed: pr.id + rot * 4, margin: 0.12 });
             arm.rotation.z = rot;
+            arm.position.z = rot ? 0.02 : 0;
             rotor.add(arm);
         }
-        const pin = new THREE.Mesh(unitCircle, outlineMat);
-        pin.scale.setScalar(0.12);
+        const pin = makeSketch({ kind: SHAPE.CIRCLE, size: [0.12], role: 'edge', inkFill: true, wob: 0.3, seed: pr.id + 9, margin: 0.08 });
         pin.position.z = 0.1;
+        pin.renderOrder = 2;
         rotor.add(pin);
         group.add(rotor);
         group.position.set(pr.x, pr.y, 0.05);
         v.rotor = rotor;
     } else {
-        // Mushroom: stem plus a domed cap, each with an ink edge.
-        const stemFill = mat(COLORS.stem), capFill = mat(COLORS.mushroom);
-        group.add(rect(0.28 + 0.08, pr.capY + 0.04, outlineMat, 0, pr.capY / 2), rect(0.28, pr.capY, stemFill, 0, pr.capY / 2, 0.05));
-        const capOut = new THREE.Mesh(halfCircle, outlineMat);
-        capOut.scale.set(pr.r + 0.045, (pr.r + 0.045) * 0.75, 1);
-        capOut.position.set(0, pr.capY - 0.03, 0.06);
-        const cap = new THREE.Mesh(halfCircle, capFill);
-        cap.scale.set(pr.r, pr.r * 0.75, 1);
-        cap.position.set(0, pr.capY, 0.07);
-        group.add(capOut, cap);
+        // Mushroom: a stem and a domed cap, both hand-drawn with an ink edge.
+        const stem = makeSketch({ kind: SHAPE.BOX, size: [0.16, pr.capY / 2 + 0.02], round: 0.04, edge: 0.05, wob: 0.35,
+            fill: COLORS.stem, seed: pr.id, margin: 0.12 });
+        stem.position.set(0, pr.capY / 2, 0);
+        const cap = makeSketch({ kind: SHAPE.CAP, size: [pr.r + 0.03, (pr.r + 0.03) * 0.75], edge: 0.055, wob: 0.45,
+            fill: COLORS.mushroom, seed: pr.id + 2, margin: 0.12 });
+        cap.position.set(0, pr.capY - 0.04, 0.05);
+        cap.renderOrder = 2;
+        group.add(stem, cap);
         group.position.set(pr.x, pr.y, 0.05);
     }
     scene.add(group);
@@ -298,46 +270,6 @@ function addFloater(text, x, y) {
     floaters.push({ m, t: 0 });
 }
 
-// Balls squash and stretch on screen only. The physics ball stays a circle,
-// so bounces stay predictable and the aim guide stays exact.
-const STRETCH_MAX = 0.75;       // extra length at full launch speed (a torpedo)
-const STRETCH_FROM = 3;         // below this speed a ball stays round
-const SQUASH_TIME = 0.22;
-const bounced = new Set();      // balls that hit something since the last frame
-const fadingBalls = [];         // balls whose shot just ended, shrinking away
-
-function buildBallView(handle) {
-    const group = new THREE.Group();          // squash, turned to the bounce normal
-    const inner = new THREE.Group();          // stretch, turned to the direction of travel
-    const o = new THREE.Mesh(unitCircle, outlineMat); o.scale.setScalar(BALL_R);
-    const f = new THREE.Mesh(unitCircle, ballMat); f.scale.setScalar(BALL_R - 0.045); f.position.z = 0.01;
-    inner.add(o, f);
-    group.add(inner);
-    scene.add(group);
-    const v = { group, inner, prev: { x: 0, y: 0 }, squashT: Infinity, normal: 0 };
-    ballViews.set(handle, v);
-    return v;
-}
-
-function shapeBall(v, vel, frameDt) {
-    v.squashT += frameDt;
-    // Squash: flatten hard against the surface, then wobble back to round.
-    let squash = 0;
-    if (v.squashT < SQUASH_TIME) {
-        const t = v.squashT;
-        squash = Math.exp(-t * 18) * Math.cos(t * 45) * 0.42;
-    }
-    // Stretch along travel, eased off while squashed. Longer also gets a little thinner.
-    const speed = Math.hypot(vel.x, vel.y);
-    const k = Math.min(1, Math.max(0, (speed - STRETCH_FROM) / (20 - STRETCH_FROM)));
-    const stretch = 1 + STRETCH_MAX * k * k * (1 - Math.min(1, Math.abs(squash) * 2.4));
-    const travel = Math.atan2(vel.y, vel.x);
-
-    v.group.rotation.z = v.normal;
-    v.group.scale.set(1 - squash, 1 / (1 - squash), 1);
-    v.inner.rotation.z = travel - v.normal;
-    v.inner.scale.set(stretch, 1 / Math.sqrt(stretch), 1);
-}
 
 function syncView(frameDt) {
     const s = sim.s;
@@ -355,7 +287,7 @@ function syncView(frameDt) {
     }
 
     for (const [id, g] of pickupViews) {
-        if (!s.pickups[id]) { scene.remove(g); pickupViews.delete(id); }
+        if (!s.pickups[id]) { scene.remove(g); forgetSketch(g); pickupViews.delete(id); }
     }
     for (const id in s.pickups) {
         const pk = s.pickups[id];
@@ -364,7 +296,7 @@ function syncView(frameDt) {
     }
 
     for (const [id, v] of propViews) {
-        if (!s.props[id]) { scene.remove(v.group); propViews.delete(id); }
+        if (!s.props[id]) { scene.remove(v.group); forgetSketch(v.group); propViews.delete(id); }
     }
     for (const id in s.props) {
         const pr = s.props[id];
@@ -606,7 +538,8 @@ function placeNote() {
     const rPx = Math.abs(edge.x - c.x);
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
-    const hudBottom = document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
+    const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
+        : document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
     const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
@@ -768,6 +701,7 @@ function applyTheme(name) {
     fieldMat.color.setHex(theme.field);
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
+    setSketchInk(theme.line, theme.edge);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
@@ -801,6 +735,7 @@ function showScreen(which, moveFocus = true) {
     menu.hidden = which !== 'menu';
     howto.hidden = which !== 'howto';
     document.body.classList.toggle('howto-open', which === 'howto');
+    document.body.classList.toggle('playing', !which);
     if (which === 'menu') {
         const best = readBest();
         $('menu-best').hidden = best === 0;
