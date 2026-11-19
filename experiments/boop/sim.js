@@ -231,7 +231,7 @@ export class Sim {
         for (const h of b.cols) delete s.owner[h];
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
-        this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
+        this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
         if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
@@ -782,6 +782,12 @@ export class Sim {
             pv: [Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED],
             home: [LAUNCHER.x, LAUNCHER.y], homeT: 0, idle: 0,
         });
+    }
+
+    // The zone is cleared mid-shot: balls still flying (and any not yet fired) are done.
+    endShots() {
+        if (this.s.shots) this.s.shots.left = 0;
+        for (const b of [...this.s.balls]) this.removeBall(b.body);
     }
 
     removeBall(handle) {

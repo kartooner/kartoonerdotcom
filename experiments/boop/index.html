@@ -82,6 +82,20 @@
         .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
         .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
         .stat-main { align-items: center; text-align: center; }
+        /* Pause sits above Depth, in the corner, out of the way of aiming. */
+        #btn-pause {
+            pointer-events: auto;
+            align-self: flex-start;
+            width: 40px; height: 40px;
+            margin: -10px 0 -4px -10px;
+            padding: 10px;
+            border: 0; background: none;
+            color: var(--ink);
+            cursor: pointer;
+        }
+        #btn-pause svg { display: block; width: 20px; height: 20px; }
+        #btn-pause:focus-visible, #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+        #stage canvas:focus { outline: none; }
         .stat-main b { font-size: 2rem; line-height: 1; }
         .stat-par { align-items: flex-end; text-align: right; }
         .stat-par.over b { color: var(--ink-soft); }
@@ -108,13 +122,16 @@
             box-sizing: border-box;
             margin: 0;
             padding: 8px 12px;
-            background: var(--panel);
-            border: 2px solid var(--ink);
-            border-radius: 10px;
+            isolation: isolate;
             font-size: 0.8125rem;
             font-weight: 600;
             line-height: 1.35;
             pointer-events: none;
+        }
+        #note::before, #message::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
+            filter: url(#sketchy);
         }
         #note::after {
             content: '';
@@ -128,6 +145,7 @@
             border-right: 2px solid var(--ink);
             border-bottom: 2px solid var(--ink);
             transform: rotate(45deg);
+            filter: url(#sketchy);
         }
         #note.below::after {
             bottom: auto;
@@ -141,12 +159,11 @@
             transform: translate(-50%, -50%);
             width: min(100vw - 32px, 320px);
             padding: 20px;
-            background: var(--panel);
-            border: 2px solid var(--ink);
+            isolation: isolate;
             text-align: center;
             pointer-events: none;
         }
-        #message h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; }
+        #message h1 { margin: 0 0 6px; font-size: 1.75rem; }
         #message p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
         [hidden] { display: none !important; }
         #theme-toggle {
@@ -386,7 +403,10 @@
 <body>
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
-        <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
+        <div class="stat stat-depth">
+            <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+            <span>Depth</span><b id="hud-depth">1</b>
+        </div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
@@ -405,6 +425,7 @@
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
                 <button class="btn" id="btn-howto" type="button">How to play</button>
+                <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
         </div>
@@ -429,7 +450,8 @@
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
-            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. Clear every block to drop to the next zone.</p>
+            <p class="note"><b>On a keyboard:</b> ← and → aim (hold Shift for fine aim), Space fires, Esc or P pauses.</p>
+            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. Pop the last block and the next zone comes up right away.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -499,6 +521,7 @@
     <link rel="modulepreload" href="./balls.js">
     <link rel="modulepreload" href="./labels.js">
     <link rel="modulepreload" href="./theme.js">
+    <link rel="modulepreload" href="./crumbs.js">
     <script type="module" src="./game.js"></script>
 </body>
 </html>
