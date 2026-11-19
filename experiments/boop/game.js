@@ -27,7 +27,6 @@ const DESCEND_TIME = 0.9;
 const $ = (id) => document.getElementById(id);
 const hud = {
     depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), progress: $('progress-fill'),
-    msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
 // ---------- three.js setup ----------
@@ -513,7 +512,6 @@ canvas.setAttribute('role', 'application');
 canvas.setAttribute('aria-label', 'Game board. Left and right arrows aim, Space fires, Escape pauses.');
 canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
-    if (phase === 'over') { restart(); return; }
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
@@ -618,21 +616,20 @@ let acc = 0, settleSteps = 0, descendT = 0, shake = 0;
 const prevBallPos = new Map();
 let stepAlpha = 1;
 
-function showMessage(title, body) {
-    hud.msgTitle.textContent = title;
-    hud.msgBody.textContent = body;
-    hud.msg.hidden = false;
-}
 
 function readBest() { try { return Number(localStorage.getItem('boop-best-depth')) || 0; } catch { return 0; } }
 function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d)); } catch { /* storage blocked */ } }
 
 function gameOver() {
-    const d = sim.s.depth, best = Math.max(readBest(), d);
+    const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
     writeBest(best);
     clearSave();
     phase = 'over';
-    showMessage(`Out of shots at depth ${d}`, `Best: ${best}. ${finePointer ? 'Click or press Space' : 'Tap'} to play again.`);
+    $('over-result').textContent = `You reached depth ${d}.`;
+    const isNew = d > before && before > 0;
+    $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
+    $('over-best').classList.toggle('new', isNew);
+    showScreen('over');
 }
 
 // The last block popped: no waiting for the balls to finish. A short beat for the
@@ -703,7 +700,6 @@ function loadRun() {
 }
 
 function restart(saved = null) {
-    hud.msg.hidden = true;
     if (sim) sim.free();
     for (const v of blockViews.values()) scene.remove(v.group);
     for (const g of pickupViews.values()) scene.remove(g);
@@ -858,8 +854,9 @@ applyTheme(currentTheme());
 // ---------- start screen ----------
 // The first zone builds behind the start screen; Play just lifts the screen.
 
-const menu = $('menu'), howto = $('howto');
-const paused = () => !menu.hidden || !howto.hidden;
+const menu = $('menu'), howto = $('howto'), over = $('over');
+const TAGLINE = $('menu-tagline').textContent;
+const paused = () => !menu.hidden || !howto.hidden || !over.hidden;
 function showScreen(which, moveFocus = true) {
     if (which) {                          // stop any aim in progress
         aiming = false; keyAim = false; keyTurn = 0;
@@ -867,18 +864,24 @@ function showScreen(which, moveFocus = true) {
     }
     menu.hidden = which !== 'menu';
     howto.hidden = which !== 'howto';
+    over.hidden = which !== 'over';
     document.body.classList.toggle('howto-open', which === 'howto');
     document.body.classList.toggle('playing', !which);
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
         const best = readBest();
-        $('menu-best').hidden = !runStarted && best === 0;
-        $('menu-best').textContent = !runStarted ? `Best depth: ${best}`
-            : fromSave ? `Saved run at depth ${sim.s.depth}` : `Paused at depth ${sim.s.depth}`;
+        // Mid-run the tagline gives way to where you are; the small line is only for Best.
+        $('menu-tagline').textContent = !runStarted ? TAGLINE
+            : fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`;
+        $('menu-tagline').classList.toggle('state', runStarted);
+        $('menu-best').hidden = runStarted || best === 0;
+        $('menu-best').textContent = `Best depth: ${best}`;
         $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-new').hidden = !runStarted;
         $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
         if (moveFocus) $('btn-play').focus();
+    } else if (which === 'over') {
+        if (moveFocus) $('btn-again').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
         $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
@@ -899,6 +902,8 @@ $('btn-menu-close').addEventListener('click', play);
 // Pause: the button, Escape or P, or leaving the tab mid-run all bring up the start screen.
 $('btn-pause').addEventListener('click', () => showScreen('menu'));
 $('btn-new').addEventListener('click', () => { restart(); play(); });
+$('btn-again').addEventListener('click', () => { restart(); play(); });
+$('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && runStarted && document.body.classList.contains('playing')) showScreen('menu', false);
 });
@@ -906,6 +911,7 @@ document.addEventListener('visibilitychange', () => {
 const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        if (!over.hidden) return;             // the run is over: nothing to pause or resume
         if (!howto.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
@@ -926,7 +932,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         if (e.repeat) return;
-        if (phase === 'over') { restart(); return; }
         if (phase !== 'aim') return;
         if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); return; }   // first press shows the guide
         const drawn = guideAngle ?? shownAngle();
