@@ -10,7 +10,7 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 
 let theme = THEMES.light;
-const makeLabel = (text, color = theme.text) => labelMesh(text, color);
+const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
 function buildBallView(handle) {
@@ -212,10 +212,10 @@ function updateBlockView(v, b, frameDt) {
 
 function buildPickupView(pk) {
     const group = new THREE.Group();
-    const ring = makeSketch({ kind: SHAPE.RING, size: [0.235], ring: 0.075, edge: 0, role: 'line', inkFill: true, wob: 0.5, seed: pk.id * 3.1, margin: 0.12 });
-    const label = makeLabel('+1');
+    const ring = makeSketch({ kind: SHAPE.RING, size: [0.25], ring: 0.045, edge: 0, role: 'line', inkFill: true, wob: 0.35, seed: pk.id * 3.1, margin: 0.12 });
+    const label = makeLabel('+1', theme.text, 'hand');
     group.userData.label = label;
-    label.scale.setScalar(0.42);
+    label.scale.setScalar(0.46);
     label.position.z = 0.1;
     group.add(ring, label);
     scene.add(group);
@@ -260,8 +260,8 @@ function buildPropView(pr) {
 }
 
 function addFloater(text, x, y) {
-    const m = makeLabel(text, theme.text);
-    m.scale.setScalar(0.55);
+    const m = makeLabel(text, theme.text, 'hand');
+    m.scale.setScalar(0.62);
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
     m.material.depthWrite = false;   // never block see-through things (jello) behind it
@@ -756,7 +756,10 @@ $('btn-menu-close').addEventListener('click', play);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !howto.hidden) showScreen('menu'); });
 
 await RAPIER.init();
-await document.fonts.load('800 64px Manrope').catch(() => {});
+await Promise.all([
+    document.fonts.load('800 64px Manrope'),
+    document.fonts.load("64px 'Cartridge Rough'"),   // for the +1 labels
+]).catch(() => {});
 fitCamera();   // the HUD's height is final once its font has loaded
 restart();
 showScreen('menu', false);
