@@ -82,17 +82,21 @@
         .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
         .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
         .stat-main { align-items: center; text-align: center; }
-        /* Pause sits above Depth, in the corner, out of the way of aiming. */
+        /* Pause: the board's top-left corner, opposite the launcher. That corner stays
+           open (zones start lower down), so it never covers a block. */
         #btn-pause {
-            pointer-events: auto;
-            align-self: flex-start;
-            width: 40px; height: 40px;
-            margin: -10px 0 -4px -10px;
-            padding: 10px;
+            display: none;
+            position: fixed;
+            z-index: 4;
+            top: calc(var(--board-top, 80px) + 4px);
+            left: calc(var(--board-left, 16px) + 4px);
+            width: 44px; height: 44px;
+            padding: 12px;
             border: 0; background: none;
             color: var(--ink);
             cursor: pointer;
         }
+        body.playing #btn-pause { display: block; }
         #btn-pause svg { display: block; width: 20px; height: 20px; }
         #btn-pause:focus-visible, #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
         #stage canvas:focus { outline: none; }
@@ -360,7 +364,8 @@
             position: fixed;
             z-index: 11;
             left: 50%;
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
+            /* Raised so "Boop" sits on the same baseline as the two links beside it. */
+            bottom: max(12px, env(safe-area-inset-bottom));
             transform: translateX(-50%);
             margin: 0;
             font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
@@ -406,14 +411,12 @@
 <body>
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
-        <div class="stat stat-depth">
-            <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
-            <span>Depth</span><b id="hud-depth">1</b>
-        </div>
+        <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
+    <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
     <p id="note" hidden></p>
     <div id="message" hidden>
         <h1 id="message-title"></h1>
