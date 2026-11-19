@@ -364,7 +364,8 @@
             position: fixed;
             z-index: 11;
             left: 50%;
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
+            /* Raised so "Boop" sits on the same baseline as the two links beside it. */
+            bottom: max(12px, env(safe-area-inset-bottom));
             transform: translateX(-50%);
             margin: 0;
             font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
