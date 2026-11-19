@@ -177,9 +177,12 @@ function updateBlockView(v, b, frameDt) {
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
     v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
-        // Jello wobbles: squash one way, stretch the other, fading out.
-        const w = Math.sin(performance.now() / 45) * 0.08 * v.punch;
-        v.group.scale.set(1 + w, 1 - w, 1);
+        // Jello wobbles hard each time a ball goes in or out: a springy squash that
+        // rings for about half a second. The ball's direction decides which way it squashes.
+        const t = v.wobbleT;
+        const w = t < 0.7 ? Math.sin(t * 38) * Math.exp(-t * 6) * 0.13 : 0;
+        const across = Math.abs(Math.cos(v.wobbleDir ?? 0)) > 0.7 ? 1 : -1;   // sideways hit squashes the other way
+        v.group.scale.set(1 + w * across, 1 - w * across, 1);
     } else {
         // Every bounce off a block gives it a quick squash-and-recover wobble on screen,
         // on top of the small physical knock; a hit that takes a point off also pops a little.
@@ -363,6 +366,9 @@ function consumeEvents() {
         else if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
+        } else if (e.t === 'jelly') {
+            const v = blockViews.get(e.id);
+            if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
     }
     sim.events.length = 0;
@@ -375,10 +381,22 @@ const dotInk = new THREE.Color(), dotFade = new THREE.Color(), dotHit = new THRE
 const dotPos = [];
 let guideAngle = null;
 
+// On slower phones a guide can take a while to work out. If the last one was slow,
+// skip a frame before the next, so aiming stays responsive. The shot always fires
+// the angle the guide on screen was drawn for.
+let guideCost = 0, guideSkip = 0;
+let lastContacts = [];
 function drawGuide(angle) {
     if (angle === guideAngle) return;
+    if (guideSkip > 0) { guideSkip -= 1; return; }
+    const t0 = performance.now();
     guideAngle = angle;
-    const { path, contacts } = predict(sim, angle);
+    const result = predict(sim, angle);
+    // Stop the guide at the bottom of the field, where the ball leaves.
+    const cut = result.path.findIndex(([, y]) => y < -H);
+    const path = cut > 0 ? result.path.slice(0, cut) : result.path;
+    const contacts = result.contacts.filter((c) => c.y >= -H);
+    lastContacts = contacts;
     let n = 0, carry = 0;
     const gap = 0.26;
     for (let i = 1; i < path.length && n < MAX_DOTS; i++) {
@@ -415,6 +433,8 @@ function drawGuide(angle) {
     }
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
+    guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
+    guideSkip = guideCost > 9 ? 1 : 0;
 }
 
 function hideGuide() {
@@ -473,10 +493,10 @@ canvas.addEventListener('pointerup', (ev) => {
     fastForward = false;
     if (!aiming) return;
     aiming = false;
+    const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
     if (angleFrom(ev) === null || phase !== 'aim') return;
-    // Fire exactly what the guide was showing.
-    sim.fire(shownAngle());
+    sim.fire(drawn);
     phase = 'play';
     $('hint').hidden = true;
     hideNote();
@@ -744,6 +764,7 @@ window.__boop = {
     get phase() { return phase; },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
+    get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

@@ -44,11 +44,15 @@ const PRESETTLE_STEPS = 720;        // a new zone is run until still before you 
 // and light blocks wobble at the same rate. Worn-down blocks get weaker springs.
 const SPRING_K = 190, SPRING_C = 9.5;
 const TWIST_K = 130, TWIST_C = 7;
-const SNAP_DIST = 0.22;             // pushed this far off its spot, a pinned block breaks loose
-const SNAP_ANGLE = 0.35;
+// A pinned block breaks loose when it's knocked hard (off its spot AND moving fast),
+// or when it's pushed very far (a worn block that can't hold its load any more).
+// A steady sag under the weight of a resting block doesn't count.
+const SNAP_DIST = 0.22, SNAP_SPEED = 1.2, GIVE_WAY_DIST = 0.45;
+const SNAP_ANGLE = 0.35, SNAP_SPIN = 1.5, GIVE_WAY_ANGLE = 0.6;
 
 // Jello: balls pass through, slowed hard while inside.
-const JELLO_DRAG = 0.97;            // velocity kept per step inside jello
+const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
+const JELLO_MIN_SPEED = 4;          // but never slower than this, so balls always come out the far side
 
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
@@ -81,7 +85,7 @@ export function zoneSpec(d) {
     if (d === 3) return { lo: 2, hi: 5, fill: 0.35, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
     if (d === 4) return { lo: 2, hi: 6, fill: 0.37, props: 2, loose: 0.18, jello: 1, tough: 0.04,
-        note: 'Jello: balls sink through it slowly. Each pass takes 1 off.' };
+        note: 'Jello: balls pass right through, slowed down. Each pass takes 1 off.' };
     return {
         lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.46, 0.36 + d * 0.01),
         props: 1 + (d % 2), loose: 0.18, jello: 0.45, tough: Math.min(0.12, 0.04 + d * 0.008),
@@ -300,7 +304,10 @@ export class Sim {
                 if (p.y < -H - 2) this.removeBlock(b, true);
             } else {
                 const off = Math.hypot(p.x - b.anchor[0], p.y - b.anchor[1]);
-                if (off > SNAP_DIST || Math.abs(body.rotation() - b.anchorA) > SNAP_ANGLE) this.snap(b);
+                const v = body.linvel(), speed = Math.hypot(v.x, v.y);
+                const turn = Math.abs(body.rotation() - b.anchorA), spin = Math.abs(body.angvel());
+                if ((off > SNAP_DIST && speed > SNAP_SPEED) || off > GIVE_WAY_DIST ||
+                    (turn > SNAP_ANGLE && spin > SNAP_SPIN) || turn > GIVE_WAY_ANGLE) this.snap(b);
             }
         }
     }
@@ -631,7 +638,9 @@ export class Sim {
             if (!ball.jello.length) continue;
             const body = world.getRigidBody(ball.body);
             const v = body.linvel();
-            body.setLinvel({ x: v.x * JELLO_DRAG, y: v.y * JELLO_DRAG }, true);
+            const sp = Math.hypot(v.x, v.y);
+            const k = sp * JELLO_DRAG < JELLO_MIN_SPEED ? Math.min(1, JELLO_MIN_SPEED / (sp || 1)) : JELLO_DRAG;
+            body.setLinvel({ x: v.x * k, y: v.y * k }, true);
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
         for (const ball of s.balls) {
@@ -694,6 +703,9 @@ export class Sim {
 
         if (b.t === 'block' && s.blocks[b.id]?.jello) {
             if (!ball) return;
+            // Jiggles on the way in and the way out.
+            const v = body.linvel();
+            this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
                 if (this.cooled(a.body + ':' + b.id)) this.damageBlock(b.id);
@@ -763,7 +775,7 @@ export class Sim {
 // Run one ball forward in a copy of the world and return its path.
 // Each contact carries the surface normal, worked out from how the ball's
 // direction changed across the bounce.
-export function predict(sim, angle, maxContacts = 3, maxSteps = 600) {
+export function predict(sim, angle, maxContacts = 3, maxSteps = 300) {
     const p = sim.clone();
     p.s.supply = Math.max(1, p.s.supply);
     p.fire(angle, 1);
