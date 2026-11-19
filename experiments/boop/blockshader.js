@@ -31,7 +31,7 @@ void main() {
 }`;
 
 const fragment = /* glsl */`
-uniform vec4 uBox[4];
+uniform vec4 uBox[9];      // one box per cell; the biggest shape is 3x3
 uniform int uCount;
 uniform float uK;          // current size (blocks shrink as they wear down)
 uniform float uR;          // corner radius
@@ -84,7 +84,7 @@ float pattern(vec2 p, int id) {
 void main() {
     vec2 p = vP / uK;                       // unscaled cell units: shape and pattern shrink together
     float d = 1e3;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 9; i++) {
         if (i >= uCount) break;
         vec4 b = uBox[i];
         d = min(d, sdBox(p - (b.xy + b.zw) * 0.5, (b.zw - b.xy) * 0.5));
@@ -148,7 +148,7 @@ export function makeBlockMesh(cells, jello, seed) {
         y - (has(x, y - 1) ? 0.52 : 0.5 - r),
         x + (has(x + 1, y) ? 0.52 : 0.5 - r),
         y + (has(x, y + 1) ? 0.52 : 0.5 - r)));
-    while (boxes.length < 4) boxes.push(new THREE.Vector4(0, 0, 0, 0));
+    while (boxes.length < 9) boxes.push(new THREE.Vector4(0, 0, 0, 0));
 
     const xs = cells.map(([x]) => x), ys = cells.map(([, y]) => y);
     const minX = Math.min(...xs) - 0.5 - MARGIN, maxX = Math.max(...xs) + 0.5 + MARGIN;

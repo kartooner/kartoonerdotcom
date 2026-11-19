@@ -8,11 +8,10 @@ export const LAUNCHER = { x: W - 0.62, y: -0.62 };
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 20;
-export const START_SUPPLY = 18;
+export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-export const ZONE_BONUS = 4;        // balls for clearing a zone
+export const ZONE_BONUS = 5;        // balls for clearing a zone
 const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
-const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
 // Blocks keep a solid, heavy fall through their own gravity scale.
@@ -73,6 +72,14 @@ const SHAPES = [
     { w: 1, c: [[0, 0], [1, 0], [2, 0], [1, 1]] },
     { w: 1, c: [[0, 0], [0, 1], [0, 2], [1, 2]] },
     { w: 1, c: [[0, 0], [1, 0], [1, 1], [2, 1]] },
+    // Big ones, so zones mix large and small: easy to hit, with numbers to chip away at.
+    { w: 2, c: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]] },              // 3x2
+    { w: 2, c: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]] },              // 2x3
+    { w: 1, c: [[0, 0], [1, 0], [2, 0], [3, 0]] },                              // long bar
+    { w: 1, c: [[0, 0], [0, 1], [0, 2], [0, 3]] },                              // tall bar
+    { w: 1, c: [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2]] },                      // big L
+    { w: 1, c: [[0, 0], [1, 0], [2, 0], [1, 1], [1, 2]] },                      // big T
+    { w: 0.6, c: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]] }, // 3x3
 ];
 const SHAPE_TOTAL = SHAPES.reduce((n, s) => n + s.w, 0);
 
@@ -321,20 +328,6 @@ export class Sim {
             if (body.isSleeping()) continue;
             const v = body.linvel();
             if (Math.abs(v.x) + Math.abs(v.y) > 0.05 || Math.abs(body.angvel()) > 0.05) return false;
-        }
-        return true;
-    }
-
-    // Between turns: if all that's left is a couple of nearly-done blocks, they crumble.
-    // Chasing the last 1s around the field isn't fun. Returns true if it happened.
-    crumbleLeftovers() {
-        const left = Object.values(this.s.blocks);
-        if (!left.length || left.length > CRUMBLE_BLOCKS) return false;
-        if (left.reduce((n, b) => n + b.hp, 0) > CRUMBLE_HP) return false;
-        for (const b of left) {
-            const p = this.world.getRigidBody(b.body).translation();
-            this.events.push({ t: 'crumble', id: b.id, x: p.x, y: p.y });
-            this.removeBlock(b, true);
         }
         return true;
     }

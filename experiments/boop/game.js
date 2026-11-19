@@ -154,7 +154,7 @@ function buildBlockView(b) {
     label.renderOrder = 2;
     group.add(label);
     scene.add(group);
-    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello };
+    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, big: b.cells.length >= 5 };
     blockViews.set(b.id, v);
     return v;
 }
@@ -173,7 +173,7 @@ function updateBlockView(v, b, frameDt) {
     u.uK.value = k;
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
-    v.label.scale.setScalar(Math.max(0.62, k * 0.92));
+    v.label.scale.setScalar(Math.max(0.62, k * 0.92) * (v.big ? 1.35 : 1));   // big blocks get bigger numbers
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
     v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
@@ -599,9 +599,8 @@ function endTurn() {
 }
 
 function readyToAim() {
-    sim.crumbleLeftovers();
     consumeEvents();
-    if (sim.blockCount() === 0) { startZone(); return; }   // cleared, or the last scraps crumbled
+    if (sim.blockCount() === 0) { startZone(); return; }   // cleared (the last blocks may have tumbled out)
     if (sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
 }
