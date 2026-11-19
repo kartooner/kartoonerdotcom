@@ -334,8 +334,10 @@
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
             position: fixed;
-            top: max(12px, env(safe-area-inset-top));
-            right: calc(var(--board-left, 8px) + 4px);   /* lines up with the board's right edge */
+            /* Pulled in from the board's right edge by the screens' side padding,
+               level with How to play's Back link. */
+            top: calc(max(32px, env(safe-area-inset-top)) - 6px);
+            right: calc(var(--board-left, 16px) + clamp(28px, 8vw, 44px) - 12px);
             z-index: 12;
             width: 44px;
             height: 44px;
