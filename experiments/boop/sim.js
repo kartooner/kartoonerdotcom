@@ -78,13 +78,13 @@ const BLOCK_DENSITY = 1.5;
 // springs back. Resting blocks keep the lighter density and move freely.
 const PINNED_DENSITY = 3;
 // Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
-// A ball hitting close to a nail wears it down; a nail lasts about a fifth of the
+// A ball hitting close to a nail wears it down; a nail lasts about a third of the
 // block's starting number in hits (at least 2; NAIL_SHARE). With one nail left the block swings
 // down and hangs from it; with none it falls and becomes a resting block. Only single
 // squares' nails never come out (hp -1).
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
-const NAIL_SHARE = 0.3;
+const NAIL_SHARE = 0.35;
 const NAIL_GREY_HP = 6;               // grey blocks have no number: their nails take this many hits
 const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
 const PINNED_KNOCK = 0.5;            // pinned blocks get half the knock of a resting one
