@@ -20,11 +20,7 @@ const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
 let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
-// Long turns (a ball caught in a trap) fast-forward in stages, so traps are fun to
-// watch, not a wait: [seconds into the turn, speed].
-const AUTO_FAST = [[20, 4], [12, 3], [6, 2]];
 const DESCEND_TIME = 0.9;
-const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
@@ -510,7 +506,6 @@ let aimCancel = false;
 const AIM_EASE = 18;           // higher = follows the finger faster
 const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
-let fastForward = false;
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
 
 // Aiming, "drag anywhere": touch anywhere on the field and drag in the direction you
@@ -536,11 +531,9 @@ canvas.addEventListener('pointerdown', (ev) => {
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
-    if (phase === 'play' || phase === 'settle') fastForward = true;
 });
 canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
 canvas.addEventListener('pointerup', () => {
-    fastForward = false;
     if (!aiming) return;
     aiming = false;
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
@@ -550,7 +543,7 @@ canvas.addEventListener('pointerup', () => {
     phase = 'play';
     hideNote();
 });
-canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
+canvas.addEventListener('pointercancel', () => { aiming = false; hideGuide(); });
 
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
@@ -689,9 +682,7 @@ function tick(frameDt) {
     if (phase !== 'play' && phase !== 'settle') return;
 
     const s = sim.s;
-    const turnSec = phase === 'play' && !(s.shots && s.shots.left > 0) ? s.turnSteps * DT : 0;
-    const auto = AUTO_FAST.find(([after]) => turnSec > after)?.[1] ?? 1;
-    acc += frameDt * Math.max(auto, fastForward ? FAST_FORWARD : 1);
+    acc += frameDt;   // always real time: no fast-forward, so ball speed always looks the same
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
