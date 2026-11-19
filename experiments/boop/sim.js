@@ -21,6 +21,11 @@ const BLOCK_FALL = 3;               // loose blocks fall as if gravity were -15
 const SHOT_GAP = 8;                 // steps between balls in a volley
 const HIT_COOLDOWN = 10;            // steps before the same pair can hit again
 const MIN_IMPACT = 3;               // a hit only counts if the bounce really changed the ball's speed
+// A hit knocks the block a little (it shifts and springs back), so one light ball
+// still makes blocks jiggle. Part of the physics, so the guide stays exact.
+// Pushed through the centre: off-centre twists were snapping blocks loose.
+const KNOCK = 0.04;                 // block speed per unit of impact
+const KNOCK_MAX = 0.75;
 const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
 const BOXED_STEPS = 150;            // ...for this long (1.25s) is stuck bouncing in place and gets kicked free
 // The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
@@ -700,12 +705,20 @@ export class Sim {
         if (!started) return;
         if (b.t === 'ball') { this.events.push({ t: 'clack', x: p.x, y: p.y }); return; }
         if (b.t === 'pickup') { this.collectPickup(b.id); return; }
-        this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: b.t });
+        this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: b.t, id: b.id });
         if (b.t === 'block') {
             // Little hops on top of a block don't count; only a real bounce does.
             const v = body.linvel();
             const impact = ball ? Math.hypot(v.x - ball.pv[0], v.y - ball.pv[1]) : 0;
             if (impact < MIN_IMPACT) return;
+            const blk = s.blocks[b.id];
+            if (blk && !blk.jello) {
+                // Push along the ball's incoming direction.
+                const bb = world.getRigidBody(blk.body);
+                const sp = Math.hypot(ball.pv[0], ball.pv[1]) || 1;
+                const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass();
+                bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
+            }
             if (this.cooled(a.body + ':' + b.id)) this.damageBlock(b.id);
         }
     }

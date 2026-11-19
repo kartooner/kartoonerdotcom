@@ -20,7 +20,6 @@ const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
 let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
-const HITSTOP = 0.045;               // tiny freeze when a block pops
 const AUTO_FAST = 2;                 // speed-up for a ball that's been bouncing a while
 const AUTO_FAST_AFTER = 960;         // 8s in, so there's time to watch it first
 const DESCEND_TIME = 0.9;
@@ -35,7 +34,10 @@ const hud = {
 // ---------- three.js setup ----------
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Resolution steps down if frames run slow (the hand-drawn block shader runs on every pixel).
+const PIXEL_RATIOS = [2, 1.5, 1].filter((r) => r <= Math.max(1, window.devicePixelRatio));
+let pixelStep = 0;
+renderer.setPixelRatio(PIXEL_RATIOS[0]);
 
 $('stage').appendChild(renderer.domElement);
 
@@ -173,12 +175,17 @@ function updateBlockView(v, b, frameDt) {
     v.label.position.set(lx * k, ly * k, 0.2);
     v.label.scale.setScalar(Math.max(0.62, k * 0.92));
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
+    v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
         // Jello wobbles: squash one way, stretch the other, fading out.
         const w = Math.sin(performance.now() / 45) * 0.08 * v.punch;
         v.group.scale.set(1 + w, 1 - w, 1);
     } else {
-        v.group.scale.setScalar(1 + 0.07 * v.punch);
+        // Every bounce off a block gives it a quick squash-and-recover wobble on screen,
+        // on top of the small physical knock; a hit that takes a point off also pops a little.
+        const w = v.wobbleT < 0.35 ? Math.sin(v.wobbleT * 55) * Math.exp(-v.wobbleT * 11) * 0.06 : 0;
+        const k = 1 + 0.06 * v.punch;
+        v.group.scale.set(k * (1 + w), k * (1 - w), 1);
     }
 }
 
@@ -327,7 +334,9 @@ function syncView(frameDt) {
             if (Math.hypot(dx, dy) > 1) { v.squashT = 0; v.normal = Math.atan2(dy, dx); }
         }
         v.prev.x = vel.x; v.prev.y = vel.y;
-        v.group.position.set(p.x, p.y, 0.4);
+        const prev = (phase === 'play' || phase === 'settle') ? prevBallPos.get(ball.body) : null;
+        if (prev) v.group.position.set(prev[0] + (p.x - prev[0]) * stepAlpha, prev[1] + (p.y - prev[1]) * stepAlpha, 0.4);
+        else v.group.position.set(p.x, p.y, 0.4);
         shapeBall(v, vel, frameDt);
     }
     bounced.clear();
@@ -351,10 +360,9 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'contact') bounced.add(e.ball);
-        else if (e.t === 'pop' && !fastForward && performance.now() - lastHitstop > 150) {
-            hitstop = HITSTOP;
-            lastHitstop = performance.now();
+        else if (e.t === 'contact') {
+            bounced.add(e.ball);
+            if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
     }
     sim.events.length = 0;
@@ -536,7 +544,10 @@ function hideNote() {
 
 // ---------- turn flow ----------
 
-let acc = 0, settleSteps = 0, descendT = 0, hitstop = 0, lastHitstop = 0, shake = 0;
+let acc = 0, settleSteps = 0, descendT = 0, shake = 0;
+// Ball positions before the latest step, so drawing can glide between steps.
+const prevBallPos = new Map();
+let stepAlpha = 1;
 
 function showMessage(title, body) {
     hud.msgTitle.textContent = title;
@@ -602,25 +613,45 @@ function tick(frameDt) {
     }
     if (phase !== 'play' && phase !== 'settle') return;
 
-    if (hitstop > 0) { hitstop -= frameDt; return; }
     const s = sim.s;
     const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.turnSteps > AUTO_FAST_AFTER;
     acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
+        prevBallPos.clear();
+        for (const b of s.balls) { const t = sim.world.getRigidBody(b.body).translation(); prevBallPos.set(b.body, [t.x, t.y]); }
         sim.step();
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
         if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
     }
     if (n >= 30) acc = 0;   // tab was in the background; don't try to catch up
+    // How far we are toward the next step: draw balls that far between their last two positions.
+    // Without this, screens faster than the physics (90/120 Hz) show balls moving in uneven hops.
+    stepAlpha = Math.min(1, acc / DT);
     consumeEvents();
 }
 
 let last = performance.now();
+let slowFrames = 0, timedFrames = 0;
+function watchFrameRate(rawDt) {
+    // Over each 60 frames, if half or more missed ~45fps, drop to the next resolution step.
+    timedFrames += 1;
+    if (rawDt > 1 / 45) slowFrames += 1;
+    if (timedFrames < 60) return;
+    if (slowFrames >= 30 && pixelStep < PIXEL_RATIOS.length - 1) {
+        pixelStep += 1;
+        renderer.setPixelRatio(PIXEL_RATIOS[pixelStep]);
+        fitCamera();
+    }
+    slowFrames = 0;
+    timedFrames = 0;
+}
 function frame(now) {
-    const frameDt = Math.min(0.05, (now - last) / 1000);
+    const rawDt = (now - last) / 1000;
+    const frameDt = Math.min(0.05, rawDt);
     last = now;
+    if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
     if (sim) {
         tick(frameDt);
         if (aiming && phase === 'aim') {
@@ -712,6 +743,7 @@ window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
     get aim() { return shownAngle(); },
+    get pixelRatio() { return renderer.getPixelRatio(); },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);
