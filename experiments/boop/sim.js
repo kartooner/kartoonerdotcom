@@ -8,25 +8,31 @@ export const LAUNCHER = { x: W - 0.62, y: -0.62 };
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 20;
-export const START_SUPPLY = 40;
-export const START_VOLLEY = 5;
-export const ZONE_BONUS = 3;        // balls for clearing a zone
+export const START_SUPPLY = 18;
+export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
+export const ZONE_BONUS = 4;        // balls for clearing a zone
+const REFUND_MIN_HP = 8;            // popping a block that started this high gives a ball back
 const CRUMBLE_BLOCKS = 2, CRUMBLE_HP = 4;   // a zone's last scraps crumble instead of being hunted down
-export const BASKET = { y: -H + 0.45, half: 0.8, wall: 0.07, depth: 0.42 };
 
-const GRAVITY = -15;
+// Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
+// Blocks keep a solid, heavy fall through their own gravity scale.
+const GRAVITY = -5;
+const BLOCK_FALL = 3;               // loose blocks fall as if gravity were -15
 const SHOT_GAP = 8;                 // steps between balls in a volley
 const HIT_COOLDOWN = 10;            // steps before the same pair can hit again
-const MIN_HIT_SPEED = 1.5;          // resting balls don't grind blocks down
+const MIN_IMPACT = 3;               // a hit only counts if the bounce really changed the ball's speed
+const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
+const BOXED_STEPS = 150;            // ...for this long (1.25s) is stuck bouncing in place and gets kicked free
+// The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
+const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
-const HEAVY_AFTER = 480;            // after 4s a ball slowly gets heavier so turns end
+const HEAVY_AFTER = 360;            // after 3s a ball steadily gets heavier so turns end
 const TURN_CAP = 30 * 120;          // after 30s any balls still out come home
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
-const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 are the basket lane
-const BASKET_PERIOD = 600;          // steps for one trip across and back
+const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
 const PRESETTLE_STEPS = 720;        // a new zone is run until still before you see it
 
 // Springs that hold pinned blocks near their spot. Per unit of mass, so heavy
@@ -39,9 +45,9 @@ const SNAP_ANGLE = 0.35;
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.97;            // velocity kept per step inside jello
 
-const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, BASKET: 32, PROP: 64, JELLO: 128 };
+const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
-const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.BASKET | G.PROP | G.JELLO;
+const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 const SHAPES = [
@@ -64,15 +70,15 @@ const SHAPE_TOTAL = SHAPES.reduce((n, s) => n + s.w, 0);
 // What each zone holds. New things arrive one at a time, then numbers climb.
 // jello = chance the zone has any jello at all; when it does, it's 1 block (2 now and then deeper down).
 export function zoneSpec(d) {
-    if (d === 1) return { lo: 1, hi: 6, fill: 0.36, props: 0, loose: 0, jello: 0, tough: 0 };
-    if (d === 2) return { lo: 2, hi: 8, fill: 0.4, props: 1, loose: 0, jello: 0, tough: 0,
+    if (d === 1) return { lo: 1, hi: 3, fill: 0.3, props: 0, loose: 0, jello: 0, tough: 0 };
+    if (d === 2) return { lo: 1, hi: 4, fill: 0.33, props: 1, loose: 0, jello: 0, tough: 0,
         note: 'Windmills spin when hit. Mushrooms kick balls back harder.' };
-    if (d === 3) return { lo: 3, hi: 10, fill: 0.42, props: 1, loose: 0.2, jello: 0, tough: 0,
+    if (d === 3) return { lo: 2, hi: 5, fill: 0.35, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
-    if (d === 4) return { lo: 4, hi: 14, fill: 0.44, props: 2, loose: 0.18, jello: 1, tough: 0.04,
+    if (d === 4) return { lo: 2, hi: 6, fill: 0.37, props: 2, loose: 0.18, jello: 1, tough: 0.04,
         note: 'Jello: balls sink through it slowly. Each pass takes 1 off.' };
     return {
-        lo: 3 + d, hi: 6 + d * 2.6, fill: Math.min(0.54, 0.4 + d * 0.012),
+        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.46, 0.36 + d * 0.01),
         props: 1 + (d % 2), loose: 0.18, jello: 0.45, tough: Math.min(0.12, 0.04 + d * 0.008),
     };
 }
@@ -96,11 +102,6 @@ export function blockScale(hp, hp0) {
     return bulk * (0.82 + 0.18 * Math.max(0, hp) / hp0);
 }
 
-export function basketX(step) {
-    const span = W / 2 - BASKET.half - 0.15;
-    return W / 2 + span * Math.sin((step / BASKET_PERIOD) * Math.PI * 2);
-}
-
 export class Sim {
     constructor(R, world, s) {
         this.R = R;
@@ -117,11 +118,9 @@ export class Sim {
             step: 0, rng: seed | 0, nextId: 1, depth: 0, note: null,
             supply: START_SUPPLY, volley: START_VOLLEY, quiet: false, turnSteps: 0,
             blocks: {}, pickups: {}, props: {}, owner: {}, balls: [], shots: null, cool: {},
-            basket: null,
         };
         const sim = new Sim(R, world, s);
         sim.buildWalls();
-        sim.buildBasket();
         return sim;
     }
 
@@ -165,30 +164,6 @@ export class Sim {
         wall(W / 2 + 1, 0.5, W / 2, 0.5);
     }
 
-    // A U-shaped basket sliding along the bottom. Balls that drop in come back.
-    buildBasket() {
-        const { R, world, s } = this;
-        const { y, half, wall, depth } = BASKET;
-        const body = world.createRigidBody(
-            R.RigidBodyDesc.kinematicPositionBased().setTranslation(basketX(0), y));
-        const solid = (hx, hy, x, yy) => {
-            const c = world.createCollider(
-                R.ColliderDesc.cuboid(hx, hy).setTranslation(x, yy)
-                    .setRestitution(0.4).setFriction(0.6)
-                    .setCollisionGroups(groups(G.BASKET, G.BALL)), body);
-            s.owner[c.handle] = { t: 'basket' };
-        };
-        solid(half, wall, 0, -depth / 2);
-        solid(wall, depth / 2, -half + wall, 0);
-        solid(wall, depth / 2, half - wall, 0);
-        const inside = world.createCollider(
-            R.ColliderDesc.cuboid(half - wall * 2 - 0.02, depth / 2 - wall).setTranslation(0, wall / 2)
-                .setSensor(true).setCollisionGroups(groups(G.BASKET, G.BALL))
-                .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
-        s.owner[inside.handle] = { t: 'catch' };
-        s.basket = { body: body.handle };
-    }
-
     // ---------- blocks ----------
     // Three kinds: pinned (held on a spring), loose (gravity only, rests on and
     // tumbles off other blocks) and jello (balls pass through).
@@ -200,7 +175,7 @@ export class Sim {
         const cy = cells.reduce((a, [, r]) => a - (r + 0.5), 0) / n + dy;
         let desc;
         if (kind === 'jello') desc = R.RigidBodyDesc.fixed().setTranslation(cx, cy);
-        else if (kind === 'loose') desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setRotation(tilt)
+        else if (kind === 'loose') desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setRotation(tilt).setGravityScale(BLOCK_FALL)
             .setLinearDamping(0.05).setAngularDamping(0.15);
         else desc = R.RigidBodyDesc.dynamic().setTranslation(cx, cy).setGravityScale(0)
             .setLinearDamping(0.4).setAngularDamping(0.6);
@@ -263,7 +238,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello });
-        if (popped && !s.quiet) this.gain(b.hp0 >= 20 ? 2 : 1, p.x, p.y);
+        if (popped && !s.quiet && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -282,7 +257,7 @@ export class Sim {
     snap(b) {
         const body = this.world.getRigidBody(b.body);
         b.loose = true;
-        body.setGravityScale(1, true);
+        body.setGravityScale(BLOCK_FALL, true);
         body.setLinearDamping(0.05);
         body.setAngularDamping(0.15);
         this.shapeBlock(b);
@@ -377,10 +352,17 @@ export class Sim {
         const s = this.s;
         this.clearZoneLeftovers();
         s.depth += 1;
-        if (s.depth > 1) s.volley += 1;
         const spec = zoneSpec(s.depth);
         s.note = spec.note ?? null;
-        const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : ['packed', 'airy', 'mixed', 'stacked'];
+        s.noteTarget = null;
+        const upgrade = MULTISHOT_AT[s.depth];
+        if (upgrade) {
+            s.volley = upgrade;
+            s.note = `Upgrade: your launcher now fires ${upgrade} balls per shot. Each shot still costs 1.`;
+            s.noteTarget = { kind: 'launcher' };
+        }
+        // Zone 3 introduces resting blocks, so it always has somewhere for them to rest.
+        const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : s.depth === 3 ? ['stacked', 'packed'] : ['packed', 'airy', 'mixed', 'stacked'];
         const styleName = names[Math.floor(this.rand() * names.length)];
         const style = STYLES[styleName];
         s.style = styleName;
@@ -471,6 +453,7 @@ export class Sim {
         for (const p of plan) {
             const t = this.rand();
             let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (1 + 0.15 * (p.cells.length - 1));
+            hp *= 1 + (s.volley - 1) * 0.7;          // numbers grow to match multishot
             if (p.kind === 'jello') hp *= 0.5;
             else if (this.rand() < spec.tough) hp *= 2.5 + this.rand() * 1.5;   // a bulky one to wear down
             this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
@@ -494,7 +477,26 @@ export class Sim {
         }
         s.quiet = false;
         this.events.length = 0;
+
+        // Zone 3 is where resting blocks are introduced: make sure at least one survived settling.
+        if (s.depth === 3 && !Object.values(s.blocks).some((b) => b.loose) && (s.retries = (s.retries ?? 0) + 1) < 8) {
+            for (const id in s.blocks) this.removeBlock(s.blocks[id], false);
+            this.events.length = 0;
+            s.depth -= 1;
+            this.genZone();
+            return;
+        }
+        s.retries = 0;
         if (s.depth > 1) this.gain(ZONE_BONUS, W / 2, -2.5);
+
+        // Point the zone's note at the first example of the new thing.
+        if (s.note && !s.noteTarget) {
+            const blocks = Object.values(s.blocks), props = Object.values(s.props);
+            const b = s.depth === 4 ? blocks.find((x) => x.jello) : s.depth === 3 ? blocks.find((x) => x.loose) : null;
+            if (b) s.noteTarget = { kind: 'block', id: b.id };
+            else if (s.depth === 2 && props.length) s.noteTarget = { kind: 'prop', id: props[0].id };
+            else s.noteTarget = { kind: 'open' };
+        }
     }
 
     addPickup(x, y) {
@@ -565,12 +567,14 @@ export class Sim {
 
     // ---------- balls ----------
 
-    fire(angle, count = Math.min(this.s.supply, this.s.volley)) {
-        this.s.shots = { left: count, angle, timer: 0 };
+    fire(angle, count = this.s.supply > 0 ? this.s.volley : 0) {
+        if (count > 0) this.s.supply -= 1;      // one ball per shot, however many the launcher fires
+        this.s.shots = { left: count, angle, timer: 0, fired: 0 };
         this.s.turnSteps = 0;
     }
 
-    spawnBall(angle) {
+    // Bonus balls are the extra ones from a multishot upgrade.
+    spawnBall(angle, bonus = false) {
         const { R, world, s } = this;
         const body = world.createRigidBody(
             R.RigidBodyDesc.dynamic().setTranslation(LAUNCHER.x, LAUNCHER.y)
@@ -583,8 +587,11 @@ export class Sim {
                 .setCollisionGroups(groups(G.BALL, BALL_FILTER))
                 .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[c.handle] = { t: 'ball', body: body.handle };
-        s.balls.push({ body: body.handle, col: c.handle, still: 0, age: 0, jello: [] });
-        s.supply -= 1;
+        s.balls.push({
+            body: body.handle, col: c.handle, still: 0, age: 0, jello: [], bonus,
+            pv: [Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED],
+            home: [LAUNCHER.x, LAUNCHER.y], homeT: 0,
+        });
     }
 
     removeBall(handle) {
@@ -607,7 +614,8 @@ export class Sim {
         const shots = s.shots;
         if (shots && shots.left > 0) {
             if (shots.timer <= 0) {
-                this.spawnBall(shots.angle);
+                this.spawnBall(shots.angle, shots.fired > 0);
+                shots.fired = (shots.fired ?? 0) + 1;
                 shots.left -= 1;
                 shots.timer = SHOT_GAP;
             }
@@ -621,7 +629,10 @@ export class Sim {
             body.setLinvel({ x: v.x * JELLO_DRAG, y: v.y * JELLO_DRAG }, true);
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
-        world.getRigidBody(s.basket.body).setNextKinematicTranslation({ x: basketX(s.step + 1), y: BASKET.y });
+        for (const ball of s.balls) {
+            const v = world.getRigidBody(ball.body).linvel();
+            ball.pv = [v.x, v.y];               // velocity going into this step, to measure impacts
+        }
         world.step(this.queue);
         s.step += 1;
 
@@ -689,16 +700,12 @@ export class Sim {
         if (!started) return;
         if (b.t === 'ball') { this.events.push({ t: 'clack', x: p.x, y: p.y }); return; }
         if (b.t === 'pickup') { this.collectPickup(b.id); return; }
-        if (b.t === 'catch') {
-            this.removeBall(a.body);
-            this.gain(1, p.x, p.y);
-            this.events.push({ t: 'catch', x: p.x, y: p.y });
-            return;
-        }
         this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: b.t });
         if (b.t === 'block') {
+            // Little hops on top of a block don't count; only a real bounce does.
             const v = body.linvel();
-            if (Math.hypot(v.x, v.y) < MIN_HIT_SPEED) return;
+            const impact = ball ? Math.hypot(v.x - ball.pv[0], v.y - ball.pv[1]) : 0;
+            if (impact < MIN_IMPACT) return;
             if (this.cooled(a.body + ':' + b.id)) this.damageBlock(b.id);
         }
     }
@@ -716,7 +723,7 @@ export class Sim {
             }
             ball.age += 1;
             if (ball.age > HEAVY_AFTER && ball.age % 30 === 0) {
-                body.setGravityScale(1 + (ball.age - HEAVY_AFTER) / 240, false);
+                body.setGravityScale(1 + (ball.age - HEAVY_AFTER) / 60, false);
             }
             const v = body.linvel();
             ball.still = Math.hypot(v.x, v.y) < STUCK_SPEED && !ball.jello.length ? ball.still + 1 : 0;
@@ -726,6 +733,15 @@ export class Sim {
                 const m = body.mass();
                 body.applyImpulse({ x: Math.cos(ang) * m * 5, y: Math.sin(ang) * m * 5 }, true);
                 ball.still = 0;
+            }
+            // A ball bouncing in place (on a block top, in a pocket) gets knocked sideways.
+            if (Math.hypot(p.x - ball.home[0], p.y - ball.home[1]) > BOXED_RADIUS) {
+                ball.home = [p.x, p.y];
+                ball.homeT = 0;
+            } else if (++ball.homeT > BOXED_STEPS && !ball.jello.length) {
+                const side = p.x < W / 2 ? 1 : -1;
+                body.setLinvel({ x: side * (4 + 3 * this.rand()), y: 3 }, true);
+                ball.homeT = 0;
             }
         }
     }

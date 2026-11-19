@@ -1,11 +1,11 @@
 // Boop gray-box: rendering, input and turn flow. Physics and rules live in sim.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, BASKET } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO } from './blockshader.js';
 
 // Light and dark palettes. "line" is for marks drawn on the field (launcher,
-// basket, guide, pickups); "edge" is the outline on blocks, props and balls.
+// guide, pickups); "edge" is the outline on blocks, props and balls.
 const THEMES = {
     light: {
         paper: 0xf1e8d2, field: 0xfbf6ea, line: 0x2b2622, edge: 0x2b2622, ball: 0xfffdf7,
@@ -21,14 +21,14 @@ let theme = THEMES.light;
 
 const MAX_SETTLE_STEPS = 360;        // tumbling blocks get up to 3s to come to rest
 const HITSTOP = 0.045;               // tiny freeze when a block pops
-const AUTO_FAST = 2.5;               // speed-up once only a couple of balls are left
-const AUTO_FAST_AFTER = 360;         // steps into a turn before that kicks in
+const AUTO_FAST = 2;                 // speed-up for a ball that's been bouncing a while
+const AUTO_FAST_AFTER = 960;         // 8s in, so there's time to watch it first
 const DESCEND_TIME = 0.9;
 const FAST_FORWARD = 3;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'),
+    depth: $('hud-depth'), balls: $('hud-balls'), volley: $('hud-volley'), volleyBox: $('hud-volley-box'),
     msg: $('message'), msgTitle: $('message-title'), msgBody: $('message-body'),
 };
 
@@ -90,17 +90,6 @@ launcher.position.set(LAUNCHER.x, LAUNCHER.y, 0.5);
 barrelPivot.rotation.z = -2.2;
 scene.add(launcher);
 
-// Catch basket: an open U in ink.
-const basket = new THREE.Group();
-{
-    const { half, wall, depth } = BASKET;
-    basket.add(
-        rect(half * 2, wall * 2, lineMat, 0, -depth / 2),
-        rect(wall * 2, depth, lineMat, -half + wall, 0),
-        rect(wall * 2, depth, lineMat, half - wall, 0),
-    );
-}
-scene.add(basket);
 
 // Aim guide: dots along the predicted path. Where the game expects the ball to
 // hit something, that dot is bigger and in the accent colour.
@@ -344,8 +333,6 @@ function syncView(frameDt) {
     bounced.clear();
     for (const [h, v] of ballViews) if (!live.has(h)) { scene.remove(v.group); ballViews.delete(h); }
 
-    const bp = sim.world.getRigidBody(s.basket.body).translation();
-    basket.position.set(bp.x, bp.y, 0.2);
 
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
@@ -357,7 +344,8 @@ function syncView(frameDt) {
 
     hud.depth.textContent = s.depth;
     hud.balls.textContent = s.supply;
-    hud.volley.textContent = Math.min(s.volley, Math.max(0, s.supply));
+    hud.volleyBox.hidden = s.volley <= 1;
+    hud.volley.textContent = s.volley;
 }
 
 function consumeEvents() {
@@ -430,7 +418,14 @@ function hideGuide() {
 
 let phase = 'loading';  // aim | play | settle | descend | over
 let aiming = false;
-let aimAngle = -2.2;
+let aimAngle = -2.2;      // what the barrel and guide show (smoothed)
+let aimTarget = -2.2;     // where the finger points
+let aimCancel = false;
+// Steadier aiming: the shown angle eases toward the finger and snaps to small
+// steps, so tiny twitches don't make the guide jump around.
+const AIM_EASE = 18;           // higher = follows the finger faster
+const AIM_STEP = 0.0025;       // about 0.15°
+const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
 let fastForward = false;
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
 const CANCEL_RADIUS = 0.55;
@@ -456,7 +451,13 @@ const canvas = renderer.domElement;
 canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'over') { restart(); return; }
-    if (phase === 'aim') { aiming = true; updateAim(ev); return; }
+    if (phase === 'aim') {
+        aiming = true;
+        hideNote();                             // read it already; don't let it cover the guide
+        updateAim(ev);
+        if (!aimCancel) aimAngle = aimTarget;   // first touch jumps straight there
+        return;
+    }
     if (phase === 'play' || phase === 'settle') fastForward = true;
 });
 canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
@@ -464,22 +465,73 @@ canvas.addEventListener('pointerup', (ev) => {
     fastForward = false;
     if (!aiming) return;
     aiming = false;
-    const a = angleFrom(ev);
     hideGuide();
-    if (a === null || phase !== 'aim') return;
-    aimAngle = a;
-    sim.fire(a);
+    if (angleFrom(ev) === null || phase !== 'aim') return;
+    // Fire exactly what the guide was showing.
+    sim.fire(shownAngle());
     phase = 'play';
     $('hint').hidden = true;
-    $('note').hidden = true;
+    hideNote();
 });
 canvas.addEventListener('pointercancel', () => { aiming = false; fastForward = false; hideGuide(); });
 
 function updateAim(ev) {
     const a = angleFrom(ev);
-    if (a === null) { hideGuide(); return; }
-    aimAngle = a;
-    barrelPivot.rotation.z = a;
+    aimCancel = a === null;
+    if (aimCancel) { hideGuide(); return; }
+    aimTarget = a;
+}
+
+function easeAim(frameDt) {
+    aimAngle += (aimTarget - aimAngle) * (1 - Math.exp(-frameDt * AIM_EASE));
+    barrelPivot.rotation.z = shownAngle();
+}
+
+// ---------- callouts ----------
+// A zone's one-line note points at the thing it's about, instead of covering the top.
+
+const note = $('note');
+let noteShown = false;
+function noteTargetPoint() {
+    const t = sim.s.noteTarget;
+    if (t?.kind === 'open') return { x: 2.6, y: -1.2, r: 0 };   // the empty top-left, clear of the launcher
+    if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
+    if (t.kind === 'block' && sim.s.blocks[t.id]) {
+        const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
+        return { x: p.x, y: p.y, r: 0.7 };
+    }
+    if (t.kind === 'prop' && sim.s.props[t.id]) {
+        const pr = sim.s.props[t.id];
+        return pr.kind === 'mushroom' ? { x: pr.x, y: pr.y + 0.45, r: 0.5 } : { x: pr.x, y: pr.y, r: 0.95 };
+    }
+    return null;
+}
+function placeNote() {
+    const t = noteTargetPoint();
+    if (!t) { hideNote(); return; }
+    const c = window.__boop.toScreen(t.x, t.y);
+    const edge = window.__boop.toScreen(t.x + t.r, t.y);
+    const rPx = Math.abs(edge.x - c.x);
+    const w = note.offsetWidth, h = note.offsetHeight;
+    const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
+    const hudBottom = 72;                       // keep clear of the HUD
+    const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
+    const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
+    const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
+    note.style.left = `${left}px`;
+    note.style.top = `${top}px`;
+    note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
+    note.classList.toggle('below', below);
+}
+function showNote(text) {
+    note.textContent = text;
+    note.hidden = false;
+    noteShown = true;
+    placeNote();
+}
+function hideNote() {
+    note.hidden = true;
+    noteShown = false;
 }
 
 // ---------- turn flow ----------
@@ -543,7 +595,7 @@ function tick(frameDt) {
         if (t >= 1) {
             zoneOffset = 0;
             // First time something new shows up, say what it does in one line.
-            if (sim.s.note) { $('note').textContent = sim.s.note; $('note').hidden = false; }
+            if (sim.s.note) showNote(sim.s.note);
             readyToAim();
         }
         return;
@@ -552,7 +604,7 @@ function tick(frameDt) {
 
     if (hitstop > 0) { hitstop -= frameDt; return; }
     const s = sim.s;
-    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.balls.length <= 2 && s.turnSteps > AUTO_FAST_AFTER;
+    const fewLeft = phase === 'play' && !(s.shots && s.shots.left > 0) && s.turnSteps > AUTO_FAST_AFTER;
     acc += frameDt * (fastForward ? FAST_FORWARD : fewLeft ? AUTO_FAST : 1);
     let n = 0;
     while (acc >= DT && n < 30) {
@@ -571,7 +623,11 @@ function frame(now) {
     last = now;
     if (sim) {
         tick(frameDt);
-        if (aiming && phase === 'aim') drawGuide(aimAngle);
+        if (aiming && phase === 'aim') {
+            easeAim(frameDt);
+            if (!aimCancel) drawGuide(shownAngle());
+        }
+        if (noteShown) placeNote();
         syncView(frameDt);
     }
     // Short shake when a tumbling block lands hard.
@@ -655,6 +711,7 @@ requestAnimationFrame(frame);
 window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
+    get aim() { return shownAngle(); },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

@@ -87,21 +87,39 @@
             font-weight: 600;
             color: var(--ink-soft);
         }
+        /* Callout: points at the new thing it describes. Placed from game.js. */
         #note {
             position: fixed;
-            top: calc(max(10px, env(safe-area-inset-top)) + 56px);
-            left: 50%;
-            transform: translateX(-50%);
-            width: min(100vw - 32px, 420px);
+            z-index: 5;
+            max-width: min(240px, calc(100vw - 32px));
             box-sizing: border-box;
             margin: 0;
             padding: 8px 12px;
             background: var(--panel);
-            border-left: 4px solid var(--ink);
-            font-size: 0.875rem;
+            border: 2px solid var(--ink);
+            border-radius: 10px;
+            font-size: 0.8125rem;
             font-weight: 600;
             line-height: 1.35;
             pointer-events: none;
+        }
+        #note::after {
+            content: '';
+            position: absolute;
+            left: var(--arrow-x, 50%);
+            bottom: -8px;
+            width: 12px;
+            height: 12px;
+            margin-left: -6px;
+            background: var(--panel);
+            border-right: 2px solid var(--ink);
+            border-bottom: 2px solid var(--ink);
+            transform: rotate(45deg);
+        }
+        #note.below::after {
+            bottom: auto;
+            top: -8px;
+            transform: rotate(-135deg);
         }
         #message {
             position: fixed;
@@ -165,6 +183,7 @@
             font-size: clamp(4rem, 22vw, 6.5rem);
             font-weight: normal;
             line-height: 1;
+            letter-spacing: -0.05em;
         }
         /* The "!" tips over like a block knocked loose. */
         #menu h1 .bang {
@@ -172,6 +191,12 @@
             margin-left: 0.04em;
             transform: rotate(14deg) translateY(-0.02em);
             transform-origin: 50% 90%;
+            /* Ink stem, orange dot: the glyph is filled with a hard two-colour split. */
+            background: linear-gradient(to bottom, var(--ink) 0 var(--bang-split), var(--accent) var(--bang-split) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            --bang-split: 63%;
         }
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
@@ -227,8 +252,8 @@
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
         <div>Depth<b id="hud-depth">1</b></div>
-        <div>Balls<b id="hud-balls">40</b></div>
-        <div>Per shot<b id="hud-volley">5</b></div>
+        <div>Balls<b id="hud-balls">15</b></div>
+        <div id="hud-volley-box" hidden>Per shot<b id="hud-volley">1</b></div>
         <p id="hint">Drag to aim, release to fire a ball, pull back to cancel.</p>
     </div>
     <p id="note" hidden></p>
@@ -254,8 +279,8 @@
             <h2 id="howto-title">How to play</h2>
 
             <h3>Aim and fire</h3>
-            <p>Drag to aim. The dotted line shows where your first ball will go. <span class="dot">Orange dots</span> mark where it will hit something.</p>
-            <p>Release to fire a volley. Pull back to the launcher to cancel.</p>
+            <p>Drag to aim. The dotted line shows where your ball will go. <span class="dot">Orange dots</span> mark where it will hit something.</p>
+            <p>Release to fire. Pull back to the launcher to cancel.</p>
             <figure>
                 <img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit">
                 <figcaption>The guide bends off what it hits.</figcaption>
@@ -266,13 +291,13 @@
             <p>Clear every block to drop to the next zone.</p>
 
             <h3>Keep your balls</h3>
-            <p>Your balls last the whole run. When they run out, the run ends. Get balls back by:</p>
+            <p>Each shot costs 1 ball. Your balls last the whole run, and when they run out, the run ends. Earn more by:</p>
             <ul>
-                <li>catching them in the basket at the bottom</li>
-                <li>popping blocks</li>
                 <li>grabbing <b>+1</b> rings</li>
-                <li>clearing a zone (+3)</li>
+                <li>popping bigger blocks</li>
+                <li>clearing a zone (+4)</li>
             </ul>
+            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 ball.</p>
 
             <h3>Things you'll meet</h3>
             <ul>
@@ -282,7 +307,7 @@
                 <li><b>Jello</b> lets balls sink through. Each pass takes 1 off.</li>
             </ul>
             <figure>
-                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block, coloured patterned blocks and the basket at the bottom">
+                <img src="img/howto-zone.webp" width="600" height="1066" alt="A deeper zone with a windmill, a mushroom, a see-through jello block and coloured, patterned blocks">
                 <figcaption>A deeper zone.</figcaption>
             </figure>
 
