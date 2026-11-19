@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
 import { THEMES, COLORS } from './theme.js';
@@ -13,7 +13,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.0.12';
+const BUILD = '1.1.0';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -24,8 +24,9 @@ let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
+const fuseGrey = new THREE.Color();
 function buildBallView(handle) {
-    const v = makeBallView(outlineMat, ballMat);
+    const v = makeBallView(outlineMat, ballMat.clone());   // own fill colour: it greys on its own timer
     scene.add(v.group);
     ballViews.set(handle, v);
     return v;
@@ -149,7 +150,7 @@ function buildBlockView(b) {
     group.add(mesh);
     // Put the number on the cell closest to the block's centre.
     let best = b.cells[0], bestD = Infinity;
-    for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2; if (d < bestD) { bestD = d; best = c; } }
+    for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2 + c[1] * 0.01; if (d < bestD - 1e-9) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
     const label = makeLabel(b.neutral ? '' : String(b.hp));
     label.userData.cell = best;
@@ -157,18 +158,47 @@ function buildBlockView(b) {
     label.renderOrder = 2;
     label.visible = !b.neutral;
     group.add(label);
+    // Pinned blocks are nailed in place: two nail heads near the top corners. Resting
+    // blocks have none, so you can tell at a glance what can tumble.
+    let nails = null;
+    if (!b.loose && !b.neutral && !b.jello) {
+        const top = Math.max(...b.cells.map(([, y]) => y));
+        const row = b.cells.filter(([, y]) => y === top).map(([x]) => x);
+        const inset = 0.17;           // tucked into the corners, clear of the number
+        nails = [[Math.min(...row) - 0.5 + inset, top + 0.5 - inset], [Math.max(...row) + 0.5 - inset, top + 0.5 - inset]].map(([x, y], i) => {
+            const m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.068], edge: 0.03, wob: 0.25, fill: NAIL, seed: b.id * 3 + i, margin: 0.05 });
+            m.userData.at = [x, y];
+            m.renderOrder = 2;
+            group.add(m);
+            return m;
+        });
+    }
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
     scene.add(group);
-    const v = { group, mesh, label, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nails, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
 
+const NAIL = 0xb7b0a6;          // nail heads: a steel grey that reads on every block colour
+
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
+    if (v.nails) {
+        if (b.loose) {
+            // Knocked loose: the nails pop out, and from here on it can tumble.
+            v.group.updateMatrixWorld();
+            const pts = v.nails.map((n) => { const w = n.getWorldPosition(new THREE.Vector3()); return [w.x, w.y]; });
+            crumbs.spray(pts, [NAIL, theme.edge]);
+            for (const n of v.nails) { v.group.remove(n); forgetSketch(n); }
+            v.nails = null;
+        } else {
+            for (const n of v.nails) n.position.set(n.userData.at[0] * b.scale, n.userData.at[1] * b.scale, 0.15);
+        }
+    }
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
@@ -284,10 +314,26 @@ function addFloater(text, x, y) {
 }
 
 
+// As a new zone slides in, its resting blocks drop the last bit into place with a
+// small bounce, so you can see they're loose before the first shot. Visual only.
+const DROP_FROM = 1.6;
+function dropIn() {
+    if (phase !== 'descend') return 0;
+    const u = Math.min(1, Math.max(0, (descendT - 0.35) / (DESCEND_TIME - 0.35)));
+    // ease-out bounce
+    const n = 7.5625, d = 2.75;
+    let e;
+    if (u < 1 / d) e = n * u * u;
+    else if (u < 2 / d) { const t = u - 1.5 / d; e = n * t * t + 0.75; }
+    else if (u < 2.5 / d) { const t = u - 2.25 / d; e = n * t * t + 0.9375; }
+    else { const t = u - 2.625 / d; e = n * t * t + 0.984375; }
+    return DROP_FROM * (1 - e);
+}
+
 function syncView(frameDt) {
     const s = sim.s;
     for (const [id, v] of blockViews) {
-        if (!s.blocks[id]) { scene.remove(v.group); blockViews.delete(id); }
+        if (!s.blocks[id]) { scene.remove(v.group); forgetSketch(v.group); blockViews.delete(id); }
     }
     for (const id in s.blocks) {
         const b = s.blocks[id];
@@ -295,7 +341,7 @@ function syncView(frameDt) {
         updateBlockView(v, b, frameDt);
         const body = sim.world.getRigidBody(b.body);
         const p = body.translation();
-        v.group.position.set(p.x, p.y + zoneOffset, b.loose ? 0.05 : 0);
+        v.group.position.set(p.x, p.y + zoneOffset + (b.loose ? dropIn() : 0), b.loose ? 0.05 : 0);
         v.group.rotation.z = body.rotation();
     }
 
@@ -347,6 +393,9 @@ function syncView(frameDt) {
             const dx = vel.x - v.prev.x, dy = vel.y - v.prev.y;
             if (Math.hypot(dx, dy) > 1) { v.squashT = 0; v.normal = Math.atan2(dy, dx); }
         }
+        // The fuse: a ball greys as it goes without hitting a block, and brightens again on a hit.
+        const fuse = ballFuse(ball), k = fuse * fuse * (3 - 2 * fuse);
+        v.fill.material.color.setHex(theme.ball).lerp(fuseGrey.setHex(theme.guideEnd), k);
         v.prev.x = vel.x; v.prev.y = vel.y;
         const prev = (phase === 'play' || phase === 'settle') ? prevBallPos.get(ball.body) : null;
         if (prev) v.group.position.set(prev[0] + (p.x - prev[0]) * stepAlpha, prev[1] + (p.y - prev[1]) * stepAlpha, 0.4);
@@ -1006,6 +1055,7 @@ window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
     fire: (angle) => fire(angle),
+    get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },

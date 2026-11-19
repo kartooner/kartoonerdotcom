@@ -17,7 +17,7 @@ export function makeBallView(outlineMat, ballMat) {
     const f = new THREE.Mesh(unitCircle, ballMat); f.scale.setScalar(BALL_R - 0.045); f.position.z = 0.01;
     inner.add(o, f);
     group.add(inner);
-    return { group, inner, prev: { x: 0, y: 0 }, squashT: Infinity, normal: 0 };
+    return { group, inner, fill: f, prev: { x: 0, y: 0 }, squashT: Infinity, normal: 0 };
 }
 
 export function shapeBall(v, vel, frameDt) {

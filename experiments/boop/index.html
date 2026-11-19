@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.0.12">
+<html lang="en" data-build="1.1.0">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -485,7 +485,7 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1 · by Erik Sagen</p>
+            <p class="version">v1.1 · by Erik Sagen</p>
         </div>
     </section>
 
@@ -517,13 +517,13 @@
                     <li><b>Let go to fire.</b> Each hit takes 1 off a block's number, and at 0 it pops.</li>
                 </ol>
                 <figure class="tilt">
-                    <span class="pic"><img src="img/howto-aim.webp" width="600" height="1066" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit"></span>
+                    <span class="pic"><img src="img/howto-aim.webp" width="600" height="1054" alt="Aiming: a dotted line runs from the launcher in the top-right corner, bouncing off a block, with orange dots at each hit"></span>
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
             <p class="note">Your run saves itself after every shot, in this browser. Close the page and pick it up later with Continue.</p>
             <p class="note"><b>On a keyboard:</b> ← and → aim (hold Shift for fine aim), Space fires, Esc or P pauses.</p>
-            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. When a zone is down to its last 3 blocks, every hit counts double. Pop the last block and the next zone comes up right away.</p>
+            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball turns grey as it goes without touching one, and after 4 seconds it fades out. Hitting a block brightens it again. When a zone is down to its last 3 blocks, every hit counts double. Pop the last block and the next zone comes up right away.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -550,11 +550,11 @@
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
-                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Colour and pattern show how tough a block is for its zone.</div></li>
+                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Nailed in place. Colour and pattern show how tough a block is for its zone. A hard knock can pop the nails.</div></li>
                 <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b>Spin when hit and swat the next ball.</div></li>
                 <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder. If their block pops, they fall.</div></li>
                 <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b>Fly a ball through one for an extra shot.</div></li>
-                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>Pop what holds them up and they tumble down.</div></li>
+                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>No nails: they just rest on others. Pop what holds them up and they tumble down.</div></li>
                 <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b>Balls pass through, slowed down. Each pass takes 1 off.</div></li>
                 <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b>Drop a ball in to grab the +1 and rattle around.</div></li>
                 <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken. Use them to bank shots.</div></li>
@@ -585,29 +585,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.0.12",
-                "./zones.js": "./zones.js?v=1.0.12",
-                "./blockshader.js": "./blockshader.js?v=1.0.12",
-                "./sketch.js": "./sketch.js?v=1.0.12",
-                "./balls.js": "./balls.js?v=1.0.12",
-                "./labels.js": "./labels.js?v=1.0.12",
-                "./theme.js": "./theme.js?v=1.0.12",
-                "./crumbs.js": "./crumbs.js?v=1.0.12",
-                "./buddy.js": "./buddy.js?v=1.0.12"
+                "./sim.js": "./sim.js?v=1.1.0",
+                "./zones.js": "./zones.js?v=1.1.0",
+                "./blockshader.js": "./blockshader.js?v=1.1.0",
+                "./sketch.js": "./sketch.js?v=1.1.0",
+                "./balls.js": "./balls.js?v=1.1.0",
+                "./labels.js": "./labels.js?v=1.1.0",
+                "./theme.js": "./theme.js?v=1.1.0",
+                "./crumbs.js": "./crumbs.js?v=1.1.0",
+                "./buddy.js": "./buddy.js?v=1.1.0"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.0.12">
-    <link rel="modulepreload" href="./sim.js?v=1.0.12">
-    <link rel="modulepreload" href="./zones.js?v=1.0.12">
-    <link rel="modulepreload" href="./blockshader.js?v=1.0.12">
-    <link rel="modulepreload" href="./sketch.js?v=1.0.12">
-    <link rel="modulepreload" href="./balls.js?v=1.0.12">
-    <link rel="modulepreload" href="./labels.js?v=1.0.12">
-    <link rel="modulepreload" href="./theme.js?v=1.0.12">
-    <link rel="modulepreload" href="./buddy.js?v=1.0.12">
-    <link rel="modulepreload" href="./crumbs.js?v=1.0.12">
-    <script type="module" src="./game.js?v=1.0.12"></script>
+    <link rel="modulepreload" href="./game.js?v=1.1.0">
+    <link rel="modulepreload" href="./sim.js?v=1.1.0">
+    <link rel="modulepreload" href="./zones.js?v=1.1.0">
+    <link rel="modulepreload" href="./blockshader.js?v=1.1.0">
+    <link rel="modulepreload" href="./sketch.js?v=1.1.0">
+    <link rel="modulepreload" href="./balls.js?v=1.1.0">
+    <link rel="modulepreload" href="./labels.js?v=1.1.0">
+    <link rel="modulepreload" href="./theme.js?v=1.1.0">
+    <link rel="modulepreload" href="./buddy.js?v=1.1.0">
+    <link rel="modulepreload" href="./crumbs.js?v=1.1.0">
+    <script type="module" src="./game.js?v=1.1.0"></script>
 </body>
 </html>

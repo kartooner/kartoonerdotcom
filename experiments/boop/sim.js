@@ -67,6 +67,9 @@ const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_
 // a busy trap keeps going; one that only now and then finds a block winds down.
 // Keeps the wait between shots short.
 const idleLimit = (ball) => ball.age < 720 ? RETIRE_IDLE : Math.max(180, RETIRE_IDLE - (ball.age - 720) * 0.3);
+// How far a ball is through its fade timer, 0 (just hit a block) to 1 (about to fade).
+// The renderer greys the ball by this, so the timer can be seen.
+export const ballFuse = (ball) => Math.min(1, ball.idle / idleLimit(ball));
 const GRACE_RANGE = 5;              // ...unless it's heading at a block within this many cells
 const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
