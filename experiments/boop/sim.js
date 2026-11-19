@@ -2,7 +2,7 @@
 // The aim preview clones this whole sim and runs it forward, so the guide line
 // uses the exact same code and numbers as the real shot.
 
-import { SHAPES, SHAPE_VARIANTS, PROP_NOTES, zoneSpec, STYLES, MIN_PICKUP_GAP } from './zones.js';
+import { SHAPES, SHAPE_VARIANTS, PROP_NOTES, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -13,7 +13,8 @@ export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-export const ZONE_BONUS = 3;        // shots for clearing a zone
+// Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
+export const zoneBonus = (d) => (d <= 10 ? 4 : d <= 15 ? 3 : 2);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
@@ -36,8 +37,13 @@ const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
 // Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
 // Eased in over the first zones so zone 1 stays friendly.
-const hpScale = (d) => Math.min(5.5, 2 + 0.95 * (d - 1));
-const parHpPerShot = (d) => (3.5 + 0.7 * d) * hpScale(d);   // a good shot does more deeper down (bigger blocks, more traps)
+// How much block numbers are scaled up with depth. It climbs gently through the early
+// zones so they go quickly, reaching full size around depth 11.
+const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
+// Par: about how much a good shot takes off at this depth (measured with bots; a shot
+// does more deeper down, with bigger blocks and more traps). Independent of hpScale,
+// so lighter early zones also get a lower par.
+const parHpPerShot = (d) => (3.5 + 0.7 * d) * Math.min(5.5, 2 + 0.95 * (d - 1));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
@@ -416,10 +422,14 @@ export class Sim {
             if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
             else windmills += 1;
         }
-        for (let i = 0, tries = 0; i < windmills && tries < 50; tries++) {
+        // Prop centres in grid units, to keep props apart.
+        const propAt = [];
+        const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
+        for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
             const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ZONE_ROWS - 1));
             const cells = [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]];
-            if (!cells.every(([cc, rr]) => free(cc, rr))) continue;
+            if (!cells.every(([cc, rr]) => free(cc, rr)) || !roomy(c + 1, r + 1)) continue;
+            propAt.push([c + 1, r + 1]);
             cells.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
             this.addWindmill(c + 1, -(r + 1 + ZONE_TOP_ROW));
             i++;
@@ -547,18 +557,19 @@ export class Sim {
                     const p = hosts[Math.floor(this.rand() * hosts.length)];
                     const [c, r] = p.cells[Math.floor(this.rand() * p.cells.length)];
                     const [dc, dr, dir] = SIDES[Math.floor(this.rand() * 3)];
-                    if (!free(c + dc, r + dr)) continue;
+                    if (!free(c + dc, r + dr) || !roomy(c + dc + 0.5, r + dr + 0.5)) continue;
                     spot = { p, c, r, dc, dr, dir, cell: [c + dc, r + dr] };
                 }
             }
             for (let tries = 0; tries < 40 && !spot; tries++) {
                 const right = this.rand() < 0.5, c = right ? W - 1 : 0;
                 const r = Math.floor(this.rand() * ZONE_ROWS);
-                if (!free(c, r)) continue;
+                if (!free(c, r) || !roomy(c + 0.5, r + 0.5)) continue;
                 spot = { p: null, c, r, dir: right ? Math.PI / 2 : -Math.PI / 2, right, cell: [c, r] };
             }
             if (!spot) continue;
             grid[spot.cell[1]][spot.cell[0]] = -1;
+            propAt.push([spot.cell[0] + 0.5, spot.cell[1] + 0.5]);
             mushSpots.push(spot);
         }
 
@@ -644,7 +655,7 @@ export class Sim {
             return;
         }
         s.retries = 0;
-        if (s.depth > 1) this.gain(ZONE_BONUS, W / 2, -2.5);
+        if (s.depth > 1) this.gain(zoneBonus(s.depth), W / 2, -2.5);
         if (s.pendingPar > 0) { this.gain(s.pendingPar, W / 2, -3.3); this.events.push({ t: 'par', n: s.pendingPar }); }
         s.pendingPar = 0;
         s.zoneHp0 = this.hpLeft();

@@ -66,7 +66,7 @@ export function zoneSpec(d) {
     if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.', noteKey: 'resting' };
-    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 2, loose: 0.2, jello: 1, tough: 0.04,
+    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 1, tough: 0.04,
         note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.', noteKey: 'jelly' };
     // Past the intro, everything that's been introduced keeps showing up more.
     // Numbers keep climbing, but more slowly past depth 8 so they stay readable.
@@ -74,7 +74,8 @@ export function zoneSpec(d) {
     return {
         ...base,
         lo: 1 + n * 0.35, hi: 3 + n * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
-        props: Math.min(4, 1 + Math.floor((d - 1) / 3)),
+        // Props stay light through the early and middle zones, then crowd in.
+        props: d <= 11 ? 2 : d <= 15 ? 3 : 4,
         loose: Math.min(0.36, 0.16 + d * 0.015),
         jello: Math.min(0.85, 0.35 + d * 0.04),
         tough: Math.min(0.12, 0.04 + d * 0.008),
@@ -94,5 +95,7 @@ export const STYLES = {
     mixed: { fill: 0, gap: 0.5, jitter: 0.5, loose: 1, tall: 1, lean: 0.14 },
     stacked: { fill: 0.02, gap: 0.3, jitter: 0, loose: 1.9, tall: 3, lean: 0.22 },
 };
+// Props keep their distance early on so shots have room; deeper, they may bunch up.
+export const propGap = (d) => (d <= 15 ? 4.5 : 3);
 export const MIN_PICKUP_GAP = 3.5;         // +1 pickups are always this many cells apart or more
 
