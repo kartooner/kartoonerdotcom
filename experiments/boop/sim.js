@@ -50,6 +50,9 @@ const RETIRE_IDLE = 480;            // 4s without hitting a block
 // A ball that's been going a while hits harder, so a long trap chews through blocks
 // instead of dragging on: +1 damage per 6s alive, up to 4 per hit.
 const POWER_EVERY = 720;
+// How much bigger numbers get with each multishot upgrade. Less than the extra balls
+// add, so an upgrade feels like a step up instead of just keeping pace.
+const multishotGrowth = (volley) => 1 + (volley - 1) * 0.35;
 const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
 // After 6s alive, the time a ball may go without a hit shrinks, to 1.5s by about 14s:
 // a busy trap keeps going; one that only now and then finds a block winds down.
@@ -245,7 +248,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
-        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * (1 + (s.volley - 1) * 0.7) * hpScale(s.depth)) this.gain(1, p.x, p.y);
+        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -552,7 +555,7 @@ export class Sim {
         // Numbers. First the zone's total: what each block would get on its own, summed.
         // Then that total is shared out by size, so bigger blocks always hold the bigger
         // numbers and a lone square never ends up a slog to chip down.
-        const grow = (1 + (s.volley - 1) * 0.7) * hpScale(s.depth);   // deeper zones and multishot
+        const grow = multishotGrowth(s.volley) * hpScale(s.depth);   // deeper zones and multishot
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
@@ -562,8 +565,17 @@ export class Sim {
             // Size counts for more than size alone (n^1.4), with a little variety (±20%).
             // Only big blocks can be the extra-tough one.
             p.w = p.cells.length ** 1.4 * (0.8 + 0.4 * this.rand());
-            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.8 + this.rand() * 0.8;
+            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.4 + this.rand() * 0.4;
             weights += p.w;
+        }
+        // No runaway block: none holds more than twice the next biggest. What's trimmed
+        // goes to the others, so the zone's total stays the same.
+        const solid = plan.filter((p) => p.kind !== 'jello').sort((a, b) => b.w - a.w);
+        if (solid.length >= 2 && solid[0].w > solid[1].w * 2) {
+            const extra = solid[0].w - solid[1].w * 2;
+            solid[0].w -= extra;
+            const rest = weights - extra - solid[0].w;
+            for (const p of solid.slice(1)) p.w += extra * p.w / rest;
         }
         for (const p of plan) {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
@@ -627,7 +639,7 @@ export class Sim {
         s.zoneHp0 = this.hpLeft();
         // How much this zone's numbers are scaled up; block colours divide it back out,
         // so every zone keeps the full range of colours and patterns.
-        s.tierScale = hpScale(s.depth) * (1 + (s.volley - 1) * 0.7);
+        s.tierScale = hpScale(s.depth) * multishotGrowth(s.volley);
         s.par = Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(s.depth) * s.volley))));
         s.zoneShots = 0;
 

@@ -69,9 +69,11 @@ export function zoneSpec(d) {
     if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 2, loose: 0.2, jello: 1, tough: 0.04,
         note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.', noteKey: 'jelly' };
     // Past the intro, everything that's been introduced keeps showing up more.
+    // Numbers keep climbing, but more slowly past depth 8 so they stay readable.
+    const n = d <= 8 ? d : 8 + (d - 8) * 0.6;
     return {
         ...base,
-        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
+        lo: 1 + n * 0.35, hi: 3 + n * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
         props: Math.min(4, 1 + Math.floor((d - 1) / 3)),
         loose: Math.min(0.36, 0.16 + d * 0.015),
         jello: Math.min(0.85, 0.35 + d * 0.04),
