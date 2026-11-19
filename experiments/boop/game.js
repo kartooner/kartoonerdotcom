@@ -725,7 +725,7 @@ function watchFrameRate(rawDt) {
 }
 function frame(now) {
     const rawDt = (now - last) / 1000;
-    const frameDt = Math.min(0.05, rawDt);
+    const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
     last = now;
     if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
     if (sim) {

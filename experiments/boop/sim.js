@@ -38,7 +38,12 @@ const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
 // Traps: a ball that keeps scoring hits keeps going. Only a ball that hasn't hit
 // anything for a while gets heavier (so turns still end) or gets kicked free.
-const HEAVY_AFTER = 300;            // 2.5s without a scoring hit, then it steadily gets heavier
+// Ending a shot cleanly: a ball whose work is done gets heavy fast and drops out,
+// instead of fading. "Done" means: 2.5s without a scoring hit, or past 5s and
+// nothing hit for half a second, or past 9s whatever it's doing. Before 5s a scoring
+// hit lifts the weight off again (fast traps keep going); after that it only adds up.
+const HEAVY_AFTER = 300;
+const WIND_DOWN_AT = 600, WIND_IDLE = 60, TRAP_LIMIT = 1080;
 const TURN_CAP = 35 * 120;          // after 35s any balls still out come home
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
@@ -58,6 +63,9 @@ const SNAP_ANGLE = 0.35, SNAP_SPIN = 1.5, GIVE_WAY_ANGLE = 0.6;
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
 const JELLO_MIN_SPEED = 4;          // but never slower than this, so balls always come out the far side
+// Balls keep their momentum: bounces still cost speed, but a ball never drops below
+// this (outside jelly), so it never crawls or drifts under the light gravity.
+const MIN_BALL_SPEED = 8;
 
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
@@ -745,7 +753,14 @@ export class Sim {
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
         for (const ball of s.balls) {
-            const v = world.getRigidBody(ball.body).linvel();
+            const body = world.getRigidBody(ball.body);
+            let v = body.linvel();
+            const sp = Math.hypot(v.x, v.y);
+            if (!ball.jello.length && sp < MIN_BALL_SPEED) {
+                const k = MIN_BALL_SPEED / (sp || 1);
+                v = sp > 0.01 ? { x: v.x * k, y: v.y * k } : { x: 0, y: -MIN_BALL_SPEED };
+                body.setLinvel(v, true);
+            }
             ball.pv = [v.x, v.y];               // velocity going into this step, to measure impacts
         }
         world.step(this.queue);
@@ -837,7 +852,7 @@ export class Sim {
     // A ball that just scored is "working": it loses any extra weight and keeps going.
     scored(ball) {
         if (!ball) return;
-        if (ball.idle > HEAVY_AFTER) this.world.getRigidBody(ball.body).setGravityScale(1, true);
+        if (ball.age <= WIND_DOWN_AT && ball.heavy) { this.world.getRigidBody(ball.body).setGravityScale(1, true); ball.heavy = 0; }
         ball.idle = 0;
     }
 
@@ -854,8 +869,16 @@ export class Sim {
             }
             ball.age += 1;
             ball.idle += 1;
-            if (ball.idle > HEAVY_AFTER && ball.idle % 30 === 0) {
-                body.setGravityScale(1 + (ball.idle - HEAVY_AFTER) / 60, false);
+            // A ball still around after 11s (say, sitting heavy at the bottom of a cup) is spent.
+            if (ball.age > TRAP_LIMIT + 240) {
+                this.events.push({ t: 'out', ball: ball.body });
+                this.removeBall(ball.body);
+                continue;
+            }
+            const done = ball.idle > HEAVY_AFTER || (ball.age > WIND_DOWN_AT && (ball.idle > WIND_IDLE || ball.heavy > 0)) || ball.age > TRAP_LIMIT;
+            if (done) {
+                ball.heavy = (ball.heavy ?? 0) + 1;
+                if (ball.heavy % 10 === 0) body.setGravityScale(Math.min(8, 1 + ball.heavy / 25), false);
             }
             const v = body.linvel();
             ball.still = Math.hypot(v.x, v.y) < STUCK_SPEED && !ball.jello.length ? ball.still + 1 : 0;
