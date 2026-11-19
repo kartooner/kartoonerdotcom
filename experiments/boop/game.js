@@ -579,11 +579,11 @@ function easeAim(frameDt) {
 // ---------- callouts ----------
 // A zone's one-line note points at the thing it's about, instead of covering the top.
 
-const note = $('note');
+const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: 3.2, y: -3.2, r: 0 };   // open space top-left, clear of the launcher and pause
+    if (t?.kind === 'open') return { x: 3.2, y: -3.9, r: 0, buddy: true };   // open space top-left, clear of the launcher and pause
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -603,7 +603,10 @@ function placeNote() {
     if (!t) { hideNote(); return; }
     const c = window.__boop.toScreen(t.x, t.y);
     const edge = window.__boop.toScreen(t.x + t.r, t.y);
-    const rPx = Math.abs(edge.x - c.x);
+    // A tip about the whole board is said by the block buddy, standing under the bubble.
+    const rPx = t.buddy ? 26 : Math.abs(edge.x - c.x);
+    buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
+    if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
     const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
@@ -624,6 +627,7 @@ function showNote(text) {
 }
 function hideNote() {
     note.hidden = true;
+    buddy.setAttribute('hidden', '');
     noteShown = false;
 }
 
