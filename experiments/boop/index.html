@@ -133,6 +133,17 @@
             pointer-events: none;
         }
         #note, #buddy { transition: opacity 0.3s ease-out; }
+        /* The buddy breathes: a slow, slight rise and squash from his feet. */
+        .breathe {
+            transform-box: fill-box;
+            transform-origin: 50% 100%;
+            animation: breathe 3.2s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0) scale(1, 1); }
+            50% { transform: translateY(-1.5px) scale(1.015, 1.035); }
+        }
+        @media (prefers-reduced-motion: reduce) { .breathe { animation: none; } }
         #note.fading, #buddy.fading { opacity: 0; }
         @media (prefers-reduced-motion: reduce) { #note, #buddy { transition: none; } }
         #buddy {
@@ -426,11 +437,11 @@
     <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
     <p id="note" hidden></p>
     <!-- The block buddy: says the tips that aren't about one thing on the board. -->
-    <svg id="buddy" viewBox="0 0 48 44" aria-hidden="true" hidden><use href="#buddy-art"/></svg>
+    <svg id="buddy" viewBox="0 0 48 44" aria-hidden="true" hidden><use class="breathe" href="#buddy-art"/></svg>
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
-            <svg class="mascot" viewBox="0 0 48 44" aria-hidden="true"><use href="#buddy-art"/></svg>
+            <svg class="mascot" viewBox="0 0 48 44" aria-hidden="true"><use class="breathe" href="#buddy-art"/></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="best" id="menu-best" hidden></p>
