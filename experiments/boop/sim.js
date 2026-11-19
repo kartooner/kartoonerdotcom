@@ -364,7 +364,11 @@ export class Sim {
         this.clearZoneLeftovers();
         s.depth += 1;
         const spec = zoneSpec(s.depth);
-        s.note = spec.note ?? null;
+        // Tips (what's new) show once: s.seen holds what's been explained, by key. The
+        // game fills it from earlier runs on this device. Upgrades are news, so always shown.
+        s.seen ??= {};
+        s.note = spec.note && !s.seen[spec.noteKey] ? spec.note : null;
+        if (s.note) s.seen[spec.noteKey] = true;
         s.noteTarget = null;
         const upgrade = MULTISHOT_AT[s.depth];
         if (upgrade) {
@@ -545,14 +549,24 @@ export class Sim {
             mushSpots.push(spot);
         }
 
+        // Numbers. First the zone's total: what each block would get on its own, summed.
+        // Then that total is shared out by size, so bigger blocks always hold the bigger
+        // numbers and a lone square never ends up a slog to chip down.
+        const grow = (1 + (s.volley - 1) * 0.7) * hpScale(s.depth);   // deeper zones and multishot
+        let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
-            // Bigger blocks carry bigger numbers: a 3x2 is about three times a single cell.
-            let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length);
-            hp *= 1 + (s.volley - 1) * 0.7;          // numbers grow to match multishot
-            hp *= hpScale(s.depth);
-            if (p.kind === 'jello') hp *= 0.5;
-            else if (this.rand() < spec.tough) hp *= 1.8 + this.rand() * 0.8;   // a bulky one to wear down
+            p.hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length) * grow;
+            if (p.kind === 'jello') { p.hp *= 0.5; continue; }    // jelly keeps its own, smaller number
+            zoneHp += p.hp;
+            // Size counts for more than size alone (n^1.4), with a little variety (±20%).
+            // Only big blocks can be the extra-tough one.
+            p.w = p.cells.length ** 1.4 * (0.8 + 0.4 * this.rand());
+            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.8 + this.rand() * 0.8;
+            weights += p.w;
+        }
+        for (const p of plan) {
+            const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
         }
         for (const m of mushSpots) {
@@ -601,6 +615,7 @@ export class Sim {
         if (s.depth === 3 && !Object.values(s.blocks).some((b) => b.loose) && (s.retries = (s.retries ?? 0) + 1) < 8) {
             for (const id in s.blocks) this.removeBlock(s.blocks[id], false);
             this.events.length = 0;
+            if (spec.noteKey && s.note === spec.note) delete s.seen[spec.noteKey];   // the redo still gets its tip
             s.depth -= 1;
             this.genZone();
             return;
@@ -618,7 +633,6 @@ export class Sim {
 
         // Props introduce themselves the first time each kind shows up, one per zone,
         // when the zone doesn't already have something else to explain.
-        s.seen ??= {};
         if (!s.note) {
             const fresh = Object.values(s.props).find((p) => !s.seen[p.kind]);
             if (fresh) {
