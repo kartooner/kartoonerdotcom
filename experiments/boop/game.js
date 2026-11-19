@@ -12,7 +12,7 @@ import { makeCrumbs } from './crumbs.js';
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.0.6';
+const BUILD = '1.0.7';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -391,7 +391,16 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'pop' && e.popped) {
+        else if (e.t === 'stretch') {
+            // Last few blocks: hits count double. Say so once per device; a small mark every time.
+            addFloater('Hits ×2', W / 2, -2.6);
+            if (!sim.s.seen?.stretch) {
+                sim.s.seen = { ...sim.s.seen, stretch: true };
+                writeTips({ ...readTips(), stretch: true });
+                sim.s.noteTarget = { kind: 'open' };
+                showNote('Last few blocks: every hit counts double.');
+            }
+        } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
                 const u = v.mesh.material.uniforms;
@@ -570,11 +579,11 @@ function easeAim(frameDt) {
 // ---------- callouts ----------
 // A zone's one-line note points at the thing it's about, instead of covering the top.
 
-const note = $('note');
+const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: 2.6, y: -1.2, r: 0 };   // the empty top-left, clear of the launcher
+    if (t?.kind === 'open') return { x: 3.2, y: -3.9, r: 0, buddy: true };   // open space top-left, clear of the launcher and pause
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -594,7 +603,10 @@ function placeNote() {
     if (!t) { hideNote(); return; }
     const c = window.__boop.toScreen(t.x, t.y);
     const edge = window.__boop.toScreen(t.x + t.r, t.y);
-    const rPx = Math.abs(edge.x - c.x);
+    // A tip about the whole board is said by the block buddy, standing under the bubble.
+    const rPx = t.buddy ? 26 : Math.abs(edge.x - c.x);
+    buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
+    if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
     const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
@@ -615,6 +627,7 @@ function showNote(text) {
 }
 function hideNote() {
     note.hidden = true;
+    buddy.setAttribute('hidden', '');
     noteShown = false;
 }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.0.6">
+<html lang="en" data-build="1.0.7">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -132,6 +132,14 @@
             line-height: 1.35;
             pointer-events: none;
         }
+        #buddy {
+            position: fixed;
+            z-index: 5;
+            width: 54px;
+            height: 50px;
+            transform: translate(-50%, -50%) rotate(-7deg);
+            pointer-events: none;
+        }
         #note::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
@@ -198,6 +206,7 @@
             align-items: center;
             text-align: center;
         }
+        #menu .mascot { width: 72px; height: 66px; margin-bottom: 6px; transform: rotate(-7deg); }
         #menu h1 {
             margin: 0;
             font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
@@ -413,9 +422,12 @@
     </div>
     <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
     <p id="note" hidden></p>
+    <!-- The block buddy: says the tips that aren't about one thing on the board. -->
+    <svg id="buddy" viewBox="0 0 48 44" aria-hidden="true" hidden><use href="#buddy-art"/></svg>
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
+            <svg class="mascot" viewBox="0 0 48 44" aria-hidden="true"><use href="#buddy-art"/></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="best" id="menu-best" hidden></p>
@@ -463,7 +475,7 @@
             </div>
             <p class="note">Your run saves itself after every shot, in this browser. Close the page and pick it up later with Continue.</p>
             <p class="note"><b>On a keyboard:</b> ← and → aim (hold Shift for fine aim), Space fires, Esc or P pauses.</p>
-            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. Pop the last block and the next zone comes up right away.</p>
+            <p class="note">Balls bounce off every side, the bottom too, and keep going as long as they keep hitting blocks. A ball that goes 4 seconds without touching one fades out. When a zone is down to its last 3 blocks, every hit counts double. Pop the last block and the next zone comes up right away.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -483,10 +495,10 @@
             <ul class="tags">
                 <li>Grab a <b>+1</b> ring</li>
                 <li>Pop a big block</li>
-                <li>Clear a zone: <b>+5</b></li>
+                <li>Clear a zone: <b>+4</b> (fewer deeper down)</li>
                 <li>Beat <b>par</b>: saved shots come back</li>
             </ul>
-            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 shot. The numbers grow to match.</p>
+            <p>Every few zones your launcher upgrades to fire one more ball per shot, still for 1 shot. Numbers grow a little too, so each upgrade is a real step up.</p>
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
@@ -510,6 +522,13 @@
     <a id="back" href="/games">← Games</a>
     <p id="brand" aria-hidden="true">Boop<span class="bang">!</span></p>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <!-- The block buddy, Boop!'s mascot: drawn once, used on the start screen and under tips. -->
+        <symbol id="buddy-art" viewBox="0 0 48 44">
+            <g filter="url(#sketchy)">
+                <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/>
+                <path d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/>
+            </g>
+        </symbol>
         <filter id="sketchy" x="-5%" y="-10%" width="110%" height="120%">
             <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/>
             <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
@@ -525,27 +544,27 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.0.6",
-                "./zones.js": "./zones.js?v=1.0.6",
-                "./blockshader.js": "./blockshader.js?v=1.0.6",
-                "./sketch.js": "./sketch.js?v=1.0.6",
-                "./balls.js": "./balls.js?v=1.0.6",
-                "./labels.js": "./labels.js?v=1.0.6",
-                "./theme.js": "./theme.js?v=1.0.6",
-                "./crumbs.js": "./crumbs.js?v=1.0.6"
+                "./sim.js": "./sim.js?v=1.0.7",
+                "./zones.js": "./zones.js?v=1.0.7",
+                "./blockshader.js": "./blockshader.js?v=1.0.7",
+                "./sketch.js": "./sketch.js?v=1.0.7",
+                "./balls.js": "./balls.js?v=1.0.7",
+                "./labels.js": "./labels.js?v=1.0.7",
+                "./theme.js": "./theme.js?v=1.0.7",
+                "./crumbs.js": "./crumbs.js?v=1.0.7"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.0.6">
-    <link rel="modulepreload" href="./sim.js?v=1.0.6">
-    <link rel="modulepreload" href="./zones.js?v=1.0.6">
-    <link rel="modulepreload" href="./blockshader.js?v=1.0.6">
-    <link rel="modulepreload" href="./sketch.js?v=1.0.6">
-    <link rel="modulepreload" href="./balls.js?v=1.0.6">
-    <link rel="modulepreload" href="./labels.js?v=1.0.6">
-    <link rel="modulepreload" href="./theme.js?v=1.0.6">
-    <link rel="modulepreload" href="./crumbs.js?v=1.0.6">
-    <script type="module" src="./game.js?v=1.0.6"></script>
+    <link rel="modulepreload" href="./game.js?v=1.0.7">
+    <link rel="modulepreload" href="./sim.js?v=1.0.7">
+    <link rel="modulepreload" href="./zones.js?v=1.0.7">
+    <link rel="modulepreload" href="./blockshader.js?v=1.0.7">
+    <link rel="modulepreload" href="./sketch.js?v=1.0.7">
+    <link rel="modulepreload" href="./balls.js?v=1.0.7">
+    <link rel="modulepreload" href="./labels.js?v=1.0.7">
+    <link rel="modulepreload" href="./theme.js?v=1.0.7">
+    <link rel="modulepreload" href="./crumbs.js?v=1.0.7">
+    <script type="module" src="./game.js?v=1.0.7"></script>
 </body>
 </html>
