@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.0.5">
+<html lang="en" data-build="1.0.6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -499,6 +499,7 @@
                 <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b>Drop a ball in to grab the +1 and rattle around.</div></li>
                 <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken. Use them to bank shots.</div></li>
             </ul>
+            <p class="note">A tip pops up the first time each of these shows up, once per device. <button class="link-btn" id="btn-tips-reset" type="button">Show tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
                 <button class="btn btn-primary" id="btn-howto-play" type="button">Play</button>
@@ -524,27 +525,27 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.0.5",
-                "./zones.js": "./zones.js?v=1.0.5",
-                "./blockshader.js": "./blockshader.js?v=1.0.5",
-                "./sketch.js": "./sketch.js?v=1.0.5",
-                "./balls.js": "./balls.js?v=1.0.5",
-                "./labels.js": "./labels.js?v=1.0.5",
-                "./theme.js": "./theme.js?v=1.0.5",
-                "./crumbs.js": "./crumbs.js?v=1.0.5"
+                "./sim.js": "./sim.js?v=1.0.6",
+                "./zones.js": "./zones.js?v=1.0.6",
+                "./blockshader.js": "./blockshader.js?v=1.0.6",
+                "./sketch.js": "./sketch.js?v=1.0.6",
+                "./balls.js": "./balls.js?v=1.0.6",
+                "./labels.js": "./labels.js?v=1.0.6",
+                "./theme.js": "./theme.js?v=1.0.6",
+                "./crumbs.js": "./crumbs.js?v=1.0.6"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.0.5">
-    <link rel="modulepreload" href="./sim.js?v=1.0.5">
-    <link rel="modulepreload" href="./zones.js?v=1.0.5">
-    <link rel="modulepreload" href="./blockshader.js?v=1.0.5">
-    <link rel="modulepreload" href="./sketch.js?v=1.0.5">
-    <link rel="modulepreload" href="./balls.js?v=1.0.5">
-    <link rel="modulepreload" href="./labels.js?v=1.0.5">
-    <link rel="modulepreload" href="./theme.js?v=1.0.5">
-    <link rel="modulepreload" href="./crumbs.js?v=1.0.5">
-    <script type="module" src="./game.js?v=1.0.5"></script>
+    <link rel="modulepreload" href="./game.js?v=1.0.6">
+    <link rel="modulepreload" href="./sim.js?v=1.0.6">
+    <link rel="modulepreload" href="./zones.js?v=1.0.6">
+    <link rel="modulepreload" href="./blockshader.js?v=1.0.6">
+    <link rel="modulepreload" href="./sketch.js?v=1.0.6">
+    <link rel="modulepreload" href="./balls.js?v=1.0.6">
+    <link rel="modulepreload" href="./labels.js?v=1.0.6">
+    <link rel="modulepreload" href="./theme.js?v=1.0.6">
+    <link rel="modulepreload" href="./crumbs.js?v=1.0.6">
+    <script type="module" src="./game.js?v=1.0.6"></script>
 </body>
 </html>

@@ -364,7 +364,11 @@ export class Sim {
         this.clearZoneLeftovers();
         s.depth += 1;
         const spec = zoneSpec(s.depth);
-        s.note = spec.note ?? null;
+        // Tips (what's new) show once: s.seen holds what's been explained, by key. The
+        // game fills it from earlier runs on this device. Upgrades are news, so always shown.
+        s.seen ??= {};
+        s.note = spec.note && !s.seen[spec.noteKey] ? spec.note : null;
+        if (s.note) s.seen[spec.noteKey] = true;
         s.noteTarget = null;
         const upgrade = MULTISHOT_AT[s.depth];
         if (upgrade) {
@@ -611,6 +615,7 @@ export class Sim {
         if (s.depth === 3 && !Object.values(s.blocks).some((b) => b.loose) && (s.retries = (s.retries ?? 0) + 1) < 8) {
             for (const id in s.blocks) this.removeBlock(s.blocks[id], false);
             this.events.length = 0;
+            if (spec.noteKey && s.note === spec.note) delete s.seen[spec.noteKey];   // the redo still gets its tip
             s.depth -= 1;
             this.genZone();
             return;
@@ -628,7 +633,6 @@ export class Sim {
 
         // Props introduce themselves the first time each kind shows up, one per zone,
         // when the zone doesn't already have something else to explain.
-        s.seen ??= {};
         if (!s.note) {
             const fresh = Object.values(s.props).find((p) => !s.seen[p.kind]);
             if (fresh) {

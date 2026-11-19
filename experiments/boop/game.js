@@ -12,7 +12,7 @@ import { makeCrumbs } from './crumbs.js';
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.0.5';
+const BUILD = '1.0.6';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -708,6 +708,12 @@ function loadRun() {
     }
 }
 
+// Tips about new things show once per device, not once per run: what's been explained
+// is remembered here and handed to each new run. How to play can reset it.
+const TIPS_KEY = 'boop-tips-seen';
+function readTips() { try { return JSON.parse(localStorage.getItem(TIPS_KEY)) || {}; } catch { return {}; } }
+function writeTips(seen) { try { localStorage.setItem(TIPS_KEY, JSON.stringify(seen)); } catch { /* storage blocked */ } }
+
 function restart(saved = null) {
     if (sim) sim.free();
     for (const v of blockViews.values()) scene.remove(v.group);
@@ -733,6 +739,7 @@ function restart(saved = null) {
     runStarted = false;
     fromSave = false;
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
+    sim.s.seen = readTips();
     startZone();
 }
 
@@ -750,6 +757,7 @@ function tick(frameDt) {
             zoneOffset = 0;
             // First time something new shows up, say what it does in one line.
             if (sim.s.note) showNote(sim.s.note);
+            writeTips({ ...readTips(), ...sim.s.seen });
             readyToAim();
         }
         return;
@@ -905,6 +913,11 @@ function play() {
 $('btn-play').addEventListener('click', play);
 $('btn-howto-play').addEventListener('click', play);
 $('btn-howto').addEventListener('click', () => showScreen('howto'));
+$('btn-tips-reset').addEventListener('click', () => {
+    writeTips({});
+    if (sim) sim.s.seen = {};
+    $('tips-reset-done').hidden = false;
+});
 $('btn-howto-back').addEventListener('click', () => showScreen('menu'));
 $('btn-howto-close').addEventListener('click', () => showScreen('menu'));
 $('btn-menu-close').addEventListener('click', play);

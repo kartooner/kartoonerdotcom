@@ -65,9 +65,9 @@ export function zoneSpec(d) {
     if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.4, props: 0, loose: 0, jello: 0, tough: 0 };
     if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0,
-        note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
+        note: 'Some blocks only rest on others. Pop what holds them up and they tumble.', noteKey: 'resting' };
     if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 2, loose: 0.2, jello: 1, tough: 0.04,
-        note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.' };
+        note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.', noteKey: 'jelly' };
     // Past the intro, everything that's been introduced keeps showing up more.
     return {
         ...base,
@@ -77,6 +77,7 @@ export function zoneSpec(d) {
         jello: Math.min(0.85, 0.35 + d * 0.04),
         tough: Math.min(0.12, 0.04 + d * 0.008),
         note: d === 7 ? 'Grey blocks can\'t be broken. Use them to bounce shots where you want.' : undefined,
+        noteKey: d === 7 ? 'grey' : undefined,
     };
 }
 
