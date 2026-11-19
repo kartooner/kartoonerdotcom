@@ -31,21 +31,20 @@ const BOXED_STEPS = 150;            // ...for this long (1.25s) without scoring 
 const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Par: a target number of shots for each zone, from its total and your balls per shot.
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
-const HP_SCALE = 1.6;               // balls keep full speed, so they hit more: numbers match
-const parHpPerShot = (d) => (3.5 + 0.7 * d) * HP_SCALE;   // a good shot does more deeper down (bigger blocks, more traps)
+// Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
+// Eased in over the first zones so zone 1 stays friendly.
+const hpScale = (d) => Math.min(3, 1.5 + 0.5 * (d - 1));
+const parHpPerShot = (d) => (3.5 + 0.7 * d) * hpScale(d);   // a good shot does more deeper down (bigger blocks, more traps)
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
-// Traps: a ball that keeps scoring hits keeps going. Only a ball that hasn't hit
-// anything for a while gets heavier (so turns still end) or gets kicked free.
-// Ending a shot cleanly: a ball whose work is done gets "heavy" (gravity bends its path
-// down harder and harder at the same speed) and leaves, instead of fading. "Done" means: 2.5s without a scoring hit, or past 5s and
-// nothing hit for half a second, or past 9s whatever it's doing. Before 5s a scoring
-// hit lifts the weight off again (fast traps keep going); after that it only adds up.
-const HEAVY_AFTER = 300;
-const WIND_DOWN_AT = 600, WIND_IDLE = 60, TRAP_LIMIT = 1080;
-const TURN_CAP = 35 * 120;          // after 35s any balls still out come home
+// When a ball's shot ends: the field is closed on all sides, so a ball keeps going as
+// long as it keeps hitting blocks (jelly counts). Walls, the floor, props and grey
+// blocks don't count: a ball that's only been bouncing off those for RETIRE_IDLE
+// is in a loop and fades out.
+const RETIRE_IDLE = 240;            // 2s without hitting a block
+const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
 const BLOCK_DENSITY = 1.5;
 const ZONE_TOP_ROW = 4;
 const ZONE_ROWS = 10;               // rows 4–13; rows 14–15 stay open so balls can leave
@@ -227,6 +226,7 @@ export class Sim {
         wall(0.5, H / 2 + 2, -0.5, -H / 2);
         wall(0.5, H / 2 + 2, W + 0.5, -H / 2);
         wall(W / 2 + 1, 0.5, W / 2, 0.5);
+        wall(W / 2 + 1, 0.5, W / 2, -H - 0.5);   // floor: balls bounce off the bottom too
     }
 
     // ---------- blocks ----------
@@ -565,7 +565,7 @@ export class Sim {
             // Bigger blocks carry bigger numbers: a 3x2 is about three times a single cell.
             let hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length);
             hp *= 1 + (s.volley - 1) * 0.7;          // numbers grow to match multishot
-            hp *= HP_SCALE;
+            hp *= hpScale(s.depth);
             if (p.kind === 'jello') hp *= 0.5;
             else if (this.rand() < spec.tough) hp *= 2.5 + this.rand() * 1.5;   // a bulky one to wear down
             this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
@@ -858,7 +858,6 @@ export class Sim {
     // A ball that just scored is "working": it loses any extra weight and keeps going.
     scored(ball) {
         if (!ball) return;
-        if (ball.age <= WIND_DOWN_AT && ball.heavy) { this.world.getRigidBody(ball.body).setGravityScale(1, true); ball.heavy = 0; }
         ball.idle = 0;
     }
 
@@ -868,23 +867,17 @@ export class Sim {
             const ball = s.balls[i];
             const body = world.getRigidBody(ball.body);
             const p = body.translation();
-            if (p.y < -H - 1) {
-                this.events.push({ t: 'out', ball: ball.body });
+            if (p.y < -H - 1) {                  // shouldn't happen with the floor, but just in case
+                this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y });
                 this.removeBall(ball.body);
                 continue;
             }
             ball.age += 1;
             ball.idle += 1;
-            // A ball still around after 11s (say, sitting heavy at the bottom of a cup) is spent.
-            if (ball.age > TRAP_LIMIT + 240) {
-                this.events.push({ t: 'out', ball: ball.body });
+            if (ball.idle > RETIRE_IDLE) {
+                this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y });
                 this.removeBall(ball.body);
                 continue;
-            }
-            const done = ball.idle > HEAVY_AFTER || (ball.age > WIND_DOWN_AT && (ball.idle > WIND_IDLE || ball.heavy > 0)) || ball.age > TRAP_LIMIT;
-            if (done) {
-                ball.heavy = (ball.heavy ?? 0) + 1;
-                if (ball.heavy % 10 === 0) body.setGravityScale(Math.min(8, 1 + ball.heavy / 25), false);
             }
             const v = body.linvel();
             ball.still = Math.hypot(v.x, v.y) < STUCK_SPEED && !ball.jello.length ? ball.still + 1 : 0;

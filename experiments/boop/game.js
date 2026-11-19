@@ -304,6 +304,7 @@ const STRETCH_MAX = 0.75;       // extra length at full launch speed (a torpedo)
 const STRETCH_FROM = 3;         // below this speed a ball stays round
 const SQUASH_TIME = 0.22;
 const bounced = new Set();      // balls that hit something since the last frame
+const fadingBalls = [];         // balls whose shot just ended, shrinking away
 
 function buildBallView(handle) {
     const group = new THREE.Group();          // squash, turned to the bounce normal
@@ -390,7 +391,21 @@ function syncView(frameDt) {
         shapeBall(v, vel, frameDt);
     }
     bounced.clear();
-    for (const [h, v] of ballViews) if (!live.has(h)) { scene.remove(v.group); ballViews.delete(h); }
+    // A ball whose shot is over shrinks and fades where it is, rather than blinking out.
+    for (const [h, v] of ballViews) {
+        if (live.has(h)) continue;
+        ballViews.delete(h);
+        v.group.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
+        fadingBalls.push({ group: v.group, t: 0 });
+    }
+    for (let i = fadingBalls.length - 1; i >= 0; i--) {
+        const f = fadingBalls[i];
+        f.t += frameDt;
+        const k = Math.max(0, 1 - f.t / 0.3);
+        f.group.scale.setScalar(k);
+        f.group.traverse((o) => { if (o.material) o.material.opacity = k; });
+        if (k <= 0) { scene.remove(f.group); fadingBalls.splice(i, 1); }
+    }
 
 
     for (let i = floaters.length - 1; i >= 0; i--) {
@@ -661,6 +676,8 @@ function restart() {
     for (const g of pickupViews.values()) scene.remove(g);
     for (const v of propViews.values()) scene.remove(v.group);
     for (const v of ballViews.values()) scene.remove(v.group);
+    for (const f of fadingBalls) scene.remove(f.group);
+    fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
     startZone();
