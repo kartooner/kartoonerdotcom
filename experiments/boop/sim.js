@@ -33,7 +33,7 @@ const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
 // Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
 // Eased in over the first zones so zone 1 stays friendly.
-const hpScale = (d) => Math.min(4.5, 1.8 + 0.75 * (d - 1));
+const hpScale = (d) => Math.min(5.5, 2 + 0.95 * (d - 1));
 const parHpPerShot = (d) => (3.5 + 0.7 * d) * hpScale(d);   // a good shot does more deeper down (bigger blocks, more traps)
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
@@ -44,6 +44,13 @@ const STUCK_STEPS = 60;
 // blocks don't count: a ball that's only been bouncing off those for RETIRE_IDLE
 // is in a loop and fades out.
 const RETIRE_IDLE = 480;            // 4s without hitting a block
+// A ball that's been going a while hits harder, so a long trap chews through blocks
+// instead of dragging on: +1 damage per 8s alive, up to 4 per hit.
+const POWER_EVERY = 960;
+const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
+// After 10s alive, the time a ball may go without a hit shrinks, to 1.5s by 20s:
+// a busy trap keeps going; one that only now and then finds a block winds down.
+const idleLimit = (ball) => ball.age < 1200 ? RETIRE_IDLE : Math.max(180, RETIRE_IDLE - (ball.age - 1200) * 0.25);
 const GRACE_RANGE = 5;              // ...unless it's heading at a block within this many cells
 const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
@@ -135,16 +142,16 @@ export function zoneSpec(d) {
         cups: d >= 2 ? Math.min(0.8, 0.25 + d * 0.04) : 0,
         neutral: d >= 7 ? Math.min(4, 1 + Math.floor((d - 7) / 3)) : 0,
     };
-    if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.28, props: 0, loose: 0, jello: 0, tough: 0 };
-    if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.3, props: 1, loose: 0, jello: 0, tough: 0 };
-    if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.32, props: 1, loose: 0.2, jello: 0, tough: 0,
+    if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.4, props: 0, loose: 0, jello: 0, tough: 0 };
+    if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
+    if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0,
         note: 'Some blocks only rest on others. Pop what holds them up and they tumble.' };
-    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.33, props: 2, loose: 0.2, jello: 1, tough: 0.04,
+    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 2, loose: 0.2, jello: 1, tough: 0.04,
         note: 'Jelly blocks: balls pass right through, slowed down. Each pass takes 1 off.' };
     // Past the intro, everything that's been introduced keeps showing up more.
     return {
         ...base,
-        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.42, 0.32 + d * 0.008),
+        lo: 1 + d * 0.35, hi: 3 + d * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
         props: Math.min(4, 1 + Math.floor((d - 1) / 3)),
         loose: Math.min(0.36, 0.16 + d * 0.015),
         jello: Math.min(0.85, 0.35 + d * 0.04),
@@ -160,7 +167,7 @@ export function zoneSpec(d) {
 //   stacked: more loose blocks, more tall bars, more leaning (from zone 3)
 const STYLES = {
     packed: { fill: 0.06, gap: 0, jitter: 0, loose: 1, tall: 1, lean: 0.12 },
-    airy: { fill: -0.08, gap: 1, jitter: 1, loose: 1, tall: 1, lean: 0.12 },
+    airy: { fill: -0.04, gap: 0.6, jitter: 1, loose: 1, tall: 1, lean: 0.12 },
     mixed: { fill: 0, gap: 0.5, jitter: 0.5, loose: 1, tall: 1, lean: 0.14 },
     stacked: { fill: 0.02, gap: 0.3, jitter: 0, loose: 1.9, tall: 3, lean: 0.22 },
 };
@@ -467,9 +474,11 @@ export class Sim {
         }
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
-        const bigMul = Math.min(4, 1.5 + 0.25 * s.depth);   // fewer, bigger blocks, more so deeper down
+        const bigMul = Math.min(5, 2.6 + 0.3 * s.depth);    // chunky shapes dominate, more so deeper down
         const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1) * (sh.size >= 5 ? bigMul : 1);
         const total = SHAPE_VARIANTS.reduce((n, sh) => n + weight(sh), 0);
+        const CHUNKY = SHAPE_VARIANTS.filter((sh) => sh.size >= 4);
+        const chunkyTotal = CHUNKY.reduce((n, sh) => n + weight(sh), 0);
         // Variety: a shape shows up at most twice per zone (singles three times), and
         // never right next to another of the same shape.
         const used = {};
@@ -510,9 +519,14 @@ export class Sim {
                 break;
             }
         }
-        for (let tries = 0; tries < 800 && filled < target; tries++) {
-            let pick = this.rand() * total, shape = SHAPE_VARIANTS[0];
-            for (const sh of SHAPE_VARIANTS) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
+        for (let tries = 0; tries < 2500 && filled < target; tries++) {
+            // Chunky first: until about half the target is filled, only 4+ cell shapes are placed,
+            // so big pieces get room before small ones scatter. Then anything fills the gaps.
+            const chunky = filled < target * 0.55 && tries < 1500;
+            const pool = chunky ? CHUNKY : SHAPE_VARIANTS;
+            const poolTotal = chunky ? chunkyTotal : total;
+            let pick = this.rand() * poolTotal, shape = pool[0];
+            for (const sh of pool) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             if ((used[shape.canon] ?? 0) >= (shape.size === 1 ? 3 : 2)) continue;
             const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ZONE_ROWS);
             const cells = shape.c.map(([c, r]) => [col + c, row + r]);
@@ -576,7 +590,7 @@ export class Sim {
             hp *= 1 + (s.volley - 1) * 0.7;          // numbers grow to match multishot
             hp *= hpScale(s.depth);
             if (p.kind === 'jello') hp *= 0.5;
-            else if (this.rand() < spec.tough) hp *= 2.5 + this.rand() * 1.5;   // a bulky one to wear down
+            else if (this.rand() < spec.tough) hp *= 1.8 + this.rand() * 0.8;   // a bulky one to wear down
             this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
         }
 
@@ -618,6 +632,9 @@ export class Sim {
         if (s.pendingPar > 0) { this.gain(s.pendingPar, W / 2, -3.3); this.events.push({ t: 'par', n: s.pendingPar }); }
         s.pendingPar = 0;
         s.zoneHp0 = this.hpLeft();
+        // How much this zone's numbers are scaled up; block colours divide it back out,
+        // so every zone keeps the full range of colours and patterns.
+        s.tierScale = hpScale(s.depth) * (1 + (s.volley - 1) * 0.7);
         s.par = Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(s.depth) * s.volley))));
         s.zoneShots = 0;
 
@@ -871,7 +888,8 @@ export class Sim {
                 const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass();
                 bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
-            if (this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id); this.scored(ball); }
+            // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
+            if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) { this.damageBlock(b.id, ballPower(ball)); this.scored(ball); }
         }
     }
 
@@ -918,11 +936,11 @@ export class Sim {
             ball.idle += 1;
             // Grace: a ball about to time out that's heading straight at a block nearby gets
             // a little longer to get there (never more than GRACE_MAX in a row).
-            if (ball.idle > RETIRE_IDLE && (ball.grace ?? 0) < GRACE_MAX && this.headingAtBlock(p, body.linvel())) {
+            if (ball.idle > idleLimit(ball) && (ball.grace ?? 0) < GRACE_MAX && this.headingAtBlock(p, body.linvel())) {
                 ball.grace = (ball.grace ?? 0) + 1;
                 continue;
             }
-            if (ball.idle > RETIRE_IDLE) {
+            if (ball.idle > idleLimit(ball)) {
                 this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y });
                 this.removeBall(ball.body);
                 continue;

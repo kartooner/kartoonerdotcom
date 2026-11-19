@@ -187,7 +187,7 @@ function updateBlockView(v, b, frameDt) {
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : tierFor(b.hp);
+        const look = b.jello ? JELLO : tierFor(b.hp / (sim.s.tierScale || 1));
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
