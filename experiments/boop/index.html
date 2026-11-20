@@ -131,28 +131,29 @@
         }
         #tipshade.fading { opacity: 0; }
         #note.ack { pointer-events: auto; max-width: min(290px, calc(100vw - 32px)); }
-        /* "Got it": a real button, centred, at least 44pt tall (Apple's minimum). It fades in
+        /* "Got it": a filled button across the bubble, like Play on the start screen, at least
+           44pt tall (Apple's minimum). It fades in
            after a beat instead of sitting greyed out, so it never looks disabled. */
         #note .ack-btn {
             position: relative;
             isolation: isolate;
             display: block;
-            min-width: 104px;
-            min-height: 44px;
-            margin: 12px auto 2px;
-            padding: 10px 20px;
+            width: 100%;               /* full width, like the start screen's buttons */
+            min-height: 46px;
+            margin: 12px 0 2px;
+            padding: 11px 20px;
             border: 0;
             background: none;
             font: inherit;
-            font-size: 0.9375rem;
+            font-size: 1rem;
             font-weight: 800;
-            color: var(--ink);
+            color: var(--paper);
             cursor: pointer;
             transition: opacity 0.25s ease-out;
         }
         #note .ack-btn::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
-            border: 2px solid var(--ink); border-radius: 10px;
+            background: var(--ink); border: 2.5px solid var(--ink); border-radius: 10px;
             filter: url(#sketchy);
             animation: boil 0.5s steps(1) infinite;
         }
