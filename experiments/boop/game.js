@@ -15,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-2';
+const BUILD = '1.2.1-3';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -335,21 +335,19 @@ function buildVineLink(parent, seed, len) {
 }
 
 // A bomb's fuse: one simple curved crayon line out of its cap, a thin ribbon along a curve.
-const BOMB_FILL = 0x3d3846;
-const FUSE_END = [0.24, 0.63];
-function fuseGeometry(seed) {
-    const pts = [], n = 14, w = 0.024;
-    const p0 = [0.01, 0.4], c = [-0.02, 0.62], p1 = FUSE_END;
-    for (let i = 0; i <= n; i++) {
-        const t = i / n, u = 1 - t;
-        pts.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]);
-    }
-    const pos = [];
+const BOMB_FILL = 0x17171d, BOMB_SHADE = 0x060608;
+const fuseMat = mat(0xb8b5af), shadeMat = mat(BOMB_SHADE);
+fuseMat.userData.keep = shadeMat.userData.keep = true;
+// Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
+const arcPoints = (r, a0, a1, n = 14) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n; return [Math.cos(a) * r, Math.sin(a) * r]; });
+// A crayon stroke along points: a thin ribbon, slightly uneven, tapering at both ends.
+function strokeGeometry(pts, w, seed, taper = true) {
+    const n = pts.length - 1, pos = [];
     for (let i = 0; i <= n; i++) {
         const [x, y] = pts[i], [nx, ny] = pts[Math.min(n, i + 1)], [px, py] = pts[Math.max(0, i - 1)];
         let dx = nx - px, dy = ny - py; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
-        const wob = 1 + 0.25 * Math.sin(i * 1.7 + seed);          // a crayon line's slightly uneven width
-        pos.push(x - dy * w * wob, y + dx * w * wob, 0, x + dy * w * wob, y - dx * w * wob, 0);
+        const t = i / n, k = (taper ? Math.min(1, Math.sin(Math.PI * t) * 1.6 + 0.15) : 1 - 0.15 * t) * (1 + 0.18 * Math.sin(i * 1.7 + seed));
+        pos.push(x - dy * w * k, y + dx * w * k, 0, x + dy * w * k, y - dx * w * k, 0);
     }
     const idx = [];
     for (let i = 0; i < n; i++) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
@@ -357,6 +355,15 @@ function fuseGeometry(seed) {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setIndex(idx);
     return geo;
+}
+const FUSE_END = [0.2, 0.64];
+function fuseGeometry(seed) {
+    const p0 = [-0.04, 0.3], c = [-0.06, 0.66], p1 = FUSE_END, pts = [];
+    for (let i = 0; i <= 16; i++) {
+        const t = i / 16, u = 1 - t;
+        pts.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]);
+    }
+    return strokeGeometry(pts, 0.045, seed, false);
 }
 
 function buildPropView(pr) {
@@ -370,19 +377,29 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'bomb') {
-        // A round cartoon bomb: charcoal body with a little shine, a cap, a curved fuse line
-        // and an orange spark at its tip.
-        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.36], edge: 0.05, wob: 0.45, fill: BOMB_FILL, seed: pr.id, margin: 0.1 });
-        const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.065], edge: 0, wob: 0.3, fill: 0x8e8899, seed: pr.id + 1, margin: 0.05 });
-        shine.position.set(-0.13, 0.13, 0.01);
-        const cap = makeSketch({ kind: SHAPE.BOX, size: [0.11, 0.06], round: 0.02, edge: 0.035, wob: 0.3, fill: 0x5d5668, seed: pr.id + 2, margin: 0.06 });
-        cap.position.set(0, 0.37, 0.01);
-        const fuse = new THREE.Mesh(fuseGeometry(pr.id), outlineMat);
-        fuse.position.z = 0.02;
-        const spark = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0.028, wob: 0.6, fill: 0xf4a640, seed: pr.id + 3, margin: 0.06 });
+        // A round cartoon bomb, as sketched: near-black body, a white oval shine up and to the
+        // right, darker crayon shading down the left, a thick grey fuse that rises and curls
+        // right, and an orange spark at its tip.
+        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.37], edge: 0.045, wob: 0.55, fill: BOMB_FILL, seed: pr.id, margin: 0.1 });
+        // Shading: two curved crayon strokes hugging the left side.
+        const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, pr.id), shadeMat);
+        const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, pr.id + 2), shadeMat);
+        shade.position.z = shade2.position.z = 0.015;
+        const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: pr.id + 1, margin: 0.05 });
+        shine.position.set(0.1, 0.12, 0.02);
+        shine.scale.set(1.2, 0.95, 1);
+        shine.rotation.z = 0.3;
+        const fuse = new THREE.Mesh(fuseGeometry(pr.id), fuseMat);
+        fuse.position.z = 0.005;           // tucked just behind the body, so it grows out of the top
+        const spark = new THREE.Group();
+        const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: pr.id + 3, margin: 0.06 });
+        const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: pr.id + 5, margin: 0.04 });
+        core.position.set(-0.015, 0.005, 0.005);
+        spark.add(glow, core);
         spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
-        for (const o of [shine, cap, spark]) o.renderOrder = 2;
-        group.add(body, shine, cap, fuse, spark);
+        for (const o of [shade, shade2, shine, glow, core]) o.renderOrder = 2;
+        body.position.z = 0.01;
+        group.add(fuse, body, shade, shade2, shine, spark);
         group.position.set(pr.x, pr.y, 0.05);
         v.bomb = { body, spark };
         scene.add(group);
