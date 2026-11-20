@@ -1344,6 +1344,18 @@ export class Sim {
         delete s.props[pr.id];
     }
 
+    // A tidy-up every few zones, so nothing left over from earlier play can pile up over a long
+    // run: lookup entries for colliders that are gone, old hit timers, and vines with nothing left.
+    tidy() {
+        const { world, s } = this;
+        for (const h in s.owner) if (!world.getCollider(Number(h))) delete s.owner[h];
+        s.cool = {};
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind === 'vine' && !pr.links.length && !pr.debris.length) this.removeProp(pr);
+        }
+    }
+
     // ---------- balls ----------
 
     fire(angle, count = this.s.supply > 0 ? this.s.volley : 0) {

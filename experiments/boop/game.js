@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL, BOMB } from './blockshader.js';
-import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
+import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
+import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
 import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
@@ -14,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0-14';
+const BUILD = '1.2.0-16';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -581,6 +582,7 @@ function syncView(frameDt) {
 
 function consumeEvents() {
     for (const e of sim.events) {
+        playSound(e);
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
         else if (e.t === 'vinesnap') crumbs.spray([[e.x, e.y], [e.x, e.y - 0.1]], [COLORS.vine, COLORS.leaf, theme.edge]);
         else if (e.t === 'nailhit') {
@@ -614,6 +616,56 @@ function consumeEvents() {
     }
     sim.events.length = 0;
 }
+
+// ---------- sound ----------
+// What makes a sound (see audio.js). Walls, grey blocks, windmills and buttons stay silent.
+const audio = makeAudio();
+let soundNudged = false;      // the muted speaker has wiggled its one hint
+function playSound(e) {
+    if (e.t === 'hit') audio.hit(e.id);
+    else if (e.t === 'vinehit') audio.hit('v' + e.id);
+    else if (e.t === 'pop' && e.popped) { audio.pop(); if (!audio.on) nudgeSound(); }
+    else if (e.t === 'nailpop') audio.tink();
+    else if (e.t === 'gain' && phase === 'play') audio.ring();
+    else if (e.t === 'jelly') audio.jelly();
+    else if (e.t === 'vinesnap') audio.snap();
+    else if (e.t === 'boom') audio.boom();
+    else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
+}
+
+// The speaker next to Pause. Off until turned on; the choice is remembered. A remembered "on"
+// waits for the first tap of the visit to start (browsers need a tap before sound).
+const SOUND_KEY = 'boop-sound';
+const soundBtn = $('btn-sound');
+function readSoundPick() { try { return localStorage.getItem(SOUND_KEY); } catch { return null; } }
+function setSound(on) {
+    audio.set(on);
+    audio.setActive(document.body.classList.contains('playing'));
+    try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
+    showSoundState();
+}
+function showSoundState() {
+    const on = audio.on || readSoundPick() === 'on';
+    soundBtn.setAttribute('aria-pressed', String(on));
+    soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
+    soundBtn.classList.toggle('off', !on);
+    $('sound-hint').hidden = readSoundPick() != null;
+}
+soundBtn.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
+$('btn-sound-on').addEventListener('click', () => setSound(true));
+if (readSoundPick() === 'on') {
+    const wake = () => { audio.set(true); audio.setActive(document.body.classList.contains('playing')); };
+    document.addEventListener('pointerdown', wake, { once: true });
+    document.addEventListener('keydown', wake, { once: true });
+}
+// The first pop with sound off, for someone who hasn't chosen either way: one small wiggle.
+function nudgeSound() {
+    if (soundNudged || readSoundPick() != null) return;
+    soundNudged = true;
+    soundBtn.classList.add('nudge');
+    setTimeout(() => soundBtn.classList.remove('nudge'), 900);
+}
+showSoundState();
 
 // ---------- aim guide ----------
 
@@ -812,6 +864,7 @@ function fire(angle) {
     worldSettling = false;
     mouseAim = false;
     sim.fire(angle);
+    audio.shot();
     runStarted = true;
     phase = 'play';
     hideNote();
@@ -1022,6 +1075,7 @@ function gameOver() {
     const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
     writeBest(best);
     clearSave();
+    audio.over();
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
     const isNew = d > before && before > 0;
@@ -1049,11 +1103,24 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
+const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
+    if (runStarted) audio.clear();
     sim.genZone();
+    if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
     descendT = 0;
     phase = 'descend';
+}
+
+// Every few zones, as the next one slides in: tidy the physics bookkeeping, forget any sketch
+// material no longer on screen, and let the renderer drop its cached draw lists.
+function tidyUp() {
+    sim.tidy();
+    const live = new Set();
+    scene.traverse((o) => { if (o.material) live.add(o.material); });
+    for (let i = sketchMats.length - 1; i >= 0; i--) if (!live.has(sketchMats[i])) sketchMats.splice(i, 1);
+    renderer.renderLists.dispose();
 }
 
 // The turn is over when the last ball is gone. If shots are left you can aim straight
@@ -1341,6 +1408,7 @@ function showScreen(which, moveFocus = true) {
     over.hidden = which !== 'over';
     document.body.classList.toggle('howto-open', which === 'howto');
     document.body.classList.toggle('playing', !which);
+    audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
         const best = readBest();
@@ -1410,6 +1478,7 @@ document.addEventListener('keydown', (e) => {
     }
     if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
     if ((e.key === 'p' || e.key === 'P') && !e.target.closest?.('input')) { showScreen('menu'); return; }   // pause always works
+    if ((e.key === 'm' || e.key === 'M') && !e.target.closest?.('input')) { setSound(!audio.on); return; }      // M: sound on/off
     if (buddyTalking) return;    // the buddy is talking: "Got it" first
     // Let buttons and links (pause, theme, Games) handle their own keys.
     if (e.target.closest?.('button, a, input')) return;
@@ -1456,12 +1525,13 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
+    get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
     // For checks: why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
     get idleBlockers() { return { aiming, keyAim, worldSettling, animating, shake, crumbs: crumbs.active(), unsettled: !sim.settled() }; },
     // For checks: GPU objects alive and things in the scene, to catch anything left behind.
-    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame }; },
+    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame, sketchMats: sketchMats.length }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

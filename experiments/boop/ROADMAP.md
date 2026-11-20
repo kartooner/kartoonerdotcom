@@ -33,31 +33,32 @@ Tester feedback on controls (mouse and phone):
 
 New props, each introduced with a pointing tip the first time it shows up:
 - **Vines (from depth 9):** green vines with leaves, always in the middle or lower part of a zone so they don't get in the way of early shots. Two kinds: **strung** across a short gap (2–4 cells, block to block or block to wall, never wall to wall) with a little sag, and **hanging** under a block, sometimes with a little one-square block dangling from its end like a chandelier (with clear space below so it lands with a thump). Vines stay dormant unless something happens to them: a ball passes close (its breeze sways them a little), a ball hits one, or the block it hangs from moves. A zone never has two hanging vines: two vines are always one garland and one hanging. Each link takes 3 hits. A snapped strung vine leaves two halves dangling; anything no longer held by a block or wall falls, and a popped block drops what it held. Depth 9 shows one strung vine on its own; depths 10–12 one vine plus one familiar prop; from 13, one or two.
-- **One-way flaps (from depth 12):** a small door hinged on a nail. Balls pass through one way and bounce back the other, which makes routes (get a ball in behind a wall where it rattles around). Built from the existing hinge.
-- **Bombs (from depth 15):** a block with a little fuse. Popping it bursts it and takes a chunk off its neighbours: a big payoff and a reason to aim at it first. Nothing new to learn.
+- **Bombs (from depth 15):** a small charcoal block with a crayon fuse, snug among other blocks. Popping it bursts it: every block within reach loses half its starting number, loose blocks get shoved, vines in reach snap, and a bomb can set off another. Its own number stays low (never more than a typical small block's): a prize, not a wall. One at depth 15, one a zone while it's new, then one or two.
 
 Pacing, so it never overwhelms. Every new thing follows the same arc (the Nintendo way: show it, teach it, then use it freely once it's familiar):
 1. **Show:** it first appears on its own, somewhere safe and easy to hit, with a pointing tip that says what it does. Nothing else new in that zone.
-2. **Teach:** for the next few zones it keeps appearing, alone or with one familiar thing, so playing with it teaches how it behaves (a vine holding a block, a flap guarding a pocket, a bomb next to a tough block).
+2. **Teach:** for the next few zones it keeps appearing, alone or with one familiar thing, so playing with it teaches how it behaves (a vine holding a block, a bomb next to a tough block).
 3. **Familiar:** after that it's a known thing and shows up more often, mixed in with everything else, sometimes in combinations that ask a little more of you.
-- Never overcrowded: a new kind of thing only every few depths (9, 12, 15), never two at once, and at most two kinds of props in a zone.
+- Never overcrowded: a new kind of thing only every few depths (vines at 9, bombs at 15), never two at once, and at most two kinds of props in a zone.
+
+Zones that stay fresh: past the first couple, interlocking shapes (L, T, S and their big versions) come up about twice as often, long bars are rare early, big rectangles are toned down, and a few more blocks rest loose mid-game. Straight pieces went from about two thirds of a zone to about half.
 
 Performance and smoothness pass (mid game onward):
 - Vines stay dormant (asleep) unless a ball comes close, hits one, or its block moves; they hang from small pins that follow their block, so they never pull on it.
 - GPU memory is freed as things leave the board (it used to grow every zone).
 - The board idles at ~10 redraws a second while you aim, in every zone (grey blocks, popped nails, paused windmills and mushrooms used to keep it at 60).
 - A ball winds down after 40s however busy it is, so no turn drags past about a minute.
-- Vines added to How to play.
+- A tidy-up every 5 zones, as the next zone slides in, so nothing left over can pile up over a long run.
+- Vines and bombs added to How to play.
 
-Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
+Not planned: one-way flaps (dropped for now), seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
-## v1.2.1
-Sound, chill and never annoying:
+Sound (moved up from v1.2.1), chill and never annoying:
 - **Feel:** soft, warm chiptune: rounded tones (not buzzy square waves), quiet, short. Generated in the browser, no sound files.
 - **Always in key:** every note comes from one gentle five-note scale, so overlapping sounds harmonise.
 - **Combo phrases (in the spirit of Wind Waker's sword combos):** each hit in a shot plays the next note of a short phrase, and popping a block lands the phrase's closing note. Our own little phrases, no borrowed melodies. Resets every shot.
 - **Never a wall of noise:** only a few sounds at once, hits on the same block a split second apart merge, a soft limiter, low volume. Silent while paused or when the tab is hidden.
-- **What makes a sound:** block hit (soft "boop", next note of the phrase), block pop (brighter pluck + a tiny crayon-scratch puff), nail pops out ("tink"), +1 ring (rising chime), jelly pass (squishy wobble), mushroom ("boing"), zone clear (short jingle), game over (gentle three notes down), launch (soft "fwip"). Walls, grey blocks, windmills and buttons stay silent.
+- **What makes a sound:** block hit (soft "boop", next note of the phrase), block pop (brighter pluck + a tiny crayon-scratch puff), nail pops out ("tink"), +1 ring (rising chime), jelly pass (squishy wobble), mushroom ("boing"), vine snap (low pluck), bomb (soft low thump), zone clear (short jingle), game over (gentle three notes down), launch (soft "fwip"). Walls, grey blocks, windmills and buttons stay silent. M toggles sound from the keyboard.
 - **Off by default.** People play in quiet places, and browsers block sound until a tap anyway.
 - **Sound toggle next to Pause:** a speaker icon in the board's top-left corner beside the pause button, with a slash while sound is off. 44pt, one tap from anywhere in the game, remembered between visits. The tap that turns it on also starts the audio (iPhones require a tap first).
 - **Letting people know, without nagging:**
