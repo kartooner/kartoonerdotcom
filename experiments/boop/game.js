@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-1';
+const BUILD = '1.2.2-2';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1512,7 +1512,9 @@ const menu = $('menu'), howto = $('howto'), over = $('over'), news = $('news');
 const TAGLINE = $('menu-tagline').textContent;
 // ---------- what's new ----------
 // One entry per release that adds something worth telling (hotfixes get none). Returning
-// players see Boop's one line on the start screen, once per entry; the page lists them all.
+// players see the nudge on the start screen, once per entry; the page lists them all.
+// To announce a release: add an entry at the top (newest first). Keep `line` short (Boop
+// says it), 3-5 items, each a picture (img/...) or an icon from ICON, a title and a sentence.
 const ICON = {
     aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l12 7-5.5 1.5L9 17z"/><path d="M12.5 12.5l5 5"/></svg>',
     sound: '<svg viewBox="0 0 22 22"><path d="M3 8.5h3.5L11 4.5v13l-4.5-4H3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 8a4 4 0 0 1 0 6"/><path d="M17 5.5a7.5 7.5 0 0 1 0 11"/></g></svg>',
