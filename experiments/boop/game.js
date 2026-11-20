@@ -15,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-3';
+const BUILD = '1.2.1-4';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -335,8 +335,13 @@ function buildVineLink(parent, seed, len) {
 }
 
 // A bomb's fuse: one simple curved crayon line out of its cap, a thin ribbon along a curve.
-const BOMB_FILL = 0x17171d, BOMB_SHADE = 0x060608;
-const fuseMat = mat(0xb8b5af), shadeMat = mat(BOMB_SHADE);
+// Bomb colours per theme: in the dark the body is lifted a little so it stands off the field.
+const BOMB_LOOK = {
+    light: { body: 0x24222b, shade: 0x0b0a0e, cap: 0x5d5668, fuse: 0xa9a59e },
+    dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
+};
+const bombLook = () => BOMB_LOOK[themeName()];
+const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
 const arcPoints = (r, a0, a1, n = 14) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n; return [Math.cos(a) * r, Math.sin(a) * r]; });
@@ -377,11 +382,11 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'bomb') {
-        // A round cartoon bomb, as sketched: near-black body, a white oval shine up and to the
-        // right, darker crayon shading down the left, a thick grey fuse that rises and curls
-        // right, and an orange spark at its tip.
-        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.37], edge: 0.045, wob: 0.55, fill: BOMB_FILL, seed: pr.id, margin: 0.1 });
-        // Shading: two curved crayon strokes hugging the left side.
+        // A round cartoon bomb: charcoal body with an ink outline, a white oval shine up and to
+        // the right, darker crayon shading down the left, a small cap, a thick grey fuse that
+        // curls right, and an orange spark at its tip. Body colours follow light/dark (bombLook).
+        const look = bombLook();
+        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.37], edge: 0.05, wob: 0.55, fill: look.body, seed: pr.id, margin: 0.1 });
         const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, pr.id), shadeMat);
         const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, pr.id + 2), shadeMat);
         shade.position.z = shade2.position.z = 0.015;
@@ -389,19 +394,21 @@ function buildPropView(pr) {
         shine.position.set(0.1, 0.12, 0.02);
         shine.scale.set(1.2, 0.95, 1);
         shine.rotation.z = 0.3;
+        const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: pr.id + 2, margin: 0.06 });
+        cap.position.set(-0.03, 0.37, 0.012);
         const fuse = new THREE.Mesh(fuseGeometry(pr.id), fuseMat);
-        fuse.position.z = 0.005;           // tucked just behind the body, so it grows out of the top
+        fuse.position.z = 0.005;
         const spark = new THREE.Group();
         const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: pr.id + 3, margin: 0.06 });
         const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: pr.id + 5, margin: 0.04 });
         core.position.set(-0.015, 0.005, 0.005);
         spark.add(glow, core);
         spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
-        for (const o of [shade, shade2, shine, glow, core]) o.renderOrder = 2;
+        for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
         body.position.z = 0.01;
-        group.add(fuse, body, shade, shade2, shine, spark);
+        group.add(fuse, body, shade, shade2, shine, cap, spark);
         group.position.set(pr.x, pr.y, 0.05);
-        v.bomb = { body, spark };
+        v.bomb = { body, cap, spark };
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -663,6 +670,9 @@ function consumeEvents() {
         } else if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
+        } else if (e.t === 'jolt') {
+            const v = blockViews.get(e.id);
+            if (v) { v.wobbleT = 0; v.wobbleDir = e.dir; }
         } else if (e.t === 'jelly') {
             const v = blockViews.get(e.id);
             if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
@@ -848,8 +858,12 @@ function fromScreen(x, y) {
     const v = new THREE.Vector3((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1), 0).unproject(camera);
     return { x: v.x, y: v.y };
 }
-function angleToward(ev) {
+// Pointing right next to the launcher, a tiny move swings the aim a long way (and trackpads
+// are less exact than a mouse): inside this distance, the aim holds where it was.
+const NEAR_LAUNCHER = 1.1;
+function angleToward(ev, hold = aimTarget) {
     const p = fromScreen(ev.clientX, ev.clientY);
+    if (Math.hypot(p.x - LAUNCHER.x, p.y - LAUNCHER.y) < NEAR_LAUNCHER) return hold;
     let a = Math.atan2(p.y - LAUNCHER.y, p.x - LAUNCHER.x);
     if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // pointing above the launcher: nearest side
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
@@ -863,6 +877,9 @@ const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
 canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses.');
+// A trackpad pinch (ctrl + wheel) or a stray scroll over the board shouldn't zoom or move the
+// page under the cursor mid-aim.
+canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); }, { passive: false });
 canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase === 'aim') cancelAim(); });
 canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
@@ -872,6 +889,7 @@ canvas.addEventListener('pointerdown', (ev) => {
         keyAim = false;
         mouseDown = true;
         mouseAim = true;
+        canvas.setPointerCapture(ev.pointerId);   // let go off the board and it still counts (as a cancel)
         aimTarget = aimAngle = angleToward(ev);   // click without moving: fire where you point
         hideNote();
         return;
@@ -902,6 +920,9 @@ canvas.addEventListener('pointerup', (ev) => {
         if (!mouseDown) return;
         mouseDown = false;
         if (phase !== 'aim' || !mouseAim) return;
+        // Pressed, dragged off the board and let go out there: changed your mind.
+        const q = fromScreen(ev.clientX, ev.clientY);
+        if (q.x < -0.3 || q.x > W + 0.3 || q.y > 0.3 || q.y < -H - 0.3) { cancelAim(); return; }
         const drawn = guideAngle ?? shownAngle();
         hideGuide();
         fire(drawn);
@@ -1423,6 +1444,15 @@ function applyTheme(name) {
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
+    // Bombs follow the theme too.
+    const look = BOMB_LOOK[name];
+    fuseMat.color.setHex(look.fuse);
+    shadeMat.color.setHex(look.shade);
+    for (const v of propViews.values()) {
+        if (!v.bomb) continue;
+        v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
+        v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
+    }
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);

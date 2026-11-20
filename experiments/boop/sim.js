@@ -109,12 +109,14 @@ const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most
 // it lights the fuse; a moment later it bursts, taking a chunk off every block within reach
 // (and snapping vines, and lighting other bombs). A big payoff, and a reason to aim at it first.
 const BOMB_FROM = 15;
+const BOMB_CHANCE = 0.33;           // after depth 15, the share of zones with a bomb
 const BOMB_R = 0.36;                // its radius, in cells
 const BOMB_FUSE = 60;               // steps from lit to burst (0.5s)
 const BOMB_CHAIN = 18;              // a bomb lit by another's burst goes off this many steps later
 const BOMB_REACH = 1.9;             // cells from the bomb's centre to a neighbour's nearest cell centre
+const BOMB_JOLT = 0.6;              // a nailed block's jolt: a bump that springs back
 const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
-const BOMB_KNOCK = 2.5;               // ...and anything loose gets shoved away this hard
+const BOMB_KNOCK = 4.5;               // ...and anything loose gets shoved away this hard
 const VINE_FROM = 9;
 const VINE_LINKS = 3, VINE_LINK_LEN = 0.6, VINE_LINK_HP = 3;
 const VINE_SLACK = 1.12;            // a strung vine is this much longer than its gap, so it sags
@@ -435,10 +437,15 @@ export class Sim {
                 near = Math.min(near, Math.hypot(wx - x, wy - y));
             }
             if (near > BOMB_REACH) continue;
+            // Unpinned blocks (resting, or hanging from one nail) get thrown; nailed ones just jolt
+            // like any hit, and their nails stay put.
+            const d = Math.hypot(t.x - x, t.y - y) || 1, m = body.mass();
             if (body.isDynamic() && (b.loose || b.hanging)) {
-                const d = Math.hypot(t.x - x, t.y - y) || 1, m = body.mass();
-                body.applyImpulse({ x: (t.x - x) / d * BOMB_KNOCK * m, y: ((t.y - y) / d + 0.4) * BOMB_KNOCK * m }, true);
+                body.applyImpulse({ x: (t.x - x) / d * BOMB_KNOCK * m, y: ((t.y - y) / d + 0.5) * BOMB_KNOCK * m }, true);
+            } else if (body.isDynamic()) {
+                body.applyImpulse({ x: (t.x - x) / d * BOMB_JOLT * m, y: (t.y - y) / d * BOMB_JOLT * m }, true);
             }
+            this.events.push({ t: 'jolt', id: b.id, dir: Math.atan2(t.y - y, t.x - x) });
             if (!b.neutral) this.damageBlock(b.id, Math.max(2, Math.round(b.hp0 * BOMB_SHARE)));
         }
         for (const id in s.props) {
@@ -623,9 +630,11 @@ export class Sim {
         let vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
         if (s.depth === VINE_FROM) { windmills = 0; mushrooms = 0; }
         else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
-        // Bombs: one at depth 15, one a zone while they're new, then one or two. A bomb is a prop,
-        // so a zone with one keeps just one other kind (at most two kinds of props a zone).
-        const bombs = s.depth < BOMB_FROM ? 0 : s.depth <= BOMB_FROM + 3 ? 1 : (this.rand() < 0.45 ? 2 : 1);
+        // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
+        // in three has one (deeper down, now and then two). A bomb is a prop, so a zone with one
+        // keeps just one other kind (at most two kinds of props a zone).
+        const bombs = s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
+            : this.rand() >= BOMB_CHANCE ? 0 : s.depth >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
         if (bombs) {
             const kinds = [vines && 'vine', windmills && 'windmill', mushrooms && 'mushroom'].filter(Boolean);
             const keep = kinds[Math.floor(this.rand() * kinds.length)];

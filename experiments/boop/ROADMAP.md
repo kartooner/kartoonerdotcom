@@ -33,7 +33,7 @@ Tester feedback on controls (mouse and phone):
 
 New props, each introduced with a pointing tip the first time it shows up:
 - **Vines (from depth 9):** green vines with leaves, always in the middle or lower part of a zone so they don't get in the way of early shots. Two kinds: **strung** across a short gap (2–4 cells, block to block or block to wall, never wall to wall) with a little sag, and **hanging** under a block, sometimes with a little one-square block dangling from its end like a chandelier (with clear space below so it lands with a thump). Vines stay dormant unless something happens to them: a ball passes close (its breeze sways them a little), a ball hits one, or the block it hangs from moves. A zone never has two hanging vines: two vines are always one garland and one hanging. Each link takes 3 hits. A snapped strung vine leaves two halves dangling; anything no longer held by a block or wall falls, and a popped block drops what it held. Depth 9 shows one strung vine on its own; depths 10–12 one vine plus one familiar prop; from 13, one or two.
-- **Bombs (from depth 15):** a round cartoon bomb with a cap, a curved fuse and an orange spark, sitting in a gap snug among blocks (not a block itself: no number, nothing to clear). A ball hitting it lights the fuse; the spark flares and the bomb shivers, and half a second later it bursts: every block within reach loses half its starting number, loose blocks get a shove, vines in reach snap, and other bombs in reach light. One at depth 15, one a zone while it's new, then one or two; a zone with a bomb keeps just one other kind of prop.
+- **Bombs (from depth 15), a treat:** a round cartoon bomb (charcoal body, white shine, crayon shading, a small cap, a curved grey fuse and an orange spark; lifted to slate in dark mode so it reads), sitting in a gap snug among blocks. Not a block: no number, nothing to clear. A ball hitting it lights the fuse; the spark flares, the bomb shivers, and half a second later it bursts: every block within reach loses half its starting number, unpinned blocks (resting or hanging) get thrown, nailed ones just jolt like any hit (their nails stay), vines snap, and other bombs light. Introduced at depth 15, then in about one zone in three (deeper down, now and then two).
 
 Pacing, so it never overwhelms. Every new thing follows the same arc (the Nintendo way: show it, teach it, then use it freely once it's familiar):
 1. **Show:** it first appears on its own, somewhere safe and easy to hit, with a pointing tip that says what it does. Nothing else new in that zone.
@@ -50,6 +50,7 @@ Performance and smoothness pass (mid game onward):
 - A ball winds down after 40s however busy it is, so no turn drags past about a minute.
 - A tidy-up every 5 zones, as the next zone slides in, so nothing left over can pile up over a long run.
 - Vines and bombs added to How to play.
+- Trackpads and mice: a pinch or scroll over the board no longer zooms or moves the page mid-aim; pointing right next to the launcher holds the aim instead of swinging it; pressing, dragging off the board and letting go cancels the shot.
 
 Not planned: one-way flaps (dropped for now), seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
