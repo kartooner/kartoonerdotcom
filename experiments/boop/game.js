@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0-9';
+const BUILD = '1.2.0-10';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -240,13 +240,14 @@ function updateNails(v, b, frameDt) {
         crumbs.spray([[w.x, w.y]], [0xb7b0a6, theme.edge, NAIL]);
         discard(m);
         v.nails.delete(id);
+        delete v.nailWob[id];      // its wobble timer would otherwise stay frozen and keep the board redrawing
     }
 }
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
     if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
-        || Object.values(v.nailWob).some((t) => t < 0.5) || v.hp !== b.hp) animating = true;
+        || Object.values(v.nailWob).some((t) => t < 0.5) || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
     updateNails(v, b, frameDt);
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
@@ -388,7 +389,7 @@ function syncVine(v, pr) {
         if (Math.abs(g.position.x - p.x) + Math.abs(g.position.y - y) + Math.abs(g.rotation.z - a) > 0.002) animating = true;
         g.position.set(p.x, y, 0.04);
         g.rotation.z = a;
-        if (fade != null) { animating = true; g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; }); }
+        if (fade != null && g.userData.fade !== fade) { animating = true; g.userData.fade = fade; g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; }); }
     };
     for (const l of pr.links) draw(l);
     for (const d of pr.debris) draw(d, Math.min(1, 3 * (1 - d.t / VINE_DEBRIS_STEPS)));
@@ -465,19 +466,23 @@ function syncView(frameDt) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         if (v.vine) { syncVine(v, pr); continue; }
-        v.group.position.y = pr.y + zoneOffset;
+        if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
+        // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
+        // since the last frame, not its speed: while you aim the world is paused, and a speed
+        // frozen mid-spin would otherwise keep the board from ever idling.
         if (v.rotor) {
-            const rotor = sim.world.getRigidBody(pr.rotor);
-            v.rotor.rotation.z = rotor.rotation();
-            if (Math.abs(rotor.angvel()) > 0.05) animating = true;
+            const a = sim.world.getRigidBody(pr.rotor).rotation();
+            if (Math.abs(v.rotor.rotation.z - a) > 0.002) animating = true;
+            v.rotor.rotation.z = a;
         }
         if (v.body != null) {
             const body = sim.world.getRigidBody(v.body);
-            const p = body.translation();
-            v.group.position.set(p.x, p.y + zoneOffset, 0.05);
-            v.group.rotation.z = body.rotation();
+            const p = body.translation(), a = body.rotation(), y = p.y + zoneOffset;
+            if (Math.abs(v.group.position.x - p.x) + Math.abs(v.group.position.y - y) + Math.abs(v.group.rotation.z - a) > 0.002) animating = true;
+            v.group.position.set(p.x, y, 0.05);
+            v.group.rotation.z = a;
             v.falling = pr.falling > 0;
-            if (Math.abs(body.angvel()) > 0.05 || v.falling) animating = true;    // a mushroom still wobbling
+            if (v.falling) animating = true;
         }
     }
 
@@ -1226,7 +1231,7 @@ function frame(now) {
     // finger on the board, and it's back to every frame. (Saves battery, mostly.)
     const still = sim && paused() && phase !== 'descend';
     const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !worldSettling && !animating && shake === 0
-        && now - lastInput > 400 && !crumbs.active() && sim.settled();
+        && now - lastInput > 400 && !crumbs.active();   // (while aiming the world only steps when worldSettling)
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
     if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
@@ -1410,8 +1415,10 @@ window.__boop = {
     get pixelRatio() { return renderer.getPixelRatio(); },
     get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
+    // For checks: why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
+    get idleBlockers() { return { aiming, keyAim, worldSettling, animating, shake, crumbs: crumbs.active(), unsettled: !sim.settled() }; },
     // For checks: GPU objects alive and things in the scene, to catch anything left behind.
-    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n }; },
+    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

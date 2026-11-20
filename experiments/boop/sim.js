@@ -457,8 +457,9 @@ export class Sim {
 
     settled() {
         const { world, s } = this;
-        // A mushroom that lost its block finishes falling before the next shot.
-        for (const id in s.props) if (s.props[id].falling) return false;
+        // A mushroom that lost its block finishes falling, and fallen bits of vine finish fading,
+        // before the board counts as settled.
+        for (const id in s.props) if (s.props[id].falling || s.props[id].debris?.length) return false;
         for (const id in s.blocks) {
             const b = s.blocks[id];
             if ((b.jello || b.neutral) && !b.loose && !b.hanging) continue;
