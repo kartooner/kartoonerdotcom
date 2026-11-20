@@ -109,7 +109,8 @@ const VINE_STRUNG_LEN = 0.8;        // strung vines use longer links: fewer bodi
 const VINE_STILL = 0.25, VINE_CALM_STEPS = 30;   // nearly still for 0.25s: let a vine sleep
 const VINE_PIN_SLOP = 0.005;        // a vine's pin ignores its block's tiny jiggles (invisible), so it can rest
 const VINE_CHECK_EVERY = 4;         // how often (in steps) an awake vine checks whether it can rest
-const VINE_WAKE = 1.2;              // ...unless a ball is within this many cells of it
+const VINE_WAKE = 1.2;
+const VINE_WIND = 0.01, VINE_WIND_REACH = 0.9, VINE_WIND_MAX = 1;   // a passing ball's breeze: share of its speed per step, and reach              // ...unless a ball is within this many cells of it
 const VINE_LAMP_SIZE = 0.7;         // a chandelier's block is drawn this size, so it swings free
 const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
 export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
@@ -609,8 +610,12 @@ export class Sim {
             filled += cells.length;
             return plan[plan.length - 1];
         };
-        for (let i = 0, tries = 0; i < vines && tries < 80; tries++) {
-            if (s.depth === VINE_FROM || this.rand() < 0.5) {
+        // Never two hanging vines: two vines are always one of each kind, for variety.
+        const vineKinds = vines === 2 ? (this.rand() < 0.5 ? ['strung', 'hang'] : ['hang', 'strung'])
+            : vines === 1 ? [s.depth === VINE_FROM || this.rand() < 0.5 ? 'strung' : 'hang'] : [];
+        for (let i = 0, tries = 0; i < vineKinds.length && tries < 80; tries++) {
+            if (tries === 40 && i < vineKinds.length) { i++; if (i >= vineKinds.length) break; }   // that one didn't fit: move on
+            if (vineKinds[i] === 'strung') {
                 // Strung: a gap of 2–4 cells in rows 3–8, with a cell below it for the sag.
                 const g = 2 + Math.floor(this.rand() * 3), c0 = Math.floor(this.rand() * (W - g + 1));
                 const r = 3 + Math.floor(this.rand() * (ROWS - 4));
@@ -1025,8 +1030,13 @@ export class Sim {
 
     updateVines() {
         const { world, s } = this;
-        let balls = null;    // ball positions, read once per step and only if a vine needs them
-        const ballsAt = () => (balls ??= s.balls.map((b) => world.getRigidBody(b.body)?.translation()).filter(Boolean));
+        let balls = null;    // ball positions and velocities, read once per step and only if a vine needs them
+        const ballsAt = () => (balls ??= s.balls.map((b) => {
+            const body = world.getRigidBody(b.body);
+            if (!body) return null;
+            const t = body.translation(), v = body.linvel();
+            return { x: t.x, y: t.y, vx: v.x, vy: v.y };
+        }).filter(Boolean));
         for (const id in s.props) {
             const pr = s.props[id];
             if (pr.kind !== 'vine') continue;
@@ -1041,11 +1051,14 @@ export class Sim {
                     continue;
                 }
                 // Follow the block (it may swing, fall, or shrink as it wears down). Only when it
-                // has actually moved, so a still vine can sleep.
+                // has visibly moved, so a still vine can stay at rest; when it has, the vine wakes.
                 if (world.getRigidBody(s.blocks[e.host].body).isSleeping() && s.blocks[e.host].scale === e.k) continue;
                 e.k = s.blocks[e.host].scale;
                 const pin = world.getRigidBody(e.pin), at = this.vineEndPoint(e), t = pin.translation();
-                if (Math.abs(at.x - t.x) + Math.abs(at.y - t.y) > VINE_PIN_SLOP) pin.setNextKinematicTranslation(at);
+                if (Math.abs(at.x - t.x) + Math.abs(at.y - t.y) > VINE_PIN_SLOP) {
+                    pin.setNextKinematicTranslation(at);
+                    this.wakeVine(pr);
+                }
             }
             this.restVine(pr, ballsAt);
             for (let i = pr.debris.length - 1; i >= 0; i--) {
@@ -1059,6 +1072,12 @@ export class Sim {
         }
     }
 
+    wakeVine(pr) {
+        if (!pr.links.length || !this.world.getRigidBody(pr.links[0].body).isSleeping()) return;
+        for (const l of pr.links) this.world.getRigidBody(l.body).wakeUp();
+        pr.calm = 0;
+    }
+
     // Where a vine end tied to a block is now: its spot on the block, turned and scaled with it.
     vineEndPoint(e) {
         const b = this.s.blocks[e.host], body = this.world.getRigidBody(b.body);
@@ -1066,38 +1085,54 @@ export class Sim {
         return { x: t.x + (e.lx * c - e.ly * sn) * k, y: t.y + (e.lx * sn + e.ly * c) * k };
     }
 
-    // Vines sleep unless a ball is near: once one has been nearly still for a moment with no
-    // ball close by, it's put to sleep. A ball coming within reach wakes it, so it sways as
-    // the ball goes by.
+    // Vines stay dormant unless something happens to them: a ball comes close (it stirs up a
+    // little wind as it passes), a ball hits one, or the block it hangs from moves. Once a
+    // vine has been nearly still for a moment with nothing close, it goes back to sleep.
     restVine(pr, ballsAt) {
         const { world, s } = this;
         if (!pr.links.length) return;
+        const box = pr.box;
+        const near = box && s.balls.length ? ballsAt().filter((t) => t.x > box[0] && t.x < box[1] && t.y > box[2] && t.y < box[3]) : [];
         // A vine's links share one island, so one link tells whether it's asleep.
-        const first = world.getRigidBody(pr.links[0].body);
-        if (first.isSleeping()) {
-            // Asleep, it doesn't move: check for a ball against where it lay down.
-            const [x0, x1, y0, y1] = pr.box ?? [0, 0, 0, 0];
-            const near = ballsAt().some((t) => t.x > x0 && t.x < x1 && t.y > y0 && t.y < y1);
-            if (near) { for (const l of pr.links) world.getRigidBody(l.body).wakeUp(); pr.calm = 0; }
-            return;
+        if (world.getRigidBody(pr.links[0].body).isSleeping()) {
+            if (!near.length) return;
+            this.wakeVine(pr);
         }
-        // Awake: every few steps, see whether it has settled down.
+        if (near.length) this.stirVine(pr, near);
+        // Awake: every few steps, note where it is and see whether it has settled down.
         if ((pr.tick = ((pr.tick ?? 0) + 1) % VINE_CHECK_EVERY) !== 0) return;
-        const bodies = pr.links.map((l) => world.getRigidBody(l.body));
         let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, calm = true;
-        for (const b of bodies) {
-            const t = b.translation(), v = b.linvel();
+        for (const l of pr.links) {
+            const b = world.getRigidBody(l.body), t = b.translation(), v = b.linvel();
             if (Math.abs(v.x) + Math.abs(v.y) + Math.abs(b.angvel()) >= VINE_STILL) calm = false;
             if (t.x < x0) x0 = t.x; if (t.x > x1) x1 = t.x; if (t.y < y0) y0 = t.y; if (t.y > y1) y1 = t.y;
         }
-        const box = [x0 - VINE_WAKE, x1 + VINE_WAKE, y0 - VINE_WAKE, y1 + VINE_WAKE];
-        const near = ballsAt().some((t) => t.x > box[0] && t.x < box[1] && t.y > box[2] && t.y < box[3]);
-        if (!calm || near) { pr.calm = 0; return; }
+        pr.box = [x0 - VINE_WAKE, x1 + VINE_WAKE, y0 - VINE_WAKE, y1 + VINE_WAKE];
+        if (!calm || near.length) { pr.calm = 0; return; }
         if ((pr.calm = (pr.calm ?? 0) + VINE_CHECK_EVERY) < VINE_CALM_STEPS) return;
-        for (const b of bodies) b.sleep();
+        for (const l of pr.links) world.getRigidBody(l.body).sleep();
         if (pr.lamp != null && s.blocks[pr.lamp]) world.getRigidBody(s.blocks[pr.lamp].body).sleep();   // its chandelier rests too
-        pr.box = box;
         pr.calm = 0;
+    }
+
+    // A ball rushing past pushes the nearest links a little the way it's going: a gentle
+    // sway, strongest right next to the ball.
+    stirVine(pr, balls) {
+        for (const l of pr.links) {
+            const b = this.world.getRigidBody(l.body), t = b.translation();
+            let ix = 0, iy = 0;
+            for (const ball of balls) {
+                const d = Math.hypot(ball.x - t.x, ball.y - t.y);
+                if (d >= VINE_WIND_REACH) continue;
+                const f = VINE_WIND * (1 - d / VINE_WIND_REACH);
+                ix += ball.vx * f; iy += ball.vy * f;
+            }
+            if (!ix && !iy) continue;
+            const v = b.linvel();
+            if (Math.abs(v.x) + Math.abs(v.y) > VINE_WIND_MAX) continue;    // a breeze, never a whip
+            const m = b.mass();
+            b.applyImpulse({ x: ix * m, y: iy * m }, true);
+        }
     }
 
     addWindmill(x, y) {
