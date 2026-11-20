@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.1-8">
+<html lang="en" data-build="1.2.2-1">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -362,7 +362,7 @@
         /* Paused or saved: the tagline becomes the state, a step up in weight. */
         #menu .tagline.state { color: var(--ink); font-size: 1.25rem; font-weight: 700; }
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
-        #menu .feedback { margin-top: 20px; }
+        #menu .menu-links .feedback { margin: 0; }
         /* Game over: same centred layout as the start screen. */
         #over h1 { margin: 0; font-size: clamp(2rem, 9.5vw, 3rem); line-height: 1.05; white-space: nowrap; }
         /* Buddy's word after a run: a speech bubble above him. */
@@ -440,12 +440,12 @@
             text-decoration: underline;
             cursor: pointer;
         }
-        #howto h2, #howto h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
-        #howto h2 { margin: 12px 0 12px; font-size: 2.25rem; }
+        #howto h2, #howto h3, #news h2, #news h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
+        #howto h2, #news h2 { margin: 12px 0 12px; font-size: 2.25rem; }
         #howto .intro { font-size: 1.125rem; line-height: 1.5; margin-bottom: 4px; }
-        #howto h3 { margin: 36px 0 12px; font-size: 1.375rem; }
-        #howto p, #howto li, #howto dd { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
-        #howto .note { color: var(--ink-soft); margin-top: 18px; }
+        #howto h3, #news h3 { margin: 36px 0 12px; font-size: 1.375rem; }
+        #howto p, #howto li, #howto dd, #news p, #news li { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
+        #howto .note, #news .note { color: var(--ink-soft); margin-top: 18px; }
         #howto .dot { color: var(--accent); font-weight: 800; }
         /* Hand-drawn frames (same SVG filter as the buttons) around pictures and panels. */
         .sketch-box { position: relative; isolation: isolate; }
@@ -499,7 +499,17 @@
         .meet b { display: block; font-size: 0.9375rem; }
         .meet div { font-size: 0.875rem; line-height: 1.4; color: var(--ink-soft); }
         .meet div b { color: var(--ink); }
-        #howto .actions { margin: 32px auto 0; }
+        #howto .actions, #news .actions { margin: 32px auto 0; }
+        #news h3:first-of-type { margin-top: 20px; }
+        #news .meet { grid-template-columns: 1fr; }
+        .meet .icon { width: 64px; height: 64px; display: grid; place-items: center; color: var(--ink); }
+        .meet .icon svg { width: 34px; height: 34px; }
+        /* Boop's one line on the start screen after a feature update. */
+        #menu .say { margin: 36px auto 12px; max-width: 220px; }   /* clear of the close button in the corner */
+        #btn-news.fresh { color: var(--ink); }
+        #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+        #menu .menu-links { margin: 4px 0 0; line-height: 1.2; display: flex; gap: 10px; align-items: baseline; justify-content: center; color: var(--ink-soft); }
+        #menu .say .link-btn { font-size: inherit; display: inline; }
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
             position: fixed;
@@ -590,6 +600,7 @@
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
+            <p class="say" id="menu-say" hidden><span id="menu-say-text"></span> <button class="link-btn" id="btn-news-say" type="button">See what's new</button></p>
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
@@ -600,8 +611,20 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <p class="sound-hint" id="sound-hint">Sound is off · <button class="link-btn" id="btn-sound-on" type="button">Turn on</button></p>
-            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1.2.1 · by Erik Sagen</p>
+            <p class="menu-links"><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a></p>
+            <p class="version">v1.2.2 · by Erik Sagen</p>
+        </div>
+    </section>
+
+    <section id="news" class="screen" aria-labelledby="news-title" hidden>
+        <button class="close-x" id="btn-news-close" type="button" aria-label="Close what's new"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+        <div class="screen-inner">
+            <button class="link-btn" id="btn-news-back" type="button">← Back</button>
+            <h2 id="news-title">What's new</h2>
+            <div id="news-list"></div>
+            <div class="actions">
+                <button class="btn btn-primary" id="btn-news-play" type="button">Play</button>
+            </div>
         </div>
     </section>
 
@@ -719,31 +742,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.1-8",
-                "./zones.js": "./zones.js?v=1.2.1-8",
-                "./blockshader.js": "./blockshader.js?v=1.2.1-8",
-                "./sketch.js": "./sketch.js?v=1.2.1-8",
-                "./balls.js": "./balls.js?v=1.2.1-8",
-                "./labels.js": "./labels.js?v=1.2.1-8",
-                "./audio.js": "./audio.js?v=1.2.1-8",
-                "./theme.js": "./theme.js?v=1.2.1-8",
-                "./crumbs.js": "./crumbs.js?v=1.2.1-8",
-                "./buddy.js": "./buddy.js?v=1.2.1-8"
+                "./sim.js": "./sim.js?v=1.2.2-1",
+                "./zones.js": "./zones.js?v=1.2.2-1",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-1",
+                "./sketch.js": "./sketch.js?v=1.2.2-1",
+                "./balls.js": "./balls.js?v=1.2.2-1",
+                "./labels.js": "./labels.js?v=1.2.2-1",
+                "./audio.js": "./audio.js?v=1.2.2-1",
+                "./theme.js": "./theme.js?v=1.2.2-1",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-1",
+                "./buddy.js": "./buddy.js?v=1.2.2-1"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./sim.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./zones.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./balls.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./labels.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./audio.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./theme.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.1-8">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-1">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-1">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <div id="updating" hidden>
@@ -780,6 +803,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.1-8"></script>
+    <script type="module" src="./game.js?v=1.2.2-1"></script>
 </body>
 </html>

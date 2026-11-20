@@ -68,6 +68,10 @@ Sound (moved up from v1.2.1), chill and never annoying:
   - The first time you pop a block, the muted speaker gives one small wiggle: a hint that sound exists for moments like this. Once, no message.
   - Not one of Boop's tips: his two are for how to play.
 
+## v1.2.2
+- **What's new, for feature releases only** (hotfixes add nothing). A returning player sees the link beside Send feedback read "● New in 1.2" until they open it or start playing; on tall screens (tablets, desktop) Boop also says it in one line above his head, in place of the tagline. The What's new page (same style as How to play) lists each feature release with a picture per item. New players don't get the nudge: everything is new to them.
+- If the game can't start (say, a cache serving a mix of old and new files right after an update), a plain panel explains and offers Reload; errors are shown, not swallowed, so a screenshot is a bug report.
+
 ## Later
 - **Haptics:** web pages can't vibrate on iPhone, so haptics wait for a possible App Store / Play Store release.
 
