@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO, NEUTRAL, BOMB } from './blockshader.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -15,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0-16';
+const BUILD = '1.2.1-1';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -205,24 +205,9 @@ function buildBlockView(b) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
-    let fuse = null;
-    if (b.bomb) {
-        // A bomb: a short crayon fuse out of its top with a spark at the end.
-        fuse = new THREE.Group();
-        const cord = makeSketch({ kind: SHAPE.BOX, size: [0.05, 0.22], round: 0.04, edge: 0.04, wob: 0.4, fill: 0x9a7a55, seed: b.id + 3, margin: 0.08 });
-        cord.rotation.z = -0.45; cord.position.set(0.09, 0.17, 0);
-        const spark = makeSketch({ kind: SHAPE.CIRCLE, size: [0.12], edge: 0.035, wob: 0.6, fill: 0xf4a640, seed: b.id + 5, margin: 0.08 });
-        spark.position.set(0.19, 0.38, 0.01);
-        fuse.add(cord, spark);
-        // On the top edge of the block, above the number's column where it can.
-        const tops = b.cells.filter(([, y]) => y === Math.max(...b.cells.map(([, cy]) => cy)));
-        const top = tops.find(([x]) => x === best[0]) ?? tops[0];
-        fuse.userData = { cell: top, spark };
-        fuse.renderOrder = 2;
-        group.add(fuse);
-    }
     scene.add(group);
-    const v = { group, mesh, label, fuse, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    scene.add(group);
+    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -270,7 +255,7 @@ function updateBlockView(v, b, frameDt) {
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : b.bomb ? BOMB : tierFor(b.hp / (sim.s.tierScale || 1));
+        const look = b.jello ? JELLO : tierFor(b.hp / (sim.s.tierScale || 1));
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -280,12 +265,6 @@ function updateBlockView(v, b, frameDt) {
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
     v.label.scale.setScalar(Math.max(0.62, k * 0.92) * (v.big ? 1.35 : 1));   // big blocks get bigger numbers
-    if (v.fuse) {
-        // The fuse sits on top of the number's cell; its spark flickers whenever the board is drawn.
-        const [fx, fy] = v.fuse.userData.cell;
-        v.fuse.position.set(fx * k, (fy + 0.5) * k, 0.12);
-        v.fuse.userData.spark.scale.setScalar(1 + 0.18 * Math.sin(performance.now() / 45));
-    }
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
     v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
@@ -355,12 +334,57 @@ function buildVineLink(parent, seed, len) {
     return g;
 }
 
+// A bomb's fuse: one simple curved crayon line out of its cap, a thin ribbon along a curve.
+const BOMB_FILL = 0x3d3846;
+const FUSE_END = [0.24, 0.63];
+function fuseGeometry(seed) {
+    const pts = [], n = 14, w = 0.024;
+    const p0 = [0.01, 0.4], c = [-0.02, 0.62], p1 = FUSE_END;
+    for (let i = 0; i <= n; i++) {
+        const t = i / n, u = 1 - t;
+        pts.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]);
+    }
+    const pos = [];
+    for (let i = 0; i <= n; i++) {
+        const [x, y] = pts[i], [nx, ny] = pts[Math.min(n, i + 1)], [px, py] = pts[Math.max(0, i - 1)];
+        let dx = nx - px, dy = ny - py; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+        const wob = 1 + 0.25 * Math.sin(i * 1.7 + seed);          // a crayon line's slightly uneven width
+        pos.push(x - dy * w * wob, y + dx * w * wob, 0, x + dy * w * wob, y - dx * w * wob, 0);
+    }
+    const idx = [];
+    for (let i = 0; i < n; i++) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    return geo;
+}
+
 function buildPropView(pr) {
     const group = new THREE.Group();
     const v = { group };
     if (pr.kind === 'vine') {
         v.links = new Map();       // link body handle → its drawing (links and fallen bits alike)
         v.vine = true;
+        scene.add(group);
+        propViews.set(pr.id, v);
+        return v;
+    }
+    if (pr.kind === 'bomb') {
+        // A round cartoon bomb: charcoal body with a little shine, a cap, a curved fuse line
+        // and an orange spark at its tip.
+        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.36], edge: 0.05, wob: 0.45, fill: BOMB_FILL, seed: pr.id, margin: 0.1 });
+        const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.065], edge: 0, wob: 0.3, fill: 0x8e8899, seed: pr.id + 1, margin: 0.05 });
+        shine.position.set(-0.13, 0.13, 0.01);
+        const cap = makeSketch({ kind: SHAPE.BOX, size: [0.11, 0.06], round: 0.02, edge: 0.035, wob: 0.3, fill: 0x5d5668, seed: pr.id + 2, margin: 0.06 });
+        cap.position.set(0, 0.37, 0.01);
+        const fuse = new THREE.Mesh(fuseGeometry(pr.id), outlineMat);
+        fuse.position.z = 0.02;
+        const spark = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0.028, wob: 0.6, fill: 0xf4a640, seed: pr.id + 3, margin: 0.06 });
+        spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
+        for (const o of [shine, cap, spark]) o.renderOrder = 2;
+        group.add(body, shine, cap, fuse, spark);
+        group.position.set(pr.x, pr.y, 0.05);
+        v.bomb = { body, spark };
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -491,6 +515,19 @@ function syncView(frameDt) {
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         if (v.vine) { syncVine(v, pr); continue; }
         if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
+        if (v.bomb) {
+            const now = performance.now() / 1000;
+            if (pr.lit) {
+                // Lit: the spark flares and spits, the bomb swells and shivers.
+                animating = true;
+                v.bomb.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
+                const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - pr.lit / 60);
+                v.group.scale.set(k, k, 1);
+                if (Math.random() < 0.25) crumbs.spray([[pr.x + FUSE_END[0], pr.y + FUSE_END[1] + zoneOffset]], [0xf4a640, 0xffe08a]);
+            } else {
+                v.bomb.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
+            }
+        }
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
         // frozen mid-spin would otherwise keep the board from ever idling.
@@ -630,6 +667,7 @@ function playSound(e) {
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();
+    else if (e.t === 'bomblit') audio.fizz();
     else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
 }
 
@@ -919,6 +957,7 @@ function noteTargetPoint() {
             const p = sim.world.getRigidBody(l.body).translation();
             return { x: p.x, y: p.y, r: 0.4 };
         }
+        if (pr.kind === 'bomb') return { x: pr.x, y: pr.y, r: 0.55 };
         if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
         // The cap's middle, out along the way the mushroom points.
         const body = sim.world.getRigidBody(pr.body), p = body.translation(), a = body.rotation();
@@ -1040,7 +1079,7 @@ function queueZoneTips() {
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
     const prop = (k) => { const p = props.find((x) => x.kind === k); return p && { kind: 'prop', id: p.id }; };
     add('ring', pickups[0] && { kind: 'pickup', id: pickups[0].id });
-    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose && !b.bomb));
+    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose));
     add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
     add('grey', block((b) => b.neutral));
@@ -1048,7 +1087,7 @@ function queueZoneTips() {
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
     add('vine', prop('vine'));
-    add('bomb', block((b) => b.bomb));
+    add('bomb', prop('bomb'));
     tipQueue.unshift(...tips);
 }
 function hideNote() {

@@ -132,6 +132,7 @@ export function makeAudio() {
             tone({ f: note(-1), dur: 0.16, vol: 0.2, glide: 1.6 });
         },
         snap() { tone({ f: note(-2), dur: 0.18, vol: 0.18 }); puff({ dur: 0.05, vol: 0.03, from: 1800 }); },
+        fizz() { puff({ dur: 0.45, vol: 0.03, from: 5000, to: 2500, q: 2 }); },     // a fuse catching
         boom() {
             tone({ f: 120, type: 'sine', dur: 0.38, vol: 0.45, glide: 0.4, cutoff: 800 });
             puff({ dur: 0.28, vol: 0.09, from: 900, to: 200, type: 'lowpass', q: 0.7 });
