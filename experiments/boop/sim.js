@@ -104,6 +104,8 @@ const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most
 // holds a small block at its end, like a chandelier: cut it and the block falls.
 const VINE_FROM = 9;
 const VINE_LINKS = 4, VINE_LINK_LEN = 0.45, VINE_LINK_HP = 3;
+const VINE_SLACK = 1.12;            // a strung vine is this much longer than its gap, so it sags
+const VINE_STRUNG_LEN = 0.65;       // strung vines use longer links: fewer bodies for the same span
 const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
 export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
 
@@ -591,28 +593,50 @@ export class Sim {
                 break;
             }
         }
-        // Vines are planned with their block, before the rest fill in, so there's always room
-        // below: two cells for the vine and, for a chandelier, two more for its little block.
+        // Vines are planned with their blocks, before the rest fill in, so there's always room.
+        // They stay in the middle and lower part of the zone, out of the way of the first shots.
+        // Two kinds: strung across a short gap (between blocks, or a block and a wall), or
+        // hanging under a block, sometimes holding a small block like a chandelier.
         const vineSpots = [];
-        for (let i = 0, tries = 0; i < vines && tries < 60; tries++) {
-            // Vines hang in the middle and lower part of the zone, out of the way of the first
-            // shots: the block sits in rows 3–6 (rows 3–5 for a chandelier, which needs more room).
-            const c = Math.floor(this.rand() * W);
-            const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
-            const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
-            const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
-            const cells = shapes[Math.floor(this.rand() * shapes.length)];
-            // Room below: two cells for the vine and, for a chandelier, three across for its
-            // two-wide block (centred under the vine) plus a clear row so it lands with a thump.
-            const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c - 1, r + 3], [c, r + 3], [c + 1, r + 3]] : [];
-            const drop = chand ? [[c - 1, r + 4], [c, r + 4], [c + 1, r + 4]] : [];
-            if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
+        const hostAt = (cells) => {
             plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap: false, vine: true });
             cells.forEach(([cc, rr]) => { grid[rr][cc] = plan.length; });
             filled += cells.length;
-            [...hang, ...lamp, ...drop].forEach(([cc, rr]) => { grid[rr][cc] = -1; });
-            propAt.push([c + 0.5, r + 2]);
-            vineSpots.push({ p: plan[plan.length - 1], c, r, lamp });
+            return plan[plan.length - 1];
+        };
+        for (let i = 0, tries = 0; i < vines && tries < 80; tries++) {
+            if (s.depth === VINE_FROM || this.rand() < 0.5) {
+                // Strung: a gap of 2–4 cells in rows 3–8, with a cell below it for the sag.
+                const g = 2 + Math.floor(this.rand() * 3), c0 = Math.floor(this.rand() * (W - g + 1));
+                const r = 3 + Math.floor(this.rand() * (ROWS - 4));
+                const host = (x, away) => (this.rand() < 0.5 ? [[x, r], [x, r - 1]] : [[x, r], [x + away, r]]);
+                const left = c0 === 0 ? null : host(c0 - 1, -1), right = c0 + g === W ? null : host(c0 + g, 1);
+                const gap = [];
+                for (let c = c0; c < c0 + g; c++) gap.push([c, r], [c, r + 1]);
+                const hosts = [...(left ?? []), ...(right ?? [])];
+                if (![...hosts, ...gap].every(([cc, rr]) => free(cc, rr)) || !rowOk(hosts) || !roomy(c0 + g / 2, r + 0.5)) continue;
+                const a = left ? { p: hostAt(left), cell: [c0 - 1, r] } : { wall: 0 };
+                const b = right ? { p: hostAt(right), cell: [c0 + g, r] } : { wall: W };
+                gap.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
+                propAt.push([c0 + g / 2, r + 0.5]);
+                vineSpots.push({ strung: true, a, b, r });
+            } else {
+                // Hanging: the block sits in rows 3–6 (3–5 with a chandelier, which needs more room).
+                const c = Math.floor(this.rand() * W);
+                const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
+                const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
+                const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
+                const cells = shapes[Math.floor(this.rand() * shapes.length)];
+                // Room below: two cells for the vine and, for a chandelier, three across for its
+                // two-wide block (centred under the vine) plus a clear row so it lands with a thump.
+                const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c - 1, r + 3], [c, r + 3], [c + 1, r + 3]] : [];
+                const drop = chand ? [[c - 1, r + 4], [c, r + 4], [c + 1, r + 4]] : [];
+                if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
+                const p = hostAt(cells);
+                [...hang, ...lamp, ...drop].forEach(([cc, rr]) => { grid[rr][cc] = -1; });
+                propAt.push([c + 0.5, r + 2]);
+                vineSpots.push({ p, c, r, lamp });
+            }
             i++;
         }
         for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
@@ -748,6 +772,16 @@ export class Sim {
             if (p.cup) p.block.cup = true;
         }
         for (const v of vineSpots) {
+            if (v.strung) {
+                // Tied to the side of a block (face -1 left, +1 right), or to a wall.
+                const end = (e, face) => {
+                    if (e.wall != null) return { x: e.wall, y: -(v.r + TOP_ROW + 0.5) };
+                    const b = e.p.block, i = e.p.cells.findIndex(([c, r]) => c === e.cell[0] && r === e.cell[1]);
+                    return { block: b, lx: b.cells[i][0] + face * 0.5, ly: b.cells[i][1] };
+                };
+                this.addVine(end(v.a, 1), end(v.b, -1));
+                continue;
+            }
             const b = v.p.block, i = v.p.cells.findIndex(([c, r]) => c === v.c && r === v.r);
             let lamp = null;
             if (v.lamp.length) {
@@ -756,7 +790,7 @@ export class Sim {
                 const hp = small.length ? small[Math.floor(small.length / 2)] : Math.max(2, Math.round(3 * hpScale(s.depth)));
                 lamp = this.addBlock(v.lamp.slice(1).map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
             }
-            this.addVine(b, b.cells[i][0], b.cells[i][1] - 0.5, lamp);
+            this.addVine({ block: b, lx: b.cells[i][0], ly: b.cells[i][1] - 0.5 }, null, lamp);
         }
         for (const m of mushSpots) {
             if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + TOP_ROW + 0.5), m.dir); continue; }
@@ -846,38 +880,81 @@ export class Sim {
     // ---------- props ----------
 
     // A free-spinning cross on a pin. Balls set it turning; it swats the next ones.
-    // A vine hanging under block `host` from (lx, ly) in its unscaled cell space. Links are
-    // small bodies joined end to end; only balls touch them until they break loose.
-    addVine(host, lx, ly, lamp) {
+    // A vine: a chain of small link bodies joined end to end. It hangs from one end (under a
+    // block) or is strung between two (blocks or walls) with a little slack. Each end is
+    // { block, lx, ly } in the block's unscaled cell space, or { x, y } on a wall.
+    // Only balls touch the links; a snapped link splits the chain, and whatever is no longer
+    // held by an end falls (and fades). A hanging vine can hold a block like a chandelier.
+    addVine(endA, endB, lamp) {
         const { R, world, s } = this;
         const id = s.nextId++;
-        const hostBody = world.getRigidBody(host.body);
-        const hp0 = hostBody.translation(), k = host.scale;
-        const x = hp0.x + lx * k, top = hp0.y + ly * k;
-        const pr = { id, kind: 'vine', host: host.id, lx, ly, k, links: [], debris: [], bodies: [], cols: [], lamp: lamp?.id ?? null, nextLid: 0 };
-        let prev = hostBody, prevAnchor = { x: lx * k, y: ly * k };
-        for (let i = 0; i < VINE_LINKS; i++) {
-            const cy = top - VINE_LINK_LEN * (i + 0.5);
-            const body = world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x, cy)
+        const ends = [endA, endB].filter(Boolean).map((e, side) => {
+            if (e.block) return { side, host: e.block.id, lx: e.lx, ly: e.ly, k: e.block.scale, alive: true };
+            // A wall end: a fixed pin with nothing to hit.
+            const pin = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(e.x, e.y));
+            return { side, host: null, pin: pin.handle, alive: true };
+        });
+        const endBody = (e) => world.getRigidBody(e.host != null ? s.blocks[e.host].body : e.pin);
+        const endLocal = (e) => (e.host != null ? { x: e.lx * e.k, y: e.ly * e.k } : { x: 0, y: 0 });
+        const endWorld = (e) => { const t = endBody(e).translation(), l = endLocal(e); return { x: t.x + l.x, y: t.y + l.y }; };
+        const A = endWorld(ends[0]);
+        // Where the joints go: straight down for a hanging vine; for a strung one, along a
+        // shallow curve whose length takes up the slack, so it starts out sagging.
+        let n, len, pts;
+        if (ends[1]) {
+            const B = endWorld(ends[1]), dist = Math.hypot(B.x - A.x, B.y - A.y);
+            const length = dist * VINE_SLACK;
+            n = Math.max(3, Math.round(length / VINE_STRUNG_LEN));
+            const sag = Math.sqrt(3 * dist * (length - dist) / 8);
+            const curve = [];
+            for (let i = 0; i <= 64; i++) {
+                const t = i / 64;
+                curve.push({ x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t - sag * 4 * t * (1 - t) });
+            }
+            const acc = [0];
+            for (let i = 1; i < curve.length; i++) acc.push(acc[i - 1] + Math.hypot(curve[i].x - curve[i - 1].x, curve[i].y - curve[i - 1].y));
+            len = acc[acc.length - 1] / n;
+            pts = [];
+            for (let k = 0, j = 0; k <= n; k++) {
+                const want = len * k;
+                while (j < acc.length - 2 && acc[j + 1] < want) j++;
+                const u = Math.min(1, (want - acc[j]) / (acc[j + 1] - acc[j] || 1));
+                pts.push({ x: curve[j].x + (curve[j + 1].x - curve[j].x) * u, y: curve[j].y + (curve[j + 1].y - curve[j].y) * u });
+            }
+        } else {
+            n = VINE_LINKS; len = VINE_LINK_LEN;
+            pts = Array.from({ length: n + 1 }, (_, k) => ({ x: A.x, y: A.y - len * k }));
+        }
+        const pr = { id, kind: 'vine', ends, n, len, links: [], debris: [], bodies: ends.filter((e) => e.pin != null).map((e) => e.pin), cols: [], lamp: lamp?.id ?? null };
+        // A link's near end is its local (0, +len/2); it points along local -y.
+        let prev = endBody(ends[0]), prevAnchor = endLocal(ends[0]);
+        for (let i = 0; i < n; i++) {
+            const p0 = pts[i], p1 = pts[i + 1];
+            const body = world.createRigidBody(R.RigidBodyDesc.dynamic()
+                .setTranslation((p0.x + p1.x) / 2, (p0.y + p1.y) / 2).setRotation(Math.atan2(p1.x - p0.x, p0.y - p1.y))
                 .setLinearDamping(0.6).setAngularDamping(1.2));
-            const col = world.createCollider(R.ColliderDesc.cuboid(0.09, VINE_LINK_LEN / 2).setDensity(0.4)
+            const col = world.createCollider(R.ColliderDesc.cuboid(0.09, len / 2).setDensity(0.4)
                 .setRestitution(0.5).setFriction(0.3).setCollisionGroups(groups(G.PROP, G.BALL)), body);
-            const joint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: 0, y: VINE_LINK_LEN / 2 }), prev, body, true);
+            const joint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: 0, y: len / 2 }), prev, body, true);
             joint.setContactsEnabled(false);
-            if (i === 0) pr.joint = joint.handle;
-            const lid = pr.nextLid++;
-            s.owner[col.handle] = { t: 'vine', id, lid };
-            pr.links.push({ lid, body: body.handle, col: col.handle, hp: VINE_LINK_HP });
+            if (i === 0) ends[0].joint = joint.handle;
+            s.owner[col.handle] = { t: 'vine', id, lid: i };
+            pr.links.push({ lid: i, body: body.handle, col: col.handle, hp: VINE_LINK_HP });
             pr.bodies.push(body.handle); pr.cols.push(col.handle);
-            prev = body; prevAnchor = { x: 0, y: -VINE_LINK_LEN / 2 };
+            prev = body; prevAnchor = { x: 0, y: -len / 2 };
+        }
+        if (ends[1]) {
+            const joint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, endLocal(ends[1])), prev, endBody(ends[1]), true);
+            joint.setContactsEnabled(false);
+            ends[1].joint = joint.handle;
         }
         if (lamp) {
             lamp.hung = id;
             const lampBody = world.getRigidBody(lamp.body);
             lampBody.setGravityScale(VINE_LAMP_FALL, true);   // light while it hangs, so its block doesn't sag
-            const top2 = Math.max(...lamp.cells.map(([, y]) => y)) + 0.5;
-            lampBody.setTranslation({ x: x - (lamp.cells.reduce((a, [cx]) => a + cx, 0) / lamp.cells.length) * lamp.scale, y: top - VINE_LINK_LEN * VINE_LINKS - top2 * lamp.scale }, true);
-            pr.lampJoint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: (lamp.cells.reduce((a, [cx]) => a + cx, 0) / lamp.cells.length) * lamp.scale, y: top2 * lamp.scale }), prev, lampBody, true).handle;
+            const top = Math.max(...lamp.cells.map(([, y]) => y)) + 0.5;
+            lampBody.setTranslation({ x: A.x, y: A.y - len * n - top * lamp.scale }, true);
+            world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: 0, y: top * lamp.scale }), prev, lampBody, true);
         }
         s.props[id] = pr;
         return pr;
@@ -893,31 +970,37 @@ export class Sim {
         link.hp -= n;
         const p = this.world.getRigidBody(link.body).translation();
         if (link.hp > 0) { this.events.push({ t: 'vinehit', id, lid, x: p.x, y: p.y }); return; }
-        // Snapped: this link goes, and everything below it falls.
         this.events.push({ t: 'vinesnap', id, lid, x: p.x, y: p.y });
         this.world.removeRigidBody(this.world.getRigidBody(link.body));
         delete this.s.owner[link.col];
         pr.bodies = pr.bodies.filter((h) => h !== link.body);
         pr.cols = pr.cols.filter((h) => h !== link.col);
-        this.dropVineBelow(pr, i + 1);
         pr.links.splice(i, 1);
+        this.dropLooseLinks(pr);
         this.wakeLoose();
     }
 
-    // Links from index `from` down (and the hung block) come loose.
-    dropVineBelow(pr, from) {
+    // Links still joined to a living end stay; the rest fall, and a hung block with them.
+    dropLooseLinks(pr) {
         const { world, s } = this;
-        for (const l of pr.links.splice(from)) {
+        const have = new Set(pr.links.map((l) => l.lid)), held = new Set();
+        const [a, b] = pr.ends;
+        if (a.alive) for (let i = 0; have.has(i); i++) held.add(i);
+        if (b?.alive) for (let i = pr.n - 1; have.has(i); i--) held.add(i);
+        for (const l of pr.links.filter((x) => !held.has(x.lid))) {
             // Fallen bits land on blocks but balls ignore them.
             world.getCollider(l.col).setCollisionGroups(groups(G.LOOSE, G.BLOCK | G.WALL));
             delete s.owner[l.col];
             pr.debris.push({ ...l, t: 0 });
         }
-        if (pr.lamp != null && s.blocks[pr.lamp]) {
-            s.blocks[pr.lamp].hung = null;
-            world.getRigidBody(s.blocks[pr.lamp].body).setGravityScale(BLOCK_FALL, true);
+        pr.links = pr.links.filter((x) => held.has(x.lid));
+        if (pr.lamp != null && !held.has(pr.n - 1)) {
+            if (s.blocks[pr.lamp]) {
+                s.blocks[pr.lamp].hung = null;
+                world.getRigidBody(s.blocks[pr.lamp].body).setGravityScale(BLOCK_FALL, true);
+            }
+            pr.lamp = null;
         }
-        pr.lamp = null;
     }
 
     updateVines() {
@@ -925,13 +1008,17 @@ export class Sim {
         for (const id in s.props) {
             const pr = s.props[id];
             if (pr.kind !== 'vine') continue;
-            // Its block popped: the whole vine falls.
-            if (pr.links.length && !s.blocks[pr.host]) this.dropVineBelow(pr, 0);
-            const host = s.blocks[pr.host];
-            if (host && pr.links.length && host.scale !== pr.k) {
-                // The block shrank as it wore down: keep the vine hanging from its edge.
-                pr.k = host.scale;
-                world.getImpulseJoint(pr.joint)?.setAnchor1({ x: pr.lx * pr.k, y: pr.ly * pr.k });
+            for (const e of pr.ends) {
+                if (e.host == null || !e.alive) continue;
+                const host = s.blocks[e.host];
+                // Its block popped (the joint went with it): what it held falls.
+                if (!host) { e.alive = false; this.dropLooseLinks(pr); continue; }
+                if (host.scale !== e.k) {
+                    // The block shrank as it wore down: keep the vine tied to its edge.
+                    e.k = host.scale;
+                    const j = world.getImpulseJoint(e.joint), at = { x: e.lx * e.k, y: e.ly * e.k };
+                    if (e.side === 0) j?.setAnchor1(at); else j?.setAnchor2(at);
+                }
             }
             for (let i = pr.debris.length - 1; i >= 0; i--) {
                 const d = pr.debris[i];
