@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.9';
+const BUILD = '1.1.10';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -230,6 +230,8 @@ function updateNails(v, b, frameDt) {
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
+    if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
+        || Object.values(v.nailWob).some((t) => t < 0.5) || v.hp !== b.hp) animating = true;
     updateNails(v, b, frameDt);
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
@@ -404,13 +406,18 @@ function syncView(frameDt) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         v.group.position.y = pr.y + zoneOffset;
-        if (v.rotor) v.rotor.rotation.z = sim.world.getRigidBody(pr.rotor).rotation();
+        if (v.rotor) {
+            const rotor = sim.world.getRigidBody(pr.rotor);
+            v.rotor.rotation.z = rotor.rotation();
+            if (Math.abs(rotor.angvel()) > 0.05) animating = true;
+        }
         if (v.body != null) {
             const body = sim.world.getRigidBody(v.body);
             const p = body.translation();
             v.group.position.set(p.x, p.y + zoneOffset, 0.05);
             v.group.rotation.z = body.rotation();
             v.falling = pr.falling > 0;
+            if (Math.abs(body.angvel()) > 0.05 || v.falling) animating = true;    // a mushroom still wobbling
         }
     }
 
@@ -452,6 +459,7 @@ function syncView(frameDt) {
     }
 
 
+    if (floaters.length || fadingBalls.length || fadingProps.length) animating = true;
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
         f.t += frameDt;
@@ -524,10 +532,11 @@ let lastGuideAt = -Infinity;
 function drawGuide(angle) {
     if (angle === guideAngle) return;
     // Working out the path is the costliest thing in the game (it plays the shot ahead on a
-    // copy of the world). While the aim is moving, do it at most ~30 times a second (less if
-    // it's slow on this device); once the aim stops, the next frame catches up exactly.
+    // copy of the world). Space the updates by what it costs on this device: on a quick phone
+    // that's nearly every frame (smooth), on a slow or low-power one down to ~30 a second.
+    // Once the aim stops, the next update catches up exactly.
     const now = performance.now();
-    if (now - lastGuideAt < Math.max(33, guideCost * 2.5)) return;
+    if (now - lastGuideAt < Math.min(33, guideCost * 3)) return;
     lastGuideAt = now;
     const t0 = now;
     guideAngle = angle;
@@ -973,10 +982,16 @@ function tick(frameDt) {
 
 let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
+const recentDt = [];
 function watchFrameRate(rawDt) {
-    // Over each 60 frames, if a quarter or more missed ~50fps, drop to the next resolution step.
+    // The screen's own pace: the quicker frames of the last second or so (120 or 60 a second,
+    // or 30 when an iPhone is in Low Power Mode). A frame is slow only if it misses that pace,
+    // so a phone capped at 30 isn't treated as struggling. Over each 60 frames, if a quarter
+    // or more were slow, drop to the next resolution step.
+    recentDt.push(rawDt); if (recentDt.length > 90) recentDt.shift();
+    const pace = recentDt.length < 20 ? 1 / 60 : [...recentDt].sort((a, b) => a - b)[Math.floor(recentDt.length * 0.25)];
     timedFrames += 1;
-    if (rawDt > 1 / 50) slowFrames += 1;
+    if (rawDt > pace * 1.6) slowFrames += 1;
     if (timedFrames < 60) return;
     if (slowFrames >= 15 && pixelStep < PIXEL_RATIOS.length - 1) {
         pixelStep += 1;
@@ -986,7 +1001,10 @@ function watchFrameRate(rawDt) {
     slowFrames = 0;
     timedFrames = 0;
 }
-let lastRender = -Infinity;
+let lastRender = -Infinity, lastInput = 0, animating = false;
+for (const type of ['pointerdown', 'pointermove', 'keydown', 'wheel']) {
+    window.addEventListener(type, () => { lastInput = performance.now(); }, { passive: true, capture: true });
+}
 function frame(now) {
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
@@ -1003,16 +1021,22 @@ function frame(now) {
             if (keyAim || !aimCancel) drawGuide(shownAngle());
         }
         if (noteShown) placeNote();
+        animating = false;          // set by syncView if anything on the board is still moving
         syncView(dt);
         crumbs.update(dt);
     }
     // Short shake when a tumbling block lands hard.
     shake = Math.max(0, shake - frameDt * 0.6);
     camera.position.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0);
-    // Behind the start, pause and game-over screens nothing moves (except a zone sliding in),
-    // so don't redraw the board every frame there: twice a second is plenty.
+    // Don't redraw a picture that hasn't changed. Behind the start, pause and game-over screens
+    // nothing moves (except a zone sliding in): twice a second. While you're deciding on a
+    // shot and nothing on the board is moving: ten times a second. Anything moving, or your
+    // finger on the board, and it's back to every frame. (Saves battery, mostly.)
     const still = sim && paused() && phase !== 'descend';
-    if (!still || now - lastRender > 500) { renderer.render(scene, camera); lastRender = now; }
+    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !animating && shake === 0
+        && now - lastInput > 400 && !crumbs.active() && sim.settled();
+    const every = still ? 500 : idle ? 100 : 0;
+    if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
     requestAnimationFrame(frame);
 }
 
