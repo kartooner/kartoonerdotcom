@@ -13,14 +13,21 @@ import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
 import './buddy.js';               // the mascot's blinks and glances
 
-// Must match data-build on the page. If they differ, the browser has mixed a cached
-// page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-6';
-if (document.documentElement.dataset.build !== BUILD) {
+// Must match data-build on the page, and the stamp every other file pushes as it loads.
+// Right after an update, a cache can briefly hand out a mix of old and new files. Then:
+// reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
+// a game that half works.
+const BUILD = '1.2.1-7';
+const MODULES = 10;
+const stamps = globalThis.boopBuilds || [];
+if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
-    if (!tried) { location.reload(); throw new Error('Boop: page and scripts out of step, reloading'); }
+    if (!tried) location.reload();
+    else globalThis.boopUpdating?.();
+    throw new Error('Boop: files out of step after an update');
 }
+globalThis.boopReady = true;   // tells the watchdog in index.html the game started
 
 let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);

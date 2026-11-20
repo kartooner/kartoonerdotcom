@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.1-6">
+<html lang="en" data-build="1.2.1-7">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -280,6 +280,14 @@
             transform: rotate(-135deg);
         }
         [hidden] { display: none !important; }
+        #updating {
+            position: fixed; inset: 0; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+            padding: 24px; text-align: center;
+            background: var(--paper, #f1e8d2); color: var(--ink);
+        }
+        #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
+        #updating .btn { width: 100%; max-width: 280px; }
         #theme-toggle {
             position: fixed;
             z-index: 11;
@@ -697,37 +705,48 @@
 
     <!-- Build stamp: every game file is loaded with ?v=BUILD so a cached old script can't
          run against a newer page (or the reverse). When any .js file changes, bump it here
-         (importmap, preloads, the script tag, data-build on <html>) and BUILD in game.js. -->
+         (importmap, preloads, the script tag, data-build on <html>), BUILD in game.js, and the
+         boopBuilds stamp at the top of every other .js file (game.js checks they all match). -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.1-6",
-                "./zones.js": "./zones.js?v=1.2.1-6",
-                "./blockshader.js": "./blockshader.js?v=1.2.1-6",
-                "./sketch.js": "./sketch.js?v=1.2.1-6",
-                "./balls.js": "./balls.js?v=1.2.1-6",
-                "./labels.js": "./labels.js?v=1.2.1-6",
-                "./audio.js": "./audio.js?v=1.2.1-6",
-                "./theme.js": "./theme.js?v=1.2.1-6",
-                "./crumbs.js": "./crumbs.js?v=1.2.1-6",
-                "./buddy.js": "./buddy.js?v=1.2.1-6"
+                "./sim.js": "./sim.js?v=1.2.1-7",
+                "./zones.js": "./zones.js?v=1.2.1-7",
+                "./blockshader.js": "./blockshader.js?v=1.2.1-7",
+                "./sketch.js": "./sketch.js?v=1.2.1-7",
+                "./balls.js": "./balls.js?v=1.2.1-7",
+                "./labels.js": "./labels.js?v=1.2.1-7",
+                "./audio.js": "./audio.js?v=1.2.1-7",
+                "./theme.js": "./theme.js?v=1.2.1-7",
+                "./crumbs.js": "./crumbs.js?v=1.2.1-7",
+                "./buddy.js": "./buddy.js?v=1.2.1-7"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./sim.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./zones.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./balls.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./labels.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./audio.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./theme.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-6">
-    <script type="module" src="./game.js?v=1.2.1-6"></script>
+    <link rel="modulepreload" href="./game.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./sim.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./zones.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./balls.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./labels.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./audio.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./theme.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-7">
+    <!-- If the game can't start (say, a cache served a mix of old and new files just after an
+         update), show a plain message with a Reload button instead of a page that won't respond. -->
+    <div id="updating" hidden>
+        <p><b>Boop is updating.</b> A new version is on its way. Give it a minute, then reload.</p>
+        <button class="btn btn-primary" type="button" onclick="location.reload()">Reload</button>
+    </div>
+    <script>
+        self.boopUpdating = function () { document.getElementById('updating').hidden = false; };
+        addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
+    </script>
+    <script type="module" src="./game.js?v=1.2.1-7"></script>
 </body>
 </html>
