@@ -74,6 +74,8 @@ Sound (moved up from v1.2.1), chill and never annoying:
 - To announce a future feature release: add one entry at the top of `WHATS_NEW` in game.js.
 - If the game can't start (say, a cache serving a mix of old and new files right after an update), a plain panel explains and offers Reload; errors are shown, not swallowed, so a screenshot is a bug report.
 
+- The start screen's "Sound is off · Turn on" line is gone: the speaker beside Pause does it, and How to play says so.
+
 ## Later
 - **Haptics:** web pages can't vibrate on iPhone, so haptics wait for a possible App Store / Play Store release.
 

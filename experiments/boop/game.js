@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-3';
+const BUILD = '1.2.2-4';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -740,10 +740,8 @@ function showSoundState() {
     soundBtn.setAttribute('aria-pressed', String(on));
     soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
     soundBtn.classList.toggle('off', !on);
-    $('sound-hint').hidden = readSoundPick() != null;
 }
 soundBtn.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
-$('btn-sound-on').addEventListener('click', () => setSound(true));
 if (readSoundPick() === 'on') {
     const wake = () => { audio.set(true); audio.setActive(document.body.classList.contains('playing')); };
     document.addEventListener('pointerdown', wake, { once: true });

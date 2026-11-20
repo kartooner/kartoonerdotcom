@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.2-3">
+<html lang="en" data-build="1.2.2-4">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -122,8 +122,6 @@
         #btn-sound.nudge svg { animation: nudge 0.8s ease-in-out; }
         @keyframes nudge { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(11deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(3deg); } }
         @media (prefers-reduced-motion: reduce) { #btn-sound.nudge svg { animation: none; } }
-        #menu .sound-hint { margin: 14px 0 0; font-size: 0.9rem; color: var(--ink-soft); }
-        #menu .sound-hint .link-btn { font-size: inherit; }
         #btn-pause svg { display: block; width: 20px; height: 20px; }
         #btn-pause:focus-visible, #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
         #stage canvas:focus { outline: none; }
@@ -522,7 +520,7 @@
         #menu .say { margin: 36px auto 12px; max-width: 220px; }   /* clear of the close button in the corner */
         #btn-news.fresh { color: var(--ink); }
         #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
-        #menu .menu-links { margin: 4px 0 0; line-height: 1.2; display: flex; gap: 10px; align-items: baseline; justify-content: center; color: var(--ink-soft); }
+        #menu .menu-links { margin: 20px 0 0; line-height: 1.2; display: flex; gap: 10px; align-items: baseline; justify-content: center; color: var(--ink-soft); }
         #menu .say .link-btn { font-size: inherit; display: inline; }
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
@@ -626,7 +624,6 @@
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="sound-hint" id="sound-hint">Sound is off · <button class="link-btn" id="btn-sound-on" type="button">Turn on</button></p>
             <p class="menu-links"><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a></p>
             <p class="version">v1.2.2 · by Erik Sagen</p>
         </div>
@@ -678,6 +675,7 @@
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
+            <p class="note"><b>Sound</b> is off to start. Tap the speaker beside Pause to turn it on.</p>
             <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires, Esc cancels or pauses, M sound on/off.</p>
 
             <h3>Reading the top</h3>
@@ -758,31 +756,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.2-3",
-                "./zones.js": "./zones.js?v=1.2.2-3",
-                "./blockshader.js": "./blockshader.js?v=1.2.2-3",
-                "./sketch.js": "./sketch.js?v=1.2.2-3",
-                "./balls.js": "./balls.js?v=1.2.2-3",
-                "./labels.js": "./labels.js?v=1.2.2-3",
-                "./audio.js": "./audio.js?v=1.2.2-3",
-                "./theme.js": "./theme.js?v=1.2.2-3",
-                "./crumbs.js": "./crumbs.js?v=1.2.2-3",
-                "./buddy.js": "./buddy.js?v=1.2.2-3"
+                "./sim.js": "./sim.js?v=1.2.2-4",
+                "./zones.js": "./zones.js?v=1.2.2-4",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-4",
+                "./sketch.js": "./sketch.js?v=1.2.2-4",
+                "./balls.js": "./balls.js?v=1.2.2-4",
+                "./labels.js": "./labels.js?v=1.2.2-4",
+                "./audio.js": "./audio.js?v=1.2.2-4",
+                "./theme.js": "./theme.js?v=1.2.2-4",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-4",
+                "./buddy.js": "./buddy.js?v=1.2.2-4"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./sim.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./zones.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./balls.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./labels.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./audio.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./theme.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.2-3">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-4">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-4">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <div id="updating" hidden>
@@ -819,6 +817,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.2-3"></script>
+    <script type="module" src="./game.js?v=1.2.2-4"></script>
 </body>
 </html>
