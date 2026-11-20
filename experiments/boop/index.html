@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.1-7">
+<html lang="en" data-build="1.2.1-8">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -288,6 +288,13 @@
         }
         #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
         #updating .btn { width: 100%; max-width: 280px; }
+        #updating .error-detail { font-size: 0.75rem; color: var(--ink-soft); word-break: break-word; }
+        #error-note {
+            position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40;
+            margin: 0; padding: 10px 12px; border-radius: 8px;
+            background: var(--ink); color: var(--paper, #f1e8d2);
+            font-size: 0.8rem; line-height: 1.4; word-break: break-word; cursor: pointer;
+        }
         #theme-toggle {
             position: fixed;
             z-index: 11;
@@ -712,41 +719,67 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.1-7",
-                "./zones.js": "./zones.js?v=1.2.1-7",
-                "./blockshader.js": "./blockshader.js?v=1.2.1-7",
-                "./sketch.js": "./sketch.js?v=1.2.1-7",
-                "./balls.js": "./balls.js?v=1.2.1-7",
-                "./labels.js": "./labels.js?v=1.2.1-7",
-                "./audio.js": "./audio.js?v=1.2.1-7",
-                "./theme.js": "./theme.js?v=1.2.1-7",
-                "./crumbs.js": "./crumbs.js?v=1.2.1-7",
-                "./buddy.js": "./buddy.js?v=1.2.1-7"
+                "./sim.js": "./sim.js?v=1.2.1-8",
+                "./zones.js": "./zones.js?v=1.2.1-8",
+                "./blockshader.js": "./blockshader.js?v=1.2.1-8",
+                "./sketch.js": "./sketch.js?v=1.2.1-8",
+                "./balls.js": "./balls.js?v=1.2.1-8",
+                "./labels.js": "./labels.js?v=1.2.1-8",
+                "./audio.js": "./audio.js?v=1.2.1-8",
+                "./theme.js": "./theme.js?v=1.2.1-8",
+                "./crumbs.js": "./crumbs.js?v=1.2.1-8",
+                "./buddy.js": "./buddy.js?v=1.2.1-8"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./sim.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./zones.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./balls.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./labels.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./audio.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./theme.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.1-7">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-7">
+    <link rel="modulepreload" href="./game.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./sim.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./zones.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./balls.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./labels.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./audio.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./theme.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.1-8">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-8">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <div id="updating" hidden>
-        <p><b>Boop is updating.</b> A new version is on its way. Give it a minute, then reload.</p>
+        <p id="updating-text"><b>Boop is updating.</b> A new version is on its way. Give it a minute, then reload.</p>
+        <p id="updating-error" class="error-detail" hidden></p>
         <button class="btn btn-primary" type="button" onclick="location.reload()">Reload</button>
     </div>
+    <p id="error-note" role="status" hidden></p>
     <script>
-        self.boopUpdating = function () { document.getElementById('updating').hidden = false; };
-        addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
+        // Problems are shown, not swallowed, so they can be reported: if the game can't start,
+        // the panel says why; if something breaks mid-game, a small note says what.
+        (function () {
+            var errors = [];
+            function note(msg) {
+                if (/ResizeObserver loop|^Script error\.?$/.test(msg)) return;   // harmless browser noise
+                errors.push(msg);
+                if (!self.boopReady) return;
+                var el = document.getElementById('error-note');
+                el.textContent = 'Something went wrong: ' + msg + ' (tap to hide)';
+                el.hidden = false;
+            }
+            addEventListener('error', function (e) { note(e.message || String(e.error || 'unknown error')); });
+            addEventListener('unhandledrejection', function (e) { note(String((e.reason && e.reason.message) || e.reason)); });
+            document.addEventListener('click', function (e) { if (e.target.id === 'error-note') e.target.hidden = true; });
+            self.boopUpdating = function () {
+                if (errors.length && !/out of step/.test(errors.join(' '))) {
+                    document.getElementById('updating-text').innerHTML = '<b>Boop couldn\'t start.</b> Reloading may help. If it doesn\'t, a screenshot of this helps fix it.';
+                    var d = document.getElementById('updating-error');
+                    d.textContent = errors.slice(0, 3).join(' · ') + ' — ' + navigator.userAgent;
+                    d.hidden = false;
+                }
+                document.getElementById('updating').hidden = false;
+            };
+            addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
+        })();
     </script>
-    <script type="module" src="./game.js?v=1.2.1-7"></script>
+    <script type="module" src="./game.js?v=1.2.1-8"></script>
 </body>
 </html>
