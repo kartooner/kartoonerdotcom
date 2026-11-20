@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.14';
+const BUILD = '1.1.16';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -486,19 +486,12 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
-        else if (e.t === 'hit' && runStarted) {
-            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.');
-        } else if (e.t === 'out' && e.faded) {
-            tourTip('fuse', 'Balls turn grey and fade when they stop hitting blocks.');
-        } else if (e.t === 'nailpop') {
-            tourTip('nailpop', 'Nail out! Knock out both and the block falls.');
-        } else if (e.t === 'nailhit') {
+        else if (e.t === 'nailhit') {
             const v = blockViews.get(e.id);
             if (v) v.nailWob[e.nail] = 0;
         } else if (e.t === 'stretch') {
-            // Last few blocks: hits count double. Say so once per device; a small mark every time.
+            // Last few blocks: hits count double. The floater says so, every time.
             addFloater('Hits ×2', W / 2, -2.6);
-            tourTip('stretch', 'Last few blocks: every hit counts double.');
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
@@ -688,7 +681,7 @@ const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: W / 2, y: sim.s.roomForBuddy ? -4.25 : -3.9, r: 0, buddy: true };   // the buddy, centred, below the pause and launcher
+    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // (placeNote lays Buddy out under his bubble)   // the buddy, centred, below the pause and launcher
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -876,16 +869,12 @@ function gameOver() {
 const CLEAR_BEAT = 0.5;
 let clearT = 0;
 function zoneCleared() {
-    tourTip('shots', 'Shots are limited. Clearing zones, beating par and +1 rings earn more.');
     sim.endShots();
     clearT = 0;
     phase = 'cleared';
 }
 
-// The buddy's tour is still under way (a new player): keep the top of the board clear for him.
-const tourPending = () => { const seen = readTips(); return !(seen.aim && seen.hits && seen.nails && seen.shots); };
 function startZone() {
-    sim.s.roomForBuddy = tourPending();
     sim.genZone();
     zoneOffset = -H;
     descendT = 0;
@@ -1188,10 +1177,11 @@ function play() {
     showScreen(null);
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
-        tourTip('aim', "Hi! I'm Buddy. To shoot a ball, drag anywhere to aim, then let go to fire!", { now: true, stay: true, first: true });
+        // Buddy's whole tour is two tips: this one, and one after your first shot.
+        tourTip('intro', "Hi! I'm Buddy. Drag anywhere to aim, let go to fire. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
-        const nails = { key: 'nails', text: 'Nailed blocks stay put until you knock their nails out. Blocks without nails can tumble.' };
-        if (tipDue(nails) && !tipQueue.some((t) => t.key === 'nails')) tipQueue.unshift(nails);
+        const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
+        if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
     }
     nextTip();
     fromSave = false;      // from here on, the start screen is just the pause screen
