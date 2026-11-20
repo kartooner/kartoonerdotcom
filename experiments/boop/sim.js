@@ -106,6 +106,8 @@ const VINE_FROM = 9;
 const VINE_LINKS = 4, VINE_LINK_LEN = 0.45, VINE_LINK_HP = 3;
 const VINE_SLACK = 1.12;            // a strung vine is this much longer than its gap, so it sags
 const VINE_STRUNG_LEN = 0.65;       // strung vines use longer links: fewer bodies for the same span
+const VINE_STILL = 0.25, VINE_CALM_STEPS = 60;   // nearly still for 0.5s: let a vine sleep
+const VINE_LAMP_SIZE = 0.7;         // a chandelier's block is drawn this size, so it swings free
 const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
 export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
 
@@ -257,7 +259,7 @@ export class Sim {
             world.removeCollider(world.getCollider(h), false);
             delete s.owner[h];
         }
-        const k = b.neutral ? 0.96 : blockScale(b.hp, b.hp0);
+        const k = b.neutral ? 0.96 : Math.min(b.mini ?? 1, blockScale(b.hp, b.hp0));   // a chandelier's block is a small one
         b.scale = k;
         const extra = [];
         b.cols = b.cells.map(([x, y]) => {
@@ -623,14 +625,14 @@ export class Sim {
             } else {
                 // Hanging: the block sits in rows 3–6 (3–5 with a chandelier, which needs more room).
                 const c = Math.floor(this.rand() * W);
-                const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
+                const chand = this.rand() < chandelierChance;
                 const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
                 const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
                 const cells = shapes[Math.floor(this.rand() * shapes.length)];
-                // Room below: two cells for the vine and, for a chandelier, three across for its
-                // two-wide block (centred under the vine) plus a clear row so it lands with a thump.
-                const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c - 1, r + 3], [c, r + 3], [c + 1, r + 3]] : [];
-                const drop = chand ? [[c - 1, r + 4], [c, r + 4], [c + 1, r + 4]] : [];
+                // Room below: two cells for the vine and, for a chandelier, one for its little
+                // block plus a clear one under it, so it lands with a thump.
+                const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c, r + 3]] : [];
+                const drop = chand ? [[c, r + 4]] : [];
                 if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
                 const p = hostAt(cells);
                 [...hang, ...lamp, ...drop].forEach(([cc, rr]) => { grid[rr][cc] = -1; });
@@ -785,10 +787,12 @@ export class Sim {
             const b = v.p.block, i = v.p.cells.findIndex(([c, r]) => c === v.c && r === v.r);
             let lamp = null;
             if (v.lamp.length) {
-                // A small resting block, about the size of a typical small one in this zone.
-                const small = plan.filter((p) => p.block && p.cells.length <= 2 && !p.block.neutral).map((p) => p.block.hp0);
-                const hp = small.length ? small[Math.floor(small.length / 2)] : Math.max(2, Math.round(3 * hpScale(s.depth)));
-                lamp = this.addBlock(v.lamp.slice(1).map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
+                // A little one-square block with no nails, numbered like the zone's small blocks.
+                const small = plan.filter((p) => p.block && p.cells.length <= 2 && !p.block.neutral).map((p) => p.block.hp0 / p.cells.length).sort((a, b) => a - b);
+                const hp = Math.max(2, Math.round(small.length ? small[Math.floor(small.length / 2)] : 3 * hpScale(s.depth)));
+                lamp = this.addBlock(v.lamp.map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
+                lamp.mini = VINE_LAMP_SIZE;
+                this.shapeBlock(lamp);
             }
             this.addVine({ block: b, lx: b.cells[i][0], ly: b.cells[i][1] - 0.5 }, null, lamp);
         }
@@ -968,6 +972,7 @@ export class Sim {
         if (i < 0) return;
         const link = pr.links[i];
         link.hp -= n;
+        for (const l of pr.links) this.world.getRigidBody(l.body).wakeUp();   // it may have been put to rest
         const p = this.world.getRigidBody(link.body).translation();
         if (link.hp > 0) { this.events.push({ t: 'vinehit', id, lid, x: p.x, y: p.y }); return; }
         this.events.push({ t: 'vinesnap', id, lid, x: p.x, y: p.y });
@@ -990,6 +995,7 @@ export class Sim {
         for (const l of pr.links.filter((x) => !held.has(x.lid))) {
             // Fallen bits land on blocks but balls ignore them.
             world.getCollider(l.col).setCollisionGroups(groups(G.LOOSE, G.BLOCK | G.WALL));
+            world.getRigidBody(l.body).wakeUp();
             delete s.owner[l.col];
             pr.debris.push({ ...l, t: 0 });
         }
@@ -997,7 +1003,9 @@ export class Sim {
         if (pr.lamp != null && !held.has(pr.n - 1)) {
             if (s.blocks[pr.lamp]) {
                 s.blocks[pr.lamp].hung = null;
-                world.getRigidBody(s.blocks[pr.lamp].body).setGravityScale(BLOCK_FALL, true);
+                const lamp = world.getRigidBody(s.blocks[pr.lamp].body);
+                lamp.setGravityScale(BLOCK_FALL, true);
+                lamp.wakeUp();
             }
             pr.lamp = null;
         }
@@ -1020,6 +1028,7 @@ export class Sim {
                     if (e.side === 0) j?.setAnchor1(at); else j?.setAnchor2(at);
                 }
             }
+            this.restVine(pr);
             for (let i = pr.debris.length - 1; i >= 0; i--) {
                 const d = pr.debris[i];
                 if (++d.t < VINE_DEBRIS_STEPS) continue;
@@ -1029,6 +1038,25 @@ export class Sim {
                 pr.debris.splice(i, 1);
             }
         }
+    }
+
+    // A vine tied to a nailed block never quite stops: the block's spring and the vine's pull
+    // keep nudging each other by tiny amounts. Once it has been nearly still for a moment with
+    // no balls about, put it (and its nailed blocks) to sleep, so the game can idle.
+    restVine(pr) {
+        const { world, s } = this;
+        if (s.balls.length || !pr.links.length) { pr.calm = 0; return; }
+        const still = (b) => { const v = b.linvel(); return Math.abs(v.x) + Math.abs(v.y) + Math.abs(b.angvel()) < VINE_STILL; };
+        const bodies = pr.links.map((l) => world.getRigidBody(l.body));
+        if (bodies.every((b) => b.isSleeping())) return;
+        if (!bodies.every(still)) { pr.calm = 0; return; }
+        if ((pr.calm = (pr.calm ?? 0) + 1) < VINE_CALM_STEPS) return;
+        for (const e of pr.ends) {
+            const host = e.host != null && s.blocks[e.host];
+            if (host && !host.loose && !host.hanging && !host.jello && !host.neutral) world.getRigidBody(host.body).sleep();
+        }
+        for (const b of bodies) b.sleep();
+        pr.calm = 0;
     }
 
     addWindmill(x, y) {

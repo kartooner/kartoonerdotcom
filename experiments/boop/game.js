@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0-5';
+const BUILD = '1.2.0-6';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -300,9 +300,9 @@ function buildPickupView(pk) {
 }
 
 // One link of a vine: a short green crayon stem with a leaf, drawn in the link's own space.
-function buildVineLink(parent, seed) {
+function buildVineLink(parent, seed, len) {
     const g = new THREE.Group();
-    const stem = makeSketch({ kind: SHAPE.BOX, size: [0.09, 0.245], round: 0.05, edge: 0.05, wob: 0.4,
+    const stem = makeSketch({ kind: SHAPE.BOX, size: [0.09, len / 2 + 0.02], round: 0.05, edge: 0.05, wob: 0.4,
         fill: COLORS.vine, seed, margin: 0.1 });
     const leaf = makeSketch({ kind: SHAPE.CAP, size: [0.2, 0.14], edge: 0.05, wob: 0.45,
         fill: COLORS.leaf, seed: seed + 5, margin: 0.1 });
@@ -364,13 +364,16 @@ function syncVine(v, pr) {
     const draw = (l, fade) => {
         live.add(l.body);
         let g = v.links.get(l.body);
-        if (!g) { g = buildVineLink(v.group, pr.id * 7 + l.lid); v.links.set(l.body, g); }
+        if (!g) { g = buildVineLink(v.group, pr.id * 7 + l.lid, pr.len); v.links.set(l.body, g); }
         const body = sim.world.getRigidBody(l.body);
         const p = body.translation();
-        g.position.set(p.x, p.y + zoneOffset, 0.04);
-        g.rotation.z = body.rotation();
-        if (fade != null) g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; });
-        if (body.isMoving()) animating = true;
+        // Keep drawing only while a link visibly moves (a vine tied to a nailed block can
+        // carry a tiny leftover velocity while the world is paused for aiming).
+        const y = p.y + zoneOffset, a = body.rotation();
+        if (Math.abs(g.position.x - p.x) + Math.abs(g.position.y - y) + Math.abs(g.rotation.z - a) > 0.002) animating = true;
+        g.position.set(p.x, y, 0.04);
+        g.rotation.z = a;
+        if (fade != null) { animating = true; g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; }); }
     };
     for (const l of pr.links) draw(l);
     for (const d of pr.debris) draw(d, Math.min(1, 3 * (1 - d.t / VINE_DEBRIS_STEPS)));
@@ -924,7 +927,7 @@ function queueZoneTips() {
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
     const prop = (k) => { const p = props.find((x) => x.kind === k); return p && { kind: 'prop', id: p.id }; };
     add('ring', pickups[0] && { kind: 'pickup', id: pickups[0].id });
-    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello));
+    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose));
     add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
     add('grey', block((b) => b.neutral));
