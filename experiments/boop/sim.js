@@ -506,10 +506,10 @@ export class Sim {
         s.style = styleName;
 
         // grid[r][c] = 0 free, -1 prop, otherwise the index+1 of the planned block.
-        // While the buddy is still walking a new player through the basics, the zone starts three
+        // While the buddy is still walking a new player through the basics, the zone starts four
         // rows lower, keeping the top of the board clear for him and what he's saying.
-        const TOP_ROW = s.roomForBuddy ? ZONE_TOP_ROW + 3 : ZONE_TOP_ROW;
-        const ROWS = s.roomForBuddy ? ZONE_ROWS - 3 : ZONE_ROWS;
+        const TOP_ROW = s.roomForBuddy ? ZONE_TOP_ROW + 4 : ZONE_TOP_ROW;
+        const ROWS = s.roomForBuddy ? ZONE_ROWS - 4 : ZONE_ROWS;
         const grid = Array.from({ length: ROWS }, () => new Array(W).fill(0));
         const free = (c, r) => c >= 0 && c < W && r >= 0 && r < ROWS && grid[r][c] === 0;
         // Fairness: never fill a whole row, so there's always a way down.
