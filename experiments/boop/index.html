@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.2-5">
+<html lang="en" data-build="1.2.2-6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -394,7 +394,7 @@
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); }
         #over .feedback { margin-top: 20px; }
-        #menu .version { margin: 12px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+        #menu .version { font-weight: 600; }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
            behind the label, roughed up by the #sketchy SVG filter; the text stays crisp. */
@@ -523,7 +523,9 @@
         #menu .say { margin: 36px auto 12px; max-width: 220px; }   /* clear of the close button in the corner */
         #btn-news.fresh { color: var(--ink); }
         #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
-        #menu .menu-links { margin: 20px 0 0; line-height: 1.2; display: flex; gap: 10px; align-items: baseline; justify-content: center; color: var(--ink-soft); }
+        /* One quiet footer line: version, What's new, Feedback. */
+        #menu .menu-links { margin: 22px 0 0; line-height: 1.2; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
+        #menu .menu-links .link-btn { font-size: inherit; }
         #menu .say .link-btn { font-size: inherit; display: inline; }
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
@@ -627,8 +629,7 @@
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="menu-links"><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a></p>
-            <p class="version">v1.2.2 · by Erik Sagen</p>
+            <p class="menu-links"><span class="version">v1.2.2</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
         </div>
     </section>
 
@@ -722,6 +723,7 @@
                 <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">Snap after a few hits. Anything they hold drops.</span></div></li>
                 <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it. It bursts and knocks a chunk off everything around it.</span></div></li>
             </ul>
+            <p class="note">Boop! is made by Erik Sagen.</p>
             <p class="note">Boop explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
@@ -759,31 +761,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.2-5",
-                "./zones.js": "./zones.js?v=1.2.2-5",
-                "./blockshader.js": "./blockshader.js?v=1.2.2-5",
-                "./sketch.js": "./sketch.js?v=1.2.2-5",
-                "./balls.js": "./balls.js?v=1.2.2-5",
-                "./labels.js": "./labels.js?v=1.2.2-5",
-                "./audio.js": "./audio.js?v=1.2.2-5",
-                "./theme.js": "./theme.js?v=1.2.2-5",
-                "./crumbs.js": "./crumbs.js?v=1.2.2-5",
-                "./buddy.js": "./buddy.js?v=1.2.2-5"
+                "./sim.js": "./sim.js?v=1.2.2-6",
+                "./zones.js": "./zones.js?v=1.2.2-6",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-6",
+                "./sketch.js": "./sketch.js?v=1.2.2-6",
+                "./balls.js": "./balls.js?v=1.2.2-6",
+                "./labels.js": "./labels.js?v=1.2.2-6",
+                "./audio.js": "./audio.js?v=1.2.2-6",
+                "./theme.js": "./theme.js?v=1.2.2-6",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-6",
+                "./buddy.js": "./buddy.js?v=1.2.2-6"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./sim.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./zones.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./balls.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./labels.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./audio.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./theme.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.2-5">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-5">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-6">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-6">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <div id="updating" hidden>
@@ -820,6 +822,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.2-5"></script>
+    <script type="module" src="./game.js?v=1.2.2-6"></script>
 </body>
 </html>
