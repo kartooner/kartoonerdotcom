@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.7';
+const BUILD = '1.1.11';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -26,6 +26,7 @@ const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, st
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
 const fuseGrey = new THREE.Color();
+let hudKey = '';
 function buildBallView(handle) {
     const v = makeBallView(outlineMat, ballMat.clone());   // own fill colour: it greys on its own timer
     scene.add(v.group);
@@ -59,7 +60,8 @@ function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
     const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
-    const hudW = 200, hudGap = 28;
+    // A phone on its side is short: give the side HUD a narrower column so it fits too.
+    const hudW = h < 520 ? 140 : 200, hudGap = h < 520 ? 20 : 28;
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
     // the HUD in a column beside it and give the board the full height.
     const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
@@ -83,8 +85,31 @@ function fitCamera() {
     root.setProperty('--board-left', `${boardLeft}px`);
     root.setProperty('--board-top', `${topPx + pad * scale}px`);
     root.setProperty('--hud-left', `${boardLeft - hudW - hudGap}px`);
+    root.setProperty('--hud-w', `${hudW}px`);
+    // Too narrow for three links under the board: drop the Boop! mark between them.
+    document.body.classList.toggle('narrow-board', boardPx < 260);
 }
-window.addEventListener('resize', fitCamera);
+// Re-fit whenever the screen changes. On iPhone, turning the phone fires these events
+// before Safari has settled on the new size (and Safari can stay zoomed in after the
+// turn), so fit again a few times as it settles and nudge the viewport back to 1x.
+let refitTimers = [];
+function refit() {
+    fitCamera();
+    refitTimers.forEach(clearTimeout);
+    refitTimers = [120, 350, 800].map((ms) => setTimeout(fitCamera, ms));
+}
+function resetZoom() {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+    const content = meta.getAttribute('content');
+    meta.setAttribute('content', content + ', minimum-scale=1');   // a change makes Safari re-apply it
+    setTimeout(() => meta.setAttribute('content', content), 50);
+}
+window.addEventListener('resize', refit);
+window.addEventListener('orientationchange', () => { resetZoom(); refit(); });
+window.visualViewport?.addEventListener('resize', refit);
+// iOS ignores user-scalable=no for pinches; stop them here so the board can't be zoomed.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
 fitCamera();
 
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
@@ -205,6 +230,8 @@ function updateNails(v, b, frameDt) {
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
+    if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
+        || Object.values(v.nailWob).some((t) => t < 0.5) || v.hp !== b.hp) animating = true;
     updateNails(v, b, frameDt);
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
@@ -379,13 +406,18 @@ function syncView(frameDt) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         v.group.position.y = pr.y + zoneOffset;
-        if (v.rotor) v.rotor.rotation.z = sim.world.getRigidBody(pr.rotor).rotation();
+        if (v.rotor) {
+            const rotor = sim.world.getRigidBody(pr.rotor);
+            v.rotor.rotation.z = rotor.rotation();
+            if (Math.abs(rotor.angvel()) > 0.05) animating = true;
+        }
         if (v.body != null) {
             const body = sim.world.getRigidBody(v.body);
             const p = body.translation();
             v.group.position.set(p.x, p.y + zoneOffset, 0.05);
             v.group.rotation.z = body.rotation();
             v.falling = pr.falling > 0;
+            if (Math.abs(body.angvel()) > 0.05 || v.falling) animating = true;    // a mushroom still wobbling
         }
     }
 
@@ -427,6 +459,7 @@ function syncView(frameDt) {
     }
 
 
+    if (floaters.length || fadingBalls.length || fadingProps.length) animating = true;
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
         f.t += frameDt;
@@ -435,14 +468,19 @@ function syncView(frameDt) {
         if (f.t > 0.9) { scene.remove(f.m); f.m.material.map.dispose(); floaters.splice(i, 1); }
     }
 
-    hud.depth.textContent = s.depth;
-    hud.shots.textContent = s.supply;
-    hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+    // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
-    hud.par.textContent = `${used}/${s.par ?? '-'}`;
-    hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
-    const done = s.zoneHp0 ? 1 - sim.hpLeft() / s.zoneHp0 : 0;
-    hud.progress.style.transform = `scaleX(${Math.max(0, Math.min(1, done))})`;
+    const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
+    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}`;
+    if (key !== hudKey) {
+        hudKey = key;
+        hud.depth.textContent = s.depth;
+        hud.shots.textContent = s.supply;
+        hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+        hud.par.textContent = `${used}/${s.par ?? '-'}`;
+        hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
+        hud.progress.style.transform = `scaleX(${done})`;
+    }
 }
 
 function consumeEvents() {
@@ -488,12 +526,19 @@ let guideAngle = null;
 // On slower phones a guide can take a while to work out. If the last one was slow,
 // skip a frame before the next, so aiming stays responsive. The shot always fires
 // the angle the guide on screen was drawn for.
-let guideCost = 0, guideSkip = 0;
+let guideCost = 0;
 let lastContacts = [];
+let lastGuideAt = -Infinity;
 function drawGuide(angle) {
     if (angle === guideAngle) return;
-    if (guideSkip > 0) { guideSkip -= 1; return; }
-    const t0 = performance.now();
+    // Working out the path is the costliest thing in the game (it plays the shot ahead on a
+    // copy of the world). Space the updates by what it costs on this device: on a quick phone
+    // that's nearly every frame (smooth), on a slow or low-power one down to ~30 a second.
+    // Once the aim stops, the next update catches up exactly.
+    const now = performance.now();
+    if (now - lastGuideAt < Math.min(33, guideCost * 3)) return;
+    lastGuideAt = now;
+    const t0 = now;
     guideAngle = angle;
     const result = predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
@@ -539,7 +584,6 @@ function drawGuide(angle) {
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
     guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
-    guideSkip = guideCost > 9 ? 1 : 0;
 }
 
 function hideGuide() {
@@ -938,12 +982,18 @@ function tick(frameDt) {
 
 let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
+const recentDt = [];
 function watchFrameRate(rawDt) {
-    // Over each 60 frames, if half or more missed ~45fps, drop to the next resolution step.
+    // The screen's own pace: the quicker frames of the last second or so (120 or 60 a second,
+    // or 30 when an iPhone is in Low Power Mode). A frame is slow only if it misses that pace,
+    // so a phone capped at 30 isn't treated as struggling. Over each 60 frames, if a quarter
+    // or more were slow, drop to the next resolution step.
+    recentDt.push(rawDt); if (recentDt.length > 90) recentDt.shift();
+    const pace = recentDt.length < 20 ? 1 / 60 : [...recentDt].sort((a, b) => a - b)[Math.floor(recentDt.length * 0.25)];
     timedFrames += 1;
-    if (rawDt > 1 / 45) slowFrames += 1;
+    if (rawDt > pace * 1.6) slowFrames += 1;
     if (timedFrames < 60) return;
-    if (slowFrames >= 30 && pixelStep < PIXEL_RATIOS.length - 1) {
+    if (slowFrames >= 15 && pixelStep < PIXEL_RATIOS.length - 1) {
         pixelStep += 1;
         renderer.setPixelRatio(PIXEL_RATIOS[pixelStep]);
         fitCamera();
@@ -951,7 +1001,35 @@ function watchFrameRate(rawDt) {
     slowFrames = 0;
     timedFrames = 0;
 }
+let lastRender = -Infinity, lastInput = 0, animating = false;
+
+// Frame pacing: a steady rate feels smoother than one that wanders. Aim for 60 a second
+// (on a 120 Hz screen that also halves the work); if this device can't hold 60, settle
+// at a steady 30 instead of bouncing between them, and try 60 again later when there's
+// room. Gameplay speed doesn't change: the physics runs on its own fixed clock.
+let targetFps = 60, lastPaced = -Infinity, paceFrames = 0, paceMissed = 0, paceWork = 0, paceWindows = 0;
+function pace(now, workMs) {
+    const interval = 1000 / targetFps;
+    paceFrames += 1;
+    if (now - lastPaced > interval * 1.5) paceMissed += 1;       // this frame came late
+    paceWork += workMs;
+    lastPaced = now;
+    if (paceFrames < 60) return;
+    const missed = paceMissed / paceFrames, work = paceWork / paceFrames;
+    if (targetFps === 60 && missed > 0.25) paceWindows = paceWindows > 0 ? paceWindows + 1 : 1;
+    else if (targetFps === 30 && work < 6 && missed < 0.05) paceWindows = paceWindows < 0 ? paceWindows - 1 : -1;
+    else paceWindows = 0;
+    if (paceWindows >= 2) { targetFps = 30; paceWindows = 0; }          // two rough seconds: settle at 30
+    if (paceWindows <= -10) { targetFps = 60; paceWindows = 0; }        // ~20 easy seconds: try 60 again
+    paceFrames = paceMissed = paceWork = 0;
+}
+for (const type of ['pointerdown', 'pointermove', 'keydown', 'wheel']) {
+    window.addEventListener(type, () => { lastInput = performance.now(); }, { passive: true, capture: true });
+}
 function frame(now) {
+    // Skip screen refreshes that come sooner than the target rate.
+    if (now - last < 1000 / targetFps - 2) { requestAnimationFrame(frame); return; }
+    const workStart = performance.now();
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
     last = now;
@@ -967,13 +1045,23 @@ function frame(now) {
             if (keyAim || !aimCancel) drawGuide(shownAngle());
         }
         if (noteShown) placeNote();
+        animating = false;          // set by syncView if anything on the board is still moving
         syncView(dt);
         crumbs.update(dt);
     }
     // Short shake when a tumbling block lands hard.
     shake = Math.max(0, shake - frameDt * 0.6);
     camera.position.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0);
-    renderer.render(scene, camera);
+    // Don't redraw a picture that hasn't changed. Behind the start, pause and game-over screens
+    // nothing moves (except a zone sliding in): twice a second. While you're deciding on a
+    // shot and nothing on the board is moving: ten times a second. Anything moving, or your
+    // finger on the board, and it's back to every frame. (Saves battery, mostly.)
+    const still = sim && paused() && phase !== 'descend';
+    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !animating && shake === 0
+        && now - lastInput > 400 && !crumbs.active() && sim.settled();
+    const every = still ? 500 : idle ? 100 : 0;
+    if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
+    if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
     requestAnimationFrame(frame);
 }
 
@@ -1147,6 +1235,7 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
+    get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {

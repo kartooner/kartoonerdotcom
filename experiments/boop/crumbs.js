@@ -92,5 +92,5 @@ export function makeCrumbs(scene) {
 
     function clear() { bits.length = 0; mesh.count = 0; }
 
-    return { burst, spray, update, clear };
+    return { burst, spray, update, clear, active: () => bits.length > 0 };
 }
