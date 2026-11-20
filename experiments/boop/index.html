@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.0-2">
+<html lang="en" data-build="1.2.0-3">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -583,7 +583,7 @@
         <div class="screen-inner">
             <button class="link-btn" id="btn-howto-back" type="button">← Back</button>
             <h2 id="howto-title">How to play</h2>
-            <p class="intro">Shoot balls at numbered blocks. Each hit takes 1 off, and at 0 a block pops. Clear a zone to dig deeper. Shots are limited, so make them count.</p>
+            <p class="intro">Shoot balls at numbered blocks. Each hit knocks the number down, and at 0 a block pops. Clear a zone to dig deeper. Shots are limited, so make them count.</p>
 
             <h3>A shot, step by step</h3>
             <div class="shot-split">
@@ -612,6 +612,12 @@
                 <div><dt>This zone / par</dt><dd>Shots used here, against the zone's target.</dd></div>
                 <div><dt>The bar</dt><dd>How much of the zone you've cleared.</dd></div>
             </dl>
+
+            <h3>Hit harder</h3>
+            <ul class="tags">
+                <li>Long rallies hit harder, up to <b>4</b></li>
+                <li>Last 3 blocks: hits <b>×2</b></li>
+            </ul>
 
             <h3>Earn more shots</h3>
             <ul class="tags">
@@ -668,29 +674,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.0-2",
-                "./zones.js": "./zones.js?v=1.2.0-2",
-                "./blockshader.js": "./blockshader.js?v=1.2.0-2",
-                "./sketch.js": "./sketch.js?v=1.2.0-2",
-                "./balls.js": "./balls.js?v=1.2.0-2",
-                "./labels.js": "./labels.js?v=1.2.0-2",
-                "./theme.js": "./theme.js?v=1.2.0-2",
-                "./crumbs.js": "./crumbs.js?v=1.2.0-2",
-                "./buddy.js": "./buddy.js?v=1.2.0-2"
+                "./sim.js": "./sim.js?v=1.2.0-3",
+                "./zones.js": "./zones.js?v=1.2.0-3",
+                "./blockshader.js": "./blockshader.js?v=1.2.0-3",
+                "./sketch.js": "./sketch.js?v=1.2.0-3",
+                "./balls.js": "./balls.js?v=1.2.0-3",
+                "./labels.js": "./labels.js?v=1.2.0-3",
+                "./theme.js": "./theme.js?v=1.2.0-3",
+                "./crumbs.js": "./crumbs.js?v=1.2.0-3",
+                "./buddy.js": "./buddy.js?v=1.2.0-3"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./sim.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./zones.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./balls.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./labels.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./theme.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.0-2">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.0-2">
-    <script type="module" src="./game.js?v=1.2.0-2"></script>
+    <link rel="modulepreload" href="./game.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./sim.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./zones.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./balls.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./labels.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./theme.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.0-3">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.0-3">
+    <script type="module" src="./game.js?v=1.2.0-3"></script>
 </body>
 </html>

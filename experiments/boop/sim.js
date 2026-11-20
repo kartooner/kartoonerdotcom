@@ -117,7 +117,8 @@ const SPEED_EASE = 0.15;
 
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128, JELLY_BODY: 256 };
 const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff);
-const BALL_FILTER = G.BALL | G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
+// Balls pass through each other: in a multishot each ball flies its own path.
+const BALL_FILTER = G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
 // Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
 export function blockScale(hp, hp0) {
