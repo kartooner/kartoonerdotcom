@@ -12,4 +12,4 @@ export const THEMES = {
         hit: 0xff9466, text: '#ede4d3', jelloText: '#f6efe2',
     },
 };
-export const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e };
+export const COLORS = { mushroom: 0xe06b4a, stem: 0xf3e3c3, windmill: 0xf2c14e, vine: 0x4f9a45, leaf: 0x7cc35a };

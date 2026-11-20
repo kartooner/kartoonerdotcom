@@ -99,6 +99,13 @@ const TWIST_K = 130, TWIST_C = 7;
 // Mushroom stems: a springy hinge (stiffness, damping), light enough to wobble when hit.
 const MUSH_K = 360, MUSH_C = 6, MUSH_DENSITY = 1.2;
 const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most 2.5s
+// Vines (from depth 9): short chains hanging under a block. Each link takes a few hits;
+// a broken link drops everything below it (which fades once it lands). Sometimes a vine
+// holds a small block at its end, like a chandelier: cut it and the block falls.
+const VINE_FROM = 9;
+const VINE_LINKS = 4, VINE_LINK_LEN = 0.45, VINE_LINK_HP = 3;
+const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
+export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
 
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
@@ -527,18 +534,15 @@ export class Sim {
             if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
             else windmills += 1;
         }
+        // Vines: shown on their own first (depth 9), then one a zone while you learn them,
+        // then one or two once they're familiar. Never more than two kinds of prop in a zone.
+        const vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
+        if (s.depth === VINE_FROM) { windmills = 0; mushrooms = 0; }
+        else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
+        const chandelierChance = s.depth === VINE_FROM ? 0 : s.depth <= VINE_FROM + 3 ? 0.5 : 0.4;
         // Prop centres in grid units, to keep props apart.
         const propAt = [];
         const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
-        for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
-            const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ROWS - 1));
-            const cells = [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]];
-            if (!cells.every(([cc, rr]) => free(cc, rr)) || !roomy(c + 1, r + 1)) continue;
-            propAt.push([c + 1, r + 1]);
-            cells.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
-            this.addWindmill(c + 1, -(r + 1 + TOP_ROW));
-            i++;
-        }
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
         const bigMul = Math.min(5, 2.6 + 0.3 * s.depth);    // chunky shapes dominate, more so deeper down
@@ -586,6 +590,36 @@ export class Sim {
                 break;
             }
         }
+        // Vines are planned with their block, before the rest fill in, so there's always room
+        // below: two cells for the vine and, for a chandelier, two more for its little block.
+        const vineSpots = [];
+        for (let i = 0, tries = 0; i < vines && tries < 60; tries++) {
+            const c = Math.floor(this.rand() * W), r = 1 + Math.floor(this.rand() * (ROWS - 7));
+            const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
+            const cells = shapes[Math.floor(this.rand() * shapes.length)];
+            // A chandelier's block is two wide, centred under the vine: keep three cells clear for it.
+            const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
+            // ...plus the row below it, so a cut chandelier has room to pick up speed before it lands.
+            const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c - 1, r + 3], [c, r + 3], [c + 1, r + 3]] : [];
+            const drop = chand ? [[c - 1, r + 4], [c, r + 4], [c + 1, r + 4]] : [];
+            if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
+            plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap: false, vine: true });
+            cells.forEach(([cc, rr]) => { grid[rr][cc] = plan.length; });
+            filled += cells.length;
+            [...hang, ...lamp, ...drop].forEach(([cc, rr]) => { grid[rr][cc] = -1; });
+            propAt.push([c + 0.5, r + 2]);
+            vineSpots.push({ p: plan[plan.length - 1], c, r, lamp });
+            i++;
+        }
+        for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
+            const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ROWS - 1));
+            const cells = [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]];
+            if (!cells.every(([cc, rr]) => free(cc, rr)) || !roomy(c + 1, r + 1)) continue;
+            propAt.push([c + 1, r + 1]);
+            cells.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
+            this.addWindmill(c + 1, -(r + 1 + TOP_ROW));
+            i++;
+        }
         for (let tries = 0; tries < 2500 && filled < target; tries++) {
             // Chunky first: until about half the target is filled, only 4+ cell shapes are placed,
             // so big pieces get room before small ones scatter. Then anything fills the gaps.
@@ -610,7 +644,7 @@ export class Sim {
         // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
         if (this.rand() < spec.jello) {
             const count = 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
-            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup);
+            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine);
             for (let i = 0; i < count && small.length; i++) {
                 small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
             }
@@ -633,7 +667,7 @@ export class Sim {
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
-            if (p.kind !== 'pinned' || p.cup || p.cells.length === 1 || !solidBelow(p)) continue;
+            if (p.kind !== 'pinned' || p.cup || p.vine || p.cells.length === 1 || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
             // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
@@ -708,6 +742,17 @@ export class Sim {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
+        }
+        for (const v of vineSpots) {
+            const b = v.p.block, i = v.p.cells.findIndex(([c, r]) => c === v.c && r === v.r);
+            let lamp = null;
+            if (v.lamp.length) {
+                // A small resting block, about the size of a typical small one in this zone.
+                const small = plan.filter((p) => p.block && p.cells.length <= 2 && !p.block.neutral).map((p) => p.block.hp0);
+                const hp = small.length ? small[Math.floor(small.length / 2)] : Math.max(2, Math.round(3 * hpScale(s.depth)));
+                lamp = this.addBlock(v.lamp.slice(1).map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
+            }
+            this.addVine(b, b.cells[i][0], b.cells[i][1] - 0.5, lamp);
         }
         for (const m of mushSpots) {
             if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + TOP_ROW + 0.5), m.dir); continue; }
@@ -797,6 +842,104 @@ export class Sim {
     // ---------- props ----------
 
     // A free-spinning cross on a pin. Balls set it turning; it swats the next ones.
+    // A vine hanging under block `host` from (lx, ly) in its unscaled cell space. Links are
+    // small bodies joined end to end; only balls touch them until they break loose.
+    addVine(host, lx, ly, lamp) {
+        const { R, world, s } = this;
+        const id = s.nextId++;
+        const hostBody = world.getRigidBody(host.body);
+        const hp0 = hostBody.translation(), k = host.scale;
+        const x = hp0.x + lx * k, top = hp0.y + ly * k;
+        const pr = { id, kind: 'vine', host: host.id, lx, ly, k, links: [], debris: [], bodies: [], cols: [], lamp: lamp?.id ?? null, nextLid: 0 };
+        let prev = hostBody, prevAnchor = { x: lx * k, y: ly * k };
+        for (let i = 0; i < VINE_LINKS; i++) {
+            const cy = top - VINE_LINK_LEN * (i + 0.5);
+            const body = world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(x, cy)
+                .setLinearDamping(0.6).setAngularDamping(1.2));
+            const col = world.createCollider(R.ColliderDesc.cuboid(0.09, VINE_LINK_LEN / 2).setDensity(0.4)
+                .setRestitution(0.5).setFriction(0.3).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+            const joint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: 0, y: VINE_LINK_LEN / 2 }), prev, body, true);
+            joint.setContactsEnabled(false);
+            if (i === 0) pr.joint = joint.handle;
+            const lid = pr.nextLid++;
+            s.owner[col.handle] = { t: 'vine', id, lid };
+            pr.links.push({ lid, body: body.handle, col: col.handle, hp: VINE_LINK_HP });
+            pr.bodies.push(body.handle); pr.cols.push(col.handle);
+            prev = body; prevAnchor = { x: 0, y: -VINE_LINK_LEN / 2 };
+        }
+        if (lamp) {
+            lamp.hung = id;
+            const lampBody = world.getRigidBody(lamp.body);
+            lampBody.setGravityScale(VINE_LAMP_FALL, true);   // light while it hangs, so its block doesn't sag
+            const top2 = Math.max(...lamp.cells.map(([, y]) => y)) + 0.5;
+            lampBody.setTranslation({ x: x - (lamp.cells.reduce((a, [cx]) => a + cx, 0) / lamp.cells.length) * lamp.scale, y: top - VINE_LINK_LEN * VINE_LINKS - top2 * lamp.scale }, true);
+            pr.lampJoint = world.createImpulseJoint(R.JointData.revolute(prevAnchor, { x: (lamp.cells.reduce((a, [cx]) => a + cx, 0) / lamp.cells.length) * lamp.scale, y: top2 * lamp.scale }), prev, lampBody, true).handle;
+        }
+        s.props[id] = pr;
+        return pr;
+    }
+
+    // A ball hit link `lid` of vine `id`.
+    hitVine(id, lid, n) {
+        const pr = this.s.props[id];
+        if (!pr) return;
+        const i = pr.links.findIndex((l) => l.lid === lid);
+        if (i < 0) return;
+        const link = pr.links[i];
+        link.hp -= n;
+        const p = this.world.getRigidBody(link.body).translation();
+        if (link.hp > 0) { this.events.push({ t: 'vinehit', id, lid, x: p.x, y: p.y }); return; }
+        // Snapped: this link goes, and everything below it falls.
+        this.events.push({ t: 'vinesnap', id, lid, x: p.x, y: p.y });
+        this.world.removeRigidBody(this.world.getRigidBody(link.body));
+        delete this.s.owner[link.col];
+        pr.bodies = pr.bodies.filter((h) => h !== link.body);
+        pr.cols = pr.cols.filter((h) => h !== link.col);
+        this.dropVineBelow(pr, i + 1);
+        pr.links.splice(i, 1);
+        this.wakeLoose();
+    }
+
+    // Links from index `from` down (and the hung block) come loose.
+    dropVineBelow(pr, from) {
+        const { world, s } = this;
+        for (const l of pr.links.splice(from)) {
+            // Fallen bits land on blocks but balls ignore them.
+            world.getCollider(l.col).setCollisionGroups(groups(G.LOOSE, G.BLOCK | G.WALL));
+            delete s.owner[l.col];
+            pr.debris.push({ ...l, t: 0 });
+        }
+        if (pr.lamp != null && s.blocks[pr.lamp]) {
+            s.blocks[pr.lamp].hung = null;
+            world.getRigidBody(s.blocks[pr.lamp].body).setGravityScale(BLOCK_FALL, true);
+        }
+        pr.lamp = null;
+    }
+
+    updateVines() {
+        const { world, s } = this;
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind !== 'vine') continue;
+            // Its block popped: the whole vine falls.
+            if (pr.links.length && !s.blocks[pr.host]) this.dropVineBelow(pr, 0);
+            const host = s.blocks[pr.host];
+            if (host && pr.links.length && host.scale !== pr.k) {
+                // The block shrank as it wore down: keep the vine hanging from its edge.
+                pr.k = host.scale;
+                world.getImpulseJoint(pr.joint)?.setAnchor1({ x: pr.lx * pr.k, y: pr.ly * pr.k });
+            }
+            for (let i = pr.debris.length - 1; i >= 0; i--) {
+                const d = pr.debris[i];
+                if (++d.t < VINE_DEBRIS_STEPS) continue;
+                world.removeRigidBody(world.getRigidBody(d.body));
+                pr.bodies = pr.bodies.filter((h) => h !== d.body);
+                pr.cols = pr.cols.filter((h) => h !== d.col);
+                pr.debris.splice(i, 1);
+            }
+        }
+    }
+
     addWindmill(x, y) {
         const { R, world, s } = this;
         const id = s.nextId++;
@@ -997,6 +1140,7 @@ export class Sim {
         this.updateBalls();
         this.updateBlocks();
         this.updateMushrooms();
+        this.updateVines();
 
         if (s.balls.length && ++s.turnSteps > TURN_CAP) {
             // Safety net: a turn that won't end just ends. The shot was spent; no refund.
@@ -1062,6 +1206,11 @@ export class Sim {
         if (!started) return;
         if (b.t === 'ball') { this.events.push({ t: 'clack', x: p.x, y: p.y }); return; }
         if (b.t === 'pickup') { this.collectPickup(b.id); return; }
+        if (b.t === 'vine') {
+            this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: 'vine', id: b.id });
+            if (ball && this.cooled(a.body + ':v' + b.id + ':' + b.lid)) { this.hitVine(b.id, b.lid, ballPower(ball) * (s.stretch ? 2 : 1)); this.scored(ball); }
+            return;
+        }
         this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: b.t, id: b.id });
         if (b.t === 'block') {
             // Little hops on top of a block don't count; only a real bounce does.

@@ -32,7 +32,7 @@ Tester feedback on controls (mouse and phone):
 - **A way to cancel:** drag back to where you started and the guide fades (letting go there doesn't fire); Esc or a right-click also cancels on desktop without pausing.
 
 New props, each introduced with a pointing tip the first time it shows up:
-- **Vines (from depth 9):** short hanging vines (3–4 links) drawn as a green crayon line with a few leaves, hanging from the ceiling, a block or a mushroom. They sway when brushed; each link takes a few hits, and a broken vine drops its lower half. Sometimes a vine holds a block up like a chandelier: cut it and the block falls into everything below. At most one or two per zone, kept short so balls don't tangle.
+- **Vines (from depth 9):** short green vines (4 links, with leaves) hanging under a block. Each link takes 3 hits; a snapped link drops everything below it, and if its block pops the whole vine falls. Sometimes a vine holds a small block like a chandelier, with a clear drop below it: cut the vine and the block falls into whatever's underneath. Depth 9 shows one vine on its own; depths 10–12 one vine plus one familiar prop; from 13, one or two.
 - **One-way flaps (from depth 12):** a small door hinged on a nail. Balls pass through one way and bounce back the other, which makes routes (get a ball in behind a wall where it rattles around). Built from the existing hinge.
 - **Bombs (from depth 15):** a block with a little fuse. Popping it bursts it and takes a chunk off its neighbours: a big payoff and a reason to aim at it first. Nothing new to learn.
 

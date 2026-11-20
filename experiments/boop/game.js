@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
 import { THEMES, COLORS } from './theme.js';
@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0';
+const BUILD = '1.2.0-2';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -299,9 +299,32 @@ function buildPickupView(pk) {
     return group;
 }
 
+// One link of a vine: a short green crayon stem with a leaf, drawn in the link's own space.
+function buildVineLink(parent, seed) {
+    const g = new THREE.Group();
+    const stem = makeSketch({ kind: SHAPE.BOX, size: [0.09, 0.245], round: 0.05, edge: 0.05, wob: 0.4,
+        fill: COLORS.vine, seed, margin: 0.1 });
+    const leaf = makeSketch({ kind: SHAPE.CAP, size: [0.2, 0.14], edge: 0.05, wob: 0.45,
+        fill: COLORS.leaf, seed: seed + 5, margin: 0.1 });
+    const side = seed % 2 ? 1 : -1;
+    leaf.position.set(0.14 * side, 0.03, 0.02);
+    leaf.rotation.z = -side * 1.15;
+    leaf.renderOrder = 2;
+    g.add(stem, leaf);
+    parent.add(g);
+    return g;
+}
+
 function buildPropView(pr) {
     const group = new THREE.Group();
     const v = { group };
+    if (pr.kind === 'vine') {
+        v.links = new Map();       // link body handle → its drawing (links and fallen bits alike)
+        v.vine = true;
+        scene.add(group);
+        propViews.set(pr.id, v);
+        return v;
+    }
     if (pr.kind === 'windmill') {
         const rotor = new THREE.Group();
         for (const rot of [0, Math.PI / 2]) {
@@ -334,6 +357,24 @@ function buildPropView(pr) {
     scene.add(group);
     propViews.set(pr.id, v);
     return v;
+}
+
+function syncVine(v, pr) {
+    const live = new Set();
+    const draw = (l, fade) => {
+        live.add(l.body);
+        let g = v.links.get(l.body);
+        if (!g) { g = buildVineLink(v.group, pr.id * 7 + l.lid); v.links.set(l.body, g); }
+        const body = sim.world.getRigidBody(l.body);
+        const p = body.translation();
+        g.position.set(p.x, p.y + zoneOffset, 0.04);
+        g.rotation.z = body.rotation();
+        if (fade != null) g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; });
+        if (body.isMoving()) animating = true;
+    };
+    for (const l of pr.links) draw(l);
+    for (const d of pr.debris) draw(d, Math.min(1, 3 * (1 - d.t / VINE_DEBRIS_STEPS)));
+    for (const [h, g] of v.links) if (!live.has(h)) { v.group.remove(g); forgetSketch(g); v.links.delete(h); }
 }
 
 function addFloater(text, x, y) {
@@ -375,7 +416,7 @@ function syncView(frameDt) {
         updateBlockView(v, b, frameDt);
         const body = sim.world.getRigidBody(b.body);
         const p = body.translation();
-        v.group.position.set(p.x, p.y + zoneOffset + (b.loose ? dropIn() : 0), b.loose ? 0.05 : 0);
+        v.group.position.set(p.x, p.y + zoneOffset + (b.loose && !b.hung ? dropIn() : 0), b.loose ? 0.05 : 0);
         v.group.rotation.z = body.rotation();
     }
 
@@ -405,6 +446,7 @@ function syncView(frameDt) {
     for (const id in s.props) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
+        if (v.vine) { syncVine(v, pr); continue; }
         v.group.position.y = pr.y + zoneOffset;
         if (v.rotor) {
             const rotor = sim.world.getRigidBody(pr.rotor);
@@ -486,6 +528,7 @@ function syncView(frameDt) {
 function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
+        else if (e.t === 'vinesnap') crumbs.spray([[e.x, e.y], [e.x, e.y - 0.1]], [COLORS.vine, COLORS.leaf, theme.edge]);
         else if (e.t === 'nailhit') {
             const v = blockViews.get(e.id);
             if (v) v.nailWob[e.nail] = 0;
@@ -753,6 +796,13 @@ function noteTargetPoint() {
     }
     if (t.kind === 'prop' && sim.s.props[t.id]) {
         const pr = sim.s.props[t.id];
+        if (pr.kind === 'vine') {
+            // The middle of the vine (or what's left of it).
+            const l = pr.links[Math.floor(pr.links.length / 2)];
+            if (!l) return null;
+            const p = sim.world.getRigidBody(l.body).translation();
+            return { x: p.x, y: p.y, r: 0.4 };
+        }
         if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
         // The cap's middle, out along the way the mushroom points.
         const body = sim.world.getRigidBody(pr.body), p = body.translation(), a = body.rotation();
@@ -875,12 +925,13 @@ function queueZoneTips() {
     const prop = (k) => { const p = props.find((x) => x.kind === k); return p && { kind: 'prop', id: p.id }; };
     add('ring', pickups[0] && { kind: 'pickup', id: pickups[0].id });
     add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello));
-    add('resting', block((b) => b.loose));
+    add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
     add('grey', block((b) => b.neutral));
     add('cup', block((b) => b.cup));
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
+    add('vine', prop('vine'));
     tipQueue.unshift(...tips);
 }
 function hideNote() {
