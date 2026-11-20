@@ -47,7 +47,12 @@ function variantsOf(cells) {
 export const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
     const vs = variantsOf(sh.c);
     const canon = [...vs.map(cellKey)].sort()[0];
-    return vs.map((c) => ({ c, w: sh.w / vs.length, canon, size: c.length }));
+    // rect: a plain rectangle or bar; long: its longest side. Used to keep zones from filling
+    // up with straight pieces (see the shape weights in sim.js).
+    const xs = sh.c.map(([x]) => x), ys = sh.c.map(([, y]) => y);
+    const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
+    const rect = bw * bh === sh.c.length, long = Math.max(bw, bh);
+    return vs.map((c) => ({ c, w: sh.w / vs.length, canon, size: c.length, rect, long }));
 });
 
 // What each zone holds. New things arrive one at a time, then numbers climb.
@@ -82,7 +87,7 @@ export function zoneSpec(d) {
         lo: 1 + n * 0.35, hi: 3 + n * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
         // Props stay light through the early and middle zones, then crowd in.
         props: d <= 11 ? 2 : d <= 15 ? 3 : 4,
-        loose: Math.min(0.36, 0.16 + d * 0.015),
+        loose: Math.min(0.42, 0.18 + d * 0.016),
         jello: Math.min(0.85, 0.35 + d * 0.04),
         tough: Math.min(0.12, 0.04 + d * 0.008),
     };

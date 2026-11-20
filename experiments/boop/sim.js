@@ -559,7 +559,16 @@ export class Sim {
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
         const bigMul = Math.min(5, 2.6 + 0.3 * s.depth);    // chunky shapes dominate, more so deeper down
-        const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1) * (sh.size >= 5 ? bigMul : 1);
+        // Variety: straight pieces (bars, rectangles) are easy to read but get samey, so past the
+        // first zones the interlocking shapes (L, T, S and their big versions) come up more,
+        // long bars are rare early, and big rectangles get a smaller share of the chunky boost.
+        const deep = s.depth >= 7;
+        const straight = (sh) => (!sh.rect ? (deep ? 2.5 : s.depth >= 3 ? 1.9 : 1.2)
+            : sh.long >= 4 ? (s.depth <= 4 ? 0 : 0.5)
+            : sh.long === 3 && sh.size === 3 ? (s.depth <= 3 ? 0.4 : deep ? 0.55 : 0.7)
+            : sh.size === 2 ? (deep ? 0.75 : 1) : 1);
+        const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1) * straight(sh)
+            * (sh.size >= 5 ? (sh.rect ? 1 + (bigMul - 1) * 0.55 : bigMul) : 1);
         const total = SHAPE_VARIANTS.reduce((n, sh) => n + weight(sh), 0);
         const CHUNKY = SHAPE_VARIANTS.filter((sh) => sh.size >= 4);
         const chunkyTotal = CHUNKY.reduce((n, sh) => n + weight(sh), 0);
@@ -623,7 +632,12 @@ export class Sim {
                 // Strung: a gap of 2–4 cells in rows 3–8, with a cell below it for the sag.
                 const g = 2 + Math.floor(this.rand() * 3), c0 = Math.floor(this.rand() * (W - g + 1));
                 const r = 3 + Math.floor(this.rand() * (ROWS - 4));
-                const host = (x, away) => (this.rand() < 0.5 ? [[x, r], [x, r - 1]] : [[x, r], [x + away, r]]);
+                // The block at each end: a short bar or a little L, turned away from the gap.
+                const host = (x, away) => {
+                    const opts = [[[x, r], [x, r - 1]], [[x, r], [x + away, r]], [[x, r], [x, r - 1], [x + away, r - 1]],
+                        [[x, r], [x + away, r], [x + away, r - 1]], [[x, r], [x, r + 1], [x + away, r + 1]]];
+                    return opts[Math.floor(this.rand() * opts.length)];
+                };
                 const left = c0 === 0 ? null : host(c0 - 1, -1), right = c0 + g === W ? null : host(c0 + g, 1);
                 const gap = [];
                 for (let c = c0; c < c0 + g; c++) gap.push([c, r], [c, r + 1]);
@@ -639,7 +653,9 @@ export class Sim {
                 const c = Math.floor(this.rand() * W);
                 const chand = this.rand() < chandelierChance;
                 const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
-                const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
+                const shapes = [[[c, r], [c + 1, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]],
+                    [[c, r], [c + 1, r], [c + 1, r - 1]], [[c - 1, r], [c, r], [c - 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r], [c, r - 1]],
+                    [[c, r], [c, r - 1], [c + 1, r - 1]]];
                 const cells = shapes[Math.floor(this.rand() * shapes.length)];
                 // Room below: two cells for the vine and, for a chandelier, one for its little
                 // block plus a clear one under it, so it lands with a thump.
