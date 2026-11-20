@@ -44,6 +44,7 @@ Pacing, so it never overwhelms. Every new thing follows the same arc (the Ninten
 
 Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
+## v1.2.1
 Sound:
 - **Sound:** chiptune-style: a soft "boop" on hits, a bright pop when a block bursts, a chime for +1, a zone-clear jingle.
 - **Haptics:** light taps on hits and pops on phones that support it.
