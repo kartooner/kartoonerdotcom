@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.2-2">
+<html lang="en" data-build="1.2.2-3">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -449,7 +449,7 @@
         #howto .dot { color: var(--accent); font-weight: 800; }
         /* Hand-drawn frames (same SVG filter as the buttons) around pictures and panels. */
         .sketch-box { position: relative; isolation: isolate; }
-        .sketch-box::before, .pic::before, .mini-hud::before, .tags li::before {
+        .sketch-box::before, .pic::before, .mini-hud::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             border: 2px solid var(--ink); border-radius: 10px; filter: url(#sketchy); pointer-events: none;
         }
@@ -488,9 +488,17 @@
         .legend dt { font-weight: 800; font-size: 0.875rem; }
         .legend dd { margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-soft); }
         /* Ways to earn shots as little hand-drawn tags. */
-        .tags { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-        .tags li { position: relative; isolation: isolate; margin: 0; padding: 6px 12px; font-size: 0.875rem; font-weight: 600; }
-        .tags li::before { border-radius: 999px; }
+        /* Short lists (Hit harder, Earn more shots): one item per line, a small dot, a hairline
+           between, matching Things you'll meet. */
+        .tags { list-style: none; margin: 0 0 12px; padding: 0; }
+        #howto .tags li {
+            position: relative; margin: 0; padding: 10px 0 10px 18px;
+            font-size: 0.9375rem; line-height: 1.45;
+            border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+        }
+        #howto .tags li:first-child { border-top: 0; padding-top: 2px; }
+        .tags li::before { content: ''; position: absolute; left: 2px; top: calc(10px + 0.55em); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        #howto .tags li:first-child::before { top: calc(2px + 0.55em); }
         /* Pictures from the game, each with its name and one line. */
         /* Things you'll meet / What's new: one column, a picture beside each title, room to read.
            Items are separated by space and a hairline, not boxes. */
@@ -529,7 +537,9 @@
             display: grid;
             place-items: center;
             padding: 0;
-            background: none;
+            /* A round patch of page colour behind it, so text scrolling under it doesn't collide. */
+            background: var(--paper);
+            border-radius: 50%;
             border: 0;
             border-radius: 50%;
             color: var(--ink);
@@ -700,7 +710,7 @@
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
-                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</div></li>
+                <li><img src="img/meet-block.webp" alt="" width="64" height="64"><div><b>Blocks</b>Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</div></li>
                 <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b>Spin when hit and swat the next ball.</div></li>
                 <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder.</div></li>
                 <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b>Fly a ball through one for an extra shot.</div></li>
@@ -748,31 +758,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.2-2",
-                "./zones.js": "./zones.js?v=1.2.2-2",
-                "./blockshader.js": "./blockshader.js?v=1.2.2-2",
-                "./sketch.js": "./sketch.js?v=1.2.2-2",
-                "./balls.js": "./balls.js?v=1.2.2-2",
-                "./labels.js": "./labels.js?v=1.2.2-2",
-                "./audio.js": "./audio.js?v=1.2.2-2",
-                "./theme.js": "./theme.js?v=1.2.2-2",
-                "./crumbs.js": "./crumbs.js?v=1.2.2-2",
-                "./buddy.js": "./buddy.js?v=1.2.2-2"
+                "./sim.js": "./sim.js?v=1.2.2-3",
+                "./zones.js": "./zones.js?v=1.2.2-3",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-3",
+                "./sketch.js": "./sketch.js?v=1.2.2-3",
+                "./balls.js": "./balls.js?v=1.2.2-3",
+                "./labels.js": "./labels.js?v=1.2.2-3",
+                "./audio.js": "./audio.js?v=1.2.2-3",
+                "./theme.js": "./theme.js?v=1.2.2-3",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-3",
+                "./buddy.js": "./buddy.js?v=1.2.2-3"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./sim.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./zones.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./balls.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./labels.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./audio.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./theme.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.2-2">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-2">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-3">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-3">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <div id="updating" hidden>
@@ -809,6 +819,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.2-2"></script>
+    <script type="module" src="./game.js?v=1.2.2-3"></script>
 </body>
 </html>
