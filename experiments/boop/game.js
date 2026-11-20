@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.10';
+const BUILD = '1.1.11';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -1002,10 +1002,34 @@ function watchFrameRate(rawDt) {
     timedFrames = 0;
 }
 let lastRender = -Infinity, lastInput = 0, animating = false;
+
+// Frame pacing: a steady rate feels smoother than one that wanders. Aim for 60 a second
+// (on a 120 Hz screen that also halves the work); if this device can't hold 60, settle
+// at a steady 30 instead of bouncing between them, and try 60 again later when there's
+// room. Gameplay speed doesn't change: the physics runs on its own fixed clock.
+let targetFps = 60, lastPaced = -Infinity, paceFrames = 0, paceMissed = 0, paceWork = 0, paceWindows = 0;
+function pace(now, workMs) {
+    const interval = 1000 / targetFps;
+    paceFrames += 1;
+    if (now - lastPaced > interval * 1.5) paceMissed += 1;       // this frame came late
+    paceWork += workMs;
+    lastPaced = now;
+    if (paceFrames < 60) return;
+    const missed = paceMissed / paceFrames, work = paceWork / paceFrames;
+    if (targetFps === 60 && missed > 0.25) paceWindows = paceWindows > 0 ? paceWindows + 1 : 1;
+    else if (targetFps === 30 && work < 6 && missed < 0.05) paceWindows = paceWindows < 0 ? paceWindows - 1 : -1;
+    else paceWindows = 0;
+    if (paceWindows >= 2) { targetFps = 30; paceWindows = 0; }          // two rough seconds: settle at 30
+    if (paceWindows <= -10) { targetFps = 60; paceWindows = 0; }        // ~20 easy seconds: try 60 again
+    paceFrames = paceMissed = paceWork = 0;
+}
 for (const type of ['pointerdown', 'pointermove', 'keydown', 'wheel']) {
     window.addEventListener(type, () => { lastInput = performance.now(); }, { passive: true, capture: true });
 }
 function frame(now) {
+    // Skip screen refreshes that come sooner than the target rate.
+    if (now - last < 1000 / targetFps - 2) { requestAnimationFrame(frame); return; }
+    const workStart = performance.now();
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
     last = now;
@@ -1037,6 +1061,7 @@ function frame(now) {
         && now - lastInput > 400 && !crumbs.active() && sim.settled();
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
+    if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
     requestAnimationFrame(frame);
 }
 
@@ -1210,6 +1235,7 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
+    get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
