@@ -42,6 +42,13 @@ Pacing, so it never overwhelms. Every new thing follows the same arc (the Ninten
 3. **Familiar:** after that it's a known thing and shows up more often, mixed in with everything else, sometimes in combinations that ask a little more of you.
 - Never overcrowded: a new kind of thing only every few depths (9, 12, 15), never two at once, and at most two kinds of props in a zone.
 
+Performance and smoothness pass (mid game onward):
+- Vines stay dormant (asleep) unless a ball comes close, hits one, or its block moves; they hang from small pins that follow their block, so they never pull on it.
+- GPU memory is freed as things leave the board (it used to grow every zone).
+- The board idles at ~10 redraws a second while you aim, in every zone (grey blocks, popped nails, paused windmills and mushrooms used to keep it at 60).
+- A ball winds down after 40s however busy it is, so no turn drags past about a minute.
+- Vines added to How to play.
+
 Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
 ## v1.2.1
