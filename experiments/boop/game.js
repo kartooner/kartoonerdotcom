@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.0-8';
+const BUILD = '1.2.0-9';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -115,9 +115,24 @@ fitCamera();
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
+unitSquare.userData.keep = unitCircle.userData.keep = true;   // shared: never freed
+
+// Take something off the board for good: out of the scene, and its GPU geometry, materials and
+// textures freed (anything marked keep is shared and stays). Without this, every block, ring,
+// prop and ball left a little GPU memory behind, which added up over a long run.
+function discard(obj) {
+    obj.parent?.remove(obj);
+    forgetSketch(obj);
+    obj.traverse((o) => {
+        if (o.geometry && !o.geometry.userData.keep) o.geometry.dispose();
+        const m = o.material;
+        if (m && !m.userData.keep) { m.map?.dispose(); m.dispose(); }
+    });
+}
 const lineMat = mat(0);         // marks on the field
 const outlineMat = mat(0);      // edges on blocks, props and balls
 const ballMat = mat(0);
+outlineMat.userData.keep = ballMat.userData.keep = lineMat.userData.keep = true;
 const fieldMat = makeFieldMaterial(H);   // field colour plus faint crayon hatching low down
 
 const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
@@ -223,7 +238,7 @@ function updateNails(v, b, frameDt) {
         v.group.updateMatrixWorld();
         const w = m.getWorldPosition(new THREE.Vector3());
         crumbs.spray([[w.x, w.y]], [0xb7b0a6, theme.edge, NAIL]);
-        v.group.remove(m); forgetSketch(m);
+        discard(m);
         v.nails.delete(id);
     }
 }
@@ -377,7 +392,7 @@ function syncVine(v, pr) {
     };
     for (const l of pr.links) draw(l);
     for (const d of pr.debris) draw(d, Math.min(1, 3 * (1 - d.t / VINE_DEBRIS_STEPS)));
-    for (const [h, g] of v.links) if (!live.has(h)) { v.group.remove(g); forgetSketch(g); v.links.delete(h); }
+    for (const [h, g] of v.links) if (!live.has(h)) { discard(g); v.links.delete(h); }
 }
 
 function addFloater(text, x, y) {
@@ -411,7 +426,7 @@ function dropIn() {
 function syncView(frameDt) {
     const s = sim.s;
     for (const [id, v] of blockViews) {
-        if (!s.blocks[id]) { scene.remove(v.group); forgetSketch(v.group); blockViews.delete(id); }
+        if (!s.blocks[id]) { discard(v.group); blockViews.delete(id); }
     }
     for (const id in s.blocks) {
         const b = s.blocks[id];
@@ -424,7 +439,7 @@ function syncView(frameDt) {
     }
 
     for (const [id, g] of pickupViews) {
-        if (!s.pickups[id]) { scene.remove(g); forgetSketch(g); pickupViews.delete(id); }
+        if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
     for (const id in s.pickups) {
         const pk = s.pickups[id];
@@ -437,14 +452,14 @@ function syncView(frameDt) {
         propViews.delete(id);
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
-        else { scene.remove(v.group); forgetSketch(v.group); }
+        else discard(v.group);
     }
     for (let i = fadingProps.length - 1; i >= 0; i--) {
         const f = fadingProps[i];
         f.t += frameDt;
         const a = Math.max(0, 1 - f.t / 0.35);
         f.v.group.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = a; });
-        if (a <= 0) { scene.remove(f.v.group); forgetSketch(f.v.group); fadingProps.splice(i, 1); }
+        if (a <= 0) { discard(f.v.group); fadingProps.splice(i, 1); }
     }
     for (const id in s.props) {
         const pr = s.props[id];
@@ -500,7 +515,7 @@ function syncView(frameDt) {
         const k = Math.max(0, 1 - f.t / 0.3);
         f.group.scale.setScalar(k);
         f.group.traverse((o) => { if (o.material) o.material.opacity = k; });
-        if (k <= 0) { scene.remove(f.group); fadingBalls.splice(i, 1); }
+        if (k <= 0) { discard(f.group); fadingBalls.splice(i, 1); }
     }
 
 
@@ -510,7 +525,7 @@ function syncView(frameDt) {
         f.t += frameDt;
         f.m.position.y += frameDt * 0.9;
         f.m.material.opacity = Math.max(0, 1 - f.t / 0.9);
-        if (f.t > 0.9) { scene.remove(f.m); f.m.material.map.dispose(); floaters.splice(i, 1); }
+        if (f.t > 0.9) { discard(f.m); floaters.splice(i, 1); }
     }
 
     // Only touch the page when a number actually changed (each change costs a layout).
@@ -1060,13 +1075,13 @@ function writeTips(seen) { try { localStorage.setItem(TIPS_KEY, JSON.stringify(s
 
 function restart(saved = null) {
     if (sim) sim.free();
-    for (const v of blockViews.values()) scene.remove(v.group);
-    for (const g of pickupViews.values()) scene.remove(g);
-    for (const v of propViews.values()) scene.remove(v.group);
-    for (const f of fadingProps) scene.remove(f.v.group);
+    for (const v of blockViews.values()) discard(v.group);
+    for (const g of pickupViews.values()) discard(g);
+    for (const v of propViews.values()) discard(v.group);
+    for (const f of fadingProps) discard(f.v.group);
     fadingProps.length = 0;
-    for (const v of ballViews.values()) scene.remove(v.group);
-    for (const f of fadingBalls) scene.remove(f.group);
+    for (const v of ballViews.values()) discard(v.group);
+    for (const f of fadingBalls) discard(f.group);
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
@@ -1395,6 +1410,8 @@ window.__boop = {
     get pixelRatio() { return renderer.getPixelRatio(); },
     get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
+    // For checks: GPU objects alive and things in the scene, to catch anything left behind.
+    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

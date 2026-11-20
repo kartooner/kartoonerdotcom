@@ -70,6 +70,9 @@ const idleLimit = (ball) => ball.age < 720 ? RETIRE_IDLE : Math.max(180, RETIRE_
 // How far a ball is through its fade timer, 0 (just hit a block) to 1 (about to fade).
 // The renderer greys the ball by this, so the timer can be seen.
 export const ballFuse = (ball) => Math.min(1, ball.idle / idleLimit(ball));
+// However busy, a ball winds down after 40s: past that, hits stop resetting its fuse, so it greys
+// and fades in a second or two. Keeps a ball rattling in a pocket from dragging a turn out.
+const BALL_LIFE = 40 * 120;
 const GRACE_RANGE = 5;              // ...unless it's heading at a block within this many cells
 const GRACE_MAX = 180;              // grace lasts at most 1.5s before the ball fades anyway
 const TURN_CAP = 120 * 120;         // safety net only; every hit wears a block down, so turns end long before this
@@ -1454,7 +1457,7 @@ export class Sim {
     }
 
     scored(ball) {
-        if (!ball) return;
+        if (!ball || ball.age >= BALL_LIFE) return;   // past its life, hits no longer keep it going
         ball.grace = 0;
         ball.idle = 0;
     }
