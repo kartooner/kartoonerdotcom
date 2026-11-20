@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.12';
+const BUILD = '1.1.13';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -715,20 +715,27 @@ function placeNote() {
     // A tip about the whole board is said by the block buddy, standing under the bubble.
     const rPx = t.buddy ? 23 : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
-    if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
+    if (t.buddy) {
+        // Buddy's tips have a fixed layout: the bubble just under the pause button, centred on
+        // the board, and Buddy standing right below it (never the other way round).
+        const pb = document.getElementById('btn-pause').getBoundingClientRect();
+        const top = Math.max(pb.bottom + 6, gutter);
+        const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
+        note.style.left = `${left}px`;
+        note.style.top = `${top}px`;
+        note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
+        note.classList.remove('below');
+        buddy.style.left = `${c.x}px`;
+        buddy.style.top = `${top + h + gap + rPx}px`;
+        return;
+    }
     const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
         : document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
-    let top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
-    if (t.buddy) {
-        // Keep the bubble clear of the pause button; the buddy moves down with it.
-        const pb = document.getElementById('btn-pause').getBoundingClientRect();
-        const dy = pb.height ? pb.bottom + 4 - top : 0;
-        if (dy > 0) { top += dy; buddy.style.top = `${c.y + dy}px`; }
-    }
+    const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
     note.style.left = `${left}px`;
     note.style.top = `${top}px`;
     note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
@@ -852,6 +859,15 @@ function gameOver() {
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
+    // Buddy has a kind word, whatever happened.
+    const cheers = [
+        "So close! You'll dig even deeper next time.",
+        'Nice run! Shake it off and go again.',
+        "Those blocks won't know what hit them next time.",
+        'Great digging! One more go?',
+        "Every run teaches you something. You've got this!",
+    ];
+    $('over-say').textContent = isNew ? 'New best! I knew you had it in you.' : cheers[Math.floor(Math.random() * cheers.length)];
     showScreen('over');
 }
 
@@ -1172,7 +1188,7 @@ function play() {
     showScreen(null);
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
-        tourTip('aim', 'Drag anywhere to aim, then let go to fire!', { now: true, stay: true, first: true });
+        tourTip('aim', "Hi! I'm Buddy. To shoot a ball, drag anywhere to aim, then let go to fire!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const nails = { key: 'nails', text: 'Nailed blocks stay put until you knock their nails out. Blocks without nails can tumble.' };
         if (tipDue(nails) && !tipQueue.some((t) => t.key === 'nails')) tipQueue.unshift(nails);
