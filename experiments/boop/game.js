@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.19';
+const BUILD = '1.2.0';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -622,23 +622,78 @@ function angleFromDrag(dx, dy) {
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
 }
 
+// Changed your mind? Drag back to where you started: the guide goes away and letting go
+// there doesn't fire. Move out again and you're aiming again.
+const CANCEL_PX = 16;
+let dragFar = 0;
+
+// With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
+// (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
+let mouseAim = false, mouseDown = false;
+function fromScreen(x, y) {
+    const r = renderer.domElement.getBoundingClientRect();
+    const v = new THREE.Vector3((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1), 0).unproject(camera);
+    return { x: v.x, y: v.y };
+}
+function angleToward(ev) {
+    const p = fromScreen(ev.clientX, ev.clientY);
+    let a = Math.atan2(p.y - LAUNCHER.y, p.x - LAUNCHER.x);
+    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // pointing above the launcher: nearest side
+    return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
+}
+function cancelAim() {
+    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0;
+    hideGuide();
+}
+
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Left and right arrows aim, Space fires, Escape pauses.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses.');
+canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase === 'aim') cancelAim(); });
+canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (ev.button !== 0) return;              // right-click is handled by contextmenu (cancel)
+        if (phase !== 'aim') return;
+        keyAim = false;
+        mouseDown = true;
+        mouseAim = true;
+        aimTarget = aimAngle = angleToward(ev);   // click without moving: fire where you point
+        hideNote();
+        return;
+    }
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
         aimCancel = true;                       // not aimed until the finger actually moves
         dragStart = { x: ev.clientX, y: ev.clientY };
+        dragFar = 0;
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
 });
-canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
-canvas.addEventListener('pointerup', () => {
+canvas.addEventListener('pointermove', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (phase !== 'aim' || paused() || buddyTalking) return;
+        if (!mouseAim) { keyAim = false; aimAngle = angleToward(ev); }
+        mouseAim = true;
+        aimTarget = angleToward(ev);
+        return;
+    }
+    if (aiming) updateAim(ev);
+});
+canvas.addEventListener('pointerup', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (!mouseDown) return;
+        mouseDown = false;
+        if (phase !== 'aim' || !mouseAim) return;
+        const drawn = guideAngle ?? shownAngle();
+        hideGuide();
+        fire(drawn);
+        return;
+    }
     if (!aiming) return;
     aiming = false;
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
@@ -648,6 +703,8 @@ canvas.addEventListener('pointerup', () => {
 });
 
 function fire(angle) {
+    worldSettling = false;
+    mouseAim = false;
     sim.fire(angle);
     runStarted = true;
     phase = 'play';
@@ -658,6 +715,9 @@ canvas.addEventListener('pointercancel', () => { aiming = false; hideGuide(); })
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
     const dist = Math.hypot(dx, dy);
+    dragFar = Math.max(dragFar, dist);
+    // Back at the start after a real drag: cancelled (until you move out again).
+    if (!aimCancel && dragFar > CANCEL_PX * 2.5 && dist < CANCEL_PX) { aimCancel = true; hideGuide(); return; }
     if (aimCancel) {
         if (dist < AIM_START_PX) return;
         aimCancel = false;
@@ -881,9 +941,15 @@ function startZone() {
     phase = 'descend';
 }
 
+// The turn is over when the last ball is gone. If shots are left you can aim straight
+// away: blocks still tumbling or swinging keep moving while you aim (worldSettling), and
+// the guide keeps up with them. Only the very last shot waits for the board to settle,
+// since a tumble could still clear the zone before the game-over check.
+let worldSettling = false;
 function endTurn() {
     if (sim.blockCount() === 0) { startZone(); return; }
     settleSteps = 0;
+    if (sim.s.supply > 0) { worldSettling = true; readyToAim(); return; }
     phase = 'settle';
 }
 
@@ -986,7 +1052,8 @@ function tick(frameDt) {
         }
         return;
     }
-    if (phase !== 'play' && phase !== 'settle') return;
+    const settlingWhileAiming = phase === 'aim' && worldSettling;
+    if (phase !== 'play' && phase !== 'settle' && !settlingWhileAiming) return;
 
     const s = sim.s;
     acc += frameDt;   // always real time: no fast-forward, so ball speed always looks the same
@@ -999,6 +1066,11 @@ function tick(frameDt) {
         if (phase === 'play' && sim.blockCount() === 0) { zoneCleared(); break; }
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
         if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
+        if (phase === 'aim' && worldSettling) {
+            if (sim.blockCount() === 0) { worldSettling = false; startZone(); break; }   // the last blocks tumbled out
+            guideAngle = null;      // the board moved: the guide needs working out again
+            if (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS) { worldSettling = false; break; }
+        }
     }
     if (n >= 30) acc = 0;   // tab was in the background; don't try to catch up
     // How far we are toward the next step: draw balls that far between their last two positions.
@@ -1067,9 +1139,9 @@ function frame(now) {
         const dt = paused() && phase !== 'descend' ? 0 : frameDt;
         tick(dt);
         if (keyAim && phase === 'aim') keyboardAim(dt);
-        if ((aiming || keyAim) && phase === 'aim') {
+        if ((aiming || keyAim || mouseAim) && phase === 'aim') {
             easeAim(dt);
-            if (keyAim || !aimCancel) drawGuide(shownAngle());
+            if (keyAim || mouseAim || !aimCancel) drawGuide(shownAngle());
         }
         if (noteShown) placeNote();
         animating = false;          // set by syncView if anything on the board is still moving
@@ -1084,7 +1156,7 @@ function frame(now) {
     // shot and nothing on the board is moving: ten times a second. Anything moving, or your
     // finger on the board, and it's back to every frame. (Saves battery, mostly.)
     const still = sim && paused() && phase !== 'descend';
-    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !animating && shake === 0
+    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !worldSettling && !animating && shake === 0
         && now - lastInput > 400 && !crumbs.active() && sim.settled();
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
@@ -1178,7 +1250,9 @@ function play() {
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
-        tourTip('intro', "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+        tourTip('intro', finePointer
+            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Each hit takes 1 off. Pop every block to dig deeper!"
+            : "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
@@ -1211,6 +1285,7 @@ const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
+        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown)) { cancelAim(); return; }   // first, put an aim away
         if (!howto.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
