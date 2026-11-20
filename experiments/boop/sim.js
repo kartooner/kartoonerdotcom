@@ -506,8 +506,12 @@ export class Sim {
         s.style = styleName;
 
         // grid[r][c] = 0 free, -1 prop, otherwise the index+1 of the planned block.
-        const grid = Array.from({ length: ZONE_ROWS }, () => new Array(W).fill(0));
-        const free = (c, r) => c >= 0 && c < W && r >= 0 && r < ZONE_ROWS && grid[r][c] === 0;
+        // While the buddy is still walking a new player through the basics, the zone starts two
+        // rows lower, keeping the top of the board clear for him and what he's saying.
+        const TOP_ROW = s.roomForBuddy ? ZONE_TOP_ROW + 2 : ZONE_TOP_ROW;
+        const ROWS = s.roomForBuddy ? ZONE_ROWS - 2 : ZONE_ROWS;
+        const grid = Array.from({ length: ROWS }, () => new Array(W).fill(0));
+        const free = (c, r) => c >= 0 && c < W && r >= 0 && r < ROWS && grid[r][c] === 0;
         // Fairness: never fill a whole row, so there's always a way down.
         const rowOk = (cells) => {
             const rows = new Set(cells.map(([, r]) => r));
@@ -530,12 +534,12 @@ export class Sim {
         const propAt = [];
         const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
         for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
-            const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ZONE_ROWS - 1));
+            const c = Math.floor(this.rand() * (W - 1)), r = Math.floor(this.rand() * (ROWS - 1));
             const cells = [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]];
             if (!cells.every(([cc, rr]) => free(cc, rr)) || !roomy(c + 1, r + 1)) continue;
             propAt.push([c + 1, r + 1]);
             cells.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
-            this.addWindmill(c + 1, -(r + 1 + ZONE_TOP_ROW));
+            this.addWindmill(c + 1, -(r + 1 + TOP_ROW));
             i++;
         }
 
@@ -555,18 +559,18 @@ export class Sim {
         const touchesOther = (cells) => cells.some(([c, r]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => {
             const cc = c + dc, rr = r + dr;
             if (cells.some(([x, y]) => x === cc && y === rr)) return false;
-            return cc >= 0 && cc < W && rr >= 0 && rr < ZONE_ROWS && grid[rr][cc] !== 0;
+            return cc >= 0 && cc < W && rr >= 0 && rr < ROWS && grid[rr][cc] !== 0;
         }));
         const plan = [];
         let filled = 0;
-        const target = Math.round(W * ZONE_ROWS * (spec.fill + style.fill));
+        const target = Math.round(W * ROWS * (spec.fill + style.fill));
 
         let cupPrize = null;
         // Now and then a cup: two walls and a floor with a gap inside. A ball that drops
         // in rattles around, hitting all three. A trap worth aiming for.
         if (this.rand() < spec.cups) {
             for (let tries = 0; tries < 30; tries++) {
-                const c = Math.floor(this.rand() * (W - 3)), r = 2 + Math.floor(this.rand() * (ZONE_ROWS - 6));
+                const c = Math.floor(this.rand() * (W - 3)), r = 2 + Math.floor(this.rand() * (ROWS - 6));
                 const parts = [
                     [[c, r], [c, r + 1], [c, r + 2]],
                     [[c + 3, r], [c + 3, r + 1], [c + 3, r + 2]],
@@ -594,7 +598,7 @@ export class Sim {
             let pick = this.rand() * poolTotal, shape = pool[0];
             for (const sh of pool) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             if ((used[shape.canon] ?? 0) >= (shape.size === 1 ? 3 : 2)) continue;
-            const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ZONE_ROWS);
+            const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
             const cells = shape.c.map(([c, r]) => [col + c, row + r]);
             if (!cells.every(([c, r]) => free(c, r)) || !rowOk(cells)) continue;
             if (sameShapeTouching(cells, shape.canon)) continue;
@@ -625,7 +629,7 @@ export class Sim {
 
         // Some pinned blocks become loose ones resting on a pinned block below.
         const solidBelow = (p) => p.cells.some(([c, r]) => {
-            const g = r + 1 < ZONE_ROWS ? grid[r + 1][c] : 0;
+            const g = r + 1 < ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && (plan[g - 1].kind === 'pinned' || plan[g - 1].kind === 'neutral');
         });
         const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
@@ -667,7 +671,7 @@ export class Sim {
             }
             for (let tries = 0; tries < 40 && !spot; tries++) {
                 const right = this.rand() < 0.5, c = right ? W - 1 : 0;
-                const r = Math.floor(this.rand() * ZONE_ROWS);
+                const r = Math.floor(this.rand() * ROWS);
                 if (!free(c, r) || !roomy(c + 0.5, r + 0.5)) continue;
                 spot = { p: null, c, r, dir: right ? Math.PI / 2 : -Math.PI / 2, right, cell: [c, r] };
             }
@@ -705,11 +709,11 @@ export class Sim {
         }
         for (const p of plan) {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
-            p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + ZONE_TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
+            p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
         }
         for (const m of mushSpots) {
-            if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + ZONE_TOP_ROW + 0.5), m.dir); continue; }
+            if (!m.p) { this.addMushroom(null, m.right ? W : 0, -(m.r + TOP_ROW + 0.5), m.dir); continue; }
             // The cell's centre in the block's own space, nudged out to the face it grows from.
             const b = m.p.block, i = m.p.cells.findIndex(([c, r]) => c === m.c && r === m.r);
             this.addMushroom(b, b.cells[i][0] + m.dc * 0.5, b.cells[i][1] - m.dr * 0.5, m.dir);
@@ -721,13 +725,13 @@ export class Sim {
         grid.forEach((row, r) => row.forEach((g, c) => { if (g === 0 && (r === 0 || grid[r - 1][c] === 0)) open.push([c, r]); }));
         let placed = 0;
         if (cupPrize) {
-            this.addPickup(cupPrize[0], -(cupPrize[1] + ZONE_TOP_ROW));
+            this.addPickup(cupPrize[0], -(cupPrize[1] + TOP_ROW));
             open = open.filter(([cc, rr]) => Math.hypot(cc + 0.5 - cupPrize[0], rr + 0.5 - cupPrize[1]) >= MIN_PICKUP_GAP);
             placed = 1;
         }
         for (let i = placed; i < 2 && open.length; i++) {
             const [c, r] = open[Math.floor(this.rand() * open.length)];
-            this.addPickup(c + 0.5, -(r + ZONE_TOP_ROW + 0.5));
+            this.addPickup(c + 0.5, -(r + TOP_ROW + 0.5));
             open = open.filter(([cc, rr]) => Math.hypot(cc - c, rr - r) >= MIN_PICKUP_GAP);
         }
 

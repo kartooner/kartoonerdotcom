@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.1.11">
+<html lang="en" data-build="1.1.12">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -89,7 +89,7 @@
         #btn-pause {
             display: none;
             position: fixed;
-            z-index: 4;
+            z-index: 8;               /* above the buddy's dimmed backdrop: pause always works */
             top: calc(var(--board-top, 80px) + 4px);
             left: calc(var(--board-left, 16px) + 4px);
             width: 44px; height: 44px;
@@ -121,9 +121,34 @@
             transition: transform 0.25s ease-out;
         }
         /* Callout: points at the new thing it describes. Placed from game.js. */
+        /* While the buddy talks, the board dims behind him and can't be tapped. */
+        #tipshade {
+            position: fixed;
+            inset: 0;
+            z-index: 6;
+            background: color-mix(in srgb, var(--paper) 62%, transparent);
+            transition: opacity 0.3s ease-out;
+        }
+        #tipshade.fading { opacity: 0; }
+        #note.ack { pointer-events: auto; }
+        #note .ack-btn {
+            display: block;
+            margin: 8px 0 0 auto;
+            padding: 6px 2px;
+            border: 0;
+            background: none;
+            font: inherit;
+            font-size: 0.875rem;
+            font-weight: 800;
+            color: var(--ink);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #note .ack-btn:disabled { opacity: 0.35; cursor: default; }
+        #note .ack-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
         #note {
             position: fixed;
-            z-index: 5;
+            z-index: 7;
             max-width: min(240px, calc(100vw - 32px));
             box-sizing: border-box;
             margin: 0;
@@ -174,10 +199,10 @@
         .buddy-face { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         @media (prefers-reduced-motion: reduce) { .buddy-face, .buddy-face.wiggling .wiggle { animation: none; } }
         #note.fading, #buddy.fading { opacity: 0; }
-        @media (prefers-reduced-motion: reduce) { #note, #buddy { transition: none; } }
+        @media (prefers-reduced-motion: reduce) { #note, #buddy, #tipshade { transition: none; } }
         #buddy {
             position: fixed;
-            z-index: 5;
+            z-index: 7;
             width: 40px;               /* smaller in the game than on the start screen */
             height: 43px;
             transform: translate(-50%, -50%) rotate(-7deg);
@@ -464,6 +489,7 @@
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
     <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+    <div id="tipshade" hidden></div>
     <p id="note" hidden></p>
     <!-- The block buddy, Boop!'s mascot (also above the logo): says the tips that aren't about one thing on the board. -->
     <svg id="buddy" class="buddy-face" viewBox="0 0 48 52" aria-hidden="true" hidden><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
@@ -577,29 +603,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.1.11",
-                "./zones.js": "./zones.js?v=1.1.11",
-                "./blockshader.js": "./blockshader.js?v=1.1.11",
-                "./sketch.js": "./sketch.js?v=1.1.11",
-                "./balls.js": "./balls.js?v=1.1.11",
-                "./labels.js": "./labels.js?v=1.1.11",
-                "./theme.js": "./theme.js?v=1.1.11",
-                "./crumbs.js": "./crumbs.js?v=1.1.11",
-                "./buddy.js": "./buddy.js?v=1.1.11"
+                "./sim.js": "./sim.js?v=1.1.12",
+                "./zones.js": "./zones.js?v=1.1.12",
+                "./blockshader.js": "./blockshader.js?v=1.1.12",
+                "./sketch.js": "./sketch.js?v=1.1.12",
+                "./balls.js": "./balls.js?v=1.1.12",
+                "./labels.js": "./labels.js?v=1.1.12",
+                "./theme.js": "./theme.js?v=1.1.12",
+                "./crumbs.js": "./crumbs.js?v=1.1.12",
+                "./buddy.js": "./buddy.js?v=1.1.12"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.1.11">
-    <link rel="modulepreload" href="./sim.js?v=1.1.11">
-    <link rel="modulepreload" href="./zones.js?v=1.1.11">
-    <link rel="modulepreload" href="./blockshader.js?v=1.1.11">
-    <link rel="modulepreload" href="./sketch.js?v=1.1.11">
-    <link rel="modulepreload" href="./balls.js?v=1.1.11">
-    <link rel="modulepreload" href="./labels.js?v=1.1.11">
-    <link rel="modulepreload" href="./theme.js?v=1.1.11">
-    <link rel="modulepreload" href="./buddy.js?v=1.1.11">
-    <link rel="modulepreload" href="./crumbs.js?v=1.1.11">
-    <script type="module" src="./game.js?v=1.1.11"></script>
+    <link rel="modulepreload" href="./game.js?v=1.1.12">
+    <link rel="modulepreload" href="./sim.js?v=1.1.12">
+    <link rel="modulepreload" href="./zones.js?v=1.1.12">
+    <link rel="modulepreload" href="./blockshader.js?v=1.1.12">
+    <link rel="modulepreload" href="./sketch.js?v=1.1.12">
+    <link rel="modulepreload" href="./balls.js?v=1.1.12">
+    <link rel="modulepreload" href="./labels.js?v=1.1.12">
+    <link rel="modulepreload" href="./theme.js?v=1.1.12">
+    <link rel="modulepreload" href="./buddy.js?v=1.1.12">
+    <link rel="modulepreload" href="./crumbs.js?v=1.1.12">
+    <script type="module" src="./game.js?v=1.1.12"></script>
 </body>
 </html>
