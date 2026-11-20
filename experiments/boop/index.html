@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.0-16">
+<html lang="en" data-build="1.2.1-6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -263,7 +263,7 @@
             content: '';
             position: absolute;
             left: var(--arrow-x, 50%);
-            bottom: -8px;
+            bottom: -5px;              /* tucked into the bubble's edge, so tail and bubble read as one shape */
             width: 12px;
             height: 12px;
             margin-left: -6px;
@@ -276,7 +276,7 @@
         }
         #note.below::after {
             bottom: auto;
-            top: -8px;
+            top: -5px;
             transform: rotate(-135deg);
         }
         [hidden] { display: none !important; }
@@ -586,7 +586,7 @@
             </div>
             <p class="sound-hint" id="sound-hint">Sound is off · <button class="link-btn" id="btn-sound-on" type="button">Turn on</button></p>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1.2 · by Erik Sagen</p>
+            <p class="version">v1.2.1 · by Erik Sagen</p>
         </div>
     </section>
 
@@ -665,7 +665,7 @@
                 <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b>Drop a ball in to grab the +1 and rattle around.</div></li>
                 <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken, but their nails can. Bank shots off them.</div></li>
                 <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b>Snap after a few hits. Anything they hold drops.</div></li>
-                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b>Burst when popped and knock a chunk off everything around them.</div></li>
+                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b>Hit one twice to light it. It bursts and knocks a chunk off everything around it.</div></li>
             </ul>
             <p class="note">Boop explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
@@ -703,31 +703,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.0-16",
-                "./zones.js": "./zones.js?v=1.2.0-16",
-                "./blockshader.js": "./blockshader.js?v=1.2.0-16",
-                "./sketch.js": "./sketch.js?v=1.2.0-16",
-                "./balls.js": "./balls.js?v=1.2.0-16",
-                "./labels.js": "./labels.js?v=1.2.0-16",
-                "./audio.js": "./audio.js?v=1.2.0-16",
-                "./theme.js": "./theme.js?v=1.2.0-16",
-                "./crumbs.js": "./crumbs.js?v=1.2.0-16",
-                "./buddy.js": "./buddy.js?v=1.2.0-16"
+                "./sim.js": "./sim.js?v=1.2.1-6",
+                "./zones.js": "./zones.js?v=1.2.1-6",
+                "./blockshader.js": "./blockshader.js?v=1.2.1-6",
+                "./sketch.js": "./sketch.js?v=1.2.1-6",
+                "./balls.js": "./balls.js?v=1.2.1-6",
+                "./labels.js": "./labels.js?v=1.2.1-6",
+                "./audio.js": "./audio.js?v=1.2.1-6",
+                "./theme.js": "./theme.js?v=1.2.1-6",
+                "./crumbs.js": "./crumbs.js?v=1.2.1-6",
+                "./buddy.js": "./buddy.js?v=1.2.1-6"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./sim.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./zones.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./balls.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./labels.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./audio.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./theme.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.0-16">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.0-16">
-    <script type="module" src="./game.js?v=1.2.0-16"></script>
+    <link rel="modulepreload" href="./game.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./sim.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./zones.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./balls.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./labels.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./audio.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./theme.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.1-6">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-6">
+    <script type="module" src="./game.js?v=1.2.1-6"></script>
 </body>
 </html>

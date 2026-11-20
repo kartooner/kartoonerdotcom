@@ -17,7 +17,6 @@ export const TIERS = [
     { max: Infinity, fill: 0x9a5e57, pattern: 6, text: '#fffaf0' }, // brown, vertical stripes
 ];
 export const JELLO = { fill: 0x8fd6c4, text: '#2b2622' };
-export const BOMB = { fill: 0x4a4350, pattern: 0, text: '#fffaf0' };   // charcoal with dots, a light number
 export const NEUTRAL = { light: 0xcdc4b5, dark: 0x6e665c };
 export const tierFor = (hp) => TIERS.find((t) => hp <= t.max);
 
@@ -168,9 +167,10 @@ void main() {
 
 // cells: block-local cell centres (unscaled). Returns a mesh whose material
 // uniforms the caller updates as the block wears down.
-export function makeBlockMesh(cells, jello, seed) {
+// corner: optional rounding override (0.5 on a single cell draws a circle, e.g. a bomb).
+export function makeBlockMesh(cells, jello, seed, corner) {
     const has = (x, y) => cells.some(([cx, cy]) => Math.abs(cx - x) < 0.01 && Math.abs(cy - y) < 0.01);
-    const r = jello ? JELLO_CORNER : CORNER;
+    const r = corner ?? (jello ? JELLO_CORNER : CORNER);
     // Each cell box pulls in by the corner radius on open sides and reaches into
     // neighbours on joined sides; rounding then adds the radius back on the outside.
     const boxes = cells.map(([x, y]) => new THREE.Vector4(
