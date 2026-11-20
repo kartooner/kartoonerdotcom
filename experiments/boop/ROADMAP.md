@@ -17,6 +17,14 @@
 - Tips in order: every new thing gets a callout pointing at it the first time it shows up; the buddy's tour covers the basics (launching, hits, nails, then the rest), one at a time; How to play trimmed to a short reference
 - Clearing a zone gives +5 shots through depth 10
 
+## v1.1.1 (hotfixes)
+- iPhone rotation fixed; a phone on its side gets the side-by-side layout
+- Steady 60 or steady 30 frame rate; fewer redraws while idle; smoother aim guide; Low Power Mode friendly
+- Buddy introduces himself; his tips dim the board and wait for "Got it" (no tapping through), only at the start of a turn; early zones leave room for him
+- Buddy cheers you on at game over
+- Speech bubble outlines "boil" slightly, like a hand-drawn cartoon
+- Tap targets at least 44pt (Got it, pause, links)
+
 ## v1.2
 Tester feedback on controls (mouse and phone):
 - **No dead window between shots:** today input is ignored until every block stops moving (up to 3s, longer with hanging blocks). Let you start aiming as soon as the balls are gone; the guide updates as things come to rest, and the shot waits until the board is ready. Gently swinging blocks shouldn't hold up the turn.
@@ -24,7 +32,7 @@ Tester feedback on controls (mouse and phone):
 - **A way to cancel:** drag back to where you started and the guide fades (letting go there doesn't fire); Esc or a right-click also cancels on desktop without pausing.
 
 Sound:
-- **Sound:** a soft "boop" on hits, a pop when a block breaks, a chime for +1, a zone-clear sting.
+- **Sound:** chiptune-style: a soft "boop" on hits, a bright pop when a block bursts, a chime for +1, a zone-clear jingle.
 - **Haptics:** light taps on hits and pops on phones that support it.
 - **Mute:** a sound on/off toggle that's always within reach and remembered between visits. Haptics follow the same toggle or get their own.
 

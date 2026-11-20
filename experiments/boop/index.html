@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.1.11">
+<html lang="en" data-build="1.1.14">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -89,7 +89,7 @@
         #btn-pause {
             display: none;
             position: fixed;
-            z-index: 4;
+            z-index: 8;               /* above the buddy's dimmed backdrop: pause always works */
             top: calc(var(--board-top, 80px) + 4px);
             left: calc(var(--board-left, 16px) + 4px);
             width: 44px; height: 44px;
@@ -121,9 +121,48 @@
             transition: transform 0.25s ease-out;
         }
         /* Callout: points at the new thing it describes. Placed from game.js. */
+        /* While the buddy talks, the board dims behind him and can't be tapped. */
+        #tipshade {
+            position: fixed;
+            inset: 0;
+            z-index: 6;
+            background: color-mix(in srgb, var(--paper) 62%, transparent);
+            transition: opacity 0.3s ease-out;
+        }
+        #tipshade.fading { opacity: 0; }
+        /* Buddy's bubble sits well inside the board, not edge to edge. */
+        #note.ack { pointer-events: auto; max-width: min(250px, calc(var(--board-w, 100vw) - 64px)); }
+        /* "Got it": an outlined button across the bubble (light, like How to play), at least
+           44pt tall (Apple's minimum). It fades in
+           after a beat instead of sitting greyed out, so it never looks disabled. */
+        #note .ack-btn {
+            position: relative;
+            isolation: isolate;
+            display: block;
+            width: 100%;               /* full width, like the start screen's buttons */
+            min-height: 46px;
+            margin: 12px 0 2px;
+            padding: 11px 20px;
+            border: 0;
+            background: none;
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--ink);
+            cursor: pointer;
+            transition: opacity 0.25s ease-out;
+        }
+        #note .ack-btn::before {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            border: 2.5px solid var(--ink); border-radius: 10px;
+            filter: url(#sketchy);
+            animation: boil 0.5s steps(1) infinite;
+        }
+        #note .ack-btn:disabled { opacity: 0; cursor: default; }
+        #note .ack-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
         #note {
             position: fixed;
-            z-index: 5;
+            z-index: 7;
             max-width: min(240px, calc(100vw - 32px));
             box-sizing: border-box;
             margin: 0;
@@ -174,20 +213,28 @@
         .buddy-face { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         @media (prefers-reduced-motion: reduce) { .buddy-face, .buddy-face.wiggling .wiggle { animation: none; } }
         #note.fading, #buddy.fading { opacity: 0; }
-        @media (prefers-reduced-motion: reduce) { #note, #buddy { transition: none; } }
+        @media (prefers-reduced-motion: reduce) { #note, #buddy, #tipshade { transition: none; } }
         #buddy {
             position: fixed;
-            z-index: 5;
+            z-index: 7;
             width: 40px;               /* smaller in the game than on the start screen */
             height: 43px;
             transform: translate(-50%, -50%) rotate(-7deg);
         }
-        #note::before {
+        #note::before, .say::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
             filter: url(#sketchy);
+            animation: boil 0.5s steps(1) infinite;
         }
-        #note::after {
+        /* Speech bubbles are alive, just slightly: the outline flips between three takes. */
+        @keyframes boil {
+            0% { filter: url(#sketchy); }
+            33% { filter: url(#sketchy-b); }
+            66% { filter: url(#sketchy-c); }
+        }
+        @media (prefers-reduced-motion: reduce) { #note::before, .say::before, #note::after, .say::after, #note .ack-btn::before { animation: none; } }
+        #note::after, .say::after {
             content: '';
             position: absolute;
             left: var(--arrow-x, 50%);
@@ -200,6 +247,7 @@
             border-bottom: 2px solid var(--ink);
             transform: rotate(45deg);
             filter: url(#sketchy);
+            animation: boil 0.5s steps(1) infinite;
         }
         #note.below::after {
             bottom: auto;
@@ -276,7 +324,34 @@
         #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
         #menu .feedback { margin-top: 20px; }
         /* Game over: same centred layout as the start screen. */
-        #over h1 { margin: 0; font-size: clamp(2.5rem, 12vw, 3.25rem); line-height: 1.05; }
+        #over h1 { margin: 0; font-size: clamp(2rem, 9.5vw, 3rem); line-height: 1.05; white-space: nowrap; }
+        /* Buddy's word after a run: a speech bubble above him. */
+        .say {
+            position: relative;
+            isolation: isolate;
+            max-width: 260px;
+            margin: 0 auto 14px;
+            padding: 10px 14px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--ink);
+        }
+        .say::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            width: 12px;
+            height: 12px;
+            margin-left: -6px;
+            background: var(--panel);
+            border-right: 2px solid var(--ink);
+            border-bottom: 2px solid var(--ink);
+            transform: rotate(45deg);
+            filter: url(#sketchy);
+        }
+        #over .over-buddy { width: 60px; height: 65px; margin: 4px auto 10px; display: block; transform: rotate(-7deg); }
         #over .result { margin: 14px 0 6px; font-size: 1.125rem; font-weight: 600; }
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); }
@@ -311,6 +386,9 @@
         .btn-primary::before { background: var(--ink); }
         .btn:active::before { transform: translateY(1px); }
         .btn:focus-visible, #theme-toggle:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        /* Small text links keep their look but get a hit area at least 44pt tall. */
+        .link-btn { position: relative; }      /* (#back and #theme-toggle are already positioned) */
+        .link-btn::after, #back::after, #theme-toggle::after { content: ''; position: absolute; inset: -12px -8px; }
         .link-btn {
             font: inherit;
             font-size: 0.9375rem;
@@ -464,6 +542,7 @@
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
     <button id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11M13 4.5v11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+    <div id="tipshade" hidden></div>
     <p id="note" hidden></p>
     <!-- The block buddy, Boop!'s mascot (also above the logo): says the tips that aren't about one thing on the board. -->
     <svg id="buddy" class="buddy-face" viewBox="0 0 48 52" aria-hidden="true" hidden><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
@@ -480,12 +559,14 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1.1 · by Erik Sagen</p>
+            <p class="version">v1.1.1 · by Erik Sagen</p>
         </div>
     </section>
 
     <section id="over" class="screen" aria-labelledby="over-title" hidden>
         <div class="screen-inner">
+            <p class="say" id="over-say"></p>
+            <svg class="mascot buddy-face over-buddy" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="over-title">Out of shots</h1>
             <p class="result" id="over-result"></p>
             <p class="best" id="over-best"></p>
@@ -566,6 +647,16 @@
             <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/>
             <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
+        <!-- Two more takes on the same wobble: speech bubbles flip between all three a few
+             times a second, so their outlines "boil" like a hand-drawn cartoon. -->
+        <filter id="sketchy-b" x="-5%" y="-10%" width="110%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="23" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="sketchy-c" x="-5%" y="-10%" width="110%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="41" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
     </svg>
     <button id="theme-toggle" type="button">Dark mode</button>
 
@@ -577,29 +668,29 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.1.11",
-                "./zones.js": "./zones.js?v=1.1.11",
-                "./blockshader.js": "./blockshader.js?v=1.1.11",
-                "./sketch.js": "./sketch.js?v=1.1.11",
-                "./balls.js": "./balls.js?v=1.1.11",
-                "./labels.js": "./labels.js?v=1.1.11",
-                "./theme.js": "./theme.js?v=1.1.11",
-                "./crumbs.js": "./crumbs.js?v=1.1.11",
-                "./buddy.js": "./buddy.js?v=1.1.11"
+                "./sim.js": "./sim.js?v=1.1.14",
+                "./zones.js": "./zones.js?v=1.1.14",
+                "./blockshader.js": "./blockshader.js?v=1.1.14",
+                "./sketch.js": "./sketch.js?v=1.1.14",
+                "./balls.js": "./balls.js?v=1.1.14",
+                "./labels.js": "./labels.js?v=1.1.14",
+                "./theme.js": "./theme.js?v=1.1.14",
+                "./crumbs.js": "./crumbs.js?v=1.1.14",
+                "./buddy.js": "./buddy.js?v=1.1.14"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.1.11">
-    <link rel="modulepreload" href="./sim.js?v=1.1.11">
-    <link rel="modulepreload" href="./zones.js?v=1.1.11">
-    <link rel="modulepreload" href="./blockshader.js?v=1.1.11">
-    <link rel="modulepreload" href="./sketch.js?v=1.1.11">
-    <link rel="modulepreload" href="./balls.js?v=1.1.11">
-    <link rel="modulepreload" href="./labels.js?v=1.1.11">
-    <link rel="modulepreload" href="./theme.js?v=1.1.11">
-    <link rel="modulepreload" href="./buddy.js?v=1.1.11">
-    <link rel="modulepreload" href="./crumbs.js?v=1.1.11">
-    <script type="module" src="./game.js?v=1.1.11"></script>
+    <link rel="modulepreload" href="./game.js?v=1.1.14">
+    <link rel="modulepreload" href="./sim.js?v=1.1.14">
+    <link rel="modulepreload" href="./zones.js?v=1.1.14">
+    <link rel="modulepreload" href="./blockshader.js?v=1.1.14">
+    <link rel="modulepreload" href="./sketch.js?v=1.1.14">
+    <link rel="modulepreload" href="./balls.js?v=1.1.14">
+    <link rel="modulepreload" href="./labels.js?v=1.1.14">
+    <link rel="modulepreload" href="./theme.js?v=1.1.14">
+    <link rel="modulepreload" href="./buddy.js?v=1.1.14">
+    <link rel="modulepreload" href="./crumbs.js?v=1.1.14">
+    <script type="module" src="./game.js?v=1.1.14"></script>
 </body>
 </html>

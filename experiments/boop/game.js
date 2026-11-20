@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.11';
+const BUILD = '1.1.14';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -487,18 +487,18 @@ function consumeEvents() {
     for (const e of sim.events) {
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
         else if (e.t === 'hit' && runStarted) {
-            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.', { now: true, first: true });
+            tourTip('hits', 'Each hit takes 1 off. Pop them all to dig deeper.');
         } else if (e.t === 'out' && e.faded) {
-            tourTip('fuse', 'Balls turn grey and fade when they stop hitting blocks.', { now: true });
+            tourTip('fuse', 'Balls turn grey and fade when they stop hitting blocks.');
         } else if (e.t === 'nailpop') {
-            tourTip('nailpop', 'Nail out! Knock out both and the block falls.', { now: true });
+            tourTip('nailpop', 'Nail out! Knock out both and the block falls.');
         } else if (e.t === 'nailhit') {
             const v = blockViews.get(e.id);
             if (v) v.nailWob[e.nail] = 0;
         } else if (e.t === 'stretch') {
             // Last few blocks: hits count double. Say so once per device; a small mark every time.
             addFloater('Hits ×2', W / 2, -2.6);
-            tourTip('stretch', 'Last few blocks: every hit counts double.', { now: true });
+            tourTip('stretch', 'Last few blocks: every hit counts double.');
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
@@ -688,7 +688,7 @@ const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // the buddy, centred, below the pause and launcher
+    if (t?.kind === 'open') return { x: W / 2, y: sim.s.roomForBuddy ? -4.25 : -3.9, r: 0, buddy: true };   // the buddy, centred, below the pause and launcher
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -715,37 +715,63 @@ function placeNote() {
     // A tip about the whole board is said by the block buddy, standing under the bubble.
     const rPx = t.buddy ? 23 : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
-    if (t.buddy) { buddy.style.left = `${c.x}px`; buddy.style.top = `${c.y}px`; }
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
+    if (t.buddy) {
+        // Buddy's tips have a fixed layout: the bubble just under the pause button, centred on
+        // the board, and Buddy standing right below it (never the other way round).
+        const pb = document.getElementById('btn-pause').getBoundingClientRect();
+        const top = Math.max(pb.bottom + 6, gutter);
+        const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
+        note.style.left = `${left}px`;
+        note.style.top = `${top}px`;
+        note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
+        note.classList.remove('below');
+        buddy.style.left = `${c.x}px`;
+        buddy.style.top = `${top + h + gap + rPx}px`;
+        return;
+    }
     const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
         : document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
     const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
     const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
-    let top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
-    if (t.buddy) {
-        // Keep the bubble clear of the pause button; the buddy moves down with it.
-        const pb = document.getElementById('btn-pause').getBoundingClientRect();
-        const dy = pb.height ? pb.bottom + 4 - top : 0;
-        if (dy > 0) { top += dy; buddy.style.top = `${c.y + dy}px`; }
-    }
+    const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
     note.style.left = `${left}px`;
     note.style.top = `${top}px`;
     note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
     note.classList.toggle('below', below);
 }
-// Tips fade away rather than blink off. The buddy's board-wide tips also leave on
-// their own after a few seconds; tips pointing at something stay until you aim.
-const BUDDY_TIP_MS = 4000, FADE_MS = 300;
+// Tips fade away rather than blink off.
+const FADE_MS = 300;
 let noteTimer = 0, fadeTimer = 0;
-function showNote(text, stay = false) {
+// The buddy's tips are onboarding, so they're a short moment you acknowledge: the board
+// dims behind him, taps can't reach it, and a "Got it" button (live after a beat, so a tap
+// already on its way doesn't skip him) closes it. Tips that point at a thing stay light:
+// they close by themselves when you start aiming.
+const shade = $('tipshade');
+let buddyTalking = false;
+const ACK_DELAY_MS = 900;
+function showNote(text) {
     clearTimeout(noteTimer); clearTimeout(fadeTimer);
     note.textContent = text;
     note.hidden = false;
     note.classList.remove('fading'); buddy.classList.remove('fading');
     noteShown = true;
+    buddyTalking = !!noteTargetPoint()?.buddy;
+    note.classList.toggle('ack', buddyTalking);
+    if (buddyTalking) {
+        const ok = document.createElement('button');
+        ok.type = 'button';
+        ok.className = 'ack-btn';
+        ok.textContent = 'Got it';
+        ok.disabled = true;
+        ok.addEventListener('click', () => { hideNote(); canvas.focus({ preventScroll: true }); });
+        note.appendChild(ok);
+        shade.hidden = false;
+        shade.classList.remove('fading');
+        noteTimer = setTimeout(() => { ok.disabled = false; ok.focus({ preventScroll: true }); }, ACK_DELAY_MS);
+    }
     placeNote();
-    if (noteTargetPoint()?.buddy && !stay) noteTimer = setTimeout(hideNote, BUDDY_TIP_MS);
 }
 
 // ---------- tips ----------
@@ -753,13 +779,12 @@ function showNote(text, stay = false) {
 //  - things: the first time a windmill, jelly block, +1 ring... shows up, a callout points
 //    at it and stays until you aim;
 //  - the buddy's tour: game-wide basics (launching, nails, shots...), said by the block buddy
-//    when they first come up; these fade on their own.
-// Tips wait in a queue for a quiet moment (nothing else on screen, at the start of a turn)
-// unless they're about something happening right now.
+//    when they first come up; you acknowledge these with "Got it".
+// Tips wait in a queue for a quiet moment: the start of a turn with nothing else on screen.
 const tipQueue = [];
 function showTip(tip) {
     sim.s.noteTarget = tip.target ?? { kind: 'open' };
-    showNote(tip.text, tip.stay);
+    showNote(tip.text);
     if (tip.key) {
         writeTips({ ...readTips(), [tip.key]: true });
         sim.s.seen = { ...sim.s.seen, [tip.key]: true };
@@ -809,8 +834,9 @@ function hideNote() {
     clearTimeout(noteTimer);
     if (!noteShown) return;
     noteShown = false;
-    note.classList.add('fading'); buddy.classList.add('fading');
-    fadeTimer = setTimeout(() => { note.hidden = true; buddy.setAttribute('hidden', ''); }, FADE_MS);
+    buddyTalking = false;
+    note.classList.add('fading'); buddy.classList.add('fading'); shade.classList.add('fading');
+    fadeTimer = setTimeout(() => { note.hidden = true; buddy.setAttribute('hidden', ''); shade.hidden = true; }, FADE_MS);
 }
 
 // ---------- turn flow ----------
@@ -833,6 +859,15 @@ function gameOver() {
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
+    // Buddy has a kind word, whatever happened.
+    const cheers = [
+        "So close! You'll dig even deeper next time.",
+        'Nice run! Shake it off and go again.',
+        "Those blocks won't know what hit them next time.",
+        'Great digging! One more go?',
+        "Every run teaches you something. You've got this!",
+    ];
+    $('over-say').textContent = isNew ? 'New best! I knew you had it in you.' : cheers[Math.floor(Math.random() * cheers.length)];
     showScreen('over');
 }
 
@@ -847,7 +882,10 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
+// The buddy's tour is still under way (a new player): keep the top of the board clear for him.
+const tourPending = () => { const seen = readTips(); return !(seen.aim && seen.hits && seen.nails && seen.shots); };
 function startZone() {
+    sim.s.roomForBuddy = tourPending();
     sim.genZone();
     zoneOffset = -H;
     descendT = 0;
@@ -1150,7 +1188,7 @@ function play() {
     showScreen(null);
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
-        tourTip('aim', 'Drag anywhere to aim, then let go to fire!', { now: true, stay: true, first: true });
+        tourTip('aim', "Hi! I'm Buddy. To shoot a ball, drag anywhere to aim, then let go to fire!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const nails = { key: 'nails', text: 'Nailed blocks stay put until you knock their nails out. Blocks without nails can tumble.' };
         if (tipDue(nails) && !tipQueue.some((t) => t.key === 'nails')) tipQueue.unshift(nails);
@@ -1189,9 +1227,10 @@ document.addEventListener('keydown', (e) => {
         return;
     }
     if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
+    if ((e.key === 'p' || e.key === 'P') && !e.target.closest?.('input')) { showScreen('menu'); return; }   // pause always works
+    if (buddyTalking) return;    // the buddy is talking: "Got it" first
     // Let buttons and links (pause, theme, Games) handle their own keys.
     if (e.target.closest?.('button, a, input')) return;
-    if (e.key === 'p' || e.key === 'P') { showScreen('menu'); return; }
     keyFine = e.shiftKey;
     if (e.key in AIM_KEYS) {
         e.preventDefault();
