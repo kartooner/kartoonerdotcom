@@ -31,6 +31,18 @@ Tester feedback on controls (mouse and phone):
 - **Point-to-aim with a mouse:** drag-anywhere works on a phone, but with a mouse people expect to point where they want to shoot. On a mouse, the launcher follows the cursor and a click fires; touch keeps drag-anywhere.
 - **A way to cancel:** drag back to where you started and the guide fades (letting go there doesn't fire); Esc or a right-click also cancels on desktop without pausing.
 
+New props, each introduced with a pointing tip the first time it shows up:
+- **Vines (from depth 9):** short hanging vines (3–4 links) drawn as a green crayon line with a few leaves, hanging from the ceiling, a block or a mushroom. They sway when brushed; each link takes a few hits, and a broken vine drops its lower half. Sometimes a vine holds a block up like a chandelier: cut it and the block falls into everything below. At most one or two per zone, kept short so balls don't tangle.
+- **One-way flaps (from depth 12):** a small door hinged on a nail. Balls pass through one way and bounce back the other, which makes routes (get a ball in behind a wall where it rattles around). Built from the existing hinge.
+- **Bombs (from depth 15):** a block with a little fuse. Popping it bursts it and takes a chunk off its neighbours: a big payoff and a reason to aim at it first. Nothing new to learn.
+
+Pacing, so it never overwhelms:
+- A new kind of thing every few depths (9, 12, 15), never two at once.
+- At most two kinds of props in a zone; the newest one appears on its own for its first zone.
+- Each new thing is rare at first and only gets more common a few depths after it's introduced.
+
+Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
+
 Sound:
 - **Sound:** chiptune-style: a soft "boop" on hits, a bright pop when a block bursts, a chime for +1, a zone-clear jingle.
 - **Haptics:** light taps on hits and pops on phones that support it.
