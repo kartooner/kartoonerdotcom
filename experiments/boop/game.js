@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.16';
+const BUILD = '1.1.17';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -1178,7 +1178,7 @@ function play() {
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
-        tourTip('intro', "Hi! I'm Buddy. Drag anywhere to aim, let go to fire. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+        tourTip('intro', "Hi! I'm Buddy. Drag anywhere to aim, let go to fire a ball. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
