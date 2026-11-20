@@ -62,7 +62,7 @@ export const THING_TIPS = {
     windmill: 'Windmills spin when hit and swat the next ball.',
     mushroom: 'Mushrooms grow off walls and blocks. Their caps kick balls back harder.',
     vine: 'Vines snap after a few hits. Anything they hold drops.',
-    bomb: 'Hit a bomb to light it. It bursts and knocks a chunk off everything around it.',
+    bomb: 'Hit a bomb twice to light it. It bursts and knocks a chunk off everything around it.',
     ring: 'Fly a ball through a +1 ring for an extra shot.',
     resting: 'No nails: this block just rests. Knock out what holds it up and it tumbles.',
     jelly: 'Jelly: balls pass right through, slowed down. Each pass takes 1 off.',

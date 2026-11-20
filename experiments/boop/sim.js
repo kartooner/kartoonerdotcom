@@ -107,9 +107,10 @@ const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most
 // holds a small block at its end, like a chandelier: cut it and the block falls.
 // Bombs (from depth 15): a round cartoon bomb sitting in a gap between blocks. A ball hitting
 // it lights the fuse; a moment later it bursts, taking a chunk off every block within reach
-// (and snapping vines, and lighting other bombs). A big payoff, and a reason to aim at it first.
+// (and snapping vines, and lighting other bombs). It takes a couple of hits to light.
 const BOMB_FROM = 15;
 const BOMB_CHANCE = 0.33;           // after depth 15, the share of zones with a bomb
+const BOMB_HITS = 2;                // hits it takes to light the fuse
 const BOMB_R = 0.36;                // its radius, in cells
 const BOMB_FUSE = 60;               // steps from lit to burst (0.5s)
 const BOMB_CHAIN = 18;              // a bomb lit by another's burst goes off this many steps later
@@ -1559,7 +1560,12 @@ export class Sim {
         if (b.t === 'bomb') {
             this.events.push({ t: 'contact', ball: a.body, x: p.x, y: p.y, with: 'bomb', id: b.id });
             const pr = s.props[b.id];
-            if (pr && ball) this.lightBomb(pr);
+            // It takes a couple of hits to light: the first gives it a jolt, the second lights it.
+            if (pr && ball && !pr.lit && this.cooled(a.body + ':bomb' + b.id)) {
+                pr.taps = (pr.taps ?? 0) + 1;
+                if (pr.taps >= BOMB_HITS) this.lightBomb(pr);
+                else this.events.push({ t: 'bombtap', id: pr.id, x: pr.x, y: pr.y });
+            }
             return;
         }
         if (b.t === 'vine') {

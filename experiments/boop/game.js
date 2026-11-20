@@ -15,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-5';
+const BUILD = '1.2.1-6';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -554,7 +554,15 @@ function syncView(frameDt) {
                 const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - pr.lit / 60);
                 v.group.scale.set(k, k, 1);
                 if (Math.random() < 0.25) crumbs.spray([[pr.x + FUSE_END[0], pr.y + FUSE_END[1] + zoneOffset]], [0xf4a640, 0xffe08a]);
+            } else if (v.bomb.tapT != null && v.bomb.tapT < 0.45) {
+                // Just tapped: it jolts and the spark flares, then settles.
+                animating = true;
+                v.bomb.tapT += frameDt;
+                const t = v.bomb.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
+                v.group.scale.set(1 + w, 1 - w, 1);
+                v.bomb.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
             } else {
+                v.group.scale.set(1, 1, 1);
                 v.bomb.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
             }
         }
@@ -676,6 +684,10 @@ function consumeEvents() {
         } else if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
+        } else if (e.t === 'bombtap') {
+            // First hit on a bomb: a jolt and a flare of the spark, so you know it counted.
+            const v = propViews.get(e.id);
+            if (v?.bomb) v.bomb.tapT = 0;
         } else if (e.t === 'jolt') {
             const v = blockViews.get(e.id);
             if (v) { v.wobbleT = 0; v.wobbleDir = e.dir; }
@@ -701,6 +713,7 @@ function playSound(e) {
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();
     else if (e.t === 'bomblit') audio.fizz();
+    else if (e.t === 'bombtap') audio.tink();
     else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
 }
 
