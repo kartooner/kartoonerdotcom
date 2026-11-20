@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-8';
+const BUILD = '1.2.2-9';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1556,17 +1556,23 @@ function showNewsLine() {
     const link = $('btn-news');
     link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>New in ${WHATS_NEW[0].version}` : "What's new";
     link.classList.toggle('fresh', fresh);
-    // Where there's room (tablets, desktop), Boop says it too, in place of the tagline a
-    // returning player already knows (a saved run's line stays).
+    // Where there's room (tablets, desktop), Boop says it too.
     const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;
     $('menu-say-text').textContent = WHATS_NEW[0].line;
     $('menu-say').hidden = !bubble;
-    $('menu-tagline').hidden = bubble && !runStarted;
 }
 $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><ul class="meet">${r.items.map((it) =>
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
-if (!menu.hidden) showNewsLine();
+if (!menu.hidden) { showNewsLine(); menuTagline(); }
 
+// The one line under the logo. New players: what the game is. Returning players already
+// know that: their best depth. Mid-run: where you are.
+function menuTagline() {
+    const best = readBest();
+    $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
+        : best > 0 ? `Best depth: ${best}` : TAGLINE;
+    $('menu-tagline').classList.toggle('state', runStarted);
+}
 const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden;
 function showScreen(which, moveFocus = true) {
     if (which) {                          // stop any aim in progress
@@ -1582,13 +1588,7 @@ function showScreen(which, moveFocus = true) {
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
-        const best = readBest();
-        // Mid-run the tagline gives way to where you are; the small line is only for Best.
-        $('menu-tagline').textContent = !runStarted ? TAGLINE
-            : fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`;
-        $('menu-tagline').classList.toggle('state', runStarted);
-        $('menu-best').hidden = runStarted || best === 0;
-        $('menu-best').textContent = `Best depth: ${best}`;
+        menuTagline();
         $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-new').hidden = !runStarted;
         $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
