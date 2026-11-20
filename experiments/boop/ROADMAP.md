@@ -76,6 +76,7 @@ Sound (moved up from v1.2.1), chill and never annoying:
 
 - The start screen's "Sound is off · Turn on" line is gone: the speaker beside Pause does it, and How to play says so.
 - Start screen footer is one quiet line: version · What's new · Feedback. The credit ("Boop! is made by Erik Sagen") moved to the end of How to play.
+- A phone turned on its side pauses the game and shows "Boop plays best upright. Turn your phone to keep going." (Safari's bars leave too little height to play, and web pages can't lock rotation.) Turning back finds the pause screen. Tablets and desktops still play in landscape.
 
 ## Later
 - **Haptics:** web pages can't vibrate on iPhone, so haptics wait for a possible App Store / Play Store release.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.2-7">
+<html lang="en" data-build="1.2.2-8">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -284,6 +284,16 @@
             padding: 24px; text-align: center;
             background: var(--paper, #f1e8d2); color: var(--ink);
         }
+        #rotate {
+            position: fixed; inset: 0; z-index: 45;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+            padding: 24px; text-align: center;
+            background: var(--paper, #f1e8d2); color: var(--ink);
+        }
+        #rotate .rotate-buddy { width: 56px; height: 61px; }
+        #rotate p { margin: 0; font-size: 1rem; line-height: 1.5; }
+        /* A narrow board leaves little room for the links under it. */
+        body.narrow-board #back, body.narrow-board #theme-toggle { font-size: 0.75rem; }
         #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
         #updating .btn { width: 100%; max-width: 280px; }
         #updating .error-detail { font-size: 0.75rem; color: var(--ink-soft); word-break: break-word; }
@@ -761,33 +771,39 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.2-7",
-                "./zones.js": "./zones.js?v=1.2.2-7",
-                "./blockshader.js": "./blockshader.js?v=1.2.2-7",
-                "./sketch.js": "./sketch.js?v=1.2.2-7",
-                "./balls.js": "./balls.js?v=1.2.2-7",
-                "./labels.js": "./labels.js?v=1.2.2-7",
-                "./audio.js": "./audio.js?v=1.2.2-7",
-                "./theme.js": "./theme.js?v=1.2.2-7",
-                "./crumbs.js": "./crumbs.js?v=1.2.2-7",
-                "./buddy.js": "./buddy.js?v=1.2.2-7"
+                "./sim.js": "./sim.js?v=1.2.2-8",
+                "./zones.js": "./zones.js?v=1.2.2-8",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-8",
+                "./sketch.js": "./sketch.js?v=1.2.2-8",
+                "./balls.js": "./balls.js?v=1.2.2-8",
+                "./labels.js": "./labels.js?v=1.2.2-8",
+                "./audio.js": "./audio.js?v=1.2.2-8",
+                "./theme.js": "./theme.js?v=1.2.2-8",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-8",
+                "./buddy.js": "./buddy.js?v=1.2.2-8"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./sim.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./zones.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./balls.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./labels.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./audio.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./theme.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.2-7">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-7">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-8">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-8">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
+    <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
+         and a web page can't lock rotation, so the game pauses and asks nicely. -->
+    <div id="rotate" hidden>
+        <svg class="mascot buddy-face rotate-buddy" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
+        <p><b>Boop plays best upright.</b><br>Turn your phone to keep going.</p>
+    </div>
     <div id="updating" hidden>
         <p id="updating-text"><b>Boop is updating.</b> A new version is on its way. Give it a minute, then reload.</p>
         <p id="updating-error" class="error-detail" hidden></p>
@@ -822,6 +838,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.2-7"></script>
+    <script type="module" src="./game.js?v=1.2.2-8"></script>
 </body>
 </html>

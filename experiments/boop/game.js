@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-7';
+const BUILD = '1.2.2-8';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -103,8 +103,19 @@ function fitCamera() {
 let refitTimers = [];
 function refit() {
     fitCamera();
+    checkSideways();
     refitTimers.forEach(clearTimeout);
-    refitTimers = [120, 350, 800].map((ms) => setTimeout(fitCamera, ms));
+    refitTimers = [120, 350, 800].map((ms) => setTimeout(() => { fitCamera(); checkSideways(); }, ms));
+}
+// A phone turned on its side: too short to play. Pause (so turning back finds Resume) and
+// show the "upright" panel. Tablets and desktops play fine in landscape.
+const touchOnly = window.matchMedia('(pointer: coarse)');
+function phoneSideways() { return touchOnly.matches && window.innerWidth > window.innerHeight && window.innerHeight < 500; }
+function checkSideways() {
+    const side = phoneSideways();
+    const panel = document.getElementById('rotate');
+    if (side && panel.hidden && document.body.classList.contains('playing')) showScreen('menu', false);
+    panel.hidden = !side;
 }
 function resetZoom() {
     const meta = document.querySelector('meta[name="viewport"]');
@@ -1711,3 +1722,4 @@ window.__boop = {
         return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
     },
 };
+checkSideways();   // in case the page opens with the phone already on its side
