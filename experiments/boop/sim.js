@@ -595,12 +595,15 @@ export class Sim {
         // below: two cells for the vine and, for a chandelier, two more for its little block.
         const vineSpots = [];
         for (let i = 0, tries = 0; i < vines && tries < 60; tries++) {
-            const c = Math.floor(this.rand() * W), r = 1 + Math.floor(this.rand() * (ROWS - 7));
+            // Vines hang in the middle and lower part of the zone, out of the way of the first
+            // shots: the block sits in rows 3–6 (rows 3–5 for a chandelier, which needs more room).
+            const c = Math.floor(this.rand() * W);
+            const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
+            const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
             const shapes = [[[c, r], [c + 1, r]], [[c - 1, r], [c, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]]];
             const cells = shapes[Math.floor(this.rand() * shapes.length)];
-            // A chandelier's block is two wide, centred under the vine: keep three cells clear for it.
-            const chand = c > 0 && c < W - 1 && this.rand() < chandelierChance;
-            // ...plus the row below it, so a cut chandelier has room to pick up speed before it lands.
+            // Room below: two cells for the vine and, for a chandelier, three across for its
+            // two-wide block (centred under the vine) plus a clear row so it lands with a thump.
             const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c - 1, r + 3], [c, r + 3], [c + 1, r + 3]] : [];
             const drop = chand ? [[c - 1, r + 4], [c, r + 4], [c + 1, r + 4]] : [];
             if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
