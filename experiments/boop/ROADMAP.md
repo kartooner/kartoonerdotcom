@@ -36,10 +36,11 @@ New props, each introduced with a pointing tip the first time it shows up:
 - **One-way flaps (from depth 12):** a small door hinged on a nail. Balls pass through one way and bounce back the other, which makes routes (get a ball in behind a wall where it rattles around). Built from the existing hinge.
 - **Bombs (from depth 15):** a block with a little fuse. Popping it bursts it and takes a chunk off its neighbours: a big payoff and a reason to aim at it first. Nothing new to learn.
 
-Pacing, so it never overwhelms:
-- A new kind of thing every few depths (9, 12, 15), never two at once.
-- At most two kinds of props in a zone; the newest one appears on its own for its first zone.
-- Each new thing is rare at first and only gets more common a few depths after it's introduced.
+Pacing, so it never overwhelms. Every new thing follows the same arc (the Nintendo way: show it, teach it, then use it freely once it's familiar):
+1. **Show:** it first appears on its own, somewhere safe and easy to hit, with a pointing tip that says what it does. Nothing else new in that zone.
+2. **Teach:** for the next few zones it keeps appearing, alone or with one familiar thing, so playing with it teaches how it behaves (a vine holding a block, a flap guarding a pocket, a bomb next to a tough block).
+3. **Familiar:** after that it's a known thing and shows up more often, mixed in with everything else, sometimes in combinations that ask a little more of you.
+- Never overcrowded: a new kind of thing only every few depths (9, 12, 15), never two at once, and at most two kinds of props in a zone.
 
 Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
