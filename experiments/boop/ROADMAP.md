@@ -20,7 +20,7 @@
 ## v1.1.1 (hotfixes)
 - iPhone rotation fixed; a phone on its side gets the side-by-side layout
 - Steady 60 or steady 30 frame rate; fewer redraws while idle; smoother aim guide; Low Power Mode friendly
-- Buddy introduces himself; his tips dim the board and wait for "Got it" (no tapping through), only at the start of a turn; early zones leave room for him
+- Buddy introduces himself; his whole tour is two tips (how to play, then nails and shots). They dim the board and wait for "Got it" (no tapping through), only at the start of a turn. Anything that explains itself on screen gets no tip
 - Buddy cheers you on at game over
 - Speech bubble outlines "boil" slightly, like a hand-drawn cartoon
 - Tap targets at least 44pt (Got it, pause, links)

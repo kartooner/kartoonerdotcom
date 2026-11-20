@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.15';
+const BUILD = '1.1.16';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -681,7 +681,7 @@ const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: W / 2, y: sim.s.roomForBuddy ? -4.25 : -3.9, r: 0, buddy: true };   // the buddy, centred, below the pause and launcher
+    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // (placeNote lays Buddy out under his bubble)   // the buddy, centred, below the pause and launcher
     if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -874,10 +874,7 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
-// The buddy's tour is still under way (a new player): keep the top of the board clear for him.
-const tourPending = () => { const seen = readTips(); return !(seen.intro && seen.basics); };
 function startZone() {
-    sim.s.roomForBuddy = tourPending();
     sim.genZone();
     zoneOffset = -H;
     descendT = 0;
