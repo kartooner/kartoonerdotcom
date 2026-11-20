@@ -167,9 +167,10 @@ void main() {
 
 // cells: block-local cell centres (unscaled). Returns a mesh whose material
 // uniforms the caller updates as the block wears down.
-export function makeBlockMesh(cells, jello, seed) {
+// corner: optional rounding override (0.5 on a single cell draws a circle, e.g. a bomb).
+export function makeBlockMesh(cells, jello, seed, corner) {
     const has = (x, y) => cells.some(([cx, cy]) => Math.abs(cx - x) < 0.01 && Math.abs(cy - y) < 0.01);
-    const r = jello ? JELLO_CORNER : CORNER;
+    const r = corner ?? (jello ? JELLO_CORNER : CORNER);
     // Each cell box pulls in by the corner radius on open sides and reaches into
     // neighbours on joined sides; rounding then adds the radius back on the outside.
     const boxes = cells.map(([x, y]) => new THREE.Vector4(

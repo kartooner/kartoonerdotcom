@@ -15,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-4';
+const BUILD = '1.2.1-5';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -386,7 +386,13 @@ function buildPropView(pr) {
         // the right, darker crayon shading down the left, a small cap, a thick grey fuse that
         // curls right, and an orange spark at its tip. Body colours follow light/dark (bombLook).
         const look = bombLook();
-        const body = makeSketch({ kind: SHAPE.CIRCLE, size: [0.37], edge: 0.05, wob: 0.55, fill: look.body, seed: pr.id, margin: 0.1 });
+        // The body is drawn by the block shader (one cell rounded into a circle), so its rough
+        // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
+        const body = makeBlockMesh([[0, 0]], false, (pr.id * 7.31) % 50, 0.5);
+        const bu = body.material.uniforms;
+        bu.uK.value = 0.74; bu.uNeutral.value = 1;
+        bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
+        body.renderOrder = 1;                // over the fuse's base, under the shine and shading
         const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, pr.id), shadeMat);
         const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, pr.id + 2), shadeMat);
         shade.position.z = shade2.position.z = 0.015;
@@ -1451,6 +1457,7 @@ function applyTheme(name) {
     for (const v of propViews.values()) {
         if (!v.bomb) continue;
         v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
+        v.bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
         v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
     }
     ballMat.color.setHex(theme.ball);
