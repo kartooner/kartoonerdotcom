@@ -45,15 +45,21 @@ Pacing, so it never overwhelms. Every new thing follows the same arc (the Ninten
 Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, magnets.
 
 ## v1.2.1
-Sound:
-- **Sound:** chiptune-style: a soft "boop" on hits, a bright pop when a block bursts, a chime for +1, a zone-clear jingle.
-- **Haptics:** light taps on hits and pops on phones that support it.
+Sound, chill and never annoying:
+- **Feel:** soft, warm chiptune: rounded tones (not buzzy square waves), quiet, short. Generated in the browser, no sound files.
+- **Always in key:** every note comes from one gentle five-note scale, so overlapping sounds harmonise.
+- **Combo phrases (in the spirit of Wind Waker's sword combos):** each hit in a shot plays the next note of a short phrase, and popping a block lands the phrase's closing note. Our own little phrases, no borrowed melodies. Resets every shot.
+- **Never a wall of noise:** only a few sounds at once, hits on the same block a split second apart merge, a soft limiter, low volume. Silent while paused or when the tab is hidden.
+- **What makes a sound:** block hit (soft "boop", next note of the phrase), block pop (brighter pluck + a tiny crayon-scratch puff), nail pops out ("tink"), +1 ring (rising chime), jelly pass (squishy wobble), mushroom ("boing"), zone clear (short jingle), game over (gentle three notes down), launch (soft "fwip"). Walls, grey blocks, windmills and buttons stay silent.
 - **Off by default.** People play in quiet places, and browsers block sound until a tap anyway.
-- **Sound toggle next to Pause:** a speaker icon in the board's top-left corner beside the pause button, with a slash while sound is off. 44pt, one tap from anywhere in the game, remembered between visits. The tap that turns it on also starts the audio (iPhones require a tap first). Haptics follow the same toggle.
+- **Sound toggle next to Pause:** a speaker icon in the board's top-left corner beside the pause button, with a slash while sound is off. 44pt, one tap from anywhere in the game, remembered between visits. The tap that turns it on also starts the audio (iPhones require a tap first).
 - **Letting people know, without nagging:**
   - A quiet line under Play on the start screen, "Sound is off · Turn on", in the same style as Send feedback. Gone once you've chosen either way.
   - The first time you pop a block, the muted speaker gives one small wiggle: a hint that sound exists for moments like this. Once, no message.
   - Not one of Boop's tips: his two are for how to play.
+
+## Later
+- **Haptics:** web pages can't vibrate on iPhone, so haptics wait for a possible App Store / Play Store release.
 
 ## Saving (first pass, in v1)
 - The run is saved in the browser's local storage at the start of every turn: the physics world snapshot plus the game state. On return the start screen offers Continue.
