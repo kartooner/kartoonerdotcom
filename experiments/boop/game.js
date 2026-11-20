@@ -2,9 +2,10 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
-import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial } from './sketch.js';
+import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL, BOMB } from './blockshader.js';
+import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
+import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
 import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
@@ -14,7 +15,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.19';
+const BUILD = '1.2.0-16';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -115,9 +116,24 @@ fitCamera();
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
+unitSquare.userData.keep = unitCircle.userData.keep = true;   // shared: never freed
+
+// Take something off the board for good: out of the scene, and its GPU geometry, materials and
+// textures freed (anything marked keep is shared and stays). Without this, every block, ring,
+// prop and ball left a little GPU memory behind, which added up over a long run.
+function discard(obj) {
+    obj.parent?.remove(obj);
+    forgetSketch(obj);
+    obj.traverse((o) => {
+        if (o.geometry && !o.geometry.userData.keep) o.geometry.dispose();
+        const m = o.material;
+        if (m && !m.userData.keep) { m.map?.dispose(); m.dispose(); }
+    });
+}
 const lineMat = mat(0);         // marks on the field
 const outlineMat = mat(0);      // edges on blocks, props and balls
 const ballMat = mat(0);
+outlineMat.userData.keep = ballMat.userData.keep = lineMat.userData.keep = true;
 const fieldMat = makeFieldMaterial(H);   // field colour plus faint crayon hatching low down
 
 const fieldMesh = new THREE.Mesh(unitSquare, fieldMat);
@@ -162,6 +178,7 @@ let sim;
 const blockViews = new Map();   // id → view
 const ballViews = new Map();    // body handle → { group, inner, ... }
 const pickupViews = new Map();  // id → group
+const booms = [];               // bomb bursts on screen: an expanding ring each
 const propViews = new Map();    // id → { group, rotor?, body? }
 const fadingProps = [];
 const floaters = [];            // "+1" labels drifting up
@@ -188,8 +205,24 @@ function buildBlockView(b) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
+    let fuse = null;
+    if (b.bomb) {
+        // A bomb: a short crayon fuse out of its top with a spark at the end.
+        fuse = new THREE.Group();
+        const cord = makeSketch({ kind: SHAPE.BOX, size: [0.05, 0.22], round: 0.04, edge: 0.04, wob: 0.4, fill: 0x9a7a55, seed: b.id + 3, margin: 0.08 });
+        cord.rotation.z = -0.45; cord.position.set(0.09, 0.17, 0);
+        const spark = makeSketch({ kind: SHAPE.CIRCLE, size: [0.12], edge: 0.035, wob: 0.6, fill: 0xf4a640, seed: b.id + 5, margin: 0.08 });
+        spark.position.set(0.19, 0.38, 0.01);
+        fuse.add(cord, spark);
+        // On the top edge of the block, above the number's column where it can.
+        const tops = b.cells.filter(([, y]) => y === Math.max(...b.cells.map(([, cy]) => cy)));
+        const top = tops.find(([x]) => x === best[0]) ?? tops[0];
+        fuse.userData = { cell: top, spark };
+        fuse.renderOrder = 2;
+        group.add(fuse);
+    }
     scene.add(group);
-    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, fuse, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -223,20 +256,21 @@ function updateNails(v, b, frameDt) {
         v.group.updateMatrixWorld();
         const w = m.getWorldPosition(new THREE.Vector3());
         crumbs.spray([[w.x, w.y]], [0xb7b0a6, theme.edge, NAIL]);
-        v.group.remove(m); forgetSketch(m);
+        discard(m);
         v.nails.delete(id);
+        delete v.nailWob[id];      // its wobble timer would otherwise stay frozen and keep the board redrawing
     }
 }
 
 function updateBlockView(v, b, frameDt) {
     const u = v.mesh.material.uniforms;
     if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
-        || Object.values(v.nailWob).some((t) => t < 0.5) || v.hp !== b.hp) animating = true;
+        || Object.values(v.nailWob).some((t) => t < 0.5) || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
     updateNails(v, b, frameDt);
     if (v.hp !== b.hp && !b.neutral) {
         if (v.hp !== -1) v.punch = 1;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : tierFor(b.hp / (sim.s.tierScale || 1));
+        const look = b.jello ? JELLO : b.bomb ? BOMB : tierFor(b.hp / (sim.s.tierScale || 1));
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -246,6 +280,12 @@ function updateBlockView(v, b, frameDt) {
     const [lx, ly] = v.label.userData.cell;
     v.label.position.set(lx * k, ly * k, 0.2);
     v.label.scale.setScalar(Math.max(0.62, k * 0.92) * (v.big ? 1.35 : 1));   // big blocks get bigger numbers
+    if (v.fuse) {
+        // The fuse sits on top of the number's cell; its spark flickers whenever the board is drawn.
+        const [fx, fy] = v.fuse.userData.cell;
+        v.fuse.position.set(fx * k, (fy + 0.5) * k, 0.12);
+        v.fuse.userData.spark.scale.setScalar(1 + 0.18 * Math.sin(performance.now() / 45));
+    }
     v.punch = Math.max(0, v.punch - frameDt * (v.jello ? 3 : 8));
     v.wobbleT = (v.wobbleT ?? Infinity) + frameDt;
     if (v.jello) {
@@ -299,9 +339,32 @@ function buildPickupView(pk) {
     return group;
 }
 
+// One link of a vine: a short green crayon stem with a leaf, drawn in the link's own space.
+function buildVineLink(parent, seed, len) {
+    const g = new THREE.Group();
+    const stem = makeSketch({ kind: SHAPE.BOX, size: [0.09, len / 2 + 0.02], round: 0.05, edge: 0.05, wob: 0.4,
+        fill: COLORS.vine, seed, margin: 0.1 });
+    const leaf = makeSketch({ kind: SHAPE.CAP, size: [0.2, 0.14], edge: 0.05, wob: 0.45,
+        fill: COLORS.leaf, seed: seed + 5, margin: 0.1 });
+    const side = seed % 2 ? 1 : -1;
+    leaf.position.set(0.14 * side, 0.03, 0.02);
+    leaf.rotation.z = -side * 1.15;
+    leaf.renderOrder = 2;
+    g.add(stem, leaf);
+    parent.add(g);
+    return g;
+}
+
 function buildPropView(pr) {
     const group = new THREE.Group();
     const v = { group };
+    if (pr.kind === 'vine') {
+        v.links = new Map();       // link body handle → its drawing (links and fallen bits alike)
+        v.vine = true;
+        scene.add(group);
+        propViews.set(pr.id, v);
+        return v;
+    }
     if (pr.kind === 'windmill') {
         const rotor = new THREE.Group();
         for (const rot of [0, Math.PI / 2]) {
@@ -336,6 +399,27 @@ function buildPropView(pr) {
     return v;
 }
 
+function syncVine(v, pr) {
+    const live = new Set();
+    const draw = (l, fade) => {
+        live.add(l.body);
+        let g = v.links.get(l.body);
+        if (!g) { g = buildVineLink(v.group, pr.id * 7 + l.lid, pr.len); v.links.set(l.body, g); }
+        const body = sim.world.getRigidBody(l.body);
+        const p = body.translation();
+        // Keep drawing only while a link visibly moves (a vine tied to a nailed block can
+        // carry a tiny leftover velocity while the world is paused for aiming).
+        const y = p.y + zoneOffset, a = body.rotation();
+        if (Math.abs(g.position.x - p.x) + Math.abs(g.position.y - y) + Math.abs(g.rotation.z - a) > 0.002) animating = true;
+        g.position.set(p.x, y, 0.04);
+        g.rotation.z = a;
+        if (fade != null && g.userData.fade !== fade) { animating = true; g.userData.fade = fade; g.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = fade; }); }
+    };
+    for (const l of pr.links) draw(l);
+    for (const d of pr.debris) draw(d, Math.min(1, 3 * (1 - d.t / VINE_DEBRIS_STEPS)));
+    for (const [h, g] of v.links) if (!live.has(h)) { discard(g); v.links.delete(h); }
+}
+
 function addFloater(text, x, y) {
     const m = makeLabel(text, theme.text, 'hand');
     m.scale.setScalar(0.62);
@@ -367,7 +451,7 @@ function dropIn() {
 function syncView(frameDt) {
     const s = sim.s;
     for (const [id, v] of blockViews) {
-        if (!s.blocks[id]) { scene.remove(v.group); forgetSketch(v.group); blockViews.delete(id); }
+        if (!s.blocks[id]) { discard(v.group); blockViews.delete(id); }
     }
     for (const id in s.blocks) {
         const b = s.blocks[id];
@@ -375,12 +459,12 @@ function syncView(frameDt) {
         updateBlockView(v, b, frameDt);
         const body = sim.world.getRigidBody(b.body);
         const p = body.translation();
-        v.group.position.set(p.x, p.y + zoneOffset + (b.loose ? dropIn() : 0), b.loose ? 0.05 : 0);
+        v.group.position.set(p.x, p.y + zoneOffset + (b.loose && !b.hung ? dropIn() : 0), b.loose ? 0.05 : 0);
         v.group.rotation.z = body.rotation();
     }
 
     for (const [id, g] of pickupViews) {
-        if (!s.pickups[id]) { scene.remove(g); forgetSketch(g); pickupViews.delete(id); }
+        if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
     for (const id in s.pickups) {
         const pk = s.pickups[id];
@@ -393,31 +477,36 @@ function syncView(frameDt) {
         propViews.delete(id);
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
-        else { scene.remove(v.group); forgetSketch(v.group); }
+        else discard(v.group);
     }
     for (let i = fadingProps.length - 1; i >= 0; i--) {
         const f = fadingProps[i];
         f.t += frameDt;
         const a = Math.max(0, 1 - f.t / 0.35);
         f.v.group.traverse((o) => { if (o.material?.uniforms?.uAlpha) o.material.uniforms.uAlpha.value = a; });
-        if (a <= 0) { scene.remove(f.v.group); forgetSketch(f.v.group); fadingProps.splice(i, 1); }
+        if (a <= 0) { discard(f.v.group); fadingProps.splice(i, 1); }
     }
     for (const id in s.props) {
         const pr = s.props[id];
         const v = propViews.get(pr.id) ?? buildPropView(pr);
-        v.group.position.y = pr.y + zoneOffset;
+        if (v.vine) { syncVine(v, pr); continue; }
+        if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
+        // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
+        // since the last frame, not its speed: while you aim the world is paused, and a speed
+        // frozen mid-spin would otherwise keep the board from ever idling.
         if (v.rotor) {
-            const rotor = sim.world.getRigidBody(pr.rotor);
-            v.rotor.rotation.z = rotor.rotation();
-            if (Math.abs(rotor.angvel()) > 0.05) animating = true;
+            const a = sim.world.getRigidBody(pr.rotor).rotation();
+            if (Math.abs(v.rotor.rotation.z - a) > 0.002) animating = true;
+            v.rotor.rotation.z = a;
         }
         if (v.body != null) {
             const body = sim.world.getRigidBody(v.body);
-            const p = body.translation();
-            v.group.position.set(p.x, p.y + zoneOffset, 0.05);
-            v.group.rotation.z = body.rotation();
+            const p = body.translation(), a = body.rotation(), y = p.y + zoneOffset;
+            if (Math.abs(v.group.position.x - p.x) + Math.abs(v.group.position.y - y) + Math.abs(v.group.rotation.z - a) > 0.002) animating = true;
+            v.group.position.set(p.x, y, 0.05);
+            v.group.rotation.z = a;
             v.falling = pr.falling > 0;
-            if (Math.abs(body.angvel()) > 0.05 || v.falling) animating = true;    // a mushroom still wobbling
+            if (v.falling) animating = true;
         }
     }
 
@@ -455,17 +544,25 @@ function syncView(frameDt) {
         const k = Math.max(0, 1 - f.t / 0.3);
         f.group.scale.setScalar(k);
         f.group.traverse((o) => { if (o.material) o.material.opacity = k; });
-        if (k <= 0) { scene.remove(f.group); fadingBalls.splice(i, 1); }
+        if (k <= 0) { discard(f.group); fadingBalls.splice(i, 1); }
     }
 
 
-    if (floaters.length || fadingBalls.length || fadingProps.length) animating = true;
+    for (let i = booms.length - 1; i >= 0; i--) {
+        const b = booms[i];
+        b.t += frameDt;
+        const k = Math.min(1, b.t / 0.4), ease = 1 - (1 - k) ** 3;
+        b.ring.scale.setScalar(0.3 + (b.r - 0.3) * ease);
+        b.ring.material.uniforms.uAlpha.value = 1 - k;
+        if (k >= 1) { discard(b.ring); booms.splice(i, 1); }
+    }
+    if (floaters.length || fadingBalls.length || fadingProps.length || booms.length) animating = true;
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
         f.t += frameDt;
         f.m.position.y += frameDt * 0.9;
         f.m.material.opacity = Math.max(0, 1 - f.t / 0.9);
-        if (f.t > 0.9) { scene.remove(f.m); f.m.material.map.dispose(); floaters.splice(i, 1); }
+        if (f.t > 0.9) { discard(f.m); floaters.splice(i, 1); }
     }
 
     // Only touch the page when a number actually changed (each change costs a layout).
@@ -485,13 +582,24 @@ function syncView(frameDt) {
 
 function consumeEvents() {
     for (const e of sim.events) {
+        playSound(e);
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
+        else if (e.t === 'vinesnap') crumbs.spray([[e.x, e.y], [e.x, e.y - 0.1]], [COLORS.vine, COLORS.leaf, theme.edge]);
         else if (e.t === 'nailhit') {
             const v = blockViews.get(e.id);
             if (v) v.nailWob[e.nail] = 0;
         } else if (e.t === 'stretch') {
             // Last few blocks: hits count double. The floater says so, every time.
             addFloater('Hits ×2', W / 2, -2.6);
+        } else if (e.t === 'boom') {
+            // A bomb: a crayon ring rushes out to its reach, and the board jolts.
+            const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.07, edge: 0, role: 'line', inkFill: true, wob: 0.9, seed: (e.x * 13 + e.y * 7) | 0, margin: 0.12 });
+            ring.position.set(e.x, e.y, 0.7);
+            ring.renderOrder = 5;
+            scene.add(ring);
+            booms.push({ ring, r: e.r, t: 0 });
+            crumbs.spray([[e.x, e.y], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y + 0.3]], [0xf4a640, 0x4a4350, theme.edge]);
+            shake = Math.min(0.2, shake + 0.14);
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
@@ -508,6 +616,56 @@ function consumeEvents() {
     }
     sim.events.length = 0;
 }
+
+// ---------- sound ----------
+// What makes a sound (see audio.js). Walls, grey blocks, windmills and buttons stay silent.
+const audio = makeAudio();
+let soundNudged = false;      // the muted speaker has wiggled its one hint
+function playSound(e) {
+    if (e.t === 'hit') audio.hit(e.id);
+    else if (e.t === 'vinehit') audio.hit('v' + e.id);
+    else if (e.t === 'pop' && e.popped) { audio.pop(); if (!audio.on) nudgeSound(); }
+    else if (e.t === 'nailpop') audio.tink();
+    else if (e.t === 'gain' && phase === 'play') audio.ring();
+    else if (e.t === 'jelly') audio.jelly();
+    else if (e.t === 'vinesnap') audio.snap();
+    else if (e.t === 'boom') audio.boom();
+    else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
+}
+
+// The speaker next to Pause. Off until turned on; the choice is remembered. A remembered "on"
+// waits for the first tap of the visit to start (browsers need a tap before sound).
+const SOUND_KEY = 'boop-sound';
+const soundBtn = $('btn-sound');
+function readSoundPick() { try { return localStorage.getItem(SOUND_KEY); } catch { return null; } }
+function setSound(on) {
+    audio.set(on);
+    audio.setActive(document.body.classList.contains('playing'));
+    try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
+    showSoundState();
+}
+function showSoundState() {
+    const on = audio.on || readSoundPick() === 'on';
+    soundBtn.setAttribute('aria-pressed', String(on));
+    soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
+    soundBtn.classList.toggle('off', !on);
+    $('sound-hint').hidden = readSoundPick() != null;
+}
+soundBtn.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
+$('btn-sound-on').addEventListener('click', () => setSound(true));
+if (readSoundPick() === 'on') {
+    const wake = () => { audio.set(true); audio.setActive(document.body.classList.contains('playing')); };
+    document.addEventListener('pointerdown', wake, { once: true });
+    document.addEventListener('keydown', wake, { once: true });
+}
+// The first pop with sound off, for someone who hasn't chosen either way: one small wiggle.
+function nudgeSound() {
+    if (soundNudged || readSoundPick() != null) return;
+    soundNudged = true;
+    soundBtn.classList.add('nudge');
+    setTimeout(() => soundBtn.classList.remove('nudge'), 900);
+}
+showSoundState();
 
 // ---------- aim guide ----------
 
@@ -622,23 +780,78 @@ function angleFromDrag(dx, dy) {
     return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
 }
 
+// Changed your mind? Drag back to where you started: the guide goes away and letting go
+// there doesn't fire. Move out again and you're aiming again.
+const CANCEL_PX = 16;
+let dragFar = 0;
+
+// With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
+// (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
+let mouseAim = false, mouseDown = false;
+function fromScreen(x, y) {
+    const r = renderer.domElement.getBoundingClientRect();
+    const v = new THREE.Vector3((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1), 0).unproject(camera);
+    return { x: v.x, y: v.y };
+}
+function angleToward(ev) {
+    const p = fromScreen(ev.clientX, ev.clientY);
+    let a = Math.atan2(p.y - LAUNCHER.y, p.x - LAUNCHER.x);
+    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // pointing above the launcher: nearest side
+    return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
+}
+function cancelAim() {
+    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0;
+    hideGuide();
+}
+
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Left and right arrows aim, Space fires, Escape pauses.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses.');
+canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase === 'aim') cancelAim(); });
+canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (ev.button !== 0) return;              // right-click is handled by contextmenu (cancel)
+        if (phase !== 'aim') return;
+        keyAim = false;
+        mouseDown = true;
+        mouseAim = true;
+        aimTarget = aimAngle = angleToward(ev);   // click without moving: fire where you point
+        hideNote();
+        return;
+    }
     canvas.setPointerCapture(ev.pointerId);
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
         aimCancel = true;                       // not aimed until the finger actually moves
         dragStart = { x: ev.clientX, y: ev.clientY };
+        dragFar = 0;
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
 });
-canvas.addEventListener('pointermove', (ev) => { if (aiming) updateAim(ev); });
-canvas.addEventListener('pointerup', () => {
+canvas.addEventListener('pointermove', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (phase !== 'aim' || paused() || buddyTalking) return;
+        if (!mouseAim) { keyAim = false; aimAngle = angleToward(ev); }
+        mouseAim = true;
+        aimTarget = angleToward(ev);
+        return;
+    }
+    if (aiming) updateAim(ev);
+});
+canvas.addEventListener('pointerup', (ev) => {
+    if (ev.pointerType === 'mouse') {
+        if (!mouseDown) return;
+        mouseDown = false;
+        if (phase !== 'aim' || !mouseAim) return;
+        const drawn = guideAngle ?? shownAngle();
+        hideGuide();
+        fire(drawn);
+        return;
+    }
     if (!aiming) return;
     aiming = false;
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
@@ -648,7 +861,10 @@ canvas.addEventListener('pointerup', () => {
 });
 
 function fire(angle) {
+    worldSettling = false;
+    mouseAim = false;
     sim.fire(angle);
+    audio.shot();
     runStarted = true;
     phase = 'play';
     hideNote();
@@ -658,6 +874,9 @@ canvas.addEventListener('pointercancel', () => { aiming = false; hideGuide(); })
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
     const dist = Math.hypot(dx, dy);
+    dragFar = Math.max(dragFar, dist);
+    // Back at the start after a real drag: cancelled (until you move out again).
+    if (!aimCancel && dragFar > CANCEL_PX * 2.5 && dist < CANCEL_PX) { aimCancel = true; hideGuide(); return; }
     if (aimCancel) {
         if (dist < AIM_START_PX) return;
         aimCancel = false;
@@ -693,6 +912,13 @@ function noteTargetPoint() {
     }
     if (t.kind === 'prop' && sim.s.props[t.id]) {
         const pr = sim.s.props[t.id];
+        if (pr.kind === 'vine') {
+            // The middle of the vine (or what's left of it).
+            const l = pr.links[Math.floor(pr.links.length / 2)];
+            if (!l) return null;
+            const p = sim.world.getRigidBody(l.body).translation();
+            return { x: p.x, y: p.y, r: 0.4 };
+        }
         if (pr.kind !== 'mushroom') return { x: pr.x, y: pr.y, r: 0.95 };
         // The cap's middle, out along the way the mushroom points.
         const body = sim.world.getRigidBody(pr.body), p = body.translation(), a = body.rotation();
@@ -814,13 +1040,15 @@ function queueZoneTips() {
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
     const prop = (k) => { const p = props.find((x) => x.kind === k); return p && { kind: 'prop', id: p.id }; };
     add('ring', pickups[0] && { kind: 'pickup', id: pickups[0].id });
-    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello));
-    add('resting', block((b) => b.loose));
+    add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose && !b.bomb));
+    add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
     add('grey', block((b) => b.neutral));
     add('cup', block((b) => b.cup));
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
+    add('vine', prop('vine'));
+    add('bomb', block((b) => b.bomb));
     tipQueue.unshift(...tips);
 }
 function hideNote() {
@@ -847,6 +1075,7 @@ function gameOver() {
     const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
     writeBest(best);
     clearSave();
+    audio.over();
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
     const isNew = d > before && before > 0;
@@ -874,16 +1103,35 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
+const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
+    if (runStarted) audio.clear();
     sim.genZone();
+    if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
     descendT = 0;
     phase = 'descend';
 }
 
+// Every few zones, as the next one slides in: tidy the physics bookkeeping, forget any sketch
+// material no longer on screen, and let the renderer drop its cached draw lists.
+function tidyUp() {
+    sim.tidy();
+    const live = new Set();
+    scene.traverse((o) => { if (o.material) live.add(o.material); });
+    for (let i = sketchMats.length - 1; i >= 0; i--) if (!live.has(sketchMats[i])) sketchMats.splice(i, 1);
+    renderer.renderLists.dispose();
+}
+
+// The turn is over when the last ball is gone. If shots are left you can aim straight
+// away: blocks still tumbling or swinging keep moving while you aim (worldSettling), and
+// the guide keeps up with them. Only the very last shot waits for the board to settle,
+// since a tumble could still clear the zone before the game-over check.
+let worldSettling = false;
 function endTurn() {
     if (sim.blockCount() === 0) { startZone(); return; }
     settleSteps = 0;
+    if (sim.s.supply > 0) { worldSettling = true; readyToAim(); return; }
     phase = 'settle';
 }
 
@@ -940,13 +1188,15 @@ function writeTips(seen) { try { localStorage.setItem(TIPS_KEY, JSON.stringify(s
 
 function restart(saved = null) {
     if (sim) sim.free();
-    for (const v of blockViews.values()) scene.remove(v.group);
-    for (const g of pickupViews.values()) scene.remove(g);
-    for (const v of propViews.values()) scene.remove(v.group);
-    for (const f of fadingProps) scene.remove(f.v.group);
+    for (const v of blockViews.values()) discard(v.group);
+    for (const g of pickupViews.values()) discard(g);
+    for (const v of propViews.values()) discard(v.group);
+    for (const f of fadingProps) discard(f.v.group);
+    for (const b of booms) discard(b.ring);
+    booms.length = 0;
     fadingProps.length = 0;
-    for (const v of ballViews.values()) scene.remove(v.group);
-    for (const f of fadingBalls) scene.remove(f.group);
+    for (const v of ballViews.values()) discard(v.group);
+    for (const f of fadingBalls) discard(f.group);
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
@@ -986,7 +1236,8 @@ function tick(frameDt) {
         }
         return;
     }
-    if (phase !== 'play' && phase !== 'settle') return;
+    const settlingWhileAiming = phase === 'aim' && worldSettling;
+    if (phase !== 'play' && phase !== 'settle' && !settlingWhileAiming) return;
 
     const s = sim.s;
     acc += frameDt;   // always real time: no fast-forward, so ball speed always looks the same
@@ -999,6 +1250,11 @@ function tick(frameDt) {
         if (phase === 'play' && sim.blockCount() === 0) { zoneCleared(); break; }
         if (phase === 'play' && sim.turnDone()) { endTurn(); break; }
         if (phase === 'settle' && (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS)) { readyToAim(); break; }
+        if (phase === 'aim' && worldSettling) {
+            if (sim.blockCount() === 0) { worldSettling = false; startZone(); break; }   // the last blocks tumbled out
+            guideAngle = null;      // the board moved: the guide needs working out again
+            if (sim.settled() || ++settleSteps > MAX_SETTLE_STEPS) { worldSettling = false; break; }
+        }
     }
     if (n >= 30) acc = 0;   // tab was in the background; don't try to catch up
     // How far we are toward the next step: draw balls that far between their last two positions.
@@ -1067,9 +1323,9 @@ function frame(now) {
         const dt = paused() && phase !== 'descend' ? 0 : frameDt;
         tick(dt);
         if (keyAim && phase === 'aim') keyboardAim(dt);
-        if ((aiming || keyAim) && phase === 'aim') {
+        if ((aiming || keyAim || mouseAim) && phase === 'aim') {
             easeAim(dt);
-            if (keyAim || !aimCancel) drawGuide(shownAngle());
+            if (keyAim || mouseAim || !aimCancel) drawGuide(shownAngle());
         }
         if (noteShown) placeNote();
         animating = false;          // set by syncView if anything on the board is still moving
@@ -1084,8 +1340,8 @@ function frame(now) {
     // shot and nothing on the board is moving: ten times a second. Anything moving, or your
     // finger on the board, and it's back to every frame. (Saves battery, mostly.)
     const still = sim && paused() && phase !== 'descend';
-    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !animating && shake === 0
-        && now - lastInput > 400 && !crumbs.active() && sim.settled();
+    const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !worldSettling && !animating && shake === 0
+        && now - lastInput > 400 && !crumbs.active();   // (while aiming the world only steps when worldSettling)
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
     if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
@@ -1152,6 +1408,7 @@ function showScreen(which, moveFocus = true) {
     over.hidden = which !== 'over';
     document.body.classList.toggle('howto-open', which === 'howto');
     document.body.classList.toggle('playing', !which);
+    audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
         const best = readBest();
@@ -1178,7 +1435,9 @@ function play() {
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
-        tourTip('intro', "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit takes 1 off. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+        tourTip('intro', finePointer
+            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!"
+            : "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
@@ -1211,6 +1470,7 @@ const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
+        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown)) { cancelAim(); return; }   // first, put an aim away
         if (!howto.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
@@ -1218,6 +1478,7 @@ document.addEventListener('keydown', (e) => {
     }
     if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
     if ((e.key === 'p' || e.key === 'P') && !e.target.closest?.('input')) { showScreen('menu'); return; }   // pause always works
+    if ((e.key === 'm' || e.key === 'M') && !e.target.closest?.('input')) { setSound(!audio.on); return; }      // M: sound on/off
     if (buddyTalking) return;    // the buddy is talking: "Got it" first
     // Let buttons and links (pause, theme, Games) handle their own keys.
     if (e.target.closest?.('button, a, input')) return;
@@ -1264,8 +1525,13 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get pixelRatio() { return renderer.getPixelRatio(); },
+    get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
+    // For checks: why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
+    get idleBlockers() { return { aiming, keyAim, worldSettling, animating, shake, crumbs: crumbs.active(), unsettled: !sim.settled() }; },
+    // For checks: GPU objects alive and things in the scene, to catch anything left behind.
+    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame, sketchMats: sketchMats.length }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { BALL_R, BALL_SPEED } from './sim.js';
 
 const unitCircle = new THREE.CircleGeometry(1, 32);
+unitCircle.userData.keep = true;   // shared by every ball
 
 // Balls squash and stretch on screen only. The physics ball stays a circle,
 // so bounces stay predictable and the aim guide stays exact.

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 
 const unitSquare = new THREE.PlaneGeometry(1, 1);
+unitSquare.userData.keep = true;   // shared by every label
 
 // style 'number' (block numbers): Manrope at 128px. style 'hand' (+1 rings and floaters):
 // the Cartridge Rough logo font at 256px, so it stays smooth and matches the drawn look.

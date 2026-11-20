@@ -17,6 +17,7 @@ export const TIERS = [
     { max: Infinity, fill: 0x9a5e57, pattern: 6, text: '#fffaf0' }, // brown, vertical stripes
 ];
 export const JELLO = { fill: 0x8fd6c4, text: '#2b2622' };
+export const BOMB = { fill: 0x4a4350, pattern: 0, text: '#fffaf0' };   // charcoal with dots, a light number
 export const NEUTRAL = { light: 0xcdc4b5, dark: 0x6e665c };
 export const tierFor = (hp) => TIERS.find((t) => hp <= t.max);
 
