@@ -14,7 +14,7 @@ import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page. If they differ, the browser has mixed a cached
 // page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.1.8';
+const BUILD = '1.1.9';
 if (document.documentElement.dataset.build !== BUILD) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
@@ -26,6 +26,7 @@ const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, st
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
 const fuseGrey = new THREE.Color();
+let hudKey = '';
 function buildBallView(handle) {
     const v = makeBallView(outlineMat, ballMat.clone());   // own fill colour: it greys on its own timer
     scene.add(v.group);
@@ -459,14 +460,19 @@ function syncView(frameDt) {
         if (f.t > 0.9) { scene.remove(f.m); f.m.material.map.dispose(); floaters.splice(i, 1); }
     }
 
-    hud.depth.textContent = s.depth;
-    hud.shots.textContent = s.supply;
-    hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+    // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
-    hud.par.textContent = `${used}/${s.par ?? '-'}`;
-    hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
-    const done = s.zoneHp0 ? 1 - sim.hpLeft() / s.zoneHp0 : 0;
-    hud.progress.style.transform = `scaleX(${Math.max(0, Math.min(1, done))})`;
+    const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
+    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}`;
+    if (key !== hudKey) {
+        hudKey = key;
+        hud.depth.textContent = s.depth;
+        hud.shots.textContent = s.supply;
+        hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+        hud.par.textContent = `${used}/${s.par ?? '-'}`;
+        hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
+        hud.progress.style.transform = `scaleX(${done})`;
+    }
 }
 
 function consumeEvents() {
@@ -512,12 +518,18 @@ let guideAngle = null;
 // On slower phones a guide can take a while to work out. If the last one was slow,
 // skip a frame before the next, so aiming stays responsive. The shot always fires
 // the angle the guide on screen was drawn for.
-let guideCost = 0, guideSkip = 0;
+let guideCost = 0;
 let lastContacts = [];
+let lastGuideAt = -Infinity;
 function drawGuide(angle) {
     if (angle === guideAngle) return;
-    if (guideSkip > 0) { guideSkip -= 1; return; }
-    const t0 = performance.now();
+    // Working out the path is the costliest thing in the game (it plays the shot ahead on a
+    // copy of the world). While the aim is moving, do it at most ~30 times a second (less if
+    // it's slow on this device); once the aim stops, the next frame catches up exactly.
+    const now = performance.now();
+    if (now - lastGuideAt < Math.max(33, guideCost * 2.5)) return;
+    lastGuideAt = now;
+    const t0 = now;
     guideAngle = angle;
     const result = predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
@@ -563,7 +575,6 @@ function drawGuide(angle) {
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
     guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
-    guideSkip = guideCost > 9 ? 1 : 0;
 }
 
 function hideGuide() {
@@ -963,11 +974,11 @@ function tick(frameDt) {
 let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
 function watchFrameRate(rawDt) {
-    // Over each 60 frames, if half or more missed ~45fps, drop to the next resolution step.
+    // Over each 60 frames, if a quarter or more missed ~50fps, drop to the next resolution step.
     timedFrames += 1;
-    if (rawDt > 1 / 45) slowFrames += 1;
+    if (rawDt > 1 / 50) slowFrames += 1;
     if (timedFrames < 60) return;
-    if (slowFrames >= 30 && pixelStep < PIXEL_RATIOS.length - 1) {
+    if (slowFrames >= 15 && pixelStep < PIXEL_RATIOS.length - 1) {
         pixelStep += 1;
         renderer.setPixelRatio(PIXEL_RATIOS[pixelStep]);
         fitCamera();
@@ -975,6 +986,7 @@ function watchFrameRate(rawDt) {
     slowFrames = 0;
     timedFrames = 0;
 }
+let lastRender = -Infinity;
 function frame(now) {
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
@@ -997,7 +1009,10 @@ function frame(now) {
     // Short shake when a tumbling block lands hard.
     shake = Math.max(0, shake - frameDt * 0.6);
     camera.position.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0);
-    renderer.render(scene, camera);
+    // Behind the start, pause and game-over screens nothing moves (except a zone sliding in),
+    // so don't redraw the board every frame there: twice a second is plenty.
+    const still = sim && paused() && phase !== 'descend';
+    if (!still || now - lastRender > 500) { renderer.render(scene, camera); lastRender = now; }
     requestAnimationFrame(frame);
 }
 
