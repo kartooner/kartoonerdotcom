@@ -132,7 +132,7 @@
         #tipshade.fading { opacity: 0; }
         /* Buddy's bubble sits well inside the board, not edge to edge. */
         #note.ack { pointer-events: auto; max-width: min(250px, calc(var(--board-w, 100vw) - 64px)); }
-        /* "Got it": a filled button across the bubble, like Play on the start screen, at least
+        /* "Got it": an outlined button across the bubble (light, like How to play), at least
            44pt tall (Apple's minimum). It fades in
            after a beat instead of sitting greyed out, so it never looks disabled. */
         #note .ack-btn {
@@ -148,13 +148,13 @@
             font: inherit;
             font-size: 1rem;
             font-weight: 800;
-            color: var(--paper);
+            color: var(--ink);
             cursor: pointer;
             transition: opacity 0.25s ease-out;
         }
         #note .ack-btn::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
-            background: var(--ink); border: 2.5px solid var(--ink); border-radius: 10px;
+            border: 2.5px solid var(--ink); border-radius: 10px;
             filter: url(#sketchy);
             animation: boil 0.5s steps(1) infinite;
         }
