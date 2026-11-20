@@ -105,6 +105,13 @@ const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most
 // Vines (from depth 9): short chains hanging under a block. Each link takes a few hits;
 // a broken link drops everything below it (which fades once it lands). Sometimes a vine
 // holds a small block at its end, like a chandelier: cut it and the block falls.
+// Bombs (from depth 15): a block with a fuse. Popping it bursts it, taking a chunk off every
+// block within reach (and snapping vines). A big payoff, and a reason to aim at it first.
+const BOMB_FROM = 15;
+const BOMB_HP = 0.6;                // a bomb's number, as a share of a normal block's
+const BOMB_REACH = 1.9;             // cells from the bomb's centre to a neighbour's nearest cell centre
+const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
+const BOMB_KNOCK = 5;               // ...and anything loose gets shoved away this hard
 const VINE_FROM = 9;
 const VINE_LINKS = 3, VINE_LINK_LEN = 0.6, VINE_LINK_HP = 3;
 const VINE_SLACK = 1.12;            // a strung vine is this much longer than its gap, so it sags
@@ -380,6 +387,51 @@ export class Sim {
             this.events.push({ t: 'stretch' });
         }
         if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
+        this.wakeLoose();
+        if (popped && b.bomb) this.burst(b, p);
+    }
+
+    // A bomb popped at p. Bursts are queued, so a bomb setting off another goes off right
+    // after it rather than inside it.
+    burst(b, p) {
+        (this.bursts ??= []).push({ b, x: p.x, y: p.y });
+        if (this.bursting) return;
+        this.bursting = true;
+        while (this.bursts.length) {
+            const { b, x, y } = this.bursts.shift();
+            this.boom(b, x, y);
+        }
+        this.bursting = false;
+    }
+
+    boom(bomb, x, y) {
+        const { world, s } = this;
+        this.events.push({ t: 'boom', x, y, r: BOMB_REACH });
+        for (const id of Object.keys(s.blocks)) {
+            const b = s.blocks[id];
+            if (!b) continue;
+            const body = world.getRigidBody(b.body), t = body.translation(), a = body.rotation(), c = Math.cos(a), sn = Math.sin(a);
+            let near = Infinity;
+            for (const [cx, cy] of b.cells) {
+                const wx = t.x + (cx * c - cy * sn) * b.scale, wy = t.y + (cx * sn + cy * c) * b.scale;
+                near = Math.min(near, Math.hypot(wx - x, wy - y));
+            }
+            if (near > BOMB_REACH) continue;
+            if (body.isDynamic() && (b.loose || b.hanging)) {
+                const d = Math.hypot(t.x - x, t.y - y) || 1, m = body.mass();
+                body.applyImpulse({ x: (t.x - x) / d * BOMB_KNOCK * m, y: ((t.y - y) / d + 0.4) * BOMB_KNOCK * m }, true);
+            }
+            if (!b.neutral) this.damageBlock(b.id, Math.max(bomb.hp0, Math.round(b.hp0 * BOMB_SHARE)));
+        }
+        // Vines in reach snap.
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind !== 'vine') continue;
+            for (const l of [...pr.links]) {
+                const t = world.getRigidBody(l.body)?.translation();
+                if (t && Math.hypot(t.x - x, t.y - y) <= BOMB_REACH) this.hitVine(pr.id, l.lid, 99);
+            }
+        }
         this.wakeLoose();
     }
 
@@ -770,6 +822,28 @@ export class Sim {
             mushSpots.push(spot);
         }
 
+        // Bombs: small nailed blocks snug among others, so the burst has something to hit.
+        // Shown on its own at first (one bomb, depth 15), one a zone while it's new, then one or two.
+        const bombs = s.depth < BOMB_FROM ? 0 : s.depth <= BOMB_FROM + 3 ? 1 : (this.rand() < 0.45 ? 2 : 1);
+        if (bombs) {
+            const neighbours = (p) => {
+                const ids = new Set();
+                for (const [c, r] of p.cells) for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+                    const g = grid[r + dr]?.[c + dc];
+                    if (g > 0 && plan[g - 1] !== p && plan[g - 1].kind !== 'neutral') ids.add(g);
+                }
+                return ids.size;
+            };
+            let pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.vine && p.cells.length <= 3).map((p) => ({ p, n: neighbours(p) }))
+                .filter((o) => o.n >= 1).sort((a, b) => b.n - a.n || a.p.cells.length - b.p.cells.length);
+            if (!pool.length) pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.vine).map((p) => ({ p, n: 0 }));
+            for (let i = 0; i < bombs && pool.length; i++) {
+                // The first one goes where it'll do the most; a second is picked from the rest at random.
+                const pick = i === 0 ? pool.splice(Math.floor(this.rand() * Math.min(3, pool.length)), 1)[0] : pool.splice(Math.floor(this.rand() * pool.length), 1)[0];
+                pick.p.bomb = true;
+            }
+        }
+
         // Numbers. First the zone's total: what each block would get on its own, summed.
         // Then that total is shared out by size, so bigger blocks always hold the bigger
         // numbers and a lone square never ends up a slog to chip down.
@@ -799,7 +873,17 @@ export class Sim {
         for (const p of plan) {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
+            if (p.bomb) p.block.bomb = true;
             if (p.cup) p.block.cup = true;
+        }
+        // A bomb is a prize, not a wall: its number is kept on the low side, never more than a
+        // typical small block's in this zone.
+        const smallHp = plan.filter((p) => p.block && !p.bomb && p.cells.length <= 2 && !p.block.neutral).map((p) => p.block.hp0).sort((a, b) => a - b);
+        const bombCap = smallHp.length ? smallHp[Math.floor(smallHp.length / 2)] : Infinity;
+        for (const p of plan) {
+            if (!p.bomb || !p.block) continue;
+            p.block.hp = p.block.hp0 = Math.max(2, Math.min(bombCap, Math.round(p.block.hp * BOMB_HP)));
+            this.shapeBlock(p.block);
         }
         for (const v of vineSpots) {
             if (v.strung) {
