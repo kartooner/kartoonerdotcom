@@ -48,7 +48,12 @@ Not planned: seesaws, bumpers (same job as mushrooms), portals, moving blocks, m
 Sound:
 - **Sound:** chiptune-style: a soft "boop" on hits, a bright pop when a block bursts, a chime for +1, a zone-clear jingle.
 - **Haptics:** light taps on hits and pops on phones that support it.
-- **Mute:** a sound on/off toggle that's always within reach and remembered between visits. Haptics follow the same toggle or get their own.
+- **Off by default.** People play in quiet places, and browsers block sound until a tap anyway.
+- **Sound toggle next to Pause:** a speaker icon in the board's top-left corner beside the pause button, with a slash while sound is off. 44pt, one tap from anywhere in the game, remembered between visits. The tap that turns it on also starts the audio (iPhones require a tap first). Haptics follow the same toggle.
+- **Letting people know, without nagging:**
+  - A quiet line under Play on the start screen, "Sound is off · Turn on", in the same style as Send feedback. Gone once you've chosen either way.
+  - The first time you pop a block, the muted speaker gives one small wiggle: a hint that sound exists for moments like this. Once, no message.
+  - Not one of Boop's tips: his two are for how to play.
 
 ## Saving (first pass, in v1)
 - The run is saved in the browser's local storage at the start of every turn: the physics world snapshot plus the game state. On return the start screen offers Continue.
