@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.1-6">
+<html lang="en" data-build="1.2.2-9">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -122,8 +122,6 @@
         #btn-sound.nudge svg { animation: nudge 0.8s ease-in-out; }
         @keyframes nudge { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(11deg); } 60% { transform: rotate(-7deg); } 80% { transform: rotate(3deg); } }
         @media (prefers-reduced-motion: reduce) { #btn-sound.nudge svg { animation: none; } }
-        #menu .sound-hint { margin: 14px 0 0; font-size: 0.9rem; color: var(--ink-soft); }
-        #menu .sound-hint .link-btn { font-size: inherit; }
         #btn-pause svg { display: block; width: 20px; height: 20px; }
         #btn-pause:focus-visible, #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
         #stage canvas:focus { outline: none; }
@@ -280,6 +278,31 @@
             transform: rotate(-135deg);
         }
         [hidden] { display: none !important; }
+        #updating {
+            position: fixed; inset: 0; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+            padding: 24px; text-align: center;
+            background: var(--paper, #f1e8d2); color: var(--ink);
+        }
+        #rotate {
+            position: fixed; inset: 0; z-index: 45;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+            padding: 24px; text-align: center;
+            background: var(--paper, #f1e8d2); color: var(--ink);
+        }
+        #rotate .rotate-buddy { width: 56px; height: 61px; }
+        #rotate p { margin: 0; font-size: 1rem; line-height: 1.5; }
+        /* A narrow board leaves little room for the links under it. */
+        body.narrow-board #back, body.narrow-board #theme-toggle { font-size: 0.75rem; }
+        #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
+        #updating .btn { width: 100%; max-width: 280px; }
+        #updating .error-detail { font-size: 0.75rem; color: var(--ink-soft); word-break: break-word; }
+        #error-note {
+            position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40;
+            margin: 0; padding: 10px 12px; border-radius: 8px;
+            background: var(--ink); color: var(--paper, #f1e8d2);
+            font-size: 0.8rem; line-height: 1.4; word-break: break-word; cursor: pointer;
+        }
         #theme-toggle {
             position: fixed;
             z-index: 11;
@@ -346,8 +369,7 @@
         #menu .tagline { margin: 10px 0 32px; font-size: 1.0625rem; font-weight: 600; color: var(--ink-soft); text-wrap: balance; }
         /* Paused or saved: the tagline becomes the state, a step up in weight. */
         #menu .tagline.state { color: var(--ink); font-size: 1.25rem; font-weight: 700; }
-        #menu .best { margin: 0 0 20px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
-        #menu .feedback { margin-top: 20px; }
+        #menu .menu-links .feedback { margin: 0; }
         /* Game over: same centred layout as the start screen. */
         #over h1 { margin: 0; font-size: clamp(2rem, 9.5vw, 3rem); line-height: 1.05; white-space: nowrap; }
         /* Buddy's word after a run: a speech bubble above him. */
@@ -381,7 +403,7 @@
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); }
         #over .feedback { margin-top: 20px; }
-        #menu .version { margin: 12px 0 0; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+        #menu .version { font-weight: 600; }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
            behind the label, roughed up by the #sketchy SVG filter; the text stays crisp. */
@@ -425,16 +447,16 @@
             text-decoration: underline;
             cursor: pointer;
         }
-        #howto h2, #howto h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
-        #howto h2 { margin: 12px 0 12px; font-size: 2.25rem; }
+        #howto h2, #howto h3, #news h2, #news h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
+        #howto h2, #news h2 { margin: 12px 0 12px; font-size: 2.25rem; }
         #howto .intro { font-size: 1.125rem; line-height: 1.5; margin-bottom: 4px; }
-        #howto h3 { margin: 36px 0 12px; font-size: 1.375rem; }
-        #howto p, #howto li, #howto dd { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
-        #howto .note { color: var(--ink-soft); margin-top: 18px; }
+        #howto h3, #news h3 { margin: 36px 0 12px; font-size: 1.375rem; }
+        #howto p, #howto li, #howto dd, #news p, #news li { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.5; color: var(--ink); }
+        #howto .note, #news .note { color: var(--ink-soft); margin-top: 18px; }
         #howto .dot { color: var(--accent); font-weight: 800; }
         /* Hand-drawn frames (same SVG filter as the buttons) around pictures and panels. */
         .sketch-box { position: relative; isolation: isolate; }
-        .sketch-box::before, .pic::before, .mini-hud::before, .tags li::before {
+        .sketch-box::before, .pic::before, .mini-hud::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             border: 2px solid var(--ink); border-radius: 10px; filter: url(#sketchy); pointer-events: none;
         }
@@ -473,18 +495,47 @@
         .legend dt { font-weight: 800; font-size: 0.875rem; }
         .legend dd { margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-soft); }
         /* Ways to earn shots as little hand-drawn tags. */
-        .tags { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-        .tags li { position: relative; isolation: isolate; margin: 0; padding: 6px 12px; font-size: 0.875rem; font-weight: 600; }
-        .tags li::before { border-radius: 999px; }
+        /* Short lists (Hit harder, Earn more shots): one item per line, a small dot, a hairline
+           between, matching Things you'll meet. */
+        .tags { list-style: none; margin: 0 0 12px; padding: 0; }
+        #howto .tags li {
+            position: relative; margin: 0; padding: 10px 0 10px 18px;
+            font-size: 0.9375rem; line-height: 1.45;
+            border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+        }
+        #howto .tags li:first-child { border-top: 0; padding-top: 2px; }
+        .tags li::before { content: ''; position: absolute; left: 2px; top: calc(10px + 0.55em); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        #howto .tags li:first-child::before { top: calc(2px + 0.55em); }
         /* Pictures from the game, each with its name and one line. */
-        .meet { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 16px; }
-        @media (min-width: 420px) { .meet { grid-template-columns: 1fr 1fr; gap: 18px 20px; } }
-        .meet li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; margin: 0; }
-        .meet img { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; }
-        .meet b { display: block; font-size: 0.9375rem; }
-        .meet div { font-size: 0.875rem; line-height: 1.4; color: var(--ink-soft); }
-        .meet div b { color: var(--ink); }
-        #howto .actions { margin: 32px auto 0; }
+        /* Things you'll meet / What's new: one item per row. A small picture with the title beside
+           it, then the description underneath at full width, so lines stay long and easy to read.
+           Items are separated by space and a hairline, not boxes. */
+        .meet { list-style: none; margin: 0; padding: 0; }
+        #howto .meet li, #news .meet li {
+            display: grid; grid-template-columns: 44px 1fr; column-gap: 14px; row-gap: 8px; align-items: center;
+            margin: 0; padding: 22px 0;
+            border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+        }
+        #howto .meet li:first-child, #news .meet li:first-child { border-top: 0; padding-top: 6px; }
+        .meet img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; }
+        /* The text block's parts take the grid's cells: title beside the picture, words below. */
+        .meet div { display: contents; }
+        .meet b { grid-column: 2; display: block; margin: 0; font-size: 1.0625rem; line-height: 1.3; color: var(--ink); }
+        .meet .say-more { grid-column: 1 / -1; margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--ink-soft); }
+        #howto .actions, #news .actions { margin: 32px auto 0; }
+        #news h3:first-of-type { margin-top: 20px; }
+        .meet .icon { width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink); border-radius: 8px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+        .meet .icon svg { width: 24px; height: 24px; }
+        /* Reading screens: a more solid backdrop, so the board doesn't show through the text. */
+        #howto, #news { background: color-mix(in srgb, var(--scrim) 40%, var(--paper)); }
+        /* Boop's one line on the start screen after a feature update. */
+        #menu .say { margin: 36px auto 12px; max-width: 220px; }   /* clear of the close button in the corner */
+        #btn-news.fresh { color: var(--ink); }
+        #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+        /* One quiet footer line: version, What's new, Feedback. */
+        #menu .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
+        #menu .menu-links .link-btn { font-size: inherit; }
+        #menu .say .link-btn { font-size: inherit; display: inline; }
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
             position: fixed;
@@ -498,7 +549,9 @@
             display: grid;
             place-items: center;
             padding: 0;
-            background: none;
+            /* A round patch of page colour behind it, so text scrolling under it doesn't collide. */
+            background: var(--paper);
+            border-radius: 50%;
             border: 0;
             border-radius: 50%;
             color: var(--ink);
@@ -575,18 +628,28 @@
     <section id="menu" class="screen" aria-labelledby="menu-title">
         <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
+            <p class="say" id="menu-say" hidden><span id="menu-say-text"></span> <button class="link-btn" id="btn-news-say" type="button">See what's new</button></p>
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
-            <p class="best" id="menu-best" hidden></p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="sound-hint" id="sound-hint">Sound is off · <button class="link-btn" id="btn-sound-on" type="button">Turn on</button></p>
-            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
-            <p class="version">v1.2.1 · by Erik Sagen</p>
+            <p class="menu-links"><span class="version">v1.2.2</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
+        </div>
+    </section>
+
+    <section id="news" class="screen" aria-labelledby="news-title" hidden>
+        <button class="close-x" id="btn-news-close" type="button" aria-label="Close what's new"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+        <div class="screen-inner">
+            <button class="link-btn" id="btn-news-back" type="button">← Back</button>
+            <h2 id="news-title">What's new</h2>
+            <div id="news-list"></div>
+            <div class="actions">
+                <button class="btn btn-primary" id="btn-news-play" type="button">Play</button>
+            </div>
         </div>
     </section>
 
@@ -624,6 +687,7 @@
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
+            <p class="note"><b>Sound</b> is off to start. Tap the speaker beside Pause to turn it on.</p>
             <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires, Esc cancels or pauses, M sound on/off.</p>
 
             <h3>Reading the top</h3>
@@ -656,17 +720,18 @@
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
-                <li><img src="img/meet-block.webp" alt="" width="54" height="64"><div><b>Blocks</b>Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</div></li>
-                <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b>Spin when hit and swat the next ball.</div></li>
-                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b>Grow off walls and blocks. Their caps kick balls back harder.</div></li>
-                <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b>Fly a ball through one for an extra shot.</div></li>
-                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b>No nails. Knock out what holds them up and they tumble.</div></li>
-                <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b>Balls pass through, slowed down. Each pass takes 1 off.</div></li>
-                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b>Drop a ball in to grab the +1 and rattle around.</div></li>
-                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b>Can't be broken, but their nails can. Bank shots off them.</div></li>
-                <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b>Snap after a few hits. Anything they hold drops.</div></li>
-                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b>Hit one twice to light it. It bursts and knocks a chunk off everything around it.</div></li>
+                <li><img src="img/meet-block.webp" alt="" width="64" height="64"><div><b>Blocks</b><span class="say-more">Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</span></div></li>
+                <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b><span class="say-more">Spin when hit and swat the next ball.</span></div></li>
+                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b><span class="say-more">Grow off walls and blocks. Their caps kick balls back harder.</span></div></li>
+                <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b><span class="say-more">Fly a ball through one for an extra shot.</span></div></li>
+                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b><span class="say-more">No nails. Knock out what holds them up and they tumble.</span></div></li>
+                <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b><span class="say-more">Balls pass through, slowed down. Each pass takes 1 off.</span></div></li>
+                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in to grab the +1 and rattle around.</span></div></li>
+                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">Can't be broken, but their nails can. Bank shots off them.</span></div></li>
+                <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">Snap after a few hits. Anything they hold drops.</span></div></li>
+                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it. It bursts and knocks a chunk off everything around it.</span></div></li>
             </ul>
+            <p class="note">Boop! is made by Erik Sagen.</p>
             <p class="note">Boop explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
@@ -697,37 +762,80 @@
 
     <!-- Build stamp: every game file is loaded with ?v=BUILD so a cached old script can't
          run against a newer page (or the reverse). When any .js file changes, bump it here
-         (importmap, preloads, the script tag, data-build on <html>) and BUILD in game.js. -->
+         (importmap, preloads, the script tag, data-build on <html>), BUILD in game.js, and the
+         boopBuilds stamp at the top of every other .js file (game.js checks they all match). -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.1-6",
-                "./zones.js": "./zones.js?v=1.2.1-6",
-                "./blockshader.js": "./blockshader.js?v=1.2.1-6",
-                "./sketch.js": "./sketch.js?v=1.2.1-6",
-                "./balls.js": "./balls.js?v=1.2.1-6",
-                "./labels.js": "./labels.js?v=1.2.1-6",
-                "./audio.js": "./audio.js?v=1.2.1-6",
-                "./theme.js": "./theme.js?v=1.2.1-6",
-                "./crumbs.js": "./crumbs.js?v=1.2.1-6",
-                "./buddy.js": "./buddy.js?v=1.2.1-6"
+                "./sim.js": "./sim.js?v=1.2.2-9",
+                "./zones.js": "./zones.js?v=1.2.2-9",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-9",
+                "./sketch.js": "./sketch.js?v=1.2.2-9",
+                "./balls.js": "./balls.js?v=1.2.2-9",
+                "./labels.js": "./labels.js?v=1.2.2-9",
+                "./audio.js": "./audio.js?v=1.2.2-9",
+                "./theme.js": "./theme.js?v=1.2.2-9",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-9",
+                "./buddy.js": "./buddy.js?v=1.2.2-9"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./sim.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./zones.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./balls.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./labels.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./audio.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./theme.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.1-6">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.1-6">
-    <script type="module" src="./game.js?v=1.2.1-6"></script>
+    <link rel="modulepreload" href="./game.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-9">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-9">
+    <!-- If the game can't start (say, a cache served a mix of old and new files just after an
+         update), show a plain message with a Reload button instead of a page that won't respond. -->
+    <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
+         and a web page can't lock rotation, so the game pauses and asks nicely. -->
+    <div id="rotate" hidden>
+        <svg class="mascot buddy-face rotate-buddy" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
+        <p><b>Boop plays best upright.</b><br>Turn your phone to keep going.</p>
+    </div>
+    <div id="updating" hidden>
+        <p id="updating-text"><b>Boop is updating.</b> A new version is on its way. Give it a minute, then reload.</p>
+        <p id="updating-error" class="error-detail" hidden></p>
+        <button class="btn btn-primary" type="button" onclick="location.reload()">Reload</button>
+    </div>
+    <p id="error-note" role="status" hidden></p>
+    <script>
+        // Problems are shown, not swallowed, so they can be reported: if the game can't start,
+        // the panel says why; if something breaks mid-game, a small note says what.
+        (function () {
+            var errors = [];
+            function note(msg) {
+                if (/ResizeObserver loop|^Script error\.?$/.test(msg)) return;   // harmless browser noise
+                errors.push(msg);
+                if (!self.boopReady) return;
+                var el = document.getElementById('error-note');
+                el.textContent = 'Something went wrong: ' + msg + ' (tap to hide)';
+                el.hidden = false;
+            }
+            addEventListener('error', function (e) { note(e.message || String(e.error || 'unknown error')); });
+            addEventListener('unhandledrejection', function (e) { note(String((e.reason && e.reason.message) || e.reason)); });
+            document.addEventListener('click', function (e) { if (e.target.id === 'error-note') e.target.hidden = true; });
+            self.boopUpdating = function () {
+                if (errors.length && !/out of step/.test(errors.join(' '))) {
+                    document.getElementById('updating-text').innerHTML = '<b>Boop couldn\'t start.</b> Reloading may help. If it doesn\'t, a screenshot of this helps fix it.';
+                    var d = document.getElementById('updating-error');
+                    d.textContent = errors.slice(0, 3).join(' · ') + ' — ' + navigator.userAgent;
+                    d.hidden = false;
+                }
+                document.getElementById('updating').hidden = false;
+            };
+            addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
+        })();
+    </script>
+    <script type="module" src="./game.js?v=1.2.2-9"></script>
 </body>
 </html>

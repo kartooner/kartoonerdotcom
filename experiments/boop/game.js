@@ -13,14 +13,21 @@ import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
 import './buddy.js';               // the mascot's blinks and glances
 
-// Must match data-build on the page. If they differ, the browser has mixed a cached
-// page with newer scripts (or the reverse): reload once to get a matching set.
-const BUILD = '1.2.1-6';
-if (document.documentElement.dataset.build !== BUILD) {
+// Must match data-build on the page, and the stamp every other file pushes as it loads.
+// Right after an update, a cache can briefly hand out a mix of old and new files. Then:
+// reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
+// a game that half works.
+const BUILD = '1.2.2-9';
+const MODULES = 10;
+const stamps = globalThis.boopBuilds || [];
+if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
     try { tried = sessionStorage.getItem('boop-reload') === BUILD; sessionStorage.setItem('boop-reload', BUILD); } catch { /* storage blocked */ }
-    if (!tried) { location.reload(); throw new Error('Boop: page and scripts out of step, reloading'); }
+    if (!tried) location.reload();
+    else globalThis.boopUpdating?.();
+    throw new Error('Boop: files out of step after an update');
 }
+globalThis.boopReady = true;   // tells the watchdog in index.html the game started
 
 let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
@@ -96,8 +103,19 @@ function fitCamera() {
 let refitTimers = [];
 function refit() {
     fitCamera();
+    checkSideways();
     refitTimers.forEach(clearTimeout);
-    refitTimers = [120, 350, 800].map((ms) => setTimeout(fitCamera, ms));
+    refitTimers = [120, 350, 800].map((ms) => setTimeout(() => { fitCamera(); checkSideways(); }, ms));
+}
+// A phone turned on its side: too short to play. Pause (so turning back finds Resume) and
+// show the "upright" panel. Tablets and desktops play fine in landscape.
+const touchOnly = window.matchMedia('(pointer: coarse)');
+function phoneSideways() { return touchOnly.matches && window.innerWidth > window.innerHeight && window.innerHeight < 500; }
+function checkSideways() {
+    const side = phoneSideways();
+    const panel = document.getElementById('rotate');
+    if (side && panel.hidden && document.body.classList.contains('playing')) showScreen('menu', false);
+    panel.hidden = !side;
 }
 function resetZoom() {
     const meta = document.querySelector('meta[name="viewport"]');
@@ -733,10 +751,8 @@ function showSoundState() {
     soundBtn.setAttribute('aria-pressed', String(on));
     soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
     soundBtn.classList.toggle('off', !on);
-    $('sound-hint').hidden = readSoundPick() != null;
 }
 soundBtn.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
-$('btn-sound-on').addEventListener('click', () => setSound(true));
 if (readSoundPick() === 'on') {
     const wake = () => { audio.set(true); audio.setActive(document.body.classList.contains('playing')); };
     document.addEventListener('pointerdown', wake, { once: true });
@@ -1501,9 +1517,63 @@ applyTheme(currentTheme());
 // ---------- start screen ----------
 // The first zone builds behind the start screen; Play just lifts the screen.
 
-const menu = $('menu'), howto = $('howto'), over = $('over');
+const menu = $('menu'), howto = $('howto'), over = $('over'), news = $('news');
 const TAGLINE = $('menu-tagline').textContent;
-const paused = () => !menu.hidden || !howto.hidden || !over.hidden;
+// ---------- what's new ----------
+// One entry per release that adds something worth telling (hotfixes get none). Returning
+// players see the nudge on the start screen, once per entry; the page lists them all.
+// To announce a release: add an entry at the top (newest first). Keep `line` short (Boop
+// says it), 3-5 items, each a picture (img/...) or an icon from ICON, a title and a sentence.
+const ICON = {
+    aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l12 7-5.5 1.5L9 17z"/><path d="M12.5 12.5l5 5"/></svg>',
+    sound: '<svg viewBox="0 0 22 22"><path d="M3 8.5h3.5L11 4.5v13l-4.5-4H3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 8a4 4 0 0 1 0 6"/><path d="M17 5.5a7.5 7.5 0 0 1 0 11"/></g></svg>',
+    shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
+};
+const WHATS_NEW = [
+    {
+        version: '1.2',
+        line: 'New in 1.2: vines, bombs and sound!',
+        items: [
+            { img: 'img/meet-vine.webp', title: 'Vines', text: 'Garlands and hanging vines from depth 9. Snap them and whatever they hold drops.' },
+            { img: 'img/meet-bomb.webp', title: 'Bombs', text: 'A rare treat from depth 15. Hit one twice to light it, then stand back.' },
+            { icon: 'sound', title: 'Sound', text: 'Soft chiptune notes that build into a little tune as your hits chain. Off until you turn it on: the speaker beside Pause, or M.' },
+            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Drag back, right-click or press Esc.' },
+            { icon: 'shapes', title: 'Fresher zones', text: 'More interlocking shapes and more blocks resting loose, so no two zones feel the same.' },
+        ],
+    },
+];
+const NEWS_KEY = 'boop-news-seen';
+const NEWS_BUBBLE_MIN_H = 860;   // screen height (CSS px) with room for Boop's line on the start screen
+function readNewsSeen() { try { return localStorage.getItem(NEWS_KEY); } catch { return null; } }
+function markNewsSeen() { try { localStorage.setItem(NEWS_KEY, WHATS_NEW[0].version); } catch { /* storage blocked */ } }
+// Someone who's played before (a best depth, tips seen, or a saved run) and hasn't seen the
+// latest entry gets Boop's line, until they play or open the page.
+function showNewsLine() {
+    let played = readBest() > 0 || Object.keys(readTips()).length > 0;
+    try { played = played || !!localStorage.getItem(SAVE_KEY); } catch { /* storage blocked */ }
+    const fresh = played && readNewsSeen() !== WHATS_NEW[0].version && (!runStarted || fromSave);   // not on a mid-run pause
+    // The link beside Send feedback says what's new until it's been seen (no extra room needed).
+    const link = $('btn-news');
+    link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>New in ${WHATS_NEW[0].version}` : "What's new";
+    link.classList.toggle('fresh', fresh);
+    // Where there's room (tablets, desktop), Boop says it too.
+    const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;
+    $('menu-say-text').textContent = WHATS_NEW[0].line;
+    $('menu-say').hidden = !bubble;
+}
+$('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><ul class="meet">${r.items.map((it) =>
+    `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
+if (!menu.hidden) { showNewsLine(); menuTagline(); }
+
+// The one line under the logo. New players: what the game is. Returning players already
+// know that: their best depth. Mid-run: where you are.
+function menuTagline() {
+    const best = readBest();
+    $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
+        : best > 0 ? `Best depth: ${best}` : TAGLINE;
+    $('menu-tagline').classList.toggle('state', runStarted);
+}
+const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden;
 function showScreen(which, moveFocus = true) {
     if (which) {                          // stop any aim in progress
         aiming = false; keyAim = false; keyTurn = 0;
@@ -1512,24 +1582,25 @@ function showScreen(which, moveFocus = true) {
     menu.hidden = which !== 'menu';
     howto.hidden = which !== 'howto';
     over.hidden = which !== 'over';
-    document.body.classList.toggle('howto-open', which === 'howto');
+    news.hidden = which !== 'news';
+    document.body.classList.toggle('howto-open', which === 'howto' || which === 'news');
     document.body.classList.toggle('playing', !which);
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
-        const best = readBest();
-        // Mid-run the tagline gives way to where you are; the small line is only for Best.
-        $('menu-tagline').textContent = !runStarted ? TAGLINE
-            : fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`;
-        $('menu-tagline').classList.toggle('state', runStarted);
-        $('menu-best').hidden = runStarted || best === 0;
-        $('menu-best').textContent = `Best depth: ${best}`;
+        menuTagline();
         $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-new').hidden = !runStarted;
         $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
+        showNewsLine();
         if (moveFocus) $('btn-play').focus();
     } else if (which === 'over') {
         if (moveFocus) $('btn-again').focus();
+    } else if (which === 'news') {
+        news.scrollTop = 0;
+        $('btn-news-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-news-back').focus();
+        markNewsSeen();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
         $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
@@ -1537,6 +1608,7 @@ function showScreen(which, moveFocus = true) {
     }
 }
 function play() {
+    markNewsSeen();          // a new player's first game, or a returning one who's read the line: done
     showScreen(null);
     // First game ever: the buddy says how to launch, and stays until you start aiming.
     if (phase === 'aim' && !runStarted) {
@@ -1561,6 +1633,11 @@ $('btn-tips-reset').addEventListener('click', () => {
     $('tips-reset-done').hidden = false;
 });
 $('btn-howto-back').addEventListener('click', () => showScreen('menu'));
+$('btn-news').addEventListener('click', () => showScreen('news'));
+$('btn-news-say').addEventListener('click', () => showScreen('news'));
+$('btn-news-back').addEventListener('click', () => showScreen('menu'));
+$('btn-news-close').addEventListener('click', () => showScreen('menu'));
+$('btn-news-play').addEventListener('click', play);
 $('btn-howto-close').addEventListener('click', () => showScreen('menu'));
 $('btn-menu-close').addEventListener('click', play);
 // Pause: the button, Escape or P, or leaving the tab mid-run all bring up the start screen.
@@ -1577,7 +1654,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
         if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown)) { cancelAim(); return; }   // first, put an aim away
-        if (!howto.hidden) showScreen('menu');
+        if (!howto.hidden || !news.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
         return;
@@ -1645,3 +1722,4 @@ window.__boop = {
         return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
     },
 };
+checkSideways();   // in case the page opens with the phone already on its side

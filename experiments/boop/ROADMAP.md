@@ -68,6 +68,16 @@ Sound (moved up from v1.2.1), chill and never annoying:
   - The first time you pop a block, the muted speaker gives one small wiggle: a hint that sound exists for moments like this. Once, no message.
   - Not one of Boop's tips: his two are for how to play.
 
+## v1.2.2
+- **What's new, for feature releases only** (hotfixes add nothing). A returning player sees the link beside Send feedback read "● New in 1.2" until they open it or start playing; on tall screens (tablets, desktop) Boop also says it in one line above his head, in place of the tagline. The What's new page (same style as How to play) lists each feature release with a picture per item. New players don't get the nudge: everything is new to them.
+- How to play's "Things you'll meet" and the What's new page share one roomier layout: one column, the picture beside each title, the description underneath, hairlines between items, and a more solid backdrop so the board doesn't show through.
+- To announce a future feature release: add one entry at the top of `WHATS_NEW` in game.js.
+- If the game can't start (say, a cache serving a mix of old and new files right after an update), a plain panel explains and offers Reload; errors are shown, not swallowed, so a screenshot is a bug report.
+
+- The start screen's "Sound is off · Turn on" line is gone: the speaker beside Pause does it, and How to play says so.
+- Start screen footer is one quiet line: version · What's new · Feedback. The credit ("Boop! is made by Erik Sagen") moved to the end of How to play.
+- A phone turned on its side pauses the game and shows "Boop plays best upright. Turn your phone to keep going." (Safari's bars leave too little height to play, and web pages can't lock rotation.) Turning back finds the pause screen. Tablets and desktops still play in landscape.
+
 ## Later
 - **Haptics:** web pages can't vibrate on iPhone, so haptics wait for a possible App Store / Play Store release.
 
