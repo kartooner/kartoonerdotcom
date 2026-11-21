@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.2-10');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.2-11');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -89,6 +89,7 @@ const PINNED_DENSITY = 3;
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
 const NAIL_SHARE = 0.35;
+const GREY_STILL = 0.6, GREY_FALL_MIN = 48, GREY_CALM = 30, GREY_MAX = 360;   // a loose grey block crumbles once settled (0.25s still, after 0.4s), or after 3s
 const NAIL_GREY_HP = 6;               // grey blocks have no number: their nails take this many hits
 const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
 const PINNED_KNOCK = 0.5;            // pinned blocks get half the knock of a resting one
@@ -529,7 +530,16 @@ export class Sim {
             const body = world.getRigidBody(b.body);
             const p = body.translation();
             if (b.loose) {
-                if (p.y < -H - 2) this.removeBlock(b, true);
+                if (p.y < -H - 2) { this.removeBlock(b, true); continue; }
+                // A grey block knocked fully loose has done its job as a bumper. Left lying around
+                // it could wall off a breakable block for good (it can't be broken), so once it
+                // lands and settles (or after a few seconds whatever it's doing) it crumbles.
+                if (b.neutral) {
+                    b.looseT = (b.looseT ?? 0) + 1;
+                    const v = body.linvel(), still = Math.abs(v.x) + Math.abs(v.y) + Math.abs(body.angvel()) < GREY_STILL;
+                    b.calmT = still && b.looseT > GREY_FALL_MIN ? (b.calmT ?? 0) + 1 : 0;
+                    if (b.calmT >= GREY_CALM || b.looseT >= GREY_MAX) this.removeBlock(b, true);
+                }
             }
             // Pinned blocks no longer snap loose from a hard knock: only their nails let go.
         }
