@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-9';
+const BUILD = '1.2.2-10';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -955,9 +955,10 @@ canvas.addEventListener('pointerup', (ev) => {
         if (!mouseDown) return;
         mouseDown = false;
         if (phase !== 'aim' || !mouseAim) return;
-        // Pressed, dragged off the board and let go out there: changed your mind.
-        const q = fromScreen(ev.clientX, ev.clientY);
-        if (q.x < -0.3 || q.x > W + 0.3 || q.y > 0.3 || q.y < -H - 0.3) { cancelAim(); return; }
+        // Pointing beside the board is a real aim (a sharp angle into a corner needs it), so a
+        // click anywhere on the page fires. Only letting go outside the window entirely counts
+        // as changing your mind.
+        if (ev.clientX < 0 || ev.clientY < 0 || ev.clientX > window.innerWidth || ev.clientY > window.innerHeight) { cancelAim(); return; }
         const drawn = guideAngle ?? shownAngle();
         hideGuide();
         fire(drawn);
