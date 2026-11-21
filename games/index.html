@@ -98,6 +98,9 @@
             background: #000;
         }
 
+        /* The site's image-loading wrapper (a div added around each image, with an inline
+           height: auto) must fill the box, or the image stops short and the black shows below. */
+        .experiment-image > div { display: block !important; height: 100% !important; }
         .experiment-image img {
             width: 100%;
             height: 100%;
@@ -211,6 +214,19 @@
             </div>
 
             <div class="experiments-grid">
+
+                <a href="/experiments/boop/" class="experiment-card">
+                    <div class="experiment-image">
+                        <picture><source srcset="/assets/images/experiment-boop-400w.webp 400w, /assets/images/experiment-boop-800w.webp 800w, /assets/images/experiment-boop-1200w.webp 1200w, /assets/images/experiment-boop.webp 1280w" type="image/webp" sizes="(max-width: 768px) calc(100vw - 32px), 560px"><img src="/assets/images/experiment-boop.jpg" sizes="(max-width: 768px) calc(100vw - 32px), 560px"
+                            alt="Boop! gameplay: hand-drawn numbered blocks, a mint jelly block and a mushroom, with a dotted aim line bouncing between them"
+                            loading="lazy" width="1280" height="720"></picture>
+                    </div>
+                    <div class="experiment-info">
+                        <span class="experiment-tag">Three.js · Game</span>
+                        <h2>Boop!</h2>
+                        <p>A Holedown-inspired game where you bounce balls off hand-drawn blocks and dig as deep as you can. I mostly wanted to see if physics could feel cozy. Hit the bombs twice. Trust me.</p>
+                    </div>
+                </a>
 
                 <a href="/experiments/paper-plane" class="experiment-card">
                     <div class="experiment-image">
