@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.2-10">
+<html lang="en" data-build="1.2.2-11">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -736,7 +736,7 @@
                 <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b><span class="say-more">No nails. Knock out what holds them up and they tumble.</span></div></li>
                 <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b><span class="say-more">Balls pass through, slowed down. Each pass takes 1 off.</span></div></li>
                 <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in to grab the +1 and rattle around.</span></div></li>
-                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">Can't be broken, but their nails can. Bank shots off them.</span></div></li>
+                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">Can't be broken. Bank shots off them, or knock their nails out and they crumble.</span></div></li>
                 <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">Snap after a few hits. Anything they hold drops.</span></div></li>
                 <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it. It bursts and knocks a chunk off everything around it.</span></div></li>
             </ul>
@@ -778,31 +778,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.2-10",
-                "./zones.js": "./zones.js?v=1.2.2-10",
-                "./blockshader.js": "./blockshader.js?v=1.2.2-10",
-                "./sketch.js": "./sketch.js?v=1.2.2-10",
-                "./balls.js": "./balls.js?v=1.2.2-10",
-                "./labels.js": "./labels.js?v=1.2.2-10",
-                "./audio.js": "./audio.js?v=1.2.2-10",
-                "./theme.js": "./theme.js?v=1.2.2-10",
-                "./crumbs.js": "./crumbs.js?v=1.2.2-10",
-                "./buddy.js": "./buddy.js?v=1.2.2-10"
+                "./sim.js": "./sim.js?v=1.2.2-11",
+                "./zones.js": "./zones.js?v=1.2.2-11",
+                "./blockshader.js": "./blockshader.js?v=1.2.2-11",
+                "./sketch.js": "./sketch.js?v=1.2.2-11",
+                "./balls.js": "./balls.js?v=1.2.2-11",
+                "./labels.js": "./labels.js?v=1.2.2-11",
+                "./audio.js": "./audio.js?v=1.2.2-11",
+                "./theme.js": "./theme.js?v=1.2.2-11",
+                "./crumbs.js": "./crumbs.js?v=1.2.2-11",
+                "./buddy.js": "./buddy.js?v=1.2.2-11"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./sim.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./zones.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./balls.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./labels.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./audio.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./theme.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.2-10">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-10">
+    <link rel="modulepreload" href="./game.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./sim.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./zones.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./balls.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./labels.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./audio.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./theme.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.2-11">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.2-11">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -845,6 +845,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.2-10"></script>
+    <script type="module" src="./game.js?v=1.2.2-11"></script>
 </body>
 </html>

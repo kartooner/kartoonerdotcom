@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.2-10');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.2-11');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -67,7 +67,7 @@ export const THING_TIPS = {
     ring: 'Fly a ball through a +1 ring for an extra shot.',
     resting: 'No nails: this block just rests. Knock out what holds it up and it tumbles.',
     jelly: 'Jelly: balls pass right through, slowed down. Each pass takes 1 off.',
-    grey: "Grey blocks can't be broken, but their nails can. Bank shots off them.",
+    grey: "Grey blocks can't be broken. Bank shots off them, or knock their nails out and they crumble.",
     cup: 'A cup: drop a ball in to grab the +1 and rattle around.',
     single: 'Grey nails never come out. This one stays put until you pop it.',
 };
