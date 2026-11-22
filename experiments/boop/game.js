@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.3-1';
+const BUILD = '1.2.3-2';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1210,6 +1210,10 @@ function gameOver() {
     audio.over();
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
+    // One line of how the run went: blocks popped, and zones cleared under par if any.
+    const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
+    $('over-stats').textContent = !popped ? '' : [`${popped} block${popped === 1 ? '' : 's'} popped`,
+        under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean).join(' · ');
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
@@ -1552,14 +1556,20 @@ const ICON = {
     aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l12 7-5.5 1.5L9 17z"/><path d="M12.5 12.5l5 5"/></svg>',
     sound: '<svg viewBox="0 0 22 22"><path d="M3 8.5h3.5L11 4.5v13l-4.5-4H3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 8a4 4 0 0 1 0 6"/><path d="M17 5.5a7.5 7.5 0 0 1 0 11"/></g></svg>',
     fast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6z"/><path d="M13 6l7 6-7 6z"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8.5v6M9 11.5h6"/></svg>',
+    summary: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19V11M12 19V5M19 19v-5"/></svg>',
+    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
     {
         version: '1.2.3',
-        line: 'New in 1.2.3: hold to speed up a long bounce.',
+        line: 'New in 1.2.3: hold to speed up, a run summary, and a home screen icon.',
         items: [
             { icon: 'fast', title: 'Hold to speed up', text: 'Ball stuck looping between a block and the ceiling? Press and hold anywhere while balls fly (or hold Space) and the turn plays three times as fast. Let go and it slows back down.' },
+            { icon: 'summary', title: 'Run summary', text: 'Game over now says how many blocks you popped and how many zones you cleared under par.' },
+            { icon: 'home', title: 'Add to Home Screen', text: "Boop has its own icon and opens full screen, with no browser bars. In Safari: Share, then Add to Home Screen. (A run saved in Safari doesn't carry over.)" },
+            { icon: 'awake', title: 'Screen stays on', text: "While you play, your phone won't dim or lock in the middle of a long bounce." },
         ],
     },
     {
@@ -1617,6 +1627,22 @@ function menuTagline() {
         : best > 0 ? `Best depth: ${best}` : TAGLINE;
     $('menu-tagline').classList.toggle('state', runStarted);
 }
+// While you play, the screen stays on: a long bounce with no touching shouldn't let the
+// phone dim or lock mid-shot. Paused, a screen up, or the tab hidden: the phone decides again.
+let wakeLock = null, wantAwake = false;
+async function keepAwake(on) {
+    wantAwake = on;
+    try {
+        if (on && !wakeLock && navigator.wakeLock && !document.hidden) {
+            const lock = await navigator.wakeLock.request('screen');
+            lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+            if (wantAwake) wakeLock = lock; else lock.release();     // paused while it was asked for
+        } else if (!on && wakeLock) {
+            const lock = wakeLock; wakeLock = null;
+            await lock.release();
+        }
+    } catch { /* not allowed (low battery, an older browser): the phone's own timer applies */ }
+}
 const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden;
 function showScreen(which, moveFocus = true) {
     if (which) {                          // stop any aim in progress
@@ -1629,6 +1655,7 @@ function showScreen(which, moveFocus = true) {
     news.hidden = which !== 'news';
     document.body.classList.toggle('howto-open', which === 'howto' || which === 'news');
     document.body.classList.toggle('playing', !which);
+    keepAwake(!which);
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.

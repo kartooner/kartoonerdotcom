@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.3-1');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.3-2');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -390,6 +390,7 @@ export class Sim {
         delete s.blocks[b.id];
         if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
+        if (popped) s.popped = (s.popped ?? 0) + 1;       // for the run summary at game over
         if (popped && !s.quiet && !s.stretch && this.blockCount() > 0 && this.blockCount() <= STRETCH_BLOCKS) {
             s.stretch = true;
             this.events.push({ t: 'stretch' });
@@ -595,6 +596,7 @@ export class Sim {
     genZone() {
         const s = this.s;
         if (!s.retries) s.pendingPar = s.par ? Math.min(PAR_BONUS_MAX, Math.max(0, s.par - s.zoneShots)) : 0;
+        if (!s.retries && s.par && s.zoneShots < s.par) s.underPar = (s.underPar ?? 0) + 1;
         this.clearZoneLeftovers();
         s.depth += 1;
         s.stretch = false;

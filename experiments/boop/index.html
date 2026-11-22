@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.3-1">
+<html lang="en" data-build="1.2.3-2">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -7,6 +7,14 @@
     <meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
     <title>Boop!</title>
+    <!-- Added to a home screen: Boop's own icon, full screen, no browser bars. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="img/icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Boop!">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="description" content="A Holedown-inspired game where you bounce balls off hand-drawn blocks and dig as deep as you can.">
     <meta property="og:title" content="Boop!">
     <meta property="og:description" content="A Holedown-inspired game where you bounce balls off hand-drawn blocks and dig as deep as you can.">
@@ -409,6 +417,8 @@
         }
         #over .over-buddy { width: 60px; height: 65px; margin: 4px auto 10px; display: block; transform: rotate(-7deg); }
         #over .result { margin: 14px 0 6px; font-size: 1.125rem; font-weight: 600; }
+        #over .stats { margin: 0 0 4px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-soft); }
+        #over .stats:empty { display: none; }
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); }
         #over .feedback { margin-top: 20px; }
@@ -673,6 +683,7 @@
             <svg class="mascot buddy-face over-buddy" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="over-title">Out of shots</h1>
             <p class="result" id="over-result"></p>
+            <p class="stats" id="over-stats"></p>
             <p class="best" id="over-best"></p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-again" type="button">Play again</button>
@@ -784,31 +795,31 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.3-1",
-                "./zones.js": "./zones.js?v=1.2.3-1",
-                "./blockshader.js": "./blockshader.js?v=1.2.3-1",
-                "./sketch.js": "./sketch.js?v=1.2.3-1",
-                "./balls.js": "./balls.js?v=1.2.3-1",
-                "./labels.js": "./labels.js?v=1.2.3-1",
-                "./audio.js": "./audio.js?v=1.2.3-1",
-                "./theme.js": "./theme.js?v=1.2.3-1",
-                "./crumbs.js": "./crumbs.js?v=1.2.3-1",
-                "./buddy.js": "./buddy.js?v=1.2.3-1"
+                "./sim.js": "./sim.js?v=1.2.3-2",
+                "./zones.js": "./zones.js?v=1.2.3-2",
+                "./blockshader.js": "./blockshader.js?v=1.2.3-2",
+                "./sketch.js": "./sketch.js?v=1.2.3-2",
+                "./balls.js": "./balls.js?v=1.2.3-2",
+                "./labels.js": "./labels.js?v=1.2.3-2",
+                "./audio.js": "./audio.js?v=1.2.3-2",
+                "./theme.js": "./theme.js?v=1.2.3-2",
+                "./crumbs.js": "./crumbs.js?v=1.2.3-2",
+                "./buddy.js": "./buddy.js?v=1.2.3-2"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./sim.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./zones.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./balls.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./labels.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./audio.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./theme.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.3-1">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.3-1">
+    <link rel="modulepreload" href="./game.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./sim.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./zones.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./blockshader.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./sketch.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./balls.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./labels.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./audio.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./theme.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./buddy.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./crumbs.js?v=1.2.3-2">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -851,6 +862,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.3-1"></script>
+    <script type="module" src="./game.js?v=1.2.3-2"></script>
 </body>
 </html>
