@@ -87,3 +87,11 @@ Sound (moved up from v1.2.1), chill and never annoying:
 - Game over and New game clear it. One save per browser; clearing site data loses it.
 - Closing mid-shot goes back to before that shot (the shot isn't spent).
 - Later: a version check so an update to the game can't load an incompatible save (today an unreadable save is just dropped); maybe a "Continue" summary (depth, shots left).
+
+## v1.2.3
+- **Hold to speed up.** While balls are flying, keeping a finger, the mouse button or Space down plays the turn three times as fast (same physics, more steps per frame), for a ball stuck looping between a block and the ceiling. Let go, the turn ends, or the game pauses: back to normal. The press that sped things up never turns into an aim or a shot.
+- Boop mentions it once, after the first turn that runs longer than 10 seconds. How to play lists it as step 4; the keyboard line says "Space fires (hold it to speed up)".
+- In a private tab (Safari, Firefox), Boop says once after the first zone that runs can't be saved there. Browsers throw a private tab's storage away when it closes.
+- **Run summary** on game over, one quiet line under "You reached depth N": "38 blocks popped · 6 zones under par" (the par part only when there are any). Counted in the run's state, so it survives a save.
+- **Add to Home Screen:** a web app manifest and Boop's face as the icon (180/192/512, plus a maskable one), so it opens full screen with no browser bars. Storage there is separate from Safari's.
+- **Screen stays on while you play** (Screen Wake Lock). Paused, a screen up, game over or the tab hidden: released, and the phone's own timer applies again.
