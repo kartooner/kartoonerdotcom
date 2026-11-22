@@ -544,8 +544,13 @@
         /* One quiet footer line: version, What's new, Feedback. */
         #menu .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
         #menu .menu-links .link-btn { font-size: inherit; }
-        #menu .private-note { margin: 12px 0 0; font-size: 0.875rem; color: var(--ink-soft); }
-        #menu .private-note + .menu-links { margin-top: 8px; }
+        /* Private tab: a small line in the tagline's gap, just above Play. */
+        #menu .private-note { margin: -22px 0 24px; font-size: 0.8125rem; font-weight: 500; color: var(--ink-soft); }
+        /* The smallest phones: the footer stays one line. */
+        @media (max-width: 360px) {
+            #menu .menu-links { gap: 5px; font-size: 0.8125rem; }
+            #menu .screen-inner { padding-left: 20px; padding-right: 20px; }
+        }
         #menu .say .link-btn { font-size: inherit; display: inline; }
         /* Close X: top-right of each screen, a full 44px tap target. */
         .close-x {
@@ -643,12 +648,12 @@
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
+            <p class="private-note" id="private-note" hidden>Private tab: runs won't save.</p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="private-note" id="private-note" hidden>Private tab: runs won't save.</p>
             <p class="menu-links"><span class="version">v1.2.2</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
         </div>
     </section>
