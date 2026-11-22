@@ -544,8 +544,6 @@
         /* One quiet footer line: version, What's new, Feedback. */
         #menu .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
         #menu .menu-links .link-btn { font-size: inherit; }
-        /* Private mode: a small last line, under the footer. */
-        #menu .private-note { margin: 14px 0 0; max-width: 260px; font-size: 0.8125rem; font-weight: 500; color: var(--ink-soft); text-wrap: balance; }
         /* The smallest phones: the footer stays one line. */
         @media (max-width: 360px) {
             #menu .menu-links { gap: 5px; font-size: 0.8125rem; }
@@ -654,7 +652,6 @@
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
             <p class="menu-links"><span class="version">v1.2.2</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
-            <p class="private-note" id="private-note" hidden>Looks like you're in private mode, so runs won't save.</p>
         </div>
     </section>
 

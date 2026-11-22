@@ -1162,6 +1162,9 @@ function queueZoneTips() {
     add('mushroom', prop('mushroom'));
     add('vine', prop('vine'));
     add('bomb', prop('bomb'));
+    if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
+        tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
+    }
     tipQueue.unshift(...tips);
 }
 function hideNote() {
@@ -1566,7 +1569,8 @@ $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><u
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
 if (!menu.hidden) { showNewsLine(); menuTagline(); }
 
-// Private tabs throw site storage away when they close, so a saved run can't last.
+// Private tabs throw site storage away when they close, so a saved run can't last. Boop says
+// so once, after the first zone is cleared: the first progress there is to lose.
 // Browsers don't say so outright; Safari and Firefox give it away by refusing their
 // private file storage. Chrome's incognito isn't caught (it keeps storage until the
 // last incognito window closes, so runs mostly survive there anyway).
@@ -1574,7 +1578,8 @@ async function isPrivateTab() {
     try { await navigator.storage?.getDirectory?.(); return false; }
     catch (e) { return /unknown transient reason|security error/i.test(String(e?.message ?? e)); }
 }
-isPrivateTab().then((p) => { $('private-note').hidden = !p; });
+let privateTab = false;
+isPrivateTab().then((p) => { privateTab = p; });
 
 // The one line under the logo. New players: what the game is. Returning players already
 // know that: their best depth. Mid-run: where you are.
