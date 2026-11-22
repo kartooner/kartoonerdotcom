@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-11';
+const BUILD = '1.2.2-12';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1565,6 +1565,16 @@ function showNewsLine() {
 $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><ul class="meet">${r.items.map((it) =>
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
 if (!menu.hidden) { showNewsLine(); menuTagline(); }
+
+// Private tabs throw site storage away when they close, so a saved run can't last.
+// Browsers don't say so outright; Safari and Firefox give it away by refusing their
+// private file storage. Chrome's incognito isn't caught (it keeps storage until the
+// last incognito window closes, so runs mostly survive there anyway).
+async function isPrivateTab() {
+    try { await navigator.storage?.getDirectory?.(); return false; }
+    catch (e) { return /unknown transient reason|security error/i.test(String(e?.message ?? e)); }
+}
+isPrivateTab().then((p) => { $('private-note').hidden = !p; });
 
 // The one line under the logo. New players: what the game is. Returning players already
 // know that: their best depth. Mid-run: where you are.
