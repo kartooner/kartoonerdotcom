@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.2-12';
+const BUILD = '1.2.3-1';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -888,6 +888,14 @@ let dragFar = 0;
 // With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
 // (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
 let mouseAim = false, mouseDown = false;
+// Hold to fast-forward: while balls are bouncing, keeping a finger, the mouse button or Space
+// down runs the game faster, for a ball stuck looping between a block and the ceiling.
+// Nothing else changes: same physics, just more steps per frame. Let go (or the turn ends,
+// or the game pauses) and it's back to normal; that same press never turns into an aim.
+const FAST = 3;
+let fastPointer = null, fastKey = false;
+const fastForward = () => (fastPointer !== null || fastKey) && (phase === 'play' || phase === 'settle') && !paused();
+const holdToFast = () => phase === 'play' || phase === 'settle';
 function fromScreen(x, y) {
     const r = renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector3((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1), 0).unproject(camera);
@@ -911,7 +919,7 @@ function cancelAim() {
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
 // A trackpad pinch (ctrl + wheel) or a stray scroll over the board shouldn't zoom or move the
 // page under the cursor mid-aim.
 canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); }, { passive: false });
@@ -920,6 +928,7 @@ canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse'
 canvas.addEventListener('pointerdown', (ev) => {
     if (ev.pointerType === 'mouse') {
         if (ev.button !== 0) return;              // right-click is handled by contextmenu (cancel)
+        if (holdToFast()) { fastPointer = ev.pointerId; canvas.setPointerCapture(ev.pointerId); return; }
         if (phase !== 'aim') return;
         keyAim = false;
         mouseDown = true;
@@ -930,6 +939,7 @@ canvas.addEventListener('pointerdown', (ev) => {
         return;
     }
     canvas.setPointerCapture(ev.pointerId);
+    if (holdToFast()) { fastPointer = ev.pointerId; return; }
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
@@ -951,6 +961,7 @@ canvas.addEventListener('pointermove', (ev) => {
     if (aiming) updateAim(ev);
 });
 canvas.addEventListener('pointerup', (ev) => {
+    if (ev.pointerId === fastPointer) { fastPointer = null; return; }    // a hold, not a shot
     if (ev.pointerType === 'mouse') {
         if (!mouseDown) return;
         mouseDown = false;
@@ -972,8 +983,11 @@ canvas.addEventListener('pointerup', (ev) => {
     fire(drawn);
 });
 
+let turnTime = 0;
+const LONG_TURN = 10;   // seconds: a turn this long gets Boop's tip about holding to speed up
 function fire(angle) {
     worldSettling = false;
+    turnTime = 0;
     mouseAim = false;
     sim.fire(angle);
     audio.shot();
@@ -981,7 +995,9 @@ function fire(angle) {
     phase = 'play';
     hideNote();
 }
-canvas.addEventListener('pointercancel', () => { aiming = false; hideGuide(); });
+canvas.addEventListener('pointercancel', () => { aiming = false; fastPointer = null; hideGuide(); });
+canvas.addEventListener('lostpointercapture', (ev) => { if (ev.pointerId === fastPointer) fastPointer = null; });
+window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
@@ -1245,6 +1261,9 @@ function tidyUp() {
 // since a tumble could still clear the zone before the game-over check.
 let worldSettling = false;
 function endTurn() {
+    if (turnTime > LONG_TURN) tourTip('fast', finePointer
+        ? 'Waiting on a long bounce? Hold the mouse button (or Space) while balls fly to speed things up.'
+        : 'Waiting on a long bounce? Press and hold anywhere while balls fly to speed things up.');
     if (sim.blockCount() === 0) { startZone(); return; }
     settleSteps = 0;
     if (sim.s.supply > 0) { worldSettling = true; readyToAim(); return; }
@@ -1356,7 +1375,8 @@ function tick(frameDt) {
     if (phase !== 'play' && phase !== 'settle' && !settlingWhileAiming) return;
 
     const s = sim.s;
-    acc += frameDt;   // always real time: no fast-forward, so ball speed always looks the same
+    acc += frameDt * (fastForward() ? FAST : 1);   // real time, unless you're holding to speed up
+    if (phase === 'play') turnTime += frameDt;
     let n = 0;
     while (acc >= DT && n < 30) {
         acc -= DT; n++;
@@ -1531,9 +1551,17 @@ const TAGLINE = $('menu-tagline').textContent;
 const ICON = {
     aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l12 7-5.5 1.5L9 17z"/><path d="M12.5 12.5l5 5"/></svg>',
     sound: '<svg viewBox="0 0 22 22"><path d="M3 8.5h3.5L11 4.5v13l-4.5-4H3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 8a4 4 0 0 1 0 6"/><path d="M17 5.5a7.5 7.5 0 0 1 0 11"/></g></svg>',
+    fast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6z"/><path d="M13 6l7 6-7 6z"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
+    {
+        version: '1.2.3',
+        line: 'New in 1.2.3: hold to speed up a long bounce.',
+        items: [
+            { icon: 'fast', title: 'Hold to speed up', text: 'Ball stuck looping between a block and the ceiling? Press and hold anywhere while balls fly (or hold Space) and the turn plays three times as fast. Let go and it slows back down.' },
+        ],
+    },
     {
         version: '1.2',
         line: 'New in 1.2: vines, bombs and sound!',
@@ -1691,6 +1719,7 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
+        if (holdToFast()) { fastKey = true; return; }      // held while balls bounce: speed up
         if (e.repeat) return;
         if (phase !== 'aim') return;
         if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); return; }   // first press shows the guide
@@ -1702,6 +1731,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 document.addEventListener('keyup', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') fastKey = false;
     keyFine = e.shiftKey;
     if (e.key in AIM_KEYS && AIM_KEYS[e.key] === keyTurn) keyTurn = 0;
 });
