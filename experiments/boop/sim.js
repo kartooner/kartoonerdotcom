@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-7');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-9');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -47,7 +47,7 @@ const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
 // Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
 // actually takes off per shot at each depth (with more balls per shot, each does a bit
 // less), set a little generous so a good zone beats par about a third of the time.
-const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 56], [16, 42], [22, 35], [30, 30]];
+const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 56], [16, 42], [22, 35], [30, 42], [40, 50]];
 const parHpPerShot = (d) => {
     const i = PAR_TABLE.findIndex(([at]) => at > d);
     if (i === -1) return PAR_TABLE[PAR_TABLE.length - 1][1];
@@ -777,6 +777,15 @@ export class Sim {
             if (cells.some(([x, y]) => x === cc && y === rr)) return false;
             return cc >= 0 && cc < W && rr >= 0 && rr < ROWS && grid[rr][cc] !== 0;
         }));
+        // How many of a piece's cell sides would touch a block already planned.
+        const hugs = (cells) => {
+            let n = 0;
+            for (const [c, r] of cells) for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                if (cells.some(([x, y]) => x === c + dc && y === r + dr)) continue;
+                if ((grid[r + dr]?.[c + dc] ?? 0) > 0) n++;
+            }
+            return n;
+        };
         const plan = [];
         let filled = 0;
         const target = Math.round(W * ROWS * (spec.fill + style.fill));
@@ -898,12 +907,22 @@ export class Sim {
             let pick = this.rand() * poolTotal, shape = pool[0];
             for (const sh of pool) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             if ((used[shape.canon] ?? 0) >= (shape.size === 1 ? 3 : 2)) continue;
-            const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
-            const cells = shape.c.map(([c, r]) => [col + c, row + r]);
-            if (!cells.every(([c, r]) => free(c, r)) || !rowOk(cells)) continue;
-            if (sameShapeTouching(cells, shape.canon)) continue;
             const wantsGap = this.rand() < style.gap;
-            if (wantsGap && touchesOther(cells)) continue;
+            // Interlocking: more often the deeper you go (and in packed layouts), a piece tries a
+            // few spots and takes the one that hugs its neighbours most, so L, T and S shapes
+            // tuck into each other's notches instead of sitting side by side.
+            const snug = !wantsGap && this.rand() < Math.min(0.85, 0.15 + s.depth * 0.025 + (styleName === 'packed' ? 0.2 : 0));
+            let cells = null, bestHug = -1;
+            for (let k = 0; k < (snug ? 8 : 1); k++) {
+                const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
+                const cand = shape.c.map(([c, r]) => [col + c, row + r]);
+                if (!cand.every(([c, r]) => free(c, r)) || !rowOk(cand)) continue;
+                if (sameShapeTouching(cand, shape.canon)) continue;
+                if (wantsGap && touchesOther(cand)) continue;
+                const hug = snug ? hugs(cand) : 0;
+                if (hug > bestHug) { bestHug = hug; cells = cand; }
+            }
+            if (!cells) continue;
             used[shape.canon] = (used[shape.canon] ?? 0) + 1;
             plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap, canon: shape.canon });
             cells.forEach(([c, r]) => { grid[r][c] = plan.length; });
@@ -913,7 +932,10 @@ export class Sim {
         // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
         if (has('jelly') || this.rand() < spec.jello) {
             const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
-            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine && !p.seesaw);
+            // Small pieces early; from depth 8 jelly can be a chunky piece too (a jelly zone favours those).
+            const most = s.depth >= 8 ? 6 : 3;
+            const small = plan.filter((p) => p.cells.length <= most && !p.cup && !p.vine && !p.seesaw);
+            if (has('jelly') && s.depth >= 8) small.sort((a, b) => b.cells.length - a.cells.length).splice(Math.max(3, count + 1));
             for (let i = 0; i < count && small.length; i++) {
                 small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
             }
@@ -933,7 +955,7 @@ export class Sim {
             const g = r + 1 < ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && (plan[g - 1].kind === 'pinned' || plan[g - 1].kind === 'neutral');
         });
-        const wantLoose = Math.round(plan.length * (has('tower') ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(0.4, spec.loose * style.loose)));
+        const wantLoose = Math.round(plan.length * (has('tower') ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(s.depth >= 20 ? 0.46 : 0.4, spec.loose * style.loose)));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
@@ -1044,6 +1066,19 @@ export class Sim {
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
             if (p.seesaw) this.makeSeesaw(p.block);
+        }
+        // Unsettled (from depth 8): a block or two start the zone already hanging from one nail,
+        // crooked, as if something knocked it loose. Never a cup, a vine's block, a seesaw,
+        // a hanging bomb's target or a mushroom's block.
+        if (s.depth >= 8) {
+            const n = s.depth < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
+            const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target
+                && p.cells.length >= 2 && p.block.nails?.length === 2 && !mushSpots.some((m) => m.p === p));
+            for (let i = 0; i < n && pool.length; i++) {
+                const b = pool.splice(Math.floor(this.rand() * pool.length), 1)[0].block;
+                b.nails.splice(Math.floor(this.rand() * 2), 1);
+                this.hang(b);
+            }
         }
         for (const b of bombSpots) this.addBomb(b.c + 0.5, -(b.r + TOP_ROW + 0.5));
         for (const v of vineSpots) {

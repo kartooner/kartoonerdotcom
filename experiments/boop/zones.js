@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-7');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-9');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -92,7 +92,7 @@ export function zoneSpec(d) {
         lo: 1 + n * 0.35, hi: 3 + n * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),
         // Props stay light through the early and middle zones, then crowd in.
         props: d <= 11 ? 2 : d <= 15 ? 3 : 4,
-        loose: Math.min(0.42, 0.18 + d * 0.016),
+        loose: Math.min(d >= 20 ? 0.5 : 0.42, 0.18 + d * 0.016),     // deeper down, more blocks just resting
         jello: d === 5 ? 1 : Math.min(0.85, 0.35 + d * 0.04),     // jelly is introduced at 5
         tough: Math.min(0.12, 0.04 + d * 0.008),
     };
