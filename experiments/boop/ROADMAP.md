@@ -95,3 +95,19 @@ Sound (moved up from v1.2.1), chill and never annoying:
 - **Run summary** on game over, one quiet line under "You reached depth N": "38 blocks popped · 6 zones under par" (the par part only when there are any). Counted in the run's state, so it survives a save.
 - **Add to Home Screen:** a web app manifest and Boop's face as the icon (180/192/512, plus a maskable one), so it opens full screen with no browser bars. Storage there is separate from Safari's.
 - **Screen stays on while you play** (Screen Wake Lock). Paused, a screen up, game over or the tab hidden: released, and the phone's own timer applies again.
+
+## v1.3 plan: keep the deep end fresh
+Past depth 16 nothing new arrives (bombs at 15 and the last launcher upgrade at 16 are the last); only the numbers grow, and around depth 18–20 zones start to feel the same. The plan: something new every 3–4 zones through 30, landmark zones every 5 from 20, and bonus stages you earn. Everything builds on pieces that already exist, and each new thing gets one Boop tip.
+
+| Depth | New | Builds on | What it adds |
+|---|---|---|---|
+| 18 | **Seesaw**: a long block with one nail in its middle | nails, resting blocks | tips when hit; whatever rests on it slides off; knock the nail out and it drops |
+| 21 | **Weight on a vine**: a heavy iron weight in place of a chandelier block | vines, falling blocks | cut the vine and it smashes the block below for a big chunk |
+| 24 | **Split ring**: a ball through it splits in two for that shot | +1 rings, multishot | a burst of power against big numbers |
+| 27 | **Block on rails**: slides along a short track when hit, then stays | resting blocks | opens and closes paths; still while you aim, so the guide stays exact |
+| 30 | **Switch**: hit it and every grey block's nails pop, so they crumble | grey blocks | one clever shot clears the walls |
+
+- **Landmark zones** every 5 from 20, built from known pieces, and Boop names them: 20 bomb field, 25 vine garden, 30 jelly maze, 35 the cave (grey channels and a switch); then they come round again.
+- **Bonus stages**, earned: from depth 12, about one zone in four has a gold block. Pop it before the zone is cleared and the next stage is a bonus: 3 free shots (supply untouched), no depth, then on to the next zone. What you collect becomes shots, capped (about +8, tuned with bots); clearing it all adds a little. Three kinds, in turn: **ring run** (no blocks, mushrooms and windmills, lots of +1 rings), **piñata** (tiny 1–3 blocks, every 3 pops +1), **chain reaction** (bombs between low blocks, +1 per block the chain pops).
+- **Challenge past 20:** slow the growth of block numbers and lean on layout (traps, tighter gaps, fewer rings) instead, so it's harder without just taking longer. Numbers from bot runs.
+- **Build order:** 1) seesaw and weight; 2) gold block and bonus stages (ring run first); 3) split ring, rails, switch; 4) landmark zones and the challenge retune.
