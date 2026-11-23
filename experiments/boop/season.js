@@ -1,9 +1,9 @@
 // Boop: seasons. Around some holidays the game dresses up: block colours, the paper, the
-// crumbs a popped block leaves, the vines, and a scarf for Boop. The rules never change.
+// crumbs a popped block leaves, the vines, and a hat for Boop. The rules never change.
 // Which season it is comes from the date on the player's device: a tiny script at the top
 // of index.html sets data-season (and data-greeting) before anything is drawn, so the page
 // never flashes the wrong colours. ?season=fall (or none) in the address forces one, for testing.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-2');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-3');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;
@@ -31,15 +31,21 @@ export function applySeason({ THEMES, TIERS, JELLO, COLORS }) {
     return { crumbs: FALL.crumbs, leaves: true };
 }
 
-// A striped knit scarf, wrapped under his chin with one end hanging down.
-const SCARF = `<g class="scarf" filter="url(#sketchy)">
-<path d="M5.5 34.5h37v5.5q-18.5 2.5-37 0z" fill="#e2803f" stroke="#2b2622" stroke-width="2.2" stroke-linejoin="round"/>
-<path d="M14 35v5.4M23 35v5.8M32 35v5.6" stroke="#c95b3e" stroke-width="2.4"/>
-<path d="M32.5 38.5l2.2 8.5 5.2-1.3-1.6-8.2z" fill="#e2803f" stroke="#2b2622" stroke-width="2.2" stroke-linejoin="round"/>
-<path d="M34.3 45.6l-.6 2.2M36.6 45l-.4 2.3M38.8 44.5l-.2 2.3" stroke="#2b2622" stroke-width="1.4" stroke-linecap="round"/>
-</g>`;
+// A little knit hat for fall: a rust band, a pumpkin-coloured top and a mustard pompom.
+// (Christmas gets a Santa hat.) It sits on his head, a little to one side.
+const HATS = {
+    fall: `<g class="hat" filter="url(#sketchy)" transform="rotate(-8 24 10)">
+<path d="M8 11.5C8 -1.5 40 -1.5 40 11.5z" fill="#e2803f" stroke="#2b2622" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M17 2.5q1.2 4 1 8.5M24 0.8v10.4M31 2.5q-1.2 4-1 8.5" fill="none" stroke="#c95b3e" stroke-width="1.6" stroke-linecap="round"/>
+<rect x="6" y="9.5" width="36" height="6.5" rx="2.2" fill="#c95b3e" stroke="#2b2622" stroke-width="2.2"/>
+<path d="M11 10.5v4.5M16 10.5v4.5M21 10.5v4.5M26 10.5v4.5M31 10.5v4.5M36 10.5v4.5" stroke="#9a4a2e" stroke-width="1.2" stroke-linecap="round"/>
+<circle cx="24" cy="-2.5" r="4.2" fill="#e8bf5a" stroke="#2b2622" stroke-width="2.2"/>
+</g>`,
+};
 function dressBuddies() {
+    const hat = HATS[season];
+    if (!hat) return;
     for (const face of document.querySelectorAll('.buddy-face .wiggle > g')) {
-        if (!face.querySelector('.scarf')) face.insertAdjacentHTML('beforeend', SCARF);
+        if (!face.querySelector('.hat')) face.insertAdjacentHTML('beforeend', hat);
     }
 }

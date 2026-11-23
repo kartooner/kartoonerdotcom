@@ -12,14 +12,15 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
+import { makeLeafPiles } from './leaves.js';
 import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page, and the stamp every other file pushes as it loads.
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.0-2';
-const MODULES = 11;
+const BUILD = '1.3.0-3';
+const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
@@ -64,7 +65,8 @@ $('stage').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 // A holiday season (if it's one) recolours things before anything is built.
 const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
-const crumbs = makeCrumbs(scene, seasonLook);   // crayon bits when a block pops
+const crumbs = makeCrumbs(scene, seasonLook);
+const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook.crumbs, -H) : null;   // fall: leaves on blocks   // crayon bits when a block pops
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -582,6 +584,7 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
+    if (leafPiles) { leafPiles.update(frameDt, blockViews); if (leafPiles.active()) animating = true; }
     for (const [id, g] of pickupViews) {
         if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
@@ -726,7 +729,9 @@ function consumeEvents() {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
             }
-        } else if (e.t === 'contact') {
+        }
+        if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
+        if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
         } else if (e.t === 'bombtap') {
@@ -1279,6 +1284,7 @@ const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
+    leafPiles?.seed(sim.s.blocks);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
     descendT = 0;
@@ -1375,9 +1381,11 @@ function restart(saved = null) {
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
+    leafPiles?.clear();
     keyAim = false;
     if (saved) {
         sim = saved;
+        leafPiles?.seed(sim.s.blocks);
         runStarted = true;
         fromSave = true;
         zoneOffset = 0;
