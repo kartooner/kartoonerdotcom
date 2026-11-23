@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.0-3';
+const BUILD = '1.3.0-4';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1284,7 +1284,7 @@ const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
-    leafPiles?.seed(sim.s.blocks);
+    leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
     descendT = 0;
@@ -1385,7 +1385,7 @@ function restart(saved = null) {
     keyAim = false;
     if (saved) {
         sim = saved;
-        leafPiles?.seed(sim.s.blocks);
+        leafPiles?.seed(sim.s.blocks, sim.s.depth);
         runStarted = true;
         fromSave = true;
         zoneOffset = 0;

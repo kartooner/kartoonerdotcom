@@ -3,7 +3,7 @@
 // Which season it is comes from the date on the player's device: a tiny script at the top
 // of index.html sets data-season (and data-greeting) before anything is drawn, so the page
 // never flashes the wrong colours. ?season=fall (or none) in the address forces one, for testing.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-3');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-4');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;
@@ -34,7 +34,7 @@ export function applySeason({ THEMES, TIERS, JELLO, COLORS }) {
 // A little knit hat for fall: a rust band, a pumpkin-coloured top and a mustard pompom.
 // (Christmas gets a Santa hat.) It sits on his head, a little to one side.
 const HATS = {
-    fall: `<g class="hat" filter="url(#sketchy)" transform="rotate(-8 24 10)">
+    fall: `<g class="hat" filter="url(#sketchy)" transform="translate(0 -3.5) rotate(-8 24 10)">
 <path d="M8 11.5C8 -1.5 40 -1.5 40 11.5z" fill="#e2803f" stroke="#2b2622" stroke-width="2.2" stroke-linejoin="round"/>
 <path d="M17 2.5q1.2 4 1 8.5M24 0.8v10.4M31 2.5q-1.2 4-1 8.5" fill="none" stroke="#c95b3e" stroke-width="1.6" stroke-linecap="round"/>
 <rect x="6" y="9.5" width="36" height="6.5" rx="2.2" fill="#c95b3e" stroke="#2b2622" stroke-width="2.2"/>

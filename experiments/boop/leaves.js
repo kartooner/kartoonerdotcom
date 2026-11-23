@@ -2,11 +2,11 @@
 // little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
 // and gather in a heap on the floor. Purely for show: they never touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-3');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-4');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
-const PILE_SHARE = 0.35, PILES_MAX = 6;
+const PILE_EVERY = 3;            // one pile every third zone (1, 4, 7...): a treat, not clutter
 const TIP = 0.35;                // a block tipped this far (radians) sheds its pile
 
 function leafGeometry() {
@@ -33,8 +33,9 @@ export function makeLeafPiles(scene, colors, floorY) {
     const pick = () => new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
 
     // A new zone: drop a few piles on the tops of some blocks (in each block's own space).
-    function seed(blocks) {
+    function seed(blocks, depth) {
         piles = new Map();
+        if ((depth - 1) % PILE_EVERY !== 0) return;
         const all = Object.values(blocks);
         // Where each block's cells are in the field (from where it was placed).
         const cellsOf = (b) => b.cells.map(([x, y]) => [b.anchor[0] + x, b.anchor[1] + y]);
@@ -44,24 +45,27 @@ export function makeLeafPiles(scene, colors, floorY) {
             return !taken.some((o) => o.cells.some(([ox, oy]) => Math.abs(ox - wx) < 0.6 && Math.abs(oy - wy) < 0.6));
         };
         const list = all.filter((b) => !b.jello && !b.bomb && !b.seesaw && !b.hung);
-        for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
-        const n = Math.min(PILES_MAX, Math.round(list.length * PILE_SHARE));
-        for (const b of list.slice(0, n)) {
-            // A top cell: one with nothing above it in the block.
+        // The block with the widest open top (two cells side by side if it can), so the pile reads.
+        let best = null;
+        for (const b of list) {
             const tops = b.cells.filter((c) => roomAbove(b, c));
-            if (!tops.length) continue;
-            const [cx, cy] = tops[Math.floor(Math.random() * tops.length)];
-            const leaves = [];
-            // A little heap, two layers: a wide bottom row and a few on top, higher in the middle.
-            for (const [count, lift, width] of [[5 + Math.floor(Math.random() * 2), 0.04, 0.8], [3, 0.13, 0.45]]) {
-                for (let k = 0; k < count; k++) {
-                    const t = (k + 0.5) / count;
-                    leaves.push({ lx: cx - width / 2 + t * width + (Math.random() - 0.5) * 0.08, ly: cy + 0.5 + lift + Math.sin(t * Math.PI) * 0.06 + Math.random() * 0.03,
-                        a: (Math.random() - 0.5) * 1.1, size: 0.85 + Math.random() * 0.35, color: pick(), wx: 0, wy: 0 });
-                }
+            for (const c of tops) {
+                const pair = tops.find(([x, y]) => Math.abs(x - (c[0] + 1)) < 0.01 && Math.abs(y - c[1]) < 0.01);
+                const score = (pair ? 2 : 1) + Math.random() * 0.5 + (b.anchor[1] > -9 ? 0.3 : 0);   // a bit higher up reads better
+                if (!best || score > best.score) best = { b, x: pair ? c[0] + 0.5 : c[0], y: c[1], w: pair ? 1.7 : 0.9, score };
             }
-            piles.set(b.id, { leaves, a0: null });
         }
+        if (!best) return;
+        // A full heap: three layers, wide at the bottom and rounded on top.
+        const leaves = [];
+        for (const [count, lift, width] of [[Math.round(best.w * 9), 0.05, best.w], [Math.round(best.w * 6), 0.17, best.w * 0.7], [Math.round(best.w * 3), 0.28, best.w * 0.38]]) {
+            for (let k = 0; k < count; k++) {
+                const t = (k + 0.5) / count;
+                leaves.push({ lx: best.x - width / 2 + t * width + (Math.random() - 0.5) * 0.1, ly: best.y + 0.5 + lift + Math.sin(t * Math.PI) * 0.05 + Math.random() * 0.04,
+                    a: (Math.random() - 0.5) * 1.4, size: 1.0 + Math.random() * 0.45, color: pick(), wx: 0, wy: 0 });
+            }
+        }
+        piles.set(best.b.id, { leaves, a0: null });
     }
 
     // A block was hit or knocked: its pile flutters off.
