@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-13');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -53,7 +53,7 @@ const parHpPerShot = (d) => {
     if (i === -1) return PAR_TABLE[PAR_TABLE.length - 1][1];
     if (i === 0) return PAR_TABLE[0][1];
     const [d0, v0] = PAR_TABLE[i - 1], [d1, v1] = PAR_TABLE[i];
-    return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 1.08;      // a stretch: par is a target, not a given
+    return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 1.02;      // par is a target, not a given: beaten about a third of the time
 };
 // Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
 // comes from layout and from income not keeping up, not from waiting on big numbers.
