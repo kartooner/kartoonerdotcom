@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-9');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-10');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -929,15 +929,19 @@ export class Sim {
             filled += cells.length;
         }
 
-        // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
+        // Jello shows up here and there: often none, usually one, sometimes two (a jelly zone, two or three).
         if (has('jelly') || this.rand() < spec.jello) {
             const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
-            // Small pieces early; from depth 8 jelly can be a chunky piece too (a jelly zone favours those).
-            const most = s.depth >= 8 ? 6 : 3;
-            const small = plan.filter((p) => p.cells.length <= most && !p.cup && !p.vine && !p.seesaw);
-            if (has('jelly') && s.depth >= 8) small.sort((a, b) => b.cells.length - a.cells.length).splice(Math.max(3, count + 1));
-            for (let i = 0; i < count && small.length; i++) {
-                small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
+            // Jelly comes in all sizes once it's been introduced: each piece rolls small (1-2 cells),
+            // medium (3-4) or large (5-6) and takes the closest piece the layout has, so a zone
+            // with two or three usually mixes them. The very first (depth 5) stays small and clear.
+            const pool = plan.filter((p) => p.cells.length <= 6 && !p.cup && !p.vine && !p.seesaw && !p.target && p.kind === 'pinned');
+            for (let i = 0; i < count && pool.length; i++) {
+                const r = this.rand();
+                const want = s.depth <= 5 ? 2 : r < 0.38 ? 1.5 : r < 0.72 ? 3.5 : 5.5;
+                let best = 0, bestD = Infinity;
+                pool.forEach((p, k) => { const d = Math.abs(p.cells.length - want) + this.rand() * 0.9; if (d < bestD) { bestD = d; best = k; } });
+                pool.splice(best, 1)[0].kind = 'jello';
             }
         }
 
