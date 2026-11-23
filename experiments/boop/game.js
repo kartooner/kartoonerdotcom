@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.4-5';
+const BUILD = '1.3.4-6';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -232,6 +232,7 @@ function buildBlockView(b) {
     if (b.gold) {
         // A gold block gets a little white star in its top corner that twinkles.
         const [cx, cy] = b.cells.reduce((m, c) => (c[1] > m[1] || (c[1] === m[1] && c[0] > m[0]) ? c : m));
+        mesh.material.uniforms.uGold.value = 1;
         star = new THREE.Mesh(starGeo, starMat);
         star.position.set(cx + 0.27, cy + 0.27, 0.25);
         star.renderOrder = 3;
@@ -254,8 +255,8 @@ function buildBlockView(b) {
 // Nails: what holds a fixed block in place. Heads with an ink outline, like a tack in a
 // drawing. Bright ones can be knocked out: they tilt and lift as they wear down, jolt
 // when hit, and pop out. Grey ones (single squares) never come out.
-// A gold block (pop it for a bonus stage): bright gold, sparkly plus-sign pattern.
-const GOLD = { fill: 0xf0ad1f, pattern: 0, text: '#2b2622' };
+// A gold block (pop it for a bonus stage): shaded like metal in the block shader (flecks, bevel, sheen).
+const GOLD = { fill: 0xf0ad1f, pattern: -1, text: '#2b2622' };
 const starGeo = flakeGeometry(), starMat = new THREE.MeshBasicMaterial({ color: 0xfffbea });
 starGeo.userData.keep = starMat.userData.keep = true;
 const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
@@ -288,7 +289,7 @@ function updateNails(v, b, frameDt) {
 }
 
 function updateBlockView(v, b, frameDt) {
-    if (v.star) { const t = performance.now() / 1000; v.star.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); v.star.rotation.z = t * 0.6; }   // twinkles whenever the board is drawn
+    if (v.star) { const t = performance.now() / 1000; v.mesh.material.uniforms.uTime.value = t % 1000; v.star.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); v.star.rotation.z = t * 0.6; }   // twinkles whenever the board is drawn
     if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
     let nailMoving = false;

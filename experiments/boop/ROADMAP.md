@@ -140,7 +140,7 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - Checked: memory flat across 26 zones, idle redraws ~10/s, aim guide exact, smoke 28/28.
 
 ## v1.3.4: bonus stages
-- **Gold block** (from depth 12; always the first time, then about one zone in seven): a deep gold block with a little white star twinkling in its corner. Pop it before the zone is cleared and the next stage is a bonus. Boop explains it the first time.
+- **Gold block** (from depth 12; always the first time, then about one zone in seven): a deep gold block that looks like metal: lighter at the top, a bevelled rim, twinkling flecks and a sheen that sweeps across now and then, plus a little white star in its corner. (The bevel is measured to each cell's outer sides, so joins between cells don't show a seam.) Pop it before the zone is cleared and the next stage is a bonus. Boop explains it the first time.
 - **Bonus stage:** three free shots, one ball each (so aim matters), your supply untouched, no depth. The par box reads "Bonus · free shots, N left". Three kinds in turn:
   - **Ring run:** seven +1 rings, three wall mushrooms, a few sturdier little blocks.
   - **Piñata:** lots of little blocks; every five pops is +1.

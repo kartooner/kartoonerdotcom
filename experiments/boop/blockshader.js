@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-6');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -34,6 +34,7 @@ void main() {
 
 const fragment = /* glsl */`
 uniform vec4 uBox[9];      // one box per cell; the biggest shape is 3x3
+uniform vec3 uCell[9];     // cell centre and open sides (bits: 1 left, 2 bottom, 4 right, 8 top), for the gold bevel
 uniform int uCount;
 uniform float uK;          // current size (blocks shrink as they wear down)
 uniform float uR;          // corner radius
@@ -48,6 +49,8 @@ uniform vec3 uPoke;        // jello: a ball inside it (x, y in unscaled cells, s
 uniform float uWobble;     // jello: current wobble, to slide the shine around
 uniform vec3 uTrail[10];   // jello: recent ball positions (x, y, strength) - a tunnel that heals
 uniform float uNeutral;    // 1 for unbreakable blocks: plain fill, no pattern
+uniform float uGold;       // 1 for the gold block: metal shading, flecks and a passing sheen
+uniform float uTime;       // seconds, for the gold sheen and fleck twinkle (only moves when the board redraws)
 // Nails, drawn here rather than as meshes of their own (two fewer draws per block): a tack
 // head with an ink rim. x, y in the block's scaled space; z = wear 0-1 (it tips and shows its
 // side); w = tilt. uNailFill is white for ones that come out, grey for ones that never do.
@@ -124,7 +127,52 @@ void main() {
         float clear = smoothstep(0.15, 0.25, length(p - uLabel));   // small, so one-cell blocks keep their pattern
         fill = mix(fill, fill * 0.8, pattern(p, uPattern) * clear);
     }
+    if (uGold > 0.5) {
+        // Gold: metal rather than a flat colour. Brighter at the top, deeper at the bottom.
+        float h = clamp((p.y - uBounds.y) / (uBounds.w - uBounds.y), 0.0, 1.0);
+        fill = mix(uFill * 0.8, mix(uFill, vec3(1.0, 0.9, 0.5), 0.3), h);
+        // Flecks: scattered bright specks, each twinkling on its own beat. Kept off the number.
+        vec2 fc = floor(p * 5.0), ff = fract(p * 5.0) - 0.5;
+        float fr = hash(fc + uSeed);
+        vec2 jit = vec2(hash(fc + 3.7), hash(fc + 9.1)) - 0.5;
+        float fleck = step(0.5, fr) * (1.0 - aastep(0.06 + fr * 0.05, length(ff - jit * 0.5)));
+        fleck += step(0.5, fr) * (1.0 - aastep(0.02, abs((ff - jit * 0.5).x))) * (1.0 - aastep(0.16, abs((ff - jit * 0.5).y))) * step(0.85, fr);   // the biggest get a little cross glint
+        fleck += step(0.5, fr) * (1.0 - aastep(0.02, abs((ff - jit * 0.5).y))) * (1.0 - aastep(0.16, abs((ff - jit * 0.5).x))) * step(0.85, fr);
+        float tw = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * 2.6 + fr * 60.0));
+        float clearG = smoothstep(0.2, 0.32, length(p - uLabel));
+        fill = mix(fill, vec3(1.0, 0.99, 0.9), min(fleck, 1.0) * tw * clearG);
+        // A few darker grains, so it reads as cast metal and not plastic.
+        float grain = step(0.8, hash(fc + uSeed + 21.0)) * (1.0 - aastep(0.05, length(ff + jit * 0.5)));
+        fill = mix(fill, uFill * 0.62, grain * 0.6 * clearG);
+        // Sheen: a soft diagonal band that sweeps across now and then, then rests.
+        float sx = p.x + p.y * 0.7;
+        float lo = uBounds.x + uBounds.y * 0.7 - 0.6, hi = uBounds.z + uBounds.w * 0.7 + 0.6;
+        float ph = fract(uTime / 3.2) / 0.45;                 // sweep takes 45% of the cycle
+        float at = mix(lo, hi, ph);
+        float sheen = (1.0 - smoothstep(0.08, 0.22, abs(sx - at))) * step(ph, 1.0);
+        sheen += (1.0 - smoothstep(0.02, 0.06, abs(sx - at - 0.3))) * step(ph, 1.0) * 0.6;   // thin trailing glint
+        fill = mix(fill, vec3(1.0, 0.98, 0.9), sheen * 0.55);
+    }
     vec3 col = mix(uInk, fill, fillMask);
+    if (uGold > 0.5) {
+        // Bevel: a bright inner rim facing the top-left light, a darker one facing away. Measured
+        // to each cell's outer sides only (the shape's distance dips at the joins between cells).
+        float eD = 1e3; vec2 eN = vec2(0.0);
+        for (int i = 0; i < 9; i++) {
+            if (i >= uCount) break;
+            vec2 cq = p - uCell[i].xy;
+            if (max(abs(cq.x), abs(cq.y)) > 0.5) continue;
+            float bits = uCell[i].z;
+            if (mod(bits, 2.0) > 0.5 && cq.x + 0.5 < eD) { eD = cq.x + 0.5; eN = vec2(-1.0, 0.0); }
+            if (mod(floor(bits / 2.0), 2.0) > 0.5 && cq.y + 0.5 < eD) { eD = cq.y + 0.5; eN = vec2(0.0, -1.0); }
+            if (mod(floor(bits / 4.0), 2.0) > 0.5 && 0.5 - cq.x < eD) { eD = 0.5 - cq.x; eN = vec2(1.0, 0.0); }
+            if (bits >= 7.5 && 0.5 - cq.y < eD) { eD = 0.5 - cq.y; eN = vec2(0.0, 1.0); }
+        }
+        float rim = smoothstep(0.06, 0.12, eD) * (1.0 - smoothstep(0.14, 0.22, eD)) * fillMask;
+        float lit = dot(eN, vec2(-0.7071, 0.7071));
+        col = mix(col, vec3(1.0, 0.97, 0.82), rim * max(lit, 0.0) * 0.8);
+        col = mix(col, uFill * 0.55, rim * max(-lit, 0.0) * 0.6);
+    }
     float alpha = inside * mix(1.0, mix(0.6, 0.4, fillMask), uJello);
 
     if (uJello > 0.5) {
@@ -199,6 +247,10 @@ export function makeBlockMesh(cells, jello, seed, corner) {
         y - (has(x, y - 1) ? 0.52 : 0.5 - r),
         x + (has(x + 1, y) ? 0.52 : 0.5 - r),
         y + (has(x, y + 1) ? 0.52 : 0.5 - r)));
+    // Each cell's centre and which sides face out (1 = open): left, bottom, right, top bits in z.
+    const open = cells.map(([x, y]) => new THREE.Vector3(x, y,
+        (has(x - 1, y) ? 0 : 1) + (has(x, y - 1) ? 0 : 2) + (has(x + 1, y) ? 0 : 4) + (has(x, y + 1) ? 0 : 8)));
+    while (open.length < 9) open.push(new THREE.Vector3(1e3, 1e3, 0));
     while (boxes.length < 9) boxes.push(new THREE.Vector4(0, 0, 0, 0));
 
     const xs = cells.map(([x]) => x), ys = cells.map(([, y]) => y);
@@ -217,6 +269,7 @@ export function makeBlockMesh(cells, jello, seed, corner) {
         uniforms: {
             uBox: { value: boxes },
             uCount: { value: cells.length },
+            uCell: { value: open },
             uK: { value: 1 },
             uR: { value: r },
             uSeed: { value: seed },
@@ -230,6 +283,8 @@ export function makeBlockMesh(cells, jello, seed, corner) {
             uWobble: { value: 0 },
             uTrail: { value: Array.from({ length: 10 }, () => new THREE.Vector3(0, 0, 0)) },
             uNeutral: { value: 0 },
+            uGold: { value: 0 },
+            uTime: { value: 0 },
             uNail: { value: [new THREE.Vector4(), new THREE.Vector4()] },
             uNailFill: { value: [new THREE.Color(), new THREE.Color()] },
             uNails: { value: 0 },
