@@ -117,7 +117,8 @@ Past depth 16 nothing new arrives (bombs at 15 and the last launcher upgrade at 
 ## Seasons
 - The game dresses up around holidays, picked from the date on the player's device (a tiny script at the top of index.html sets `data-season` before anything draws). Rules never change; `?season=fall` or `?season=none` in the address forces one, for testing.
 - **Fall / Thanksgiving** (Nov 1 to the Sunday after Thanksgiving): warmer paper, harvest block colours (still light to dark as numbers climb, same patterns), cranberry jelly, autumn vines, leaves drifting from popped blocks, one full leaf pile every third zone (1, 4, 7...) on the block with the widest open top, which flutters off when the block is hit and heaps up on the floor (for show only, never the physics), and a knit hat with a pompom for Boop. In Thanksgiving week the start screen says "Happy Thanksgiving!" before the best depth.
-- **Next:** Christmas (Dec 1 to Jan 1): snow, ornaments, a garland vine, a Santa hat. Later maybe New Year's and Halloween.
+- **Christmas / winter** (Dec 1 to Jan 1, added in v1.3.3): crisp paper, mint and ice blue climbing to cranberry and pine (light numbers on the two darkest), icy jelly, snowflakes from popped blocks, a snow cap on one block every third zone that puffs off when hit and drifts into a bank on the floor, garland vines strung with little coloured lights, and a Santa hat for Boop. "Merry Christmas!" from Dec 18 to 26, "Happy New Year!" on Dec 31 and Jan 1. `?season=winter` forces it.
+- **Later:** maybe New Year's and Halloween; the season system takes a palette, a crumb shape and a hat.
 
 ## v1.3.1: the retune
 Measured with bots at two skill levels (random aim, and best of two aims). An average player now gets past 20–25; past 25 zones grow again a little each time, so the deep end ramps up.

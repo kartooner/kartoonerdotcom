@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.2-2';
+const BUILD = '1.3.3-2';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -66,7 +66,7 @@ const scene = new THREE.Scene();
 // A holiday season (if it's one) recolours things before anything is built.
 const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
-const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook.crumbs, -H) : null;   // fall: leaves on blocks   // crayon bits when a block pops
+const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block   // crayon bits when a block pops
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -364,6 +364,14 @@ function buildVineLink(parent, seed, len) {
     leaf.rotation.z = -side * 1.15;
     leaf.renderOrder = 2;
     g.add(stem, leaf);
+    // Christmas: the vine is a garland strung with little lights, one per link, colours in turn.
+    if (seasonLook?.lights) {
+        const bulb = makeSketch({ kind: SHAPE.CIRCLE, size: [0.085], edge: 0.035, wob: 0.3,
+            fill: seasonLook.lights[seed % seasonLook.lights.length], seed: seed + 9, margin: 0.06 });
+        bulb.position.set(-0.1 * side, -0.12, 0.03);
+        bulb.renderOrder = 2;
+        g.add(bulb);
+    }
     parent.add(g);
     return g;
 }

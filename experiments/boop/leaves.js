@@ -2,16 +2,19 @@
 // little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
 // and gather in a heap on the floor. Purely for show: they never touch the physics.
 import * as THREE from 'three';
-import { leafGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.2-2');   // build stamp: game.js checks every file matches
+import { seasonGeometry } from './crumbs.js';
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.3-2');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
 const PILE_EVERY = 3;            // one pile every third zone (1, 4, 7...): a treat, not clutter
 const TIP = 0.35;                // a block tipped this far (radians) sheds its pile
 
-export function makeLeafPiles(scene, colors, floorY) {
-    const mesh = new THREE.InstancedMesh(leafGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
+// season: { crumbs: colours, shape }. In winter the "leaves" are snow: a snowy cap on a block
+// that puffs off when it's hit and drifts into a little bank on the floor.
+export function makeLeafPiles(scene, season, floorY) {
+    const colors = season.crumbs;
+    const mesh = new THREE.InstancedMesh(seasonGeometry(season), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = 4;
