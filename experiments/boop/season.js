@@ -3,7 +3,7 @@
 // Which season it is comes from the date on the player's device: a tiny script at the top
 // of index.html sets data-season (and data-greeting) before anything is drawn, so the page
 // never flashes the wrong colours. ?season=fall (or none) in the address forces one, for testing.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-6');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-7');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;
@@ -33,6 +33,9 @@ const SEASONS = {
         dark: { paper: 0x10141a, field: 0x182029 },
         crumbs: [0xd8e8f3, 0xbcd6ea, 0xa9c8e0, 0xffffff],   // snowflakes (icy blue, so they show on light paper)
         shape: 'flake',
+        // The snow cap: fine flakes in white with a little blue, periwinkle and lavender, so it
+        // reads as snow catching the light rather than one flat colour.
+        pile: { colors: [0xffffff, 0xffffff, 0xeef4fb, 0xdce8f5, 0xb8cdea, 0xa9bde6, 0xc4b8e8], size: 0.5, density: 2.4 },
         lights: [0xe0473c, 0xf2c14e, 0x4f9bd9, 0x58b368],   // garland bulbs
     },
 };
@@ -47,7 +50,7 @@ export function applySeason({ THEMES, TIERS, JELLO, COLORS }) {
     Object.assign(THEMES.light, look.light);
     Object.assign(THEMES.dark, look.dark);
     dressBuddies();
-    return { crumbs: look.crumbs, leaves: true, shape: look.shape, lights: look.lights ?? null };
+    return { crumbs: look.crumbs, leaves: true, shape: look.shape, lights: look.lights ?? null, pile: look.pile ?? null };
 }
 
 // A little knit hat for fall: a rust band, a pumpkin-coloured top and a mustard pompom.
