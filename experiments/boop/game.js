@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-2';
+const BUILD = '1.3.5-3';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1746,13 +1746,6 @@ function menuTagline() {
         : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
         : best > 0 ? `Best depth: ${best}` : TAGLINE;
     $('menu-tagline').classList.toggle('state', runStarted);
-    // Paused mid-run: your best depth underneath, or that you've passed it.
-    if (runStarted && best > 0) {
-        const sub = document.createElement('span');
-        sub.className = 'sub' + (sim.s.depth > best ? ' new' : '');
-        sub.textContent = sim.s.depth > best ? `New best! (was ${best})` : `Best depth: ${best}`;
-        $('menu-tagline').append(' ', sub);   // the space keeps the two lines apart for screen readers
-    }
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
 // phone dim or lock mid-shot. Paused, a screen up, or the tab hidden: the phone decides again.

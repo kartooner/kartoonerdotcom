@@ -152,4 +152,4 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Last shot:** three faint dashes from the launcher along the angle you last fired, shown while aiming (hidden when you're aiming right along them). Cleared on a new run.
 - **Nearly-out nails:** a crack across the head on the second-to-last hit, two cracks on the last.
 - **Reduce Motion** (the phone's setting) now reaches the board too: no screen shake, the gold block's sheen and star stay still, and leaves and snow drop without swaying or spinning.
-- **Best depth on the pause screen:** under "Paused · Depth 12", a quieter "Best depth: 27", or "New best! (was 27)" in the accent colour once you've passed it. (Tried first as a note next to Depth in the top bar; it looked out of place there.)
+- **Best depth** stays on the game-over screen only (as before). Tried a note next to Depth in the top bar, then a line on the pause screen; both cluttered the UI.
