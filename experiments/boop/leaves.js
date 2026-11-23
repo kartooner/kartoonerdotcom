@@ -3,7 +3,7 @@
 // and gather in a heap on the floor. Purely for show: they never touch the physics.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-6');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -11,6 +11,8 @@ const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
 // finer, more numerous flakes; the limits grow with the density so the floor bank keeps its size.
 const PILE_EVERY = 3;            // one pile every third zone (1, 4, 7...): a treat, not clutter
 const TIP = 0.35;                // a block tipped this far (radians) sheds its pile
+// Reduce Motion: leaves and snow drop gently, without the swaying and spinning.
+const calm = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
 
 // season: { crumbs: colours, shape }. In winter the "leaves" are snow: a snowy cap on a block
 // that puffs off when it's hit and drifts into a little bank on the floor.
@@ -96,9 +98,9 @@ export function makeLeafPiles(scene, season, floorY) {
             const f = falling[i];
             f.t += dt;
             f.vy = Math.max(-2, f.vy - 5 * dt);
-            f.vx += Math.sin(f.t * 4 + f.sway) * 5 * dt;
+            if (!calm?.matches) f.vx += Math.sin(f.t * 4 + f.sway) * 5 * dt;
             f.vx *= 1 - dt * 1.2;
-            f.x += f.vx * dt; f.y += f.vy * dt; f.a += f.va * dt;
+            f.x += f.vx * dt; f.y += f.vy * dt; if (!calm?.matches) f.a += f.va * dt;
             f.x = Math.max(0.1, Math.min(8.9, f.x));
             // Land on the heap: a little higher where more leaves have gathered.
             const near = floor.filter((l) => Math.abs(l.x - f.x) < 0.3).length;

@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-6');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -56,6 +56,7 @@ uniform float uTime;       // seconds, for the gold sheen and fleck twinkle (onl
 // side); w = tilt. uNailFill is white for ones that come out, grey for ones that never do.
 uniform vec4 uNail[2];
 uniform vec3 uNailFill[2];
+uniform float uNailCrack[2];   // 0 none, 1 one crack, 2 two: the nail is nearly out
 uniform int uNails;
 varying vec2 vP;
 
@@ -226,7 +227,16 @@ void main() {
         float naa = fwidth(r);
         float head = 1.0 - smoothstep(-naa, naa, r - 0.032);       // head plus rim
         float face = 1.0 - smoothstep(-naa, naa, r);                // the head inside the rim
-        col = mix(col, mix(uInk, uNailFill[i], face), head);
+        vec3 nc = uNailFill[i];
+        float ck = uNailCrack[i];
+        if (ck > 0.5) {
+            // Jagged ink lines across the head.
+            float j = (noise(dp * 60.0 + uSeed) - 0.5) * 0.018;
+            float c1 = 1.0 - smoothstep(0.007, 0.015, abs(dp.y - dp.x * 0.55 + j));
+            float c2 = ck > 1.5 ? (1.0 - smoothstep(0.007, 0.015, abs(dp.x + dp.y * 0.35 - 0.02 + j))) * step(dp.y, 0.01) : 0.0;
+            nc = mix(nc, uInk, max(c1, c2) * 0.9);
+        }
+        col = mix(col, mix(uInk, nc, face), head);
         alpha = max(alpha, head);
     }
     if (alpha < 0.01) discard;
@@ -287,6 +297,7 @@ export function makeBlockMesh(cells, jello, seed, corner) {
             uTime: { value: 0 },
             uNail: { value: [new THREE.Vector4(), new THREE.Vector4()] },
             uNailFill: { value: [new THREE.Color(), new THREE.Color()] },
+            uNailCrack: { value: [0, 0] },
             uNails: { value: 0 },
         },
     });

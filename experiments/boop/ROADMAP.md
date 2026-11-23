@@ -146,3 +146,15 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
   - **Piñata:** lots of little blocks; every five pops is +1.
   - **Chain reaction:** a row of bombs among little blocks; every four pops is +1.
 - **Payout capped at +5**, plus +1 for clearing the whole stage; "Bonus +N" shows as the next zone comes in. Measured with random aim: 3–6, about 4.5 on average.
+
+## v1.3.5: small comforts
+- **Nails pop sooner:** a nail's strength grows slowly with its block's number and tops out at 10 hits (deep nails used to take 30–50). Bots: about half of nails pop from depth 6 on, up from about a quarter; end depth about the same.
+- **Last shot:** three faint dashes from the launcher along the angle you last fired, shown while aiming (hidden when you're aiming right along them). Cleared on a new run.
+- **Nearly-out nails:** a crack across the head on the second-to-last hit, two cracks on the last.
+- **Reduce Motion** (the phone's setting) now reaches the board too: no screen shake, the gold block's sheen and star stay still, and leaves and snow drop without swaying or spinning.
+- **Best depth** stays on the game-over screen only (as before). Tried a note next to Depth in the top bar, then a line on the pause screen; both cluttered the UI.
+- **Fine aim on touch:** a slow, careful finger turns the aim about a third as much (under ~40 px a second), easing up to the normal amount by ~200 px a second. Aim changes are applied as steps, so slowing down never makes the aim jump. Mouse pointing and keys are unchanged (Shift is the keys' fine aim).
+- **Hit stop:** a blink of stillness when a big block (5+ squares) pops (45 ms), a bomb goes off (60 ms) or a nail pops (30 ms); never twice within a quarter second, so chains don't stutter.
+- **Pop streaks:** from the third block popped in one turn, a "×3", "×4"... floater that grows a little each time. (The pop sound already climbs in pitch through a turn.)
+- **Last balls speed up:** 4 s into a turn, once only one or two balls are left, the game eases up to 1.8× by itself. Holding still speeds it up 3×.
+- **Fix:** hand-lettered floaters longer than a few letters ("Hits ×2", "Bonus stage next!") were cut off at both ends; their canvas now fits the text, and they're kept inside the field.
