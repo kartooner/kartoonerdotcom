@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-7');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -97,13 +97,14 @@ const BLOCK_DENSITY = 1.5;
 // springs back. Resting blocks keep the lighter density and move freely.
 const PINNED_DENSITY = 3;
 // Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
-// A ball hitting close to a nail wears it down; a nail lasts about a third of the
-// block's starting number in hits (at least 2; NAIL_SHARE). With one nail left the block swings
+// A ball hitting close to a nail wears it down. A nail's strength grows slowly with the
+// block's starting number and tops out at 10 hits (nailHpFor), so popping nails stays a real
+// option on big deep blocks instead of taking 30-50 hits. With one nail left the block swings
 // down and hangs from it; with none it falls and becomes a resting block. Only single
 // squares' nails never come out (hp -1).
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
-const NAIL_SHARE = 0.35;
+const nailHpFor = (hp) => Math.min(10, Math.max(2, Math.round(1.5 + Math.sqrt(hp) * 0.75)));   // 4 → 3, 14 → 4, 50 → 7, 100+ → 9-10
 const GREY_STILL = 0.6, GREY_FALL_MIN = 48, GREY_CALM = 30, GREY_MAX = 360;   // a loose grey block crumbles once settled (0.25s still, after 0.4s), or after 3s
 const NAIL_GREY_HP = 6;               // grey blocks have no number: their nails take this many hits
 const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
@@ -317,7 +318,7 @@ export class Sim {
             const a = flip ? [Math.max(...topX) + 0.5 - i, top + 0.5 - i] : [Math.min(...topX) - 0.5 + i, top + 0.5 - i];
             const c = flip ? [Math.min(...botX) - 0.5 + i, bot - 0.5 + i] : [Math.max(...botX) + 0.5 - i, bot - 0.5 + i];
             // Single squares' nails never come out (a lone square on the floor is no fun to chase).
-            const nhp = n === 1 ? -1 : kind === 'neutral' ? NAIL_GREY_HP : Math.max(2, Math.round(hp * NAIL_SHARE));
+            const nhp = n === 1 ? -1 : kind === 'neutral' ? NAIL_GREY_HP : nailHpFor(hp);
             b.nails = [{ id: 0, x: a[0], y: a[1], hp: nhp, hp0: nhp }, { id: 1, x: c[0], y: c[1], hp: nhp, hp0: nhp }];
         } else b.nails = [];
         s.blocks[id] = b;
@@ -422,7 +423,7 @@ export class Sim {
     // A seesaw: one nail, in the middle of the bar (where it pivots).
     makeSeesaw(b) {
         b.seesaw = true;
-        const nhp = Math.max(2, Math.round(b.hp0 * NAIL_SHARE));
+        const nhp = nailHpFor(b.hp0);
         b.nails = [{ id: 0, x: 0, y: SEESAW_NAIL_Y, hp: nhp, hp0: nhp }];   // just under the number
         this.shapeBlock(b);
     }
