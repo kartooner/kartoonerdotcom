@@ -146,3 +146,10 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
   - **Piñata:** lots of little blocks; every five pops is +1.
   - **Chain reaction:** a row of bombs among little blocks; every four pops is +1.
 - **Payout capped at +5**, plus +1 for clearing the whole stage; "Bonus +N" shows as the next zone comes in. Measured with random aim: 3–6, about 4.5 on average.
+
+## v1.3.5: small comforts
+- **Nails pop sooner:** a nail's strength grows slowly with its block's number and tops out at 10 hits (deep nails used to take 30–50). Bots: about half of nails pop from depth 6 on, up from about a quarter; end depth about the same.
+- **Last shot:** three faint dashes from the launcher along the angle you last fired, shown while aiming (hidden when you're aiming right along them). Cleared on a new run.
+- **Nearly-out nails:** a crack across the head on the second-to-last hit, two cracks on the last.
+- **Reduce Motion** (the phone's setting) now reaches the board too: no screen shake, the gold block's sheen and star stay still, and leaves and snow drop without swaying or spinning.
+- **Near your best:** within 2 of your best depth (once your best is 5 or more), "· Best 27" shows next to Depth; past it, "· New best!" in the accent colour. It sits on the label line, so the numbers never shift.

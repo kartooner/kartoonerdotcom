@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.3.4-8">
+<html lang="en" data-build="1.3.5-1">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -134,6 +134,10 @@
         .stat span { font-size: 0.75rem; font-weight: 600; }
         .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
         .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
+        /* Next to "Depth" when you're near your best (so it never shifts the numbers). */
+        #hud-best { font-style: normal; font-weight: 600; }
+        #hud-best:not(:empty)::before { content: " · "; }
+        #hud-best.new { color: var(--accent); font-weight: 800; }
         .stat-main { align-items: center; text-align: center; }
         /* Pause: the board's top-left corner, opposite the launcher. That corner stays
            open (zones start lower down), so it never covers a block. */
@@ -674,7 +678,7 @@
 <body>
     <div id="stage"></div>
     <div id="hud" aria-live="polite">
-        <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
+        <div class="stat"><span>Depth<em id="hud-best"></em></span><b id="hud-depth">1</b></div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
         <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
@@ -831,35 +835,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.3.4-8",
-                "./zones.js": "./zones.js?v=1.3.4-8",
-                "./blockshader.js": "./blockshader.js?v=1.3.4-8",
-                "./sketch.js": "./sketch.js?v=1.3.4-8",
-                "./balls.js": "./balls.js?v=1.3.4-8",
-                "./labels.js": "./labels.js?v=1.3.4-8",
-                "./audio.js": "./audio.js?v=1.3.4-8",
-                "./theme.js": "./theme.js?v=1.3.4-8",
-                "./crumbs.js": "./crumbs.js?v=1.3.4-8",
-                "./buddy.js": "./buddy.js?v=1.3.4-8",
-                "./season.js": "./season.js?v=1.3.4-8",
-                "./leaves.js": "./leaves.js?v=1.3.4-8"
+                "./sim.js": "./sim.js?v=1.3.5-1",
+                "./zones.js": "./zones.js?v=1.3.5-1",
+                "./blockshader.js": "./blockshader.js?v=1.3.5-1",
+                "./sketch.js": "./sketch.js?v=1.3.5-1",
+                "./balls.js": "./balls.js?v=1.3.5-1",
+                "./labels.js": "./labels.js?v=1.3.5-1",
+                "./audio.js": "./audio.js?v=1.3.5-1",
+                "./theme.js": "./theme.js?v=1.3.5-1",
+                "./crumbs.js": "./crumbs.js?v=1.3.5-1",
+                "./buddy.js": "./buddy.js?v=1.3.5-1",
+                "./season.js": "./season.js?v=1.3.5-1",
+                "./leaves.js": "./leaves.js?v=1.3.5-1"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./sim.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./zones.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./blockshader.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./sketch.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./balls.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./labels.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./audio.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./theme.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./buddy.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./crumbs.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./season.js?v=1.3.4-8">
-    <link rel="modulepreload" href="./leaves.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./game.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./sim.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./zones.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./blockshader.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./sketch.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./balls.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./labels.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./audio.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./theme.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./buddy.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./crumbs.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./season.js?v=1.3.5-1">
+    <link rel="modulepreload" href="./leaves.js?v=1.3.5-1">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -902,6 +906,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.3.4-8"></script>
+    <script type="module" src="./game.js?v=1.3.5-1"></script>
 </body>
 </html>

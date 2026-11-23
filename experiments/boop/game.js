@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.4-8';
+const BUILD = '1.3.5-1';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -49,7 +49,7 @@ const DESCEND_TIME = 0.9;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
+    depth: $('hud-depth'), best: $('hud-best'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
 };
 
 // ---------- three.js setup ----------
@@ -115,6 +115,8 @@ function refit() {
 // A phone turned on its side: too short to play. Pause (so turning back finds Resume) and
 // show the "upright" panel. Tablets and desktops play fine in landscape.
 const touchOnly = window.matchMedia('(pointer: coarse)');
+// The phone's Reduce Motion setting: no screen shake, and the gold block's sheen and star stay still.
+const calmMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function phoneSideways() { return touchOnly.matches && window.innerWidth > window.innerHeight && window.innerHeight < 500; }
 function checkSideways() {
     const side = phoneSideways();
@@ -193,6 +195,19 @@ dots.count = 0;
 dots.frustumCulled = false;   // instances move every aim; the cached bounds would hide them
 for (let i = 0; i < MAX_DOTS; i++) dots.setColorAt(i, new THREE.Color(0));   // colour buffer must exist before first draw
 scene.add(dots);
+// Last shot: three faint dashes from the launcher along the angle you last fired, shown while
+// aiming, so "a little left of last time" is easy. Hidden when you're aiming right along it.
+const lastShot = new THREE.Group();
+const lastShotMat = mat(0xffffff, { transparent: true, opacity: 0.4 });
+for (let i = 0; i < 3; i++) {
+    const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.06), lastShotMat);
+    dash.position.x = 0.62 + i * 0.27;
+    lastShot.add(dash);
+}
+lastShot.position.set(LAUNCHER.x, LAUNCHER.y, 0.44);
+lastShot.visible = false;
+scene.add(lastShot);
+let lastShotAngle = null;
 
 
 // ---------- view of the sim ----------
@@ -270,6 +285,8 @@ function updateNails(v, b, frameDt) {
         live.add(n.id);
         if (!v.nailSeen?.has(n.id)) (v.nailSeen ??= new Map()).set(n.id, [n.x, n.y]);
         u.uNailFill.value[i].setHex(n.hp < 0 ? NAIL_FIXED : NAIL);
+        // Nearly out: a crack across the head on its second-to-last hit, two on its last.
+        u.uNailCrack.value[i] = n.hp === 1 && n.hp0 >= 2 ? 2 : n.hp === 2 && n.hp0 >= 4 ? 1 : 0;
         const worn = n.hp < 0 ? 0 : 1 - n.hp / n.hp0;
         const wobT = (v.nailWob[n.id] = (v.nailWob[n.id] ?? 9) + frameDt);
         const jolt = wobT < 0.5 ? Math.exp(-wobT * 14) * Math.sin(wobT * 60) * 0.06 : 0;
@@ -289,7 +306,10 @@ function updateNails(v, b, frameDt) {
 }
 
 function updateBlockView(v, b, frameDt) {
-    if (v.star) { const t = performance.now() / 1000; v.mesh.material.uniforms.uTime.value = t % 1000; v.star.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); v.star.rotation.z = t * 0.6; }   // twinkles whenever the board is drawn
+    if (v.star) {   // twinkles whenever the board is drawn (still with Reduce Motion: 2.0 is between sheen sweeps)
+        const t = calmMotion.matches ? 2 : performance.now() / 1000;
+        v.mesh.material.uniforms.uTime.value = t % 1000; v.star.scale.setScalar(calmMotion.matches ? 1 : 1 + 0.25 * Math.sin(t * 5)); v.star.rotation.z = t * 0.6;
+    }
     if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
     let nailMoving = false;
@@ -717,10 +737,15 @@ function syncView(frameDt) {
     // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
     const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
-    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
+    // Near your best depth: a quiet "Best 27" under Depth; past it, "New best!".
+    const near = bestBefore >= 5 && s.depth >= bestBefore - 2;
+    const bestText = !near ? '' : s.depth > bestBefore ? 'New best!' : `Best ${bestBefore}`;
+    const key = `${bestText}|${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
     if (key !== hudKey) {
         hudKey = key;
         hud.depth.textContent = s.depth;
+        hud.best.textContent = bestText;
+        hud.best.classList.toggle('new', s.depth > bestBefore && near);
         hud.shots.textContent = s.supply;
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
@@ -752,7 +777,7 @@ function consumeEvents() {
             scene.add(ring);
             booms.push({ ring, r: e.r, t: 0 });
             crumbs.spray([[e.x, e.y], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y + 0.3]], [0xf4a640, 0x4a4350, theme.edge]);
-            shake = Math.min(0.2, shake + 0.14);
+            if (!calmMotion.matches) shake = Math.min(0.2, shake + 0.14);
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
             if (v) {
@@ -776,7 +801,7 @@ function consumeEvents() {
         } else if (e.t === 'jelly') {
             const v = blockViews.get(e.id);
             if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
-        } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
+        } else if (e.t === 'smash' && !calmMotion.matches) shake = Math.min(0.16, shake + e.speed * 0.015);
 
     }
     sim.events.length = 0;
@@ -900,12 +925,14 @@ function drawGuide(angle) {
     }
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
+    lastShot.visible = lastShotAngle != null && Math.abs(angle - lastShotAngle) > 0.02;
     guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
 }
 
 function hideGuide() {
     guideAngle = null;
     dots.count = 0;
+    lastShot.visible = false;
 }
 
 // ---------- input ----------
@@ -1056,6 +1083,8 @@ function fire(angle) {
     turnTime = 0;
     mouseAim = false;
     sim.fire(angle);
+    lastShotAngle = angle;
+    lastShot.rotation.z = angle;
     audio.shot();
     runStarted = true;
     phase = 'play';
@@ -1272,9 +1301,12 @@ let stepAlpha = 1;
 function readBest() { try { return Number(localStorage.getItem('boop-best-depth')) || 0; } catch { return 0; } }
 function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d)); } catch { /* storage blocked */ } }
 
+// Your best depth from earlier runs, for the HUD's nudge when you're close to it.
+let bestBefore = readBest();
 function gameOver() {
     const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
     writeBest(best);
+    bestBefore = best;
     clearSave();
     audio.over();
     phase = 'over';
@@ -1432,6 +1464,7 @@ function restart(saved = null) {
     runStarted = false;
     fromSave = false;
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
+    lastShotAngle = null;
     sim.s.seen = readTips();
     startZone();
 }
@@ -1610,6 +1643,7 @@ function applyTheme(name) {
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
     dotHit.setHex(theme.hit);
+    lastShotMat.color.setHex(theme.line);
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
