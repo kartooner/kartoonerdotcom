@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-2');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-3');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -44,9 +44,17 @@ const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
 // Par: about how much a good shot takes off at this depth (measured with bots; a shot
 // does more deeper down, with bigger blocks and more traps). Independent of hpScale,
 // so lighter early zones also get a lower par.
-// Retuned in 1.3.1 from bot runs at three skill levels: what an average player's ball
-// actually takes off per shot, which climbs only slowly with depth.
-const parHpPerShot = (d) => Math.min(70, 32 + 1.2 * d);
+// Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
+// actually takes off per shot at each depth (with more balls per shot, each does a bit
+// less), set a little generous so a good zone beats par about a third of the time.
+const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 56], [16, 42], [22, 35], [30, 30]];
+const parHpPerShot = (d) => {
+    const i = PAR_TABLE.findIndex(([at]) => at > d);
+    if (i === -1) return PAR_TABLE[PAR_TABLE.length - 1][1];
+    if (i === 0) return PAR_TABLE[0][1];
+    const [d0, v0] = PAR_TABLE[i - 1], [d1, v1] = PAR_TABLE[i];
+    return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 0.92;      // a touch under average: par is a target
+};
 // Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
 // comes from layout and from income not keeping up, not from waiting on big numbers.
 const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : 0.62);
