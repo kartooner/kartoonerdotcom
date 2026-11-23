@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -11,14 +11,15 @@ import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
+import { applySeason, seasonGreeting } from './season.js';
 import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page, and the stamp every other file pushes as it loads.
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.0-1';
-const MODULES = 10;
+const BUILD = '1.3.0-2';
+const MODULES = 11;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
@@ -61,7 +62,9 @@ renderer.setPixelRatio(PIXEL_RATIOS[0]);
 $('stage').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const crumbs = makeCrumbs(scene);   // crayon bits when a block pops
+// A holiday season (if it's one) recolours things before anything is built.
+const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
+const crumbs = makeCrumbs(scene, seasonLook);   // crayon bits when a block pops
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -213,26 +216,26 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2 + c[1] * 0.01; if (d < bestD - 1e-9) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(b.weight ? 'TON' : b.neutral ? '' : String(b.hp), b.weight ? WEIGHT_TEXT : undefined);
+    const label = makeLabel(b.neutral ? '' : String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
-    label.visible = !b.neutral || b.weight;
+    label.visible = !b.neutral;
     group.add(label);
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
-        mesh.material.uniforms.uFill.value.setHex(b.weight ? bombLook().body : NEUTRAL[themeName()]);
+        mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
-    let handle = null;
-    if (b.weight) {
-        // A cartoon iron weight: the bomb's charcoal, "TON" on it, and a ring on top for the vine.
-        handle = makeSketch({ kind: SHAPE.RING, size: [0.15], ring: 0.05, edge: 0.03, wob: 0.3, filled: false, fill: bombLook().cap, seed: b.id, margin: 0.06 });
-        handle.position.set(0, 0.6, -0.01);
-        group.add(handle);
+    let bomb = null;
+    if (b.bomb) {
+        // A bomb hanging on a vine: drawn like any bomb, in place of the block.
+        mesh.visible = false;
+        bomb = makeBombParts(b.id);
+        group.add(bomb.group);
     }
     scene.add(group);
     scene.add(group);
-    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, weight: b.weight, handle, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -273,6 +276,7 @@ function updateNails(v, b, frameDt) {
 }
 
 function updateBlockView(v, b, frameDt) {
+    if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
     if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
         || Object.values(v.nailWob).some((t) => t < 0.5) || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
@@ -366,7 +370,6 @@ const BOMB_LOOK = {
     dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
 };
 const bombLook = () => BOMB_LOOK[themeName()];
-const WEIGHT_TEXT = '#d9d4cb';
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -397,6 +400,68 @@ function fuseGeometry(seed) {
     return strokeGeometry(pts, 0.045, seed, false);
 }
 
+// A round cartoon bomb (a prop sitting in a gap, or hanging on a vine): charcoal body with an
+// ink outline, a white shine, darker shading, a small cap, a curled fuse and an orange spark.
+function makeBombParts(id) {
+    const look = bombLook();
+    // The body is drawn by the block shader (one cell rounded into a circle), so its rough
+    // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
+    const body = makeBlockMesh([[0, 0]], false, (id * 7.31) % 50, 0.5);
+    const bu = body.material.uniforms;
+    bu.uK.value = 0.74; bu.uNeutral.value = 1;
+    bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
+    body.renderOrder = 1;                // over the fuse's base, under the shine and shading
+    const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, id), shadeMat);
+    const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, id + 2), shadeMat);
+    shade.position.z = shade2.position.z = 0.015;
+    const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: id + 1, margin: 0.05 });
+    shine.position.set(0.1, 0.12, 0.02);
+    shine.scale.set(1.2, 0.95, 1);
+    shine.rotation.z = 0.3;
+    const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: id + 2, margin: 0.06 });
+    cap.position.set(-0.03, 0.37, 0.012);
+    const fuse = new THREE.Mesh(fuseGeometry(id), fuseMat);
+    fuse.position.z = 0.005;
+    const spark = new THREE.Group();
+    const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: id + 3, margin: 0.06 });
+    const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: id + 5, margin: 0.04 });
+    core.position.set(-0.015, 0.005, 0.005);
+    spark.add(glow, core);
+    spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
+    for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
+    body.position.z = 0.01;
+    const group = new THREE.Group();
+    group.add(fuse, body, shade, shade2, shine, cap, spark);
+    return { group, body, cap, spark };
+}
+
+// A bomb's life on screen. Lit: the spark flares and spits, the bomb swells and shivers.
+// Just tapped: it jolts and the spark flares, then settles. Otherwise a gentle flicker.
+const sparkAt = new THREE.Vector3();
+function animateBomb(parts, lit, frameDt, holder) {
+    const now = performance.now() / 1000;
+    if (lit) {
+        animating = true;
+        parts.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
+        const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - Math.min(lit, 60) / 60);
+        parts.group.scale.set(k, k, 1);
+        if (Math.random() < 0.25) {
+            holder.updateMatrixWorld();
+            parts.spark.getWorldPosition(sparkAt);
+            crumbs.spray([[sparkAt.x, sparkAt.y]], [0xf4a640, 0xffe08a]);
+        }
+    } else if (parts.tapT != null && parts.tapT < 0.45) {
+        animating = true;
+        parts.tapT += frameDt;
+        const t = parts.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
+        parts.group.scale.set(1 + w, 1 - w, 1);
+        parts.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
+    } else {
+        parts.group.scale.set(1, 1, 1);
+        parts.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
+    }
+}
+
 function buildPropView(pr) {
     const group = new THREE.Group();
     const v = { group };
@@ -411,36 +476,10 @@ function buildPropView(pr) {
         // A round cartoon bomb: charcoal body with an ink outline, a white oval shine up and to
         // the right, darker crayon shading down the left, a small cap, a thick grey fuse that
         // curls right, and an orange spark at its tip. Body colours follow light/dark (bombLook).
-        const look = bombLook();
-        // The body is drawn by the block shader (one cell rounded into a circle), so its rough
-        // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
-        const body = makeBlockMesh([[0, 0]], false, (pr.id * 7.31) % 50, 0.5);
-        const bu = body.material.uniforms;
-        bu.uK.value = 0.74; bu.uNeutral.value = 1;
-        bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
-        body.renderOrder = 1;                // over the fuse's base, under the shine and shading
-        const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, pr.id), shadeMat);
-        const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, pr.id + 2), shadeMat);
-        shade.position.z = shade2.position.z = 0.015;
-        const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: pr.id + 1, margin: 0.05 });
-        shine.position.set(0.1, 0.12, 0.02);
-        shine.scale.set(1.2, 0.95, 1);
-        shine.rotation.z = 0.3;
-        const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: pr.id + 2, margin: 0.06 });
-        cap.position.set(-0.03, 0.37, 0.012);
-        const fuse = new THREE.Mesh(fuseGeometry(pr.id), fuseMat);
-        fuse.position.z = 0.005;
-        const spark = new THREE.Group();
-        const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: pr.id + 3, margin: 0.06 });
-        const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: pr.id + 5, margin: 0.04 });
-        core.position.set(-0.015, 0.005, 0.005);
-        spark.add(glow, core);
-        spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
-        for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
-        body.position.z = 0.01;
-        group.add(fuse, body, shade, shade2, shine, cap, spark);
+        const parts = makeBombParts(pr.id);
+        group.add(parts.group);
         group.position.set(pr.x, pr.y, 0.05);
-        v.bomb = { body, cap, spark };
+        v.bomb = parts;
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -571,27 +610,7 @@ function syncView(frameDt) {
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         if (v.vine) { syncVine(v, pr); continue; }
         if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
-        if (v.bomb) {
-            const now = performance.now() / 1000;
-            if (pr.lit) {
-                // Lit: the spark flares and spits, the bomb swells and shivers.
-                animating = true;
-                v.bomb.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
-                const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - pr.lit / 60);
-                v.group.scale.set(k, k, 1);
-                if (Math.random() < 0.25) crumbs.spray([[pr.x + FUSE_END[0], pr.y + FUSE_END[1] + zoneOffset]], [0xf4a640, 0xffe08a]);
-            } else if (v.bomb.tapT != null && v.bomb.tapT < 0.45) {
-                // Just tapped: it jolts and the spark flares, then settles.
-                animating = true;
-                v.bomb.tapT += frameDt;
-                const t = v.bomb.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
-                v.group.scale.set(1 + w, 1 - w, 1);
-                v.bomb.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
-            } else {
-                v.group.scale.set(1, 1, 1);
-                v.bomb.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
-            }
-        }
+        if (v.bomb) animateBomb(v.bomb, pr.lit, frameDt, v.group);
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
         // frozen mid-spin would otherwise keep the board from ever idling.
@@ -714,6 +733,8 @@ function consumeEvents() {
             // First hit on a bomb: a jolt and a flare of the spark, so you know it counted.
             const v = propViews.get(e.id);
             if (v?.bomb) v.bomb.tapT = 0;
+            const bv = e.block ? blockViews.get(e.id) : null;
+            if (bv?.bomb) bv.bomb.tapT = 0;
         } else if (e.t === 'jolt') {
             const v = blockViews.get(e.id);
             if (v) { v.wobbleT = 0; v.wobbleDir = e.dir; }
@@ -742,7 +763,7 @@ function playSound(e) {
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
-    else if (e.t === 'boom' || e.t === 'thud') audio.boom();
+    else if (e.t === 'boom') audio.boom();
     else if (e.t === 'bomblit') audio.fizz();
     else if (e.t === 'bombtap') audio.tink();
     else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
@@ -1185,14 +1206,14 @@ function queueZoneTips() {
     add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose));
     add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
-    add('grey', block((b) => b.neutral && !b.weight));
+    add('grey', block((b) => b.neutral && !b.bomb));
     add('cup', block((b) => b.cup));
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
     add('vine', prop('vine'));
     add('bomb', prop('bomb'));
     add('seesaw', block((b) => b.seesaw && !b.loose));
-    add('weight', block((b) => b.weight && b.hung != null));
+    add('hangbomb', block((b) => b.bomb && b.hung != null));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
     }
@@ -1539,8 +1560,11 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
-        if (v.weight) { v.mesh.material.uniforms.uFill.value.setHex(look.body); v.handle.material.uniforms.uFill.value.setHex(look.cap); }
-        else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+        if (v.bomb) {
+            v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
+            v.bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
+            v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
+        } else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
@@ -1578,14 +1602,6 @@ const ICON = {
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
-    {
-        version: '1.3',
-        line: 'New in 1.3: seesaws and weights, deeper down.',
-        items: [
-            { img: 'img/meet-seesaw.webp', title: 'Seesaws', text: 'From depth 18. One nail in the middle: hit an end and it tips, and anything resting on it slides off.' },
-            { img: 'img/meet-weight.webp', title: 'Weights', text: 'From depth 21, hanging on a vine. Cut the vine and it drops, smashing a big chunk off whatever it lands on.' },
-        ],
-    },
     {
         version: '1.2.3',
         line: 'New in 1.2.3: hold to speed up, a run summary, and a home screen icon.',
@@ -1648,6 +1664,7 @@ isPrivateTab().then((p) => { privateTab = p; });
 function menuTagline() {
     const best = readBest();
     $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
+        : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
         : best > 0 ? `Best depth: ${best}` : TAGLINE;
     $('menu-tagline').classList.toggle('state', runStarted);
 }
