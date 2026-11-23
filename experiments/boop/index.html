@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.3.1-14">
+<html lang="en" data-build="1.3.4-8">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -8,17 +8,24 @@
     <meta name="color-scheme" content="light dark">
     <title>Boop!</title>
     <script>
-        // Seasons (see season.js): fall colours from Nov 1 to the Sunday after Thanksgiving,
-        // and a greeting in Thanksgiving week. Set before anything is drawn.
+        // Seasons (see season.js): fall colours from Nov 1 to the Sunday after Thanksgiving
+        // (a greeting in Thanksgiving week), winter from Dec 1 to Jan 1 (Merry Christmas from
+        // the 18th to the 26th, Happy New Year on the 31st and the 1st). Set before anything is drawn.
         (function () {
             try {
                 var q = new URLSearchParams(location.search).get('season');
                 var d = new Date(), y = d.getFullYear(), nov1 = new Date(y, 10, 1);
                 var thx = 1 + ((4 - nov1.getDay() + 7) % 7) + 21;            // fourth Thursday of November
                 var end = new Date(y, 10, thx + 3, 23, 59, 59), week = new Date(y, 10, thx - 3);
-                var s = q || (d >= nov1 && d <= end ? 'fall' : '');
+                var m = d.getMonth(), day = d.getDate();
+                var winter = m === 11 || (m === 0 && day === 1);                // Dec 1 to Jan 1
+                var s = q || (d >= nov1 && d <= end ? 'fall' : winter ? 'winter' : '');
                 if (s && s !== 'none') document.documentElement.dataset.season = s;
                 if (s === 'fall' && (q === 'fall' || d >= week)) document.documentElement.dataset.greeting = 'Happy Thanksgiving!';
+                if (s === 'winter') {
+                    if (q === 'winter' || (m === 11 && day >= 18 && day <= 26)) document.documentElement.dataset.greeting = 'Merry Christmas!';
+                    else if ((m === 11 && day === 31) || m === 0) document.documentElement.dataset.greeting = 'Happy New Year!';
+                }
             } catch (e) { /* no season */ }
         })();
     </script>
@@ -88,6 +95,12 @@
             :root[data-season="fall"]:not([data-theme="light"]) { --paper: #1a1410; --panel: #281e17; --scrim: rgba(26, 20, 16, 0.9); }
         }
         :root[data-season="fall"][data-theme="dark"] { --paper: #1a1410; --panel: #281e17; --scrim: rgba(26, 20, 16, 0.9); }
+        /* Winter: crisp paper. */
+        :root[data-season="winter"] { --paper: #eceeea; --panel: #fafbf8; --scrim: rgba(236, 238, 234, 0.9); }
+        @media (prefers-color-scheme: dark) {
+            :root[data-season="winter"]:not([data-theme="light"]) { --paper: #10141a; --panel: #182029; --scrim: rgba(16, 20, 26, 0.9); }
+        }
+        :root[data-season="winter"][data-theme="dark"] { --paper: #10141a; --panel: #182029; --scrim: rgba(16, 20, 26, 0.9); }
         /* iOS Safari enlarges text when the phone turns sideways; keep it as designed. */
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         html, body {
@@ -166,6 +179,7 @@
         .stat-main b { font-size: 2rem; line-height: 1; }
         .stat-par { align-items: flex-end; text-align: right; }
         .stat-par.over b { color: var(--ink-soft); }
+        .stat-par.bonus b { color: var(--accent); }
         /* Zone progress: how much of the zone's numbers you've cleared. */
         #progress {
             grid-column: 1 / -1;
@@ -817,35 +831,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.3.1-14",
-                "./zones.js": "./zones.js?v=1.3.1-14",
-                "./blockshader.js": "./blockshader.js?v=1.3.1-14",
-                "./sketch.js": "./sketch.js?v=1.3.1-14",
-                "./balls.js": "./balls.js?v=1.3.1-14",
-                "./labels.js": "./labels.js?v=1.3.1-14",
-                "./audio.js": "./audio.js?v=1.3.1-14",
-                "./theme.js": "./theme.js?v=1.3.1-14",
-                "./crumbs.js": "./crumbs.js?v=1.3.1-14",
-                "./buddy.js": "./buddy.js?v=1.3.1-14",
-                "./season.js": "./season.js?v=1.3.1-14",
-                "./leaves.js": "./leaves.js?v=1.3.1-14"
+                "./sim.js": "./sim.js?v=1.3.4-8",
+                "./zones.js": "./zones.js?v=1.3.4-8",
+                "./blockshader.js": "./blockshader.js?v=1.3.4-8",
+                "./sketch.js": "./sketch.js?v=1.3.4-8",
+                "./balls.js": "./balls.js?v=1.3.4-8",
+                "./labels.js": "./labels.js?v=1.3.4-8",
+                "./audio.js": "./audio.js?v=1.3.4-8",
+                "./theme.js": "./theme.js?v=1.3.4-8",
+                "./crumbs.js": "./crumbs.js?v=1.3.4-8",
+                "./buddy.js": "./buddy.js?v=1.3.4-8",
+                "./season.js": "./season.js?v=1.3.4-8",
+                "./leaves.js": "./leaves.js?v=1.3.4-8"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./sim.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./zones.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./blockshader.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./sketch.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./balls.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./labels.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./audio.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./theme.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./buddy.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./crumbs.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./season.js?v=1.3.1-14">
-    <link rel="modulepreload" href="./leaves.js?v=1.3.1-14">
+    <link rel="modulepreload" href="./game.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./sim.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./zones.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./blockshader.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./sketch.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./balls.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./labels.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./audio.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./theme.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./buddy.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./crumbs.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./season.js?v=1.3.4-8">
+    <link rel="modulepreload" href="./leaves.js?v=1.3.4-8">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -888,6 +902,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.3.1-14"></script>
+    <script type="module" src="./game.js?v=1.3.4-8"></script>
 </body>
 </html>

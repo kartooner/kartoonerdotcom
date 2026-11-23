@@ -2,7 +2,7 @@
 // shavings in its own colour, with a few flecks of ink from its outline.
 // Purely for show: the bits don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel
@@ -20,8 +20,8 @@ function shardGeometry() {
     return g;
 }
 
-// In fall: a little pointed leaf instead of a shard.
-function leafGeometry() {
+// In fall: a little pointed leaf instead of a shard (the leaf piles use it too).
+export function leafGeometry() {
     const g = new THREE.BufferGeometry();
     const v = new Float32Array([
         -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,
@@ -31,9 +31,21 @@ function leafGeometry() {
     return g;
 }
 
-// season (optional): { crumbs: [colours], leaves: true } adds a few drifting leaves to every pop.
+// In winter: a little six-pointed snowflake (two triangles).
+export function flakeGeometry() {
+    const g = new THREE.BufferGeometry(), r = 0.17, v = [];
+    for (const off of [Math.PI / 2, -Math.PI / 2]) {
+        for (let k = 0; k < 3; k++) { const a = off + k * Math.PI * 2 / 3; v.push(Math.cos(a) * r, Math.sin(a) * r, 0); }
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
+    return g;
+}
+export const seasonGeometry = (season) => (season?.shape === 'flake' ? flakeGeometry() : leafGeometry());
+
+// season (optional): { crumbs: [colours], leaves: true, shape } adds a few drifting leaves (or
+// snowflakes) to every pop.
 export function makeCrumbs(scene, season = null) {
-    const mesh = new THREE.InstancedMesh(season?.leaves ? leafGeometry() : shardGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
+    const mesh = new THREE.InstancedMesh(season?.leaves ? seasonGeometry(season) : shardGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = 4;

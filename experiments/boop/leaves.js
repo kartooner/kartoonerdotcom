@@ -2,28 +2,27 @@
 // little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
 // and gather in a heap on the floor. Purely for show: they never touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+import { seasonGeometry } from './crumbs.js';
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
+// season.pile (optional) changes the heap: { colors, size (scale), density (count) }. Snow uses
+// finer, more numerous flakes; the limits grow with the density so the floor bank keeps its size.
 const PILE_EVERY = 3;            // one pile every third zone (1, 4, 7...): a treat, not clutter
 const TIP = 0.35;                // a block tipped this far (radians) sheds its pile
 
-function leafGeometry() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-        -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,
-        -0.2, 0, 0, 0.2, 0, 0, 0, 0.1, 0,
-    ]), 3));
-    return g;
-}
-
-export function makeLeafPiles(scene, colors, floorY) {
-    const mesh = new THREE.InstancedMesh(leafGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
+// season: { crumbs: colours, shape }. In winter the "leaves" are snow: a snowy cap on a block
+// that puffs off when it's hit and drifts into a little bank on the floor.
+export function makeLeafPiles(scene, season, floorY) {
+    const colors = season.pile?.colors ?? season.crumbs;
+    const SIZE = season.pile?.size ?? 1, DENSITY = season.pile?.density ?? 1;
+    const max = Math.round(MAX * DENSITY), floorMax = Math.round(FLOOR_MAX * DENSITY);
+    const mesh = new THREE.InstancedMesh(seasonGeometry(season), new THREE.MeshBasicMaterial({ color: 0xffffff }), max);
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = 4;
-    for (let i = 0; i < MAX; i++) mesh.setColorAt(i, new THREE.Color(0));
+    for (let i = 0; i < max; i++) mesh.setColorAt(i, new THREE.Color(0));
     scene.add(mesh);
 
     let piles = new Map();     // block id → { leaves: [{ lx, ly, a, size, color, wx, wy }], a0 }
@@ -58,11 +57,11 @@ export function makeLeafPiles(scene, colors, floorY) {
         if (!best) return;
         // A full heap: three layers, wide at the bottom and rounded on top.
         const leaves = [];
-        for (const [count, lift, width] of [[Math.round(best.w * 9), 0.05, best.w], [Math.round(best.w * 6), 0.17, best.w * 0.7], [Math.round(best.w * 3), 0.28, best.w * 0.38]]) {
+        for (const [count, lift, width] of [[Math.round(best.w * 9 * DENSITY), 0.05, best.w], [Math.round(best.w * 6 * DENSITY), 0.17, best.w * 0.7], [Math.round(best.w * 3 * DENSITY), 0.28, best.w * 0.38]]) {
             for (let k = 0; k < count; k++) {
                 const t = (k + 0.5) / count;
-                leaves.push({ lx: best.x - width / 2 + t * width + (Math.random() - 0.5) * 0.1, ly: best.y + 0.5 + lift + Math.sin(t * Math.PI) * 0.05 + Math.random() * 0.04,
-                    a: (Math.random() - 0.5) * 1.4, size: 1.0 + Math.random() * 0.45, color: pick(), wx: 0, wy: 0 });
+                leaves.push({ lx: best.x - width / 2 + t * width + (Math.random() - 0.5) * 0.1, ly: best.y + 0.5 + lift + Math.sin(t * Math.PI) * 0.05 + Math.random() * (SIZE < 1 ? 0.12 : 0.04),   // fine snow fills in between the layers
+                    a: (Math.random() - 0.5) * 1.4, size: (1.0 + Math.random() * 0.45) * SIZE, color: pick(), wx: 0, wy: 0 });
             }
         }
         piles.set(best.b.id, { leaves, a0: null });
@@ -74,7 +73,7 @@ export function makeLeafPiles(scene, colors, floorY) {
         if (!pile) return;
         piles.delete(id);
         for (const l of pile.leaves) {
-            if (falling.length + floor.length >= MAX) break;
+            if (falling.length + floor.length >= max) break;
             falling.push({ x: l.wx, y: l.wy, vx: (Math.random() - 0.5) * 3, vy: 1 + Math.random() * 2, a: l.a, va: (Math.random() - 0.5) * 5,
                 size: l.size, color: l.color, sway: Math.random() * 6, t: 0 });
         }
@@ -103,16 +102,16 @@ export function makeLeafPiles(scene, colors, floorY) {
             f.x = Math.max(0.1, Math.min(8.9, f.x));
             // Land on the heap: a little higher where more leaves have gathered.
             const near = floor.filter((l) => Math.abs(l.x - f.x) < 0.3).length;
-            const rest = floorY + 0.07 + Math.min(0.6, near * 0.04);
+            const rest = floorY + 0.07 * SIZE + Math.min(0.6, near * 0.04 / DENSITY);
             if (f.y <= rest) {
                 falling.splice(i, 1);
                 floor.push({ x: f.x, y: rest, a: (Math.random() - 0.5) * 0.6, size: f.size, color: f.color });
-                if (floor.length > FLOOR_MAX) floor.shift();
+                if (floor.length > floorMax) floor.shift();
             }
         }
         let n = 0;
         const put = (x, y, a, size, color) => {
-            if (n >= MAX) return;
+            if (n >= max) return;
             pos.set(x, y, 0.55); q.setFromAxisAngle(zAxis, a); scl.set(size, size, 1);
             m.compose(pos, q, scl);
             mesh.setMatrixAt(n, m); mesh.setColorAt(n, color); n++;

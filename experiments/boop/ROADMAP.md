@@ -117,7 +117,8 @@ Past depth 16 nothing new arrives (bombs at 15 and the last launcher upgrade at 
 ## Seasons
 - The game dresses up around holidays, picked from the date on the player's device (a tiny script at the top of index.html sets `data-season` before anything draws). Rules never change; `?season=fall` or `?season=none` in the address forces one, for testing.
 - **Fall / Thanksgiving** (Nov 1 to the Sunday after Thanksgiving): warmer paper, harvest block colours (still light to dark as numbers climb, same patterns), cranberry jelly, autumn vines, leaves drifting from popped blocks, one full leaf pile every third zone (1, 4, 7...) on the block with the widest open top, which flutters off when the block is hit and heaps up on the floor (for show only, never the physics), and a knit hat with a pompom for Boop. In Thanksgiving week the start screen says "Happy Thanksgiving!" before the best depth.
-- **Next:** Christmas (Dec 1 to Jan 1): snow, ornaments, a garland vine, a Santa hat. Later maybe New Year's and Halloween.
+- **Christmas / winter** (Dec 1 to Jan 1, added in v1.3.3): crisp paper, mint and ice blue climbing to cranberry and pine (light numbers on the two darkest), icy jelly, snowflakes from popped blocks, a snow cap on one block every third zone that puffs off when hit and drifts into a bank on the floor, garland vines strung with little coloured lights, and a Santa hat for Boop. "Merry Christmas!" from Dec 18 to 26, "Happy New Year!" on Dec 31 and Jan 1. `?season=winter` forces it.
+- **Later:** maybe New Year's and Halloween; the season system takes a palette, a crumb shape and a hat.
 
 ## v1.3.1: the retune
 Measured with bots at two skill levels (random aim, and best of two aims). An average player now gets past 20–25; past 25 zones grow again a little each time, so the deep end ramps up.
@@ -130,3 +131,18 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Calmer boards:** at most two windmills a zone (three only in an occasional windmill garden), at most three windmills and mushrooms together.
 - **Deeper looks deeper:** the field darkens a step every 10 depths, like layers of earth.
 - **Jelly feel:** inside jelly a ball still slows, but holds the line it came in on (only a touch of sag) and leaves the far side at full speed in that direction. Fixed a long-standing bug where a ball nicking a jelly's edge stayed marked as "inside" after the jelly shrank from the hit, crawling slowly until it faded.
+
+## v1.3.2: optimization pass
+- Measured first: the physics step is 40–66 µs, the aim guide ~4–6 ms (already spaced out on slow devices), zone build 13–28 ms. Drawing is the main cost on phones.
+- **Nails drawn inside each block's shader** instead of as meshes of their own: about a quarter to a third fewer draw calls (e.g. 105 → 76 at depth 20) and ~30 fewer materials per zone. They look and behave the same (wear, tilt, jolt, pop spray).
+- **Block numbers redraw at most every 50 ms** while a block is being hammered (the latest number always shows): fewer texture uploads.
+- No allocations in the per-block, per-frame loop; dead code from the TON weight removed; the leaf shape shared between crumbs and leaf piles.
+- Checked: memory flat across 26 zones, idle redraws ~10/s, aim guide exact, smoke 28/28.
+
+## v1.3.4: bonus stages
+- **Gold block** (from depth 12; always the first time, then about one zone in seven): a deep gold block that looks like metal: lighter at the top, a bevelled rim, twinkling flecks and a sheen that sweeps across now and then, plus a little white star in its corner. (The bevel is measured to each cell's outer sides, so joins between cells don't show a seam.) Pop it before the zone is cleared and the next stage is a bonus. Boop explains it the first time.
+- **Bonus stage:** three free shots, one ball each (so aim matters), your supply untouched, no depth. The par box reads "Bonus · free shots, N left". Three kinds in turn:
+  - **Ring run:** seven +1 rings, three wall mushrooms, a few sturdier little blocks.
+  - **Piñata:** lots of little blocks; every five pops is +1.
+  - **Chain reaction:** a row of bombs among little blocks; every four pops is +1.
+- **Payout capped at +5**, plus +1 for clearing the whole stage; "Bonus +N" shows as the next zone comes in. Measured with random aim: 3–6, about 4.5 on average.

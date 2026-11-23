@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-8');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -15,7 +15,8 @@ export const BALL_SPEED = 18;      // balls always travel at this speed (jelly a
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
 // Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
-export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : 2);
+// Past 25 a clear pays one: the deep end gets tighter through scarcer shots, not longer zones.
+export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : d <= 25 ? 2 : 1);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
@@ -58,7 +59,7 @@ const parHpPerShot = (d) => {
 // Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
 // comes from layout and from income not keeping up, not from waiting on big numbers.
 // Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
-const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(1, 0.62 + (d - 25) * 0.04));
+const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(0.85, 0.62 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
@@ -96,13 +97,14 @@ const BLOCK_DENSITY = 1.5;
 // springs back. Resting blocks keep the lighter density and move freely.
 const PINNED_DENSITY = 3;
 // Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
-// A ball hitting close to a nail wears it down; a nail lasts about a third of the
-// block's starting number in hits (at least 2; NAIL_SHARE). With one nail left the block swings
+// A ball hitting close to a nail wears it down. A nail's strength grows slowly with the
+// block's starting number and tops out at 10 hits (nailHpFor), so popping nails stays a real
+// option on big deep blocks instead of taking 30-50 hits. With one nail left the block swings
 // down and hangs from it; with none it falls and becomes a resting block. Only single
 // squares' nails never come out (hp -1).
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
-const NAIL_SHARE = 0.35;
+const nailHpFor = (hp) => Math.min(10, Math.max(2, Math.round(1.5 + Math.sqrt(hp) * 0.75)));   // 4 → 3, 14 → 4, 50 → 7, 100+ → 9-10
 const GREY_STILL = 0.6, GREY_FALL_MIN = 48, GREY_CALM = 30, GREY_MAX = 360;   // a loose grey block crumbles once settled (0.25s still, after 0.4s), or after 3s
 const NAIL_GREY_HP = 6;               // grey blocks have no number: their nails take this many hits
 const HANG_K = 420, HANG_C = 7;      // the one-nail hinge: stiff enough to hold the block's weight
@@ -135,6 +137,18 @@ const BOMB_JOLT = 0.6;              // a nailed block's jolt: a bump that spring
 const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
 const BOMB_KNOCK = 4.5;               // ...and anything loose gets shoved away this hard
 const VINE_FROM = 9;
+// Bonus stages (from depth 12): now and then a zone has a gold block. Pop it before the zone
+// is cleared and the next stage is a bonus: three free shots (your supply isn't touched), no
+// depth, then on to the next zone. Ring run, piñata and chain reaction take turns. What you
+// collect is capped, so a great bonus helps without breaking the climb; clearing it all adds one.
+const GOLD_FROM = 12, GOLD_CHANCE = 0.15;
+const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
+const BONUS_KINDS = ['rings', 'pinata', 'chain'];
+const BONUS_NOTES = {
+    rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
+    pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
+    chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
+};
 // Seesaws (from depth 13): a long bar held by one nail in its middle. A hit rocks it and it
 // settles back level; it's slippery, so whatever rests on it slides off as it tips. Knock
 // the nail out and it drops like any block.
@@ -242,6 +256,12 @@ export class Sim {
     }
 
     gain(n, x, y) {
+        const b = this.s.bonus;
+        if (b) {                                   // a bonus stage pays out up to its cap
+            n = Math.min(n, BONUS_CAP - b.gain);
+            if (n <= 0) return;
+            b.gain += n;
+        }
         this.s.supply += n;
         this.events.push({ t: 'gain', n, x, y });
     }
@@ -298,7 +318,7 @@ export class Sim {
             const a = flip ? [Math.max(...topX) + 0.5 - i, top + 0.5 - i] : [Math.min(...topX) - 0.5 + i, top + 0.5 - i];
             const c = flip ? [Math.min(...botX) - 0.5 + i, bot - 0.5 + i] : [Math.max(...botX) + 0.5 - i, bot - 0.5 + i];
             // Single squares' nails never come out (a lone square on the floor is no fun to chase).
-            const nhp = n === 1 ? -1 : kind === 'neutral' ? NAIL_GREY_HP : Math.max(2, Math.round(hp * NAIL_SHARE));
+            const nhp = n === 1 ? -1 : kind === 'neutral' ? NAIL_GREY_HP : nailHpFor(hp);
             b.nails = [{ id: 0, x: a[0], y: a[1], hp: nhp, hp0: nhp }, { id: 1, x: c[0], y: c[1], hp: nhp, hp0: nhp }];
         } else b.nails = [];
         s.blocks[id] = b;
@@ -403,7 +423,7 @@ export class Sim {
     // A seesaw: one nail, in the middle of the bar (where it pivots).
     makeSeesaw(b) {
         b.seesaw = true;
-        const nhp = Math.max(2, Math.round(b.hp0 * NAIL_SHARE));
+        const nhp = nailHpFor(b.hp0);
         b.nails = [{ id: 0, x: 0, y: SEESAW_NAIL_Y, hp: nhp, hp0: nhp }];   // just under the number
         this.shapeBlock(b);
     }
@@ -454,7 +474,13 @@ export class Sim {
             s.stretch = true;
             this.events.push({ t: 'stretch' });
         }
-        if (popped && !s.quiet && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
+        if (popped && !s.quiet && b.gold && !s.bonusNext) { s.bonusNext = true; this.events.push({ t: 'gold', x: p.x, y: p.y }); }
+        if (popped && !s.quiet && s.bonus && !b.neutral) {
+            s.bonus.pops += 1;
+            const every = s.bonus.kind === 'chain' ? 4 : s.bonus.kind === 'pinata' ? 5 : 0;
+            if (every && s.bonus.pops % every === 0) this.gain(1, p.x, p.y);
+        }
+        if (popped && !s.quiet && !s.bonus && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -684,10 +710,96 @@ export class Sim {
         for (const id in s.blocks) if (s.blocks[id].neutral) this.removeBlock(s.blocks[id], false);
     }
 
+    // A bonus stage: no depth, three free shots, one of three layouts. Small numbers that grow
+    // with your balls per shot, so it takes a little aim.
+    genBonus() {
+        const s = this.s;
+        this.clearZoneLeftovers();
+        const parBack = s.pendingPar;            // the last zone's par shots, paid once this is built
+        s.pendingPar = 0;
+        s.bonusNext = false;
+        s.bonusCount = (s.bonusCount ?? 0) + 1;
+        const kind = BONUS_KINDS[(s.bonusCount - 1) % BONUS_KINDS.length];
+        s.bonus = { kind, shots: BONUS_SHOTS, gain: 0, pops: 0 };
+        s.par = null; s.zoneShots = 0; s.stretch = false; s.recipe = 'bonus';
+        s.note = BONUS_NOTES[kind];
+        s.noteTarget = { kind: 'launcher' };
+        const TOP = ZONE_TOP_ROW, ROWS = ZONE_ROWS;
+        const used = new Set(), key = (c, r) => c + ',' + r;
+        const free = (c, r) => c >= 0 && c < W && r >= 0 && r < ROWS && !used.has(key(c, r));
+        const take = (cells) => cells.forEach(([c, r]) => used.add(key(c, r)));
+        // Numbers that take a little aim: a few good hits each, more with more balls per shot.
+        const small = () => Math.max(1, Math.round((1 + this.rand() * 2) * (kind === 'chain' ? 1.5 : kind === 'rings' ? 2.5 : 1)));
+        const placeBlocks = (n, sizes) => {
+            for (let i = 0, tries = 0; i < n && tries < 400; tries++) {
+                const c = Math.floor(this.rand() * W), r = 1 + Math.floor(this.rand() * (ROWS - 2));
+                const cells = sizes[Math.floor(this.rand() * sizes.length)].map(([dc, dr]) => [c + dc, r + dr]);
+                if (!cells.every(([cc, rr]) => free(cc, rr))) continue;
+                take(cells);
+                this.addBlock(cells.map(([cc, rr]) => [cc, rr + TOP]), small(), 'pinned');
+                i++;
+            }
+        };
+        const placeRings = (n) => {
+            const spots = [];
+            for (let i = 0, tries = 0; i < n && tries < 400; tries++) {
+                const c = Math.floor(this.rand() * W), r = Math.floor(this.rand() * ROWS);
+                if (!free(c, r) || spots.some(([x, y]) => Math.hypot(x - c, y - r) < 1.6)) continue;
+                used.add(key(c, r)); spots.push([c, r]);
+                this.addPickup(c + 0.5, -(r + TOP + 0.5));
+                i++;
+            }
+        };
+        const ONE = [[[0, 0]]], TWO = [[[0, 0]], [[0, 0], [1, 0]], [[0, 0], [0, 1]]];
+        if (kind === 'rings') {
+            // A sky full of +1 rings, a few springy mushrooms on the walls, little blocks to keep balls going.
+            for (const [right, r] of [[false, 3], [true, 5], [false, 7]]) {
+                const c = right ? W - 1 : 0;
+                if (!free(c, r)) continue;
+                used.add(key(c, r));
+                this.addMushroom(null, right ? W : 0, -(r + TOP + 0.5), right ? Math.PI / 2 : -Math.PI / 2);
+            }
+            placeBlocks(6, TWO);
+            placeRings(7);
+        } else if (kind === 'pinata') {
+            // Lots of little blocks to pop.
+            placeBlocks(18, TWO);
+            placeRings(2);
+        } else {
+            // Bombs in a loose row with little blocks packed around them: light one, watch it go.
+            const r0 = 3 + Math.floor(this.rand() * 3);
+            for (const c of [1, 3, 5, 7]) {
+                const r = r0 + (c % 4 === 1 ? 0 : 1);
+                if (!free(c, r)) continue;
+                used.add(key(c, r));
+                this.addBomb(c + 0.5, -(r + TOP + 0.5));
+            }
+            placeBlocks(16, ONE.concat(TWO));
+            placeRings(1);
+        }
+        s.zoneHp0 = this.hpLeft();
+        s.quiet = true;
+        for (let i = 0; i < PRESETTLE_STEPS; i++) { this.step(); if (i > 30 && this.settled()) break; }
+        s.quiet = false;
+        this.events.length = 0;
+        if (parBack > 0) {                       // paid before the bonus counts anything
+            const b = s.bonus; s.bonus = null;
+            this.gain(parBack, W / 2, -3.3); this.events.push({ t: 'par', n: parBack });
+            s.bonus = b;
+        }
+    }
+
     genZone() {
         const s = this.s;
         if (!s.retries) s.pendingPar = s.par ? Math.min(PAR_BONUS_MAX, Math.max(0, s.par - s.zoneShots)) : 0;
         if (!s.retries && s.par && s.zoneShots < s.par) s.underPar = (s.underPar ?? 0) + 1;
+        if (s.bonus) {
+            // Out of a bonus stage: clearing it all adds one (outside the cap), then say what it paid.
+            if (this.blockCount() === 0 && !s.bonus.cleared) { s.bonus.cleared = true; s.supply += BONUS_CLEAR; s.bonus.gain += BONUS_CLEAR; }
+            s.bonusPaid = s.bonus.gain;           // the game shows it as the next zone comes in
+            s.bonus = null;
+        }
+        if (s.bonusNext && !s.retries) { this.genBonus(); return; }
         this.clearZoneLeftovers();
         s.depth += 1;
         s.stretch = false;
@@ -1091,12 +1203,18 @@ export class Sim {
             if (p.cup) p.block.cup = true;
             if (p.seesaw) this.makeSeesaw(p.block);
         }
+        // A gold block (from depth 12; always the first time): pop it for a bonus stage next.
+        if (s.depth >= GOLD_FROM && (s.depth === GOLD_FROM || this.rand() < GOLD_CHANCE)) {
+            const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target
+                && p.cells.length <= 3 && !mushSpots.some((m) => m.p === p));
+            if (pool.length) { const g = pool[Math.floor(this.rand() * pool.length)]; g.gold = true; g.block.gold = true; }
+        }
         // Unsettled (from depth 8): a block or two start the zone already hanging from one nail,
         // crooked, as if something knocked it loose. Never a cup, a vine's block, a seesaw,
         // a hanging bomb's target or a mushroom's block.
         if (s.depth >= 8) {
             const n = s.depth < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
-            const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target
+            const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target && !p.gold
                 && p.cells.length >= 2 && p.block.nails?.length === 2 && !mushSpots.some((m) => m.p === p));
             for (let i = 0; i < n && pool.length; i++) {
                 const b = pool.splice(Math.floor(this.rand() * pool.length), 1)[0].block;
@@ -1580,8 +1698,10 @@ export class Sim {
 
     // ---------- balls ----------
 
-    fire(angle, count = this.s.supply > 0 ? this.s.volley : 0) {
-        if (count > 0) { this.s.supply -= 1; this.s.zoneShots = (this.s.zoneShots ?? 0) + 1; }   // one shot, however many balls it fires
+    // A bonus shot is a single ball: where you aim is what counts.
+    fire(angle, count = this.s.bonus ? (this.s.bonus.shots > 0 ? 1 : 0) : this.s.supply > 0 ? this.s.volley : 0) {
+        if (count > 0 && this.s.bonus) this.s.bonus.shots -= 1;                   // a bonus shot is free
+        else if (count > 0) { this.s.supply -= 1; this.s.zoneShots = (this.s.zoneShots ?? 0) + 1; }   // one shot, however many balls it fires
         this.s.shots = { left: count, angle, timer: 0, fired: 0 };
         this.s.turnSteps = 0;
     }
