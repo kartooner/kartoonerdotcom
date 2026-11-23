@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-6');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -126,7 +126,7 @@ const INTRO_DEPTHS = new Set([2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 16, 18]);
 // stage; otherwise a zone picks one the depth allows, never the same as the last one.
 export const RECIPES = [
     { name: 'plain', from: 1, w: 3 },
-    { name: 'windmills', from: 3, w: 1 },     // a windmill garden: three windmills
+    { name: 'windmills', from: 3, w: 0.5 },   // a windmill garden: three windmills (now and then)
     { name: 'tower', from: 4, w: 1 },         // stacked: more resting blocks to topple
     { name: 'pinball', from: 5, w: 1 },       // three mushrooms, airy layout
     { name: 'jelly', from: 6, w: 0.8 },       // two or three jelly blocks

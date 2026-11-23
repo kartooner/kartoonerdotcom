@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-6');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -718,6 +718,10 @@ export class Sim {
         else if (s.depth === MUSHROOM_FROM) { mushrooms = 1; windmills = 0; }
         if (has('windmills')) { windmills = 3; mushrooms = 0; }
         if (has('pinball')) { mushrooms = 3; windmills = 0; }
+        // Never a fan factory: two windmills at most (three only in a windmill garden), and
+        // no more than three windmills and mushrooms together.
+        windmills = Math.min(windmills, has('windmills') ? 3 : 2);
+        if (!has('windmills') && !has('pinball')) mushrooms = Math.min(mushrooms, 3 - windmills);
         // Vines: shown on their own first (depth 9), then one a zone while you learn them,
         // then one or two once they're familiar. Never more than two kinds of prop in a zone.
         let vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
