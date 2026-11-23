@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-1');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-2');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -84,8 +84,9 @@ export function zoneSpec(d) {
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0 };
     if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 0, tough: 0.04 };
     // Past the intro, everything that's been introduced keeps showing up more.
-    // Numbers keep climbing, but more slowly past depth 8 so they stay readable.
-    const n = d <= 8 ? d : 8 + (d - 8) * 0.6;
+    // Numbers keep climbing, but more slowly past depth 8 so they stay readable, and slower
+    // again past 16, where zones should go quicker and the layouts do the work.
+    const n = d <= 8 ? d : d <= 16 ? 8 + (d - 8) * 0.6 : 12.8 + (d - 16) * 0.3;     // slower still past 16
     return {
         ...base,
         lo: 1 + n * 0.35, hi: 3 + n * 0.9, fill: Math.min(0.58, 0.48 + d * 0.008),

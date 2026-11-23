@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-1');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-2');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -44,7 +44,12 @@ const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
 // Par: about how much a good shot takes off at this depth (measured with bots; a shot
 // does more deeper down, with bigger blocks and more traps). Independent of hpScale,
 // so lighter early zones also get a lower par.
-const parHpPerShot = (d) => (3.5 + 0.7 * d) * Math.min(5.5, 2 + 0.95 * (d - 1));
+// Retuned in 1.3.1 from bot runs at three skill levels: what an average player's ball
+// actually takes off per shot, which climbs only slowly with depth.
+const parHpPerShot = (d) => Math.min(70, 32 + 1.2 * d);
+// Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
+// comes from layout and from income not keeping up, not from waiting on big numbers.
+const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : 0.62);
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
@@ -996,7 +1001,7 @@ export class Sim {
         // Numbers. First the zone's total: what each block would get on its own, summed.
         // Then that total is shared out by size, so bigger blocks always hold the bigger
         // numbers and a lone square never ends up a slog to chip down.
-        const grow = multishotGrowth(s.volley) * hpScale(s.depth);   // deeper zones and multishot
+        const grow = multishotGrowth(s.volley) * hpScale(s.depth) * zoneTrim(s.depth);   // deeper zones and multishot
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
