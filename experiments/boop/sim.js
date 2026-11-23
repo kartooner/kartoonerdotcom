@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-11');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-12');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -165,7 +165,11 @@ export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.2
 
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
-const JELLO_MIN_SPEED = 4;          // but never slower than this, so balls always come out the far side
+const JELLO_MIN_SPEED = 4.5;        // but never slower than this, so balls always come out the far side
+// Inside jelly a ball holds the line it came in on (gravity would otherwise drag a slow ball
+// down through a big piece), sagging only a touch, and comes out the far side at full speed
+// in that same direction: a slow push through, then on its way again.
+const JELLO_SAG = 0.0012;           // per step, how much the held direction leans downward
 // Consistent speed: a ball always travels at BALL_SPEED. Bounces and gravity change its
 // direction, not how fast it goes. Lost speed (a bounce, a pass through jelly) eases back
 // over a few steps instead of snapping, so it reads as smooth, not jerky.
@@ -386,6 +390,16 @@ export class Sim {
         body.wakeUp();
     }
 
+    // Is point p (a ball's centre) within a jelly block, allowing for the ball's size?
+    insideJelly(p, b) {
+        if (!b) return false;
+        const body = this.world.getRigidBody(b.body), t = body.translation(), a = body.rotation();
+        const c = Math.cos(-a), sn = Math.sin(-a);
+        const lx = ((p.x - t.x) * c - (p.y - t.y) * sn) / b.scale, ly = ((p.x - t.x) * sn + (p.y - t.y) * c) / b.scale;
+        const r = 0.5 + BALL_R / b.scale;
+        return b.cells.some(([x, y]) => Math.abs(lx - x) <= r && Math.abs(ly - y) <= r);
+    }
+
     // A seesaw: one nail, in the middle of the bar (where it pivots).
     makeSeesaw(b) {
         b.seesaw = true;
@@ -426,7 +440,14 @@ export class Sim {
         world.removeRigidBody(world.getRigidBody(b.body));
         for (const h of b.cols) delete s.owner[h];
         delete s.blocks[b.id];
-        if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
+        if (b.jello) for (const ball of s.balls) {
+            if (!ball.jello.includes(b.id)) continue;
+            ball.jello = ball.jello.filter((j) => j !== b.id);
+            if (!ball.jello.length && ball.jdir) {       // popped around it: on its way at full speed
+                world.getRigidBody(ball.body)?.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true);
+                ball.jdir = null;
+            }
+        }
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
         if (popped) s.popped = (s.popped ?? 0) + 1;       // for the run summary at game over
         if (popped && !s.quiet && !s.stretch && this.blockCount() > 0 && this.blockCount() <= STRETCH_BLOCKS) {
@@ -1623,10 +1644,26 @@ export class Sim {
         for (const ball of s.balls) {
             if (!ball.jello.length) continue;
             const body = world.getRigidBody(ball.body);
+            // Still really inside? A hit shrinks a jelly a little, which can leave a ball at its
+            // edge outside it without the engine ever saying it left. Check, and let it go.
+            const bp = body.translation();
+            ball.jello = ball.jello.filter((id) => this.insideJelly(bp, s.blocks[id]));
+            if (!ball.jello.length) {
+                if (ball.jdir) { body.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true); ball.jdir = null; }
+                continue;
+            }
             const v = body.linvel();
             const sp = Math.hypot(v.x, v.y);
             const k = sp * JELLO_DRAG < JELLO_MIN_SPEED ? Math.min(1, JELLO_MIN_SPEED / (sp || 1)) : JELLO_DRAG;
-            body.setLinvel({ x: v.x * k, y: v.y * k }, true);
+            if (ball.jdir) {
+                // Hold the way in, sagging only a touch.
+                let [dx, dy] = ball.jdir;
+                dy -= JELLO_SAG;
+                const l = Math.hypot(dx, dy) || 1;
+                ball.jdir = [dx / l, dy / l];
+                const next = Math.max(JELLO_MIN_SPEED, sp * k);
+                body.setLinvel({ x: ball.jdir[0] * next, y: ball.jdir[1] * next }, true);
+            } else body.setLinvel({ x: v.x * k, y: v.y * k }, true);
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
         for (const ball of s.balls) {
@@ -1710,6 +1747,10 @@ export class Sim {
             const v = body.linvel();
             this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
+                if (!ball.jello.length) {
+                    const sp = Math.hypot(v.x, v.y) || 1;
+                    ball.jdir = [v.x / sp, v.y / sp];        // the line it holds inside
+                }
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
                 if (this.cooled(a.body + ':' + b.id)) {
                     const n = s.stretch ? 2 : 1, blk = s.blocks[b.id];
@@ -1719,6 +1760,11 @@ export class Sim {
                 }
             } else {
                 ball.jello = ball.jello.filter((j) => j !== b.id);
+                if (!ball.jello.length && ball.jdir) {
+                    // Out the far side: full speed again, along the way it came in.
+                    body.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true);
+                    ball.jdir = null;
+                }
             }
             return;
         }

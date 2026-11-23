@@ -129,3 +129,4 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Shorter deep zones:** numbers trimmed from depth 11 (more from 16) and growing slower past 16, so a deep zone is a few minutes, not five; past 25 they grow again for the ramp.
 - **Calmer boards:** at most two windmills a zone (three only in an occasional windmill garden), at most three windmills and mushrooms together.
 - **Deeper looks deeper:** the field darkens a step every 10 depths, like layers of earth.
+- **Jelly feel:** inside jelly a ball still slows, but holds the line it came in on (only a touch of sag) and leaves the far side at full speed in that direction. Fixed a long-standing bug where a ball nicking a jelly's edge stayed marked as "inside" after the jelly shrank from the hit, crawling slowly until it faded.
