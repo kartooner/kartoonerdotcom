@@ -10,7 +10,7 @@ import { THEMES, COLORS } from './theme.js';
 import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
-import { makeCrumbs } from './crumbs.js';
+import { makeCrumbs, flakeGeometry } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
 import { makeLeafPiles } from './leaves.js';
 import './buddy.js';               // the mascot's blinks and glances
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.3-2';
+const BUILD = '1.3.4-4';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -49,7 +49,7 @@ const DESCEND_TIME = 0.9;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), progress: $('progress-fill'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
 };
 
 // ---------- three.js setup ----------
@@ -228,6 +228,15 @@ function buildBlockView(b) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
+    let star = null;
+    if (b.gold) {
+        // A gold block gets a little white star in its top corner that twinkles.
+        const [cx, cy] = b.cells.reduce((m, c) => (c[1] > m[1] || (c[1] === m[1] && c[0] > m[0]) ? c : m));
+        star = new THREE.Mesh(starGeo, starMat);
+        star.position.set(cx + 0.27, cy + 0.27, 0.25);
+        star.renderOrder = 3;
+        group.add(star);
+    }
     let bomb = null;
     if (b.bomb) {
         // A bomb hanging on a vine: drawn like any bomb, in place of the block.
@@ -237,7 +246,7 @@ function buildBlockView(b) {
     }
     scene.add(group);
     scene.add(group);
-    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -245,6 +254,10 @@ function buildBlockView(b) {
 // Nails: what holds a fixed block in place. Heads with an ink outline, like a tack in a
 // drawing. Bright ones can be knocked out: they tilt and lift as they wear down, jolt
 // when hit, and pop out. Grey ones (single squares) never come out.
+// A gold block (pop it for a bonus stage): bright gold, sparkly plus-sign pattern.
+const GOLD = { fill: 0xf0ad1f, pattern: 0, text: '#2b2622' };
+const starGeo = flakeGeometry(), starMat = new THREE.MeshBasicMaterial({ color: 0xfffbea });
+starGeo.userData.keep = starMat.userData.keep = true;
 const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
 const nailAt = new THREE.Vector3();
 function updateNails(v, b, frameDt) {
@@ -275,6 +288,7 @@ function updateNails(v, b, frameDt) {
 }
 
 function updateBlockView(v, b, frameDt) {
+    if (v.star) { const t = performance.now() / 1000; v.star.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); v.star.rotation.z = t * 0.6; }   // twinkles whenever the board is drawn
     if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
     let nailMoving = false;
@@ -289,7 +303,7 @@ function updateBlockView(v, b, frameDt) {
         if (v.hp !== -1) v.punch = 1;
         v.labelAt = now;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : tierFor(b.hp / (sim.s.tierScale || 1));
+        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.hp / (sim.s.tierScale || 1));
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -702,14 +716,17 @@ function syncView(frameDt) {
     // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
     const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
-    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}`;
+    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
     if (key !== hudKey) {
         hudKey = key;
         hud.depth.textContent = s.depth;
         hud.shots.textContent = s.supply;
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
-        hud.par.textContent = `${used}/${s.par ?? '-'}`;
-        hud.parBox.classList.toggle('over', used > (s.par ?? Infinity));
+        // A bonus stage swaps par for its free shots.
+        hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
+        hud.par.textContent = s.bonus ? `${s.bonus.shots} left` : `${used}/${s.par ?? '-'}`;
+        hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
+        hud.parBox.classList.toggle('bonus', !!s.bonus);
         hud.progress.style.transform = `scaleX(${done})`;
     }
 }
@@ -718,6 +735,7 @@ function consumeEvents() {
     for (const e of sim.events) {
         playSound(e);
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
+        else if (e.t === 'gold') { addFloater('Bonus stage next!', e.x, e.y + 0.4); crumbs.spray([[e.x, e.y], [e.x - 0.3, e.y], [e.x + 0.3, e.y]], [0xf4c542, 0xffe9a0, theme.edge]); }
         else if (e.t === 'vinesnap') crumbs.spray([[e.x, e.y], [e.x, e.y - 0.1]], [COLORS.vine, COLORS.leaf, theme.edge]);
         else if (e.t === 'nailhit') {
             const v = blockViews.get(e.id);
@@ -773,6 +791,7 @@ function playSound(e) {
     else if (e.t === 'pop' && e.popped) { audio.pop(); if (!audio.on) nudgeSound(); }
     else if (e.t === 'nailpop') audio.tink();
     else if (e.t === 'gain' && phase === 'play') audio.ring();
+    else if (e.t === 'gold') audio.clear();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();
@@ -1226,6 +1245,7 @@ function queueZoneTips() {
     add('bomb', prop('bomb'));
     add('seesaw', block((b) => b.seesaw && !b.loose));
     add('hangbomb', block((b) => b.bomb && b.hung != null));
+    add('gold', block((b) => b.gold));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
     }
@@ -1292,6 +1312,10 @@ function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
     tintField();
+    if (sim.s.bonusPaid != null) {                       // just out of a bonus stage: what it paid
+        addFloater(sim.s.bonusPaid > 0 ? `Bonus +${sim.s.bonusPaid}` : 'Bonus over', W / 2, -2.2);
+        sim.s.bonusPaid = null;
+    }
     leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
@@ -1320,14 +1344,16 @@ function endTurn() {
         : 'Waiting on a long bounce? Press and hold anywhere while balls fly to speed things up.');
     if (sim.blockCount() === 0) { startZone(); return; }
     settleSteps = 0;
-    if (sim.s.supply > 0) { worldSettling = true; readyToAim(); return; }
+    if (sim.s.bonus && sim.s.bonus.shots <= 0) { phase = 'settle'; return; }       // last bonus shot: let it finish, then move on
+    if (sim.s.supply > 0 || sim.s.bonus) { worldSettling = true; readyToAim(); return; }
     phase = 'settle';
 }
 
 function readyToAim() {
     consumeEvents();
     if (sim.blockCount() === 0) { startZone(); return; }   // cleared (the last blocks may have tumbled out)
-    if (sim.s.supply <= 0) { gameOver(); return; }
+    if (sim.s.bonus && sim.s.bonus.shots <= 0) { startZone(); return; }   // the bonus stage is over: on to the next zone
+    if (!sim.s.bonus && sim.s.supply <= 0) { gameOver(); return; }
     phase = 'aim';
     if (runStarted) saveRun();
     nextTip();

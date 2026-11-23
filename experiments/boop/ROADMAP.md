@@ -138,3 +138,11 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Block numbers redraw at most every 50 ms** while a block is being hammered (the latest number always shows): fewer texture uploads.
 - No allocations in the per-block, per-frame loop; dead code from the TON weight removed; the leaf shape shared between crumbs and leaf piles.
 - Checked: memory flat across 26 zones, idle redraws ~10/s, aim guide exact, smoke 28/28.
+
+## v1.3.4: bonus stages
+- **Gold block** (from depth 12; always the first time, then about one zone in five): a deep gold block with a little white star twinkling in its corner. Pop it before the zone is cleared and the next stage is a bonus. Boop explains it the first time.
+- **Bonus stage:** three free shots, one ball each (so aim matters), your supply untouched, no depth. The par box reads "Bonus · free shots, N left". Three kinds in turn:
+  - **Ring run:** seven +1 rings, three wall mushrooms, a few sturdier little blocks.
+  - **Piñata:** lots of little blocks; every five pops is +1.
+  - **Chain reaction:** a row of bombs among little blocks; every four pops is +1.
+- **Payout capped at +5**, plus +1 for clearing the whole stage; "Bonus +N" shows as the next zone comes in. Measured with random aim: 3–6, about 4.5 on average.
