@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.2-2');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -48,6 +48,12 @@ uniform vec3 uPoke;        // jello: a ball inside it (x, y in unscaled cells, s
 uniform float uWobble;     // jello: current wobble, to slide the shine around
 uniform vec3 uTrail[10];   // jello: recent ball positions (x, y, strength) - a tunnel that heals
 uniform float uNeutral;    // 1 for unbreakable blocks: plain fill, no pattern
+// Nails, drawn here rather than as meshes of their own (two fewer draws per block): a tack
+// head with an ink rim. x, y in the block's scaled space; z = wear 0-1 (it tips and shows its
+// side); w = tilt. uNailFill is white for ones that come out, grey for ones that never do.
+uniform vec4 uNail[2];
+uniform vec3 uNailFill[2];
+uniform int uNails;
 varying vec2 vP;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -161,6 +167,20 @@ void main() {
         col = mix(col, vec3(1.0), spec);
         alpha = max(alpha, spec * 0.95);
     }
+    for (int i = 0; i < 2; i++) {
+        if (i >= uNails) break;
+        vec4 nl = uNail[i];
+        vec2 dp = vP - nl.xy;
+        float c = cos(nl.w), sn = sin(nl.w);
+        dp = vec2(c * dp.x + sn * dp.y, -sn * dp.x + c * dp.y) / vec2(1.0 + nl.z * 0.25, 1.0 - nl.z * 0.25);
+        float a = atan(dp.y, dp.x);
+        float r = length(dp) - 0.078 - (noise(vec2(a * 2.0, uSeed + float(i) * 7.0)) - 0.5) * 0.012;
+        float naa = fwidth(r);
+        float head = 1.0 - smoothstep(-naa, naa, r - 0.032);       // head plus rim
+        float face = 1.0 - smoothstep(-naa, naa, r);                // the head inside the rim
+        col = mix(col, mix(uInk, uNailFill[i], face), head);
+        alpha = max(alpha, head);
+    }
     if (alpha < 0.01) discard;
     gl_FragColor = vec4(col, alpha);
     #include <colorspace_fragment>
@@ -210,6 +230,9 @@ export function makeBlockMesh(cells, jello, seed, corner) {
             uWobble: { value: 0 },
             uTrail: { value: Array.from({ length: 10 }, () => new THREE.Vector3(0, 0, 0)) },
             uNeutral: { value: 0 },
+            uNail: { value: [new THREE.Vector4(), new THREE.Vector4()] },
+            uNailFill: { value: [new THREE.Color(), new THREE.Color()] },
+            uNails: { value: 0 },
         },
     });
     return new THREE.Mesh(geo, material);

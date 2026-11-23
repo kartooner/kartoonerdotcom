@@ -2,21 +2,13 @@
 // little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
 // and gather in a heap on the floor. Purely for show: they never touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+import { leafGeometry } from './crumbs.js';
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.2-2');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
 const PILE_EVERY = 3;            // one pile every third zone (1, 4, 7...): a treat, not clutter
 const TIP = 0.35;                // a block tipped this far (radians) sheds its pile
-
-function leafGeometry() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-        -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,
-        -0.2, 0, 0, 0.2, 0, 0, 0, 0.1, 0,
-    ]), 3));
-    return g;
-}
 
 export function makeLeafPiles(scene, colors, floorY) {
     const mesh = new THREE.InstancedMesh(leafGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);

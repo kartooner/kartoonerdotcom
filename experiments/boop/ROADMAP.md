@@ -130,3 +130,10 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Calmer boards:** at most two windmills a zone (three only in an occasional windmill garden), at most three windmills and mushrooms together.
 - **Deeper looks deeper:** the field darkens a step every 10 depths, like layers of earth.
 - **Jelly feel:** inside jelly a ball still slows, but holds the line it came in on (only a touch of sag) and leaves the far side at full speed in that direction. Fixed a long-standing bug where a ball nicking a jelly's edge stayed marked as "inside" after the jelly shrank from the hit, crawling slowly until it faded.
+
+## v1.3.2: optimization pass
+- Measured first: the physics step is 40–66 µs, the aim guide ~4–6 ms (already spaced out on slow devices), zone build 13–28 ms. Drawing is the main cost on phones.
+- **Nails drawn inside each block's shader** instead of as meshes of their own: about a quarter to a third fewer draw calls (e.g. 105 → 76 at depth 20) and ~30 fewer materials per zone. They look and behave the same (wear, tilt, jolt, pop spray).
+- **Block numbers redraw at most every 50 ms** while a block is being hammered (the latest number always shows): fewer texture uploads.
+- No allocations in the per-block, per-frame loop; dead code from the TON weight removed; the leaf shape shared between crumbs and leaf piles.
+- Checked: memory flat across 26 zones, idle redraws ~10/s, aim guide exact, smoke 28/28.

@@ -2,7 +2,7 @@
 // shavings in its own colour, with a few flecks of ink from its outline.
 // Purely for show: the bits don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.2-2');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel
@@ -20,8 +20,8 @@ function shardGeometry() {
     return g;
 }
 
-// In fall: a little pointed leaf instead of a shard.
-function leafGeometry() {
+// In fall: a little pointed leaf instead of a shard (the leaf piles use it too).
+export function leafGeometry() {
     const g = new THREE.BufferGeometry();
     const v = new Float32Array([
         -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,

@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.1-14';
+const BUILD = '1.3.2-2';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -237,7 +237,7 @@ function buildBlockView(b) {
     }
     scene.add(group);
     scene.add(group);
-    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -246,33 +246,30 @@ function buildBlockView(b) {
 // drawing. Bright ones can be knocked out: they tilt and lift as they wear down, jolt
 // when hit, and pop out. Grey ones (single squares) never come out.
 const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
+const nailAt = new THREE.Vector3();
 function updateNails(v, b, frameDt) {
+    const u = v.mesh.material.uniforms;
+    const nails = b.nails ?? [];
+    u.uNails.value = nails.length;
     const live = new Set();
-    for (const n of b.nails ?? []) {
+    nails.forEach((n, i) => {
         live.add(n.id);
-        let m = v.nails.get(n.id);
-        if (!m) {
-            m = makeSketch({ kind: SHAPE.CIRCLE, size: [0.078], edge: 0.032, wob: 0.25, fill: n.hp < 0 ? NAIL_FIXED : NAIL, seed: b.id * 3 + n.id, margin: 0.05 });
-            m.renderOrder = 2;
-            v.group.add(m);
-            v.nails.set(n.id, m);
-        }
+        if (!v.nailSeen?.has(n.id)) (v.nailSeen ??= new Map()).set(n.id, [n.x, n.y]);
+        u.uNailFill.value[i].setHex(n.hp < 0 ? NAIL_FIXED : NAIL);
         const worn = n.hp < 0 ? 0 : 1 - n.hp / n.hp0;
         const wobT = (v.nailWob[n.id] = (v.nailWob[n.id] ?? 9) + frameDt);
-        const jolt = Math.exp(-wobT * 14) * Math.sin(wobT * 60) * 0.06;
+        const jolt = wobT < 0.5 ? Math.exp(-wobT * 14) * Math.sin(wobT * 60) * 0.06 : 0;
         const side = n.id === 0 ? -1 : 1;
-        m.position.set(n.x * b.scale + side * worn * 0.03, n.y * b.scale + worn * 0.04 + jolt, 0.15);
-        m.scale.set(1 + worn * 0.25, 1 - worn * 0.25, 1);       // a worn nail tips and shows its side
-        m.rotation.z = side * worn * 0.5;
-    }
-    for (const [id, m] of v.nails) {
+        // In the mesh's own space (the group's scale is the hit squash, applied on top).
+        u.uNail.value[i].set(n.x * b.scale + side * worn * 0.03, n.y * b.scale + worn * 0.04 + jolt, worn, side * worn * 0.5);
+    });
+    for (const [id, [x, y]] of v.nailSeen ?? []) {
         if (live.has(id)) continue;
         // Popped: a little spray of steel and ink from where it was.
         v.group.updateMatrixWorld();
-        const w = m.getWorldPosition(new THREE.Vector3());
-        crumbs.spray([[w.x, w.y]], [0xb7b0a6, theme.edge, NAIL]);
-        discard(m);
-        v.nails.delete(id);
+        v.group.localToWorld(nailAt.set(x * b.scale, y * b.scale, 0));
+        crumbs.spray([[nailAt.x, nailAt.y]], [0xb7b0a6, theme.edge, NAIL]);
+        v.nailSeen.delete(id);
         delete v.nailWob[id];      // its wobble timer would otherwise stay frozen and keep the board redrawing
     }
 }
@@ -280,11 +277,17 @@ function updateNails(v, b, frameDt) {
 function updateBlockView(v, b, frameDt) {
     if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
+    let nailMoving = false;
+    for (const id in v.nailWob) if (v.nailWob[id] < 0.5) { nailMoving = true; break; }
     if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
-        || Object.values(v.nailWob).some((t) => t < 0.5) || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
+        || nailMoving || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
     updateNails(v, b, frameDt);
-    if (v.hp !== b.hp && !b.neutral) {
+    // A new number means redrawing its texture; with several balls hammering one block that's
+    // many a second, so it's redrawn at most every 50 ms (the latest number always shows).
+    const now = performance.now();
+    if (v.hp !== b.hp && !b.neutral && (v.hp === -1 || now - (v.labelAt ?? 0) > 50)) {
         if (v.hp !== -1) v.punch = 1;
+        v.labelAt = now;
         v.hp = b.hp;
         const look = b.jello ? JELLO : tierFor(b.hp / (sim.s.tierScale || 1));
         v.label.userData.color = look.text;
@@ -747,11 +750,7 @@ function consumeEvents() {
             const v = blockViews.get(e.id);
             if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
-        else if (e.t === 'thud') {
-            // A dropped weight lands: a heavy jolt and a puff of dust and ink.
-            crumbs.spray([[e.x, e.y + 0.4], [e.x - 0.35, e.y + 0.3], [e.x + 0.35, e.y + 0.3]], [0x8f8982, 0x4a4350, theme.edge]);
-            shake = Math.min(0.2, shake + 0.12);
-        }
+
     }
     sim.events.length = 0;
 }
@@ -1847,7 +1846,7 @@ window.__boop = {
     // For checks: why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
     get idleBlockers() { return { aiming, keyAim, worldSettling, animating, shake, crumbs: crumbs.active(), unsettled: !sim.settled() }; },
     // For checks: GPU objects alive and things in the scene, to catch anything left behind.
-    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame, sketchMats: sketchMats.length }; },
+    get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, sketchMats: sketchMats.length }; },
     // Screen position of a point in the field, so tests can aim with real pointer input.
     toScreen(x, y) {
         const v = new THREE.Vector3(x, y, 0).project(camera);
