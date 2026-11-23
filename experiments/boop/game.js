@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-1';
+const BUILD = '1.3.5-2';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -49,7 +49,7 @@ const DESCEND_TIME = 0.9;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), best: $('hud-best'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
 };
 
 // ---------- three.js setup ----------
@@ -737,15 +737,10 @@ function syncView(frameDt) {
     // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
     const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
-    // Near your best depth: a quiet "Best 27" under Depth; past it, "New best!".
-    const near = bestBefore >= 5 && s.depth >= bestBefore - 2;
-    const bestText = !near ? '' : s.depth > bestBefore ? 'New best!' : `Best ${bestBefore}`;
-    const key = `${bestText}|${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
+    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
     if (key !== hudKey) {
         hudKey = key;
         hud.depth.textContent = s.depth;
-        hud.best.textContent = bestText;
-        hud.best.classList.toggle('new', s.depth > bestBefore && near);
         hud.shots.textContent = s.supply;
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
@@ -1301,12 +1296,9 @@ let stepAlpha = 1;
 function readBest() { try { return Number(localStorage.getItem('boop-best-depth')) || 0; } catch { return 0; } }
 function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d)); } catch { /* storage blocked */ } }
 
-// Your best depth from earlier runs, for the HUD's nudge when you're close to it.
-let bestBefore = readBest();
 function gameOver() {
     const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
     writeBest(best);
-    bestBefore = best;
     clearSave();
     audio.over();
     phase = 'over';
@@ -1754,6 +1746,13 @@ function menuTagline() {
         : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
         : best > 0 ? `Best depth: ${best}` : TAGLINE;
     $('menu-tagline').classList.toggle('state', runStarted);
+    // Paused mid-run: your best depth underneath, or that you've passed it.
+    if (runStarted && best > 0) {
+        const sub = document.createElement('span');
+        sub.className = 'sub' + (sim.s.depth > best ? ' new' : '');
+        sub.textContent = sim.s.depth > best ? `New best! (was ${best})` : `Best depth: ${best}`;
+        $('menu-tagline').append(' ', sub);   // the space keeps the two lines apart for screen readers
+    }
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
 // phone dim or lock mid-shot. Paused, a screen up, or the tab hidden: the phone decides again.
