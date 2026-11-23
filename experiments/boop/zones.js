@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-1');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -82,7 +82,7 @@ export function zoneSpec(d) {
     if (d === 1) return { ...base, lo: 1, hi: 2.5, fill: 0.4, props: 0, loose: 0, jello: 0, tough: 0 };
     if (d === 2) return { ...base, lo: 1, hi: 4, fill: 0.44, props: 1, loose: 0, jello: 0, tough: 0 };
     if (d === 3) return { ...base, lo: 2, hi: 5, fill: 0.46, props: 1, loose: 0.2, jello: 0, tough: 0 };
-    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 1, tough: 0.04 };
+    if (d === 4) return { ...base, lo: 2, hi: 6, fill: 0.48, props: 1, loose: 0.2, jello: 0, tough: 0.04 };
     // Past the intro, everything that's been introduced keeps showing up more.
     // Numbers keep climbing, but more slowly past depth 8 so they stay readable.
     const n = d <= 8 ? d : 8 + (d - 8) * 0.6;
@@ -92,7 +92,7 @@ export function zoneSpec(d) {
         // Props stay light through the early and middle zones, then crowd in.
         props: d <= 11 ? 2 : d <= 15 ? 3 : 4,
         loose: Math.min(0.42, 0.18 + d * 0.016),
-        jello: Math.min(0.85, 0.35 + d * 0.04),
+        jello: d === 5 ? 1 : Math.min(0.85, 0.35 + d * 0.04),     // jelly is introduced at 5
         tough: Math.min(0.12, 0.04 + d * 0.008),
     };
 }
@@ -112,3 +112,32 @@ export const STYLES = {
 export const propGap = (d) => (d <= 15 ? 4.5 : 3);
 export const MIN_PICKUP_GAP = 3.5;         // +1 pickups are always this many cells apart or more
 
+
+// When things first show up. A new thing arrives every few zones all the way down:
+// windmills and cups 2, resting blocks 3, mushrooms 4, jelly 5, two balls 6, grey 7,
+// vines 9, three balls 11, seesaws 13, bombs 15, four balls 16, hanging bombs 18.
+export const MUSHROOM_FROM = 4;
+const INTRO_DEPTHS = new Set([2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 16, 18]);
+
+// Recipes: what a zone leans on, so deep zones don't all blur into the same mix.
+// from = first depth it can show up (the zone after everything it needs is introduced);
+// w = how often. A zone that introduces something stays plain, so the new thing has the
+// stage; otherwise a zone picks one the depth allows, never the same as the last one.
+export const RECIPES = [
+    { name: 'plain', from: 1, w: 3 },
+    { name: 'windmills', from: 3, w: 1 },     // a windmill garden: three windmills
+    { name: 'tower', from: 4, w: 1 },         // stacked: more resting blocks to topple
+    { name: 'pinball', from: 5, w: 1 },       // three mushrooms, airy layout
+    { name: 'jelly', from: 6, w: 0.8 },       // two or three jelly blocks
+    { name: 'greymaze', from: 8, w: 0.8 },    // extra grey blocks to bank off
+    { name: 'vines', from: 10, w: 0.8 },      // two vines
+    { name: 'seesaws', from: 14, w: 0.7 },    // two seesaws
+    { name: 'bombs', from: 16, w: 0.6 },      // two bombs
+];
+export function pickRecipe(d, last, rand) {
+    if (INTRO_DEPTHS.has(d)) return 'plain';
+    const pool = RECIPES.filter((r) => r.from <= d && r.name !== last);
+    let pick = rand() * pool.reduce((n, r) => n + r.w, 0);
+    for (const r of pool) if ((pick -= r.w) <= 0) return r.name;
+    return pool[pool.length - 1].name;
+}

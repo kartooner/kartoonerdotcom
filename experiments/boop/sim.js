@@ -2,8 +2,8 @@
 // The aim preview clones this whole sim and runs it forward, so the guide line
 // uses the exact same code and numbers as the real shot.
 
-import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-5');   // build stamp: game.js checks every file matches
+import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-1');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -657,6 +657,9 @@ export class Sim {
         s.depth += 1;
         s.stretch = false;
         const spec = zoneSpec(s.depth);
+        // What this zone leans on (see RECIPES in zones.js): never the same as the last.
+        const recipe = pickRecipe(s.depth, s.recipe, () => this.rand());
+        s.recipe = recipe;
         // The game introduces each new thing itself (see game.js). The sim only announces
         // launcher upgrades, which are news about the run.
         s.note = null;
@@ -669,7 +672,7 @@ export class Sim {
         }
         // Zone 3 introduces resting blocks, so it always has somewhere for them to rest.
         const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : s.depth === 3 ? ['stacked', 'packed'] : ['packed', 'airy', 'mixed', 'stacked'];
-        const styleName = names[Math.floor(this.rand() * names.length)];
+        const styleName = recipe === 'tower' ? 'stacked' : recipe === 'pinball' ? 'airy' : names[Math.floor(this.rand() * names.length)];
         const style = STYLES[styleName];
         s.style = styleName;
 
@@ -695,9 +698,15 @@ export class Sim {
             if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
             else windmills += 1;
         }
+        // Mushrooms arrive at their own depth (windmills come first).
+        if (s.depth < MUSHROOM_FROM) { windmills += mushrooms; mushrooms = 0; }
+        else if (s.depth === MUSHROOM_FROM) { mushrooms = 1; windmills = 0; }
+        if (recipe === 'windmills') { windmills = 3; mushrooms = 0; }
+        if (recipe === 'pinball') { mushrooms = 3; windmills = 0; }
         // Vines: shown on their own first (depth 9), then one a zone while you learn them,
         // then one or two once they're familiar. Never more than two kinds of prop in a zone.
         let vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
+        if (recipe === 'vines') vines = 2;
         if (s.depth === VINE_FROM) { windmills = 0; mushrooms = 0; }
         else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
         // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
@@ -705,8 +714,9 @@ export class Sim {
         // keeps just one other kind (at most two kinds of props a zone).
         const hangIntro = s.depth === HANGBOMB_FROM;
         if (hangIntro) vines = Math.max(1, vines);
-        const bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
+        let bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
             : this.rand() >= BOMB_CHANCE ? 0 : s.depth >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
+        if (recipe === 'bombs') bombs = 2;
         if (bombs) {
             const kinds = [vines && 'vine', windmills && 'windmill', mushrooms && 'mushroom'].filter(Boolean);
             const keep = kinds[Math.floor(this.rand() * kinds.length)];
@@ -715,7 +725,7 @@ export class Sim {
             if (keep !== 'mushroom') mushrooms = 0;
         }
         const chandelierChance = s.depth === VINE_FROM ? 0 : s.depth <= VINE_FROM + 3 ? 0.5 : 0.4;
-        const seesaws = s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
+        const seesaws = recipe === 'seesaws' ? 2 : s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
         // Prop centres in grid units, to keep props apart.
         const propAt = [];
         const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
@@ -881,8 +891,8 @@ export class Sim {
         }
 
         // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
-        if (this.rand() < spec.jello) {
-            const count = 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
+        if (recipe === 'jelly' || this.rand() < spec.jello) {
+            const count = recipe === 'jelly' ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
             const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine && !p.seesaw);
             for (let i = 0; i < count && small.length; i++) {
                 small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
@@ -890,9 +900,10 @@ export class Sim {
         }
 
         // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
-        if (spec.neutral) {
+        const greys = spec.neutral + (recipe === 'greymaze' ? 2 : 0);
+        if (greys) {
             const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4);
-            for (let i = 0; i < spec.neutral && pool.length > 2; i++) {
+            for (let i = 0; i < greys && pool.length > 2; i++) {
                 pool.splice(Math.floor(this.rand() * pool.length), 1)[0].kind = 'neutral';
             }
         }
@@ -902,7 +913,7 @@ export class Sim {
             const g = r + 1 < ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && (plan[g - 1].kind === 'pinned' || plan[g - 1].kind === 'neutral');
         });
-        const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
+        const wantLoose = Math.round(plan.length * (recipe === 'tower' ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(0.4, spec.loose * style.loose)));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
