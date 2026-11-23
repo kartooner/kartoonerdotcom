@@ -2,8 +2,8 @@
 // The aim preview clones this whole sim and runs it forward, so the guide line
 // uses the exact same code and numbers as the real shot.
 
-import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-5');   // build stamp: game.js checks every file matches
+import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-14');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -44,7 +44,21 @@ const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
 // Par: about how much a good shot takes off at this depth (measured with bots; a shot
 // does more deeper down, with bigger blocks and more traps). Independent of hpScale,
 // so lighter early zones also get a lower par.
-const parHpPerShot = (d) => (3.5 + 0.7 * d) * Math.min(5.5, 2 + 0.95 * (d - 1));
+// Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
+// actually takes off per shot at each depth (with more balls per shot, each does a bit
+// less), set a little generous so a good zone beats par about a third of the time.
+const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 56], [16, 42], [22, 35], [30, 42], [40, 50]];
+const parHpPerShot = (d) => {
+    const i = PAR_TABLE.findIndex(([at]) => at > d);
+    if (i === -1) return PAR_TABLE[PAR_TABLE.length - 1][1];
+    if (i === 0) return PAR_TABLE[0][1];
+    const [d0, v0] = PAR_TABLE[i - 1], [d1, v1] = PAR_TABLE[i];
+    return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 1.02;      // par is a target, not a given: beaten about a third of the time
+};
+// Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
+// comes from layout and from income not keeping up, not from waiting on big numbers.
+// Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
+const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(1, 0.62 + (d - 25) * 0.04));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
@@ -151,7 +165,11 @@ export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.2
 
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
-const JELLO_MIN_SPEED = 4;          // but never slower than this, so balls always come out the far side
+const JELLO_MIN_SPEED = 4.5;        // but never slower than this, so balls always come out the far side
+// Inside jelly a ball holds the line it came in on (gravity would otherwise drag a slow ball
+// down through a big piece), sagging only a touch, and comes out the far side at full speed
+// in that same direction: a slow push through, then on its way again.
+const JELLO_SAG = 0.0012;           // per step, how much the held direction leans downward
 // Consistent speed: a ball always travels at BALL_SPEED. Bounces and gravity change its
 // direction, not how fast it goes. Lost speed (a bounce, a pass through jelly) eases back
 // over a few steps instead of snapping, so it reads as smooth, not jerky.
@@ -372,6 +390,16 @@ export class Sim {
         body.wakeUp();
     }
 
+    // Is point p (a ball's centre) within a jelly block, allowing for the ball's size?
+    insideJelly(p, b) {
+        if (!b) return false;
+        const body = this.world.getRigidBody(b.body), t = body.translation(), a = body.rotation();
+        const c = Math.cos(-a), sn = Math.sin(-a);
+        const lx = ((p.x - t.x) * c - (p.y - t.y) * sn) / b.scale, ly = ((p.x - t.x) * sn + (p.y - t.y) * c) / b.scale;
+        const r = 0.5 + BALL_R / b.scale;
+        return b.cells.some(([x, y]) => Math.abs(lx - x) <= r && Math.abs(ly - y) <= r);
+    }
+
     // A seesaw: one nail, in the middle of the bar (where it pivots).
     makeSeesaw(b) {
         b.seesaw = true;
@@ -412,7 +440,14 @@ export class Sim {
         world.removeRigidBody(world.getRigidBody(b.body));
         for (const h of b.cols) delete s.owner[h];
         delete s.blocks[b.id];
-        if (b.jello) for (const ball of s.balls) ball.jello = ball.jello.filter((j) => j !== b.id);
+        if (b.jello) for (const ball of s.balls) {
+            if (!ball.jello.includes(b.id)) continue;
+            ball.jello = ball.jello.filter((j) => j !== b.id);
+            if (!ball.jello.length && ball.jdir) {       // popped around it: on its way at full speed
+                world.getRigidBody(ball.body)?.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true);
+                ball.jdir = null;
+            }
+        }
         this.events.push({ t: 'pop', id: b.id, x: p.x, y: p.y, jello: b.jello, popped });
         if (popped) s.popped = (s.popped ?? 0) + 1;       // for the run summary at game over
         if (popped && !s.quiet && !s.stretch && this.blockCount() > 0 && this.blockCount() <= STRETCH_BLOCKS) {
@@ -657,6 +692,10 @@ export class Sim {
         s.depth += 1;
         s.stretch = false;
         const spec = zoneSpec(s.depth);
+        // What this zone leans on (see RECIPES in zones.js): never the same as the last.
+        const recipe = pickRecipe(s.depth, s.recipe, () => this.rand());
+        s.recipe = recipe;
+        const has = (k) => recipe.split('+').includes(k);      // deep zones can mix two recipes
         // The game introduces each new thing itself (see game.js). The sim only announces
         // launcher upgrades, which are news about the run.
         s.note = null;
@@ -669,7 +708,7 @@ export class Sim {
         }
         // Zone 3 introduces resting blocks, so it always has somewhere for them to rest.
         const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : s.depth === 3 ? ['stacked', 'packed'] : ['packed', 'airy', 'mixed', 'stacked'];
-        const styleName = names[Math.floor(this.rand() * names.length)];
+        const styleName = has('tower') ? 'stacked' : has('pinball') ? 'airy' : names[Math.floor(this.rand() * names.length)];
         const style = STYLES[styleName];
         s.style = styleName;
 
@@ -695,9 +734,15 @@ export class Sim {
             if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
             else windmills += 1;
         }
+        // Mushrooms arrive at their own depth (windmills come first).
+        if (s.depth < MUSHROOM_FROM) { windmills += mushrooms; mushrooms = 0; }
+        else if (s.depth === MUSHROOM_FROM) { mushrooms = 1; windmills = 0; }
+        if (has('windmills')) { windmills = 3; mushrooms = 0; }
+        if (has('pinball')) { mushrooms = 3; windmills = 0; }
         // Vines: shown on their own first (depth 9), then one a zone while you learn them,
         // then one or two once they're familiar. Never more than two kinds of prop in a zone.
         let vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
+        if (has('vines')) vines = 2;
         if (s.depth === VINE_FROM) { windmills = 0; mushrooms = 0; }
         else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
         // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
@@ -705,17 +750,23 @@ export class Sim {
         // keeps just one other kind (at most two kinds of props a zone).
         const hangIntro = s.depth === HANGBOMB_FROM;
         if (hangIntro) vines = Math.max(1, vines);
-        const bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
+        let bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
             : this.rand() >= BOMB_CHANCE ? 0 : s.depth >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
+        if (has('bombs')) bombs = 2;
         if (bombs) {
             const kinds = [vines && 'vine', windmills && 'windmill', mushrooms && 'mushroom'].filter(Boolean);
-            const keep = kinds[Math.floor(this.rand() * kinds.length)];
+            // A combo zone keeps the kind its other recipe is about.
+            const keep = has('vines') ? 'vine' : has('windmills') ? 'windmill' : has('pinball') ? 'mushroom' : kinds[Math.floor(this.rand() * kinds.length)];
             if (keep !== 'vine') vines = 0;
             if (keep !== 'windmill') windmills = 0;
             if (keep !== 'mushroom') mushrooms = 0;
         }
+        // Never a fan factory: two windmills at most (three only in a windmill garden), and
+        // no more than three windmills and mushrooms together.
+        windmills = Math.min(windmills, has('windmills') ? 3 : 2);
+        if (!has('windmills') && !has('pinball')) mushrooms = Math.min(mushrooms, 3 - windmills);
         const chandelierChance = s.depth === VINE_FROM ? 0 : s.depth <= VINE_FROM + 3 ? 0.5 : 0.4;
-        const seesaws = s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
+        const seesaws = has('seesaws') ? 2 : s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
         // Prop centres in grid units, to keep props apart.
         const propAt = [];
         const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
@@ -747,6 +798,15 @@ export class Sim {
             if (cells.some(([x, y]) => x === cc && y === rr)) return false;
             return cc >= 0 && cc < W && rr >= 0 && rr < ROWS && grid[rr][cc] !== 0;
         }));
+        // How many of a piece's cell sides would touch a block already planned.
+        const hugs = (cells) => {
+            let n = 0;
+            for (const [c, r] of cells) for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                if (cells.some(([x, y]) => x === c + dc && y === r + dr)) continue;
+                if ((grid[r + dr]?.[c + dc] ?? 0) > 0) n++;
+            }
+            return n;
+        };
         const plan = [];
         let filled = 0;
         const target = Math.round(W * ROWS * (spec.fill + style.fill));
@@ -868,31 +928,49 @@ export class Sim {
             let pick = this.rand() * poolTotal, shape = pool[0];
             for (const sh of pool) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             if ((used[shape.canon] ?? 0) >= (shape.size === 1 ? 3 : 2)) continue;
-            const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
-            const cells = shape.c.map(([c, r]) => [col + c, row + r]);
-            if (!cells.every(([c, r]) => free(c, r)) || !rowOk(cells)) continue;
-            if (sameShapeTouching(cells, shape.canon)) continue;
             const wantsGap = this.rand() < style.gap;
-            if (wantsGap && touchesOther(cells)) continue;
+            // Interlocking: more often the deeper you go (and in packed layouts), a piece tries a
+            // few spots and takes the one that hugs its neighbours most, so L, T and S shapes
+            // tuck into each other's notches instead of sitting side by side.
+            const snug = !wantsGap && this.rand() < Math.min(0.85, 0.15 + s.depth * 0.025 + (styleName === 'packed' ? 0.2 : 0));
+            let cells = null, bestHug = -1;
+            for (let k = 0; k < (snug ? 8 : 1); k++) {
+                const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
+                const cand = shape.c.map(([c, r]) => [col + c, row + r]);
+                if (!cand.every(([c, r]) => free(c, r)) || !rowOk(cand)) continue;
+                if (sameShapeTouching(cand, shape.canon)) continue;
+                if (wantsGap && touchesOther(cand)) continue;
+                const hug = snug ? hugs(cand) : 0;
+                if (hug > bestHug) { bestHug = hug; cells = cand; }
+            }
+            if (!cells) continue;
             used[shape.canon] = (used[shape.canon] ?? 0) + 1;
             plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap, canon: shape.canon });
             cells.forEach(([c, r]) => { grid[r][c] = plan.length; });
             filled += cells.length;
         }
 
-        // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
-        if (this.rand() < spec.jello) {
-            const count = 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
-            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine && !p.seesaw);
-            for (let i = 0; i < count && small.length; i++) {
-                small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
+        // Jello shows up here and there: often none, usually one, sometimes two (a jelly zone, two or three).
+        if (has('jelly') || this.rand() < spec.jello) {
+            const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
+            // Jelly comes in all sizes once it's been introduced: each piece rolls small (1-2 cells),
+            // medium (3-4) or large (5-6) and takes the closest piece the layout has, so a zone
+            // with two or three usually mixes them. The very first (depth 5) stays small and clear.
+            const pool = plan.filter((p) => p.cells.length <= 6 && !p.cup && !p.vine && !p.seesaw && !p.target && p.kind === 'pinned');
+            for (let i = 0; i < count && pool.length; i++) {
+                const r = this.rand();
+                const want = s.depth <= 5 ? 2 : r < 0.38 ? 1.5 : r < 0.72 ? 3.5 : 5.5;
+                let best = 0, bestD = Infinity;
+                pool.forEach((p, k) => { const d = Math.abs(p.cells.length - want) + this.rand() * 0.9; if (d < bestD) { bestD = d; best = k; } });
+                pool.splice(best, 1)[0].kind = 'jello';
             }
         }
 
         // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
-        if (spec.neutral) {
+        const greys = spec.neutral + (has('greymaze') ? 2 : 0);
+        if (greys) {
             const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4);
-            for (let i = 0; i < spec.neutral && pool.length > 2; i++) {
+            for (let i = 0; i < greys && pool.length > 2; i++) {
                 pool.splice(Math.floor(this.rand() * pool.length), 1)[0].kind = 'neutral';
             }
         }
@@ -902,7 +980,7 @@ export class Sim {
             const g = r + 1 < ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && (plan[g - 1].kind === 'pinned' || plan[g - 1].kind === 'neutral');
         });
-        const wantLoose = Math.round(plan.length * Math.min(0.4, spec.loose * style.loose));
+        const wantLoose = Math.round(plan.length * (has('tower') ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(s.depth >= 20 ? 0.46 : 0.4, spec.loose * style.loose)));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
@@ -985,34 +1063,46 @@ export class Sim {
         // Numbers. First the zone's total: what each block would get on its own, summed.
         // Then that total is shared out by size, so bigger blocks always hold the bigger
         // numbers and a lone square never ends up a slog to chip down.
-        const grow = multishotGrowth(s.volley) * hpScale(s.depth);   // deeper zones and multishot
+        const grow = multishotGrowth(s.volley) * hpScale(s.depth) * zoneTrim(s.depth);   // deeper zones and multishot
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
-            p.hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length) * grow;
-            if (p.kind === 'jello') { p.hp *= 0.5; continue; }    // jelly keeps its own, smaller number
-            zoneHp += p.hp;
-            // Size counts for more than size alone (n^1.4), with a little variety (±20%).
+            const own = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length) * grow;
+            zoneHp += p.kind === 'jello' ? own * 0.5 : own;
+            // Size counts for more than size alone (n^1.4), with a little variety (±10%).
             // Only big blocks can be the extra-tough one.
-            p.w = p.cells.length ** 1.4 * (0.8 + 0.4 * this.rand());
-            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.4 + this.rand() * 0.4;
-            if (p.kind === 'loose') p.w *= 0.5;    // resting blocks can tumble somewhere awkward
-            weights += p.w;
+            p.w = p.cells.length ** 1.4 * (0.9 + 0.2 * this.rand());
+            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.3 + this.rand() * 0.3;
+            weights += p.w * (p.kind === 'jello' ? 0.5 : p.kind === 'loose' ? 0.8 : 1);
         }
-        // No runaway block: none holds more than twice the next biggest. What's trimmed
-        // goes to the others, so the zone's total stays the same.
-        const solid = plan.filter((p) => p.kind !== 'jello').sort((a, b) => b.w - a.w);
-        if (solid.length >= 2 && solid[0].w > solid[1].w * 2) {
-            const extra = solid[0].w - solid[1].w * 2;
-            solid[0].w -= extra;
-            const rest = weights - extra - solid[0].w;
-            for (const p of solid.slice(1)) p.w += extra * p.w / rest;
-        }
+        // No runaway block: none holds more than twice the next biggest.
+        const byW = [...plan].sort((a, b) => b.w - a.w);
+        if (byW.length >= 2 && byW[0].w > byW[1].w * 2) byW[0].w = byW[1].w * 2;
+        // The number reads like the block's size: the shares are handed out in order, the biggest
+        // block getting the biggest, so a small piece never shows more than a bigger one beside it.
+        // Jelly then keeps half (it's soft) and resting blocks a little less (they can tumble
+        // somewhere awkward); a big jelly still outnumbers a small one.
+        const shares = plan.map((p) => zoneHp * p.w / weights).sort((a, b) => b - a);
+        [...plan].sort((a, b) => b.cells.length - a.cells.length || b.w - a.w)
+            .forEach((p, k) => { p.hp = shares[k] * (p.kind === 'jello' ? 0.5 : p.kind === 'loose' ? 0.8 : 1); });
         for (const p of plan) {
-            const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
+            const hp = p.hp;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
             if (p.seesaw) this.makeSeesaw(p.block);
+        }
+        // Unsettled (from depth 8): a block or two start the zone already hanging from one nail,
+        // crooked, as if something knocked it loose. Never a cup, a vine's block, a seesaw,
+        // a hanging bomb's target or a mushroom's block.
+        if (s.depth >= 8) {
+            const n = s.depth < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
+            const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target
+                && p.cells.length >= 2 && p.block.nails?.length === 2 && !mushSpots.some((m) => m.p === p));
+            for (let i = 0; i < n && pool.length; i++) {
+                const b = pool.splice(Math.floor(this.rand() * pool.length), 1)[0].block;
+                b.nails.splice(Math.floor(this.rand() * 2), 1);
+                this.hang(b);
+            }
         }
         for (const b of bombSpots) this.addBomb(b.c + 0.5, -(b.r + TOP_ROW + 0.5));
         for (const v of vineSpots) {
@@ -1554,10 +1644,26 @@ export class Sim {
         for (const ball of s.balls) {
             if (!ball.jello.length) continue;
             const body = world.getRigidBody(ball.body);
+            // Still really inside? A hit shrinks a jelly a little, which can leave a ball at its
+            // edge outside it without the engine ever saying it left. Check, and let it go.
+            const bp = body.translation();
+            ball.jello = ball.jello.filter((id) => this.insideJelly(bp, s.blocks[id]));
+            if (!ball.jello.length) {
+                if (ball.jdir) { body.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true); ball.jdir = null; }
+                continue;
+            }
             const v = body.linvel();
             const sp = Math.hypot(v.x, v.y);
             const k = sp * JELLO_DRAG < JELLO_MIN_SPEED ? Math.min(1, JELLO_MIN_SPEED / (sp || 1)) : JELLO_DRAG;
-            body.setLinvel({ x: v.x * k, y: v.y * k }, true);
+            if (ball.jdir) {
+                // Hold the way in, sagging only a touch.
+                let [dx, dy] = ball.jdir;
+                dy -= JELLO_SAG;
+                const l = Math.hypot(dx, dy) || 1;
+                ball.jdir = [dx / l, dy / l];
+                const next = Math.max(JELLO_MIN_SPEED, sp * k);
+                body.setLinvel({ x: ball.jdir[0] * next, y: ball.jdir[1] * next }, true);
+            } else body.setLinvel({ x: v.x * k, y: v.y * k }, true);
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
         for (const ball of s.balls) {
@@ -1641,6 +1747,10 @@ export class Sim {
             const v = body.linvel();
             this.events.push({ t: 'jelly', id: b.id, x: p.x, y: p.y, dir: Math.atan2(v.y, v.x) });
             if (started) {
+                if (!ball.jello.length) {
+                    const sp = Math.hypot(v.x, v.y) || 1;
+                    ball.jdir = [v.x / sp, v.y / sp];        // the line it holds inside
+                }
                 if (!ball.jello.includes(b.id)) ball.jello.push(b.id);
                 if (this.cooled(a.body + ':' + b.id)) {
                     const n = s.stretch ? 2 : 1, blk = s.blocks[b.id];
@@ -1650,6 +1760,11 @@ export class Sim {
                 }
             } else {
                 ball.jello = ball.jello.filter((j) => j !== b.id);
+                if (!ball.jello.length && ball.jdir) {
+                    // Out the far side: full speed again, along the way it came in.
+                    body.setLinvel({ x: ball.jdir[0] * BALL_SPEED, y: ball.jdir[1] * BALL_SPEED }, true);
+                    ball.jdir = null;
+                }
             }
             return;
         }

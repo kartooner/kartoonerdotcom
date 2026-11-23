@@ -118,3 +118,15 @@ Past depth 16 nothing new arrives (bombs at 15 and the last launcher upgrade at 
 - The game dresses up around holidays, picked from the date on the player's device (a tiny script at the top of index.html sets `data-season` before anything draws). Rules never change; `?season=fall` or `?season=none` in the address forces one, for testing.
 - **Fall / Thanksgiving** (Nov 1 to the Sunday after Thanksgiving): warmer paper, harvest block colours (still light to dark as numbers climb, same patterns), cranberry jelly, autumn vines, leaves drifting from popped blocks, one full leaf pile every third zone (1, 4, 7...) on the block with the widest open top, which flutters off when the block is hit and heaps up on the floor (for show only, never the physics), and a knit hat with a pompom for Boop. In Thanksgiving week the start screen says "Happy Thanksgiving!" before the best depth.
 - **Next:** Christmas (Dec 1 to Jan 1): snow, ornaments, a garland vine, a Santa hat. Later maybe New Year's and Halloween.
+
+## v1.3.1: the retune
+Measured with bots at two skill levels (random aim, and best of two aims). An average player now gets past 20–25; past 25 zones grow again a little each time, so the deep end ramps up.
+- **New things keep coming:** windmills and cups 2, resting blocks 3, mushrooms 4, jelly 5, two balls 6, grey 7, vines 9, three balls 11, seesaws 13, bombs 15, four balls 16, hanging bombs 18.
+- **Zone recipes:** each zone leans on one (plain, windmill garden, tower, pinball, jelly, grey maze, vines, seesaws, bombs), never the same twice running; a zone that introduces something stays plain. From depth 25 zones can mix two (about half of them from 30).
+- **Variety in the blocks:** jelly in small, medium and large right after it's introduced; from depth 8 a block or two start hanging crooked from one nail; more resting blocks deep down; pieces try a few spots and take the snuggest, so L, T and S shapes interlock (more so deeper and in packed layouts).
+- **Numbers read like size:** a zone's numbers are handed out biggest block first, so a small piece never shows more than a bigger one beside it (jelly keeps half, resting blocks a little less).
+- **Par is a real target again:** fitted per depth band to an average player, beaten about a third of the time; it pays up to +5 shots.
+- **Shorter deep zones:** numbers trimmed from depth 11 (more from 16) and growing slower past 16, so a deep zone is a few minutes, not five; past 25 they grow again for the ramp.
+- **Calmer boards:** at most two windmills a zone (three only in an occasional windmill garden), at most three windmills and mushrooms together.
+- **Deeper looks deeper:** the field darkens a step every 10 depths, like layers of earth.
+- **Jelly feel:** inside jelly a ball still slows, but holds the line it came in on (only a touch of sag) and leaves the far side at full speed in that direction. Fixed a long-standing bug where a ball nicking a jelly's edge stayed marked as "inside" after the jelly shrank from the hit, crawling slowly until it faded.

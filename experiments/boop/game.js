@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.0-5';
+const BUILD = '1.3.1-14';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1284,6 +1284,7 @@ const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
+    tintField();
     leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
@@ -1385,6 +1386,7 @@ function restart(saved = null) {
     keyAim = false;
     if (saved) {
         sim = saved;
+        tintField();
         leafPiles?.seed(sim.s.blocks, sim.s.depth);
         runStarted = true;
         fromSave = true;
@@ -1540,12 +1542,21 @@ const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 function readThemePick() { try { return localStorage.getItem('boop-theme'); } catch { return null; } }
 function writeThemePick(v) { try { localStorage.setItem('boop-theme', v); } catch { /* storage blocked */ } }
 
+// Digging down: the field darkens a step every 10 depths (11, 21, 31), like layers of earth.
+// Subtle, and in both light and dark.
+const FIELD_DEEP = { light: 0xe3cfab, dark: 0x0e0b09 };
+const fieldColor = new THREE.Color(), deepColor = new THREE.Color();
+function tintField() {
+    const band = Math.min(3, Math.floor(((sim?.s.depth ?? 1) - 1) / 10));
+    fieldColor.setHex(theme.field).lerp(deepColor.setHex(FIELD_DEEP[themeName()]), band * 0.14);
+    fieldMat.uniforms.uField.value.copy(fieldColor);
+}
 function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
 function applyTheme(name) {
     theme = THEMES[name];
     document.documentElement.dataset.theme = name;
     renderer.setClearColor(theme.paper);
-    fieldMat.uniforms.uField.value.setHex(theme.field);
+    tintField();
     fieldMat.uniforms.uHatch.value.setHex(theme.line);
     fieldMat.uniforms.uStrength.value = name === 'dark' ? 0.08 : 0.12;   // light paper needs a touch more to show
     lineMat.color.setHex(theme.line);
