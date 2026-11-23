@@ -17,7 +17,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.3-2';
+const BUILD = '1.3.0-1';
 const MODULES = 10;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -213,19 +213,26 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2 + c[1] * 0.01; if (d < bestD - 1e-9) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(b.neutral ? '' : String(b.hp));
+    const label = makeLabel(b.weight ? 'TON' : b.neutral ? '' : String(b.hp), b.weight ? WEIGHT_TEXT : undefined);
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
-    label.visible = !b.neutral;
+    label.visible = !b.neutral || b.weight;
     group.add(label);
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
-        mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
+        mesh.material.uniforms.uFill.value.setHex(b.weight ? bombLook().body : NEUTRAL[themeName()]);
+    }
+    let handle = null;
+    if (b.weight) {
+        // A cartoon iron weight: the bomb's charcoal, "TON" on it, and a ring on top for the vine.
+        handle = makeSketch({ kind: SHAPE.RING, size: [0.15], ring: 0.05, edge: 0.03, wob: 0.3, filled: false, fill: bombLook().cap, seed: b.id, margin: 0.06 });
+        handle.position.set(0, 0.6, -0.01);
+        group.add(handle);
     }
     scene.add(group);
     scene.add(group);
-    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, weight: b.weight, handle, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -359,6 +366,7 @@ const BOMB_LOOK = {
     dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
 };
 const bombLook = () => BOMB_LOOK[themeName()];
+const WEIGHT_TEXT = '#d9d4cb';
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -713,6 +721,11 @@ function consumeEvents() {
             const v = blockViews.get(e.id);
             if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
+        else if (e.t === 'thud') {
+            // A dropped weight lands: a heavy jolt and a puff of dust and ink.
+            crumbs.spray([[e.x, e.y + 0.4], [e.x - 0.35, e.y + 0.3], [e.x + 0.35, e.y + 0.3]], [0x8f8982, 0x4a4350, theme.edge]);
+            shake = Math.min(0.2, shake + 0.12);
+        }
     }
     sim.events.length = 0;
 }
@@ -729,7 +742,7 @@ function playSound(e) {
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
-    else if (e.t === 'boom') audio.boom();
+    else if (e.t === 'boom' || e.t === 'thud') audio.boom();
     else if (e.t === 'bomblit') audio.fizz();
     else if (e.t === 'bombtap') audio.tink();
     else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
@@ -1172,12 +1185,14 @@ function queueZoneTips() {
     add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose));
     add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
-    add('grey', block((b) => b.neutral));
+    add('grey', block((b) => b.neutral && !b.weight));
     add('cup', block((b) => b.cup));
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
     add('vine', prop('vine'));
     add('bomb', prop('bomb'));
+    add('seesaw', block((b) => b.seesaw && !b.loose));
+    add('weight', block((b) => b.weight && b.hung != null));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
     }
@@ -1524,7 +1539,8 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
-        if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+        if (v.weight) { v.mesh.material.uniforms.uFill.value.setHex(look.body); v.handle.material.uniforms.uFill.value.setHex(look.cap); }
+        else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
@@ -1562,6 +1578,14 @@ const ICON = {
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
+    {
+        version: '1.3',
+        line: 'New in 1.3: seesaws and weights, deeper down.',
+        items: [
+            { img: 'img/meet-seesaw.webp', title: 'Seesaws', text: 'From depth 18. One nail in the middle: hit an end and it tips, and anything resting on it slides off.' },
+            { img: 'img/meet-weight.webp', title: 'Weights', text: 'From depth 21, hanging on a vine. Cut the vine and it drops, smashing a big chunk off whatever it lands on.' },
+        ],
+    },
     {
         version: '1.2.3',
         line: 'New in 1.2.3: hold to speed up, a run summary, and a home screen icon.',
