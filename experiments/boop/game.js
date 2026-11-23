@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-3';
+const BUILD = '1.3.5-5';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -587,9 +587,11 @@ function syncVine(v, pr) {
     for (const [h, g] of v.links) if (!live.has(h)) { discard(g); v.links.delete(h); }
 }
 
-function addFloater(text, x, y) {
+function addFloater(text, x, y, size = 0.62) {
     const m = makeLabel(text, theme.text, 'hand');
-    m.scale.setScalar(0.62);
+    m.scale.set(size * m.userData.aspect, size, 1);
+    const half = Math.min(W / 2, size * m.userData.aspect * 0.5 + 0.15);   // keep long text inside the field
+    x = Math.min(W - half, Math.max(half, x));
     m.position.set(x, y, 0.8);
     m.material.opacity = 1;
     m.material.depthWrite = false;   // never block see-through things (jello) behind it
@@ -756,6 +758,7 @@ function consumeEvents() {
     for (const e of sim.events) {
         playSound(e);
         if (e.t === 'gain') addFloater(`+${e.n}`, e.x, e.y + 0.3);
+        else if (e.t === 'nailpop') stopFor(0.03);
         else if (e.t === 'gold') { addFloater('Bonus stage next!', e.x, e.y + 0.4); crumbs.spray([[e.x, e.y], [e.x - 0.3, e.y], [e.x + 0.3, e.y]], [0xf4c542, 0xffe9a0, theme.edge]); }
         else if (e.t === 'vinesnap') crumbs.spray([[e.x, e.y], [e.x, e.y - 0.1]], [COLORS.vine, COLORS.leaf, theme.edge]);
         else if (e.t === 'nailhit') {
@@ -773,8 +776,12 @@ function consumeEvents() {
             booms.push({ ring, r: e.r, t: 0 });
             crumbs.spray([[e.x, e.y], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y + 0.3]], [0xf4a640, 0x4a4350, theme.edge]);
             if (!calmMotion.matches) shake = Math.min(0.2, shake + 0.14);
+            stopFor(0.06);
         } else if (e.t === 'pop' && e.popped) {
             const v = blockViews.get(e.id);
+            // A streak: from the third block popped in one turn, a little "×3", "×4"...
+            if (phase === 'play' && ++turnPops >= 3) addFloater(`×${turnPops}`, e.x, e.y + 0.45, Math.min(1.15, 0.85 + 0.05 * (turnPops - 3)));
+            if (v?.big) stopFor(0.045);            // a big block going is worth a beat
             if (v) {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
@@ -1034,6 +1041,7 @@ canvas.addEventListener('pointerdown', (ev) => {
         aimCancel = true;                       // not aimed until the finger actually moves
         dragStart = { x: ev.clientX, y: ev.clientY };
         dragFar = 0;
+        aimPrev = null;
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
@@ -1076,6 +1084,8 @@ const LONG_TURN = 10;   // seconds: a turn this long gets Boop's tip about holdi
 function fire(angle) {
     worldSettling = false;
     turnTime = 0;
+    turnPops = 0;
+    autoSpeed = 1;
     mouseAim = false;
     sim.fire(angle);
     lastShotAngle = angle;
@@ -1089,6 +1099,23 @@ canvas.addEventListener('pointercancel', () => { aiming = false; fastPointer = n
 canvas.addEventListener('lostpointercapture', (ev) => { if (ev.pointerId === fastPointer) fastPointer = null; });
 window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 
+// Fine aim on touch: a slow, careful finger turns the aim less (down to about a third), a
+// normal drag turns it fully. Changes are applied as steps, so the aim stays put when you slow
+// down instead of jumping to where the finger points.
+let aimPrev = null;
+const AIM_SLOW = 0.03, AIM_FAST = 0.2;     // finger speed in px per ms (30 .. 200 px a second): full fine aim .. none
+function steerAim(ev, raw) {
+    if (aimPrev) {
+        const d = raw - aimPrev.raw;
+        if (Math.abs(d) > 1) aimTarget = raw;     // flipped to the other side: just follow
+        else {
+            const speed = Math.hypot(ev.clientX - aimPrev.x, ev.clientY - aimPrev.y) / Math.max(4, ev.timeStamp - aimPrev.t);
+            const k = Math.min(1, Math.max(0, (speed - AIM_SLOW) / (AIM_FAST - AIM_SLOW)));
+            aimTarget = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, aimTarget + d * (0.32 + 0.68 * k * k * (3 - 2 * k))));
+        }
+    } else aimTarget = raw;
+    aimPrev = { raw, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
+}
 function updateAim(ev) {
     const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
     const dist = Math.hypot(dx, dy);
@@ -1099,11 +1126,12 @@ function updateAim(ev) {
         if (dist < AIM_START_PX) return;
         aimCancel = false;
         aimTarget = aimAngle = angleFromDrag(dx, dy);    // first real movement: jump straight to the aim
+        aimPrev = { raw: aimTarget, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
         return;
     }
     // Once aiming, keep the last direction while the finger is very near its start point,
     // where tiny wobbles would swing the angle wildly.
-    if (dist >= AIM_START_PX) aimTarget = angleFromDrag(dx, dy);
+    if (dist >= AIM_START_PX) steerAim(ev, angleFromDrag(dx, dy));
 }
 
 function easeAim(frameDt) {
@@ -1288,6 +1316,14 @@ function hideNote() {
 // ---------- turn flow ----------
 
 let acc = 0, settleSteps = 0, descendT = 0, shake = 0;
+let autoSpeed = 1, hitStop = 0, lastStopAt = -Infinity, turnPops = 0;
+const AUTO_AFTER = 4, AUTO_FAST = 1.8;      // seconds into a turn; how much faster the last balls go
+function stopFor(sec) {                    // a hit stop, but never twice in quick succession (chains)
+    const now = performance.now();
+    if (now - lastStopAt < 250) return;
+    lastStopAt = now;
+    hitStop = Math.max(hitStop, sec);
+}
 // Ball positions before the latest step, so drawing can glide between steps.
 const prevBallPos = new Map();
 let stepAlpha = 1;
@@ -1484,7 +1520,14 @@ function tick(frameDt) {
     if (phase !== 'play' && phase !== 'settle' && !settlingWhileAiming) return;
 
     const s = sim.s;
-    acc += frameDt * (fastForward() ? FAST : 1);   // real time, unless you're holding to speed up
+    // Last balls: once only one or two are still bouncing a few seconds into the turn, the
+    // game eases up to a bit faster by itself (holding still speeds it up more).
+    const shots = s.shots;
+    const trickle = phase === 'play' && turnTime > AUTO_AFTER && !(shots && shots.left > 0) && s.balls.length <= 2 && (shots?.fired ?? 0) >= 1;
+    autoSpeed += ((trickle ? AUTO_FAST : 1) - autoSpeed) * (1 - Math.exp(-frameDt * 2));
+    // Hit stop: a big pop, a bomb or a nail coming out holds everything for a blink.
+    if (hitStop > 0 && !fastForward()) hitStop = Math.max(0, hitStop - frameDt);
+    else acc += frameDt * (fastForward() ? FAST : autoSpeed);   // real time, unless you're holding to speed up
     if (phase === 'play') turnTime += frameDt;
     let n = 0;
     while (acc >= DT && n < 30) {
@@ -1900,6 +1943,7 @@ window.__boop = {
     fire: (angle) => fire(angle),
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
+    get feel() { return { autoSpeed, hitStop, turnPops }; },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },
