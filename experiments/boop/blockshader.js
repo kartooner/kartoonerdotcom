@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-10');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-11');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).

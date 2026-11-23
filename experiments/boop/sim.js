@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-10');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.1-11');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -1046,27 +1046,26 @@ export class Sim {
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
-            p.hp = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length) * grow;
-            if (p.kind === 'jello') { p.hp *= 0.5; continue; }    // jelly keeps its own, smaller number
-            zoneHp += p.hp;
-            // Size counts for more than size alone (n^1.4), with a little variety (±20%).
+            const own = (spec.lo + (spec.hi - spec.lo) * t * t) * (0.6 + 0.4 * p.cells.length) * grow;
+            zoneHp += p.kind === 'jello' ? own * 0.5 : own;
+            // Size counts for more than size alone (n^1.4), with a little variety (±10%).
             // Only big blocks can be the extra-tough one.
-            p.w = p.cells.length ** 1.4 * (0.8 + 0.4 * this.rand());
-            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.4 + this.rand() * 0.4;
-            if (p.kind === 'loose') p.w *= 0.5;    // resting blocks can tumble somewhere awkward
-            weights += p.w;
+            p.w = p.cells.length ** 1.4 * (0.9 + 0.2 * this.rand());
+            if (p.cells.length >= 4 && this.rand() < spec.tough) p.w *= 1.3 + this.rand() * 0.3;
+            weights += p.w * (p.kind === 'jello' ? 0.5 : p.kind === 'loose' ? 0.8 : 1);
         }
-        // No runaway block: none holds more than twice the next biggest. What's trimmed
-        // goes to the others, so the zone's total stays the same.
-        const solid = plan.filter((p) => p.kind !== 'jello').sort((a, b) => b.w - a.w);
-        if (solid.length >= 2 && solid[0].w > solid[1].w * 2) {
-            const extra = solid[0].w - solid[1].w * 2;
-            solid[0].w -= extra;
-            const rest = weights - extra - solid[0].w;
-            for (const p of solid.slice(1)) p.w += extra * p.w / rest;
-        }
+        // No runaway block: none holds more than twice the next biggest.
+        const byW = [...plan].sort((a, b) => b.w - a.w);
+        if (byW.length >= 2 && byW[0].w > byW[1].w * 2) byW[0].w = byW[1].w * 2;
+        // The number reads like the block's size: the shares are handed out in order, the biggest
+        // block getting the biggest, so a small piece never shows more than a bigger one beside it.
+        // Jelly then keeps half (it's soft) and resting blocks a little less (they can tumble
+        // somewhere awkward); a big jelly still outnumbers a small one.
+        const shares = plan.map((p) => zoneHp * p.w / weights).sort((a, b) => b - a);
+        [...plan].sort((a, b) => b.cells.length - a.cells.length || b.w - a.w)
+            .forEach((p, k) => { p.hp = shares[k] * (p.kind === 'jello' ? 0.5 : p.kind === 'loose' ? 0.8 : 1); });
         for (const p of plan) {
-            const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
+            const hp = p.hp;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
             if (p.seesaw) this.makeSeesaw(p.block);
