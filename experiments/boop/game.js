@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, BALL_R, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO, NEUTRAL } from './blockshader.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -11,14 +11,16 @@ import { THING_TIPS } from './zones.js';
 import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs } from './crumbs.js';
+import { applySeason, seasonGreeting } from './season.js';
+import { makeLeafPiles } from './leaves.js';
 import './buddy.js';               // the mascot's blinks and glances
 
 // Must match data-build on the page, and the stamp every other file pushes as it loads.
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.2.3-2';
-const MODULES = 10;
+const BUILD = '1.3.0-5';
+const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
@@ -61,7 +63,10 @@ renderer.setPixelRatio(PIXEL_RATIOS[0]);
 $('stage').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const crumbs = makeCrumbs(scene);   // crayon bits when a block pops
+// A holiday season (if it's one) recolours things before anything is built.
+const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
+const crumbs = makeCrumbs(scene, seasonLook);
+const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook.crumbs, -H) : null;   // fall: leaves on blocks   // crayon bits when a block pops
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -223,9 +228,16 @@ function buildBlockView(b) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
+    let bomb = null;
+    if (b.bomb) {
+        // A bomb hanging on a vine: drawn like any bomb, in place of the block.
+        mesh.visible = false;
+        bomb = makeBombParts(b.id);
+        group.add(bomb.group);
+    }
     scene.add(group);
     scene.add(group);
-    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nails: new Map(), nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
@@ -266,6 +278,7 @@ function updateNails(v, b, frameDt) {
 }
 
 function updateBlockView(v, b, frameDt) {
+    if (v.bomb) animateBomb(v.bomb, b.lit, frameDt, v.group);
     const u = v.mesh.material.uniforms;
     if (v.wobbleT < 0.8 || v.punch > 0.01 || v.pokeAmt > 0.01 || v.trail?.some((pt) => pt[2] > 0)
         || Object.values(v.nailWob).some((t) => t < 0.5) || (v.hp !== b.hp && !b.neutral)) animating = true;   // grey blocks have no number to change
@@ -389,6 +402,68 @@ function fuseGeometry(seed) {
     return strokeGeometry(pts, 0.045, seed, false);
 }
 
+// A round cartoon bomb (a prop sitting in a gap, or hanging on a vine): charcoal body with an
+// ink outline, a white shine, darker shading, a small cap, a curled fuse and an orange spark.
+function makeBombParts(id) {
+    const look = bombLook();
+    // The body is drawn by the block shader (one cell rounded into a circle), so its rough
+    // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
+    const body = makeBlockMesh([[0, 0]], false, (id * 7.31) % 50, 0.5);
+    const bu = body.material.uniforms;
+    bu.uK.value = 0.74; bu.uNeutral.value = 1;
+    bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
+    body.renderOrder = 1;                // over the fuse's base, under the shine and shading
+    const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, id), shadeMat);
+    const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, id + 2), shadeMat);
+    shade.position.z = shade2.position.z = 0.015;
+    const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: id + 1, margin: 0.05 });
+    shine.position.set(0.1, 0.12, 0.02);
+    shine.scale.set(1.2, 0.95, 1);
+    shine.rotation.z = 0.3;
+    const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: id + 2, margin: 0.06 });
+    cap.position.set(-0.03, 0.37, 0.012);
+    const fuse = new THREE.Mesh(fuseGeometry(id), fuseMat);
+    fuse.position.z = 0.005;
+    const spark = new THREE.Group();
+    const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: id + 3, margin: 0.06 });
+    const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: id + 5, margin: 0.04 });
+    core.position.set(-0.015, 0.005, 0.005);
+    spark.add(glow, core);
+    spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
+    for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
+    body.position.z = 0.01;
+    const group = new THREE.Group();
+    group.add(fuse, body, shade, shade2, shine, cap, spark);
+    return { group, body, cap, spark };
+}
+
+// A bomb's life on screen. Lit: the spark flares and spits, the bomb swells and shivers.
+// Just tapped: it jolts and the spark flares, then settles. Otherwise a gentle flicker.
+const sparkAt = new THREE.Vector3();
+function animateBomb(parts, lit, frameDt, holder) {
+    const now = performance.now() / 1000;
+    if (lit) {
+        animating = true;
+        parts.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
+        const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - Math.min(lit, 60) / 60);
+        parts.group.scale.set(k, k, 1);
+        if (Math.random() < 0.25) {
+            holder.updateMatrixWorld();
+            parts.spark.getWorldPosition(sparkAt);
+            crumbs.spray([[sparkAt.x, sparkAt.y]], [0xf4a640, 0xffe08a]);
+        }
+    } else if (parts.tapT != null && parts.tapT < 0.45) {
+        animating = true;
+        parts.tapT += frameDt;
+        const t = parts.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
+        parts.group.scale.set(1 + w, 1 - w, 1);
+        parts.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
+    } else {
+        parts.group.scale.set(1, 1, 1);
+        parts.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
+    }
+}
+
 function buildPropView(pr) {
     const group = new THREE.Group();
     const v = { group };
@@ -403,36 +478,10 @@ function buildPropView(pr) {
         // A round cartoon bomb: charcoal body with an ink outline, a white oval shine up and to
         // the right, darker crayon shading down the left, a small cap, a thick grey fuse that
         // curls right, and an orange spark at its tip. Body colours follow light/dark (bombLook).
-        const look = bombLook();
-        // The body is drawn by the block shader (one cell rounded into a circle), so its rough
-        // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
-        const body = makeBlockMesh([[0, 0]], false, (pr.id * 7.31) % 50, 0.5);
-        const bu = body.material.uniforms;
-        bu.uK.value = 0.74; bu.uNeutral.value = 1;
-        bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
-        body.renderOrder = 1;                // over the fuse's base, under the shine and shading
-        const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, pr.id), shadeMat);
-        const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, pr.id + 2), shadeMat);
-        shade.position.z = shade2.position.z = 0.015;
-        const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: pr.id + 1, margin: 0.05 });
-        shine.position.set(0.1, 0.12, 0.02);
-        shine.scale.set(1.2, 0.95, 1);
-        shine.rotation.z = 0.3;
-        const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: pr.id + 2, margin: 0.06 });
-        cap.position.set(-0.03, 0.37, 0.012);
-        const fuse = new THREE.Mesh(fuseGeometry(pr.id), fuseMat);
-        fuse.position.z = 0.005;
-        const spark = new THREE.Group();
-        const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: pr.id + 3, margin: 0.06 });
-        const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: pr.id + 5, margin: 0.04 });
-        core.position.set(-0.015, 0.005, 0.005);
-        spark.add(glow, core);
-        spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
-        for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
-        body.position.z = 0.01;
-        group.add(fuse, body, shade, shade2, shine, cap, spark);
+        const parts = makeBombParts(pr.id);
+        group.add(parts.group);
         group.position.set(pr.x, pr.y, 0.05);
-        v.bomb = { body, cap, spark };
+        v.bomb = parts;
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -535,6 +584,7 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
+    if (leafPiles) { leafPiles.update(frameDt, blockViews); if (leafPiles.active()) animating = true; }
     for (const [id, g] of pickupViews) {
         if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
@@ -563,27 +613,7 @@ function syncView(frameDt) {
         const v = propViews.get(pr.id) ?? buildPropView(pr);
         if (v.vine) { syncVine(v, pr); continue; }
         if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
-        if (v.bomb) {
-            const now = performance.now() / 1000;
-            if (pr.lit) {
-                // Lit: the spark flares and spits, the bomb swells and shivers.
-                animating = true;
-                v.bomb.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
-                const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - pr.lit / 60);
-                v.group.scale.set(k, k, 1);
-                if (Math.random() < 0.25) crumbs.spray([[pr.x + FUSE_END[0], pr.y + FUSE_END[1] + zoneOffset]], [0xf4a640, 0xffe08a]);
-            } else if (v.bomb.tapT != null && v.bomb.tapT < 0.45) {
-                // Just tapped: it jolts and the spark flares, then settles.
-                animating = true;
-                v.bomb.tapT += frameDt;
-                const t = v.bomb.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
-                v.group.scale.set(1 + w, 1 - w, 1);
-                v.bomb.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
-            } else {
-                v.group.scale.set(1, 1, 1);
-                v.bomb.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
-            }
-        }
+        if (v.bomb) animateBomb(v.bomb, pr.lit, frameDt, v.group);
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
         // frozen mid-spin would otherwise keep the board from ever idling.
@@ -699,13 +729,17 @@ function consumeEvents() {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
             }
-        } else if (e.t === 'contact') {
+        }
+        if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
+        if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
         } else if (e.t === 'bombtap') {
             // First hit on a bomb: a jolt and a flare of the spark, so you know it counted.
             const v = propViews.get(e.id);
             if (v?.bomb) v.bomb.tapT = 0;
+            const bv = e.block ? blockViews.get(e.id) : null;
+            if (bv?.bomb) bv.bomb.tapT = 0;
         } else if (e.t === 'jolt') {
             const v = blockViews.get(e.id);
             if (v) { v.wobbleT = 0; v.wobbleDir = e.dir; }
@@ -713,6 +747,11 @@ function consumeEvents() {
             const v = blockViews.get(e.id);
             if (v && !(v.wobbleT < 0.12)) { v.wobbleT = 0; v.wobbleDir = e.dir; }   // one wobble per cell crossing, not a flicker
         } else if (e.t === 'smash') shake = Math.min(0.16, shake + e.speed * 0.015);
+        else if (e.t === 'thud') {
+            // A dropped weight lands: a heavy jolt and a puff of dust and ink.
+            crumbs.spray([[e.x, e.y + 0.4], [e.x - 0.35, e.y + 0.3], [e.x + 0.35, e.y + 0.3]], [0x8f8982, 0x4a4350, theme.edge]);
+            shake = Math.min(0.2, shake + 0.12);
+        }
     }
     sim.events.length = 0;
 }
@@ -1172,12 +1211,14 @@ function queueZoneTips() {
     add('single', block((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.loose));
     add('resting', block((b) => b.loose && !b.hung));
     add('jelly', block((b) => b.jello));
-    add('grey', block((b) => b.neutral));
+    add('grey', block((b) => b.neutral && !b.bomb));
     add('cup', block((b) => b.cup));
     add('windmill', prop('windmill'));
     add('mushroom', prop('mushroom'));
     add('vine', prop('vine'));
     add('bomb', prop('bomb'));
+    add('seesaw', block((b) => b.seesaw && !b.loose));
+    add('hangbomb', block((b) => b.bomb && b.hung != null));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
     }
@@ -1243,6 +1284,7 @@ const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
+    leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
     descendT = 0;
@@ -1339,9 +1381,11 @@ function restart(saved = null) {
     fadingBalls.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
+    leafPiles?.clear();
     keyAim = false;
     if (saved) {
         sim = saved;
+        leafPiles?.seed(sim.s.blocks, sim.s.depth);
         runStarted = true;
         fromSave = true;
         zoneOffset = 0;
@@ -1524,7 +1568,11 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
-        if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+        if (v.bomb) {
+            v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
+            v.bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
+            v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
+        } else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
@@ -1624,6 +1672,7 @@ isPrivateTab().then((p) => { privateTab = p; });
 function menuTagline() {
     const best = readBest();
     $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
+        : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
         : best > 0 ? `Best depth: ${best}` : TAGLINE;
     $('menu-tagline').classList.toggle('state', runStarted);
 }

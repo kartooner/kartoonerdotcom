@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.2.3-2">
+<html lang="en" data-build="1.3.0-5">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -7,6 +7,21 @@
     <meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
     <title>Boop!</title>
+    <script>
+        // Seasons (see season.js): fall colours from Nov 1 to the Sunday after Thanksgiving,
+        // and a greeting in Thanksgiving week. Set before anything is drawn.
+        (function () {
+            try {
+                var q = new URLSearchParams(location.search).get('season');
+                var d = new Date(), y = d.getFullYear(), nov1 = new Date(y, 10, 1);
+                var thx = 1 + ((4 - nov1.getDay() + 7) % 7) + 21;            // fourth Thursday of November
+                var end = new Date(y, 10, thx + 3, 23, 59, 59), week = new Date(y, 10, thx - 3);
+                var s = q || (d >= nov1 && d <= end ? 'fall' : '');
+                if (s && s !== 'none') document.documentElement.dataset.season = s;
+                if (s === 'fall' && (q === 'fall' || d >= week)) document.documentElement.dataset.greeting = 'Happy Thanksgiving!';
+            } catch (e) { /* no season */ }
+        })();
+    </script>
     <!-- Added to a home screen: Boop's own icon, full screen, no browser bars. -->
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="img/icon-180.png">
@@ -67,6 +82,12 @@
             --scrim: rgba(21, 18, 15, 0.9);
             --accent: #ff9466;
         }
+        /* Fall: warmer paper (see season.js). */
+        :root[data-season="fall"] { --paper: #f0e1c4; --panel: #fbf1de; --scrim: rgba(240, 225, 196, 0.9); }
+        @media (prefers-color-scheme: dark) {
+            :root[data-season="fall"]:not([data-theme="light"]) { --paper: #1a1410; --panel: #281e17; --scrim: rgba(26, 20, 16, 0.9); }
+        }
+        :root[data-season="fall"][data-theme="dark"] { --paper: #1a1410; --panel: #281e17; --scrim: rgba(26, 20, 16, 0.9); }
         /* iOS Safari enlarges text when the phone turns sideways; keep it as designed. */
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         html, body {
@@ -217,6 +238,7 @@
         /* The buddy breathes: a slow, slight rise and squash from his feet. It moves the
            whole drawing (translate/scale, on top of its tilt), so the browser can do it on
            the GPU instead of redrawing his hand-drawn edges every frame. */
+        .buddy-face { overflow: visible; }   /* room for a holiday hat above his head */
         .buddy-face {
             transform-origin: 50% 88%;
             will-change: translate, scale;
@@ -661,7 +683,7 @@
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="menu-links"><span class="version">v1.2.3</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
+            <p class="menu-links"><span class="version">v1.3</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
         </div>
     </section>
 
@@ -795,31 +817,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.2.3-2",
-                "./zones.js": "./zones.js?v=1.2.3-2",
-                "./blockshader.js": "./blockshader.js?v=1.2.3-2",
-                "./sketch.js": "./sketch.js?v=1.2.3-2",
-                "./balls.js": "./balls.js?v=1.2.3-2",
-                "./labels.js": "./labels.js?v=1.2.3-2",
-                "./audio.js": "./audio.js?v=1.2.3-2",
-                "./theme.js": "./theme.js?v=1.2.3-2",
-                "./crumbs.js": "./crumbs.js?v=1.2.3-2",
-                "./buddy.js": "./buddy.js?v=1.2.3-2"
+                "./sim.js": "./sim.js?v=1.3.0-5",
+                "./zones.js": "./zones.js?v=1.3.0-5",
+                "./blockshader.js": "./blockshader.js?v=1.3.0-5",
+                "./sketch.js": "./sketch.js?v=1.3.0-5",
+                "./balls.js": "./balls.js?v=1.3.0-5",
+                "./labels.js": "./labels.js?v=1.3.0-5",
+                "./audio.js": "./audio.js?v=1.3.0-5",
+                "./theme.js": "./theme.js?v=1.3.0-5",
+                "./crumbs.js": "./crumbs.js?v=1.3.0-5",
+                "./buddy.js": "./buddy.js?v=1.3.0-5",
+                "./season.js": "./season.js?v=1.3.0-5",
+                "./leaves.js": "./leaves.js?v=1.3.0-5"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./sim.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./zones.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./blockshader.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./sketch.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./balls.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./labels.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./audio.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./theme.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./buddy.js?v=1.2.3-2">
-    <link rel="modulepreload" href="./crumbs.js?v=1.2.3-2">
+    <link rel="modulepreload" href="./game.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./sim.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./zones.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./blockshader.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./sketch.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./balls.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./labels.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./audio.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./theme.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./buddy.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./crumbs.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./season.js?v=1.3.0-5">
+    <link rel="modulepreload" href="./leaves.js?v=1.3.0-5">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -862,6 +888,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.2.3-2"></script>
+    <script type="module" src="./game.js?v=1.3.0-5"></script>
 </body>
 </html>

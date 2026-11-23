@@ -2,11 +2,12 @@
 // shavings in its own colour, with a few flecks of ink from its outline.
 // Purely for show: the bits don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.3-2');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-5');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel
 const LIFE = 0.75;             // seconds
+const LEAF_LIFE = 1.6;        // fall leaves drift a little longer
 
 // A short, slightly uneven crayon stroke: a skewed four-sided shard.
 function shardGeometry() {
@@ -19,8 +20,20 @@ function shardGeometry() {
     return g;
 }
 
-export function makeCrumbs(scene) {
-    const mesh = new THREE.InstancedMesh(shardGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
+// In fall: a little pointed leaf instead of a shard.
+function leafGeometry() {
+    const g = new THREE.BufferGeometry();
+    const v = new Float32Array([
+        -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,
+        -0.2, 0, 0, 0.2, 0, 0, 0, 0.1, 0,
+    ]);
+    g.setAttribute('position', new THREE.BufferAttribute(v, 3));
+    return g;
+}
+
+// season (optional): { crumbs: [colours], leaves: true } adds a few drifting leaves to every pop.
+export function makeCrumbs(scene, season = null) {
+    const mesh = new THREE.InstancedMesh(season?.leaves ? leafGeometry() : shardGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), MAX);
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.renderOrder = 4;
@@ -50,6 +63,20 @@ export function makeCrumbs(scene) {
                 });
             }
         }
+        // Fall: a few leaves float down, swaying, after the crumbs.
+        if (season?.crumbs) {
+            for (let i = 0; i < Math.min(6, 2 + cells.length); i++) {
+                if (bits.length >= MAX) bits.shift();
+                bits.push({
+                    x: x + (Math.random() - 0.5) * scale, y: y + (Math.random() - 0.5) * 0.6 * scale,
+                    vx: (Math.random() - 0.5) * 2.5, vy: 1.5 + Math.random() * 2,
+                    a: Math.random() * Math.PI, va: (Math.random() - 0.5) * 6,
+                    size: 1.1 + Math.random() * 0.5, leaf: true, sway: Math.random() * 6,
+                    color: new THREE.Color(season.crumbs[Math.floor(Math.random() * season.crumbs.length)]),
+                    t: 0,
+                });
+            }
+        }
     }
 
     // A few bits flying from given world points (nails popping out of a block).
@@ -72,13 +99,20 @@ export function makeCrumbs(scene) {
         for (let i = bits.length - 1; i >= 0; i--) {
             const b = bits[i];
             b.t += dt;
-            if (b.t >= LIFE) { bits.splice(i, 1); continue; }
-            b.vy += GRAVITY * dt;
-            b.vx *= 1 - dt * 1.5;
+            if (b.t >= (b.leaf ? LEAF_LIFE : LIFE)) { bits.splice(i, 1); continue; }
+            if (b.leaf) {
+                // Leaves drift: light gravity, a slow sideways sway, and they don't speed up much.
+                b.vy = Math.max(-2.2, b.vy - 5 * dt);
+                b.vx += Math.sin(b.t * 5 + b.sway) * 6 * dt;
+                b.vx *= 1 - dt * 1.2;
+            } else {
+                b.vy += GRAVITY * dt;
+                b.vx *= 1 - dt * 1.5;
+            }
             b.x += b.vx * dt; b.y += b.vy * dt; b.a += b.va * dt;
         }
         bits.forEach((b, i) => {
-            const k = b.size * (1 - (b.t / LIFE) ** 2);    // shrink away rather than fade
+            const k = b.size * (1 - (b.t / (b.leaf ? LEAF_LIFE : LIFE)) ** 2);    // shrink away rather than fade
             pos.set(b.x, b.y + yOffset, 0.6);
             q.setFromAxisAngle(zAxis, b.a);
             scl.set(k, k, 1);

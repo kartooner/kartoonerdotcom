@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.2.3-2');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.0-5');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -121,6 +121,22 @@ const BOMB_JOLT = 0.6;              // a nailed block's jolt: a bump that spring
 const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
 const BOMB_KNOCK = 4.5;               // ...and anything loose gets shoved away this hard
 const VINE_FROM = 9;
+// Seesaws (from depth 13): a long bar held by one nail in its middle. A hit rocks it and it
+// settles back level; it's slippery, so whatever rests on it slides off as it tips. Knock
+// the nail out and it drops like any block.
+const SEESAW_FROM = 13;
+const SEESAW_CHANCE = 0.45;           // after that, the share of zones with one
+const SEESAW_K = 14, SEESAW_C = 4;  // a weak pull back to level: it rocks a few times, then rests
+const SEESAW_LIMIT = 0.5, SEESAW_STOP_K = 300;   // tips at most about 30 degrees
+const SEESAW_FRICTION = 0.1;
+const SEESAW_NAIL_Y = -0.27;          // the nail sits in the middle, just below the number
+// Hanging bombs (from depth 18): a bomb on a hanging vine, in place of a chandelier's block,
+// over a short target block. Hit it twice and it bursts where it hangs; cut the vine and it
+// lights as it drops and bursts when it lands (or soon after). Another burst lights it too.
+const HANGBOMB_FROM = 18;
+const HANGBOMB_CHANCE = 0.5;          // after that, the share of chandeliers that are bombs
+const HANGBOMB_DROP_FUSE = 90;        // cut loose: it bursts within 0.75s...
+const HANGBOMB_LAND_FUSE = 8;         // ...or right after it lands on a block
 const VINE_LINKS = 3, VINE_LINK_LEN = 0.6, VINE_LINK_HP = 3;
 const VINE_SLACK = 1.12;            // a strung vine is this much longer than its gap, so it sags
 const VINE_STRUNG_LEN = 0.8;        // strung vines use longer links: fewer bodies for the same span
@@ -281,11 +297,11 @@ export class Sim {
             world.removeCollider(world.getCollider(h), false);
             delete s.owner[h];
         }
-        const k = b.neutral ? 0.96 : Math.min(b.mini ?? 1, blockScale(b.hp, b.hp0));   // a chandelier's block is a small one
+        const k = b.bomb ? 1 : b.neutral ? 0.96 : Math.min(b.mini ?? 1, blockScale(b.hp, b.hp0));   // a chandelier's block is a small one
         b.scale = k;
         const extra = [];
         b.cols = b.cells.map(([x, y]) => {
-            let d = R.ColliderDesc.cuboid(0.5 * k, 0.5 * k).setTranslation(x * k, y * k);
+            let d = b.bomb ? R.ColliderDesc.ball(BOMB_R) : R.ColliderDesc.cuboid(0.5 * k, 0.5 * k).setTranslation(x * k, y * k);
             if (b.jello) {
                 d = d.setSensor(true).setCollisionGroups(groups(G.JELLO, G.BALL))
                     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
@@ -298,11 +314,11 @@ export class Sim {
                     extra.push(solid.handle);
                 }
             } else if (b.loose || b.hanging) {   // hanging from one nail: it swings into things like a loose block
-                d = d.setDensity(BLOCK_DENSITY).setRestitution(0.2).setFriction(0.8)
+                d = d.setDensity(BLOCK_DENSITY).setRestitution(b.bomb ? 0.7 : 0.2).setFriction(b.bomb ? 0.2 : 0.8)
                     .setCollisionGroups(groups(G.LOOSE, G.BALL | G.BLOCK | G.LOOSE | G.WALL | G.PROP | G.JELLY_BODY))
                     .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
             } else {
-                d = d.setDensity(PINNED_DENSITY).setRestitution(0.9).setFriction(0.6)
+                d = d.setDensity(PINNED_DENSITY).setRestitution(0.9).setFriction(b.seesaw ? SEESAW_FRICTION : 0.6)
                     .setCollisionGroups(groups(G.BLOCK, G.BALL | G.LOOSE | G.JELLY_BODY));
             }
             const c = world.createCollider(d, body);
@@ -354,6 +370,14 @@ export class Sim {
         body.setAngularDamping(0.35);
         this.shapeBlock(b);
         body.wakeUp();
+    }
+
+    // A seesaw: one nail, in the middle of the bar (where it pivots).
+    makeSeesaw(b) {
+        b.seesaw = true;
+        const nhp = Math.max(2, Math.round(b.hp0 * NAIL_SHARE));
+        b.nails = [{ id: 0, x: 0, y: SEESAW_NAIL_Y, hp: nhp, hp0: nhp }];   // just under the number
+        this.shapeBlock(b);
     }
 
     // No nails left: it falls and from now on rests like any loose block.
@@ -418,7 +442,23 @@ export class Sim {
         this.events.push({ t: 'bomblit', id: pr.id, x: pr.x, y: pr.y });
     }
 
+    // A bomb hanging on a vine (a block, so it can hang and fall): light it.
+    lightBlockBomb(b, steps = BOMB_FUSE) {
+        if (b.lit || this.s.quiet) return;
+        b.lit = steps;
+        const p = this.world.getRigidBody(b.body).translation();
+        this.events.push({ t: 'bomblit', id: b.id, block: true, x: p.x, y: p.y });
+    }
+
     updateBombs() {
+        for (const id of Object.keys(this.s.blocks)) {
+            const b = this.s.blocks[id];
+            if (!b?.bomb || !b.lit) continue;
+            if (--b.lit > 0) continue;
+            const p = this.world.getRigidBody(b.body).translation();
+            this.removeBlock(b, false);
+            this.boom(p.x, p.y);
+        }
         for (const id in this.s.props) {
             const pr = this.s.props[id];
             if (pr.kind !== 'bomb' || !pr.lit) continue;
@@ -441,6 +481,7 @@ export class Sim {
                 near = Math.min(near, Math.hypot(wx - x, wy - y));
             }
             if (near > BOMB_REACH) continue;
+            if (b.bomb) { this.lightBlockBomb(b, BOMB_CHAIN); continue; }   // another bomb: it goes off too
             // Unpinned blocks (resting, or hanging from one nail) get thrown; nailed ones just jolt
             // like any hit, and their nails stay put.
             const d = Math.hypot(t.x - x, t.y - y) || 1, m = body.mass();
@@ -501,6 +542,20 @@ export class Sim {
             const a = body.rotation(), w = body.angvel();
             const m = body.mass(), I = body.principalInertia();
             const weak = 0.3 + 0.7 * b.hp / b.hp0;
+            if (b.seesaw) {
+                // Held firmly at its nail (it pivots there); only a light pull back to level,
+                // and a stop past ~30 degrees.
+                const nail = b.nails[0];
+                const [nx, ny] = this.nailPoint(b, nail), [ax, ay] = this.nailAnchor(b, nail);
+                const vx = v.x - w * (ny - p.y), vy = v.y + w * (nx - p.x);   // the nail point's velocity
+                body.applyImpulseAtPoint({
+                    x: m * DT * (HANG_K * (ax - nx) - HANG_C * vx),
+                    y: m * DT * (HANG_K * (ay - ny) - HANG_C * vy),
+                }, { x: nx, y: ny }, false);
+                const over = Math.abs(a) > SEESAW_LIMIT ? (Math.abs(a) - SEESAW_LIMIT) * Math.sign(a) : 0;
+                body.applyTorqueImpulse(I * DT * (-SEESAW_K * a - SEESAW_STOP_K * over - SEESAW_C * w), false);
+                continue;
+            }
             body.applyImpulse({
                 x: m * DT * (-SPRING_K * weak * (p.x - b.anchor[0]) - SPRING_C * v.x),
                 y: m * DT * (-SPRING_K * weak * (p.y - b.anchor[1]) - SPRING_C * v.y),
@@ -535,7 +590,7 @@ export class Sim {
                 // A grey block knocked fully loose has done its job as a bumper. Left lying around
                 // it could wall off a breakable block for good (it can't be broken), so once it
                 // lands and settles (or after a few seconds whatever it's doing) it crumbles.
-                if (b.neutral) {
+                if (b.neutral && !b.bomb && b.hung == null) {
                     b.looseT = (b.looseT ?? 0) + 1;
                     const v = body.linvel(), still = Math.abs(v.x) + Math.abs(v.y) + Math.abs(body.angvel()) < GREY_STILL;
                     b.calmT = still && b.looseT > GREY_FALL_MIN ? (b.calmT ?? 0) + 1 : 0;
@@ -551,6 +606,7 @@ export class Sim {
         // A mushroom that lost its block finishes falling, and fallen bits of vine finish fading,
         // before the board counts as settled.
         for (const id in s.props) if (s.props[id].falling || s.props[id].debris?.length || s.props[id].lit) return false;
+        for (const id in s.blocks) if (s.blocks[id].lit) return false;
         for (const id in s.blocks) {
             const b = s.blocks[id];
             if ((b.jello || b.neutral) && !b.loose && !b.hanging) continue;
@@ -647,7 +703,9 @@ export class Sim {
         // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
         // in three has one (deeper down, now and then two). A bomb is a prop, so a zone with one
         // keeps just one other kind (at most two kinds of props a zone).
-        const bombs = s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
+        const hangIntro = s.depth === HANGBOMB_FROM;
+        if (hangIntro) vines = Math.max(1, vines);
+        const bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
             : this.rand() >= BOMB_CHANCE ? 0 : s.depth >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
         if (bombs) {
             const kinds = [vines && 'vine', windmills && 'windmill', mushrooms && 'mushroom'].filter(Boolean);
@@ -657,6 +715,7 @@ export class Sim {
             if (keep !== 'mushroom') mushrooms = 0;
         }
         const chandelierChance = s.depth === VINE_FROM ? 0 : s.depth <= VINE_FROM + 3 ? 0.5 : 0.4;
+        const seesaws = s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
         // Prop centres in grid units, to keep props apart.
         const propAt = [];
         const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
@@ -729,7 +788,7 @@ export class Sim {
         };
         // Never two hanging vines: two vines are always one of each kind, for variety.
         const vineKinds = vines === 2 ? (this.rand() < 0.5 ? ['strung', 'hang'] : ['hang', 'strung'])
-            : vines === 1 ? [s.depth === VINE_FROM || this.rand() < 0.5 ? 'strung' : 'hang'] : [];
+            : vines === 1 ? [hangIntro ? 'hang' : s.depth === VINE_FROM || this.rand() < 0.5 ? 'strung' : 'hang'] : [];
         for (let i = 0, tries = 0; i < vineKinds.length && tries < 80; tries++) {
             if (tries === 40 && i < vineKinds.length) { i++; if (i >= vineKinds.length) break; }   // that one didn't fit: move on
             if (vineKinds[i] === 'strung') {
@@ -755,8 +814,9 @@ export class Sim {
             } else {
                 // Hanging: the block sits in rows 3–6 (3–5 with a chandelier, which needs more room).
                 const c = Math.floor(this.rand() * W);
-                const chand = this.rand() < chandelierChance;
-                const r = 3 + Math.floor(this.rand() * (chand ? ROWS - 7 : ROWS - 6));
+                const chand = hangIntro || this.rand() < chandelierChance;
+                const bomb = chand && s.depth >= HANGBOMB_FROM && (hangIntro || this.rand() < HANGBOMB_CHANCE);
+                const r = 3 + Math.floor(this.rand() * (bomb ? ROWS - 9 : chand ? ROWS - 7 : ROWS - 6));
                 const shapes = [[[c, r], [c + 1, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]],
                     [[c, r], [c + 1, r], [c + 1, r - 1]], [[c - 1, r], [c, r], [c - 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r], [c, r - 1]],
                     [[c, r], [c, r - 1], [c + 1, r - 1]]];
@@ -765,12 +825,29 @@ export class Sim {
                 // block plus a clear one under it, so it lands with a thump.
                 const hang = [[c, r + 1], [c, r + 2]], lamp = chand ? [[c, r + 3]] : [];
                 const drop = chand ? [[c, r + 4]] : [];
-                if (![...cells, ...hang, ...lamp, ...drop].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + 0.5, r + 2)) continue;
+                // A hanging bomb gets something to land on: a short block right under the drop.
+                const side = this.rand() < 0.5 ? -1 : 1;
+                const target = !bomb ? [] : (c + side < 0 || c + side >= W) ? [[c, r + 5]] : [[c, r + 5], [c + side, r + 5]];
+                if (![...cells, ...hang, ...lamp, ...drop, ...target].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || (target.length && !rowOk(target)) || !roomy(c + 0.5, r + 2)) continue;
                 const p = hostAt(cells);
+                if (target.length) hostAt(target).target = true;
                 [...hang, ...lamp, ...drop].forEach(([cc, rr]) => { grid[rr][cc] = -1; });
                 propAt.push([c + 0.5, r + 2]);
-                vineSpots.push({ p, c, r, lamp });
+                vineSpots.push({ p, c, r, lamp, bomb });
             }
+            i++;
+        }
+        // Seesaws: a bar of 3 or 4 in open space, with a free row above and below so it can tip.
+        for (let i = 0, tries = 0; i < seesaws && tries < 80; tries++) {
+            const L = this.rand() < 0.5 ? 3 : 4, c = Math.floor(this.rand() * (W - L + 1)), r = 2 + Math.floor(this.rand() * (ROWS - 4));
+            const cells = [], room = [];
+            for (let k = 0; k < L; k++) { cells.push([c + k, r]); room.push([c + k, r - 1], [c + k, r + 1]); }
+            if (![...cells, ...room].every(([cc, rr]) => free(cc, rr)) || !rowOk(cells) || !roomy(c + L / 2, r + 0.5)) continue;
+            plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap: false, seesaw: true });
+            cells.forEach(([cc, rr]) => { grid[rr][cc] = plan.length; });
+            room.forEach(([cc, rr]) => { grid[rr][cc] = -1; });
+            filled += L;
+            propAt.push([c + L / 2, r + 0.5]);
             i++;
         }
         for (let i = 0, tries = 0; i < windmills && tries < 80; tries++) {
@@ -806,7 +883,7 @@ export class Sim {
         // Jello shows up here and there: often none, usually one, rarely two. Small shapes only.
         if (this.rand() < spec.jello) {
             const count = 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
-            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine);
+            const small = plan.filter((p) => p.cells.length <= 3 && !p.cup && !p.vine && !p.seesaw);
             for (let i = 0; i < count && small.length; i++) {
                 small.splice(Math.floor(this.rand() * small.length), 1)[0].kind = 'jello';
             }
@@ -814,7 +891,7 @@ export class Sim {
 
         // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
         if (spec.neutral) {
-            const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && p.cells.length <= 4);
+            const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4);
             for (let i = 0; i < spec.neutral && pool.length > 2; i++) {
                 pool.splice(Math.floor(this.rand() * pool.length), 1)[0].kind = 'neutral';
             }
@@ -829,7 +906,7 @@ export class Sim {
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
-            if (p.kind !== 'pinned' || p.cup || p.vine || p.cells.length === 1 || !solidBelow(p)) continue;
+            if (p.kind !== 'pinned' || p.cup || p.vine || p.seesaw || p.cells.length === 1 || !solidBelow(p)) continue;
             p.kind = 'loose';
             made += 1;
             // Blocks next to a neighbour start leaning on it; the settle pass lets them find their rest.
@@ -853,7 +930,7 @@ export class Sim {
         for (let i = 0; i < mushrooms; i++) {
             let spot = null;
             if (this.rand() < 0.5) {
-                const hosts = plan.filter((p) => (p.kind === 'pinned' || p.kind === 'neutral') && !p.cup);
+                const hosts = plan.filter((p) => (p.kind === 'pinned' || p.kind === 'neutral') && !p.cup && !p.seesaw);
                 for (let tries = 0; tries < 30 && hosts.length && !spot; tries++) {
                     const p = hosts[Math.floor(this.rand() * hosts.length)];
                     const [c, r] = p.cells[Math.floor(this.rand() * p.cells.length)];
@@ -935,6 +1012,7 @@ export class Sim {
             const hp = p.kind === 'jello' ? p.hp : zoneHp * p.w / weights;
             p.block = this.addBlock(p.cells.map(([c, r]) => [c, r + TOP_ROW]), Math.max(1, Math.round(hp)), p.kind, p.tilt, p.dx, p.dy);
             if (p.cup) p.block.cup = true;
+            if (p.seesaw) this.makeSeesaw(p.block);
         }
         for (const b of bombSpots) this.addBomb(b.c + 0.5, -(b.r + TOP_ROW + 0.5));
         for (const v of vineSpots) {
@@ -956,6 +1034,7 @@ export class Sim {
                 const hp = Math.max(2, Math.round(small.length ? small[Math.floor(small.length / 2)] : 3 * hpScale(s.depth)));
                 lamp = this.addBlock(v.lamp.map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
                 lamp.mini = VINE_LAMP_SIZE;
+                if (v.bomb) { lamp.neutral = true; lamp.bomb = true; lamp.taps = 0; lamp.lit = 0; }   // no number: it's a bomb
                 this.shapeBlock(lamp);
             }
             this.addVine({ block: b, lx: b.cells[i][0], ly: b.cells[i][1] - 0.5 }, null, lamp);
@@ -1176,6 +1255,7 @@ export class Sim {
         if (pr.lamp != null && !held.has(pr.n - 1)) {
             if (s.blocks[pr.lamp]) {
                 s.blocks[pr.lamp].hung = null;
+                if (s.blocks[pr.lamp].bomb) this.lightBlockBomb(s.blocks[pr.lamp], HANGBOMB_DROP_FUSE);   // it bursts where it lands
                 const lamp = world.getRigidBody(s.blocks[pr.lamp].body);
                 lamp.setGravityScale(BLOCK_FALL, true);
                 lamp.wakeUp();
@@ -1538,6 +1618,12 @@ export class Sim {
             if (speed < MIN_SMASH_SPEED || !this.cooled(Math.min(A.id, B.id) + ':' + Math.max(A.id, B.id))) return;
             const [hitter, target] = Math.hypot(va.x, va.y) >= Math.hypot(vb.x, vb.y) ? [A, B] : [B, A];
             const p = world.getRigidBody(target.body).translation();
+            // A dropped bomb bursts as it lands; bombs don't smash blocks themselves.
+            const bomb = A.bomb ? A : B.bomb ? B : null;
+            if (bomb) {
+                if (bomb.hung == null && bomb.lit > HANGBOMB_LAND_FUSE) bomb.lit = HANGBOMB_LAND_FUSE;
+                return;
+            }
             this.events.push({ t: 'smash', x: p.x, y: p.y, speed });
             this.damageBlock(target.id, Math.min(10, Math.round(speed * 1.1)));
             this.damageBlock(hitter.id, 1);
@@ -1597,8 +1683,19 @@ export class Sim {
                 // Push along the ball's incoming direction.
                 const bb = world.getRigidBody(blk.body);
                 const sp = Math.hypot(ball.pv[0], ball.pv[1]) || 1;
-                const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass() * (blk.loose || blk.hanging ? 1 : PINNED_KNOCK);
-                bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
+                const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass() * (blk.loose || blk.hanging || blk.seesaw ? 1 : PINNED_KNOCK);
+                // A seesaw is pushed where it was hit, so it rocks; anything else through its centre.
+                if (blk.seesaw) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, { x: p.x, y: p.y }, true);
+                else bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
+            }
+            // A hanging bomb: two hits light it, like any bomb.
+            if (blk?.bomb) {
+                if (!blk.lit && this.cooled(a.body + ':bomb' + b.id)) {
+                    blk.taps = (blk.taps ?? 0) + 1;
+                    if (blk.taps >= BOMB_HITS) this.lightBlockBomb(blk);
+                    else this.events.push({ t: 'bombtap', id: blk.id, block: true, x: p.x, y: p.y });
+                }
+                return;
             }
             // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
             if (blk?.neutral && this.cooled(a.body + ':' + b.id)) this.hitNail(blk, p, 1);
