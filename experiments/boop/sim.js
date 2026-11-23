@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-4');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.4-5');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -15,7 +15,8 @@ export const BALL_SPEED = 18;      // balls always travel at this speed (jelly a
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
 // Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
-export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : 2);
+// Past 25 a clear pays one: the deep end gets tighter through scarcer shots, not longer zones.
+export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : d <= 25 ? 2 : 1);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
 // Balls fly fast and nearly straight: world gravity is light, just a gentle sag.
@@ -58,7 +59,7 @@ const parHpPerShot = (d) => {
 // Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
 // comes from layout and from income not keeping up, not from waiting on big numbers.
 // Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
-const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(1, 0.62 + (d - 25) * 0.04));
+const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(0.85, 0.62 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
@@ -139,7 +140,7 @@ const VINE_FROM = 9;
 // is cleared and the next stage is a bonus: three free shots (your supply isn't touched), no
 // depth, then on to the next zone. Ring run, piñata and chain reaction take turns. What you
 // collect is capped, so a great bonus helps without breaking the climb; clearing it all adds one.
-const GOLD_FROM = 12, GOLD_CHANCE = 0.2;
+const GOLD_FROM = 12, GOLD_CHANCE = 0.15;
 const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
