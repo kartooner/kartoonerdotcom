@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-9';
+const BUILD = '1.4-1';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -208,6 +208,62 @@ lastShot.position.set(LAUNCHER.x, LAUNCHER.y, 0.44);
 lastShot.visible = false;
 scene.add(lastShot);
 let lastShotAngle = null, lastShotX = null;
+// Moving the launcher: a sketchy rail along the top with ticks (far left, centre, far right and
+// steps between) while it's picked up, and ‹ › arrows beside it. Drawn white on little canvases
+// and tinted with the theme's line colour.
+function sketchTexture(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.strokeStyle = '#fff'; g.lineCap = 'round'; g.lineJoin = 'round';
+    let seed = 7;
+    const jit = (a) => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * a; };
+    // A hand-drawn stroke: two slightly different passes along the same points.
+    const stroke = (pts, width) => {
+        for (let pass = 0; pass < 2; pass++) {
+            g.lineWidth = width * (pass ? 0.7 : 1);
+            g.beginPath();
+            pts.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, x + jit(width * 0.6), y + jit(width * 0.6)));
+            g.stroke();
+        }
+    };
+    draw(stroke, jit);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+}
+const LAUNCH_EDGE_VIEW = 0.62;   // matches LAUNCH_EDGE in sim.js
+const railW = W - 2 * LAUNCH_EDGE_VIEW;
+const railMat = mat(0xffffff, { transparent: true, opacity: 0.55, depthWrite: false,
+    map: sketchTexture(1024, 64, (stroke) => {
+        const y = 32, x0 = 12, x1 = 1012;
+        const pts = []; for (let i = 0; i <= 16; i++) pts.push([x0 + (x1 - x0) * i / 16, y]);
+        stroke(pts, 4);
+        for (let i = 0; i <= 8; i++) {
+            const x = x0 + (x1 - x0) * i / 8, tall = i % 4 === 0;
+            stroke([[x, y - (tall ? 22 : 12)], [x, y + (tall ? 22 : 12)]], tall ? 5 : 3.5);
+        }
+    }) });
+const rail = new THREE.Mesh(new THREE.PlaneGeometry(railW + 0.12, 0.5), railMat);
+rail.position.set(W / 2, LAUNCHER.y, 0.42);
+rail.visible = false;
+scene.add(rail);
+const arrowMat = mat(0xffffff, { transparent: true, depthWrite: false,
+    map: sketchTexture(128, 128, (stroke) => { stroke([[40, 16], [92, 64], [40, 112]], 16); }) });
+const arrowGeo = new THREE.PlaneGeometry(0.46, 0.46);
+const arrowR = new THREE.Mesh(arrowGeo, arrowMat), arrowL = new THREE.Mesh(arrowGeo, arrowMat);
+arrowL.rotation.z = Math.PI;
+for (const a of [arrowL, arrowR]) { a.position.set(0, LAUNCHER.y, 0.46); a.visible = false; scene.add(a); }
+// The ‹ › arrows show by themselves until you've moved the launcher once.
+const MOVED_KEY = 'boop-launcher-moved';
+let launcherMoved = (() => { try { return localStorage.getItem(MOVED_KEY) === '1'; } catch { return true; } })();
+function markLauncherMoved() {
+    if (launcherMoved) return;
+    launcherMoved = true;
+    try { localStorage.setItem(MOVED_KEY, '1'); } catch { /* storage blocked */ }
+}
+let moveMode = false;    // the launcher's picked up: the next drag slides it
+
 // Where the launcher is in the sim (the guide and the shot start there).
 const launchAt = () => sim ? sim.launcher() : LAUNCHER;
 function moveLauncherView(frameDt) {
@@ -218,6 +274,17 @@ function moveLauncherView(frameDt) {
         animating = true;
     } else launcher.position.x = x;
     lastShot.position.x = launcher.position.x;
+    const showArrows = phase === 'aim' && !paused() && (moveMode || (!launcherMoved && runStarted && !buddyTalking));
+    if (rail.visible !== moveMode || arrowL.visible !== showArrows) animating = true;
+    rail.visible = moveMode;
+    arrowL.visible = arrowR.visible = showArrows;
+    if (showArrows) {
+        const L = launcher.position.x, off = 0.78;
+        arrowL.position.x = L - off; arrowR.position.x = L + off;
+        arrowL.visible = L - off > LAUNCH_EDGE_VIEW - 0.3;     // no arrow pointing into a wall it's against
+        arrowR.visible = L + off < W - LAUNCH_EDGE_VIEW + 0.3;
+        arrowMat.opacity = moveMode ? 0.95 : 0.6;
+    }
 }
 
 
@@ -935,7 +1002,25 @@ function drawGuide(angle) {
     guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
 }
 
+// The guide draws faint while the aim is moving and inks in once you hold steady, so you can
+// feel when it's settled.
+const GUIDE_FAINT = 0.38, GUIDE_FULL = 0.9, STEADY_AFTER = 0.12;
+let steadyFor = 0, inkAngle = null, inkX = null;
+function inkGuide(dt) {
+    const a = aimTarget, x = launchAt().x;
+    if (inkAngle === null || Math.abs(a - inkAngle) > 0.0015 || Math.abs(x - inkX) > 0.002 || grabbing) steadyFor = 0;
+    else steadyFor += dt;
+    inkAngle = a; inkX = x;
+    const want = steadyFor > STEADY_AFTER ? GUIDE_FULL : GUIDE_FAINT;
+    const op = dots.material.opacity;
+    if (Math.abs(op - want) > 0.005) {
+        dots.material.opacity = op + (want - op) * (1 - Math.exp(-dt * 14));
+        animating = true;
+    } else dots.material.opacity = want;
+}
 function hideGuide() {
+    steadyFor = 0; inkAngle = null;
+    dots.material.opacity = GUIDE_FAINT;
     guideAngle = null;
     dots.count = 0;
     lastShot.visible = false;
@@ -985,6 +1070,7 @@ const offBoard = (ev) => {
 // With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
 // (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
 let mouseAim = false, mouseDown = false;
+let mouseDownAt = null;     // where a mouse press started, and whether it was on the launcher
 // Hold to fast-forward: while balls are bouncing, keeping a finger, the mouse button or Space
 // down runs the game faster, for a ball stuck looping between a block and the ceiling.
 // Nothing else changes: same physics, just more steps per frame. Let go (or the turn ends,
@@ -1009,38 +1095,56 @@ function angleToward(ev, hold = aimTarget) {
     if (a > 0) a = a > Math.PI / 2 ? -Math.PI : 0;     // pointing above the launcher: nearest side
     return clampAim(a);
 }
-// Moving the launcher: press on it (a generous target) and slide along the top. Letting go
-// leaves it there; nothing fires. The guide stays up so you can see the shot from the new spot.
+// Moving the launcher. Pressing on it and dragging down still aims (people drag their guide
+// out from it). Two ways to move it instead:
+//  - tap it: it's picked up (a rail with ticks shows), the next drag anywhere slides it, and
+//    letting go puts it down. With a mouse: click it, move, click to put it down.
+//  - press on it and slide sideways along the top: it moves right away.
 const GRAB_PX = 30;              // at least this far from its centre counts as on the launcher
-let grabbing = null;             // { id, dx } while the launcher is being dragged
+const LAUNCHER_TAP_MS = 400;
+let grabbing = null;             // { id, x0, l0 } while the launcher is being slid
 function onLauncher(ev) {
     const L = launchAt();
     const c = window.__boop.toScreen(L.x, L.y), e = window.__boop.toScreen(L.x + 0.55, L.y);
     return Math.hypot(ev.clientX - c.x, ev.clientY - c.y) < Math.max(GRAB_PX, Math.abs(e.x - c.x));
 }
-function startGrab(ev) {
-    grabbing = { id: ev.pointerId, dx: fromScreen(ev.clientX, ev.clientY).x - launchAt().x };
+function startGrab(ev, from = ev) {
+    grabbing = { id: ev.pointerId, x0: fromScreen(from.clientX, from.clientY).x, l0: launchAt().x };
     keyAim = true; aiming = false; mouseAim = false; mouseDown = false;   // keyAim keeps the guide drawn
-    canvas.setPointerCapture(ev.pointerId);
+    canvas.setPointerCapture?.(ev.pointerId);
     canvas.style.cursor = 'grabbing';
     hideNote();
 }
-function moveGrab(ev) { sim.moveLauncher(fromScreen(ev.clientX, ev.clientY).x - grabbing.dx); }
+function moveGrab(ev) {
+    sim.moveLauncher(grabbing.l0 + fromScreen(ev.clientX, ev.clientY).x - grabbing.x0);
+    if (Math.abs(launchAt().x - grabbing.l0) > 0.05) markLauncherMoved();
+}
 function endGrab() {
     grabbing = null;
+    moveMode = false;
     canvas.style.cursor = '';
     if (runStarted) saveRun();
 }
+function pickUpLauncher() {
+    moveMode = true;
+    keyAim = true; aiming = false; mouseAim = false; mouseDown = false;
+    hideNote();
+}
+// A drag that started on the launcher: sideways along the top moves it, anything else aims.
+function launcherDragIsMove(ev, start) {
+    const dx = ev.clientX - start.x, dy = ev.clientY - start.y;
+    return Math.abs(dy) < Math.abs(dx) * 0.6;
+}
 
 function cancelAim() {
-    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0;
+    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0; moveMode = false;
     hideGuide();
 }
 
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or touch where to aim and let go, to fire. Drag the launcher to move it. Left and right arrows aim, Alt with the arrows moves the launcher, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or touch where to aim and let go, to fire. Tap the launcher, then drag, to move it. Left and right arrows aim, Alt with the arrows moves the launcher, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
 // A trackpad pinch (ctrl + wheel) or a stray scroll over the board shouldn't zoom or move the
 // page under the cursor mid-aim.
 canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); }, { passive: false });
@@ -1048,10 +1152,12 @@ canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase 
 canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;   // right-click is handled by contextmenu (cancel)
-    if (phase === 'aim' && !paused() && !buddyTalking && !grabbing && onLauncher(ev)) { startGrab(ev); return; }
+    // Picked up: this press slides it (a mouse click puts it down where it is).
+    if (moveMode && phase === 'aim' && !paused()) { startGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
         if (holdToFast()) { fastPointer = ev.pointerId; canvas.setPointerCapture(ev.pointerId); return; }
         if (phase !== 'aim') return;
+        mouseDownAt = { x: ev.clientX, y: ev.clientY, onL: onLauncher(ev), moved: false };
         keyAim = false;
         mouseDown = true;
         mouseAim = true;
@@ -1066,7 +1172,7 @@ canvas.addEventListener('pointerdown', (ev) => {
         keyAim = false;
         aiming = true;
         aimCancel = false;
-        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false };
+        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: onLauncher(ev) };
         aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
         hideNote();                             // read it already; don't let it cover the guide
         return;
@@ -1076,7 +1182,13 @@ canvas.addEventListener('pointermove', (ev) => {
     if (grabbing) { if (ev.pointerId === grabbing.id) moveGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
         if (phase !== 'aim' || paused() || buddyTalking) return;
-        canvas.style.cursor = onLauncher(ev) ? 'grab' : '';
+        // Picked up with a click: it follows the pointer until the next click.
+        if (moveMode) { sim.moveLauncher(fromScreen(ev.clientX, ev.clientY).x); markLauncherMoved(); return; }
+        if (mouseDownAt && !mouseDownAt.moved && Math.hypot(ev.clientX - mouseDownAt.x, ev.clientY - mouseDownAt.y) > TAP_PX) {
+            mouseDownAt.moved = true;
+            if (mouseDownAt.onL && launcherDragIsMove(ev, mouseDownAt)) { startGrab(ev, { clientX: mouseDownAt.x, clientY: mouseDownAt.y }); moveGrab(ev); return; }
+        }
+        canvas.style.cursor = onLauncher(ev) ? 'pointer' : '';
         if (!mouseAim) { keyAim = false; aimAngle = angleToward(ev); }
         mouseAim = true;
         aimTarget = angleToward(ev);
@@ -1090,7 +1202,9 @@ canvas.addEventListener('pointerup', (ev) => {
     if (ev.pointerType === 'mouse') {
         if (!mouseDown) return;
         mouseDown = false;
+        const at = mouseDownAt; mouseDownAt = null;
         if (phase !== 'aim' || !mouseAim) return;
+        if (at?.onL && !at.moved) { pickUpLauncher(); return; }    // a click on the launcher picks it up
         // Pointing beside the board is a real aim (a sharp angle into a corner needs it), so a
         // click anywhere on the page fires. Only letting go outside the window entirely counts
         // as changing your mind.
@@ -1102,6 +1216,7 @@ canvas.addEventListener('pointerup', (ev) => {
     }
     if (!aiming) return;
     aiming = false;
+    if (touchDown?.onL && !touchDown.moved && ev.timeStamp - touchDown.t < LAUNCHER_TAP_MS && phase === 'aim') { pickUpLauncher(); return; }
     if (aimCancel || phase !== 'aim') { hideGuide(); return; }
     // A quick tap: the aim and guide stay where you tapped, nothing fires.
     if (touchDown && !touchDown.moved && ev.timeStamp - touchDown.t < TAP_MS) { keyAim = true; return; }   // (keeps the guide drawn)
@@ -1118,6 +1233,7 @@ function fire(angle) {
     turnPops = 0;
     autoSpeed = 1;
     mouseAim = false;
+    moveMode = false;
     sim.fire(angle);
     lastShotAngle = angle;
     lastShotX = launchAt().x;
@@ -1132,7 +1248,11 @@ canvas.addEventListener('lostpointercapture', (ev) => { if (ev.pointerId === fas
 window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 
 function updateAim(ev) {
-    if (Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) touchDown.moved = true;
+    if (!touchDown.moved && Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) {
+        touchDown.moved = true;
+        // Started on the launcher and went sideways along the top: that's a move, not an aim.
+        if (touchDown.onL && launcherDragIsMove(ev, touchDown)) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
+    }
     // Off the board: put the guide away; letting go here doesn't fire. Back on: aiming again.
     if (offBoard(ev)) { if (!aimCancel) { aimCancel = true; hideGuide(); } return; }
     aimCancel = false;
@@ -1618,7 +1738,7 @@ function frame(now) {
         if (keyAim && phase === 'aim') keyboardAim(dt);
         if ((aiming || keyAim || mouseAim) && phase === 'aim') {
             easeAim(dt);
-            if (keyAim || mouseAim || !aimCancel) drawGuide(shownAngle());
+            if (keyAim || mouseAim || !aimCancel) { drawGuide(shownAngle()); inkGuide(dt); }
         }
         if (noteShown) placeNote();
         animating = false;          // set by syncView if anything on the board is still moving
@@ -1684,6 +1804,8 @@ function applyTheme(name) {
     dotFade.setHex(theme.guideEnd);
     dotHit.setHex(theme.hit);
     lastShotMat.color.setHex(theme.line);
+    railMat.color.setHex(theme.line);
+    arrowMat.color.setHex(theme.line);
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
@@ -1732,10 +1854,10 @@ const ICON = {
 };
 const WHATS_NEW = [
     {
-        version: '1.3.5',
-        line: 'New in 1.3.5: move the launcher, and touch right where you want to aim.',
+        version: '1.4',
+        line: 'New in 1.4: move the launcher, and touch right where you want to aim.',
         items: [
-            { icon: 'move', title: 'Move the launcher', text: 'Drag it anywhere along the top for a better angle. It stays where you leave it. On a keyboard: Alt (Option) with ← →.' },
+            { icon: 'move', title: 'Move the launcher', text: 'Tap it, then drag it anywhere along the top for a better angle (or slide it sideways straight away). It stays where you leave it. On a keyboard: Alt (Option) with ← →.' },
             { icon: 'aim', title: 'Touch to aim', text: 'Touch where you want the ball to go and the launcher points right there. Slide to adjust, let go to fire. A quick tap just aims. Slide off the board to cancel.' },
             { icon: 'gear', title: 'Menu and Settings', text: 'The game pauses by itself when you switch apps. Menu, under the board, pauses too. Sound now lives in Settings.' },
         ],
@@ -1833,7 +1955,7 @@ function showScreen(which, moveFocus = true) {
     over.hidden = which !== 'over';
     news.hidden = which !== 'news';
     settings.hidden = which !== 'settings';
-    if (which) grabbing = null;
+    if (which) { grabbing = null; moveMode = false; }
     document.body.classList.toggle('howto-open', which === 'howto' || which === 'news' || which === 'settings');
     document.body.classList.toggle('playing', !which);
     keepAwake(!which);
@@ -1871,8 +1993,8 @@ function play() {
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
         tourTip('intro', finePointer
-            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Drag the launcher to move it. Each hit knocks its number down. Pop every block to dig deeper!"
-            : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Drag the launcher to move it. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!"
+            : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
@@ -1915,7 +2037,7 @@ const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
-        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown)) { cancelAim(); return; }   // first, put an aim away
+        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown || moveMode)) { cancelAim(); return; }   // first, put an aim (or a picked-up launcher) away
         if (!howto.hidden || !news.hidden || !settings.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
@@ -1926,6 +2048,7 @@ document.addEventListener('keydown', (e) => {
         if (paused() || buddyTalking || phase !== 'aim' || e.target.closest?.('button, a, input')) return;
         e.preventDefault();
         sim.moveLauncher(launchAt().x + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 0.05 : 0.25));
+        markLauncherMoved();
         if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); }
         return;
     }
@@ -1981,6 +2104,8 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get feel() { return { autoSpeed, hitStop, turnPops }; },
+    get moveMode() { return moveMode; },
+    get guideInk() { return dots.material.opacity; },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },

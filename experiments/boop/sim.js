@@ -3,15 +3,15 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-9');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4-1');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
 export const H = 16;                // field height in cells (y runs 0 → -H)
 // The launcher sits along the top, and the player can slide it anywhere between the walls.
-// A run starts a little in from the right wall.
-export const LAUNCHER = { x: W - 1.3, y: -0.62 };
-export const LAUNCH_EDGE = 0.9;     // keeps the barrel clear of the side walls
+// A run starts in the top-right corner, a touch below the top edge.
+export const LAUNCHER = { x: W - 0.62, y: -0.7 };
+export const LAUNCH_EDGE = 0.62;    // how close to a side wall it can go (the corner spot)
 export const clampLaunch = (x) => Math.min(W - LAUNCH_EDGE, Math.max(LAUNCH_EDGE, x));
 // How far the aim can turn toward each side, for a launcher at x. Near a wall, shallow shots
 // would point straight into it a few steps away, so that side stops steeper (about 40°
