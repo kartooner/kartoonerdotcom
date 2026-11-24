@@ -1556,7 +1556,7 @@ let bannerTimer = 0;
 function showBanner(text) {
     clearTimeout(bannerTimer);
     $('banner-text').textContent = text;
-    banner.hidden = true; void banner.offsetWidth; banner.hidden = false;     // restart the pop-in
+    banner.hidden = true; void banner.offsetWidth; banner.hidden = false;     // restart the fade
     bannerTimer = setTimeout(() => { banner.hidden = true; }, 2700);
 }
 

@@ -293,34 +293,28 @@
             transform: rotate(-135deg);
         }
         [hidden] { display: none !important; }
-        /* Depth milestones ("New best!", "Depth 25!"): a hand-drawn pennant that pops in over
-           the top of the board as the zone slides in, holds, and fades. Nothing to tap. */
+        /* Depth milestones ("New best!", "Depth 25!"): a small hand-drawn pennant that fades in over
+           the top of the board as the zone slides in, holds, and fades out. Nothing to tap. */
         #banner {
             position: fixed; z-index: 6;
             left: calc(var(--board-left, 16px) + var(--board-w, 100vw) / 2);
             top: calc(var(--board-top, 120px) + 56px);
-            width: min(260px, calc(var(--board-w, 100vw) - 48px));
+            width: min(190px, calc(var(--board-w, 100vw) - 64px));
             aspect-ratio: 260 / 72;
             display: grid; place-items: center;
             pointer-events: none;
-            transform: translateX(-50%) rotate(-2deg);
-            animation: banner-in 2.6s ease-out forwards;
+            transform: translateX(-50%);
+            animation: banner-fade 2.6s ease-out forwards;
         }
         #banner svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: url(#sketchy); animation: boil 0.5s steps(1) infinite; }
-        #banner .rib-band { fill: var(--panel); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+        #banner .rib-band { fill: var(--panel); stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
         #banner-text {
-            position: relative; margin-right: 18%;
+            position: relative; margin-right: 13%;
             font-family: 'Cartridge Rough', Manrope, system-ui, sans-serif;
-            font-size: 1.6rem; line-height: 1; color: var(--ink); white-space: nowrap;
-        }
-        @keyframes banner-in {
-            0% { opacity: 0; transform: translateX(-50%) rotate(-2deg) scale(0.6); }
-            10% { opacity: 1; transform: translateX(-50%) rotate(-2deg) scale(1.06); }
-            16%, 84% { opacity: 1; transform: translateX(-50%) rotate(-2deg) scale(1); }
-            100% { opacity: 0; transform: translateX(-50%) rotate(-2deg) scale(1); }
+            font-size: 1.15rem; line-height: 1; color: var(--ink); white-space: nowrap;
         }
         @keyframes banner-fade { 0% { opacity: 0; } 10%, 84% { opacity: 1; } 100% { opacity: 0; } }
-        @media (prefers-reduced-motion: reduce) { #banner { animation-name: banner-fade; } #banner svg { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { #banner svg { animation: none; } }
         #updating {
             position: fixed; inset: 0; z-index: 50;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
@@ -698,7 +692,7 @@
     <div id="tipshade" hidden></div>
     <p id="note" hidden></p>
     <div id="banner" role="status" hidden><svg viewBox="0 0 260 72" aria-hidden="true">
-        <path class="rib-band" d="M6 11Q68 4 130 9T254 6L206 35L254 64Q192 59 130 64T6 62Z"/>
+        <path class="rib-band" d="M4 8H256L222 36L256 64H4Z"/>
     </svg><span id="banner-text"></span></div>
     <!-- The block buddy, Boop!'s mascot (also above the logo): says the tips that aren't about one thing on the board. -->
     <svg id="buddy" class="buddy-face" viewBox="0 0 48 52" aria-hidden="true" hidden><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
