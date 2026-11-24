@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-2">
+<html lang="en" data-build="1.5-3">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -401,20 +401,6 @@
             line-height: 1.4;
             color: var(--ink);
         }
-        .say::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            bottom: -8px;
-            width: 12px;
-            height: 12px;
-            margin-left: -6px;
-            background: var(--panel);
-            border-right: 2px solid var(--ink);
-            border-bottom: 2px solid var(--ink);
-            transform: rotate(45deg);
-            filter: url(#sketchy);
-        }
         #over .over-buddy { width: 60px; height: 65px; margin: 4px auto 10px; display: block; transform: rotate(-7deg); }
         #over .result { margin: 14px 0 6px; font-size: 1.125rem; font-weight: 600; }
         #over .stats { margin: 0 0 4px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-soft); }
@@ -548,7 +534,7 @@
         /* Reading screens: a more solid backdrop, so the board doesn't show through the text. */
         #howto, #news { background: color-mix(in srgb, var(--scrim) 40%, var(--paper)); }
         /* Boop's one line on the start screen after a feature update. */
-        #menu .say { margin: 36px auto 12px; max-width: 220px; }   /* clear of the close button in the corner */
+        #menu .say { margin: 36px auto 30px; max-width: 220px; }   /* clear of the close button above, and of a holiday hat below */
         #btn-news.fresh { color: var(--ink); }
         #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
         /* One quiet footer line: version, What's new, Feedback. */
@@ -854,35 +840,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-2",
-                "./zones.js": "./zones.js?v=1.5-2",
-                "./blockshader.js": "./blockshader.js?v=1.5-2",
-                "./sketch.js": "./sketch.js?v=1.5-2",
-                "./balls.js": "./balls.js?v=1.5-2",
-                "./labels.js": "./labels.js?v=1.5-2",
-                "./audio.js": "./audio.js?v=1.5-2",
-                "./theme.js": "./theme.js?v=1.5-2",
-                "./crumbs.js": "./crumbs.js?v=1.5-2",
-                "./buddy.js": "./buddy.js?v=1.5-2",
-                "./season.js": "./season.js?v=1.5-2",
-                "./leaves.js": "./leaves.js?v=1.5-2"
+                "./sim.js": "./sim.js?v=1.5-3",
+                "./zones.js": "./zones.js?v=1.5-3",
+                "./blockshader.js": "./blockshader.js?v=1.5-3",
+                "./sketch.js": "./sketch.js?v=1.5-3",
+                "./balls.js": "./balls.js?v=1.5-3",
+                "./labels.js": "./labels.js?v=1.5-3",
+                "./audio.js": "./audio.js?v=1.5-3",
+                "./theme.js": "./theme.js?v=1.5-3",
+                "./crumbs.js": "./crumbs.js?v=1.5-3",
+                "./buddy.js": "./buddy.js?v=1.5-3",
+                "./season.js": "./season.js?v=1.5-3",
+                "./leaves.js": "./leaves.js?v=1.5-3"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-2">
-    <link rel="modulepreload" href="./sim.js?v=1.5-2">
-    <link rel="modulepreload" href="./zones.js?v=1.5-2">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-2">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-2">
-    <link rel="modulepreload" href="./balls.js?v=1.5-2">
-    <link rel="modulepreload" href="./labels.js?v=1.5-2">
-    <link rel="modulepreload" href="./audio.js?v=1.5-2">
-    <link rel="modulepreload" href="./theme.js?v=1.5-2">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-2">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-2">
-    <link rel="modulepreload" href="./season.js?v=1.5-2">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-2">
+    <link rel="modulepreload" href="./game.js?v=1.5-3">
+    <link rel="modulepreload" href="./sim.js?v=1.5-3">
+    <link rel="modulepreload" href="./zones.js?v=1.5-3">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-3">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-3">
+    <link rel="modulepreload" href="./balls.js?v=1.5-3">
+    <link rel="modulepreload" href="./labels.js?v=1.5-3">
+    <link rel="modulepreload" href="./audio.js?v=1.5-3">
+    <link rel="modulepreload" href="./theme.js?v=1.5-3">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-3">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-3">
+    <link rel="modulepreload" href="./season.js?v=1.5-3">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-3">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -925,6 +911,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-2"></script>
+    <script type="module" src="./game.js?v=1.5-3"></script>
 </body>
 </html>
