@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-5';
+const BUILD = '1.5-6';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1539,6 +1539,27 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
+// Something to aim for on long runs: a pennant pops up as the zone slides in, the first time
+// a run goes past your best depth, and at a few milestones. Nothing to tap, nothing paused.
+// The best depth is only written at game over, so "past your best" happens once per run
+// by itself (and survives a saved run). Relaxed runs have no best depth, just the milestones.
+const DEPTH_MARKS = new Set([25, 40, 50]);
+function depthMark(d) {
+    const best = relaxed ? 0 : readBest();
+    if (best >= 5 && d === best + 1) return 'New best!';
+    if (DEPTH_MARKS.has(d)) return `Depth ${d}!`;
+    return null;
+}
+
+const banner = $('banner');
+let bannerTimer = 0;
+function showBanner(text) {
+    clearTimeout(bannerTimer);
+    $('banner-text').textContent = text;
+    banner.hidden = true; void banner.offsetWidth; banner.hidden = false;     // restart the fade
+    bannerTimer = setTimeout(() => { banner.hidden = true; }, 2700);
+}
+
 const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
@@ -1548,6 +1569,8 @@ function startZone() {
         addFloater(sim.s.bonusPaid > 0 ? `Bonus +${sim.s.bonusPaid}` : 'Bonus over', W / 2, -2.2);
         sim.s.bonusPaid = null;
     }
+    const mark = sim.s.bonus ? null : depthMark(sim.s.depth);
+    if (mark) showBanner(mark);
     leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
