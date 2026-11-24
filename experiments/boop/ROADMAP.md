@@ -172,3 +172,4 @@ Moving the launcher lets you pick your angle, so you can be more precise against
 
 ## v1.4.1 (hotfix)
 - **Home Screen app picks up updates:** an app added to the Home Screen (or a tab left open) resumes the page it already has, so it never saw 1.4. The game now asks the server for the current build on start and whenever it comes back to the front (at most every 10 s). If it's newer, it saves the run and reloads, but only while a screen is up (start, pause, game over; leaving the app pauses), never mid-play. Tried once per build, so a stale cache can't loop.
+- **Fix: aiming right after picking up the launcher.** Tapping the launcher picked it up, and the next touch always slid it, so tapping where to shoot did nothing (only a drag aimed afterwards). Now, once it's picked up, the next touch only moves it if the finger slides; a touch that doesn't slide aims as usual (hold and lift fires, a quick tap only aims). Mouse unchanged: click to pick up, click to put down.

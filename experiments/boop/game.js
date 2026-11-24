@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4.1-1';
+const BUILD = '1.4.1-2';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1155,8 +1155,8 @@ canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase 
 canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;   // right-click is handled by contextmenu (cancel)
-    // Picked up: this press slides it (a mouse click puts it down where it is).
-    if (moveMode && phase === 'aim' && !paused()) { startGrab(ev); return; }
+    // Picked up, with a mouse: this click puts it down where it is.
+    if (moveMode && ev.pointerType === 'mouse' && phase === 'aim' && !paused()) { startGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
         if (holdToFast()) { fastPointer = ev.pointerId; canvas.setPointerCapture(ev.pointerId); return; }
         if (phase !== 'aim') return;
@@ -1175,8 +1175,13 @@ canvas.addEventListener('pointerdown', (ev) => {
         keyAim = false;
         aiming = true;
         aimCancel = false;
-        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: onLauncher(ev) };
-        aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
+        // Picked up: a slide moves it; a touch that doesn't slide is an ordinary aim (decided
+        // when the finger moves or lifts, so the guide doesn't jump to the finger meanwhile).
+        const fromMove = moveMode;
+        moveMode = false;
+        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: !fromMove && onLauncher(ev), fromMove };
+        if (fromMove) keyAim = true;              // keep the guide as it is until we know
+        else aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
@@ -1220,6 +1225,7 @@ canvas.addEventListener('pointerup', (ev) => {
     if (!aiming) return;
     aiming = false;
     if (touchDown?.onL && !touchDown.moved && ev.timeStamp - touchDown.t < LAUNCHER_TAP_MS && phase === 'aim') { pickUpLauncher(); return; }
+    if (touchDown?.fromMove && phase === 'aim') { keyAim = false; aimTarget = aimAngle = angleToward(ev); guideAngle = null; }   // picked up, then a plain touch: aim there
     if (aimCancel || phase !== 'aim') { hideGuide(); return; }
     // A quick tap: the aim and guide stay where you tapped, nothing fires.
     if (touchDown && !touchDown.moved && ev.timeStamp - touchDown.t < TAP_MS) { keyAim = true; return; }   // (keeps the guide drawn)
@@ -1253,9 +1259,12 @@ window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 function updateAim(ev) {
     if (!touchDown.moved && Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) {
         touchDown.moved = true;
+        // Picked up and slid: move it.
+        if (touchDown.fromMove) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
         // Started on the launcher and went sideways along the top: that's a move, not an aim.
         if (touchDown.onL && launcherDragIsMove(ev, touchDown)) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
     }
+    if (touchDown.fromMove && !touchDown.moved) return;   // picked up: not decided yet
     // Off the board: put the guide away; letting go here doesn't fire. Back on: aiming again.
     if (offBoard(ev)) { if (!aimCancel) { aimCancel = true; hideGuide(); } return; }
     aimCancel = false;
