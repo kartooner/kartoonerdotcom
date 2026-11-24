@@ -3,12 +3,23 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-6');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4-2');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
 export const H = 16;                // field height in cells (y runs 0 → -H)
-export const LAUNCHER = { x: W - 0.62, y: -0.62 };
+// The launcher sits along the top, and the player can slide it anywhere between the walls.
+// A run starts in the top-right corner, a touch below the top edge.
+export const LAUNCHER = { x: W - 0.62, y: -0.7 };
+export const LAUNCH_EDGE = 0.62;    // how close to a side wall it can go (the corner spot)
+export const clampLaunch = (x) => Math.min(W - LAUNCH_EDGE, Math.max(LAUNCH_EDGE, x));
+// How far the aim can turn toward each side, for a launcher at x. Near a wall, shallow shots
+// would point straight into it a few steps away, so that side stops steeper (about 40°
+// below flat); with room, it goes nearly flat.
+export function aimRange(x) {
+    const lim = (gap) => gap <= 1.4 ? 0.7 : gap >= 2.6 ? 0.12 : 0.7 - (gap - 1.4) / 1.2 * 0.58;
+    return { min: -Math.PI + lim(x), max: -lim(W - x) };
+}
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
@@ -218,6 +229,7 @@ export class Sim {
             step: 0, rng: seed | 0, nextId: 1, depth: 0, note: null,
             supply: START_SUPPLY, volley: START_VOLLEY, quiet: false, turnSteps: 0,
             blocks: {}, pickups: {}, props: {}, owner: {}, balls: [], shots: null, cool: {},
+            launchX: LAUNCHER.x,
         };
         const sim = new Sim(R, world, s);
         sim.buildWalls();
@@ -240,7 +252,9 @@ export class Sim {
         const w = R.World.restoreSnapshot(world);
         if (!w) throw new Error('bad save');
         w.timestep = DT;
-        return new Sim(R, w, JSON.parse(s));
+        const sim = new Sim(R, w, JSON.parse(s));
+        sim.s.launchX ??= LAUNCHER.x;       // saves from before the launcher could move
+        return sim;
     }
 
     free() {
@@ -1706,11 +1720,15 @@ export class Sim {
         this.s.turnSteps = 0;
     }
 
+    launcher() { return { x: this.s.launchX ?? LAUNCHER.x, y: LAUNCHER.y }; }
+    moveLauncher(x) { this.s.launchX = clampLaunch(x); }
+
     // Bonus balls are the extra ones from a multishot upgrade.
     spawnBall(angle, bonus = false) {
         const { R, world, s } = this;
+        const L = this.launcher();
         const body = world.createRigidBody(
-            R.RigidBodyDesc.dynamic().setTranslation(LAUNCHER.x, LAUNCHER.y)
+            R.RigidBodyDesc.dynamic().setTranslation(L.x, L.y)
                 .setLinvel(Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED)
                 .setCcdEnabled(true).setCanSleep(false));
         const c = world.createCollider(
@@ -1723,7 +1741,7 @@ export class Sim {
         s.balls.push({
             body: body.handle, col: c.handle, still: 0, age: 0, jello: [], bonus,
             pv: [Math.cos(angle) * BALL_SPEED, Math.sin(angle) * BALL_SPEED],
-            home: [LAUNCHER.x, LAUNCHER.y], homeT: 0, idle: 0,
+            home: [L.x, L.y], homeT: 0, idle: 0,
         });
     }
 
@@ -2024,7 +2042,8 @@ export function predict(sim, angle, maxContacts = 3, maxSteps = 300) {
     const p = sim.clone();
     p.s.supply = Math.max(1, p.s.supply);
     p.fire(angle, 1);
-    const path = [[LAUNCHER.x, LAUNCHER.y]];
+    const L = sim.launcher();
+    const path = [[L.x, L.y]];
     const hits = [];            // path index right after each bounce
     let stopAt = maxSteps;
     for (let i = 0; i < maxSteps && path.length <= stopAt; i++) {

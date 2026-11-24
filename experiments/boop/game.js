@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-6';
+const BUILD = '1.4-2';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -174,7 +174,7 @@ boardFrame.renderOrder = 0;
 scene.add(boardFrame);
 
 
-// Launcher in the top-right corner.
+// Launcher along the top. Drag it to move it anywhere between the walls.
 const launcher = new THREE.Group();
 const launcherBody = makeSketch({ kind: SHAPE.CIRCLE, size: [0.34], role: 'line', inkFill: true, wob: 0.6, seed: 3 });
 const barrelPivot = new THREE.Group();
@@ -207,7 +207,87 @@ for (let i = 0; i < 3; i++) {
 lastShot.position.set(LAUNCHER.x, LAUNCHER.y, 0.44);
 lastShot.visible = false;
 scene.add(lastShot);
-let lastShotAngle = null;
+let lastShotAngle = null, lastShotX = null;
+// Moving the launcher: a sketchy rail along the top with ticks (far left, centre, far right and
+// steps between) while it's picked up, and ‹ › arrows beside it. Drawn white on little canvases
+// and tinted with the theme's line colour.
+function sketchTexture(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.strokeStyle = '#fff'; g.lineCap = 'round'; g.lineJoin = 'round';
+    let seed = 7;
+    const jit = (a) => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * a; };
+    // A hand-drawn stroke: two slightly different passes along the same points.
+    const stroke = (pts, width) => {
+        for (let pass = 0; pass < 2; pass++) {
+            g.lineWidth = width * (pass ? 0.7 : 1);
+            g.beginPath();
+            pts.forEach(([x, y], i) => (i ? g.lineTo : g.moveTo).call(g, x + jit(width * 0.6), y + jit(width * 0.6)));
+            g.stroke();
+        }
+    };
+    draw(stroke, jit);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+}
+const LAUNCH_EDGE_VIEW = 0.62;   // matches LAUNCH_EDGE in sim.js
+const railW = W - 2 * LAUNCH_EDGE_VIEW;
+const railMat = mat(0xffffff, { transparent: true, opacity: 0.55, depthWrite: false,
+    map: sketchTexture(1024, 64, (stroke) => {
+        const y = 32, x0 = 12, x1 = 1012;
+        const pts = []; for (let i = 0; i <= 16; i++) pts.push([x0 + (x1 - x0) * i / 16, y]);
+        stroke(pts, 4);
+        for (let i = 0; i <= 8; i++) {
+            const x = x0 + (x1 - x0) * i / 8, tall = i % 4 === 0;
+            stroke([[x, y - (tall ? 22 : 12)], [x, y + (tall ? 22 : 12)]], tall ? 5 : 3.5);
+        }
+    }) });
+const rail = new THREE.Mesh(new THREE.PlaneGeometry(railW + 0.12, 0.5), railMat);
+rail.position.set(W / 2, LAUNCHER.y, 0.42);
+rail.visible = false;
+scene.add(rail);
+const arrowMat = mat(0xffffff, { transparent: true, depthWrite: false,
+    map: sketchTexture(128, 128, (stroke) => { stroke([[40, 16], [92, 64], [40, 112]], 16); }) });
+const arrowGeo = new THREE.PlaneGeometry(0.46, 0.46);
+const arrowR = new THREE.Mesh(arrowGeo, arrowMat), arrowL = new THREE.Mesh(arrowGeo, arrowMat);
+arrowL.rotation.z = Math.PI;
+for (const a of [arrowL, arrowR]) { a.position.set(0, LAUNCHER.y, 0.46); a.visible = false; scene.add(a); }
+// The ‹ › arrows show by themselves until you've moved the launcher once.
+const MOVED_KEY = 'boop-launcher-moved';
+let launcherMoved = (() => { try { return localStorage.getItem(MOVED_KEY) === '1'; } catch { return true; } })();
+function markLauncherMoved() {
+    if (launcherMoved) return;
+    launcherMoved = true;
+    try { localStorage.setItem(MOVED_KEY, '1'); } catch { /* storage blocked */ }
+}
+let moveMode = false;    // the launcher's picked up: the next drag slides it
+
+// Where the launcher is in the sim (the guide and the shot start there).
+const launchAt = () => sim ? sim.launcher() : LAUNCHER;
+function moveLauncherView(frameDt) {
+    const x = launchAt().x;
+    const dx = x - launcher.position.x;
+    if (Math.abs(dx) > 0.002) {
+        launcher.position.x += dx * (1 - Math.exp(-frameDt * 30));
+        animating = true;
+    } else launcher.position.x = x;
+    lastShot.position.x = launcher.position.x;
+    const showArrows = phase === 'aim' && !paused() && (moveMode || (!launcherMoved && runStarted && !buddyTalking));
+    if (rail.visible !== moveMode || arrowL.visible !== showArrows) animating = true;
+    rail.visible = moveMode;
+    arrowL.visible = arrowR.visible = showArrows;
+    if (showArrows) {
+        // Same gap on both sides. An arrow goes away once the launcher can't go any further
+        // that way (or the arrow would sit over the wall).
+        const L = launcher.position.x, x = launchAt().x, off = 0.7, half = 0.23;
+        arrowL.position.x = L - off; arrowR.position.x = L + off;
+        arrowL.visible = x > LAUNCH_EDGE_VIEW + 0.02 && L - off - half > 0.02;
+        arrowR.visible = x < W - LAUNCH_EDGE_VIEW - 0.02 && L + off + half < W - 0.02;
+        arrowMat.opacity = moveMode ? 0.95 : 0.6;
+    }
+}
 
 
 // ---------- view of the sim ----------
@@ -619,6 +699,7 @@ function dropIn() {
 
 function syncView(frameDt) {
     const s = sim.s;
+    moveLauncherView(frameDt);
     for (const [id, v] of blockViews) {
         if (!s.blocks[id]) { discard(v.group); blockViews.delete(id); }
     }
@@ -812,11 +893,10 @@ function consumeEvents() {
 // ---------- sound ----------
 // What makes a sound (see audio.js). Walls, grey blocks, windmills and buttons stay silent.
 const audio = makeAudio();
-let soundNudged = false;      // the muted speaker has wiggled its one hint
 function playSound(e) {
     if (e.t === 'hit') audio.hit(e.id);
     else if (e.t === 'vinehit') audio.hit('v' + e.id);
-    else if (e.t === 'pop' && e.popped) { audio.pop(); if (!audio.on) nudgeSound(); }
+    else if (e.t === 'pop' && e.popped) audio.pop();
     else if (e.t === 'nailpop') audio.tink();
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'gold') audio.clear();
@@ -828,10 +908,10 @@ function playSound(e) {
     else if (e.t === 'contact' && e.with === 'prop' && sim.s.props[e.id]?.kind === 'mushroom') audio.boing();
 }
 
-// The speaker next to Pause. Off until turned on; the choice is remembered. A remembered "on"
-// waits for the first tap of the visit to start (browsers need a tap before sound).
+// Sound: a switch in Settings (and the M key). Off until turned on; the choice is remembered.
+// A remembered "on" waits for the first tap of the visit to start (browsers need a tap first).
 const SOUND_KEY = 'boop-sound';
-const soundBtn = $('btn-sound');
+const soundSwitch = $('sound-switch');
 function readSoundPick() { try { return localStorage.getItem(SOUND_KEY); } catch { return null; } }
 function setSound(on) {
     audio.set(on);
@@ -841,22 +921,13 @@ function setSound(on) {
 }
 function showSoundState() {
     const on = audio.on || readSoundPick() === 'on';
-    soundBtn.setAttribute('aria-pressed', String(on));
-    soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
-    soundBtn.classList.toggle('off', !on);
+    soundSwitch.setAttribute('aria-checked', String(on));
 }
-soundBtn.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
+soundSwitch.addEventListener('click', () => setSound(!(audio.on || readSoundPick() === 'on')));
 if (readSoundPick() === 'on') {
     const wake = () => { audio.set(true); audio.setActive(document.body.classList.contains('playing')); };
     document.addEventListener('pointerdown', wake, { once: true });
     document.addEventListener('keydown', wake, { once: true });
-}
-// The first pop with sound off, for someone who hasn't chosen either way: one small wiggle.
-function nudgeSound() {
-    if (soundNudged || readSoundPick() != null) return;
-    soundNudged = true;
-    soundBtn.classList.add('nudge');
-    setTimeout(() => soundBtn.classList.remove('nudge'), 900);
 }
 showSoundState();
 
@@ -873,8 +944,9 @@ let guideAngle = null;
 let guideCost = 0;
 let lastContacts = [];
 let lastGuideAt = -Infinity;
+let guideX = null;
 function drawGuide(angle) {
-    if (angle === guideAngle) return;
+    if (angle === guideAngle && launchAt().x === guideX) return;
     // Working out the path is the costliest thing in the game (it plays the shot ahead on a
     // copy of the world). Space the updates by what it costs on this device: on a quick phone
     // that's nearly every frame (smooth), on a slow or low-power one down to ~30 a second.
@@ -884,6 +956,7 @@ function drawGuide(angle) {
     lastGuideAt = now;
     const t0 = now;
     guideAngle = angle;
+    guideX = launchAt().x;
     const result = predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
     const cut = result.path.findIndex(([, y]) => y < -H);
@@ -927,11 +1000,29 @@ function drawGuide(angle) {
     }
     dots.instanceMatrix.needsUpdate = true;
     if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
-    lastShot.visible = lastShotAngle != null && Math.abs(angle - lastShotAngle) > 0.02;
+    lastShot.visible = lastShotAngle != null && lastShotX === launchAt().x && Math.abs(angle - lastShotAngle) > 0.02;
     guideCost = guideCost * 0.7 + (performance.now() - t0) * 0.3;
 }
 
+// The guide draws faint while the aim is moving and inks in once you hold steady, so you can
+// feel when it's settled.
+const GUIDE_FAINT = 0.38, GUIDE_FULL = 0.9, STEADY_AFTER = 0.12;
+let steadyFor = 0, inkAngle = null, inkX = null;
+function inkGuide(dt) {
+    const a = aimTarget, x = launchAt().x;
+    if (inkAngle === null || Math.abs(a - inkAngle) > 0.0015 || Math.abs(x - inkX) > 0.002 || grabbing) steadyFor = 0;
+    else steadyFor += dt;
+    inkAngle = a; inkX = x;
+    const want = steadyFor > STEADY_AFTER ? GUIDE_FULL : GUIDE_FAINT;
+    const op = dots.material.opacity;
+    if (Math.abs(op - want) > 0.005) {
+        dots.material.opacity = op + (want - op) * (1 - Math.exp(-dt * 14));
+        animating = true;
+    } else dots.material.opacity = want;
+}
 function hideGuide() {
+    steadyFor = 0; inkAngle = null;
+    dots.material.opacity = GUIDE_FAINT;
     guideAngle = null;
     dots.count = 0;
     lastShot.visible = false;
@@ -948,41 +1039,40 @@ let runStarted = false;   // a shot has been fired this run (the start screen th
 const finePointer = window.matchMedia('(pointer: fine)').matches;
 
 // Keyboard aiming: ← → turn the launcher (hold Shift for fine aim), Space or Enter fires.
-let keyAim = false;       // the guide is up because of the keyboard
+let keyAim = false;       // the guide is up with no finger or mouse button down (keyboard, or after a tap)
 let keyTurn = 0;          // -1 left, 1 right, 0 still
 let keyFine = false;
 const KEY_TURN = 0.9, KEY_TURN_FINE = 0.15;   // radians per second
 function keyboardAim(dt) {
     if (!keyTurn) return;
-    aimTarget = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, aimTarget + keyTurn * (keyFine ? KEY_TURN_FINE : KEY_TURN) * dt));
+    aimTarget = clampAim(aimTarget + keyTurn * (keyFine ? KEY_TURN_FINE : KEY_TURN) * dt);
 }
 // Steadier aiming: the shown angle eases toward the finger and snaps to small
 // steps, so tiny twitches don't make the guide jump around.
 const AIM_EASE = 18;           // higher = follows the finger faster
 const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
-const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
+// To the right the wall is close: stop at about 40° below flat so the barrel never
+// points straight into it. Steeper shots down the right side still work.
+// How far the aim turns each way depends on where the launcher is (see aimRange in sim.js).
+const clampAim = (a) => { const r = aimRange(launchAt().x); return Math.min(r.max, Math.max(r.min, a)); };
 
-// Aiming, "drag anywhere": touch anywhere on the field and drag in the direction you
-// want to shoot. Your finger never has to sit on the guide, and the further you drag,
-// the finer the aim. Release fires. A tap without a drag does nothing (nothing is aimed yet).
-const AIM_START_PX = 8;          // movement needed before a drag counts as aiming
-let dragStart = null;
-
-function angleFromDrag(dx, dy) {
-    let a = Math.atan2(-dy, dx);                                // screen y points down
-    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // dragging upward: pin to the nearest side
-    return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
-}
-
-// Changed your mind? Drag back to where you started: the guide goes away and letting go
-// there doesn't fire. Move out again and you're aiming again.
-const CANCEL_PX = 16;
-let dragFar = 0;
+// Aiming on touch: the launcher turns toward wherever your finger is, from the moment it lands,
+// and follows it as it moves (further down the board turns it more finely). Lifting fires.
+// A quick tap only aims, so a stray touch never costs a shot. Changed your mind? Slide off
+// the board and let go there.
+const TAP_MS = 150;              // shorter than this, without moving, is a tap: aim only
+const TAP_PX = 10;
+let touchDown = null;            // { x, y, t } where and when the finger landed
+const offBoard = (ev) => {
+    const r = renderer.domElement.getBoundingClientRect();
+    return ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
+};
 
 // With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
 // (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
 let mouseAim = false, mouseDown = false;
+let mouseDownAt = null;     // where a mouse press started, and whether it was on the launcher
 // Hold to fast-forward: while balls are bouncing, keeping a finger, the mouse button or Space
 // down runs the game faster, for a ball stuck looping between a block and the ceiling.
 // Nothing else changes: same physics, just more steps per frame. Let go (or the turn ends,
@@ -1001,30 +1091,75 @@ function fromScreen(x, y) {
 const NEAR_LAUNCHER = 1.1;
 function angleToward(ev, hold = aimTarget) {
     const p = fromScreen(ev.clientX, ev.clientY);
-    if (Math.hypot(p.x - LAUNCHER.x, p.y - LAUNCHER.y) < NEAR_LAUNCHER) return hold;
-    let a = Math.atan2(p.y - LAUNCHER.y, p.x - LAUNCHER.x);
-    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // pointing above the launcher: nearest side
-    return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
+    const L = launchAt();
+    if (Math.hypot(p.x - L.x, p.y - L.y) < NEAR_LAUNCHER) return clampAim(hold);
+    let a = Math.atan2(p.y - L.y, p.x - L.x);
+    if (a > 0) a = a > Math.PI / 2 ? -Math.PI : 0;     // pointing above the launcher: nearest side
+    return clampAim(a);
 }
+// Moving the launcher. Pressing on it and dragging down still aims (people drag their guide
+// out from it). Two ways to move it instead:
+//  - tap it: it's picked up (a rail with ticks shows), the next drag anywhere slides it, and
+//    letting go puts it down. With a mouse: click it, move, click to put it down.
+//  - press on it and slide sideways along the top: it moves right away.
+const GRAB_PX = 30;              // at least this far from its centre counts as on the launcher
+const LAUNCHER_TAP_MS = 400;
+let grabbing = null;             // { id, x0, l0 } while the launcher is being slid
+function onLauncher(ev) {
+    const L = launchAt();
+    const c = window.__boop.toScreen(L.x, L.y), e = window.__boop.toScreen(L.x + 0.55, L.y);
+    return Math.hypot(ev.clientX - c.x, ev.clientY - c.y) < Math.max(GRAB_PX, Math.abs(e.x - c.x));
+}
+function startGrab(ev, from = ev) {
+    grabbing = { id: ev.pointerId, x0: fromScreen(from.clientX, from.clientY).x, l0: launchAt().x };
+    keyAim = true; aiming = false; mouseAim = false; mouseDown = false;   // keyAim keeps the guide drawn
+    canvas.setPointerCapture?.(ev.pointerId);
+    canvas.style.cursor = 'grabbing';
+    hideNote();
+}
+function moveGrab(ev) {
+    sim.moveLauncher(grabbing.l0 + fromScreen(ev.clientX, ev.clientY).x - grabbing.x0);
+    if (Math.abs(launchAt().x - grabbing.l0) > 0.05) markLauncherMoved();
+}
+function endGrab() {
+    grabbing = null;
+    moveMode = false;
+    canvas.style.cursor = '';
+    if (runStarted) saveRun();
+}
+function pickUpLauncher() {
+    moveMode = true;
+    keyAim = true; aiming = false; mouseAim = false; mouseDown = false;
+    hideNote();
+}
+// A drag that started on the launcher: sideways along the top moves it, anything else aims.
+function launcherDragIsMove(ev, start) {
+    const dx = ev.clientX - start.x, dy = ev.clientY - start.y;
+    return Math.abs(dy) < Math.abs(dx) * 0.6;
+}
+
 function cancelAim() {
-    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0;
+    aiming = false; aimCancel = true; mouseAim = false; mouseDown = false; keyAim = false; keyTurn = 0; moveMode = false;
     hideGuide();
 }
 
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or touch where to aim and let go, to fire. Tap the launcher, then drag, to move it. Left and right arrows aim, Alt with the arrows moves the launcher, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
 // A trackpad pinch (ctrl + wheel) or a stray scroll over the board shouldn't zoom or move the
 // page under the cursor mid-aim.
 canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); }, { passive: false });
 canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase === 'aim') cancelAim(); });
 canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;   // right-click is handled by contextmenu (cancel)
+    // Picked up: this press slides it (a mouse click puts it down where it is).
+    if (moveMode && phase === 'aim' && !paused()) { startGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
-        if (ev.button !== 0) return;              // right-click is handled by contextmenu (cancel)
         if (holdToFast()) { fastPointer = ev.pointerId; canvas.setPointerCapture(ev.pointerId); return; }
         if (phase !== 'aim') return;
+        mouseDownAt = { x: ev.clientX, y: ev.clientY, onL: onLauncher(ev), moved: false };
         keyAim = false;
         mouseDown = true;
         mouseAim = true;
@@ -1038,17 +1173,24 @@ canvas.addEventListener('pointerdown', (ev) => {
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
-        aimCancel = true;                       // not aimed until the finger actually moves
-        dragStart = { x: ev.clientX, y: ev.clientY };
-        dragFar = 0;
-        aimPrev = null;
+        aimCancel = false;
+        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: onLauncher(ev) };
+        aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
 });
 canvas.addEventListener('pointermove', (ev) => {
+    if (grabbing) { if (ev.pointerId === grabbing.id) moveGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
         if (phase !== 'aim' || paused() || buddyTalking) return;
+        // Picked up with a click: it follows the pointer until the next click.
+        if (moveMode) { sim.moveLauncher(fromScreen(ev.clientX, ev.clientY).x); markLauncherMoved(); return; }
+        if (mouseDownAt && !mouseDownAt.moved && Math.hypot(ev.clientX - mouseDownAt.x, ev.clientY - mouseDownAt.y) > TAP_PX) {
+            mouseDownAt.moved = true;
+            if (mouseDownAt.onL && launcherDragIsMove(ev, mouseDownAt)) { startGrab(ev, { clientX: mouseDownAt.x, clientY: mouseDownAt.y }); moveGrab(ev); return; }
+        }
+        canvas.style.cursor = onLauncher(ev) ? 'pointer' : '';
         if (!mouseAim) { keyAim = false; aimAngle = angleToward(ev); }
         mouseAim = true;
         aimTarget = angleToward(ev);
@@ -1057,11 +1199,14 @@ canvas.addEventListener('pointermove', (ev) => {
     if (aiming) updateAim(ev);
 });
 canvas.addEventListener('pointerup', (ev) => {
+    if (grabbing) { if (ev.pointerId === grabbing.id) endGrab(); return; }
     if (ev.pointerId === fastPointer) { fastPointer = null; return; }    // a hold, not a shot
     if (ev.pointerType === 'mouse') {
         if (!mouseDown) return;
         mouseDown = false;
+        const at = mouseDownAt; mouseDownAt = null;
         if (phase !== 'aim' || !mouseAim) return;
+        if (at?.onL && !at.moved) { pickUpLauncher(); return; }    // a click on the launcher picks it up
         // Pointing beside the board is a real aim (a sharp angle into a corner needs it), so a
         // click anywhere on the page fires. Only letting go outside the window entirely counts
         // as changing your mind.
@@ -1073,9 +1218,12 @@ canvas.addEventListener('pointerup', (ev) => {
     }
     if (!aiming) return;
     aiming = false;
+    if (touchDown?.onL && !touchDown.moved && ev.timeStamp - touchDown.t < LAUNCHER_TAP_MS && phase === 'aim') { pickUpLauncher(); return; }
+    if (aimCancel || phase !== 'aim') { hideGuide(); return; }
+    // A quick tap: the aim and guide stay where you tapped, nothing fires.
+    if (touchDown && !touchDown.moved && ev.timeStamp - touchDown.t < TAP_MS) { keyAim = true; return; }   // (keeps the guide drawn)
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
-    if (aimCancel || phase !== 'aim') return;
     fire(drawn);
 });
 
@@ -1087,54 +1235,34 @@ function fire(angle) {
     turnPops = 0;
     autoSpeed = 1;
     mouseAim = false;
+    moveMode = false;
     sim.fire(angle);
     lastShotAngle = angle;
+    lastShotX = launchAt().x;
     lastShot.rotation.z = angle;
     audio.shot();
     runStarted = true;
     phase = 'play';
     hideNote();
 }
-canvas.addEventListener('pointercancel', () => { aiming = false; fastPointer = null; hideGuide(); });
+canvas.addEventListener('pointercancel', () => { if (grabbing) endGrab(); aiming = false; fastPointer = null; hideGuide(); });
 canvas.addEventListener('lostpointercapture', (ev) => { if (ev.pointerId === fastPointer) fastPointer = null; });
 window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 
-// Fine aim on touch: a slow, careful finger turns the aim less (down to about a third), a
-// normal drag turns it fully. Changes are applied as steps, so the aim stays put when you slow
-// down instead of jumping to where the finger points.
-let aimPrev = null;
-const AIM_SLOW = 0.03, AIM_FAST = 0.2;     // finger speed in px per ms (30 .. 200 px a second): full fine aim .. none
-function steerAim(ev, raw) {
-    if (aimPrev) {
-        const d = raw - aimPrev.raw;
-        if (Math.abs(d) > 1) aimTarget = raw;     // flipped to the other side: just follow
-        else {
-            const speed = Math.hypot(ev.clientX - aimPrev.x, ev.clientY - aimPrev.y) / Math.max(4, ev.timeStamp - aimPrev.t);
-            const k = Math.min(1, Math.max(0, (speed - AIM_SLOW) / (AIM_FAST - AIM_SLOW)));
-            aimTarget = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, aimTarget + d * (0.32 + 0.68 * k * k * (3 - 2 * k))));
-        }
-    } else aimTarget = raw;
-    aimPrev = { raw, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
-}
 function updateAim(ev) {
-    const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
-    const dist = Math.hypot(dx, dy);
-    dragFar = Math.max(dragFar, dist);
-    // Back at the start after a real drag: cancelled (until you move out again).
-    if (!aimCancel && dragFar > CANCEL_PX * 2.5 && dist < CANCEL_PX) { aimCancel = true; hideGuide(); return; }
-    if (aimCancel) {
-        if (dist < AIM_START_PX) return;
-        aimCancel = false;
-        aimTarget = aimAngle = angleFromDrag(dx, dy);    // first real movement: jump straight to the aim
-        aimPrev = { raw: aimTarget, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
-        return;
+    if (!touchDown.moved && Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) {
+        touchDown.moved = true;
+        // Started on the launcher and went sideways along the top: that's a move, not an aim.
+        if (touchDown.onL && launcherDragIsMove(ev, touchDown)) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
     }
-    // Once aiming, keep the last direction while the finger is very near its start point,
-    // where tiny wobbles would swing the angle wildly.
-    if (dist >= AIM_START_PX) steerAim(ev, angleFromDrag(dx, dy));
+    // Off the board: put the guide away; letting go here doesn't fire. Back on: aiming again.
+    if (offBoard(ev)) { if (!aimCancel) { aimCancel = true; hideGuide(); } return; }
+    aimCancel = false;
+    aimTarget = angleToward(ev);
 }
 
 function easeAim(frameDt) {
+    aimTarget = clampAim(aimTarget);       // the launcher may have moved since the last aim
     aimAngle += (aimTarget - aimAngle) * (1 - Math.exp(-frameDt * AIM_EASE));
     barrelPivot.rotation.z = shownAngle();
 }
@@ -1147,7 +1275,7 @@ let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
     if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // (placeNote lays Buddy out under his bubble)   // the buddy, centred, below the pause and launcher
-    if (!t || t.kind === 'launcher') return { x: LAUNCHER.x, y: LAUNCHER.y, r: 0.45 };
+    if (!t || t.kind === 'launcher') return { x: launcher.position.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
         return { x: p.x, y: p.y, r: 0.7 };
@@ -1184,10 +1312,9 @@ function placeNote() {
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
     if (t.buddy) {
-        // Buddy's tips have a fixed layout: the bubble just under the pause button, centred on
-        // the board, and Buddy standing right below it (never the other way round).
-        const pb = document.getElementById('btn-pause').getBoundingClientRect();
-        const top = Math.max(pb.bottom + 6, gutter);
+        // Buddy's tips have a fixed layout: the bubble near the top of the board, centred on
+        // it, and Buddy standing right below it (never the other way round).
+        const top = Math.max(renderer.domElement.getBoundingClientRect().top + 54, gutter);
         const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
         note.style.left = `${left}px`;
         note.style.top = `${top}px`;
@@ -1613,7 +1740,7 @@ function frame(now) {
         if (keyAim && phase === 'aim') keyboardAim(dt);
         if ((aiming || keyAim || mouseAim) && phase === 'aim') {
             easeAim(dt);
-            if (keyAim || mouseAim || !aimCancel) drawGuide(shownAngle());
+            if (keyAim || mouseAim || !aimCancel) { drawGuide(shownAngle()); inkGuide(dt); }
         }
         if (noteShown) placeNote();
         animating = false;          // set by syncView if anything on the board is still moving
@@ -1679,6 +1806,8 @@ function applyTheme(name) {
     dotFade.setHex(theme.guideEnd);
     dotHit.setHex(theme.hit);
     lastShotMat.color.setHex(theme.line);
+    railMat.color.setHex(theme.line);
+    arrowMat.color.setHex(theme.line);
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
@@ -1707,7 +1836,7 @@ applyTheme(currentTheme());
 // ---------- start screen ----------
 // The first zone builds behind the start screen; Play just lifts the screen.
 
-const menu = $('menu'), howto = $('howto'), over = $('over'), news = $('news');
+const menu = $('menu'), howto = $('howto'), over = $('over'), news = $('news'), settings = $('settings');
 const TAGLINE = $('menu-tagline').textContent;
 // ---------- what's new ----------
 // One entry per release that adds something worth telling (hotfixes get none). Returning
@@ -1720,10 +1849,21 @@ const ICON = {
     fast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6z"/><path d="M13 6l7 6-7 6z"/></svg>',
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8.5v6M9 11.5h6"/></svg>',
     summary: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19V11M12 19V5M19 19v-5"/></svg>',
-    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
+    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-2.4M17.3 6.7l1.4-2.4"/></svg>',
+    move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
+    {
+        version: '1.4',
+        line: 'New in 1.4: move the launcher, and touch right where you want to aim.',
+        items: [
+            { icon: 'move', title: 'Move the launcher', text: 'Tap it, then drag it anywhere along the top for a better angle (or slide it sideways straight away). It stays where you leave it. On a keyboard: Alt (Option) with ← →.' },
+            { icon: 'aim', title: 'Touch to aim', text: 'Touch where you want the ball to go and the launcher points right there. Slide to adjust, let go to fire. A quick tap just aims. Slide off the board to cancel.' },
+            { icon: 'gear', title: 'Menu and Settings', text: 'The game pauses by itself when you switch apps. Menu, under the board, pauses too. Sound now lives in Settings.' },
+        ],
+    },
     {
         version: '1.2.3',
         line: 'New in 1.2.3: hold to speed up, a run summary, and a home screen icon.',
@@ -1740,8 +1880,8 @@ const WHATS_NEW = [
         items: [
             { img: 'img/meet-vine.webp', title: 'Vines', text: 'Garlands and hanging vines from depth 9. Snap them and whatever they hold drops.' },
             { img: 'img/meet-bomb.webp', title: 'Bombs', text: 'A rare treat from depth 15. Hit one twice to light it, then stand back.' },
-            { icon: 'sound', title: 'Sound', text: 'Soft chiptune notes that build into a little tune as your hits chain. Off until you turn it on: the speaker beside Pause, or M.' },
-            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Drag back, right-click or press Esc.' },
+            { icon: 'sound', title: 'Sound', text: 'Soft chiptune notes that build into a little tune as your hits chain. Off until you turn it on in Settings, or with M.' },
+            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Slide off the board, right-click or press Esc.' },
             { icon: 'shapes', title: 'Fresher zones', text: 'More interlocking shapes and more blocks resting loose, so no two zones feel the same.' },
         ],
     },
@@ -1806,7 +1946,7 @@ async function keepAwake(on) {
         }
     } catch { /* not allowed (low battery, an older browser): the phone's own timer applies */ }
 }
-const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden;
+const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden || !settings.hidden;
 function showScreen(which, moveFocus = true) {
     if (which) {                          // stop any aim in progress
         aiming = false; keyAim = false; keyTurn = 0;
@@ -1816,7 +1956,9 @@ function showScreen(which, moveFocus = true) {
     howto.hidden = which !== 'howto';
     over.hidden = which !== 'over';
     news.hidden = which !== 'news';
-    document.body.classList.toggle('howto-open', which === 'howto' || which === 'news');
+    settings.hidden = which !== 'settings';
+    if (which) { grabbing = null; moveMode = false; }
+    document.body.classList.toggle('howto-open', which === 'howto' || which === 'news' || which === 'settings');
     document.body.classList.toggle('playing', !which);
     keepAwake(!which);
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
@@ -1835,6 +1977,11 @@ function showScreen(which, moveFocus = true) {
         $('btn-news-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-news-back').focus();
         markNewsSeen();
+    } else if (which === 'settings') {
+        settings.scrollTop = 0;
+        $('btn-settings-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        showSoundState();
+        if (moveFocus) $('btn-settings-back').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
         $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
@@ -1848,8 +1995,8 @@ function play() {
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
         tourTip('intro', finePointer
-            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!"
-            : "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!"
+            : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
@@ -1874,23 +2021,37 @@ $('btn-news-close').addEventListener('click', () => showScreen('menu'));
 $('btn-news-play').addEventListener('click', play);
 $('btn-howto-close').addEventListener('click', () => showScreen('menu'));
 $('btn-menu-close').addEventListener('click', play);
-// Pause: the button, Escape or P, or leaving the tab mid-run all bring up the start screen.
-$('btn-pause').addEventListener('click', () => showScreen('menu'));
+// Pause: Menu (under the board), Escape or P, or leaving the app or tab mid-run all bring up
+// the start screen.
+$('btn-open-menu').addEventListener('click', () => showScreen('menu'));
+$('btn-settings').addEventListener('click', () => showScreen('settings'));
+$('btn-settings-back').addEventListener('click', () => showScreen('menu'));
+$('btn-settings-close').addEventListener('click', () => showScreen('menu'));
+$('btn-settings-play').addEventListener('click', play);
 $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden && runStarted && document.body.classList.contains('playing')) showScreen('menu', false);
-});
+const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+window.addEventListener('blur', autoPause);
 
 const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
-        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown)) { cancelAim(); return; }   // first, put an aim away
-        if (!howto.hidden || !news.hidden) showScreen('menu');
+        if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown || moveMode)) { cancelAim(); return; }   // first, put an aim (or a picked-up launcher) away
+        if (!howto.hidden || !news.hidden || !settings.hidden) showScreen('menu');
         else if (!menu.hidden) play();
         else showScreen('menu');
+        return;
+    }
+    // Alt (Option) + left/right slides the launcher along the top.
+    if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        if (paused() || buddyTalking || phase !== 'aim' || e.target.closest?.('button, a, input')) return;
+        e.preventDefault();
+        sim.moveLauncher(launchAt().x + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 0.05 : 0.25));
+        markLauncherMoved();
+        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); }
         return;
     }
     if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1921,6 +2082,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 document.addEventListener('keyup', (e) => {
+    if (e.key === 'Alt' && runStarted && phase === 'aim') saveRun();
     if (e.key === ' ' || e.key === 'Enter') fastKey = false;
     keyFine = e.shiftKey;
     if (e.key in AIM_KEYS && AIM_KEYS[e.key] === keyTurn) keyTurn = 0;
@@ -1944,6 +2106,8 @@ window.__boop = {
     get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
     get feel() { return { autoSpeed, hitStop, turnPops }; },
+    get moveMode() { return moveMode; },
+    get guideInk() { return dots.material.opacity; },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },
