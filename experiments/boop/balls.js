@@ -1,7 +1,7 @@
 // Boop: how a ball is drawn. Squash and stretch are visual only.
 import * as THREE from 'three';
 import { BALL_R, BALL_SPEED } from './sim.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-7');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-8');   // build stamp: game.js checks every file matches
 
 const unitCircle = new THREE.CircleGeometry(1, 32);
 unitCircle.userData.keep = true;   // shared by every ball

@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-7';
+const BUILD = '1.3.5-8';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -948,7 +948,7 @@ let runStarted = false;   // a shot has been fired this run (the start screen th
 const finePointer = window.matchMedia('(pointer: fine)').matches;
 
 // Keyboard aiming: ← → turn the launcher (hold Shift for fine aim), Space or Enter fires.
-let keyAim = false;       // the guide is up because of the keyboard
+let keyAim = false;       // the guide is up with no finger or mouse button down (keyboard, or after a tap)
 let keyTurn = 0;          // -1 left, 1 right, 0 still
 let keyFine = false;
 const KEY_TURN = 0.9, KEY_TURN_FINE = 0.15;   // radians per second
@@ -965,22 +965,17 @@ const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
 // points straight into it. Steeper shots down the right side still work.
 const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.7;
 
-// Aiming, "drag anywhere": touch anywhere on the field and drag in the direction you
-// want to shoot. Your finger never has to sit on the guide, and the further you drag,
-// the finer the aim. Release fires. A tap without a drag does nothing (nothing is aimed yet).
-const AIM_START_PX = 8;          // movement needed before a drag counts as aiming
-let dragStart = null;
-
-function angleFromDrag(dx, dy) {
-    let a = Math.atan2(-dy, dx);                                // screen y points down
-    if (a > 0) a = a > Math.PI / 2 ? MIN_ANGLE : MAX_ANGLE;     // dragging upward: pin to the nearest side
-    return Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, a));
-}
-
-// Changed your mind? Drag back to where you started: the guide goes away and letting go
-// there doesn't fire. Move out again and you're aiming again.
-const CANCEL_PX = 16;
-let dragFar = 0;
+// Aiming on touch: the launcher turns toward wherever your finger is, from the moment it lands,
+// and follows it as it moves (further down the board turns it more finely). Lifting fires.
+// A quick tap only aims, so a stray touch never costs a shot. Changed your mind? Slide off
+// the board and let go there.
+const TAP_MS = 150;              // shorter than this, without moving, is a tap: aim only
+const TAP_PX = 10;
+let touchDown = null;            // { x, y, t } where and when the finger landed
+const offBoard = (ev) => {
+    const r = renderer.domElement.getBoundingClientRect();
+    return ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
+};
 
 // With a mouse, aim by pointing: the launcher turns toward the cursor and a click fires.
 // (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
@@ -1016,7 +1011,7 @@ function cancelAim() {
 const canvas = renderer.domElement;
 canvas.tabIndex = 0;
 canvas.setAttribute('role', 'application');
-canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or drag anywhere and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
+canvas.setAttribute('aria-label', 'Game board. Point to aim and click, or touch where to aim and let go, to fire. Left and right arrows aim, Space fires, Escape cancels or pauses. Hold while balls fly to speed up.');
 // A trackpad pinch (ctrl + wheel) or a stray scroll over the board shouldn't zoom or move the
 // page under the cursor mid-aim.
 canvas.addEventListener('wheel', (ev) => { ev.preventDefault(); }, { passive: false });
@@ -1040,10 +1035,9 @@ canvas.addEventListener('pointerdown', (ev) => {
     if (phase === 'aim') {
         keyAim = false;
         aiming = true;
-        aimCancel = true;                       // not aimed until the finger actually moves
-        dragStart = { x: ev.clientX, y: ev.clientY };
-        dragFar = 0;
-        aimPrev = null;
+        aimCancel = false;
+        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false };
+        aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
@@ -1075,9 +1069,11 @@ canvas.addEventListener('pointerup', (ev) => {
     }
     if (!aiming) return;
     aiming = false;
+    if (aimCancel || phase !== 'aim') { hideGuide(); return; }
+    // A quick tap: the aim and guide stay where you tapped, nothing fires.
+    if (touchDown && !touchDown.moved && ev.timeStamp - touchDown.t < TAP_MS) { keyAim = true; return; }   // (keeps the guide drawn)
     const drawn = guideAngle ?? shownAngle();   // the angle the guide on screen was drawn for
     hideGuide();
-    if (aimCancel || phase !== 'aim') return;
     fire(drawn);
 });
 
@@ -1101,39 +1097,12 @@ canvas.addEventListener('pointercancel', () => { aiming = false; fastPointer = n
 canvas.addEventListener('lostpointercapture', (ev) => { if (ev.pointerId === fastPointer) fastPointer = null; });
 window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 
-// Fine aim on touch: a slow, careful finger turns the aim less (down to about a third), a
-// normal drag turns it fully. Changes are applied as steps, so the aim stays put when you slow
-// down instead of jumping to where the finger points.
-let aimPrev = null;
-const AIM_SLOW = 0.03, AIM_FAST = 0.2;     // finger speed in px per ms (30 .. 200 px a second): full fine aim .. none
-function steerAim(ev, raw) {
-    if (aimPrev) {
-        const d = raw - aimPrev.raw;
-        if (Math.abs(d) > 1) aimTarget = raw;     // flipped to the other side: just follow
-        else {
-            const speed = Math.hypot(ev.clientX - aimPrev.x, ev.clientY - aimPrev.y) / Math.max(4, ev.timeStamp - aimPrev.t);
-            const k = Math.min(1, Math.max(0, (speed - AIM_SLOW) / (AIM_FAST - AIM_SLOW)));
-            aimTarget = Math.min(MAX_ANGLE, Math.max(MIN_ANGLE, aimTarget + d * (0.32 + 0.68 * k * k * (3 - 2 * k))));
-        }
-    } else aimTarget = raw;
-    aimPrev = { raw, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
-}
 function updateAim(ev) {
-    const dx = ev.clientX - dragStart.x, dy = ev.clientY - dragStart.y;
-    const dist = Math.hypot(dx, dy);
-    dragFar = Math.max(dragFar, dist);
-    // Back at the start after a real drag: cancelled (until you move out again).
-    if (!aimCancel && dragFar > CANCEL_PX * 2.5 && dist < CANCEL_PX) { aimCancel = true; hideGuide(); return; }
-    if (aimCancel) {
-        if (dist < AIM_START_PX) return;
-        aimCancel = false;
-        aimTarget = aimAngle = angleFromDrag(dx, dy);    // first real movement: jump straight to the aim
-        aimPrev = { raw: aimTarget, x: ev.clientX, y: ev.clientY, t: ev.timeStamp };
-        return;
-    }
-    // Once aiming, keep the last direction while the finger is very near its start point,
-    // where tiny wobbles would swing the angle wildly.
-    if (dist >= AIM_START_PX) steerAim(ev, angleFromDrag(dx, dy));
+    if (Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) touchDown.moved = true;
+    // Off the board: put the guide away; letting go here doesn't fire. Back on: aiming again.
+    if (offBoard(ev)) { if (!aimCancel) { aimCancel = true; hideGuide(); } return; }
+    aimCancel = false;
+    aimTarget = angleToward(ev);
 }
 
 function easeAim(frameDt) {
@@ -1743,7 +1712,7 @@ const WHATS_NEW = [
             { img: 'img/meet-vine.webp', title: 'Vines', text: 'Garlands and hanging vines from depth 9. Snap them and whatever they hold drops.' },
             { img: 'img/meet-bomb.webp', title: 'Bombs', text: 'A rare treat from depth 15. Hit one twice to light it, then stand back.' },
             { icon: 'sound', title: 'Sound', text: 'Soft chiptune notes that build into a little tune as your hits chain. Off until you turn it on: the speaker beside Pause, or M.' },
-            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Drag back, right-click or press Esc.' },
+            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Slide off the board, right-click or press Esc.' },
             { icon: 'shapes', title: 'Fresher zones', text: 'More interlocking shapes and more blocks resting loose, so no two zones feel the same.' },
         ],
     },
@@ -1851,7 +1820,7 @@ function play() {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
         tourTip('intro', finePointer
             ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!"
-            : "Hi, I'm Boop! Drag anywhere to aim, then let go to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+            : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
         if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
