@@ -1,9 +1,12 @@
 // Boop: fall leaf piles (a season extra, see season.js). A few blocks start each zone with a
 // little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
-// and gather in a heap on the floor. Purely for show: they never touch the physics.
+// and gather in a heap on the floor. A ball skimming the heap, or a bomb going off near it,
+// kicks some back up; they flutter and settle again. Purely for show: they never touch the
+// physics (as bodies they'd slow the aim guide and deflect balls), and they don't stir on
+// their own, so a still board can still rest at a low frame rate.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4.1-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-4');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -126,7 +129,28 @@ export function makeLeafPiles(scene, season, floorY) {
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
 
+    // Kick floor leaves within reach of (x, y) back into the air. (vx, vy): what's pushing them.
+    const KICK_REACH = 0.45, KICK_MAX = 4;
+    function kick(x, y, reach, vx, vy, power) {
+        if (y > floorY + reach + 0.7) return;           // nowhere near the floor
+        for (let i = floor.length - 1; i >= 0; i--) {
+            const l = floor[i], dx = l.x - x, dy = l.y - y, d = Math.hypot(dx, dy);
+            if (d > reach) continue;
+            const away = (dx >= 0 ? 1 : -1) * (1 - d / reach);
+            floor.splice(i, 1);
+            falling.push({ x: l.x, y: l.y + 0.02, vx: vx * 0.2 + away * 1.6 * power + (Math.random() - 0.5) * 0.8,
+                vy: Math.min(KICK_MAX, (1.2 + Math.random() * 1.6) * power + Math.max(0, vy) * 0.15), a: l.a,
+                va: (Math.random() - 0.5) * 6, size: l.size, color: l.color, sway: Math.random() * 6, t: 0 });
+        }
+    }
+    // balls: [{ x, y, vx, vy }] each frame; a fast ball kicks harder.
+    function stir(balls) {
+        if (!floor.length) return;
+        for (const b of balls) kick(b.x, b.y, KICK_REACH, b.vx, b.vy, Math.min(1.4, 0.5 + Math.hypot(b.vx, b.vy) / 25));
+    }
+    function blast(x, y, r) { kick(x, y, r * 1.3, 0, 3, 1.6); }
+
     function clear() { piles = new Map(); falling = []; floor = []; mesh.count = 0; }
 
-    return { seed, knock, update, clear, active: () => falling.length > 0 };
+    return { seed, knock, update, stir, blast, clear, active: () => falling.length > 0 };
 }

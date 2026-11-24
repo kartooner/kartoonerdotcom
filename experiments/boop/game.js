@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4.1-5';
+const BUILD = '1.5-4';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -50,7 +50,7 @@ const DESCEND_TIME = 0.9;
 
 const $ = (id) => document.getElementById(id);
 const hud = {
-    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), progress: $('progress-fill'),
+    depth: $('hud-depth'), shots: $('hud-shots'), volley: $('hud-volley'), par: $('hud-par'), parBox: $('hud-par-box'), parLabel: document.querySelector('#hud-par-box span'), shotsLabel: document.querySelector('.stat-main span'), progress: $('progress-fill'),
 };
 
 // ---------- three.js setup ----------
@@ -716,7 +716,14 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
-    if (leafPiles) { leafPiles.update(frameDt, blockViews); if (leafPiles.active()) animating = true; }
+    if (leafPiles) {
+        if (s.balls.length) leafPiles.stir(s.balls.map((b) => {
+            const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
+            return { x: t.x, y: t.y + zoneOffset, vx: v.x, vy: v.y };
+        }));
+        leafPiles.update(frameDt, blockViews);
+        if (leafPiles.active()) animating = true;
+    }
     for (const [id, g] of pickupViews) {
         if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
@@ -823,11 +830,13 @@ function syncView(frameDt) {
     // Only touch the page when a number actually changed (each change costs a layout).
     const used = s.zoneShots ?? 0;
     const done = s.zoneHp0 ? Math.max(0, Math.min(1, 1 - sim.hpLeft() / s.zoneHp0)) : 0;
-    const key = `${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
+    const key = `${s.relaxed ? 'R' : ''}${s.depth}|${s.supply}|${s.volley}|${used}|${s.par}|${done.toFixed(3)}|${s.bonus?.shots ?? ''}`;
     if (key !== hudKey) {
         hudKey = key;
         hud.depth.textContent = s.depth;
-        hud.shots.textContent = s.supply;
+        hud.shots.textContent = s.relaxed ? '∞' : s.supply;      // Relaxed: shots never run out
+        hud.shotsLabel.textContent = s.relaxed ? 'Shots' : 'Shots left';
+        hud.parBox.classList.toggle('relaxed', !!s.relaxed);   // and there's no par
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
         hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
@@ -852,6 +861,7 @@ function consumeEvents() {
             // Last few blocks: hits count double. The floater says so, every time.
             addFloater('Hits ×2', W / 2, -2.6);
         } else if (e.t === 'boom') {
+            leafPiles?.blast(e.x, e.y, e.r);
             // A bomb: a crayon ring rushes out to its reach, and the board jolts.
             const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.07, edge: 0, role: 'line', inkFill: true, wob: 0.9, seed: (e.x * 13 + e.y * 7) | 0, margin: 0.12 });
             ring.position.set(e.x, e.y, 0.7);
@@ -933,6 +943,26 @@ if (readSoundPick() === 'on') {
     document.addEventListener('keydown', wake, { once: true });
 }
 showSoundState();
+
+// Relaxed mode: a switch in Settings. Simpler zones, smaller numbers, shots that never run
+// out (see RELAXED_HP in sim.js). It has its own saved run, so handing the game to a child
+// and back is one switch each way: turning it on parks the regular run where it is, turning
+// it off brings it back. Relaxed runs don't count toward the best depth.
+const RELAXED_KEY = 'boop-relaxed';
+let relaxed = (() => { try { return localStorage.getItem(RELAXED_KEY) === 'on'; } catch { return false; } })();
+const relaxedSwitch = $('relaxed-switch');
+function showRelaxedState() { relaxedSwitch.setAttribute('aria-checked', String(relaxed)); }
+function setRelaxed(on) {
+    if (on === relaxed) return;
+    if (runStarted && phase === 'aim') saveRun();   // between turns: keep it exactly (otherwise the last turn's save stands)
+    relaxed = on;
+    try { localStorage.setItem(RELAXED_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
+    restart(loadRun());                              // the other mode's run, or a fresh one
+    showRelaxedState();
+    $('btn-settings-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+}
+relaxedSwitch.addEventListener('click', () => setRelaxed(!relaxed));
+showRelaxedState();
 
 // ---------- aim guide ----------
 
@@ -1421,6 +1451,8 @@ function tourTip(key, text, { now = false, stay = false, first = false } = {}) {
 function queueZoneTips() {
     const s = sim.s, tips = [];
     if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
+    // Relaxed mode skips the tips about new things: they're kept for the regular game.
+    if (s.relaxed) { tipQueue.unshift(...tips); return; }
     const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
     const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
@@ -1563,7 +1595,8 @@ function readyToAim() {
 // The run is saved in this browser at the start of every turn (board settled, nothing
 // in flight): the physics world as bytes, the game state as JSON. Closing the page
 // mid-shot loses only that shot. Game over or New game clears it.
-const SAVE_KEY = 'boop-save-v1';
+const SAVE_KEY = 'boop-save-v1', RELAXED_SAVE_KEY = 'boop-save-relaxed-v1';
+const saveKey = () => (relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
 let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
 
 function toBase64(bytes) {
@@ -1579,13 +1612,13 @@ function fromBase64(text) {
 function saveRun() {
     try {
         const { world, s } = sim.save();
-        localStorage.setItem(SAVE_KEY, JSON.stringify({ depth: sim.s.depth, world: toBase64(world), s }));
+        localStorage.setItem(saveKey(), JSON.stringify({ depth: sim.s.depth, world: toBase64(world), s }));
     } catch { /* storage full or blocked: the game just isn't saved */ }
 }
-function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage blocked */ } }
+function clearSave() { try { localStorage.removeItem(saveKey()); } catch { /* storage blocked */ } }
 function loadRun() {
     try {
-        const raw = localStorage.getItem(SAVE_KEY);
+        const raw = localStorage.getItem(saveKey());
         if (!raw) return null;
         const data = JSON.parse(raw);
         return Sim.load(RAPIER, fromBase64(data.world), data.s);
@@ -1631,6 +1664,7 @@ function restart(saved = null) {
     runStarted = false;
     fromSave = false;
     sim = Sim.create(RAPIER, (Math.random() * 2 ** 31) | 0);
+    sim.s.relaxed = relaxed;
     lastShotAngle = null;
     sim.s.seen = readTips();
     startZone();
@@ -1650,7 +1684,7 @@ function tick(frameDt) {
             zoneOffset = 0;
             // First time something new shows up, say what it does in one line.
             queueZoneTips();
-            writeTips({ ...readTips(), ...sim.s.seen });
+            if (!sim.s.relaxed) writeTips({ ...readTips(), ...sim.s.seen });
             readyToAim();
         }
         return;
@@ -1865,9 +1899,17 @@ const ICON = {
     finger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V6a1.5 1.5 0 0 1 3 0v5.5"/><path d="M13 11v-1a1.5 1.5 0 0 1 3 0v1.5"/><path d="M16 11.5a1.5 1.5 0 0 1 3 0v3a6.5 6.5 0 0 1-6.5 6.5h-.5a5.5 5.5 0 0 1-4.6-2.5L5 15.3a1.6 1.6 0 0 1 2.7-1.8L10 16"/><path d="M8 4.6a3.5 3.5 0 0 1 7 0" stroke-width="1.6"/></svg>',
     move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="2.4"/><path d="M18.00 12.00L21.00 12.00M16.24 16.24L18.36 18.36M12.00 18.00L12.00 21.00M7.76 16.24L5.64 18.36M6.00 12.00L3.00 12.00M7.76 7.76L5.64 5.64M12.00 6.00L12.00 3.00M16.24 7.76L18.36 5.64" stroke-width="3.6" stroke-linecap="butt"/></svg>',
+    relax: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c-2-2.7-3.5-4-5.5-4a4 4 0 0 0 0 8c2 0 3.5-1.3 5.5-4s3.5-4 5.5-4a4 4 0 0 1 0 8c-2 0-3.5-1.3-5.5-4z"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
+    {
+        version: '1.5',
+        line: 'New in 1.5: Relaxed mode, for an easygoing game (or a young player).',
+        items: [
+            { icon: 'relax', title: 'Relaxed mode', text: 'Turn it on in Settings for simpler zones, smaller numbers and shots that never run out. It keeps its own run: switch back and yours is right where you left it.' },
+        ],
+    },
     {
         version: '1.4',
         line: 'New in 1.4: move the launcher, and touch right where you want to aim.',
@@ -1900,14 +1942,15 @@ const WHATS_NEW = [
     },
 ];
 const NEWS_KEY = 'boop-news-seen';
-const NEWS_BUBBLE_MIN_H = 860;   // screen height (CSS px) with room for Boop's line on the start screen
+const NEWS_BUBBLE_MIN_H = 860;
+const GREET_MIN_H = 620;          // a holiday greeting is one short line: it fits on most phones   // screen height (CSS px) with room for Boop's line on the start screen
 function readNewsSeen() { try { return localStorage.getItem(NEWS_KEY); } catch { return null; } }
 function markNewsSeen() { try { localStorage.setItem(NEWS_KEY, WHATS_NEW[0].version); } catch { /* storage blocked */ } }
 // Someone who's played before (a best depth, tips seen, or a saved run) and hasn't seen the
 // latest entry gets Boop's line, until they play or open the page.
 function showNewsLine() {
     let played = readBest() > 0 || Object.keys(readTips()).length > 0;
-    try { played = played || !!localStorage.getItem(SAVE_KEY); } catch { /* storage blocked */ }
+    try { played = played || !!localStorage.getItem(SAVE_KEY) || !!localStorage.getItem(RELAXED_SAVE_KEY); } catch { /* storage blocked */ }
     const fresh = played && readNewsSeen() !== WHATS_NEW[0].version && (!runStarted || fromSave);   // not on a mid-run pause
     // The link beside Send feedback says what's new until it's been seen (no extra room needed).
     const link = $('btn-news');
@@ -1915,8 +1958,11 @@ function showNewsLine() {
     link.classList.toggle('fresh', fresh);
     // Where there's room (tablets, desktop), Boop says it too.
     const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;
-    $('menu-say-text').textContent = WHATS_NEW[0].line;
-    $('menu-say').hidden = !bubble;
+    // Around a holiday (see season.js), Boop says the greeting instead, on the start screen only.
+    const greet = !bubble && !!seasonGreeting && (!runStarted || fromSave) && window.innerHeight >= GREET_MIN_H;
+    $('menu-say-text').textContent = bubble ? WHATS_NEW[0].line : greet ? seasonGreeting : '';
+    $('btn-news-say').hidden = !bubble;
+    $('menu-say').hidden = !bubble && !greet;
 }
 $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><ul class="meet">${r.items.map((it) =>
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
@@ -1937,10 +1983,10 @@ isPrivateTab().then((p) => { privateTab = p; });
 // The one line under the logo. New players: what the game is. Returning players already
 // know that: their best depth. Mid-run: where you are.
 function menuTagline() {
-    const best = readBest();
+    const best = relaxed ? 0 : readBest();          // Relaxed runs don't count toward the best depth
+    $('menu-mode').hidden = !relaxed;
     $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
-        : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
-        : best > 0 ? `Best depth: ${best}` : TAGLINE;
+        : best > 0 ? `Best depth: ${best}` : relaxed ? 'Bounce balls, dig deeper.' : TAGLINE;   // short, with the Relaxed label under it
     $('menu-tagline').classList.toggle('state', runStarted);
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
@@ -2013,7 +2059,7 @@ function play() {
             : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
         const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
-        if (tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
+        if (!relaxed && tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
     }
     nextTip();
     fromSave = false;      // from here on, the start screen is just the pause screen
