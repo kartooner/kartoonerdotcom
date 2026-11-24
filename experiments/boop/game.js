@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4.1-3';
+const BUILD = '1.4.1-4';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -275,9 +275,11 @@ function moveLauncherView(frameDt) {
         animating = true;
     } else launcher.position.x = x;
     lastShot.position.x = launcher.position.x;
-    const showArrows = phase === 'aim' && !paused() && (moveMode || (!launcherMoved && runStarted && !buddyTalking));
-    if (rail.visible !== moveMode || arrowL.visible !== showArrows) animating = true;
-    rail.visible = moveMode;
+    // The rail (and arrows) stay up from pickup until the launcher's set down, drag included.
+    const moving = moveMode || !!grabbing || (aiming && !!touchDown?.fromMove);
+    const showArrows = phase === 'aim' && !paused() && (moving || (!launcherMoved && runStarted && !buddyTalking));
+    if (rail.visible !== moving || arrowL.visible !== showArrows) animating = true;
+    rail.visible = moving;
     arrowL.visible = arrowR.visible = showArrows;
     if (showArrows) {
         // Same gap on both sides. An arrow goes away once the launcher can't go any further
@@ -286,7 +288,7 @@ function moveLauncherView(frameDt) {
         arrowL.position.x = L - off; arrowR.position.x = L + off;
         arrowL.visible = x > LAUNCH_EDGE_VIEW + 0.02 && L - off - half > 0.02;
         arrowR.visible = x < W - LAUNCH_EDGE_VIEW - 0.02 && L + off + half < W - 0.02;
-        arrowMat.opacity = moveMode ? 0.95 : 0.6;
+        arrowMat.opacity = moving ? 0.95 : 0.6;
     }
 }
 
@@ -2144,6 +2146,7 @@ window.__boop = {
     get aim() { return shownAngle(); },
     get feel() { return { autoSpeed, hitStop, turnPops }; },
     get moveMode() { return moveMode; },
+    get railOn() { return rail.visible; },
     get fast() { return fastForward(); },
     get guideInk() { return dots.material.opacity; },
     get pixelRatio() { return renderer.getPixelRatio(); },
