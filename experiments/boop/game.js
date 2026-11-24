@@ -19,7 +19,8 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4-2';
+const BUILD = '1.4.1-1';
+let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1849,7 +1850,7 @@ const ICON = {
     fast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6z"/><path d="M13 6l7 6-7 6z"/></svg>',
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8.5v6M9 11.5h6"/></svg>',
     summary: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19V11M12 19V5M19 19v-5"/></svg>',
-    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-2.4M17.3 6.7l1.4-2.4"/></svg>',
+    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4.1-1.4M17.3 6.7l1.4.1-1.4"/></svg>',
     move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
@@ -1948,6 +1949,7 @@ async function keepAwake(on) {
 }
 const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden || !settings.hidden;
 function showScreen(which, moveFocus = true) {
+    if (which && pendingBuild) setTimeout(applyUpdate, 0);   // a newer build is waiting: now's a good moment
     if (which) {                          // stop any aim in progress
         aiming = false; keyAim = false; keyTurn = 0;
         hideGuide();
@@ -2032,7 +2034,31 @@ $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
 const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
-document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else checkForUpdate(); });
+
+// Updates. A Home Screen app (and a long-open tab) keeps the page it already has: reopening
+// it doesn't load anything new. So on start and whenever the game comes back to the front,
+// ask the server which build is current. If it's newer, save the run and reload, but only
+// while a screen is up (start, pause, game over), never in the middle of playing; otherwise
+// it waits for the next screen. Tried once per build, so a stale cache can't cause a loop.
+async function checkForUpdate() {
+    if (Date.now() - lastUpdateCheck < 10000) return;   // at most every 10 s
+    lastUpdateCheck = Date.now();
+    try {
+        const res = await fetch(`./?check=${Date.now()}`, { cache: 'no-store' });
+        const m = res.ok && (await res.text()).match(/data-build="([^"]+)"/);
+        if (!m || m[1] === BUILD) return;
+        try { if (sessionStorage.getItem('boop-update-tried') === m[1]) return; } catch { /* storage blocked */ }
+        pendingBuild = m[1];
+        applyUpdate();
+    } catch { /* offline: keep playing what we have */ }
+}
+function applyUpdate() {
+    if (!pendingBuild || !paused()) return;
+    try { sessionStorage.setItem('boop-update-tried', pendingBuild); } catch { /* storage blocked */ }
+    if (runStarted) saveRun();
+    location.replace(`./?v=${encodeURIComponent(pendingBuild)}`);
+}
 window.addEventListener('blur', autoPause);
 
 const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
@@ -2097,6 +2123,7 @@ fitCamera();   // the HUD's height is final once its font has loaded
 restart(loadRun());
 showScreen('menu', false);
 requestAnimationFrame(frame);
+checkForUpdate();
 
 // For automated checks.
 window.__boop = {
