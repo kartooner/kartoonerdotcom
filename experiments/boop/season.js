@@ -3,7 +3,7 @@
 // Which season it is comes from the date on the player's device: a tiny script at the top
 // of index.html sets data-season (and data-greeting) before anything is drawn, so the page
 // never flashes the wrong colours. ?season=fall (or none) in the address forces one, for testing.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-1');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-2');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;

@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-1';
+const BUILD = '1.5-2';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1934,7 +1934,8 @@ const WHATS_NEW = [
     },
 ];
 const NEWS_KEY = 'boop-news-seen';
-const NEWS_BUBBLE_MIN_H = 860;   // screen height (CSS px) with room for Boop's line on the start screen
+const NEWS_BUBBLE_MIN_H = 860;
+const GREET_MIN_H = 620;          // a holiday greeting is one short line: it fits on most phones   // screen height (CSS px) with room for Boop's line on the start screen
 function readNewsSeen() { try { return localStorage.getItem(NEWS_KEY); } catch { return null; } }
 function markNewsSeen() { try { localStorage.setItem(NEWS_KEY, WHATS_NEW[0].version); } catch { /* storage blocked */ } }
 // Someone who's played before (a best depth, tips seen, or a saved run) and hasn't seen the
@@ -1949,8 +1950,11 @@ function showNewsLine() {
     link.classList.toggle('fresh', fresh);
     // Where there's room (tablets, desktop), Boop says it too.
     const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;
-    $('menu-say-text').textContent = WHATS_NEW[0].line;
-    $('menu-say').hidden = !bubble;
+    // Around a holiday (see season.js), Boop says the greeting instead, on the start screen only.
+    const greet = !bubble && !!seasonGreeting && (!runStarted || fromSave) && window.innerHeight >= GREET_MIN_H;
+    $('menu-say-text').textContent = bubble ? WHATS_NEW[0].line : greet ? seasonGreeting : '';
+    $('btn-news-say').hidden = !bubble;
+    $('menu-say').hidden = !bubble && !greet;
 }
 $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><ul class="meet">${r.items.map((it) =>
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
@@ -1974,8 +1978,7 @@ function menuTagline() {
     const best = relaxed ? 0 : readBest();          // Relaxed runs don't count toward the best depth
     $('menu-mode').hidden = !relaxed;
     $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
-        : seasonGreeting ? `${seasonGreeting} ${best > 0 ? `Best depth: ${best}` : 'Bounce balls, dig deeper.'}`    // a holiday: Boop says so
-        : best > 0 ? `Best depth: ${best}` : TAGLINE;
+        : best > 0 ? `Best depth: ${best}` : relaxed ? 'Bounce balls, dig deeper.' : TAGLINE;   // short, with the Relaxed label under it
     $('menu-tagline').classList.toggle('state', runStarted);
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
