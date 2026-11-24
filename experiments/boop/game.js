@@ -19,7 +19,8 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4-2';
+const BUILD = '1.4.1-3';
+let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -1154,8 +1155,8 @@ canvas.addEventListener('contextmenu', (ev) => { ev.preventDefault(); if (phase 
 canvas.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !mouseDown) { mouseAim = false; hideGuide(); } });
 canvas.addEventListener('pointerdown', (ev) => {
     if (ev.pointerType === 'mouse' && ev.button !== 0) return;   // right-click is handled by contextmenu (cancel)
-    // Picked up: this press slides it (a mouse click puts it down where it is).
-    if (moveMode && phase === 'aim' && !paused()) { startGrab(ev); return; }
+    // Picked up, with a mouse: this click puts it down where it is.
+    if (moveMode && ev.pointerType === 'mouse' && phase === 'aim' && !paused()) { startGrab(ev); return; }
     if (ev.pointerType === 'mouse') {
         if (holdToFast()) { fastPointer = ev.pointerId; canvas.setPointerCapture(ev.pointerId); return; }
         if (phase !== 'aim') return;
@@ -1174,8 +1175,13 @@ canvas.addEventListener('pointerdown', (ev) => {
         keyAim = false;
         aiming = true;
         aimCancel = false;
-        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: onLauncher(ev) };
-        aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
+        // Picked up: a slide moves it; a touch that doesn't slide is an ordinary aim (decided
+        // when the finger moves or lifts, so the guide doesn't jump to the finger meanwhile).
+        const fromMove = moveMode;
+        moveMode = false;
+        touchDown = { x: ev.clientX, y: ev.clientY, t: ev.timeStamp, moved: false, onL: !fromMove && onLauncher(ev), fromMove };
+        if (fromMove) keyAim = true;              // keep the guide as it is until we know
+        else aimTarget = aimAngle = angleToward(ev);   // aim right at the finger, straight away
         hideNote();                             // read it already; don't let it cover the guide
         return;
     }
@@ -1219,6 +1225,7 @@ canvas.addEventListener('pointerup', (ev) => {
     if (!aiming) return;
     aiming = false;
     if (touchDown?.onL && !touchDown.moved && ev.timeStamp - touchDown.t < LAUNCHER_TAP_MS && phase === 'aim') { pickUpLauncher(); return; }
+    if (touchDown?.fromMove && phase === 'aim') { keyAim = false; aimTarget = aimAngle = angleToward(ev); guideAngle = null; }   // picked up, then a plain touch: aim there
     if (aimCancel || phase !== 'aim') { hideGuide(); return; }
     // A quick tap: the aim and guide stay where you tapped, nothing fires.
     if (touchDown && !touchDown.moved && ev.timeStamp - touchDown.t < TAP_MS) { keyAim = true; return; }   // (keeps the guide drawn)
@@ -1252,9 +1259,12 @@ window.addEventListener('blur', () => { fastPointer = null; fastKey = false; });
 function updateAim(ev) {
     if (!touchDown.moved && Math.hypot(ev.clientX - touchDown.x, ev.clientY - touchDown.y) > TAP_PX) {
         touchDown.moved = true;
+        // Picked up and slid: move it.
+        if (touchDown.fromMove) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
         // Started on the launcher and went sideways along the top: that's a move, not an aim.
         if (touchDown.onL && launcherDragIsMove(ev, touchDown)) { startGrab(ev, { clientX: touchDown.x, clientY: touchDown.y }); moveGrab(ev); return; }
     }
+    if (touchDown.fromMove && !touchDown.moved) return;   // picked up: not decided yet
     // Off the board: put the guide away; letting go here doesn't fire. Back on: aiming again.
     if (offBoard(ev)) { if (!aimCancel) { aimCancel = true; hideGuide(); } return; }
     aimCancel = false;
@@ -1849,9 +1859,10 @@ const ICON = {
     fast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6z"/><path d="M13 6l7 6-7 6z"/></svg>',
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8.5v6M9 11.5h6"/></svg>',
     summary: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19V11M12 19V5M19 19v-5"/></svg>',
-    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-2.4M17.3 6.7l1.4-2.4"/></svg>',
+    awake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>',
+    finger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V6a1.5 1.5 0 0 1 3 0v5.5"/><path d="M13 11v-1a1.5 1.5 0 0 1 3 0v1.5"/><path d="M16 11.5a1.5 1.5 0 0 1 3 0v3a6.5 6.5 0 0 1-6.5 6.5h-.5a5.5 5.5 0 0 1-4.6-2.5L5 15.3a1.6 1.6 0 0 1 2.7-1.8L10 16"/><path d="M8 4.6a3.5 3.5 0 0 1 7 0" stroke-width="1.6"/></svg>',
     move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>',
-    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="2.4"/><path d="M18.00 12.00L21.00 12.00M16.24 16.24L18.36 18.36M12.00 18.00L12.00 21.00M7.76 16.24L5.64 18.36M6.00 12.00L3.00 12.00M7.76 7.76L5.64 5.64M12.00 6.00L12.00 3.00M16.24 7.76L18.36 5.64" stroke-width="3.6" stroke-linecap="butt"/></svg>',
     shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h7v7H6.5v6H3z"/><path d="M13 9h8v4h-4v7h-4z"/></svg>',
 };
 const WHATS_NEW = [
@@ -1860,7 +1871,7 @@ const WHATS_NEW = [
         line: 'New in 1.4: move the launcher, and touch right where you want to aim.',
         items: [
             { icon: 'move', title: 'Move the launcher', text: 'Tap it, then drag it anywhere along the top for a better angle (or slide it sideways straight away). It stays where you leave it. On a keyboard: Alt (Option) with ← →.' },
-            { icon: 'aim', title: 'Touch to aim', text: 'Touch where you want the ball to go and the launcher points right there. Slide to adjust, let go to fire. A quick tap just aims. Slide off the board to cancel.' },
+            { icon: 'finger', title: 'Touch to aim', text: 'Touch where you want the ball to go and the launcher points right there. Slide to adjust, let go to fire. A quick tap just aims. Slide off the board to cancel.' },
             { icon: 'gear', title: 'Menu and Settings', text: 'The game pauses by itself when you switch apps. Menu, under the board, pauses too. Sound now lives in Settings.' },
         ],
     },
@@ -1948,6 +1959,7 @@ async function keepAwake(on) {
 }
 const paused = () => !menu.hidden || !howto.hidden || !over.hidden || !news.hidden || !settings.hidden;
 function showScreen(which, moveFocus = true) {
+    if (which && pendingBuild) setTimeout(applyUpdate, 0);   // a newer build is waiting: now's a good moment
     if (which) {                          // stop any aim in progress
         aiming = false; keyAim = false; keyTurn = 0;
         hideGuide();
@@ -2032,7 +2044,31 @@ $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
 const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
-document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else checkForUpdate(); });
+
+// Updates. A Home Screen app (and a long-open tab) keeps the page it already has: reopening
+// it doesn't load anything new. So on start and whenever the game comes back to the front,
+// ask the server which build is current. If it's newer, save the run and reload, but only
+// while a screen is up (start, pause, game over), never in the middle of playing; otherwise
+// it waits for the next screen. Tried once per build, so a stale cache can't cause a loop.
+async function checkForUpdate() {
+    if (Date.now() - lastUpdateCheck < 10000) return;   // at most every 10 s
+    lastUpdateCheck = Date.now();
+    try {
+        const res = await fetch(`./?check=${Date.now()}`, { cache: 'no-store' });
+        const m = res.ok && (await res.text()).match(/data-build="([^"]+)"/);
+        if (!m || m[1] === BUILD) return;
+        try { if (sessionStorage.getItem('boop-update-tried') === m[1]) return; } catch { /* storage blocked */ }
+        pendingBuild = m[1];
+        applyUpdate();
+    } catch { /* offline: keep playing what we have */ }
+}
+function applyUpdate() {
+    if (!pendingBuild || !paused()) return;
+    try { sessionStorage.setItem('boop-update-tried', pendingBuild); } catch { /* storage blocked */ }
+    if (runStarted) saveRun();
+    location.replace(`./?v=${encodeURIComponent(pendingBuild)}`);
+}
 window.addEventListener('blur', autoPause);
 
 const AIM_KEYS = { ArrowLeft: -1, ArrowRight: 1, a: -1, d: 1, A: -1, D: 1 };
@@ -2097,6 +2133,7 @@ fitCamera();   // the HUD's height is final once its font has loaded
 restart(loadRun());
 showScreen('menu', false);
 requestAnimationFrame(frame);
+checkForUpdate();
 
 // For automated checks.
 window.__boop = {
@@ -2107,6 +2144,7 @@ window.__boop = {
     get aim() { return shownAngle(); },
     get feel() { return { autoSpeed, hitStop, turnPops }; },
     get moveMode() { return moveMode; },
+    get fast() { return fastForward(); },
     get guideInk() { return dots.material.opacity; },
     get pixelRatio() { return renderer.getPixelRatio(); },
     get soundOn() { return audio.on; },
