@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4.1-4');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4.1-5');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -59,7 +59,8 @@ const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
 // Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
 // actually takes off per shot at each depth (with more balls per shot, each does a bit
 // less), set a little generous so a good zone beats par about a third of the time.
-const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 56], [16, 42], [22, 35], [30, 42], [40, 50]];
+// 1.4.1: eased a touch from 12 to 25 along with zoneTrim below, so par is still beaten about a third of the time.
+const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 52], [16, 39], [22, 33], [30, 42], [40, 50]];
 const parHpPerShot = (d) => {
     const i = PAR_TABLE.findIndex(([at]) => at > d);
     if (i === -1) return PAR_TABLE[PAR_TABLE.length - 1][1];
@@ -70,7 +71,9 @@ const parHpPerShot = (d) => {
 // Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
 // comes from layout and from income not keeping up, not from waiting on big numbers.
 // Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
-const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.8 : d <= 25 ? 0.62 : Math.min(0.85, 0.62 + (d - 25) * 0.025));
+// 1.4.1: about 10% more from 11 on. The aim range (no shots flat into a wall) made each shot count
+// for more, and average bots got about 3 zones deeper than in 1.3; this brings them back.
+const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.88 : d <= 25 ? 0.69 : Math.min(0.88, 0.69 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;

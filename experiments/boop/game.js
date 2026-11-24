@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.4.1-4';
+const BUILD = '1.4.1-5';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
