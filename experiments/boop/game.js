@@ -1539,7 +1539,7 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
-// Something to aim for on long runs: a ribbon banner pops up as the zone slides in, the first time
+// Something to aim for on long runs: a pennant pops up as the zone slides in, the first time
 // a run goes past your best depth, and at a few milestones. Nothing to tap, nothing paused.
 // The best depth is only written at game over, so "past your best" happens once per run
 // by itself (and survives a saved run). Relaxed runs have no best depth, just the milestones.
