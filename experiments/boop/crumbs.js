@@ -2,7 +2,7 @@
 // shavings in its own colour, with a few flecks of ink from its outline.
 // Purely for show: the bits don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-6');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-7');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel

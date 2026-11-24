@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.3.5-6';
+const BUILD = '1.3.5-7';
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
@@ -961,7 +961,9 @@ function keyboardAim(dt) {
 const AIM_EASE = 18;           // higher = follows the finger faster
 const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
-const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.04;
+// To the right the wall is close: stop at about 40° below flat so the barrel never
+// points straight into it. Steeper shots down the right side still work.
+const MIN_ANGLE = -Math.PI + 0.04, MAX_ANGLE = -0.7;
 
 // Aiming, "drag anywhere": touch anywhere on the field and drag in the direction you
 // want to shoot. Your finger never has to sit on the guide, and the further you drag,

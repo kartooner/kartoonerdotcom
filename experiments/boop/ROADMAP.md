@@ -157,4 +157,5 @@ Measured with bots at two skill levels (random aim, and best of two aims). An av
 - **Hit stop:** a blink of stillness when a big block (5+ squares) pops (45 ms), a bomb goes off (60 ms) or a nail pops (30 ms); never twice within a quarter second, so chains don't stutter.
 - **Pop streaks:** from the third block popped in one turn, a "×3", "×4"... floater that grows a little each time. (The pop sound already climbs in pitch through a turn.)
 - **Last balls speed up:** 4 s into a turn, once only one or two balls are left, the game eases up to 1.8× by itself. Holding still speeds it up 3×.
+- **Launcher off the wall:** moved from 0.6 to 1.3 cells in from the right wall, and the aim stops at about 40° below flat on the right (it used to go nearly flat). A tester found it awkward that the barrel could point straight into the wall. Shallow right shots only bounced off that wall anyway; steep shots down the right side still work.
 - **Fix:** hand-lettered floaters longer than a few letters ("Hits ×2", "Bonus stage next!") were cut off at both ends; their canvas now fits the text, and they're kept inside the field.

@@ -3,12 +3,12 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-6');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.3.5-7');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
 export const H = 16;                // field height in cells (y runs 0 → -H)
-export const LAUNCHER = { x: W - 0.62, y: -0.62 };
+export const LAUNCHER = { x: W - 1.3, y: -0.62 };     // a cell and a bit in from the right wall, so the barrel has room to turn
 export const DT = 1 / 120;
 export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
