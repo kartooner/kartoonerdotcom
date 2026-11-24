@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.4.1-5');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-1');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -142,19 +142,22 @@ export const RECIPES = [
 const COMBO_FROM = 25;
 const CLASH = [['windmills', 'pinball'], ['tower', 'pinball']];
 const clash = (a, b) => CLASH.some(([x, y]) => (a === x && b === y) || (a === y && b === x));
-export function pickRecipe(d, last, rand) {
+// Relaxed mode leaves out the recipes built on things it doesn't have.
+const NOT_RELAXED = new Set(['greymaze', 'vines', 'seesaws']);
+export function pickRecipe(d, last, rand, relaxed = false) {
     if (INTRO_DEPTHS.has(d)) return 'plain';
+    const RECIPES_OK = relaxed ? RECIPES.filter((r) => !NOT_RELAXED.has(r.name)) : RECIPES;
     const weighted = (pool) => {
         let pick = rand() * pool.reduce((n, r) => n + r.w, 0);
         for (const r of pool) if ((pick -= r.w) <= 0) return r;
         return pool[pool.length - 1];
     };
     if (d >= COMBO_FROM && rand() < Math.min(0.55, 0.25 + (d - COMBO_FROM) * 0.06)) {
-        const pool = RECIPES.filter((r) => r.from <= d && r.name !== 'plain');
+        const pool = RECIPES_OK.filter((r) => r.from <= d && r.name !== 'plain');
         const a = weighted(pool);
         const b = weighted(pool.filter((r) => r !== a && !clash(r.name, a.name)));
         const name = [a.name, b.name].sort().join('+');
         if (name !== last) return name;
     }
-    return weighted(RECIPES.filter((r) => r.from <= d && r.name !== last)).name;
+    return weighted(RECIPES_OK.filter((r) => r.from <= d && r.name !== last)).name;
 }

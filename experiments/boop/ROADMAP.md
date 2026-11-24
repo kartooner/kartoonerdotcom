@@ -177,3 +177,13 @@ Moving the launcher lets you pick your angle, so you can be more precise against
 - **Checked: hold to speed up vs touch to aim.** They never compete: holding only speeds up while balls fly, touching only aims between shots. A hold that lasts past the end of a turn doesn't fire when lifted; a quick tap mid-shot does nothing lasting; the next touch aims and fires as usual.
 - **Fix: the rail stays while you move the launcher.** After tapping the launcher, the rail behind it went away as soon as you started dragging. It now stays up from pickup until you let go, and also while sliding the launcher straight from a press on it.
 - **Retune for the new aim range.** With no more shots flat into a wall, each shot counts for more. Bots (12 seeds each, random aim and best of two, 1.3 vs 1.4): casual about the same (median 12.5 → 14), average about 3 zones deeper (22 → 25.5). Moving the launcher itself adds almost nothing at the same number of tries. Fewer shots for clearing a zone barely moved it, so block numbers are about 10% bigger from depth 11 on, with par eased a touch from 12 to 25 so it's still beaten about a third of the time. Now: casual 13.5, average 22.5; depths 1-10 unchanged.
+
+## v1.5: Relaxed mode
+From watching a tester's kids: they loved popping blocks when the board was simpler. Relaxed mode is a switch in Settings.
+- **Its own run.** Turning it on parks the regular run exactly where it is (saved at the last turn); Play then starts or continues the Relaxed run. Turning it off brings the regular run back untouched. Each mode is saved separately, so handing the game to a child and back is one switch each way. A small "Relaxed mode" label under the tagline says which run Play picks up.
+- **Simpler zones:** no grey blocks, vines (so no hanging bombs), seesaws, crooked pre-hung blocks, gold blocks or +1 rings. Windmills, mushrooms, cups, jelly and bombs stay. No grey-maze, vine or seesaw recipes.
+- **Smaller numbers:** 60% of the regular game's.
+- **Shots never run out:** the counter shows ∞, there's no par, and no game over. Relaxed runs don't count toward the best depth.
+- **Fewer interruptions:** Boop's tips about new things are skipped (and stay unseen, so the regular game still introduces them). The launcher upgrade note still shows.
+- Bots with random aim: zones take about 4–10 shots, about two minutes each, through depth 20.
+- How to play mentions it; What's new has a 1.5 entry.

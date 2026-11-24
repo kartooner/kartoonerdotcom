@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.4.1-5">
+<html lang="en" data-build="1.5-1">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -141,6 +141,7 @@
         .stat-par { align-items: flex-end; text-align: right; }
         .stat-par.over b { color: var(--ink-soft); }
         .stat-par.bonus b { color: var(--accent); }
+        .stat-par.relaxed { visibility: hidden; }     /* Relaxed mode has no par */
         /* Zone progress: how much of the zone's numbers you've cleared. */
         #progress {
             grid-column: 1 / -1;
@@ -383,6 +384,8 @@
         #menu .tagline { margin: 10px 0 32px; font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-size: 1.25rem; font-weight: normal; line-height: 1.3; color: var(--ink-soft); text-wrap: balance; }
         /* Paused or saved: the tagline becomes the state, a step up in weight. */
         #menu .tagline.state { color: var(--ink); font-size: 1.5rem; }
+        /* Which mode Play starts or continues, when it's Relaxed. */
+        #menu .mode-label { margin: -22px 0 16px; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
         #menu .menu-links .feedback { margin: 0; }
         /* Game over: same centred layout as the start screen. */
         #over h1 { margin: 0; font-size: clamp(2rem, 9.5vw, 3rem); line-height: 1.05; white-space: nowrap; }
@@ -642,7 +645,7 @@
         /* Settings: a plain list of rows, one switch each. */
         #settings h2 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; margin: 12px 0 20px; font-size: 2.25rem; }
         .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1.5px solid var(--ink-soft); }
-        .setting:last-of-type { border-bottom: 1.5px solid var(--ink-soft); }
+        .setting:has(+ .actions) { border-bottom: 1.5px solid var(--ink-soft); }
         .setting-label b { display: block; font-size: 1.0625rem; }
         .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); }
         .switch {
@@ -689,12 +692,13 @@
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
             <h1 id="menu-title">Boop<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
+            <p class="mode-label" id="menu-mode" hidden>Relaxed mode</p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-play" type="button">Play</button>
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="menu-links"><span class="version">v1.4</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><button class="link-btn" id="btn-settings" type="button">Settings</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
+            <p class="menu-links"><span class="version">v1.5</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><button class="link-btn" id="btn-settings" type="button">Settings</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
         </div>
     </section>
 
@@ -718,6 +722,10 @@
             <div class="setting">
                 <div class="setting-label" id="sound-label"><b>Sound</b><span>Turn sound effects on or off.</span></div>
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
+            </div>
+            <div class="setting">
+                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Simpler zones, and shots never run out. Your regular run waits until you switch back.</span></div>
+                <button class="switch" id="relaxed-switch" type="button" role="switch" aria-checked="false" aria-labelledby="relaxed-label"></button>
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-settings-play" type="button">Play</button>
@@ -763,6 +771,7 @@
                 </figure>
             </div>
             <p class="note"><b>Sound</b> is off to start. Turn it on in Settings, on the start screen.</p>
+            <p class="note"><b>Playing with a child?</b> Relaxed mode, in Settings, has simpler zones and shots that never run out. It keeps its own run, so yours waits for you.</p>
             <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires (hold it to speed up), Alt (Option) + ← → moves the launcher, Esc cancels or pauses, M sound on/off.</p>
 
             <h3>Reading the top</h3>
@@ -845,35 +854,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.4.1-5",
-                "./zones.js": "./zones.js?v=1.4.1-5",
-                "./blockshader.js": "./blockshader.js?v=1.4.1-5",
-                "./sketch.js": "./sketch.js?v=1.4.1-5",
-                "./balls.js": "./balls.js?v=1.4.1-5",
-                "./labels.js": "./labels.js?v=1.4.1-5",
-                "./audio.js": "./audio.js?v=1.4.1-5",
-                "./theme.js": "./theme.js?v=1.4.1-5",
-                "./crumbs.js": "./crumbs.js?v=1.4.1-5",
-                "./buddy.js": "./buddy.js?v=1.4.1-5",
-                "./season.js": "./season.js?v=1.4.1-5",
-                "./leaves.js": "./leaves.js?v=1.4.1-5"
+                "./sim.js": "./sim.js?v=1.5-1",
+                "./zones.js": "./zones.js?v=1.5-1",
+                "./blockshader.js": "./blockshader.js?v=1.5-1",
+                "./sketch.js": "./sketch.js?v=1.5-1",
+                "./balls.js": "./balls.js?v=1.5-1",
+                "./labels.js": "./labels.js?v=1.5-1",
+                "./audio.js": "./audio.js?v=1.5-1",
+                "./theme.js": "./theme.js?v=1.5-1",
+                "./crumbs.js": "./crumbs.js?v=1.5-1",
+                "./buddy.js": "./buddy.js?v=1.5-1",
+                "./season.js": "./season.js?v=1.5-1",
+                "./leaves.js": "./leaves.js?v=1.5-1"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./sim.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./zones.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./blockshader.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./sketch.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./balls.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./labels.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./audio.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./theme.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./buddy.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./crumbs.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./season.js?v=1.4.1-5">
-    <link rel="modulepreload" href="./leaves.js?v=1.4.1-5">
+    <link rel="modulepreload" href="./game.js?v=1.5-1">
+    <link rel="modulepreload" href="./sim.js?v=1.5-1">
+    <link rel="modulepreload" href="./zones.js?v=1.5-1">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-1">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-1">
+    <link rel="modulepreload" href="./balls.js?v=1.5-1">
+    <link rel="modulepreload" href="./labels.js?v=1.5-1">
+    <link rel="modulepreload" href="./audio.js?v=1.5-1">
+    <link rel="modulepreload" href="./theme.js?v=1.5-1">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-1">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-1">
+    <link rel="modulepreload" href="./season.js?v=1.5-1">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-1">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -916,6 +925,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.4.1-5"></script>
+    <script type="module" src="./game.js?v=1.5-1"></script>
 </body>
 </html>
