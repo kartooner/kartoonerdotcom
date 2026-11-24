@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-7';
+const BUILD = '1.5-8';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -615,7 +615,23 @@ function buildPropView(pr) {
             post.position.set(i, -H + pr.postH, 0);
             group.add(post);
         }
+        // Catch cups: a little open box drawn in ink, with what a catch wins under it.
+        const half = pr.cupHalf ?? 0.36;
         v.labels = [];
+        (pr.cups ?? []).forEach(([cx, cy], i) => {
+            for (const [hx, hy, x, y] of [[half + 0.05, 0.05, cx, cy - 0.35], [0.05, 0.27, cx - half, cy - 0.13], [0.05, 0.27, cx + half, cy - 0.13]]) {
+                const side = makeSketch({ kind: SHAPE.BOX, size: [hx, hy], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: i * 5.1 + x, margin: 0.06 });
+                side.position.set(x, y, 0);
+                group.add(side);
+            }
+            const text = `+${pr.cupBalls ?? 2} balls`;
+            const label = makeLabel(text, theme.text, 'hand');
+            label.userData.text = text;
+            label.scale.set(0.8 * label.userData.aspect, 0.8, 1);
+            label.position.set(cx, cy - 0.66, 0.1);
+            group.add(label);
+            v.labels.push(label);
+        });
         pr.pockets.forEach((n, i) => {
             if (!n) return;
             const label = makeLabel(`+${n}`, theme.text, 'hand');
@@ -908,6 +924,7 @@ function consumeEvents() {
             }
         }
         if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
+        if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
         if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
@@ -939,6 +956,7 @@ function playSound(e) {
     else if (e.t === 'nailpop') audio.tink();
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'gold') audio.clear();
+    else if (e.t === 'catch' && e.n > 0) audio.ring();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();

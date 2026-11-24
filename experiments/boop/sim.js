@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-7');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-8');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -164,7 +164,7 @@ const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
-    pachinko: 'Bonus stage! One big drop: ten balls. Pick your spot, then let them fall into the pockets.',
+    pachinko: 'Bonus stage! One big drop: eight balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
@@ -174,10 +174,14 @@ const BONUS_NOTES = {
 // each pocket pays what's on it. Here balls fall for real: gravity, no constant speed, softer
 // bounces. Not in Relaxed mode, where shots never run out anyway.
 export const PACHINKO_AT = new Set([25, 40, 50]);
-const PACHINKO_BALLS = 10, PACHINKO_CAP = 10;
-const PACHINKO_SPEED = 6;             // launch speed (a drop, not a shot)
-const PACHINKO_GRAVITY = 4;           // gravity scale on the balls: falls like -20; a drop takes about 5s
+const PACHINKO_BALLS = 8, PACHINKO_CAP = 10;
+const PACHINKO_SPEED = 4;             // launch speed (a drop, not a shot)
+const PACHINKO_GRAVITY = 2.2;         // gravity scale on the balls: a gentle fall you can follow
 const PACHINKO_POCKETS = [1, 0, 1, 0, 3, 0, 1, 0, 1];   // one per column, left to right
+// Catch cups part-way down: a ball that drops in releases more balls from the launcher.
+const PACHINKO_CUPS = [[2, -6.4], [7, -6.4], [4.5, -10.9]];
+const CUP_HALF = 0.36;                // half its width: a ball fits, but it takes a good line
+const CUP_BALLS = 2, CUP_BALLS_MAX = 6;    // balls per catch; most a drop can win this way (three catches)
 const PEG_R = 0.09;
 // Seesaws (from depth 13): a long bar held by one nail in its middle. A hit rocks it and it
 // settles back level; it's slippery, so whatever rests on it slides off as it tips. Knock
@@ -1634,10 +1638,12 @@ export class Sim {
         const id = s.nextId++;
         const body = world.createRigidBody(R.RigidBodyDesc.fixed());
         const cols = [], pegs = [];
+        const nearCup = (x, y) => PACHINKO_CUPS.some(([cx, cy]) => Math.abs(x - cx) < 0.9 && y < cy + 0.75 && y > cy - 1);   // room for the cup and its label
         for (let row = 0; row < 8; row++) {
             const y = -2.8 - row * 1.5, odd = row % 2 === 1;
             for (let x = odd ? 1 : 0.5; x < W; x += 1) {
                 if (!odd && (x < 0.6 || x > W - 0.6)) continue;      // not right against the walls
+                if (nearCup(x, y)) continue;
                 const c = world.createCollider(R.ColliderDesc.ball(PEG_R).setTranslation(x, y)
                     .setRestitution(0.5).setFriction(0.05)
                     .setCollisionGroups(groups(G.PROP, G.BALL)), body);
@@ -1658,7 +1664,20 @@ export class Sim {
             s.owner[c.handle] = { t: 'pocket', n, i };
             cols.push(c.handle);
         });
-        s.props[id] = { id, kind: 'pachinko', x: 0, y: 0, pegs, postH: POST_H, pockets: [...PACHINKO_POCKETS], bodies: [body.handle], cols };
+        // A cup: a floor and two low sides, open at the top, with a catcher inside.
+        for (const [cx, cy] of PACHINKO_CUPS) {
+            for (const [hx, hy, x, y] of [[CUP_HALF, 0.05, cx, cy - 0.35], [0.05, 0.25, cx - CUP_HALF, cy - 0.15], [0.05, 0.25, cx + CUP_HALF, cy - 0.15]]) {
+                const c = world.createCollider(R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
+                    .setRestitution(0.2).setFriction(0.1).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+                s.owner[c.handle] = { t: 'peg' };
+                cols.push(c.handle);
+            }
+            const c = world.createCollider(R.ColliderDesc.cuboid(CUP_HALF - 0.1, 0.1).setTranslation(cx, cy - 0.2).setSensor(true)
+                .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
+            s.owner[c.handle] = { t: 'catch', x: cx, y: cy };
+            cols.push(c.handle);
+        }
+        s.props[id] = { id, kind: 'pachinko', x: 0, y: 0, pegs, postH: POST_H, pockets: [...PACHINKO_POCKETS], cups: PACHINKO_CUPS.map((c) => [...c]), cupHalf: CUP_HALF, cupBalls: CUP_BALLS, bodies: [body.handle], cols };
     }
 
     addWindmill(x, y) {
@@ -1986,6 +2005,19 @@ export class Sim {
             this.events.push({ t: 'pocket', n: b.n, i: b.i, x: p.x, y: p.y });
             if (b.n > 0) this.gain(b.n, b.i + 0.5, -H + 1.2);
             this.removeBall(a.body);
+            return;
+        }
+        if (b.t === 'catch') {
+            // Caught: more balls drop from the launcher (up to CUP_BALLS_MAX a stage).
+            this.removeBall(a.body);
+            const won = Math.min(CUP_BALLS, CUP_BALLS_MAX - (s.bonus?.won ?? 0));
+            this.events.push({ t: 'catch', n: won, x: b.x, y: b.y });
+            if (won > 0 && s.bonus) {
+                s.bonus.won = (s.bonus.won ?? 0) + won;
+                const sh = s.shots ?? (s.shots = { left: 0, angle: -Math.PI / 2, timer: 0, fired: 1 });
+                sh.left += won;
+                sh.fired = Math.max(1, sh.fired ?? 1);     // these spread out like the rest of the drop
+            }
             return;
         }
         if (b.t === 'bomb') {
