@@ -670,7 +670,7 @@ function syncVine(v, pr) {
     for (const [h, g] of v.links) if (!live.has(h)) { discard(g); v.links.delete(h); }
 }
 
-function addFloater(text, x, y, size = 0.62, hold = 0) {      // hold: seconds it stays solid before fading
+function addFloater(text, x, y, size = 0.62) {
     const m = makeLabel(text, theme.text, 'hand');
     m.scale.set(size * m.userData.aspect, size, 1);
     const half = Math.min(W / 2, size * m.userData.aspect * 0.5 + 0.15);   // keep long text inside the field
@@ -680,7 +680,7 @@ function addFloater(text, x, y, size = 0.62, hold = 0) {      // hold: seconds i
     m.material.depthWrite = false;   // never block see-through things (jello) behind it
     m.renderOrder = 5;
     scene.add(m);
-    floaters.push({ m, t: -hold });
+    floaters.push({ m, t: 0 });
 }
 
 
@@ -822,8 +822,8 @@ function syncView(frameDt) {
     for (let i = floaters.length - 1; i >= 0; i--) {
         const f = floaters[i];
         f.t += frameDt;
-        f.m.position.y += frameDt * (f.t < 0 ? 0.25 : 0.9);
-        f.m.material.opacity = Math.max(0, Math.min(1, 1 - f.t / 0.9));
+        f.m.position.y += frameDt * 0.9;
+        f.m.material.opacity = Math.max(0, 1 - f.t / 0.9);
         if (f.t > 0.9) { discard(f.m); floaters.splice(i, 1); }
     }
 
@@ -1539,7 +1539,7 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
-// Something to aim for on long runs: a line floats up as the zone slides in, the first time
+// Something to aim for on long runs: a ribbon banner pops up as the zone slides in, the first time
 // a run goes past your best depth, and at a few milestones. Nothing to tap, nothing paused.
 // The best depth is only written at game over, so "past your best" happens once per run
 // by itself (and survives a saved run). Relaxed runs have no best depth, just the milestones.
@@ -1551,6 +1551,15 @@ function depthMark(d) {
     return null;
 }
 
+const banner = $('banner');
+let bannerTimer = 0;
+function showBanner(text) {
+    clearTimeout(bannerTimer);
+    $('banner-text').textContent = text;
+    banner.hidden = true; void banner.offsetWidth; banner.hidden = false;     // restart the pop-in
+    bannerTimer = setTimeout(() => { banner.hidden = true; }, 2700);
+}
+
 const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
@@ -1560,9 +1569,8 @@ function startZone() {
         addFloater(sim.s.bonusPaid > 0 ? `Bonus +${sim.s.bonusPaid}` : 'Bonus over', W / 2, -2.2);
         sim.s.bonusPaid = null;
     }
-    // Above the par "+N" and the bonus line, which rise from lower down.
     const mark = sim.s.bonus ? null : depthMark(sim.s.depth);
-    if (mark) addFloater(mark, W / 2, -1.1, 0.95, 1.8);
+    if (mark) showBanner(mark);
     leafPiles?.seed(sim.s.blocks, sim.s.depth);
     if (sim.s.depth % TIDY_EVERY === 0) tidyUp();
     zoneOffset = -H;
