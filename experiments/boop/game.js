@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-3';
+const BUILD = '1.5-4';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -716,7 +716,14 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
-    if (leafPiles) { leafPiles.update(frameDt, blockViews); if (leafPiles.active()) animating = true; }
+    if (leafPiles) {
+        if (s.balls.length) leafPiles.stir(s.balls.map((b) => {
+            const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
+            return { x: t.x, y: t.y + zoneOffset, vx: v.x, vy: v.y };
+        }));
+        leafPiles.update(frameDt, blockViews);
+        if (leafPiles.active()) animating = true;
+    }
     for (const [id, g] of pickupViews) {
         if (!s.pickups[id]) { discard(g); pickupViews.delete(id); }
     }
@@ -854,6 +861,7 @@ function consumeEvents() {
             // Last few blocks: hits count double. The floater says so, every time.
             addFloater('Hits ×2', W / 2, -2.6);
         } else if (e.t === 'boom') {
+            leafPiles?.blast(e.x, e.y, e.r);
             // A bomb: a crayon ring rushes out to its reach, and the board jolts.
             const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.07, edge: 0, role: 'line', inkFill: true, wob: 0.9, seed: (e.x * 13 + e.y * 7) | 0, margin: 0.12 });
             ring.position.set(e.x, e.y, 0.7);

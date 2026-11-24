@@ -1,6 +1,6 @@
 // Boop: numbers and short text drawn onto little canvas textures (block numbers, +1, floaters).
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-3');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-4');   // build stamp: game.js checks every file matches
 
 const unitSquare = new THREE.PlaneGeometry(1, 1);
 unitSquare.userData.keep = true;   // shared by every label
