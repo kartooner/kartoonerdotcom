@@ -213,7 +213,29 @@ From watching a tester's kids: they loved popping blocks when the board was simp
   - Links: every text link underlines alike (1.5px line, 3px below the text, at any size); the arrow on ← Back and ← Games sits outside the line.
   - Sizes: the top bar's labels never wrap (smaller on narrow boards); on desktop the top bar sits right beside the board.
 - **Fixed: extra balls after a pause.** When a newer build was waiting, pausing mid-shot saved the run with its balls still flying and reloaded; the game then offered a fresh shot while those balls kept bouncing (8 on the board with four per shot). Now a save is only ever taken between turns, an update waits for a moment between turns (or game over) to reload, and a save made the old way loads without its stray balls. (It also stops an update at game over from saving the finished run.)
+- **Ready for biomes:** the props' drawing moved out of game.js into props.js (one builder per kind); seasons now go through `applyLook`, which can repaint mid-run (a biome would use it too); and sim.js says which stages are surprise stages (`isStage`, `arcShots`) instead of game.js keeping its own lists. Comments rewritten in a plainer, friendlier voice. Checked the same way: bot runs move for move, and screenshots of every bonus stage and three deep zones pixel for pixel.
 - **Cleanup pass (no change in play):** removed unused code (golf leftovers, a doubled scene add, the never-shown "Boop!" mark under the board and its styles, CSS rules overridden later, test hooks nothing used), shared what was repeated (the big button's words, keyboard aim start, screen positions, bomb recolouring on a theme change, note placement), and cut comments down to what the code needs: tuning history lives here, not in sim.js. Checked: six bot runs to depth 68 match the old build move for move, and every screen, bonus stage and theme switch runs without errors.
 - **Laps: endless, in a sense.** Past 80 the game isn't a wall that only gets steeper. At 81 it eases back to about depth 30's difficulty (zones about a quarter smaller: still a challenge, not punishing) and builds back up to depth 80's by around 120, holding there to 160; then it eases again, and so on: room for another 80, and another. The bonus stages start over each lap (the same schedule from 105: pachinko, tower, golf, hoops, then random every 5) with generous tries again. The depth shown, the best depth and the launcher (four balls a shot) follow the real depth; only how hard a zone is follows the lap. Banners: "Depth 80!", then "Lap 2!" at 81, and every 40 after (120, 160, …).
 - **Pachinko bonus (a surprise: not in What's new or How to play):** a board of staggered nails and nine pockets along the floor paying +1, +2 and +1 (the edge pockets, where the walls steer balls, pay nothing). Drops of five balls from the launcher (move it and aim before each; each ball after the first goes a little its own way), 4 drops the first time. Balls fall for real and gently and end in a pocket. Pays up to 12, about 7 on a first visit. Earlier versions: one drop of eight (over too soon), then catch cups part-way down that released two more balls (dropped: they didn't make sense). Not in Relaxed mode. Survives closing the app mid-stage.
 - **Tried and dropped:** capping the under-par shots back at 3 (from 5) past depth 30. Bots with the depth limit raised to 80: strong ones ended about 3–6 zones sooner (median 64.5 → 58.5), average ones unchanged. Testers end around 30–40, so it would only have cost them a zone or two; worth revisiting if people start reaching 50.
+
+## Later: a bigger version (app or Steam)
+
+What could make a paid version worth it, beyond the free web game:
+
+- **Biomes.** Every 20 or so depths the world changes: caves, ice, lava, deep sea. Each gets its own colours, a shape or two, a prop or two (ice that slides, lava that eats a ball) and its own music phrase.
+- **An overworld.** A hand-drawn map between runs: pick a route down, see how far you got, unlock new entrances.
+- **Biome bosses.** One special zone at the end of each biome that opens the next.
+- **A daily dig.** The same seeded run for everyone each day, with a leaderboard.
+- **Cosmetics.** Launcher skins, ball trails, Buddy hats, earned by playing.
+
+Where these plug in today:
+
+| Piece | Where | What a new one takes |
+|---|---|---|
+| Colours | `applyLook` in season.js | A palette entry, then `applyLook` + `applyTheme` when you cross into it (it repaints mid-run) |
+| Props | props.js (drawing) + sim.js (physics) | One builder in each |
+| Zone layouts | zones.js | Its own shapes, recipe weights and numbers |
+| Bonus stages | `STAGES` in sim.js | A table entry, a layout function, and its pieces in props.js |
+| Overworld | not there yet | A run state above a single board (biome, route), and `genZone` taking the biome as an input, not just the depth |
+

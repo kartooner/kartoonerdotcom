@@ -1,12 +1,10 @@
-// Boop: fall leaf piles (a season extra, see season.js). A few blocks start each zone with a
-// little pile of leaves on top. Hit, knock or pop the block and they flutter off, drift down
-// and gather in a heap on the floor. A ball skimming the heap, or a bomb going off near it,
-// kicks some back up; they flutter and settle again. Purely for show: they never touch the
-// physics (as bodies they'd slow the aim guide and deflect balls), and they don't stir on
-// their own, so a still board can still rest at a low frame rate.
+// Leaf piles (snow in winter), a seasonal extra. A few blocks start each zone with a pile on
+// top; hit the block and the leaves flutter down into a heap on the floor, and balls or bombs
+// kick them back up. Just for show: they stay out of the physics (they'd slow the aim guide),
+// and they never move on their own, so a still board can rest.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-43');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -32,11 +30,9 @@ export function makeLeafPiles(scene, season, floorY) {
 
     let piles = new Map();     // block id → { leaves: [{ lx, ly, a, size, color, wx, wy }], a0 }
     let falling = [], floor = [];
-    // Water (the golf stage): while it's there, the floor leaves float on its surface in a single
-    // loose layer, bobbing and drifting, instead of heaping on the floor. null = no water.
-    // island: the golf hill standing in the water: [x0, x1 where it meets the water, its top's y,
-    // the hole's x, x0, x1 of its flat top]. Leaves rest on the flat top (not on the hole); any
-    // that land on its slopes slide off into the water beside it.
+    // On the golf stage the floor leaves float on the water instead of heaping (null = no water).
+    // island is the golf hill: [x0, x1 at the waterline, top y, hole x, x0, x1 of the flat top].
+    // Leaves can rest on the flat top; ones that land on the slopes slide into the water.
     let water = null, island = null, time = 0;
     const offHole = (x) => !island || Math.abs(x - island[3]) > 0.42 ? x : island[3] + (x < island[3] ? -0.42 : 0.42);
     const onTop = (x) => island && x > island[4] && x < island[5];

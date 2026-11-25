@@ -1,9 +1,9 @@
-// Boop!: the game loop, rendering of the board, input and turn flow.
-// Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
+// Boop! The main file: draws the board, handles your input, and runs each turn.
+// The rules and physics live in sim.js; props.js, blockshader.js and sketch.js do the drawing.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, LAUNCH_EDGE, LAP, MULTISHOT_AT, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
+import { Sim, predict, W, H, DT, LAUNCHER, LAUNCH_EDGE, LAP, MULTISHOT_AT, aimRange, ballFuse, isStage, arcShots, VINE_DEBRIS_STEPS } from './sim.js';
+import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -13,15 +13,15 @@ import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs, flakeGeometry } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
 import { makeLeafPiles } from './leaves.js';
+import { makeProps } from './props.js';
 import './buddy.js';               // the mascot's blinks and glances
 
-// Must match data-build on the page, and the stamp every other file pushes as it loads.
-// Right after an update, a cache can briefly hand out a mix of old and new files. Then:
-// reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
-// a game that half works.
-const BUILD = '1.5-43';
+// Every file stamps its build as it loads, and they all have to match. Right after an update a
+// cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
+// say so (with a Reload button) instead of running a game that half works.
+const BUILD = '1.5-44';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
-const MODULES = 12;
+const MODULES = 13;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
@@ -107,9 +107,8 @@ function fitCamera() {
     // A narrow board gets smaller labels in the top bar.
     document.body.classList.toggle('narrow-board', boardPx < 260);
 }
-// Re-fit whenever the screen changes. On iPhone, turning the phone fires these events
-// before Safari has settled on the new size (and Safari can stay zoomed in after the
-// turn), so fit again a few times as it settles and nudge the viewport back to 1x.
+// Re-fit when the screen changes. On iPhone the resize events arrive before Safari has
+// settled on the new size, so we fit a few more times as it settles and undo any zoom.
 let refitTimers = [];
 function refit() {
     fitCamera();
@@ -148,9 +147,8 @@ const unitSquare = new THREE.PlaneGeometry(1, 1);
 const unitCircle = new THREE.CircleGeometry(1, 32);
 unitSquare.userData.keep = unitCircle.userData.keep = true;   // shared: never freed
 
-// Take something off the board for good: out of the scene, and its GPU geometry, materials and
-// textures freed (anything marked keep is shared and stays). Without this, every block, ring,
-// prop and ball left a little GPU memory behind, which added up over a long run.
+// Take something off the board for good, freeing its GPU memory too (shared pieces are marked
+// keep and stay). Skipping this leaks a little with every block, which adds up on long runs.
 function discard(obj) {
     obj.parent?.remove(obj);
     forgetSketch(obj);
@@ -213,9 +211,8 @@ lastShot.position.set(LAUNCHER.x, LAUNCHER.y, 0.44);
 lastShot.visible = false;
 scene.add(lastShot);
 let lastShotAngle = null, lastShotX = null;
-// Moving the launcher: a sketchy rail along the top with ticks (far left, centre, far right and
-// steps between) while it's picked up, and ‹ › arrows beside it. Drawn white on little canvases
-// and tinted with the theme's line colour.
+// While you move the launcher, a sketchy rail with ticks shows along the top, with ‹ › arrows
+// beside it. They're drawn white on little canvases and tinted to the theme.
 function sketchTexture(w, h, draw) {
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
@@ -356,9 +353,8 @@ function buildBlockView(b) {
 const GOLD = { fill: 0xf0ad1f, pattern: -1, text: '#2b2622' };
 const starGeo = flakeGeometry(), starMat = new THREE.MeshBasicMaterial({ color: 0xfffbea });
 starGeo.userData.keep = starMat.userData.keep = true;
-// Nails: what holds a fixed block in place, drawn by the block shader. Bright ones can be
-// knocked out: they tilt and lift as they wear down, jolt when hit, and pop out. Grey ones
-// (single squares) never come out.
+// Nails hold a block in place (the block shader draws them). White ones tilt and lift as they
+// wear down, jolt when hit, and pop out. Grey ones, on single squares, never come out.
 const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
 const nailAt = new THREE.Vector3();
 function updateNails(v, b, frameDt) {
@@ -472,50 +468,6 @@ function buildPickupView(pk) {
     return group;
 }
 
-// One link of a vine: a short green crayon stem with a leaf, drawn in the link's own space.
-function buildVineLink(parent, seed, len) {
-    const g = new THREE.Group();
-    const stem = makeSketch({ kind: SHAPE.BOX, size: [0.09, len / 2 + 0.02], round: 0.05, edge: 0.05, wob: 0.4,
-        fill: COLORS.vine, seed, margin: 0.1 });
-    const leaf = makeSketch({ kind: SHAPE.CAP, size: [0.2, 0.14], edge: 0.05, wob: 0.45,
-        fill: COLORS.leaf, seed: seed + 5, margin: 0.1 });
-    const side = seed % 2 ? 1 : -1;
-    leaf.position.set(0.14 * side, 0.03, 0.02);
-    leaf.rotation.z = -side * 1.15;
-    leaf.renderOrder = 2;
-    g.add(stem, leaf);
-    // Christmas: the vine is a garland strung with little lights, one per link, colours in turn.
-    if (seasonLook?.lights) {
-        const bulb = makeSketch({ kind: SHAPE.CIRCLE, size: [0.085], edge: 0.035, wob: 0.3,
-            fill: seasonLook.lights[seed % seasonLook.lights.length], seed: seed + 9, margin: 0.06 });
-        bulb.position.set(-0.1 * side, -0.12, 0.03);
-        bulb.renderOrder = 2;
-        g.add(bulb);
-    }
-    parent.add(g);
-    return g;
-}
-
-// Bomb colours per theme: in the dark the body is lifted a little so it stands off the field.
-const BOMB_LOOK = {
-    light: { body: 0x24222b, shade: 0x0b0a0e, cap: 0x5d5668, fuse: 0xa9a59e },
-    dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
-};
-const bombLook = () => BOMB_LOOK[themeName()];
-const GOLF_WATER = { light: 0x9ccfe4, dark: 0x2e5a70 };     // the golf stage's water
-// A notched flag (a swallowtail), filled orange with an ink outline, its top-left corner at (x, y).
-function notchedFlag(x, y) {
-    const w = 0.56, h = 0.34, notch = 0.16;
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0); shape.lineTo(w, -0.02); shape.lineTo(w - notch, -h / 2); shape.lineTo(w, -h + 0.02); shape.lineTo(0, -h); shape.closePath();
-    const g = new THREE.Group();
-    const fill = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color: COLORS.mushroom, transparent: true, depthWrite: false }));
-    const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(shape.getPoints()), outlineMat);
-    fill.renderOrder = 2; edge.renderOrder = 3;
-    g.add(fill, edge);
-    g.position.set(x, y, 0.06);
-    return g;
-}
 const GOLF_RIPPLE = { light: 0xffffff, dark: 0xd6eaf2 };    // rings on the water: white foam
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
 // behind a floating ball and round in front of it. delay: seconds before it starts.
@@ -529,239 +481,14 @@ function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
     booms.push({ ring, r, r0, t: -delay, dur, flat: true });
 }
 const rippleT = new Map();       // floating ball → time since its last ring
-const GOLF_ISLAND = { light: 0x6fae6a, dark: 0x67a663 };    // the hill (its zigzag is drawn a shade darker); bright in the dark too, like the blocks
-const GOLF_HOLE_C = { light: 0x2b2622, dark: 0x120f0d };     // ...and its hole
-const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
-fuseMat.userData.keep = shadeMat.userData.keep = true;
-// Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
-const arcPoints = (r, a0, a1, n = 14) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n; return [Math.cos(a) * r, Math.sin(a) * r]; });
-// A crayon stroke along points: a thin ribbon, slightly uneven, tapering at both ends.
-function strokeGeometry(pts, w, seed, taper = true) {
-    const n = pts.length - 1, pos = [];
-    for (let i = 0; i <= n; i++) {
-        const [x, y] = pts[i], [nx, ny] = pts[Math.min(n, i + 1)], [px, py] = pts[Math.max(0, i - 1)];
-        let dx = nx - px, dy = ny - py; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
-        const t = i / n, k = (taper ? Math.min(1, Math.sin(Math.PI * t) * 1.6 + 0.15) : 1 - 0.15 * t) * (1 + 0.18 * Math.sin(i * 1.7 + seed));
-        pos.push(x - dy * w * k, y + dx * w * k, 0, x + dy * w * k, y - dx * w * k, 0);
-    }
-    const idx = [];
-    for (let i = 0; i < n; i++) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setIndex(idx);
-    return geo;
-}
-// A bomb's fuse: one curved crayon line out of its cap.
-const FUSE_END = [0.2, 0.64];
-function fuseGeometry(seed) {
-    const p0 = [-0.04, 0.3], c = [-0.06, 0.66], p1 = FUSE_END, pts = [];
-    for (let i = 0; i <= 16; i++) {
-        const t = i / 16, u = 1 - t;
-        pts.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]);
-    }
-    return strokeGeometry(pts, 0.045, seed, false);
-}
-
-// A round cartoon bomb (a prop sitting in a gap, or hanging on a vine): charcoal body with an
-// ink outline, a white shine, darker shading, a small cap, a curled fuse and an orange spark.
-function makeBombParts(id) {
-    const look = bombLook();
-    // The body is drawn by the block shader (one cell rounded into a circle), so its rough
-    // crayon edge and ink outline match the blocks exactly. Plain fill, no pattern.
-    const body = makeBlockMesh([[0, 0]], false, (id * 7.31) % 50, 0.5);
-    const bu = body.material.uniforms;
-    bu.uK.value = 0.74; bu.uNeutral.value = 1;
-    bu.uFill.value.setHex(look.body); bu.uInk.value.setHex(theme.edge);
-    body.renderOrder = 1;                // over the fuse's base, under the shine and shading
-    const shade = new THREE.Mesh(strokeGeometry(arcPoints(0.27, 2.0, 4.2), 0.05, id), shadeMat);
-    const shade2 = new THREE.Mesh(strokeGeometry(arcPoints(0.16, 2.5, 4.0), 0.035, id + 2), shadeMat);
-    shade.position.z = shade2.position.z = 0.015;
-    const shine = makeSketch({ kind: SHAPE.CIRCLE, size: [0.075], edge: 0, wob: 0.4, fill: 0xf7f4ee, seed: id + 1, margin: 0.05 });
-    shine.position.set(0.1, 0.12, 0.02);
-    shine.scale.set(1.2, 0.95, 1);
-    shine.rotation.z = 0.3;
-    const cap = makeSketch({ kind: SHAPE.BOX, size: [0.1, 0.055], round: 0.02, edge: 0.035, wob: 0.3, fill: look.cap, seed: id + 2, margin: 0.06 });
-    cap.position.set(-0.03, 0.37, 0.012);
-    const fuse = new THREE.Mesh(fuseGeometry(id), fuseMat);
-    fuse.position.z = 0.005;
-    const spark = new THREE.Group();
-    const glow = makeSketch({ kind: SHAPE.CIRCLE, size: [0.07], edge: 0, wob: 0.7, fill: 0xf37a2a, seed: id + 3, margin: 0.06 });
-    const core = makeSketch({ kind: SHAPE.CIRCLE, size: [0.035], edge: 0, wob: 0.6, fill: 0xc5461c, seed: id + 5, margin: 0.04 });
-    core.position.set(-0.015, 0.005, 0.005);
-    spark.add(glow, core);
-    spark.position.set(FUSE_END[0], FUSE_END[1], 0.03);
-    for (const o of [shade, shade2, shine, cap, glow, core]) o.renderOrder = 2;
-    body.position.z = 0.01;
-    const group = new THREE.Group();
-    group.add(fuse, body, shade, shade2, shine, cap, spark);
-    return { group, body, cap, spark };
-}
-
-// A bomb's life on screen. Lit: the spark flares and spits, the bomb swells and shivers.
-// Just tapped: it jolts and the spark flares, then settles. Otherwise a gentle flicker.
-const sparkAt = new THREE.Vector3();
-function animateBomb(parts, lit, frameDt, holder) {
-    const now = performance.now() / 1000;
-    if (lit) {
-        animating = true;
-        parts.spark.scale.setScalar(1.7 + 0.5 * Math.sin(now * 55));
-        const k = 1 + 0.07 * Math.sin(now * 40) + 0.08 * (1 - Math.min(lit, 60) / 60);
-        parts.group.scale.set(k, k, 1);
-        if (Math.random() < 0.25) {
-            holder.updateMatrixWorld();
-            parts.spark.getWorldPosition(sparkAt);
-            crumbs.spray([[sparkAt.x, sparkAt.y]], [0xf4a640, 0xffe08a]);
-        }
-    } else if (parts.tapT != null && parts.tapT < 0.45) {
-        animating = true;
-        parts.tapT += frameDt;
-        const t = parts.tapT, w = Math.sin(t * 45) * Math.exp(-t * 9) * 0.12;
-        parts.group.scale.set(1 + w, 1 - w, 1);
-        parts.spark.scale.setScalar(1 + 0.9 * Math.exp(-t * 7));
-    } else {
-        parts.group.scale.set(1, 1, 1);
-        parts.spark.scale.setScalar(1 + 0.15 * Math.sin(now * 22));   // a gentle flicker whenever the board is drawn
-    }
-}
-
+const propArt = makeProps({
+    get theme() { return theme; }, themeName: () => themeName(), makeLabel, drawLabel, outlineMat, crumbs, leafPiles, seasonLook,
+});
+const { buildVineLink, makeBombParts, GOLF_WATER } = propArt;
+const animateBomb = (...a) => { if (propArt.animateBomb(...a)) animating = true; };
 function buildPropView(pr) {
-    const group = new THREE.Group();
-    const v = { group };
-    if (pr.kind === 'vine') {
-        v.links = new Map();       // link body handle → its drawing (links and fallen bits alike)
-        v.vine = true;
-        scene.add(group);
-        propViews.set(pr.id, v);
-        return v;
-    }
-    if (pr.kind === 'golf') {
-        // Mini golf: grey slabs for the ground and ledges, and a flag over the hole.
-        v.greys = [];
-        pr.rects.forEach(([x, y, hx, hy], i) => {
-            const slab = makeSketch({ kind: SHAPE.BOX, size: [hx, hy], round: 0.06, edge: 0.05, wob: 0.35, fill: NEUTRAL[themeName()], seed: i * 3.7 + pr.id, margin: 0.1 });
-            slab.position.set(x, y, 0);
-            group.add(slab);
-            v.greys.push(slab);
-        });
-        if (pr.water) {
-            // The water the green stands in: a blue band along the floor, under everything else.
-            v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2 - 0.06, pr.water / 2 - 0.04], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.45);    // over a floating ball, so its lower half is under water
-            v.water.material.uniforms.uAlpha.value = 0.72;
-            group.add(v.water);
-            leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
-        }
-        if (pr.outline) {
-            // The hill, drawn like a block: zigzag green, a crayon edge, the hole cut into its top.
-            // Kept inside the board: it stops at the walls and the floor.
-            const [hx, hy] = pr.hole;
-            const hill = makeHillMesh(pr.outline, [hx, hy - 0.07, pr.holeW / 2 + 0.12, 0.16], {
-                x0: Math.max(0.06, pr.outline[0][0]), x1: Math.min(W - 0.06, pr.outline[pr.outline.length - 1][0]), bottom: -H + 0.06, top: hy + 0.25,
-                fill: GOLF_ISLAND[themeName()], ink: theme.edge, holeColor: GOLF_HOLE_C[themeName()], seed: pr.id * 1.3,
-            });
-            v.hill = hill;
-            group.add(hill);
-        }
-        const [hx, hy] = pr.hole;
-        // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
-        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.045, 0.78], round: 0.02, role: 'line', inkFill: true, wob: 0.4, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx, hy + 0.71, 0.035);                  // standing in the hole: its foot just inside the rim
-        group.add(pole, notchedFlag(hx + 0.02, hy + 1.42));
-        scene.add(group);
-        propViews.set(pr.id, v);
-        return v;
-    }
-    if (pr.kind === 'hoop') {
-        // Hoops: a crayon basket. An oval orange rim, seen a little from above, and a net hanging
-        // from it, a funnel of crossed strokes. (The rim's ends are what the ball bounces off.)
-        const half = pr.half;
-        const net = makeNetMesh(half - 0.02, half * 0.55, 0.5, theme.line, pr.id * 0.7);     // the line colour: light on the dark board
-        net.position.set(0, 0.1, 0.04);
-        const rim = makeSketch({ kind: SHAPE.RING, size: [half], ring: 0.07, edge: 0.03, wob: 0.6, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.1 });
-        rim.scale.set(1, 0.28, 1);
-        rim.position.set(0, 0.1, 0.06);
-        v.net = net;
-        group.add(net, rim);
-        const label = makeLabel('+2', theme.text, 'hand');
-        label.userData.text = '+2';
-        label.scale.setScalar(0.8);
-        label.position.set(0, -0.72, 0.1);
-        v.labels = [label];
-        group.add(label);
-        group.position.set(pr.x, pr.y, 0.05);
-        v.body = pr.body;
-        scene.add(group);
-        propViews.set(pr.id, v);
-        return v;
-    }
-    if (pr.kind === 'pachinko') {
-        // The pachinko board: small ink nails, thin posts between the pockets, and what each pays.
-        pr.pegs.forEach(([x, y], i) => {
-            const peg = makeSketch({ kind: SHAPE.CIRCLE, size: [0.1], role: 'line', inkFill: true, wob: 0.3, seed: i * 1.7, margin: 0.06 });
-            peg.position.set(x, y, 0);
-            group.add(peg);
-        });
-        for (let i = 1; i < W; i++) {
-            const post = makeSketch({ kind: SHAPE.BOX, size: [0.05, pr.postH], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: i * 2.3, margin: 0.06 });
-            post.position.set(i, -H + pr.postH, 0);
-            group.add(post);
-        }
-        v.labels = [];
-        pr.pockets.forEach((n, i) => {
-            if (!n) return;
-            const label = makeLabel(`+${n}`, theme.text, 'hand');
-            label.userData.text = `+${n}`;
-            label.scale.setScalar(1);
-            label.position.set(i + 0.5, -H + 0.42, 0.1);
-            group.add(label);
-            v.labels.push(label);
-        });
-        scene.add(group);
-        propViews.set(pr.id, v);
-        return v;
-    }
-    if (pr.kind === 'bomb') {
-        // A round cartoon bomb: charcoal body with an ink outline, a white oval shine up and to
-        // the right, darker crayon shading down the left, a small cap, a thick grey fuse that
-        // curls right, and an orange spark at its tip. Body colours follow light/dark (bombLook).
-        const parts = makeBombParts(pr.id);
-        group.add(parts.group);
-        group.position.set(pr.x, pr.y, 0.05);
-        v.bomb = parts;
-        scene.add(group);
-        propViews.set(pr.id, v);
-        return v;
-    }
-    if (pr.kind === 'windmill') {
-        const rotor = new THREE.Group();
-        for (const rot of [0, Math.PI / 2]) {
-            const arm = makeSketch({ kind: SHAPE.BOX, size: [0.89, 0.13], round: 0.05, edge: 0.05, wob: 0.35,
-                fill: COLORS.windmill, seed: pr.id + rot * 4, margin: 0.12 });
-            arm.rotation.z = rot;
-            arm.position.z = rot ? 0.02 : 0;
-            rotor.add(arm);
-        }
-        const pin = makeSketch({ kind: SHAPE.CIRCLE, size: [0.12], role: 'edge', inkFill: true, wob: 0.3, seed: pr.id + 9, margin: 0.08 });
-        pin.position.z = 0.1;
-        pin.renderOrder = 2;
-        rotor.add(pin);
-        group.add(rotor);
-        group.position.set(pr.x, pr.y, 0.05);
-        v.rotor = rotor;
-    } else {
-        // Mushroom: a stem and a domed cap, both hand-drawn with an ink edge.
-        const stem = makeSketch({ kind: SHAPE.BOX, size: [0.16, pr.capY / 2 + 0.02], round: 0.04, edge: 0.05, wob: 0.35,
-            fill: COLORS.stem, seed: pr.id, margin: 0.12 });
-        stem.position.set(0, pr.capY / 2, 0);
-        const cap = makeSketch({ kind: SHAPE.CAP, size: [pr.r + 0.03, (pr.r + 0.03) * 0.75], edge: 0.055, wob: 0.45,
-            fill: COLORS.mushroom, seed: pr.id + 2, margin: 0.12 });
-        cap.position.set(0, pr.capY - 0.04, 0.05);
-        cap.renderOrder = 2;
-        group.add(stem, cap);
-        group.position.set(pr.x, pr.y, 0.05);
-        v.body = pr.body;
-    }
-    scene.add(group);
+    const v = propArt.buildPropView(pr);
+    scene.add(v.group);
     propViews.set(pr.id, v);
     return v;
 }
@@ -892,9 +619,9 @@ function syncView(frameDt) {
             animating = true;
             if (k >= 1) { v.swishT = null; v.net.scale.y = 1; v.net.rotation.z = 0; }
         }
-        // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
-        // since the last frame, not its speed: while you aim the world is paused, and a speed
-        // frozen mid-spin would otherwise keep the board from ever idling.
+        // Keep drawing while a windmill or mushroom is visibly moving. We check how far it moved,
+        // not its speed: the world pauses while you aim, and a frozen mid-spin speed would keep
+        // the board from ever going idle.
         if (v.rotor) {
             const a = sim.world.getRigidBody(pr.rotor).rotation();
             if (Math.abs(v.rotor.rotation.z - a) > 0.002) animating = true;
@@ -1100,10 +827,9 @@ if (readSoundPick() === 'on') {
 }
 showSoundState();
 
-// Relaxed mode: a switch in Settings. Simpler zones, smaller numbers, shots that never run
-// out (see RELAXED_HP in sim.js). It has its own saved run, so handing the game to a child
-// and back is one switch each way: turning it on parks the regular run where it is, turning
-// it off brings it back. Relaxed runs don't count toward the best depth.
+// Relaxed mode (a switch in Settings): simpler zones, smaller numbers, endless shots. It keeps
+// its own saved run, so you can hand the game to a kid and get your run back with one switch.
+// Relaxed runs don't count toward your best depth.
 const RELAXED_KEY = 'boop-relaxed';
 let relaxed = (() => { try { return localStorage.getItem(RELAXED_KEY) === 'on'; } catch { return false; } })();
 const relaxedSwitch = $('relaxed-switch');
@@ -1127,19 +853,17 @@ const dotInk = new THREE.Color(), dotFade = new THREE.Color(), dotHit = new THRE
 const dotPos = [];
 let guideAngle = null;
 
-// On slower phones a guide can take a while to work out. If the last one was slow,
-// skip a frame before the next, so aiming stays responsive. The shot always fires
-// the angle the guide on screen was drawn for.
+// The shot always fires at the angle the guide on screen was drawn for, even if the
+// guide is a frame behind your finger.
 let guideCost = 0;
 let lastContacts = [];
 let lastGuideAt = -Infinity;
 let guideX = null;
 function drawGuide(angle) {
     if (angle === guideAngle && launchAt().x === guideX) return;
-    // Working out the path is the costliest thing in the game (it plays the shot ahead on a
-    // copy of the world). Space the updates by what it costs on this device: on a quick phone
-    // that's nearly every frame (smooth), on a slow or low-power one down to ~30 a second.
-    // Once the aim stops, the next update catches up exactly.
+    // The guide is the priciest thing we do (it plays the shot ahead on a copy of the world),
+    // so we space updates by what it costs here: nearly every frame on a fast phone, about 30
+    // a second on a slow one. When you stop moving, it catches up exactly.
     const now = performance.now();
     if (now - lastGuideAt < Math.min(33, guideCost * 3)) return;
     lastGuideAt = now;
@@ -1147,7 +871,7 @@ function drawGuide(angle) {
     guideAngle = angle;
     guideX = launchAt().x;
     // On the slow, floaty bonus stages the guide shows the whole arc, up to the first thing it hits.
-    const arcs = ['golf', 'hoops', 'pachinko'].includes(sim.s.bonus?.kind);
+    const arcs = arcShots(sim.s.bonus?.kind);
     const result = arcs ? predict(sim, angle, 1, 600) : predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
     const cut = result.path.findIndex(([, y]) => y < -H);
@@ -1247,15 +971,13 @@ function keyboardAim(dt) {
 const AIM_EASE = 18;           // higher = follows the finger faster
 const AIM_STEP = 0.0025;       // about 0.15°
 const shownAngle = () => Math.round(aimAngle / AIM_STEP) * AIM_STEP;
-// To the right the wall is close: stop at about 40° below flat so the barrel never
-// points straight into it. Steeper shots down the right side still work.
-// How far the aim turns each way depends on where the launcher is (see aimRange in sim.js).
+// Near a wall the aim stops short of flat, so you never fire straight into it. How far it
+// turns each way depends on where the launcher is (aimRange in sim.js).
 const clampAim = (a) => { const r = aimRange(launchAt().x); return Math.min(r.max, Math.max(r.min, a)); };
 
-// Aiming on touch: the launcher turns toward wherever your finger is, from the moment it lands,
-// and follows it as it moves (further down the board turns it more finely). Lifting fires.
-// A quick tap only aims, so a stray touch never costs a shot. Changed your mind? Slide off
-// the board and let go there.
+// Touch aiming: the launcher points at your finger and follows it, and lifting fires. A quick
+// tap only aims, so a stray touch never costs a shot. Changed your mind? Slide off the board
+// and let go there.
 const TAP_MS = 150;              // shorter than this, without moving, is a tap: aim only
 const TAP_PX = 10;
 let touchDown = null;            // { x, y, t } where and when the finger landed
@@ -1268,10 +990,9 @@ const offBoard = (ev) => {
 // (Touch and pen keep drag-anywhere.) Right-click or Esc puts the guide away.
 let mouseAim = false, mouseDown = false;
 let mouseDownAt = null;     // where a mouse press started, and whether it was on the launcher
-// Hold to fast-forward: while balls are bouncing, keeping a finger, the mouse button or Space
-// down runs the game faster, for a ball stuck looping between a block and the ceiling.
-// Nothing else changes: same physics, just more steps per frame. Let go (or the turn ends,
-// or the game pauses) and it's back to normal; that same press never turns into an aim.
+// Hold to fast-forward: while balls bounce, holding a finger, the mouse or Space runs the game
+// faster (same physics, more steps per frame). Handy when a ball loops near the ceiling.
+// Letting go puts it back to normal, and that press never turns into an aim.
 const FAST = 3;
 let fastPointer = null, fastKey = false;
 const holdToFast = () => phase === 'play' || phase === 'settle';
@@ -1297,11 +1018,9 @@ function angleToward(ev, hold = aimTarget) {
     if (a > 0) a = a > Math.PI / 2 ? -Math.PI : 0;     // pointing above the launcher: nearest side
     return clampAim(a);
 }
-// Moving the launcher. Pressing on it and dragging down still aims (people drag their guide
-// out from it). Two ways to move it instead:
-//  - tap it: it's picked up (a rail with ticks shows), the next drag anywhere slides it, and
-//    letting go puts it down. With a mouse: click it, move, click to put it down.
-//  - press on it and slide sideways along the top: it moves right away.
+// Moving the launcher. Dragging down from it still aims (people pull their guide out of it).
+// To move it, either tap it to pick it up and then drag anywhere (with a mouse: click, move,
+// click), or press on it and slide sideways along the top.
 const GRAB_PX = 30;              // at least this far from its centre counts as on the launcher
 const LAUNCHER_TAP_MS = 400;
 let grabbing = null;             // { id, x0, l0 } while the launcher is being slid
@@ -1412,9 +1131,8 @@ canvas.addEventListener('pointerup', (ev) => {
         const at = mouseDownAt; mouseDownAt = null;
         if (phase !== 'aim' || !mouseAim) return;
         if (at?.onL && !at.moved) { pickUpLauncher(); return; }    // a click on the launcher picks it up
-        // Pointing beside the board is a real aim (a sharp angle into a corner needs it), so a
-        // click anywhere on the page fires. Only letting go outside the window entirely counts
-        // as changing your mind.
+        // Pointing beside the board is a real aim (sharp corner shots need it), so a click
+        // anywhere on the page fires. Only letting go outside the window cancels.
         if (ev.clientX < 0 || ev.clientY < 0 || ev.clientX > window.innerWidth || ev.clientY > window.innerHeight) { cancelAim(); return; }
         const drawn = guideAngle ?? shownAngle();
         hideGuide();
@@ -1541,10 +1259,9 @@ function placeNote() {
 // Tips fade away rather than blink off.
 const FADE_MS = 300;
 let noteTimer = 0, fadeTimer = 0;
-// The buddy's tips are onboarding, so they're a short moment you acknowledge: the board
-// dims behind him, taps can't reach it, and a "Got it" button (live after a beat, so a tap
-// already on its way doesn't skip him) closes it. Tips that point at a thing stay light:
-// they close by themselves when you start aiming.
+// Buddy's tips are a short pause you acknowledge: the board dims and a "Got it" button closes
+// it (it wakes up after a beat, so a tap already on its way can't skip him). Tips that point
+// at a thing are lighter: they go away when you start aiming.
 const shade = $('tipshade');
 let buddyTalking = false;
 const ACK_DELAY_MS = 900;
@@ -1572,12 +1289,9 @@ function showNote(text) {
 }
 
 // ---------- tips ----------
-// Every tip shows once per device, one at a time. Two kinds:
-//  - things: the first time a windmill, jelly block, +1 ring... shows up, a callout points
-//    at it and stays until you aim;
-//  - the buddy's tour: game-wide basics (launching, nails, shots...), said by the block buddy
-//    when they first come up; you acknowledge these with "Got it".
-// Tips wait in a queue for a quiet moment: the start of a turn with nothing else on screen.
+// Each tip shows once per device, one at a time. Some point at a new thing on the board (a
+// windmill, a jelly block); others are Buddy explaining the basics. They queue up and wait
+// for a quiet moment at the start of a turn.
 const tipQueue = [];
 function showTip(tip) {
     sim.s.noteTarget = tip.target ?? { kind: 'open' };
@@ -1615,7 +1329,7 @@ function queueZoneTips() {
     if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
     // No tips about new things in Relaxed mode (they're kept for the regular game), or on the
     // surprise stages (they explain themselves in their own note).
-    if (s.relaxed || ['tower', 'golf', 'hoops', 'pachinko'].includes(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
+    if (s.relaxed || isStage(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
     const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
     const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
@@ -1705,11 +1419,9 @@ function zoneCleared() {
     phase = 'cleared';
 }
 
-// Something to aim for on long runs: a pennant pops up as the zone slides in, the first time
-// a run goes past your best depth, and at a few milestones. Nothing to tap, nothing paused.
-// The best depth is only written at game over, so "past your best" happens once per run
-// by itself (and survives a saved run). Relaxed runs have no best depth, just the milestones.
-// Past 80 the game runs in laps (see LAP in sim.js): a new lap gets its own banner, and every 40 after 80 is a milestone.
+// A little pennant as the zone slides in: when you pass your best depth, at a few milestones,
+// and at the start of each lap past 80. Nothing to tap. (The best depth is only saved at game
+// over, so "New best!" shows once per run. Relaxed runs just get the milestones.)
 const DEPTH_MARKS = new Set([25, 40, 50, 80]);
 function depthMark(d) {
     const best = relaxed ? 0 : readBest();
@@ -1756,10 +1468,9 @@ function tidyUp() {
     renderer.renderLists.dispose();
 }
 
-// The turn is over when the last ball is gone. If shots are left you can aim straight
-// away: blocks still tumbling or swinging keep moving while you aim (worldSettling), and
-// the guide keeps up with them. Only the very last shot waits for the board to settle,
-// since a tumble could still clear the zone before the game-over check.
+// The turn ends when the last ball is gone. If you have shots left you can aim right away,
+// even while blocks are still tumbling (the guide keeps up). Only your very last shot waits
+// for the board to settle, since a late tumble could still clear the zone.
 let worldSettling = false;
 function endTurn() {
     if (turnTime > LONG_TURN) tourTip('fast', finePointer
@@ -1783,13 +1494,11 @@ function readyToAim() {
 }
 
 // ---------- saving ----------
-// The run is saved in this browser at the start of every turn (board settled, nothing
-// in flight): the physics world as bytes, the game state as JSON. Closing the page
-// mid-shot loses only that shot. Game over or New game clears it.
+// The run is saved in this browser at the start of every turn, with nothing in flight. Close
+// the page mid-shot and you only lose that shot. Game over or New game clears it.
 const SAVE_KEY = 'boop-save-v1', RELAXED_SAVE_KEY = 'boop-save-relaxed-v1';
-// Test link: ?stage=golf (or pachinko, tower, hoops) starts a fresh run right at that bonus
-// stage, to try it without playing down to it. It keeps its own save, so the real run is left
-// alone, and it never counts toward the best depth.
+// Test link: ?stage=golf (or pachinko, tower, hoops) jumps straight to that bonus stage. It
+// has its own save and never touches your real run or best depth.
 const TEST_STAGES = { pachinko: 25, tower: 30, golf: 35, hoops: 40 };
 const TEST_STAGE = (() => { try { const k = new URLSearchParams(location.search).get('stage'); return TEST_STAGES[k] ? k : null; } catch { return null; } })();
 const saveKey = () => (TEST_STAGE ? 'boop-save-test' : relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
@@ -1935,10 +1644,9 @@ let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
 const recentDt = [];
 function watchFrameRate(rawDt) {
-    // The screen's own pace: the quicker frames of the last second or so (120 or 60 a second,
-    // or 30 when an iPhone is in Low Power Mode). A frame is slow only if it misses that pace,
-    // so a phone capped at 30 isn't treated as struggling. Over each 60 frames, if a quarter
-    // or more were slow, drop to the next resolution step.
+    // Learn the screen's own pace first (120, 60, or 30 in Low Power Mode), so a phone capped
+    // at 30 isn't mistaken for a struggling one. If a quarter of the last 60 frames missed it,
+    // drop the resolution a step.
     recentDt.push(rawDt); if (recentDt.length > 90) recentDt.shift();
     const pace = recentDt.length < 20 ? 1 / 60 : [...recentDt].sort((a, b) => a - b)[Math.floor(recentDt.length * 0.25)];
     timedFrames += 1;
@@ -1954,10 +1662,9 @@ function watchFrameRate(rawDt) {
 }
 let lastRender = -Infinity, lastInput = 0, animating = false;
 
-// Frame pacing: a steady rate feels smoother than one that wanders. Aim for 60 a second
-// (on a 120 Hz screen that also halves the work); if this device can't hold 60, settle
-// at a steady 30 instead of bouncing between them, and try 60 again later when there's
-// room. Gameplay speed doesn't change: the physics runs on its own fixed clock.
+// Frame pacing: a steady rate feels smoother than a wandering one. We aim for 60; if this
+// device can't hold it, we settle at 30 and try 60 again later. The physics has its own
+// fixed clock, so game speed never changes.
 let targetFps = 60, lastPaced = -Infinity, paceFrames = 0, paceMissed = 0, paceWork = 0, paceWindows = 0;
 function pace(now, workMs) {
     const interval = 1000 / targetFps;
@@ -2003,10 +1710,9 @@ function frame(now) {
     // Short shake when a tumbling block lands hard.
     shake = Math.max(0, shake - frameDt * 0.6);
     camera.position.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, 0);
-    // Don't redraw a picture that hasn't changed. Behind the start, pause and game-over screens
-    // nothing moves (except a zone sliding in): twice a second. While you're deciding on a
-    // shot and nothing on the board is moving: ten times a second. Anything moving, or your
-    // finger on the board, and it's back to every frame. (Saves battery, mostly.)
+    // Don't redraw a picture that hasn't changed (it's mostly about battery): twice a second
+    // behind a menu, ten times a second while you're thinking about a shot, and every frame
+    // the moment anything moves or you touch the board.
     const still = sim && paused() && phase !== 'descend';
     const idle = sim && !still && phase === 'aim' && !aiming && !keyAim && !worldSettling && !animating && shake === 0
         && now - lastInput > 400 && !crumbs.active();   // (while aiming the world only steps when worldSettling)
@@ -2045,14 +1751,7 @@ function applyTheme(name) {
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
-    const look = BOMB_LOOK[name];
-    fuseMat.color.setHex(look.fuse);
-    shadeMat.color.setHex(look.shade);
-    const tintBomb = (bomb) => {
-        bomb.body.material.uniforms.uFill.value.setHex(look.body);
-        bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
-        bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
-    };
+    propArt.setTheme(name);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
@@ -2063,21 +1762,11 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
-        if (v.bomb) tintBomb(v.bomb);
+        if (v.bomb) propArt.tintBomb(v.bomb, name);
         else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
-    for (const v of propViews.values()) {
-        if (v.bomb) tintBomb(v.bomb);
-        for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
-        v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
-        v.net?.material.uniforms.uInk?.value.setHex(theme.line);
-        if (v.hill) {
-            const u = v.hill.material.uniforms;
-            u.uFill.value.setHex(GOLF_ISLAND[name]); u.uInk.value.setHex(theme.edge); u.uHole.value.setHex(GOLF_HOLE_C[name]);
-        }
-        for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
-    }
+    for (const v of propViews.values()) propArt.retint(v, name);
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     const next = name === 'dark' ? 'light' : 'dark';
     themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
@@ -2101,10 +1790,9 @@ applyTheme(currentTheme());
 const menu = $('menu'), howto = $('howto'), over = $('over'), news = $('news'), settings = $('settings');
 const TAGLINE = $('menu-tagline').textContent;
 // ---------- what's new ----------
-// One entry per release that adds something worth telling (hotfixes get none). Returning
-// players see the nudge on the start screen, once per entry; the page lists them all.
-// To announce a release: add an entry at the top (newest first). Keep `line` short (Boop
-// says it), 3-5 items, each a picture (img/...) or an icon from ICON, a title and a sentence.
+// One entry per release worth telling about, newest first (hotfixes get none). Returning
+// players get a nudge once per entry. Keep `line` short (Boop says it) and give each item a
+// picture or an ICON, a title and a sentence.
 const ICON = {
     aim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l12 7-5.5 1.5L9 17z"/><path d="M12.5 12.5l5 5"/></svg>',
     sound: '<svg viewBox="0 0 22 22"><path d="M3 8.5h3.5L11 4.5v13l-4.5-4H3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 8a4 4 0 0 1 0 6"/><path d="M17 5.5a7.5 7.5 0 0 1 0 11"/></g></svg>',
@@ -2184,11 +1872,9 @@ $('news-list').innerHTML = WHATS_NEW.map((r) => `<h3>Version ${r.version}</h3><u
     `<li>${it.img ? `<img src="${it.img}" alt="" width="64" height="64">` : `<span class="icon" aria-hidden="true">${ICON[it.icon]}</span>`}<div><b>${it.title}</b><span class="say-more">${it.text}</span></div></li>`).join('')}</ul>`).join('');
 if (!menu.hidden) { showNewsLine(); menuTagline(); }
 
-// Private tabs throw site storage away when they close, so a saved run can't last. Boop says
-// so once, after the first zone is cleared: the first progress there is to lose.
-// Browsers don't say so outright; Safari and Firefox give it away by refusing their
-// private file storage. Chrome's incognito isn't caught (it keeps storage until the
-// last incognito window closes, so runs mostly survive there anyway).
+// Private tabs throw away saved data when they close, so Boop mentions it once, after your
+// first cleared zone. Browsers don't say they're private; Safari and Firefox give it away by
+// refusing file storage. (Chrome's incognito slips through, but runs mostly survive there.)
 async function isPrivateTab() {
     try { await navigator.storage?.getDirectory?.(); return false; }
     catch (e) { return /unknown transient reason|security error/i.test(String(e?.message ?? e)); }
@@ -2317,11 +2003,10 @@ $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu
 const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
 document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else checkForUpdate(); });
 
-// Updates. A Home Screen app (and a long-open tab) keeps the page it already has: reopening
-// it doesn't load anything new. So on start and whenever the game comes back to the front,
-// ask the server which build is current. If it's newer, save the run and reload, but only
-// while a screen is up (start, pause, game over), never in the middle of playing; otherwise
-// it waits for the next screen. Tried once per build, so a stale cache can't cause a loop.
+// Updates. A Home Screen app never reloads by itself, so whenever the game comes back to the
+// front we ask the server for the current build. If there's a newer one, we save and reload,
+// but only on a menu between turns (never mid-shot). Each build is tried once, so a stale
+// cache can't loop.
 async function checkForUpdate() {
     if (Date.now() - lastUpdateCheck < 10000) return;   // at most every 10 s
     lastUpdateCheck = Date.now();

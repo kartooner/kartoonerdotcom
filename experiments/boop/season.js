@@ -1,9 +1,8 @@
-// Boop: seasons. Around some holidays the game dresses up: block colours, the paper, the
-// crumbs a popped block leaves, the vines, and a hat for Boop. The rules never change.
-// Which season it is comes from the date on the player's device: a tiny script at the top
-// of index.html sets data-season (and data-greeting) before anything is drawn, so the page
-// never flashes the wrong colours. ?season=fall (or none) in the address forces one, for testing.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-43');   // build stamp: game.js checks every file matches
+// Seasons. Around some holidays the game dresses up: block colours, the paper, the crumbs,
+// the vines, and a hat for Buddy. The rules never change. A tiny script in index.html picks
+// the season from the device's date before anything draws, so nothing flashes. To test one,
+// add ?season=fall (or none) to the address.
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;
@@ -40,15 +39,31 @@ const SEASONS = {
     },
 };
 
-export function applySeason({ THEMES, TIERS, JELLO, COLORS }) {
-    const look = SEASONS[season];
-    if (!look) return null;
-    look.tiers.forEach((fill, i) => { if (TIERS[i]) TIERS[i].fill = fill; });
+// A look is a set of colour overrides on top of the base palette. A season is one, and a
+// biome deeper down could be another. You can call applyLook again mid-run (then repaint with
+// the game's applyTheme); it always starts from the base colours, so looks never stack.
+let base = null;
+export function applyLook({ THEMES, TIERS, JELLO, COLORS }, look) {
+    base ??= structuredClone({ THEMES, TIERS, JELLO, COLORS });
+    TIERS.forEach((t, i) => Object.assign(t, base.TIERS[i]));
+    Object.assign(JELLO, base.JELLO);
+    Object.assign(COLORS, base.COLORS);
+    Object.assign(THEMES.light, base.THEMES.light);
+    Object.assign(THEMES.dark, base.THEMES.dark);
+    if (!look) return;
+    look.tiers?.forEach((fill, i) => { if (TIERS[i]) TIERS[i].fill = fill; });
     for (const i in look.texts ?? {}) if (TIERS[i]) TIERS[i].text = look.texts[i];
-    JELLO.fill = look.jello;
+    if (look.jello) JELLO.fill = look.jello;
     Object.assign(COLORS, look.colors);
     Object.assign(THEMES.light, look.light);
     Object.assign(THEMES.dark, look.dark);
+}
+
+// The season's look, put on once at start, plus its extras (falling bits, leaf piles, a hat).
+export function applySeason(palettes) {
+    const look = SEASONS[season];
+    if (!look) return null;
+    applyLook(palettes, look);
     dressBuddies();
     return { crumbs: look.crumbs, leaves: true, shape: look.shape, lights: look.lights ?? null, pile: look.pile ?? null };
 }

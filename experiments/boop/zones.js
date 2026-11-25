@@ -1,6 +1,7 @@
-// Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
-// depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-43');   // build stamp: game.js checks every file matches
+// Zone recipes: which shapes exist, how zones are laid out, and what each depth holds.
+// Just data and small helpers; sim.js builds the zones from these. A biome would mostly
+// live here: its own shapes, recipe weights and numbers.
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -121,10 +122,9 @@ export const MIN_PICKUP_GAP = 3.5;         // +1 pickups are always this many ce
 export const MUSHROOM_FROM = 4;
 const INTRO_DEPTHS = new Set([2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 16, 18]);
 
-// Recipes: what a zone leans on, so deep zones don't all blur into the same mix.
-// from = first depth it can show up (the zone after everything it needs is introduced);
-// w = how often. A zone that introduces something stays plain, so the new thing has the
-// stage; otherwise a zone picks one the depth allows, never the same as the last one.
+// Recipes: what a zone leans on, so deep zones don't all blur together. from = the first
+// depth it can show up, w = how often. A zone that introduces something new stays plain so
+// the new thing gets the spotlight; otherwise it picks a recipe, never the same twice running.
 export const RECIPES = [
     { name: 'plain', from: 1, w: 3 },
     { name: 'windmills', from: 3, w: 0.5 },   // a windmill garden: three windmills (now and then)
@@ -136,9 +136,8 @@ export const RECIPES = [
     { name: 'seesaws', from: 14, w: 0.7 },    // two seesaws
     { name: 'bombs', from: 16, w: 0.6 },      // two bombs
 ];
-// From depth 25 a zone can mix two recipes ("vines+bombs", "tower+seesaws"...), more often the
-// deeper you go (about half of zones from 30), so the deep end keeps turning up setups you
-// haven't seen. A few pairs don't mix (both decide the props, or the layout).
+// From depth 25 a zone can mix two recipes ("vines+bombs"), about half the time from 30, so
+// the deep end keeps surprising you. A few pairs don't mix (they'd fight over the layout).
 const COMBO_FROM = 25;
 const CLASH = [['windmills', 'pinball'], ['tower', 'pinball'], ['windmills', 'greymaze']];   // (windmills over grey pieces walled a zone off)
 const clash = (a, b) => CLASH.some(([x, y]) => (a === x && b === y) || (a === y && b === x));

@@ -1,12 +1,10 @@
-// Boop: sound. Soft, rounded chiptune made in the browser (no sound files), kept calm:
-// - every note comes from one five-note scale, so overlapping sounds harmonise
-// - each hit in a shot plays the next note of a short rising phrase, and popping a block
-//   lands the phrase's closing note (in the spirit of Wind Waker's sword combos; our own
-//   little phrases). The phrase starts over every shot.
-// - only a few sounds at once, hits on the same block a moment apart merge, a soft limiter,
-//   low volume, and silence while paused or hidden.
-// Off by default. Nothing is created until sound is turned on (browsers need a tap first).
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-43');   // build stamp: game.js checks every file matches
+// Sound: soft chiptune made right in the browser, no sound files. We keep it calm:
+// - every note comes from one five-note scale, so overlapping sounds still harmonise
+// - each hit in a shot plays the next note of a short rising phrase, and a pop lands its
+//   last note, so a good shot turns into a little tune (it starts over each shot)
+// - only a few sounds at once, a soft limiter, low volume, and quiet while paused
+// Off until you turn it on (browsers need a tap first anyway).
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 const SCALE = [0, 2, 4, 7, 9];            // major pentatonic, in semitones
 const ROOT = 392;                         // G4: warm, not shrill
