@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, makeHillMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
+import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-25';
+const BUILD = '1.5-32';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -316,11 +316,11 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2 + c[1] * 0.01; if (d < bestD - 1e-9) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(b.neutral ? '' : String(b.hp));
+    const label = makeLabel(b.neutral || b.tower ? '' : String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
-    label.visible = !b.neutral;
+    label.visible = !b.neutral && !b.tower;              // tower blocks (a bonus stage) have no number
     group.add(label);
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
@@ -407,7 +407,7 @@ function updateBlockView(v, b, frameDt) {
         if (v.hp !== -1) v.punch = 1;
         v.labelAt = now;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.hp / (sim.s.tierScale || 1));
+        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -691,24 +691,22 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'hoop') {
-        // Hoops: two rim posts, an orange rim between them, and a net hanging under it.
-        // Drawn around the basket's body, which slides side to side (followed below).
+        // Hoops: a crayon basket. An oval orange rim, seen a little from above, and a net hanging
+        // from it, a funnel of crossed strokes. (The rim's ends are what the ball bounces off.)
         const half = pr.half;
-        for (const dx of [-half, half]) {
-            const post = makeSketch({ kind: SHAPE.BOX, size: [0.06, 0.3], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + dx * 3, margin: 0.06 });
-            post.position.set(dx, -0.15, 0.05);
-            group.add(post);
-        }
-        const rim = makeSketch({ kind: SHAPE.BOX, size: [half, 0.045], round: 0.03, edge: 0.03, wob: 0.3, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.06 });
-        rim.position.set(0, 0.12, 0.06);
-        const net = makeSketch({ kind: SHAPE.BOX, size: [half - 0.1, 0.24], round: 0.05, role: 'line', filled: false, edge: 0.03, wob: 0.6, seed: pr.id + 5, margin: 0.08 });
-        net.position.set(0, -0.2, 0.04);
+        const net = makeNetMesh(half - 0.02, half * 0.55, 0.5, theme.line, pr.id * 0.7);     // the line colour: light on the dark board
+        net.position.set(0, 0.1, 0.04);
+        const rim = makeSketch({ kind: SHAPE.RING, size: [half], ring: 0.07, edge: 0.03, wob: 0.6, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.1 });
+        rim.scale.set(1, 0.28, 1);
+        rim.position.set(0, 0.1, 0.06);
+        v.net = net;
+        group.add(net, rim);
         const label = makeLabel('+2', theme.text, 'hand');
         label.userData.text = '+2';
         label.scale.setScalar(0.8);
-        label.position.set(0, -0.75, 0.1);
+        label.position.set(0, -0.72, 0.1);
         v.labels = [label];
-        group.add(rim, net, label);
+        group.add(label);
         group.position.set(pr.x, pr.y, 0.05);
         v.body = pr.body;
         scene.add(group);
@@ -727,23 +725,7 @@ function buildPropView(pr) {
             post.position.set(i, -H + pr.postH, 0);
             group.add(post);
         }
-        // Catch cups: a little open box drawn in ink, with what a catch wins under it.
-        const half = pr.cupHalf ?? 0.36;
         v.labels = [];
-        (pr.cups ?? []).forEach(([cx, cy], i) => {
-            for (const [hx, hy, x, y] of [[half + 0.05, 0.05, cx, cy - 0.35], [0.05, 0.27, cx - half, cy - 0.13], [0.05, 0.27, cx + half, cy - 0.13]]) {
-                const side = makeSketch({ kind: SHAPE.BOX, size: [hx, hy], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: i * 5.1 + x, margin: 0.06 });
-                side.position.set(x, y, 0);
-                group.add(side);
-            }
-            const text = `+${pr.cupBalls ?? 2} balls`;
-            const label = makeLabel(text, theme.text, 'hand');
-            label.userData.text = text;
-            label.scale.set(0.8 * label.userData.aspect, 0.8, 1);
-            label.position.set(cx, cy - 0.66, 0.1);
-            group.add(label);
-            v.labels.push(label);
-        });
         pr.pockets.forEach((n, i) => {
             if (!n) return;
             const label = makeLabel(`+${n}`, theme.text, 'hand');
@@ -919,6 +901,16 @@ function syncView(frameDt) {
         if (v.vine) { syncVine(v, pr); continue; }
         if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
         if (v.bomb) animateBomb(v.bomb, pr.lit, frameDt, v.group);
+        if (v.swishT != null) {
+            // A swish: the net drops and stretches with the ball, sways, and springs back.
+            v.swishT += frameDt;
+            const k = Math.min(1, v.swishT / 0.6), ease = Math.sin(Math.PI * Math.min(1, k * 1.6)) * (1 - k * 0.6);
+            const sy = 1 + 0.55 * Math.max(0, ease);
+            v.net.scale.y = sy;                              // stretched from its top, where it hangs from the rim
+            v.net.rotation.z = calmMotion.matches ? 0 : 0.18 * Math.sin(k * 14) * (1 - k);
+            animating = true;
+            if (k >= 1) { v.swishT = null; v.net.scale.y = 1; v.net.rotation.z = 0; }
+        }
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
         // frozen mid-spin would otherwise keep the board from ever idling.
@@ -1049,9 +1041,12 @@ function consumeEvents() {
             }
         }
         if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
-        if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
         if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2.9, 0.75);
-        if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
+        if (e.t === 'swish') {
+            addFloater('Swish!', e.x, e.y + 1.4);
+            const hv = propViews.get(e.id);
+            if (hv) hv.swishT = 0;                // the net stretches and sways as the ball goes through
+        }
         if (e.t === 'splash') {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
@@ -1089,7 +1084,6 @@ function playSound(e) {
     else if (e.t === 'nailpop') audio.tink();
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'gold') audio.clear();
-    else if (e.t === 'catch' && e.n > 0) audio.ring();
     else if (e.t === 'sunk') audio.clear();
     else if (e.t === 'splash') audio.plop();
     else if (e.t === 'jelly') audio.jelly();
@@ -1169,7 +1163,9 @@ function drawGuide(angle) {
     const t0 = now;
     guideAngle = angle;
     guideX = launchAt().x;
-    const result = predict(sim, angle);
+    // On the slow, floaty bonus stages the guide shows the whole arc, up to the first thing it hits.
+    const arcs = ['golf', 'hoops', 'pachinko'].includes(sim.s.bonus?.kind);
+    const result = arcs ? predict(sim, angle, 1, 600) : predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
     const cut = result.path.findIndex(([, y]) => y < -H);
     const path = cut > 0 ? result.path.slice(0, cut) : result.path;
@@ -1632,6 +1628,8 @@ function queueZoneTips() {
     if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
     // Relaxed mode skips the tips about new things: they're kept for the regular game.
     if (s.relaxed) { tipQueue.unshift(...tips); return; }
+    // The surprise stages explain themselves in their own note; their pieces aren't the board's.
+    if (['tower', 'golf', 'hoops', 'pachinko'].includes(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
     const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
     const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
@@ -1798,10 +1796,10 @@ function readyToAim() {
 // in flight): the physics world as bytes, the game state as JSON. Closing the page
 // mid-shot loses only that shot. Game over or New game clears it.
 const SAVE_KEY = 'boop-save-v1', RELAXED_SAVE_KEY = 'boop-save-relaxed-v1';
-// Test link: ?stage=golf (or pachinko, dominoes, hoops) starts a fresh run right at that bonus
+// Test link: ?stage=golf (or pachinko, tower, hoops) starts a fresh run right at that bonus
 // stage, to try it without playing down to it. It keeps its own save, so the real run is left
 // alone, and it never counts toward the best depth.
-const TEST_STAGES = { pachinko: 25, dominoes: 30, golf: 35, hoops: 40 };
+const TEST_STAGES = { pachinko: 25, tower: 30, golf: 35, hoops: 40 };
 const TEST_STAGE = (() => { try { const k = new URLSearchParams(location.search).get('stage'); return TEST_STAGES[k] ? k : null; } catch { return null; } })();
 const saveKey = () => (TEST_STAGE ? 'boop-save-test' : relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
 let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
@@ -2082,6 +2080,7 @@ function applyTheme(name) {
     }
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
     for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
+    for (const v of propViews.values()) if (v.net?.material.uniforms?.uInk) v.net.material.uniforms.uInk.value.setHex(theme.line);
     for (const v of propViews.values()) {
         if (!v.hill) continue;
         const u = v.hill.material.uniforms;

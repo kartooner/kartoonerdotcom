@@ -2,7 +2,7 @@
 // Same idea as the block shader: a shape is a distance field, its edge is wobbled
 // with a slow bend and fine grain so it reads as drawn, not machined.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-25');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-32');   // build stamp: game.js checks every file matches
 
 export const SHAPE = { BOX: 0, CIRCLE: 1, RING: 2, CAP: 3 };
 
