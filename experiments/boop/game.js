@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-61';
+const BUILD = '1.5-62';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -37,7 +37,7 @@ let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
-const bobbing = [];             // the water test: balls left floating in the golf pool
+const bobbing = [];             // balls left floating in the golf pool
 const fuseGrey = new THREE.Color();
 let hudKey = '';
 function buildBallView(handle) {
@@ -80,15 +80,16 @@ const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
 const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
-// Test: water jars, behind ?water=1. Once in a while from depth 25 a zone has a jar (small or
-// big); pop it and the water runs down over the blocks and pools on the floor, where balls slosh
-// through it. ?water=often puts one in the first zone and about every other zone, for trying it out.
+// Water: once in a while from depth 25 a zone has a jar (small or big); pop it and it tips over
+// and the water runs down over the blocks and pools on the floor, where balls slosh through it.
+// The golf stage's pool is the same water, kept still. A surprise, like the bonus stages: it's
+// not in What's new or How to play. ?water=often puts a jar up high in the first zone and about
+// every other zone, for trying it out.
 const WATER_MODE = (() => { try { return new URLSearchParams(location.search).get('water'); } catch { return null; } })();
-const WATER_TEST = WATER_MODE != null;
 const WATER = { light: [0x559fc6, 0x3b7fa8], dark: [0x3d9ad6, 0x24618d] };    // fill, and deeper down
 const GLASS = { light: 0xeef7fa, dark: 0x9db6c1 };
 const jarMats = new Set();          // one per jar on the board (each has its own size and wobble)
-const water = WATER_TEST ? makeWater(scene, renderer) : null;
+const water = makeWater(scene, renderer);
 const waterShapes = new Map();      // block id → its shape, for the water to flow round
 const jarIds = new Set();
 let waterTop = null;                // where the pool's surface is, for leaves to float on
@@ -515,7 +516,7 @@ const GOLF_RIPPLE = { light: 0xffffff, dark: 0xd6eaf2 };    // rings on the wate
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
 // behind a floating ball and round in front of it. delay: seconds before it starts.
 function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
-    if (golfPool) return;                                // the water test's still pool: no rings
+    if (golfPool) return;                                // the still golf pool: no rings
     r = Math.min(r, x - 0.08, W - x - 0.08);            // never past the walls
     if (r <= r0) return;
     const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0.035, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.7, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
@@ -535,8 +536,8 @@ function buildPropView(pr) {
     scene.add(v.group);
     propViews.set(pr.id, v);
     if (water && pr.kind === 'golf' && pr.water) {
-        // The water test: the golf pool is the same water, kept still (it ripples and splashes,
-        // but doesn't flow). The hill and ledges are solid for any splash.
+        // The golf pool is the same water, kept still: no flowing, no ripples, just a small splash
+        // when a ball drops in. The hill and ledges are solid for the droplets.
         v.water.visible = false;
         golfPool = { id: pr.id, top: -H + pr.water, ground: groundSolid(pr.outline), rects: pr.rects };
         water.setPool(-H + pr.water);
@@ -716,7 +717,7 @@ function syncView(frameDt) {
     for (const [h, v] of ballViews) {
         if (live.has(h)) continue;
         ballViews.delete(h);
-        // The water test: a ball that landed in the still golf pool stays, bobbing, till the stage is over.
+        // A ball that landed in the still golf pool stays, bobbing, till the stage is over.
         if (v.floating && golfPool) { bobbing.push({ group: v.group, x: v.group.position.x, t: Math.random() * 6 }); continue; }
         v.group.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
         fadingBalls.push({ group: v.group, t: 0 });
@@ -1529,7 +1530,7 @@ function startZone() {
     phase = 'descend';
 }
 
-// The water test's jar: rare, and not before depth 25, so it stays a nice surprise (with
+// The jar: rare, and not before depth 25, so it stays a nice surprise (with
 // ?water=often: the first zone, then about every other zone). Small ones take over a single
 // square; big ones (four squares) go in an open spot.
 function addJar() {
@@ -1763,7 +1764,7 @@ function restart(saved = null) {
     keyAim = false;
     if (saved) {
         sim = saved;
-        // The water test, trying it out: a run picked back up gets a jar too (they're otherwise
+        // Trying water out (?water=often): a run picked back up gets a jar too (they're otherwise
         // only added as a new zone comes up).
         if (water && WATER_MODE === 'often' && !Object.values(sim.s.blocks).some((b) => b.jar)) {
             placeJar(false);
