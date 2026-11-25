@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-39">
+<html lang="en" data-build="1.5-40">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -474,6 +474,10 @@
         /* Small text links keep their look but get a hit area at least 44pt tall. */
         .link-btn { position: relative; }      /* (#back is already positioned) */
         .link-btn::after, #back::after { content: ''; position: absolute; inset: -12px -8px; }
+        /* Every text link underlines the same way: one weight and gap at any size, and the
+           arrow on Back and Games sits outside the line. */
+        .link-btn, #back { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+        .arrow { display: inline-block; margin-right: 0.3em; text-decoration: none; }
         .link-btn {
             font: inherit;
             font-size: 0.9375rem;
@@ -482,7 +486,8 @@
             background: none;
             border: 0;
             color: var(--ink);
-            text-decoration: underline;
+            text-decoration: underline 1.5px;    /* (the same as #back: see above) */
+            text-underline-offset: 3px;
             cursor: pointer;
         }
         #howto h2, #howto h3, #news h2, #news h3, #over h1 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; }
@@ -733,7 +738,7 @@
 
     <section id="news" class="screen" aria-labelledby="news-title" hidden>
         <div class="screen-inner">
-            <button class="link-btn" id="btn-news-back" type="button">← Back</button>
+            <button class="link-btn" id="btn-news-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="news-title">What's new</h2>
             <div id="news-list"></div>
             <div class="actions">
@@ -744,7 +749,7 @@
 
     <section id="settings" class="screen" aria-labelledby="settings-title" hidden>
         <div class="screen-inner">
-            <button class="link-btn" id="btn-settings-back" type="button">← Back</button>
+            <button class="link-btn" id="btn-settings-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="settings-title">Settings</h2>
             <div class="setting">
                 <div class="setting-label" id="sound-label"><b>Sound</b><span>Blips when you hit blocks.</span></div>
@@ -782,7 +787,7 @@
 
     <section id="howto" class="screen" aria-labelledby="howto-title" hidden>
         <div class="screen-inner">
-            <button class="link-btn" id="btn-howto-back" type="button">← Back</button>
+            <button class="link-btn" id="btn-howto-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="howto-title">How to play</h2>
             <p class="intro">Shoot balls at numbered blocks. Each hit knocks the number down, and at 0 a block pops. Clear a zone to dig deeper. Shots are limited, so make them count.</p>
 
@@ -854,7 +859,7 @@
         </div>
     </section>
 
-    <a id="back" href="/games">← Games</a>
+    <a id="back" href="/games"><span class="arrow" aria-hidden="true">←</span>Games</a>
     <p id="brand" aria-hidden="true">Boop<span class="bang">!</span></p>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <filter id="sketchy" x="-5%" y="-10%" width="110%" height="120%">
@@ -890,35 +895,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-39",
-                "./zones.js": "./zones.js?v=1.5-39",
-                "./blockshader.js": "./blockshader.js?v=1.5-39",
-                "./sketch.js": "./sketch.js?v=1.5-39",
-                "./balls.js": "./balls.js?v=1.5-39",
-                "./labels.js": "./labels.js?v=1.5-39",
-                "./audio.js": "./audio.js?v=1.5-39",
-                "./theme.js": "./theme.js?v=1.5-39",
-                "./crumbs.js": "./crumbs.js?v=1.5-39",
-                "./buddy.js": "./buddy.js?v=1.5-39",
-                "./season.js": "./season.js?v=1.5-39",
-                "./leaves.js": "./leaves.js?v=1.5-39"
+                "./sim.js": "./sim.js?v=1.5-40",
+                "./zones.js": "./zones.js?v=1.5-40",
+                "./blockshader.js": "./blockshader.js?v=1.5-40",
+                "./sketch.js": "./sketch.js?v=1.5-40",
+                "./balls.js": "./balls.js?v=1.5-40",
+                "./labels.js": "./labels.js?v=1.5-40",
+                "./audio.js": "./audio.js?v=1.5-40",
+                "./theme.js": "./theme.js?v=1.5-40",
+                "./crumbs.js": "./crumbs.js?v=1.5-40",
+                "./buddy.js": "./buddy.js?v=1.5-40",
+                "./season.js": "./season.js?v=1.5-40",
+                "./leaves.js": "./leaves.js?v=1.5-40"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-39">
-    <link rel="modulepreload" href="./sim.js?v=1.5-39">
-    <link rel="modulepreload" href="./zones.js?v=1.5-39">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-39">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-39">
-    <link rel="modulepreload" href="./balls.js?v=1.5-39">
-    <link rel="modulepreload" href="./labels.js?v=1.5-39">
-    <link rel="modulepreload" href="./audio.js?v=1.5-39">
-    <link rel="modulepreload" href="./theme.js?v=1.5-39">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-39">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-39">
-    <link rel="modulepreload" href="./season.js?v=1.5-39">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-39">
+    <link rel="modulepreload" href="./game.js?v=1.5-40">
+    <link rel="modulepreload" href="./sim.js?v=1.5-40">
+    <link rel="modulepreload" href="./zones.js?v=1.5-40">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-40">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-40">
+    <link rel="modulepreload" href="./balls.js?v=1.5-40">
+    <link rel="modulepreload" href="./labels.js?v=1.5-40">
+    <link rel="modulepreload" href="./audio.js?v=1.5-40">
+    <link rel="modulepreload" href="./theme.js?v=1.5-40">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-40">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-40">
+    <link rel="modulepreload" href="./season.js?v=1.5-40">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-40">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -961,6 +966,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-39"></script>
+    <script type="module" src="./game.js?v=1.5-40"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Boop: zone recipes. Which shapes exist, how zones are laid out, and what each
 // depth contains. Pure data and small helpers; sim.js builds the zones from these.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-39');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-40');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
