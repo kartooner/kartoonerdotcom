@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-64'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-65'];
 
 const R = 0.13;                // how close a drop gets to the floor
 const RW = 0.05;               // ...and to the side walls (close, so a mushroom growing off a wall doesn't wedge drops)
