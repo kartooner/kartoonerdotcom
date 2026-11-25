@@ -1,6 +1,6 @@
 // Water you can spill: a jar pops and the water runs over and round the blocks, slips through
 // the cracks between them and pools on the floor. Balls slosh through the pool and throw a bit of
-// it around. It's behind ?water=1 while we play with it.
+// it around. The golf stage's pool is the same water, kept still.
 //
 // The flow is its own little particle sim (the "double density relaxation" trick from Clavet et
 // al. 2005), not Rapier bodies: a couple of hundred drops stay cheap on a phone and stay out of
@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-61'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-62'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
