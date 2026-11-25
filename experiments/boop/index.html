@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-45">
+<html lang="en" data-build="1.5-46">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -717,7 +717,7 @@
             <button class="link-btn" id="btn-settings-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="settings-title">Settings</h2>
             <div class="setting">
-                <div class="setting-label" id="sound-label"><b>Sound</b><span>Blips when you hit blocks.</span></div>
+                <div class="setting-label" id="sound-label"><b>Sound</b><span>Soft notes on every hit.</span></div>
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
             </div>
             <div class="setting">
@@ -759,19 +759,19 @@
             <h3>A shot, step by step</h3>
             <div class="shot-split">
                 <ol class="steps">
-                    <li><b>Move the launcher</b> if you like: tap it, then drag it along the top.</li>
+                    <li><b>Move the launcher</b> if you want a better angle: tap it, then drag it along the top.</li>
                     <li><b>Touch where</b> you want to shoot, and slide to adjust. With a mouse, just point.</li>
                     <li><b>Read the guide.</b> <span class="dot">Orange dots</span> mark each hit.</li>
-                    <li><b>Let go</b> (or click) to fire. Changed your mind? Slide off the board and let go.</li>
-                    <li><b>Long bounce?</b> Press and hold anywhere while balls fly to speed things up.</li>
+                    <li><b>Let go</b> (or click) to fire. Changed your mind? Slide off the board first.</li>
+                    <li><b>Long bounce?</b> Press and hold anywhere while balls fly to speed it up.</li>
                 </ol>
                 <figure class="tilt">
                     <span class="pic"><img src="img/howto-aim.webp" width="600" height="1054" alt="Aiming: a dotted line runs from the launcher at the top, bouncing off a block, with orange dots at each hit"></span>
                     <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
                 </figure>
             </div>
-            <p class="note"><b>Sound</b> is off to start. Turn it on in Settings, on the start screen.</p>
-            <p class="note"><b>Playing with a child?</b> Relaxed mode, in Settings, has simpler zones and shots that never run out. It keeps its own run, so yours waits for you.</p>
+            <p class="note"><b>Sound</b> is off to start. Turn it on in Settings.</p>
+            <p class="note"><b>Playing with a child?</b> Turn on Relaxed mode in Settings for simpler zones and shots that never run out. It keeps its own run, so yours is still there when you switch back.</p>
             <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires (hold it to speed up), Alt (Option) + ← → moves the launcher, Esc cancels or pauses, M sound on/off.</p>
 
             <h3>Reading the top</h3>
@@ -790,8 +790,8 @@
 
             <h3>Hit harder</h3>
             <ul class="tags">
-                <li>Long rallies hit harder, up to <b>4</b></li>
-                <li>Last 3 blocks: hits <b>×2</b></li>
+                <li>The longer a ball bounces, the harder it hits, up to <b>4</b></li>
+                <li>Down to the last 3 blocks: hits count <b>×2</b></li>
             </ul>
 
             <h3>Earn more shots</h3>
@@ -810,13 +810,13 @@
                 <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b><span class="say-more">Fly a ball through one for an extra shot.</span></div></li>
                 <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b><span class="say-more">No nails. Knock out what holds them up and they tumble.</span></div></li>
                 <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b><span class="say-more">Balls pass through, slowed down. Each pass takes 1 off.</span></div></li>
-                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in to grab the +1 and rattle around.</span></div></li>
+                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in for a +1. It rattles around before it leaves.</span></div></li>
                 <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">Can't be broken. Bank shots off them, or knock their nails out and they crumble.</span></div></li>
                 <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">Snap after a few hits. Anything they hold drops.</span></div></li>
                 <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it. It bursts and knocks a chunk off everything around it.</span></div></li>
             </ul>
             <p class="note">Boop! is made by Erik Sagen.</p>
-            <p class="note">Boop explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
+            <p class="note">Boop, the little blue block, explains the rest as you go. <button class="link-btn" id="btn-tips-reset" type="button">Show Boop's tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
                 <button class="btn btn-primary" id="btn-howto-play" type="button">Play</button>
@@ -859,37 +859,37 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-45",
-                "./zones.js": "./zones.js?v=1.5-45",
-                "./blockshader.js": "./blockshader.js?v=1.5-45",
-                "./sketch.js": "./sketch.js?v=1.5-45",
-                "./balls.js": "./balls.js?v=1.5-45",
-                "./labels.js": "./labels.js?v=1.5-45",
-                "./audio.js": "./audio.js?v=1.5-45",
-                "./theme.js": "./theme.js?v=1.5-45",
-                "./crumbs.js": "./crumbs.js?v=1.5-45",
-                "./buddy.js": "./buddy.js?v=1.5-45",
-                "./season.js": "./season.js?v=1.5-45",
-                "./leaves.js": "./leaves.js?v=1.5-45",
-                "./props.js": "./props.js?v=1.5-45"
+                "./sim.js": "./sim.js?v=1.5-46",
+                "./zones.js": "./zones.js?v=1.5-46",
+                "./blockshader.js": "./blockshader.js?v=1.5-46",
+                "./sketch.js": "./sketch.js?v=1.5-46",
+                "./balls.js": "./balls.js?v=1.5-46",
+                "./labels.js": "./labels.js?v=1.5-46",
+                "./audio.js": "./audio.js?v=1.5-46",
+                "./theme.js": "./theme.js?v=1.5-46",
+                "./crumbs.js": "./crumbs.js?v=1.5-46",
+                "./buddy.js": "./buddy.js?v=1.5-46",
+                "./season.js": "./season.js?v=1.5-46",
+                "./leaves.js": "./leaves.js?v=1.5-46",
+                "./props.js": "./props.js?v=1.5-46"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-45">
-    <link rel="modulepreload" href="./sim.js?v=1.5-45">
-    <link rel="modulepreload" href="./zones.js?v=1.5-45">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-45">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-45">
-    <link rel="modulepreload" href="./balls.js?v=1.5-45">
-    <link rel="modulepreload" href="./labels.js?v=1.5-45">
-    <link rel="modulepreload" href="./audio.js?v=1.5-45">
-    <link rel="modulepreload" href="./theme.js?v=1.5-45">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-45">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-45">
-    <link rel="modulepreload" href="./season.js?v=1.5-45">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-45">
-    <link rel="modulepreload" href="./props.js?v=1.5-45">
+    <link rel="modulepreload" href="./game.js?v=1.5-46">
+    <link rel="modulepreload" href="./sim.js?v=1.5-46">
+    <link rel="modulepreload" href="./zones.js?v=1.5-46">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-46">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-46">
+    <link rel="modulepreload" href="./balls.js?v=1.5-46">
+    <link rel="modulepreload" href="./labels.js?v=1.5-46">
+    <link rel="modulepreload" href="./audio.js?v=1.5-46">
+    <link rel="modulepreload" href="./theme.js?v=1.5-46">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-46">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-46">
+    <link rel="modulepreload" href="./season.js?v=1.5-46">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-46">
+    <link rel="modulepreload" href="./props.js?v=1.5-46">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -937,6 +937,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-45"></script>
+    <script type="module" src="./game.js?v=1.5-46"></script>
 </body>
 </html>

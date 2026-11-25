@@ -1,7 +1,7 @@
 // Zone recipes: which shapes exist, how zones are laid out, and what each depth holds.
 // Just data and small helpers; sim.js builds the zones from these. A biome would mostly
 // live here: its own shapes, recipe weights and numbers.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-45');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-46');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -63,14 +63,14 @@ export const THING_TIPS = {
     mushroom: 'Mushrooms grow off walls and blocks. Their caps kick balls back harder.',
     vine: 'Vines snap after a few hits. Anything they hold drops.',
     bomb: 'Hit a bomb twice to light it. It bursts and knocks a chunk off everything around it.',
-    seesaw: 'A seesaw: one nail in the middle. Hit an end and it tips, and anything on it slides off.',
+    seesaw: 'A seesaw! One nail in the middle. Hit an end and it tips, and anything on it slides off.',
     hangbomb: 'A bomb on a vine! Hit it twice to light it, or cut the vine and it bursts where it lands.',
     gold: 'A gold block! Pop it before this zone is cleared and a bonus stage comes next.',
     ring: 'Fly a ball through a +1 ring for an extra shot.',
     resting: 'No nails: this block just rests. Knock out what holds it up and it tumbles.',
-    jelly: 'Jelly: balls pass right through, slowed down. Each pass takes 1 off.',
+    jelly: 'Jelly! Balls pass right through, slowed down. Each pass takes 1 off.',
     grey: "Grey blocks can't be broken. Bank shots off them, or knock their nails out and they crumble.",
-    cup: 'A cup: drop a ball in to grab the +1 and rattle around.',
+    cup: 'A cup! Drop a ball in for a +1. It rattles around before it leaves.',
     single: 'Grey nails never come out. This one stays put until you pop it.',
 };
 
