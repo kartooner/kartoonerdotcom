@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-37">
+<html lang="en" data-build="1.5-38">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -873,6 +873,7 @@
             <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
     </svg>
+    <div id="safe-probe" aria-hidden="true" style="position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none"></div>
     <button id="btn-open-menu" class="glyph-btn" type="button" aria-label="Menu">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
@@ -890,35 +891,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-37",
-                "./zones.js": "./zones.js?v=1.5-37",
-                "./blockshader.js": "./blockshader.js?v=1.5-37",
-                "./sketch.js": "./sketch.js?v=1.5-37",
-                "./balls.js": "./balls.js?v=1.5-37",
-                "./labels.js": "./labels.js?v=1.5-37",
-                "./audio.js": "./audio.js?v=1.5-37",
-                "./theme.js": "./theme.js?v=1.5-37",
-                "./crumbs.js": "./crumbs.js?v=1.5-37",
-                "./buddy.js": "./buddy.js?v=1.5-37",
-                "./season.js": "./season.js?v=1.5-37",
-                "./leaves.js": "./leaves.js?v=1.5-37"
+                "./sim.js": "./sim.js?v=1.5-38",
+                "./zones.js": "./zones.js?v=1.5-38",
+                "./blockshader.js": "./blockshader.js?v=1.5-38",
+                "./sketch.js": "./sketch.js?v=1.5-38",
+                "./balls.js": "./balls.js?v=1.5-38",
+                "./labels.js": "./labels.js?v=1.5-38",
+                "./audio.js": "./audio.js?v=1.5-38",
+                "./theme.js": "./theme.js?v=1.5-38",
+                "./crumbs.js": "./crumbs.js?v=1.5-38",
+                "./buddy.js": "./buddy.js?v=1.5-38",
+                "./season.js": "./season.js?v=1.5-38",
+                "./leaves.js": "./leaves.js?v=1.5-38"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-37">
-    <link rel="modulepreload" href="./sim.js?v=1.5-37">
-    <link rel="modulepreload" href="./zones.js?v=1.5-37">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-37">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-37">
-    <link rel="modulepreload" href="./balls.js?v=1.5-37">
-    <link rel="modulepreload" href="./labels.js?v=1.5-37">
-    <link rel="modulepreload" href="./audio.js?v=1.5-37">
-    <link rel="modulepreload" href="./theme.js?v=1.5-37">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-37">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-37">
-    <link rel="modulepreload" href="./season.js?v=1.5-37">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-37">
+    <link rel="modulepreload" href="./game.js?v=1.5-38">
+    <link rel="modulepreload" href="./sim.js?v=1.5-38">
+    <link rel="modulepreload" href="./zones.js?v=1.5-38">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-38">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-38">
+    <link rel="modulepreload" href="./balls.js?v=1.5-38">
+    <link rel="modulepreload" href="./labels.js?v=1.5-38">
+    <link rel="modulepreload" href="./audio.js?v=1.5-38">
+    <link rel="modulepreload" href="./theme.js?v=1.5-38">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-38">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-38">
+    <link rel="modulepreload" href="./season.js?v=1.5-38">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-38">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -961,6 +962,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-37"></script>
+    <script type="module" src="./game.js?v=1.5-38"></script>
 </body>
 </html>
