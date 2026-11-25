@@ -221,7 +221,7 @@ From watching a tester's kids: they loved popping blocks when the board was simp
 
 ## Later: a bigger version (app or Steam)
 
-What could make a paid version worth it, beyond the free web game:
+What could make a paid version worth it, beyond the free web game (decided: biomes and the overworld are for that version only; the web game stays the single endless dig):
 
 - **Biomes.** Every 20 or so depths the world changes: caves, ice, lava, deep sea. Each gets its own colours, a shape or two, a prop or two (ice that slides, lava that eats a ball) and its own music phrase.
 - **An overworld.** A hand-drawn map between runs: pick a route down, see how far you got, unlock new entrances.
