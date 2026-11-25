@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-19');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-20');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,7 +192,7 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;              // a ball tips a domino harder, at the point it hits, so it topples
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_BASE = 2.1, GOLF_HILL_H = 2.3, GOLF_ROUND = 2.6;       // the hill: half its width at the floor, its height, how square its dome is
+const GOLF_BASE = 2.6, GOLF_HILL_H = 2.4, GOLF_ROUND = 1.3;       // the hill: half its width at the floor, its height, how its slopes curve
 const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
 const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades
@@ -1715,13 +1715,13 @@ export class Sim {
             s.owner[c.handle] = { t: 'peg' };
             cols.push(c.handle); rects.push([x, y, hx, hy]);
         };
-        const gx = GOLF_BASE + 0.2 + this.rand() * (W - 2 * GOLF_BASE - 0.4);   // the hill's middle
-        // A dome: flat-ish on top, rounded shoulders, its foot under the water. (A superellipse.)
+        const gx = 1.9 + this.rand() * (W - 3.8);                          // the hill's middle (its foot may run under the walls)
+        // A hill: rounded on top, sloping away on each side, its foot under the water.
         const domeY = (x) => {
             const u = Math.min(1, Math.abs(x - gx) / GOLF_BASE);
-            return -H + GOLF_HILL_H * Math.pow(1 - Math.pow(u, GOLF_ROUND), 1 / GOLF_ROUND);
+            return -H + GOLF_HILL_H * Math.pow(1 - u * u, GOLF_ROUND);
         };
-        const holeX = gx + (this.rand() * 2 - 1) * 0.35;
+        const holeX = gx + (this.rand() * 2 - 1) * 0.3;
         const top = domeY(holeX);
         const outline = [];                                                 // the dome as drawn, left foot to right foot
         for (let k = 0; k <= 40; k++) { const x = gx - GOLF_BASE + (2 * GOLF_BASE) * (k / 40); outline.push([x, domeY(x)]); }
@@ -1758,7 +1758,7 @@ export class Sim {
         s.owner[water.handle] = { t: 'water' };
         cols.push(water.handle);
         // Where the hill meets the water, for the leaves (they float round it; any landing on it slide off).
-        const wu = Math.pow(1 - Math.pow(GOLF_WATER_H / GOLF_HILL_H, GOLF_ROUND), 1 / GOLF_ROUND) * GOLF_BASE;
+        const wu = Math.sqrt(1 - Math.pow(GOLF_WATER_H / GOLF_HILL_H, 1 / GOLF_ROUND)) * GOLF_BASE;
         s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, waterline: [gx - wu, gx + wu], hole: [holeX, top], holeW: GOLF_HOLE * 2,
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
@@ -2314,7 +2314,7 @@ export class Sim {
             if (ball.floating) {
                 // Afloat: drawn up to just under the surface, bobbing, drifting to a stop, then gone.
                 ball.floating += 1;
-                const v = body.linvel(), surface = -H + GOLF_WATER_H - 0.06 + 0.035 * Math.sin(ball.floating * 0.09);
+                const v = body.linvel(), surface = -H + GOLF_WATER_H + 0.07 + 0.03 * Math.sin(ball.floating * 0.09);   // riding high, like a bob
                 body.setLinvel({ x: v.x * 0.94, y: (surface - p.y) * 6 }, true);
                 body.setAngvel(body.angvel() * 0.9, true);
                 if (ball.floating > FLOAT_STEPS) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); }

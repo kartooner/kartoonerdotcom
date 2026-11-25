@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-19';
+const BUILD = '1.5-20';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -671,19 +671,19 @@ function buildPropView(pr) {
             // The hill: a green dome, wobbled a touch and inked like crayon, standing in the water
             // (which is drawn see-through in front of its foot). The hole is a dark oval on top.
             const wob = (pts, amt, seed) => pts.map(([x, y], i) => [x + Math.sin(i * 2.3 + seed) * amt, y + Math.cos(i * 1.7 + seed) * amt]);
-            const dome = wob(pr.outline, 0.016, pr.id).map(([x, y]) => [x, Math.max(-H, y)]);
+            const dome = wob(pr.outline, 0.016, pr.id).map(([x, y]) => [Math.min(W, Math.max(0, x)), Math.max(-H, y)]);   // kept inside the board
             const body = filledShape(dome, GOLF_ISLAND[themeName()], 0);
             v.island = body.fill;
             const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [pr.holeW / 2 + 0.05], role: 'edge', inkFill: true, wob: 0.5, seed: pr.id + 15, margin: 0.08 });
-            rim.scale.set(1, 0.38, 1);
-            rim.position.set(pr.hole[0], pr.hole[1] - 0.03, 0.03);
+            rim.scale.set(1, 0.36, 1);
+            rim.position.set(pr.hole[0], pr.hole[1] - 0.1, 0.03);         // set down into the hill
             group.add(body.group, rim);
         }
         const [hx, hy] = pr.hole;
         // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
         const pole = makeSketch({ kind: SHAPE.BOX, size: [0.045, 0.78], round: 0.02, role: 'line', inkFill: true, wob: 0.4, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx, hy + 0.74, 0.035);                  // standing in the hole
-        group.add(pole, notchedFlag(hx + 0.02, hy + 1.5));
+        pole.position.set(hx, hy + 0.66, 0.035);                  // standing in the hole
+        group.add(pole, notchedFlag(hx + 0.02, hy + 1.42));
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -875,7 +875,7 @@ function syncView(frameDt) {
         if (t < 0.55) { rippleT.set(b.body, t); continue; }
         rippleT.set(b.body, 0);
         const p = sim.world.getRigidBody(b.body).translation();
-        waterRing(p.x, p.y + zoneOffset, 1.1, 1.1);
+        waterRing(p.x, p.y + zoneOffset - 0.12, 1.1, 1.1);        // from the waterline, down at the bottom of the ball
     }
     if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
