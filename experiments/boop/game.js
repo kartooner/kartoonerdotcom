@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-56';
+const BUILD = '1.5-57';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -37,6 +37,7 @@ let theme = THEMES.light;
 const makeLabel = (text, color = theme.text, style) => labelMesh(text, color, style);
 const bounced = new Set();      // balls that hit something since the last frame
 const fadingBalls = [];         // balls whose shot just ended, shrinking away
+const bobbing = [];             // the water test: balls left floating in the golf pool
 const fuseGrey = new THREE.Color();
 let hudKey = '';
 function buildBallView(handle) {
@@ -535,7 +536,7 @@ function buildPropView(pr) {
         // The water test: the golf pool is the same water, kept still (it ripples and splashes,
         // but doesn't flow). The hill and ledges are solid for any splash.
         v.water.visible = false;
-        golfPool = { id: pr.id, ground: groundSolid(pr.outline), rects: pr.rects };
+        golfPool = { id: pr.id, top: -H + pr.water, ground: groundSolid(pr.outline), rects: pr.rects };
         water.setPool(-H + pr.water);
     }
     return v;
@@ -698,6 +699,7 @@ function syncView(frameDt) {
             const dx = vel.x - v.prev.x, dy = vel.y - v.prev.y;
             if (Math.hypot(dx, dy) > 1) { v.squashT = 0; v.normal = Math.atan2(dy, dx); }
         }
+        if (ball.floating) v.floating = true;
         // The fuse: a ball greys as it goes without hitting a block, and brightens again on a hit.
         const fuse = ballFuse(ball), k = fuse * fuse * (3 - 2 * fuse);
         v.fill.material.color.setHex(theme.ball).lerp(fuseGrey.setHex(theme.guideEnd), k);
@@ -712,9 +714,24 @@ function syncView(frameDt) {
     for (const [h, v] of ballViews) {
         if (live.has(h)) continue;
         ballViews.delete(h);
+        // The water test: a ball that landed in the still golf pool stays, bobbing, till the stage is over.
+        if (v.floating && golfPool) { bobbing.push({ group: v.group, x: v.group.position.x, t: Math.random() * 6 }); continue; }
         v.group.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
         fadingBalls.push({ group: v.group, t: 0 });
     }
+    for (let i = bobbing.length - 1; i >= 0; i--) {
+        const b = bobbing[i];
+        if (!golfPool) {                                     // stage over: off they go, like any finished ball
+            b.group.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
+            fadingBalls.push({ group: b.group, t: 0 });
+            bobbing.splice(i, 1);
+            continue;
+        }
+        b.t += frameDt;
+        b.group.position.set(b.x, golfPool.top + Math.sin(b.t * 1.6) * 0.03 + zoneOffset, 0.4);
+        b.group.rotation.z = Math.sin(b.t * 1.1) * 0.08;
+    }
+    if (bobbing.length && !calmMotion.matches) animating = true;
     for (let i = fadingBalls.length - 1; i >= 0; i--) {
         const f = fadingBalls[i];
         f.t += frameDt;
@@ -1704,6 +1721,8 @@ function restart(saved = null) {
     for (const v of ballViews.values()) discard(v.group);
     for (const f of fadingBalls) discard(f.group);
     fadingBalls.length = 0;
+    for (const b of bobbing) discard(b.group);
+    bobbing.length = 0;
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
     leafPiles?.clear();

@@ -1,7 +1,7 @@
 // Buddy's little life. He breathes (that's CSS), and every few seconds he opens his eyes to
 // blink or glance around, then settles. Tap him and he wiggles. With Reduce Motion on he
 // skips the breathing and wiggling but still blinks.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-56');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-57');   // build stamp: game.js checks every file matches
 
 const still = window.matchMedia('(prefers-reduced-motion: reduce)');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
