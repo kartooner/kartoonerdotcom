@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-9');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-10');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -165,18 +165,35 @@ const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
     pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
+    dominoes: 'Bonus stage! Knock over the dominoes. Each one that falls is +1. Three shots.',
+    golf: 'Bonus stage! Mini golf: sink the ball in the hole by the flag. First try +8, then +6, then +4.',
+    hoops: 'Bonus stage! Hoops: five shots at the moving basket. Each one in is +2.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
-// Pachinko (a surprise, so not in What's new): clearing depth 25, 40 or 50 leads to a bonus
-// stage with no blocks, a board of nails and pockets along the bottom. Three drops of five balls
-// fall from the launcher (pick the spot and the angle each time) and bounce down through the
-// nails; each pocket pays what's on it. Here balls fall for real: gravity, no constant speed, softer
-// bounces. Not in Relaxed mode, where shots never run out anyway.
-export const PACHINKO_AT = new Set([25, 40, 50]);
-const PACHINKO_DROPS = 3, PACHINKO_BALLS = 5, PACHINKO_CAP = 12;
-const PACHINKO_SPEED = 4;             // launch speed (a drop, not a shot)
-const PACHINKO_GRAVITY = 2.2;         // gravity scale on the balls: a gentle fall you can follow
+// Surprise stages (not in What's new or How to play): little bonus games between zones, after
+// clearing set depths and then every few zones at random. Not in Relaxed mode, where shots
+// never run out anyway. Each has its own shots and its own cap on what it pays; on the
+// ones with a ball config, balls fall for real (gravity, no constant speed, softer bounces).
+//   dominoes: rows of standing grey dominoes; each one that topples is +1.
+//   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
+//   pachinko: three drops of five balls through nails into pockets (see below).
+//   hoops:    five shots at a basket sliding side to side; each in is +2.
+const SPECIAL_AT = { 10: 'dominoes', 20: 'golf', 25: 'pachinko', 30: 'hoops' };
+const SPECIAL_RANDOM_FROM = 35, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
+const SPECIALS = ['dominoes', 'golf', 'pachinko', 'hoops'];
+const STAGES = {
+    dominoes: { shots: 3, cap: 7 },
+    golf: { shots: 3, cap: 8, ball: { speed: 10, gravity: 1.6, rest: 0.35, settle: true } },
+    pachinko: { shots: 3, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
+    hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true } },
+};
+const DOMINO_KNOCK = 2.5;
+const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
+const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
+const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
+const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
+// Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
 const PACHINKO_POCKETS = [1, 0, 0, 0, 3, 0, 0, 0, 1];   // one per column, left to right
 // Catch cups part-way down: a ball that drops in releases more balls from the launcher.
 const PACHINKO_CUPS = [[2, -6.4], [7, -6.4], [4.5, -10.9]];
@@ -689,7 +706,7 @@ export class Sim {
                 // A grey block knocked fully loose has done its job as a bumper. Left lying around
                 // it could wall off a breakable block for good (it can't be broken), so once it
                 // lands and settles (or after a few seconds whatever it's doing) it crumbles.
-                if (b.neutral && !b.bomb && b.hung == null) {
+                if (b.neutral && !b.bomb && !b.domino && b.hung == null) {      // (dominoes stay put)
                     b.looseT = (b.looseT ?? 0) + 1;
                     const v = body.linvel(), still = Math.abs(v.x) + Math.abs(v.y) + Math.abs(body.angvel()) < GREY_STILL;
                     b.calmT = still && b.looseT > GREY_FALL_MIN ? (b.calmT ?? 0) + 1 : 0;
@@ -717,8 +734,8 @@ export class Sim {
         return true;
     }
 
-    // Is the board done? A pachinko stage has no blocks; it ends when its drop is used up.
-    cleared() { return this.blockCount() === 0 && this.s.bonus?.kind !== 'pachinko'; }
+    // Is the board done? A surprise stage has no blocks to clear; it ends when its shots are used up.
+    cleared() { return this.blockCount() === 0 && !STAGES[this.s.bonus?.kind]; }
 
     // Blocks left to clear. Neutral blocks don't count: they can't be broken.
     blockCount() {
@@ -753,18 +770,18 @@ export class Sim {
 
     // A bonus stage: no depth, three free shots, one of three layouts. Small numbers that grow
     // with your balls per shot, so it takes a little aim.
-    genBonus(pachinko = false) {
+    genBonus(special = null) {
         const s = this.s;
         this.clearZoneLeftovers();
         const parBack = s.pendingPar;            // the last zone's par shots, paid once this is built
         s.pendingPar = 0;
-        let kind = 'pachinko';
-        if (!pachinko) {                         // a gold block's bonus (a pachinko stage leaves it waiting)
+        let kind = special;
+        if (!special) {                          // a gold block's bonus (a surprise stage leaves it waiting)
             s.bonusNext = false;
             s.bonusCount = (s.bonusCount ?? 0) + 1;
             kind = BONUS_KINDS[(s.bonusCount - 1) % BONUS_KINDS.length];
         }
-        s.bonus = pachinko ? { kind, shots: PACHINKO_DROPS, gain: 0, pops: 0, cap: PACHINKO_CAP } : { kind, shots: BONUS_SHOTS, gain: 0, pops: 0 };
+        s.bonus = special ? { kind, shots: STAGES[kind].shots, gain: 0, pops: 0, cap: STAGES[kind].cap } : { kind, shots: BONUS_SHOTS, gain: 0, pops: 0 };
         s.par = null; s.zoneShots = 0; s.stretch = false; s.recipe = 'bonus';
         s.note = BONUS_NOTES[kind];
         s.noteTarget = { kind: 'launcher' };
@@ -796,6 +813,9 @@ export class Sim {
         };
         const ONE = [[[0, 0]]], TWO = [[[0, 0]], [[0, 0], [1, 0]], [[0, 0], [0, 1]]];
         if (kind === 'pachinko') this.addPachinko();
+        else if (kind === 'dominoes') this.addDominoes();
+        else if (kind === 'golf') this.addGolf();
+        else if (kind === 'hoops') this.addHoop();
         else if (kind === 'rings') {
             // A sky full of +1 rings, a few springy mushrooms on the walls, little blocks to keep balls going.
             for (const [right, r] of [[false, 3], [true, 5], [false, 7]]) {
@@ -834,19 +854,30 @@ export class Sim {
         }
     }
 
+    // Which surprise stage (if any) follows clearing depth d.
+    specialFor(d) {
+        if (SPECIAL_AT[d]) return SPECIAL_AT[d];
+        if (d < SPECIAL_RANDOM_FROM || d % SPECIAL_EVERY !== 0) return null;
+        const pool = SPECIALS.filter((k) => k !== this.s.lastSpecial);
+        return pool[Math.floor(this.rand() * pool.length)];
+    }
+
     genZone() {
         const s = this.s;
         if (!s.retries) s.pendingPar = s.par ? Math.min(PAR_BONUS_MAX, Math.max(0, s.par - s.zoneShots)) : 0;
         if (!s.retries && s.par && s.zoneShots < s.par) s.underPar = (s.underPar ?? 0) + 1;
         if (s.bonus) {
             // Out of a bonus stage: clearing it all adds one (outside the cap), then say what it paid.
-            if (this.blockCount() === 0 && !s.bonus.cleared && s.bonus.kind !== 'pachinko') { s.bonus.cleared = true; s.supply += BONUS_CLEAR; s.bonus.gain += BONUS_CLEAR; }
+            if (this.blockCount() === 0 && !s.bonus.cleared && !STAGES[s.bonus.kind]) { s.bonus.cleared = true; s.supply += BONUS_CLEAR; s.bonus.gain += BONUS_CLEAR; }
+            if (s.bonus.kind === 'golf' && !s.bonus.sunk) { s.supply += GOLF_TRY; s.bonus.gain += GOLF_TRY; }   // a little something for trying
             s.bonusPaid = s.bonus.gain;           // the game shows it as the next zone comes in
             s.bonus = null;
         }
-        if (!s.retries && !s.relaxed && PACHINKO_AT.has(s.depth) && s.pachinkoAt !== s.depth) {
-            s.pachinkoAt = s.depth;
-            this.genBonus(true);
+        const special = !s.retries && !s.relaxed && (s.specialAt ?? s.pachinkoAt) !== s.depth ? this.specialFor(s.depth) : null;
+        if (special) {
+            s.specialAt = s.depth;
+            s.lastSpecial = special;
+            this.genBonus(special);
             return;
         }
         if (s.bonusNext && !s.retries) { this.genBonus(); return; }
@@ -1631,6 +1662,99 @@ export class Sim {
         }
     }
 
+    // Dominoes: two rows of tall grey dominoes, one on a grey shelf and one on the floor.
+    // They can't be broken; each that topples pays (checkDominoes).
+    addDominoes() {
+        const shelfRow = 9;
+        this.addBlock([1, 2, 3, 4, 5, 6].map((c) => [c, shelfRow]), 1, 'neutral');
+        const add = (c, bottom) => {
+            const b = this.addBlock([[c, bottom - 3], [c, bottom - 2], [c, bottom - 1], [c, bottom]], 1, 'loose');
+            b.neutral = true; b.domino = true;
+            for (const h of b.cols) this.world.getCollider(h).setFriction(0.3);
+        };
+        for (const c of [1, 3, 5]) add(c, shelfRow - 1);
+        for (const c of [0, 2, 4, 6]) add(c, H - 1);       // not against the right wall: it couldn't fall
+    }
+
+    checkDominoes() {
+        const { world, s } = this;
+        if (s.quiet) return;
+        for (const id in s.blocks) {
+            const b = s.blocks[id];
+            if (!b.domino) continue;
+            const body = world.getRigidBody(b.body);
+            const a = body.rotation(), tilt = Math.abs(Math.sin(a));
+            // Once it's tipping, help it on its way so it falls flat and takes the next one with it
+            // (left alone they lean on each other and stall halfway).
+            if (tilt > 0.17 && tilt < 0.97) body.applyTorqueImpulse(Math.sign(Math.sin(a)) * DOMINO_FALL * body.mass(), true);
+            if (b.fell || tilt < 0.42) continue;     // counts once it's clearly tipped (about 25°)
+            b.fell = true;
+            const p = body.translation();
+            this.events.push({ t: 'topple', id: b.id, x: p.x, y: p.y });
+            this.gain(1, p.x, p.y + 0.8);
+        }
+    }
+
+    // Mini golf: grey ground with a hole in it, a ledge or two on the way, and a flag.
+    // The hole is a gap in the ground with a catcher in it.
+    addGolf() {
+        const { R, world, s } = this;
+        const id = s.nextId++;
+        const body = world.createRigidBody(R.RigidBodyDesc.fixed());
+        const cols = [], rects = [];
+        const rect = (x0, x1, y0, y1) => {      // a grey slab from x0 to x1, y0 (top) to y1 (bottom)
+            const hx = (x1 - x0) / 2, hy = (y0 - y1) / 2, x = (x0 + x1) / 2, y = (y0 + y1) / 2;
+            const c = world.createCollider(R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
+                .setRestitution(0.2).setFriction(0.6).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+            s.owner[c.handle] = { t: 'peg' };
+            cols.push(c.handle); rects.push([x, y, hx, hy]);
+        };
+        const holeX = 1.5 + Math.floor(this.rand() * 6);              // the hole's column centre, 1.5–6.5
+        const groundTop = -H + 1.2;
+        rect(0, holeX - GOLF_HOLE, groundTop, -H);
+        rect(holeX + GOLF_HOLE, W, groundTop, -H);
+        // A ledge or two to play around: never right over the hole.
+        const ledges = this.rand() < 0.5 ? [[0, 3.2, -6.5], [5.2, W, -9.5]] : [[5.8, W, -6.5], [0, 3.8, -9.5]];
+        for (const [x0, x1, y] of ledges) if (holeX < x0 - 0.6 || holeX > x1 + 0.6) rect(x0, x1, y, y - 0.4);
+        // A bump on the green, on the far side of the hole from the launcher.
+        const bumpX = holeX > W / 2 ? holeX - 2 : holeX + 2;
+        rect(bumpX - 0.5, bumpX + 0.5, groundTop + 0.5, groundTop);
+        const c = world.createCollider(R.ColliderDesc.cuboid(GOLF_HOLE - 0.06, 0.2).setTranslation(holeX, -H + 0.35).setSensor(true)
+            .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
+        s.owner[c.handle] = { t: 'hole', x: holeX, y: groundTop };
+        cols.push(c.handle);
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, hole: [holeX, groundTop], bodies: [body.handle], cols };
+    }
+
+    // Hoops: a basket (two rim posts with a catcher between) that slides side to side.
+    addHoop() {
+        const { R, world, s } = this;
+        const id = s.nextId++;
+        const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(W / 2, HOOP_Y));
+        const cols = [];
+        for (const dx of [-HOOP_HALF, HOOP_HALF]) {
+            const c = world.createCollider(R.ColliderDesc.cuboid(0.06, 0.3).setTranslation(dx, -0.15)
+                .setRestitution(0.4).setFriction(0.2).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+            s.owner[c.handle] = { t: 'peg' };
+            cols.push(c.handle);
+        }
+        const c = world.createCollider(R.ColliderDesc.cuboid(HOOP_HALF - 0.12, 0.08).setTranslation(0, -0.3).setSensor(true)
+            .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
+        s.owner[c.handle] = { t: 'hoop', id };
+        cols.push(c.handle);
+        s.props[id] = { id, kind: 'hoop', x: W / 2, y: HOOP_Y, half: HOOP_HALF, body: body.handle, bodies: [body.handle], cols };
+    }
+
+    moveHoop() {
+        const { world, s } = this;
+        for (const id in s.props) {
+            const pr = s.props[id];
+            if (pr.kind !== 'hoop') continue;
+            const x = W / 2 + HOOP_SWING * Math.sin(s.step * HOOP_SPEED);
+            world.getRigidBody(pr.body).setNextKinematicTranslation({ x, y: HOOP_Y });
+        }
+    }
+
     // The pachinko board: staggered nails, and pockets along the floor with thin posts between.
     // One prop holds it all (one fixed body), so it clears with the stage like any prop.
     addPachinko() {
@@ -1800,7 +1924,7 @@ export class Sim {
     // ---------- balls ----------
 
     // A bonus shot is a single ball: where you aim is what counts.
-    fire(angle, count = this.s.bonus ? (this.s.bonus.shots > 0 ? (this.s.bonus.kind === 'pachinko' ? PACHINKO_BALLS : 1) : 0) : this.s.supply > 0 ? this.s.volley : 0) {
+    fire(angle, count = this.s.bonus ? (this.s.bonus.shots > 0 ? (STAGES[this.s.bonus.kind]?.balls ?? 1) : 0) : this.s.supply > 0 ? this.s.volley : 0) {
         if (count > 0 && this.s.bonus) this.s.bonus.shots -= 1;                   // a bonus shot is free
         else if (count > 0) { if (!this.s.relaxed) this.s.supply -= 1; this.s.zoneShots = (this.s.zoneShots ?? 0) + 1; }   // one shot, however many balls it fires
         this.s.shots = { left: count, angle, timer: 0, fired: 0 };
@@ -1814,17 +1938,17 @@ export class Sim {
     spawnBall(angle, bonus = false) {
         const { R, world, s } = this;
         const L = this.launcher();
-        const drop = s.bonus?.kind === 'pachinko';
-        if (drop && bonus) angle += (this.rand() - 0.5) * 0.5;     // each ball of the drop goes its own way
-        const speed = drop ? PACHINKO_SPEED : BALL_SPEED;
+        const drop = STAGES[s.bonus?.kind]?.ball;               // a surprise stage's falling ball
+        if (drop?.spread && bonus) angle += (this.rand() - 0.5) * drop.spread;     // each ball of a drop goes its own way
+        const speed = drop ? drop.speed : BALL_SPEED;
         const body = world.createRigidBody(
             R.RigidBodyDesc.dynamic().setTranslation(L.x, L.y)
                 .setLinvel(Math.cos(angle) * speed, Math.sin(angle) * speed)
-                .setGravityScale(drop ? PACHINKO_GRAVITY : 1)
+                .setGravityScale(drop ? drop.gravity : 1)
                 .setCcdEnabled(true).setCanSleep(false));
         const c = world.createCollider(
             R.ColliderDesc.ball(BALL_R).setDensity(1)
-                .setRestitution(drop ? 0.45 : 0.9).setRestitutionCombineRule(R.CoefficientCombineRule.Max)
+                .setRestitution(drop ? drop.rest : 0.9).setRestitutionCombineRule(R.CoefficientCombineRule.Max)
                 .setFriction(0.35)
                 .setCollisionGroups(groups(G.BALL, BALL_FILTER))
                 .setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
@@ -1895,7 +2019,9 @@ export class Sim {
             } else body.setLinvel({ x: v.x * k, y: v.y * k }, true);
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
-        const falling = s.bonus?.kind === 'pachinko';     // pachinko balls just fall
+        const falling = !!STAGES[s.bonus?.kind]?.ball;     // a surprise stage's balls just fall
+        if (s.bonus?.kind === 'hoops') this.moveHoop();
+        if (s.bonus?.kind === 'dominoes') this.checkDominoes();
         for (const ball of s.balls) {
             const body = world.getRigidBody(ball.body);
             let v = body.linvel();
@@ -2007,6 +2133,30 @@ export class Sim {
             this.removeBall(a.body);
             return;
         }
+        if (b.t === 'hole') {
+            // Golf: in the hole. Pays by try, and the stage is done.
+            this.removeBall(a.body);
+            if (s.bonus && !s.bonus.sunk) {
+                const tries = STAGES.golf.shots - s.bonus.shots;
+                const n = GOLF_PAYS[Math.max(0, Math.min(GOLF_PAYS.length - 1, tries - 1))];
+                s.bonus.sunk = true;
+                s.bonus.shots = 0;
+                this.events.push({ t: 'sunk', n, x: b.x, y: b.y });
+                this.gain(n, b.x, b.y + 1);
+            }
+            return;
+        }
+        if (b.t === 'hoop') {
+            // Hoops: through the basket from above, once per ball.
+            const v = body.linvel();
+            if (ball && !ball.hooped && v.y < 0) {
+                ball.hooped = true;
+                const pr = s.props[b.id], hp = pr ? world.getRigidBody(pr.body).translation() : p;
+                this.events.push({ t: 'swish', x: hp.x, y: hp.y });
+                this.gain(2, hp.x, hp.y + 0.8);
+            }
+            return;
+        }
         if (b.t === 'catch') {
             // Caught: more balls drop from the launcher (up to CUP_BALLS_MAX a stage).
             this.removeBall(a.body);
@@ -2049,7 +2199,8 @@ export class Sim {
                 const sp = Math.hypot(ball.pv[0], ball.pv[1]) || 1;
                 const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass() * (blk.loose || blk.hanging || blk.seesaw ? 1 : PINNED_KNOCK);
                 // A seesaw is pushed where it was hit, so it rocks; anything else through its centre.
-                if (blk.seesaw) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, { x: p.x, y: p.y }, true);
+                if (blk.domino) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv * DOMINO_KNOCK, y: ball.pv[1] / sp * dv * DOMINO_KNOCK }, { x: p.x, y: p.y }, true);
+                else if (blk.seesaw) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, { x: p.x, y: p.y }, true);
                 else bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
             // A hanging bomb: two hits light it, like any bomb.
@@ -2113,9 +2264,20 @@ export class Sim {
             }
             ball.age += 1;
             ball.idle += 1;
-            if (s.bonus?.kind === 'pachinko') {
-                ball.idle = 0;                   // no fade: a falling ball ends in a pocket
+            const drop = STAGES[s.bonus?.kind]?.ball;
+            if (drop) {
+                ball.idle = 0;                   // no fade: a falling ball ends in a pocket, a hole, or at rest
                 if (ball.age > 30 * 120) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); continue; }
+                if (drop.settle) {
+                    // Golf and hoops: a ball that has come to rest (or nearly) is done. No kicks.
+                    const v = body.linvel();
+                    ball.rest = Math.hypot(v.x, v.y) < 0.6 ? (ball.rest ?? 0) + 1 : 0;
+                    if (ball.rest > 60 || (s.bonus.kind === 'hoops' && p.y < -H + 0.4)) {
+                        this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true });
+                        this.removeBall(ball.body);
+                    }
+                    continue;
+                }
             }
             // Grace: a ball about to time out that's heading straight at a block nearby gets
             // a little longer to get there (never more than GRACE_MAX in a row).
