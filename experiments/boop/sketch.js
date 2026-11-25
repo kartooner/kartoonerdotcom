@@ -1,7 +1,7 @@
 // Hand-drawn simple shapes: the board frame, props, +1 rings, the launcher. Same trick as
 // the block shader: the edge gets a slow bend and fine grain so it looks drawn, not machined.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-55');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-56');   // build stamp: game.js checks every file matches
 
 export const SHAPE = { BOX: 0, CIRCLE: 1, RING: 2, CAP: 3 };
 
