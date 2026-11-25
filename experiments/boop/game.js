@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-16';
+const BUILD = '1.5-17';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -517,6 +517,17 @@ function notchedFlag(x, y) {
     return g;
 }
 const GOLF_GRASS = 0x6fae4f;
+const GOLF_RIPPLE = { light: 0x557c8c, dark: 0x9cc6d8 };    // rings on the water: a darker (or, at night, lighter) blue-grey
+// A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
+// behind a floating ball and round in front of it. delay: seconds before it starts.
+function waterRing(x, y, r, dur, delay = 0) {
+    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.9, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
+    ring.position.set(x, y, 0.045);
+    ring.scale.setScalar(0.001);
+    scene.add(ring);
+    booms.push({ ring, r, t: -delay, dur, flat: true });
+}
+const rippleT = new Map();       // floating ball → time since its last ring
 const GOLF_ISLAND = { light: 0x3f7a4c, dark: 0x2c5436 };    // the island's sides, a darker green                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
@@ -847,6 +858,16 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
+    // A ball afloat in the golf water sends out a ring every half second while it bobs.
+    for (const b of s.balls) {
+        if (!b.floating) continue;
+        const t = (rippleT.get(b.body) ?? 0.25) + frameDt;
+        if (t < 0.55) { rippleT.set(b.body, t); continue; }
+        rippleT.set(b.body, 0);
+        const p = sim.world.getRigidBody(b.body).translation();
+        waterRing(p.x, p.y + zoneOffset, 1.1, 1.1);
+    }
+    if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
         if (s.balls.length) leafPiles.stir(s.balls.map((b) => {
             const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
@@ -947,7 +968,7 @@ function syncView(frameDt) {
         b.t += frameDt;
         const k = Math.max(0, Math.min(1, b.t / (b.dur ?? 0.4))), ease = 1 - (1 - k) ** 3;
         const sc = 0.3 + (b.r - 0.3) * ease;
-        b.ring.scale.set(sc, b.flat ? sc * 0.22 : sc, 1);           // a ripple is a ring seen side-on: flat
+        b.ring.scale.set(sc, b.flat ? sc * 0.3 : sc, 1);            // a ripple is a ring seen side-on: flat
         b.ring.material.uniforms.uAlpha.value = b.t < 0 ? 0 : 1 - k;
         if (k >= 1) { discard(b.ring); booms.splice(i, 1); }
     }
@@ -1022,13 +1043,7 @@ function consumeEvents() {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
             leafPiles?.ripple(e.x, 1.4);
-            for (const [delay, r] of [[0, 0.9], [0.18, 1.3]]) {
-                const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.06, edge: 0, role: 'line', inkFill: true, wob: 0.6, seed: (e.x * 13 + delay * 50) | 0, margin: 0.12 });
-                ring.position.set(e.x, e.y, 0.045);       // on the water's surface
-                ring.scale.setScalar(0.001);
-                scene.add(ring);
-                booms.push({ ring, r, t: -delay, dur: 0.7, flat: true });
-            }
+            for (const [delay, r] of [[0, 1.0], [0.16, 1.35], [0.32, 1.7]]) waterRing(e.x, e.y, r, 0.9, delay);
         }
         if (e.t === 'contact') {
             bounced.add(e.ball);
