@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-27');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-28');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -165,12 +165,14 @@ const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
     pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
-    tower: 'Bonus stage! Topple the towers. Every block you knock over is +1. Three shots.',
+    tower: 'Bonus stage! Topple the towers: three shots. Every block you knock over is +1.',
     golf: "Bonus stage! Mini golf: land on the green and sink it by the flag. Miss and it's in the water. First try +8, then +6, then +4.",
     hoops: 'Bonus stage! Hoops: five shots, baskets all over. Bank off the grey blocks. Every basket is +2.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
+// On the stages with a ball config, balls are slowed down and float, so shots fly in clear arcs
+// (and the aim guide shows the arc). The tower stage keeps the normal fast ball.
 // Surprise stages (not in What's new or How to play): little bonus games between zones, a reward
 // for deep runs (gold blocks give earlier players their bonuses), after clearing set depths
 // and then every few zones at random. Not in Relaxed mode, where shots
@@ -185,9 +187,9 @@ const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one eve
 const SPECIALS = ['tower', 'golf', 'pachinko', 'hoops'];
 const STAGES = {
     tower: { shots: 3, cap: 10 },
-    golf: { shots: 3, cap: 8, ball: { speed: 10, gravity: 1.6, rest: 0.35, settle: true } },
+    golf: { shots: 3, cap: 8, ball: { speed: 6.5, gravity: 1.0, rest: 0.35, settle: true } },
     pachinko: { shots: 3, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
-    hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true, life: 7 } },
+    hoops: { shots: 5, cap: 10, ball: { speed: 6, gravity: 0.9, rest: 0.6, settle: true, life: 8 } },
 };
 const TOWER_KNOCK = 5;                 // a ball shoves a tower block harder, at the point it hits, so it tips
 const TOWER_HP = [2, 4, 6, 9, 14, 24, 39];   // just for their colours: tower blocks have no number and don't break
@@ -2253,7 +2255,7 @@ export class Sim {
             if (ball && !(ball.hooped ??= []).includes(b.id) && v.y < 0) {
                 ball.hooped.push(b.id);
                 const pr = s.props[b.id], hp = pr ? world.getRigidBody(pr.body).translation() : p;
-                this.events.push({ t: 'swish', x: hp.x, y: hp.y });
+                this.events.push({ t: 'swish', id: b.id, x: hp.x, y: hp.y });
                 this.gain(2, hp.x, hp.y + 0.8);
             }
             return;

@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-27';
+const BUILD = '1.5-28';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -709,6 +709,7 @@ function buildPropView(pr) {
         rim.position.set(0, 0.12, 0.06);
         const net = makeSketch({ kind: SHAPE.BOX, size: [half - 0.1, 0.24], round: 0.05, role: 'line', filled: false, edge: 0.03, wob: 0.6, seed: pr.id + 5, margin: 0.08 });
         net.position.set(0, -0.2, 0.04);
+        v.net = net;
         const label = makeLabel('+2', theme.text, 'hand');
         label.userData.text = '+2';
         label.scale.setScalar(0.8);
@@ -925,6 +926,17 @@ function syncView(frameDt) {
         if (v.vine) { syncVine(v, pr); continue; }
         if (v.body == null) v.group.position.y = pr.y + zoneOffset;   // a mushroom follows its body (below)
         if (v.bomb) animateBomb(v.bomb, pr.lit, frameDt, v.group);
+        if (v.swishT != null) {
+            // A swish: the net drops and stretches with the ball, sways, and springs back.
+            v.swishT += frameDt;
+            const k = Math.min(1, v.swishT / 0.6), ease = Math.sin(Math.PI * Math.min(1, k * 1.6)) * (1 - k * 0.6);
+            const sy = 1 + 0.55 * Math.max(0, ease);
+            v.net.scale.y = sy;
+            v.net.position.y = 0.04 - 0.24 * sy;            // stretched from its top, where it hangs from the rim
+            v.net.rotation.z = calmMotion.matches ? 0 : 0.18 * Math.sin(k * 14) * (1 - k);
+            animating = true;
+            if (k >= 1) { v.swishT = null; v.net.scale.y = 1; v.net.position.y = -0.2; v.net.rotation.z = 0; }
+        }
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
         // frozen mid-spin would otherwise keep the board from ever idling.
@@ -1057,7 +1069,11 @@ function consumeEvents() {
         if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
         if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
         if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2.9, 0.75);
-        if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
+        if (e.t === 'swish') {
+            addFloater('Swish!', e.x, e.y + 1.4);
+            const hv = propViews.get(e.id);
+            if (hv) hv.swishT = 0;                // the net stretches and sways as the ball goes through
+        }
         if (e.t === 'splash') {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
@@ -1175,7 +1191,9 @@ function drawGuide(angle) {
     const t0 = now;
     guideAngle = angle;
     guideX = launchAt().x;
-    const result = predict(sim, angle);
+    // On the slow, floaty bonus stages the guide shows the whole arc, up to the first thing it hits.
+    const arcs = ['golf', 'hoops', 'pachinko'].includes(sim.s.bonus?.kind);
+    const result = arcs ? predict(sim, angle, 1, 600) : predict(sim, angle);
     // Stop the guide at the bottom of the field, where the ball leaves.
     const cut = result.path.findIndex(([, y]) => y < -H);
     const path = cut > 0 ? result.path.slice(0, cut) : result.path;

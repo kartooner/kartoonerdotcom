@@ -3,7 +3,7 @@
 // Tap him and he wiggles.
 // Each buddy on the page keeps its own timing. With reduced motion he doesn't breathe
 // or wiggle, but still blinks and glances: small, and nothing on screen moves around.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-27');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-28');   // build stamp: game.js checks every file matches
 
 const still = window.matchMedia('(prefers-reduced-motion: reduce)');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
