@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-28');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-29');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -393,6 +393,47 @@ export function makeHillMesh(outline, hole, { x0, x1, bottom, top, fill, ink, ho
             uHoleE: { value: new THREE.Vector4(...hole) },
             uSeed: { value: seed },
         },
+    });
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.renderOrder = 1;
+    return mesh;
+}
+
+// ---------- a basketball net ----------
+// A funnel hanging from a rim: crossed diagonal crayon strokes and a few rings round it, wider at
+// the top and tapering down, drawn in ink with crayon grain. Its top edge is at y = 0.
+const netFragment = /* glsl */`
+uniform vec3 uInk;
+uniform vec3 uSize;        // top half-width, bottom half-width, height
+uniform float uSeed;
+varying vec2 vP;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float line(float v, float w) { float d = abs(fract(v) - 0.5); float aa = fwidth(v); return 1.0 - smoothstep(w - aa, w + aa, d); }
+void main() {
+    float t = clamp(-vP.y / uSize.z, 0.0, 1.0);                    // 0 at the rim, 1 at the bottom
+    float hw = mix(uSize.x, uSize.y, t);
+    float wob = (noise(vP * 9.0 + uSeed) - 0.5) * 0.08;
+    float u = vP.x / hw + wob;                                     // -1..1 across the net at this height
+    float inside = step(abs(u), 1.04) * step(-vP.y, uSize.z * 1.02) * step(vP.y, 0.02);
+    float diag = max(line(u * 1.6 + t * 2.2 + 0.25, 0.16), line(u * 1.6 - t * 2.2 + 0.25, 0.16));
+    float ring = line(t * 3.0 + wob * 2.0, 0.13) * step(0.2, t);
+    float side = 1.0 - smoothstep(0.88, 0.98, abs(u)) ;
+    float strokes = max(max(diag, ring), 1.0 - side);
+    float grain = 0.65 + 0.35 * noise(vP * 40.0 + uSeed);
+    gl_FragColor = vec4(uInk, strokes * inside * grain);
+    #include <colorspace_fragment>
+}`;
+export function makeNetMesh(top, bottom, height, ink, seed = 0) {
+    const geo = new THREE.PlaneGeometry(top * 2 + 0.2, height + 0.2);
+    geo.translate(0, -height / 2, 0);
+    const material = new THREE.ShaderMaterial({
+        vertexShader: vertex, fragmentShader: netFragment, transparent: true, depthWrite: false,
+        uniforms: { uInk: { value: new THREE.Color(ink) }, uSize: { value: new THREE.Vector3(top, bottom, height) }, uSeed: { value: seed } },
     });
     const mesh = new THREE.Mesh(geo, material);
     mesh.renderOrder = 1;

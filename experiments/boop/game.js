@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, makeHillMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
+import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-28';
+const BUILD = '1.5-29';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -691,31 +691,25 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'hoop') {
-        // Hoops: two rim posts (the one on the backboard side taller), a backboard, an orange rim
-        // between the posts, and a net hanging under it.
-        const half = pr.half;
-        for (const dx of [-half, half]) {
-            const tall = Math.sign(dx) === pr.back;
-            const post = makeSketch({ kind: SHAPE.BOX, size: [0.06, tall ? 0.55 : 0.3], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + dx * 3, margin: 0.06 });
-            post.position.set(dx, tall ? 0.1 : -0.15, 0.05);
-            group.add(post);
-            if (tall) {
-                const board = makeSketch({ kind: SHAPE.BOX, size: [0.09, 0.32], round: 0.04, edge: 0.04, wob: 0.4, fill: 0xfbf6ea, seed: pr.id + 7, margin: 0.08 });
-                board.position.set(dx + Math.sign(dx) * 0.1, 0.3, 0.045);
-                group.add(board);
-            }
-        }
-        const rim = makeSketch({ kind: SHAPE.BOX, size: [half, 0.045], round: 0.03, edge: 0.03, wob: 0.3, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.06 });
-        rim.position.set(0, 0.12, 0.06);
-        const net = makeSketch({ kind: SHAPE.BOX, size: [half - 0.1, 0.24], round: 0.05, role: 'line', filled: false, edge: 0.03, wob: 0.6, seed: pr.id + 5, margin: 0.08 });
-        net.position.set(0, -0.2, 0.04);
+        // Hoops: a crayon basket. An oval orange rim, seen a little from above; a net hanging from it,
+        // a funnel of crossed strokes; and a small hand-drawn backboard behind, on the side nearer
+        // its wall. (The rim's ends and the backboard are the posts the ball bounces off.)
+        const half = pr.half, back = pr.back;
+        const board = makeSketch({ kind: SHAPE.BOX, size: [0.07, 0.36], round: 0.05, edge: 0.045, wob: 0.6, fill: 0xfbf6ea, seed: pr.id + 7, margin: 0.1 });
+        board.position.set(back * (half + 0.04), 0.28, 0.03);
+        const net = makeNetMesh(half - 0.02, half * 0.55, 0.5, theme.line, pr.id * 0.7);     // the line colour: light on the dark board
+        net.position.set(0, 0.1, 0.04);
+        const rim = makeSketch({ kind: SHAPE.RING, size: [half], ring: 0.07, edge: 0.03, wob: 0.6, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.1 });
+        rim.scale.set(1, 0.28, 1);
+        rim.position.set(0, 0.1, 0.06);
         v.net = net;
+        group.add(board, net, rim);
         const label = makeLabel('+2', theme.text, 'hand');
         label.userData.text = '+2';
         label.scale.setScalar(0.8);
-        label.position.set(0, -0.75, 0.1);
+        label.position.set(0, -0.72, 0.1);
         v.labels = [label];
-        group.add(rim, net, label);
+        group.add(label);
         group.position.set(pr.x, pr.y, 0.05);
         v.body = pr.body;
         scene.add(group);
@@ -931,11 +925,10 @@ function syncView(frameDt) {
             v.swishT += frameDt;
             const k = Math.min(1, v.swishT / 0.6), ease = Math.sin(Math.PI * Math.min(1, k * 1.6)) * (1 - k * 0.6);
             const sy = 1 + 0.55 * Math.max(0, ease);
-            v.net.scale.y = sy;
-            v.net.position.y = 0.04 - 0.24 * sy;            // stretched from its top, where it hangs from the rim
+            v.net.scale.y = sy;                              // stretched from its top, where it hangs from the rim
             v.net.rotation.z = calmMotion.matches ? 0 : 0.18 * Math.sin(k * 14) * (1 - k);
             animating = true;
-            if (k >= 1) { v.swishT = null; v.net.scale.y = 1; v.net.position.y = -0.2; v.net.rotation.z = 0; }
+            if (k >= 1) { v.swishT = null; v.net.scale.y = 1; v.net.rotation.z = 0; }
         }
         // Keep drawing while a windmill or mushroom visibly moves. Judged by how far it moved
         // since the last frame, not its speed: while you aim the world is paused, and a speed
@@ -2108,6 +2101,7 @@ function applyTheme(name) {
     }
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
     for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
+    for (const v of propViews.values()) if (v.net?.material.uniforms?.uInk) v.net.material.uniforms.uInk.value.setHex(theme.line);
     for (const v of propViews.values()) {
         if (!v.hill) continue;
         const u = v.hill.material.uniforms;
