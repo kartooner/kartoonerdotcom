@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-63';
+const BUILD = '1.5-64';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1588,7 +1588,13 @@ function propSolid(x, y, i = -1) {
     const hit = sim.world.projectPoint(atPoint, false, RAPIER.QueryFilterFlags.EXCLUDE_SENSORS, PROP_QUERY);
     if (!hit) { if (i >= 0) propSkip[i] = 20; return null; }
     const px = hit.point.x, py = hit.point.y, dx = x - px, dy = y - py, d = Math.hypot(dx, dy);
-    if (!hit.isInside && d > 0.04) { if (i >= 0) propSkip[i] = Math.min(20, Math.floor((d - 0.04) / 0.16)); return null; }
+    if (!hit.isInside && d > 0.04) {
+        // Far from a prop that's standing still: skip a few steps. A moving one (a windmill, a
+        // swinging bomb) gets checked every step.
+        const body = hit.collider.parent();
+        if (i >= 0 && (!body || body.isFixed())) propSkip[i] = Math.min(20, Math.floor((d - 0.04) / 0.16));
+        return null;
+    }
     if (d < 1e-6) return null;
     const s = hit.isInside ? -1 : 1, nx = (dx / d) * s, ny = (dy / d) * s;   // out of the prop
     const out = { x: px + nx * 0.04, y: py + ny * 0.04, slide: null, vx: 0, vy: 0 };
@@ -1654,6 +1660,16 @@ function updateWater(dt) {
         sh.vx = v.x; sh.vy = v.y; sh.w = body.angvel();
         if (v.x * v.x + v.y * v.y > 0.1 || Math.abs(sh.w) > 0.3) moved = true;
         blocks.push(sh);
+    }
+    // A prop moving (a windmill turning, a bomb swinging) stirs a still pool too.
+    if (!moved) for (const id in sim.s.props) {
+        for (const h of sim.s.props[id].bodies ?? []) {
+            const rb = sim.world.getRigidBody(h);
+            if (!rb || rb.isFixed()) continue;
+            const v = rb.linvel();
+            if (v.x * v.x + v.y * v.y > 0.01 || Math.abs(rb.angvel()) > 0.05) { moved = true; break; }
+        }
+        if (moved) break;
     }
     if (waterShapes.size > blocks.length + 20) for (const id of waterShapes.keys()) if (!sim.s.blocks[id]) waterShapes.delete(id);
     const balls = sim.s.balls.map((b) => {
@@ -1793,7 +1809,7 @@ function restart(saved = null) {
         sim = saved;
         // Trying water out (?water=often): a run picked back up gets a jar too (they're otherwise
         // only added as a new zone comes up).
-        if (water && WATER_MODE === 'often' && !Object.values(sim.s.blocks).some((b) => b.jar)) {
+        if (water && WATER_MODE === 'often' && !sim.s.bonus && !Object.values(sim.s.blocks).some((b) => b.jar)) {
             placeJar(false);
             const jar = Object.values(sim.s.blocks).find((b) => b.jar);
             if (jar && tipDue({ key: 'jar' })) tipQueue.unshift({ key: 'jar', text: THING_TIPS.jar, target: { kind: 'block', id: jar.id } });
