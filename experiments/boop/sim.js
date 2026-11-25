@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-42');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-43');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -287,6 +287,10 @@ export class Sim {
         w.timestep = DT;
         const sim = new Sim(R, w, JSON.parse(s));
         sim.s.launchX ??= LAUNCHER.x;       // saves from before the launcher could move
+        // A save from mid-shot (older builds could make one when an update reloaded the page):
+        // drop the balls still flying, or they'd still be bouncing when you take your next shot.
+        for (const b of [...sim.s.balls]) sim.removeBall(b.body);
+        sim.s.shots = null;
         // Saves from build 1.5-32, where a topple tower's blocks were left in the next zone (they
         // can't be broken, so that zone could never be cleared): take them away.
         if (sim.s.bonus?.kind !== 'tower') for (const id in sim.s.blocks) if (sim.s.blocks[id].tower) sim.removeBlock(sim.s.blocks[id], false);

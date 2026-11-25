@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-42';
+const BUILD = '1.5-43';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1806,6 +1806,9 @@ function fromBase64(text) {
     return bytes;
 }
 function saveRun() {
+    // Only between turns. A save taken mid-shot would bring the balls back as if it were
+    // your turn, and you could fire more on top of them.
+    if (phase !== 'aim') return;
     try {
         const { world, s } = sim.save();
         localStorage.setItem(saveKey(), JSON.stringify({ depth: sim.s.depth, world: toBase64(world), s }));
@@ -2332,7 +2335,9 @@ async function checkForUpdate() {
     } catch { /* offline: keep playing what we have */ }
 }
 function applyUpdate() {
-    if (!pendingBuild || !paused()) return;
+    // Wait for a screen, and for a moment between turns (or the end of the run), so the
+    // reload never lands mid-shot.
+    if (!pendingBuild || !paused() || (phase !== 'aim' && phase !== 'over')) return;
     try { sessionStorage.setItem('boop-update-tried', pendingBuild); } catch { /* storage blocked */ }
     if (runStarted) saveRun();
     location.replace(`./?v=${encodeURIComponent(pendingBuild)}`);
