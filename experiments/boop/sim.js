@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-30');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-31');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -96,6 +96,10 @@ const multishotGrowth = (volley) => 1 + (volley - 1) * 0.35;
 // Last stretch: once a zone is down to its last few breakable blocks, every hit
 // counts double, so the end of a zone doesn't drag.
 const STRETCH_BLOCKS = 3;
+// Catch-up: a zone that's clearly a wall (a full par used and under 40% done, or half as much
+// again and under 70% done) also gets hits ×2 from then on, so a bad layout is slow, not hopeless.
+const WALL_DONE = [[1, 0.4], [1.5, 0.7]];
+const GREY_PIECES = 4;                // grey pieces in a zone at most
 const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
 // After 6s alive, the time a ball may go without a hit shrinks, to 1.5s by about 14s:
 // a busy trap keeps going; one that only now and then finds a block winds down.
@@ -1175,9 +1179,11 @@ export class Sim {
         }
 
         // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
-        const greys = s.relaxed ? 0 : spec.neutral + (has('greymaze') ? 2 : 0);
+        // Never in the zone's top two rows, and never more than four: grey pieces across the top
+        // made a lid that kept every shot off the blocks below (a tester's depth-66 wall).
+        const greys = s.relaxed ? 0 : Math.min(GREY_PIECES, spec.neutral + (has('greymaze') ? 2 : 0));
         if (greys) {
-            const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4);
+            const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4 && Math.min(...p.cells.map(([, r]) => r)) >= 2);
             for (let i = 0; i < greys && pool.length > 2; i++) {
                 pool.splice(Math.floor(this.rand() * pool.length), 1)[0].kind = 'neutral';
             }
@@ -2013,9 +2019,23 @@ export class Sim {
     // A bonus shot is a single ball: where you aim is what counts.
     fire(angle, count = this.s.bonus ? (this.s.bonus.shots > 0 ? (STAGES[this.s.bonus.kind]?.balls ?? 1) : 0) : this.s.supply > 0 ? this.s.volley : 0) {
         if (count > 0 && this.s.bonus) this.s.bonus.shots -= 1;                   // a bonus shot is free
-        else if (count > 0) { if (!this.s.relaxed) this.s.supply -= 1; this.s.zoneShots = (this.s.zoneShots ?? 0) + 1; }   // one shot, however many balls it fires
+        else if (count > 0) {
+            if (!this.s.relaxed) this.s.supply -= 1;
+            this.s.zoneShots = (this.s.zoneShots ?? 0) + 1;   // one shot, however many balls it fires
+            this.catchUp();
+        }
         this.s.shots = { left: count, angle, timer: 0, fired: 0 };
         this.s.turnSteps = 0;
+    }
+
+    // See WALL_DONE.
+    catchUp() {
+        const s = this.s;
+        if (s.stretch || !s.par || s.bonus || !s.zoneHp0) return;
+        const done = 1 - this.hpLeft() / s.zoneHp0;
+        if (!WALL_DONE.some(([k, d]) => s.zoneShots >= s.par * k && done < d)) return;
+        s.stretch = true;
+        this.events.push({ t: 'stretch' });
     }
 
     launcher() { return { x: this.s.launchX ?? LAUNCHER.x, y: LAUNCHER.y }; }
