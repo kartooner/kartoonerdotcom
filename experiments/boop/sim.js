@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-25');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-26');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -165,7 +165,7 @@ const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
     pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
-    dominoes: 'Bonus stage! Knock over the dominoes. Each one that falls is +1. Three shots.',
+    tower: 'Bonus stage! Topple the towers. Every block you knock over is +1. Three shots.',
     golf: "Bonus stage! Mini golf: land on the green and sink it by the flag. Miss and it's in the water. First try +8, then +6, then +4.",
     hoops: 'Bonus stage! Hoops: five shots at the moving basket. Each one in is +2.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
@@ -176,21 +176,21 @@ const BONUS_NOTES = {
 // and then every few zones at random. Not in Relaxed mode, where shots
 // never run out anyway. Each has its own shots and its own cap on what it pays; on the
 // ones with a ball config, balls fall for real (gravity, no constant speed, softer bounces).
-//   dominoes: rows of standing grey dominoes; each one that topples is +1.
+//   tower:    a tower or two of stacked blocks (pillars and planks); each block knocked over is +1.
 //   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
 //   pachinko: three drops of five balls through nails into pockets (see below).
 //   hoops:    five shots at a basket sliding side to side; each in is +2.
-const SPECIAL_AT = { 25: 'pachinko', 30: 'dominoes', 35: 'golf', 40: 'hoops' };
+const SPECIAL_AT = { 25: 'pachinko', 30: 'tower', 35: 'golf', 40: 'hoops' };
 const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
-const SPECIALS = ['dominoes', 'golf', 'pachinko', 'hoops'];
+const SPECIALS = ['tower', 'golf', 'pachinko', 'hoops'];
 const STAGES = {
-    dominoes: { shots: 3, cap: 7 },
+    tower: { shots: 3, cap: 10 },
     golf: { shots: 3, cap: 8, ball: { speed: 10, gravity: 1.6, rest: 0.35, settle: true } },
     pachinko: { shots: 3, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
     hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true } },
 };
-const DOMINO_KNOCK = 2.5;              // a ball tips a domino harder, at the point it hits, so it topples
-const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling
+const TOWER_KNOCK = 5;                 // a ball shoves a tower block harder, at the point it hits, so it tips
+const TOWER_HP = [2, 4, 6, 9, 14, 24, 39];   // just for their colours: tower blocks have no number and don't break
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
 // The golf hill: how far its feet run each way, its height, how wide its bell is, and the half-width of the level spot on top.
 const GOLF_BASE = 3.8, GOLF_HILL_H = 2.3, GOLF_SPREAD = 1.5, GOLF_FLAT = 0.5;
@@ -629,7 +629,7 @@ export class Sim {
 
     damageBlock(id, n = 1) {
         const b = this.s.blocks[id];
-        if (!b || b.neutral) return;
+        if (!b || b.neutral || b.tower) return;          // tower blocks don't break: they're there to knock over
         b.hp -= n;
         if (b.hp <= 0) { this.removeBlock(b, true); return; }
         this.shapeBlock(b);
@@ -711,7 +711,7 @@ export class Sim {
                 // A grey block knocked fully loose has done its job as a bumper. Left lying around
                 // it could wall off a breakable block for good (it can't be broken), so once it
                 // lands and settles (or after a few seconds whatever it's doing) it crumbles.
-                if (b.neutral && !b.bomb && !b.domino && b.hung == null) {      // (dominoes stay put)
+                if (b.neutral && !b.bomb && b.hung == null) {
                     b.looseT = (b.looseT ?? 0) + 1;
                     const v = body.linvel(), still = Math.abs(v.x) + Math.abs(v.y) + Math.abs(body.angvel()) < GREY_STILL;
                     b.calmT = still && b.looseT > GREY_FALL_MIN ? (b.calmT ?? 0) + 1 : 0;
@@ -818,7 +818,7 @@ export class Sim {
         };
         const ONE = [[[0, 0]]], TWO = [[[0, 0]], [[0, 0], [1, 0]], [[0, 0], [0, 1]]];
         if (kind === 'pachinko') this.addPachinko();
-        else if (kind === 'dominoes') this.addDominoes();
+        else if (kind === 'tower') this.addTowers();
         else if (kind === 'golf') this.addGolf();
         else if (kind === 'hoops') this.addHoop();
         else if (kind === 'rings') {
@@ -1667,34 +1667,38 @@ export class Sim {
         }
     }
 
-    // Dominoes: two rows of tall grey dominoes, one on a grey shelf and one on the floor.
-    // They can't be broken; each that topples pays (checkDominoes).
-    addDominoes() {
-        const shelfRow = 9;
-        this.addBlock([1, 2, 3, 4, 5, 6].map((c) => [c, shelfRow]), 1, 'neutral');
-        const add = (c, bottom) => {
-            const b = this.addBlock([[c, bottom - 3], [c, bottom - 2], [c, bottom - 1], [c, bottom]], 1, 'loose');
-            b.neutral = true; b.domino = true;
-            for (const h of b.cols) this.world.getCollider(h).setFriction(0.3);
+    // Topple tower: one or two towers on the floor, stacked the way a child stacks blocks:
+    // pillars standing up, a plank across them, again, and something on top. The blocks are
+    // ordinary resting blocks in the usual colours, but with no number and they don't break:
+    // here you knock them over. Each one that tips well over or drops a good way pays (checkTowers).
+    addTowers() {
+        const pick = () => TOWER_HP[Math.floor(this.rand() * TOWER_HP.length)];
+        const add = (cells) => { const b = this.addBlock(cells, pick(), 'loose'); b.tower = true; b.home = null; };
+        const build = (c, stories) => {
+            let floor = H - 1;                                       // the row the next story stands on
+            for (let k = 0; k < stories; k++) {
+                add([[c, floor - 1], [c, floor]]);                   // pillars
+                add([[c + 2, floor - 1], [c + 2, floor]]);
+                add([[c, floor - 2], [c + 1, floor - 2], [c + 2, floor - 2]]);   // the plank across
+                floor -= 3;
+            }
+            if (this.rand() < 0.5) add([[c + 1, floor]]);            // a little block on top...
+            else add([[c, floor], [c + 1, floor]]);                  // ...or a short one
         };
-        for (const c of [1, 3, 5]) add(c, shelfRow - 1);
-        for (const c of [0, 2, 4, 6]) add(c, H - 1);       // not against the right wall: it couldn't fall
+        if (this.rand() < 0.35) build(3, 3);                         // one tall tower in the middle
+        else { build(1, 2); build(5, 2 + (this.rand() < 0.4 ? 1 : 0)); }
     }
 
-    checkDominoes() {
+    checkTowers() {
         const { world, s } = this;
         if (s.quiet) return;
         for (const id in s.blocks) {
             const b = s.blocks[id];
-            if (!b.domino) continue;
-            const body = world.getRigidBody(b.body);
-            const a = body.rotation(), tilt = Math.abs(Math.sin(a));
-            // Once it's tipping, help it on its way so it falls flat and takes the next one with it
-            // (left alone they lean on each other and stall halfway).
-            if (tilt > 0.17 && tilt < 0.97) body.applyTorqueImpulse(Math.sign(Math.sin(a)) * DOMINO_FALL * body.mass(), true);
-            if (b.fell || tilt < 0.42) continue;     // counts once it's clearly tipped (about 25°)
+            if (!b.tower || b.fell) continue;
+            const body = world.getRigidBody(b.body), p = body.translation();
+            b.home ??= p.y;                                          // where it stood once settled
+            if (Math.abs(Math.sin(body.rotation())) < 0.5 && b.home - p.y < 0.8) continue;
             b.fell = true;
-            const p = body.translation();
             this.events.push({ t: 'topple', id: b.id, x: p.x, y: p.y });
             this.gain(1, p.x, p.y + 0.8);
         }
@@ -2062,7 +2066,7 @@ export class Sim {
         }
         const falling = !!STAGES[s.bonus?.kind]?.ball;     // a surprise stage's balls just fall
         if (s.bonus?.kind === 'hoops') this.moveHoop();
-        if (s.bonus?.kind === 'dominoes') this.checkDominoes();
+        if (s.bonus?.kind === 'tower') this.checkTowers();
         for (const ball of s.balls) {
             const body = world.getRigidBody(ball.body);
             let v = body.linvel();
@@ -2249,7 +2253,7 @@ export class Sim {
                 const sp = Math.hypot(ball.pv[0], ball.pv[1]) || 1;
                 const dv = Math.min(KNOCK_MAX, impact * KNOCK) * bb.mass() * (blk.loose || blk.hanging || blk.seesaw ? 1 : PINNED_KNOCK);
                 // A seesaw is pushed where it was hit, so it rocks; anything else through its centre.
-                if (blk.domino) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv * DOMINO_KNOCK, y: ball.pv[1] / sp * dv * DOMINO_KNOCK }, { x: p.x, y: p.y }, true);
+                if (blk.tower) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv * TOWER_KNOCK, y: ball.pv[1] / sp * dv * TOWER_KNOCK }, { x: p.x, y: p.y }, true);
                 else if (blk.seesaw) bb.applyImpulseAtPoint({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, { x: p.x, y: p.y }, true);
                 else bb.applyImpulse({ x: ball.pv[0] / sp * dv, y: ball.pv[1] / sp * dv }, true);
             }
@@ -2264,7 +2268,7 @@ export class Sim {
             }
             // Grey blocks can't be damaged, so bouncing off them doesn't keep a ball alive either.
             if (blk?.neutral && this.cooled(a.body + ':' + b.id)) this.hitNail(blk, p, 1);
-            else if (blk && !blk.neutral && this.cooled(a.body + ':' + b.id)) {
+            else if (blk && !blk.neutral && !blk.tower && this.cooled(a.body + ':' + b.id)) {    // (tower blocks don't wear down, and don't keep a ball going)
                 const n = ballPower(ball) * (s.stretch ? 2 : 1);
                 this.damageBlock(b.id, n);
                 if (s.blocks[b.id]) this.hitNail(blk, p, n);

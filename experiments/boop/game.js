@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-25';
+const BUILD = '1.5-26';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -316,11 +316,11 @@ function buildBlockView(b) {
     let best = b.cells[0], bestD = Infinity;
     for (const c of b.cells) { const d = c[0] ** 2 + c[1] ** 2 + c[1] * 0.01; if (d < bestD - 1e-9) { bestD = d; best = c; } }
     mesh.material.uniforms.uLabel.value.set(best[0], best[1]);
-    const label = makeLabel(b.neutral ? '' : String(b.hp));
+    const label = makeLabel(b.neutral || b.tower ? '' : String(b.hp));
     label.userData.cell = best;
     label.position.z = 0.2;
     label.renderOrder = 2;
-    label.visible = !b.neutral;
+    label.visible = !b.neutral && !b.tower;              // tower blocks (a bonus stage) have no number
     group.add(label);
     if (b.neutral) {
         mesh.material.uniforms.uNeutral.value = 1;
@@ -407,7 +407,7 @@ function updateBlockView(v, b, frameDt) {
         if (v.hp !== -1) v.punch = 1;
         v.labelAt = now;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.hp / (sim.s.tierScale || 1));
+        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -1632,6 +1632,8 @@ function queueZoneTips() {
     if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
     // Relaxed mode skips the tips about new things: they're kept for the regular game.
     if (s.relaxed) { tipQueue.unshift(...tips); return; }
+    // The surprise stages explain themselves in their own note; their pieces aren't the board's.
+    if (['tower', 'golf', 'hoops', 'pachinko'].includes(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
     const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
     const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
@@ -1798,10 +1800,10 @@ function readyToAim() {
 // in flight): the physics world as bytes, the game state as JSON. Closing the page
 // mid-shot loses only that shot. Game over or New game clears it.
 const SAVE_KEY = 'boop-save-v1', RELAXED_SAVE_KEY = 'boop-save-relaxed-v1';
-// Test link: ?stage=golf (or pachinko, dominoes, hoops) starts a fresh run right at that bonus
+// Test link: ?stage=golf (or pachinko, tower, hoops) starts a fresh run right at that bonus
 // stage, to try it without playing down to it. It keeps its own save, so the real run is left
 // alone, and it never counts toward the best depth.
-const TEST_STAGES = { pachinko: 25, dominoes: 30, golf: 35, hoops: 40 };
+const TEST_STAGES = { pachinko: 25, tower: 30, golf: 35, hoops: 40 };
 const TEST_STAGE = (() => { try { const k = new URLSearchParams(location.search).get('stage'); return TEST_STAGES[k] ? k : null; } catch { return null; } })();
 const saveKey = () => (TEST_STAGE ? 'boop-save-test' : relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
 let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
