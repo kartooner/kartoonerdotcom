@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-41">
+<html lang="en" data-build="1.5-42">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -160,7 +160,6 @@
             transform-origin: left;
             transition: transform 0.25s ease-out;
         }
-        /* Callout: points at the new thing it describes. Placed from game.js. */
         /* While the buddy talks, the board dims behind him and can't be tapped. */
         #tipshade {
             position: fixed;
@@ -200,6 +199,7 @@
         }
         #note .ack-btn:disabled { opacity: 0; cursor: default; }
         #note .ack-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
+        /* Callout: points at the new thing it describes. Placed from game.js. */
         #note {
             position: fixed;
             z-index: 7;
@@ -229,7 +229,6 @@
         }
         .buddy-shadow { fill: #2b2622; }
         :root[data-theme="dark"] .buddy-shadow { fill: #000; opacity: 0.7; }
-        /* Every few seconds he blinks: his closed eyes squeeze shut for a moment. */
         /* His eyes (driven by buddy.js, at random): usually closed and content; now and
            then a blink, or he opens them and glances around. --lid squeezes, --look shifts. */
         .eyes-shut, .eyes-open {
@@ -405,7 +404,6 @@
         body:has(.screen:not([hidden])) :is(#hud, #note, #buddy, #tipshade) { visibility: hidden; }
         /* Which mode Play starts or continues, when it's Relaxed. */
         #menu .mode-label { margin: -22px 0 16px; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
-        #menu .menu-links .feedback { margin: 0; }
         /* Game over: same centred layout as the start screen. */
         #over h1 { margin: 0; font-size: clamp(2rem, 9.5vw, 3rem); line-height: 1.05; white-space: nowrap; }
         /* Buddy's word after a run: a speech bubble above him. */
@@ -427,7 +425,6 @@
         #over .stats:empty { display: none; }
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-size: 1.375rem; font-weight: normal; }
-        #over .menu-links { margin-top: 20px; }
         #menu .menu-links .feedback, #over .menu-links .feedback { margin: 0; }
         #over .result { text-wrap: balance; }
         /* Short screens (an iPhone SE): everything a little tighter, so the whole screen fits above
@@ -439,7 +436,6 @@
             #over .best { margin-bottom: 18px; }
             #over .actions { gap: 10px; }
             #over .actions .btn { padding: 12px 20px; }
-            #over .menu-links { margin-top: 12px; }
         }
         .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; }      /* buttons run the full width of the screen's column */
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
@@ -498,8 +494,7 @@
         #howto .note, #news .note { color: var(--ink-soft); margin-top: 18px; }
         #howto .dot { color: var(--accent); font-weight: 800; }
         /* Hand-drawn frames (same SVG filter as the buttons) around pictures and panels. */
-        .sketch-box { position: relative; isolation: isolate; }
-        .sketch-box::before, .pic::before, .mini-hud::before {
+        .pic::before, .mini-hud::before {
             content: ''; position: absolute; inset: 0; z-index: -1;
             border: 2px solid var(--ink); border-radius: 10px; filter: url(#sketchy); pointer-events: none;
         }
@@ -537,7 +532,6 @@
         .legend { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
         .legend dt { font-weight: 800; font-size: 0.875rem; }
         .legend dd { margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-soft); }
-        /* Ways to earn shots as little hand-drawn tags. */
         /* Short lists (Hit harder, Earn more shots): one item per line, a small dot, a hairline
            between, matching Things you'll meet. */
         .tags { list-style: none; margin: 0 0 12px; padding: 0; }
@@ -549,7 +543,6 @@
         #howto .tags li:first-child { border-top: 0; padding-top: 2px; }
         .tags li::before { content: ''; position: absolute; left: 2px; top: calc(10px + 0.55em); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
         #howto .tags li:first-child::before { top: calc(2px + 0.55em); }
-        /* Pictures from the game, each with its name and one line. */
         /* Things you'll meet / What's new: one item per row. A small picture with the title beside
            it, then the description underneath at full width, so lines stay long and easy to read.
            Items are separated by space and a hairline, not boxes. */
@@ -572,10 +565,10 @@
         /* Reading screens: a more solid backdrop, so the board doesn't show through the text. */
         #howto, #news { background: color-mix(in srgb, var(--scrim) 40%, var(--paper)); }
         /* Boop's one line on the start screen after a feature update. */
-        #menu .say { margin: 36px auto 30px; max-width: 220px; }   /* clear of the close button above, and of a holiday hat below */
+        #menu .say { margin: 36px auto 30px; max-width: 220px; }   /* clear of a holiday hat below */
         #btn-news.fresh { color: var(--ink); }
         #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
-        /* One quiet footer line: version, What's new, Feedback. */
+        /* One quiet line of links: What's new, Settings, Feedback. */
         #menu .menu-links, #over .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
         #menu .menu-links .link-btn, #over .menu-links .link-btn { font-size: inherit; }
         /* The smallest phones: the footer stays one line. */
@@ -584,7 +577,7 @@
             #menu .screen-inner { padding-left: 20px; padding-right: 20px; }
         }
         #menu .say .link-btn { font-size: inherit; display: inline; padding: 0; line-height: inherit; vertical-align: baseline; }   /* inline in the sentence: no extra line height (the ::after keeps the tap area) */
-        /* Close X: top-right of each screen, a full 44px tap target. */
+        /* Close X: top-right of the pause screen, a full 44px tap target. */
         .close-x {
             position: fixed;
             /* Pulled in from the board's right edge by the screens' side padding,
@@ -611,34 +604,6 @@
         body.howto-open #back, body.howto-open .glyph-btn { display: none; }
         /* While you play, only the two glyphs sit under the board (Games is on the menu screens). */
         body.playing #back { display: none; }
-        /* "Boop!" sits centred between the two links while you play. */
-        #brand {
-            display: none;
-            position: fixed;
-            z-index: 11;
-            left: 50%;
-            /* Raised so "Boop" sits on the same baseline as the two links beside it. */
-            bottom: max(12px, env(safe-area-inset-bottom));
-            transform: translateX(-50%);
-            margin: 0;
-            font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif;
-            font-size: 1.25rem;
-            letter-spacing: -0.04em;
-            line-height: 1;
-            color: var(--ink);
-            pointer-events: none;
-        }
-        /* (Shown nowhere for now: Menu took its spot under the board.) */
-        #brand .bang {
-            display: inline-block;
-            margin-left: 0.04em;
-            transform: rotate(14deg);
-            transform-origin: 50% 90%;
-            background: linear-gradient(to bottom, var(--ink) 0 63%, var(--accent) 63% 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
         /* Wide screens (tablets and laptops sideways): the board is height-limited, so the
            HUD moves to a column on its left and the board gets the full height. */
         body.wide #hud {
@@ -860,7 +825,6 @@
     </section>
 
     <a id="back" href="/games"><span class="arrow" aria-hidden="true">←</span>Games</a>
-    <p id="brand" aria-hidden="true">Boop<span class="bang">!</span></p>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <filter id="sketchy" x="-5%" y="-10%" width="110%" height="120%">
             <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/>
@@ -895,35 +859,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-41",
-                "./zones.js": "./zones.js?v=1.5-41",
-                "./blockshader.js": "./blockshader.js?v=1.5-41",
-                "./sketch.js": "./sketch.js?v=1.5-41",
-                "./balls.js": "./balls.js?v=1.5-41",
-                "./labels.js": "./labels.js?v=1.5-41",
-                "./audio.js": "./audio.js?v=1.5-41",
-                "./theme.js": "./theme.js?v=1.5-41",
-                "./crumbs.js": "./crumbs.js?v=1.5-41",
-                "./buddy.js": "./buddy.js?v=1.5-41",
-                "./season.js": "./season.js?v=1.5-41",
-                "./leaves.js": "./leaves.js?v=1.5-41"
+                "./sim.js": "./sim.js?v=1.5-42",
+                "./zones.js": "./zones.js?v=1.5-42",
+                "./blockshader.js": "./blockshader.js?v=1.5-42",
+                "./sketch.js": "./sketch.js?v=1.5-42",
+                "./balls.js": "./balls.js?v=1.5-42",
+                "./labels.js": "./labels.js?v=1.5-42",
+                "./audio.js": "./audio.js?v=1.5-42",
+                "./theme.js": "./theme.js?v=1.5-42",
+                "./crumbs.js": "./crumbs.js?v=1.5-42",
+                "./buddy.js": "./buddy.js?v=1.5-42",
+                "./season.js": "./season.js?v=1.5-42",
+                "./leaves.js": "./leaves.js?v=1.5-42"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-41">
-    <link rel="modulepreload" href="./sim.js?v=1.5-41">
-    <link rel="modulepreload" href="./zones.js?v=1.5-41">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-41">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-41">
-    <link rel="modulepreload" href="./balls.js?v=1.5-41">
-    <link rel="modulepreload" href="./labels.js?v=1.5-41">
-    <link rel="modulepreload" href="./audio.js?v=1.5-41">
-    <link rel="modulepreload" href="./theme.js?v=1.5-41">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-41">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-41">
-    <link rel="modulepreload" href="./season.js?v=1.5-41">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-41">
+    <link rel="modulepreload" href="./game.js?v=1.5-42">
+    <link rel="modulepreload" href="./sim.js?v=1.5-42">
+    <link rel="modulepreload" href="./zones.js?v=1.5-42">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-42">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-42">
+    <link rel="modulepreload" href="./balls.js?v=1.5-42">
+    <link rel="modulepreload" href="./labels.js?v=1.5-42">
+    <link rel="modulepreload" href="./audio.js?v=1.5-42">
+    <link rel="modulepreload" href="./theme.js?v=1.5-42">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-42">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-42">
+    <link rel="modulepreload" href="./season.js?v=1.5-42">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-42">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -966,6 +930,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-41"></script>
+    <script type="module" src="./game.js?v=1.5-42"></script>
 </body>
 </html>

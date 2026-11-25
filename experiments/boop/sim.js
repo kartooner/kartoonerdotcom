@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-42');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -25,12 +25,11 @@ export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-// Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
-// Past 25 a clear pays one: the deep end gets tighter through scarcer shots, not longer zones.
-// Relaxed mode (s.relaxed, set by the game for its own separate run): shots never run out,
-// numbers are smaller, and zones leave out grey blocks, vines (and hanging bombs), seesaws,
-// crooked blocks, gold blocks and +1 rings. Windmills, mushrooms, jelly and bombs stay. No par.
+// Relaxed mode (s.relaxed): shots never run out, numbers are smaller, no par, and zones leave
+// out grey blocks, vines, seesaws, crooked blocks, gold blocks and +1 rings.
 export const RELAXED_HP = 0.6;
+// Shots for clearing a zone: generous early, leaner deeper (the deep end gets tighter through
+// scarcer shots, not longer zones).
 export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : d <= 25 ? 2 : 1);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
@@ -41,29 +40,20 @@ const BLOCK_FALL = 3;               // loose blocks fall as if gravity were -15
 const SHOT_GAP = 8;                 // steps between balls in a volley
 const HIT_COOLDOWN = 10;            // steps before the same pair can hit again
 const MIN_IMPACT = 3;               // a hit only counts if the bounce really changed the ball's speed
-// A hit knocks the block a little (it shifts and springs back), so one light ball
-// still makes blocks jiggle. Part of the physics, so the guide stays exact.
-// Pushed through the centre: off-centre twists were snapping blocks loose.
+// A hit knocks the block a little (it shifts and springs back), pushed through its centre.
+// Part of the physics, so the guide stays exact.
 const KNOCK = 0.04;                 // block speed per unit of impact
 const KNOCK_MAX = 0.75;
 const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
 const BOXED_STEPS = 150;            // ...for this long (1.25s) without scoring is stuck, and gets kicked free
 // The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
 export const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
-// Par: a target number of shots for each zone, from its total and your balls per shot.
-// Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
-// Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
-// Eased in over the first zones so zone 1 stays friendly.
-// How much block numbers are scaled up with depth. It climbs gently through the early
-// zones so they go quickly, reaching full size around depth 11.
+// How much block numbers are scaled up with depth: gently through the early zones, full size
+// around depth 11.
 const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
-// Par: about how much a good shot takes off at this depth (measured with bots; a shot
-// does more deeper down, with bigger blocks and more traps). Independent of hpScale,
-// so lighter early zones also get a lower par.
-// Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
-// actually takes off per shot at each depth (with more balls per shot, each does a bit
-// less), set a little generous so a good zone beats par about a third of the time.
-// 1.4.1: eased a touch from 12 to 25 along with zoneTrim below, so par is still beaten about a third of the time.
+// Par: a target number of shots for each zone. Clear it under par and the shots you saved come
+// back (up to PAR_BONUS_MAX). PAR_TABLE is how much an average player's shot takes off at each
+// depth (measured with bots), set so a good zone beats par about a third of the time.
 const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 52], [16, 39], [22, 33], [30, 42], [40, 50]];
 const parHpPerShot = (d) => {
     const i = PAR_TABLE.findIndex(([at]) => at > d);
@@ -72,19 +62,14 @@ const parHpPerShot = (d) => {
     const [d0, v0] = PAR_TABLE[i - 1], [d1, v1] = PAR_TABLE[i];
     return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 1.02;      // par is a target, not a given: beaten about a third of the time
 };
-// Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
-// comes from layout and from income not keeping up, not from waiting on big numbers.
-// Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
-// 1.4.1: about 10% more from 11 on. The aim range (no shots flat into a wall) made each shot count
-// for more, and average bots got about 3 zones deeper than in 1.3; this brings them back.
-// Laps: past depth 80 the game isn't a wall that only gets steeper. At 81 it eases back to about
-// depth 30's difficulty (still a challenge, not punishing) and builds up again to depth 80's by 160,
-// then eases again, and so on: room for another 80. The bonus stages start over each lap (the same
-// schedule, and generous tries again). The depth shown, the best depth and the launcher's
-// upgrades follow the real depth; only how hard a zone is follows the lap.
+// Laps: at 81 the difficulty eases back to about depth 30's and builds up again to depth 80's
+// by 160, and so on. The bonus stages start over each lap. Only how hard a zone is follows the
+// lap; the depth shown, the best depth and the launcher's upgrades follow the real depth.
 export const LAP = 80;
 const LAP_EASE = 30;                 // where each new lap starts: about depth 30's difficulty
 export const lapDepth = (d) => (d <= LAP ? d : Math.floor(LAP_EASE + ((d - LAP - 1) % LAP) * (LAP - LAP_EASE) / (LAP - 1)));
+// Deeper zones are trimmed so they take a handful of good shots, not twenty; past 25 they grow
+// again, a little each zone.
 const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.88 : d <= 25 ? 0.69 : Math.min(0.88, 0.69 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
@@ -165,12 +150,10 @@ const BOMB_CHAIN = 18;              // a bomb lit by another's burst goes off th
 const BOMB_REACH = 1.9;             // cells from the bomb's centre to a neighbour's nearest cell centre
 const BOMB_JOLT = 0.6;              // a nailed block's jolt: a bump that springs back
 const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
-const BOMB_KNOCK = 4.5;               // ...and anything loose gets shoved away this hard
+const BOMB_KNOCK = 4.5;             // ...and anything loose gets shoved away this hard
 const VINE_FROM = 9;
-// Bonus stages (from depth 12): now and then a zone has a gold block. Pop it before the zone
-// is cleared and the next stage is a bonus: three free shots (your supply isn't touched), no
-// depth, then on to the next zone. Ring run, piñata and chain reaction take turns. What you
-// collect is capped, so a great bonus helps without breaking the climb; clearing it all adds one.
+// Gold blocks (from depth 12): pop one and the next stage is a bonus: three free shots, no
+// depth. Rings, piñata and chain reaction take turns. What it pays is capped; clearing it all adds one.
 const GOLD_FROM = 12, GOLD_CHANCE = 0.15;
 const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
@@ -186,22 +169,13 @@ const BONUS_NOTES = {
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
-// On the stages with a ball config, balls are slowed down and float, so shots fly in clear arcs
-// (and the aim guide shows the arc). The tower stage keeps the normal fast ball.
-// Surprise stages (not in What's new or How to play): little bonus games between zones, a reward
-// for deep runs (gold blocks give earlier players their bonuses), after clearing set depths
-// and then every few zones at random. Not in Relaxed mode, where shots
-// never run out anyway. Each has its own shots and its own cap on what it pays; on the
-// ones with a ball config, balls fall for real (gravity, no constant speed, softer bounces).
-//   tower:    a tower or two of stacked blocks (pillars and planks); each block knocked over is +1.
-//   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
-//   pachinko: three drops of five balls through nails into pockets (see below).
-//   hoops:    five shots at baskets scattered about, with grey blocks to bank off; each basket is +2.
+// Surprise stages (not in What's new or How to play): bonus games for deep runs, after set
+// depths and then every few zones at random. Not in Relaxed mode. Each has its own tries and
+// cap; with a ball config, balls are slow and fall for real, so shots fly in arcs.
 const SPECIAL_AT = { 25: 'pachinko', 30: 'tower', 35: 'golf', 40: 'hoops' };
 const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
 const SPECIALS = ['tower', 'golf', 'pachinko', 'hoops'];
-// Like a carnival game: the first time a stage comes up you get plenty of tries to get the hang
-// of it (shots); each time it comes back deeper in the run, one fewer, down to `fewest`.
+// Tries: plenty the first visit, one fewer each time it comes back, down to `fewest`.
 const STAGES = {
     tower: { shots: 4, fewest: 2, cap: 10 },
     golf: { shots: 4, fewest: 2, cap: 8, ball: { speed: 6.5, gravity: 1.0, rest: 0.35, settle: true } },
@@ -243,7 +217,7 @@ const VINE_STILL = 0.25, VINE_CALM_STEPS = 30;   // nearly still for 0.25s: let 
 const VINE_PIN_SLOP = 0.005;        // a vine's pin ignores its block's tiny jiggles (invisible), so it can rest
 const VINE_CHECK_EVERY = 4;         // how often (in steps) an awake vine checks whether it can rest
 const VINE_WAKE = 1.2;
-const VINE_WIND = 0.01, VINE_WIND_REACH = 0.9, VINE_WIND_MAX = 1;   // a passing ball's breeze: share of its speed per step, and reach              // ...unless a ball is within this many cells of it
+const VINE_WIND = 0.01, VINE_WIND_REACH = 0.9, VINE_WIND_MAX = 1;   // a passing ball's breeze: share of its speed per step, and reach
 const VINE_LAMP_SIZE = 0.7;         // a chandelier's block is drawn this size, so it swings free
 const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
 export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
@@ -265,10 +239,9 @@ const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff)
 // Balls pass through each other: in a multishot each ball flies its own path.
 const BALL_FILTER = G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
-// Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
+// Bigger numbers look a bit bulkier, and a block shrinks a little as it wears down, but never
+// below about 85%: the last blocks of a zone shouldn't turn into slivers.
 export function blockScale(hp, hp0) {
-    // Bigger numbers look a bit bulkier, and a block shrinks a little as it wears down,
-    // but never below about 85%: the last blocks of a zone shouldn't turn into slivers.
     const bulk = 0.9 + 0.1 * Math.min(1, Math.log(hp0) / Math.log(60));
     return bulk * (0.94 + 0.06 * Math.max(0, hp) / hp0);
 }
@@ -736,7 +709,6 @@ export class Sim {
                     if (b.calmT >= GREY_CALM || b.looseT >= GREY_MAX) this.removeBlock(b, true);
                 }
             }
-            // Pinned blocks no longer snap loose from a hard knock: only their nails let go.
         }
     }
 
@@ -1194,8 +1166,8 @@ export class Sim {
         }
 
         // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
-        // Never in the zone's top two rows, and never more than four: grey pieces across the top
-        // made a lid that kept every shot off the blocks below (a tester's depth-66 wall).
+        // Never in the zone's top two rows, and never more than four, so they can't make a lid
+        // that keeps every shot off the blocks below.
         const greys = s.relaxed ? 0 : Math.min(GREY_PIECES, spec.neutral + (has('greymaze') ? 2 : 0));
         if (greys) {
             const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4 && Math.min(...p.cells.map(([, r]) => r)) >= 2);
@@ -1829,9 +1801,9 @@ export class Sim {
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
-    // Hoops: three or four baskets (a rim and a net) scattered across the board, and a few grey blocks to bank shots off (their nails never come out). Now and then a
-    // mushroom on a wall for a lucky bounce. A ball through a basket from above pays, once per
-    // basket per ball, so one good ball can drop through two.
+    // Hoops: three or four baskets scattered across the board, a few grey blocks to bank shots
+    // off, and now and then a mushroom on a wall. A ball through a basket from above pays, once
+    // per basket per ball, so one good ball can drop through two.
     addHoops() {
         const { R, world, s } = this;
         const n = 3 + (this.rand() < 0.4 ? 1 : 0), spots = [];
@@ -2338,7 +2310,6 @@ export class Sim {
         }
     }
 
-    // A ball that just scored is "working": it loses any extra weight and keeps going.
     // Is a ball at p moving along v aimed at a block (not a grey one) within GRACE_RANGE cells?
     headingAtBlock(p, v) {
         const sp = Math.hypot(v.x, v.y);

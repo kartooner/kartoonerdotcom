@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, LAP, MULTISHOT_AT, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, LAUNCH_EDGE, LAP, MULTISHOT_AT, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-41';
+const BUILD = '1.5-42';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -67,7 +67,7 @@ const scene = new THREE.Scene();
 // A holiday season (if it's one) recolours things before anything is built.
 const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
-const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block   // crayon bits when a block pops
+const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 
 function fitCamera() {
@@ -75,7 +75,7 @@ function fitCamera() {
     renderer.setSize(w, h);
     // Bottom: room for the menu and theme glyphs. They sit above the home indicator
     // (safe-area inset), so on a notched iPhone they need more than a flat 44px.
-    const probe = document.getElementById('safe-probe');
+    const probe = $('safe-probe');
     const inset = probe ? probe.offsetHeight : 0;
     const pad = 0.25, bottomPx = Math.max(44, Math.max(2, inset - 10) + 44);
     // A phone on its side is short: give the side HUD a narrower column so it fits too.
@@ -87,7 +87,7 @@ function fitCamera() {
     const wide = w > h * 1.05 && (w - wideBoard) / 2 >= hudW + hudGap + 16;
     document.body.classList.toggle('wide', wide);
     // Otherwise the field sits just below the HUD, using the HUD's real height.
-    const hudEl = document.getElementById('hud');
+    const hudEl = $('hud');
     const topPx = wide ? 16 : (hudEl ? hudEl.getBoundingClientRect().bottom : 60) + 10;
     const scale = Math.min(w / (W + pad * 2), (h - topPx - bottomPx) / (H + pad * 2));   // px per cell
     const vw = w / scale, vh = h / scale;
@@ -104,7 +104,7 @@ function fitCamera() {
     root.setProperty('--board-top', `${topPx + pad * scale}px`);
     root.setProperty('--hud-left', `${boardLeft - hudW - hudGap}px`);
     root.setProperty('--hud-w', `${hudW}px`);
-    // Too narrow for three links under the board: drop the Boop! mark between them.
+    // A narrow board gets smaller labels in the top bar.
     document.body.classList.toggle('narrow-board', boardPx < 260);
 }
 // Re-fit whenever the screen changes. On iPhone, turning the phone fires these events
@@ -125,7 +125,7 @@ const calmMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function phoneSideways() { return touchOnly.matches && window.innerWidth > window.innerHeight && window.innerHeight < 500; }
 function checkSideways() {
     const side = phoneSideways();
-    const panel = document.getElementById('rotate');
+    const panel = $('rotate');
     if (side && panel.hidden && document.body.classList.contains('playing')) showScreen('menu', false);
     panel.hidden = !side;
 }
@@ -237,8 +237,7 @@ function sketchTexture(w, h, draw) {
     tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
 }
-const LAUNCH_EDGE_VIEW = 0.62;   // matches LAUNCH_EDGE in sim.js
-const railW = W - 2 * LAUNCH_EDGE_VIEW;
+const railW = W - 2 * LAUNCH_EDGE;
 const railMat = mat(0xffffff, { transparent: true, opacity: 0.55, depthWrite: false,
     map: sketchTexture(1024, 64, (stroke) => {
         const y = 32, x0 = 12, x1 = 1012;
@@ -290,8 +289,8 @@ function moveLauncherView(frameDt) {
         // that way (or the arrow would sit over the wall).
         const L = launcher.position.x, x = launchAt().x, off = 0.7, half = 0.23;
         arrowL.position.x = L - off; arrowR.position.x = L + off;
-        arrowL.visible = x > LAUNCH_EDGE_VIEW + 0.02 && L - off - half > 0.02;
-        arrowR.visible = x < W - LAUNCH_EDGE_VIEW - 0.02 && L + off + half < W - 0.02;
+        arrowL.visible = x > LAUNCH_EDGE + 0.02 && L - off - half > 0.02;
+        arrowR.visible = x < W - LAUNCH_EDGE - 0.02 && L + off + half < W - 0.02;
         arrowMat.opacity = moving ? 0.95 : 0.6;
     }
 }
@@ -348,19 +347,18 @@ function buildBlockView(b) {
         group.add(bomb.group);
     }
     scene.add(group);
-    scene.add(group);
     const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5, trail: [], cells: b.cells };
     blockViews.set(b.id, v);
     return v;
 }
 
-// Nails: what holds a fixed block in place. Heads with an ink outline, like a tack in a
-// drawing. Bright ones can be knocked out: they tilt and lift as they wear down, jolt
-// when hit, and pop out. Grey ones (single squares) never come out.
-// A gold block (pop it for a bonus stage): shaded like metal in the block shader (flecks, bevel, sheen).
+// A gold block (pop it for a bonus stage): shaded like metal in the block shader, with a twinkling star.
 const GOLD = { fill: 0xf0ad1f, pattern: -1, text: '#2b2622' };
 const starGeo = flakeGeometry(), starMat = new THREE.MeshBasicMaterial({ color: 0xfffbea });
 starGeo.userData.keep = starMat.userData.keep = true;
+// Nails: what holds a fixed block in place, drawn by the block shader. Bright ones can be
+// knocked out: they tilt and lift as they wear down, jolt when hit, and pop out. Grey ones
+// (single squares) never come out.
 const NAIL = 0xf7f3ea, NAIL_FIXED = 0x8f8982;
 const nailAt = new THREE.Vector3();
 function updateNails(v, b, frameDt) {
@@ -498,7 +496,6 @@ function buildVineLink(parent, seed, len) {
     return g;
 }
 
-// A bomb's fuse: one simple curved crayon line out of its cap, a thin ribbon along a curve.
 // Bomb colours per theme: in the dark the body is lifted a little so it stands off the field.
 const BOMB_LOOK = {
     light: { body: 0x24222b, shade: 0x0b0a0e, cap: 0x5d5668, fuse: 0xa9a59e },
@@ -506,7 +503,6 @@ const BOMB_LOOK = {
 };
 const bombLook = () => BOMB_LOOK[themeName()];
 const GOLF_WATER = { light: 0x9ccfe4, dark: 0x2e5a70 };     // the golf stage's water
-const GOLF_POCKET = { light: 0x5d5853, dark: 0x3b3632 };    // ...the pocket under its hole
 // A notched flag (a swallowtail), filled orange with an ink outline, its top-left corner at (x, y).
 function notchedFlag(x, y) {
     const w = 0.56, h = 0.34, notch = 0.16;
@@ -519,26 +515,6 @@ function notchedFlag(x, y) {
     g.add(fill, edge);
     g.position.set(x, y, 0.06);
     return g;
-}
-const GOLF_GRASS = 0x6fae4f;
-// A filled shape from a list of points, with an ink outline (or none): for the golf hill.
-function filledShape(pts, color, z, outline = true) {
-    const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
-    const fill = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false }));
-    fill.renderOrder = 1;
-    const group = new THREE.Group();
-    group.add(fill);
-    if (outline) {
-        // Inked twice, each a little off, like a crayon going round it.
-        for (const [dx, dy, k] of [[0, 0, 0], [0.012, -0.01, 1]]) {
-            const p2 = pts.map(([x, y], i) => new THREE.Vector3(x + dx + Math.sin(i * 3.1 + k * 5) * 0.012, y + dy + Math.cos(i * 2.3 + k * 7) * 0.012, 0.001));
-            const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(p2), outlineMat);
-            edge.renderOrder = 2;
-            group.add(edge);
-        }
-    }
-    group.position.z = z;
-    return { group, fill };
 }
 const GOLF_RIPPLE = { light: 0xffffff, dark: 0xd6eaf2 };    // rings on the water: white foam
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
@@ -554,7 +530,7 @@ function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
 }
 const rippleT = new Map();       // floating ball → time since its last ring
 const GOLF_ISLAND = { light: 0x6fae6a, dark: 0x67a663 };    // the hill (its zigzag is drawn a shade darker); bright in the dark too, like the blocks
-const GOLF_HOLE_C = { light: 0x2b2622, dark: 0x120f0d };     // ...and its hole                                 // ...and its green (its own colour: the leaves change with the seasons)
+const GOLF_HOLE_C = { light: 0x2b2622, dark: 0x120f0d };     // ...and its hole
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -575,6 +551,7 @@ function strokeGeometry(pts, w, seed, taper = true) {
     geo.setIndex(idx);
     return geo;
 }
+// A bomb's fuse: one curved crayon line out of its cap.
 const FUSE_END = [0.2, 0.64];
 function fuseGeometry(seed) {
     const p0 = [-0.04, 0.3], c = [-0.06, 0.66], p1 = FUSE_END, pts = [];
@@ -669,7 +646,7 @@ function buildPropView(pr) {
         if (pr.water) {
             // The water the green stands in: a blue band along the floor, under everything else.
             v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2 - 0.06, pr.water / 2 - 0.04], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.45);    // inside the frame; over a floating ball, so its lower half is under water     // in front of the hill's foot, see-through
+            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.45);    // over a floating ball, so its lower half is under water
             v.water.material.uniforms.uAlpha.value = 0.72;
             group.add(v.water);
             leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
@@ -1138,7 +1115,7 @@ function setRelaxed(on) {
     try { localStorage.setItem(RELAXED_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
     restart(loadRun());                              // the other mode's run, or a fresh one
     showRelaxedState();
-    $('btn-settings-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+    $('btn-settings-play').textContent = playLabel();
 }
 relaxedSwitch.addEventListener('click', () => setRelaxed(!relaxed));
 showRelaxedState();
@@ -1257,6 +1234,10 @@ let keyAim = false;       // the guide is up with no finger or mouse button down
 let keyTurn = 0;          // -1 left, 1 right, 0 still
 let keyFine = false;
 const KEY_TURN = 0.9, KEY_TURN_FINE = 0.15;   // radians per second
+function startKeyAim() {          // the guide comes up where the aim already is
+    if (keyAim) return;
+    keyAim = true; aiming = false; aimTarget = aimAngle; hideNote();
+}
 function keyboardAim(dt) {
     if (!keyTurn) return;
     aimTarget = clampAim(aimTarget + keyTurn * (keyFine ? KEY_TURN_FINE : KEY_TURN) * dt);
@@ -1293,8 +1274,13 @@ let mouseDownAt = null;     // where a mouse press started, and whether it was o
 // or the game pauses) and it's back to normal; that same press never turns into an aim.
 const FAST = 3;
 let fastPointer = null, fastKey = false;
-const fastForward = () => (fastPointer !== null || fastKey) && (phase === 'play' || phase === 'settle') && !paused();
 const holdToFast = () => phase === 'play' || phase === 'settle';
+const fastForward = () => (fastPointer !== null || fastKey) && holdToFast() && !paused();
+function toScreen(x, y) {
+    const v = new THREE.Vector3(x, y, 0).project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+}
 function fromScreen(x, y) {
     const r = renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector3((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height * 2 - 1), 0).unproject(camera);
@@ -1321,7 +1307,7 @@ const LAUNCHER_TAP_MS = 400;
 let grabbing = null;             // { id, x0, l0 } while the launcher is being slid
 function onLauncher(ev) {
     const L = launchAt();
-    const c = window.__boop.toScreen(L.x, L.y), e = window.__boop.toScreen(L.x + 0.55, L.y);
+    const c = toScreen(L.x, L.y), e = toScreen(L.x + 0.55, L.y);
     return Math.hypot(ev.clientX - c.x, ev.clientY - c.y) < Math.max(GRAB_PX, Math.abs(e.x - c.x));
 }
 function startGrab(ev, from = ev) {
@@ -1497,7 +1483,7 @@ const note = $('note'), buddy = $('buddy');
 let noteShown = false;
 function noteTargetPoint() {
     const t = sim.s.noteTarget;
-    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // (placeNote lays Buddy out under his bubble)   // the buddy, centred, below the pause and launcher
+    if (t?.kind === 'open') return { x: W / 2, y: -3.9, r: 0, buddy: true };   // Buddy, centred (placeNote puts him under his bubble)
     if (!t || t.kind === 'launcher') return { x: launcher.position.x, y: LAUNCHER.y, r: 0.45 };
     if (t.kind === 'block' && sim.s.blocks[t.id]) {
         const p = sim.world.getRigidBody(sim.s.blocks[t.id].body).translation();
@@ -1527,31 +1513,26 @@ function noteTargetPoint() {
 function placeNote() {
     const t = noteTargetPoint();
     if (!t) { hideNote(); return; }
-    const c = window.__boop.toScreen(t.x, t.y);
-    const edge = window.__boop.toScreen(t.x + t.r, t.y);
+    const c = toScreen(t.x, t.y);
+    const edge = toScreen(t.x + t.r, t.y);
     // A tip about the whole board is said by the block buddy, standing under the bubble.
     const rPx = t.buddy ? 23 : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
+    const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
+    let top, below = false;
     if (t.buddy) {
-        // Buddy's tips have a fixed layout: the bubble near the top of the board, centred on
-        // it, and Buddy standing right below it (never the other way round).
-        const top = Math.max(renderer.domElement.getBoundingClientRect().top + 54, gutter);
-        const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
-        note.style.left = `${left}px`;
-        note.style.top = `${top}px`;
-        note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
-        note.classList.remove('below');
+        // Buddy's tips: the bubble near the top of the board, and Buddy standing right below it.
+        top = Math.max(renderer.domElement.getBoundingClientRect().top + 54, gutter);
         buddy.style.left = `${c.x}px`;
         buddy.style.top = `${top + h + gap + rPx}px`;
-        return;
+    } else {
+        const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
+            : $('hud').getBoundingClientRect().bottom + 6;
+        below = c.y - rPx - gap - h < hudBottom;   // above the thing when it fits, otherwise below
+        top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
     }
-    const hudBottom = document.body.classList.contains('wide') ? 8   // HUD is beside the board, not above
-        : document.getElementById('hud').getBoundingClientRect().bottom + 6;   // keep clear of the HUD
-    const below = c.y - rPx - gap - h < hudBottom;   // above when it fits, otherwise below
-    const left = Math.min(vw - gutter - w, Math.max(gutter, c.x - w / 2));
-    const top = below ? c.y + rPx + gap : c.y - rPx - gap - h;
     note.style.left = `${left}px`;
     note.style.top = `${top}px`;
     note.style.setProperty('--arrow-x', `${Math.min(w - 18, Math.max(18, c.x - left))}px`);
@@ -1632,10 +1613,9 @@ function tourTip(key, text, { now = false, stay = false, first = false } = {}) {
 function queueZoneTips() {
     const s = sim.s, tips = [];
     if (s.note) tips.push({ key: null, text: s.note, target: s.noteTarget ?? { kind: 'launcher' } });   // an upgrade
-    // Relaxed mode skips the tips about new things: they're kept for the regular game.
-    if (s.relaxed) { tipQueue.unshift(...tips); return; }
-    // The surprise stages explain themselves in their own note; their pieces aren't the board's.
-    if (['tower', 'golf', 'hoops', 'pachinko'].includes(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
+    // No tips about new things in Relaxed mode (they're kept for the regular game), or on the
+    // surprise stages (they explain themselves in their own note).
+    if (s.relaxed || ['tower', 'golf', 'hoops', 'pachinko'].includes(s.bonus?.kind)) { tipQueue.unshift(...tips); return; }
     const blocks = Object.values(s.blocks), props = Object.values(s.props), pickups = Object.values(s.pickups);
     const add = (key, target) => { if (target && tipDue({ key }) && !tipQueue.some((t) => t.key === key)) tips.push({ key, text: THING_TIPS[key], target }); };
     const block = (f) => { const b = blocks.find(f); return b && { kind: 'block', id: b.id }; };
@@ -1693,12 +1673,12 @@ function gameOver() {
     audio.over();
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
-    // One line of how the run went: blocks popped, and zones cleared under par if any.
+    // How the run went: blocks popped, and zones cleared under par if any.
     const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
-    const statParts = !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
-    $('over-stats').replaceChildren(...statParts.flatMap((t, i) => {     // each stat kept whole: the line breaks between them
+    const stats = !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
+    $('over-stats').replaceChildren(...stats.map((t) => {     // one stat per line
         const span = document.createElement('span'); span.textContent = t;
-        return [span];
+        return span;
     }));
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
@@ -2062,16 +2042,14 @@ function applyTheme(name) {
     lineMat.color.setHex(theme.line);
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
-    // Bombs follow the theme too.
     const look = BOMB_LOOK[name];
     fuseMat.color.setHex(look.fuse);
     shadeMat.color.setHex(look.shade);
-    for (const v of propViews.values()) {
-        if (!v.bomb) continue;
-        v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
-        v.bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
-        v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
-    }
+    const tintBomb = (bomb) => {
+        bomb.body.material.uniforms.uFill.value.setHex(look.body);
+        bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
+        bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
+    };
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
@@ -2082,23 +2060,22 @@ function applyTheme(name) {
     JELLO.text = theme.jelloText;
     for (const v of blockViews.values()) {
         v.mesh.material.uniforms.uInk.value.setHex(theme.edge);
-        if (v.bomb) {
-            v.bomb.body.material.uniforms.uFill.value.setHex(look.body);
-            v.bomb.body.material.uniforms.uInk.value.setHex(theme.edge);
-            v.bomb.cap.material.uniforms.uFill.value.setHex(look.cap);
-        } else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+        if (v.bomb) tintBomb(v.bomb);
+        else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
-    for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
-    for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
-    for (const v of propViews.values()) if (v.net?.material.uniforms?.uInk) v.net.material.uniforms.uInk.value.setHex(theme.line);
     for (const v of propViews.values()) {
-        if (!v.hill) continue;
-        const u = v.hill.material.uniforms;
-        u.uFill.value.setHex(GOLF_ISLAND[name]); u.uInk.value.setHex(theme.edge); u.uHole.value.setHex(GOLF_HOLE_C[name]);
+        if (v.bomb) tintBomb(v.bomb);
+        for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+        v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
+        v.net?.material.uniforms.uInk?.value.setHex(theme.line);
+        if (v.hill) {
+            const u = v.hill.material.uniforms;
+            u.uFill.value.setHex(GOLF_ISLAND[name]); u.uInk.value.setHex(theme.edge); u.uHole.value.setHex(GOLF_HOLE_C[name]);
+        }
+        for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
-    for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
     themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
     $('theme-switch').setAttribute('aria-checked', String(name === 'dark'));
@@ -2178,8 +2155,8 @@ const WHATS_NEW = [
     },
 ];
 const NEWS_KEY = 'boop-news-seen';
-const NEWS_BUBBLE_MIN_H = 860;
-const GREET_MIN_H = 620;          // a holiday greeting is one short line: it fits on most phones   // screen height (CSS px) with room for Boop's line on the start screen
+const NEWS_BUBBLE_MIN_H = 860;    // screen height (CSS px) with room for Boop's What's new line
+const GREET_MIN_H = 620;          // a holiday greeting is one short line: it fits on most phones
 function readNewsSeen() { try { return localStorage.getItem(NEWS_KEY); } catch { return null; } }
 function markNewsSeen() { try { localStorage.setItem(NEWS_KEY, WHATS_NEW[0].version); } catch { /* storage blocked */ } }
 // Someone who's played before (a best depth, tips seen, or a saved run) and hasn't seen the
@@ -2261,7 +2238,7 @@ function showScreen(which, moveFocus = true) {
     if (which === 'menu') {
         // Mid-run, the start screen is the pause screen: Resume, or start over.
         menuTagline();
-        $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-play').textContent = playLabel(true);
         $('btn-new').hidden = !runStarted;
         $('btn-menu-close').hidden = !runStarted || fromSave;   // only on the pause screen: close and keep playing
         showNewsLine();
@@ -2270,23 +2247,25 @@ function showScreen(which, moveFocus = true) {
         if (moveFocus) $('btn-again').focus();
     } else if (which === 'news') {
         news.scrollTop = 0;
-        $('btn-news-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-news-play').textContent = playLabel();
         $('btn-news-back').focus();
         markNewsSeen();
     } else if (which === 'settings') {
         settings.scrollTop = 0;
-        $('btn-settings-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-settings-play').textContent = playLabel();
         showSoundState();
         if (moveFocus) $('btn-settings-back').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
-        $('btn-howto-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-howto-play').textContent = playLabel();
         $('btn-howto-back').focus();
     }
 }
 // Settings, What's new and How to play open from the start/pause screen or from game over;
 // Back returns there, and their big button plays on (or, after game over, plays again).
 let backTo = 'menu';
+// The big button's words: start, pick a saved run back up, carry on, or (after game over) go again.
+const playLabel = (onMenu = false) => (!onMenu && backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume');
 const openSub = (which) => { backTo = over.hidden ? 'menu' : 'over'; showScreen(which); };
 const goBack = () => showScreen(backTo);
 const subPlay = () => { if (backTo === 'over') { backTo = 'menu'; restart(); } play(); };
@@ -2376,7 +2355,7 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         sim.moveLauncher(launchAt().x + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 0.05 : 0.25));
         markLauncherMoved();
-        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); }
+        startKeyAim();
         return;
     }
     if (paused() || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2389,7 +2368,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key in AIM_KEYS) {
         e.preventDefault();
         if (phase !== 'aim') return;
-        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); }
+        startKeyAim();
         keyTurn = AIM_KEYS[e.key];
         return;
     }
@@ -2398,7 +2377,7 @@ document.addEventListener('keydown', (e) => {
         if (holdToFast()) { fastKey = true; return; }      // held while balls bounce: speed up
         if (e.repeat) return;
         if (phase !== 'aim') return;
-        if (!keyAim) { keyAim = true; aiming = false; aimTarget = aimAngle; hideNote(); return; }   // first press shows the guide
+        if (!keyAim) { startKeyAim(); return; }   // first press shows the guide
         const drawn = guideAngle ?? shownAngle();
         keyAim = false;
         keyTurn = 0;
@@ -2429,27 +2408,16 @@ window.__boop = {
     get sim() { return sim; },
     get phase() { return phase; },
     fire: (angle) => fire(angle),
-    get ballColors() { return [...ballViews.values()].map((v) => v.fill.material.color.getHexString()); },
     get aim() { return shownAngle(); },
-    get feel() { return { autoSpeed, hitStop, turnPops }; },
-    get moveMode() { return moveMode; },
-    get railOn() { return rail.visible; },
-    clearLeaves: () => leafPiles?.clear(),       // for checks: a board without leaves
-    get fast() { return fastForward(); },
-    get guideInk() { return dots.material.opacity; },
+    clearLeaves: () => leafPiles?.clear(),
     get pixelRatio() { return renderer.getPixelRatio(); },
     get soundOn() { return audio.on; },
     get targetFps() { return targetFps; },
     get guide() { return { angle: guideAngle, contacts: lastContacts, cost: guideCost }; },
-    // For checks: why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
+    // Why the board isn't idling (each should be false/0 for it to drop to ~10 fps).
     get idleBlockers() { return { aiming, keyAim, worldSettling, animating, shake, crumbs: crumbs.active(), unsettled: !sim.settled() }; },
-    // For checks: GPU objects alive and things in the scene, to catch anything left behind.
+    // GPU objects alive and things in the scene, to catch anything left behind.
     get stats() { let n = 0; scene.traverse(() => { n++; }); return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneObjects: n, renders: renderer.info.render.frame, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, sketchMats: sketchMats.length }; },
-    // Screen position of a point in the field, so tests can aim with real pointer input.
-    toScreen(x, y) {
-        const v = new THREE.Vector3(x, y, 0).project(camera);
-        const r = renderer.domElement.getBoundingClientRect();
-        return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
-    },
+    toScreen,       // so tests can aim with real pointer input
 };
 checkSideways();   // in case the page opens with the phone already on its side
