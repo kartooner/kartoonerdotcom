@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-64';
+const BUILD = '1.5-65';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -781,7 +781,8 @@ function syncView(frameDt) {
         hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? `${s.bonus.shots} ${s.bonus.shots === 1 ? 'drop' : 'drops'}` : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
         hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
         hud.parBox.classList.toggle('bonus', !!s.bonus);
-        hud.progress.style.transform = `scaleX(${done})`;
+        const bar = `scaleX(${done})`;
+        if (hud.progress.style.transform !== bar) hud.progress.style.transform = bar;   // only when it changes
     }
 }
 
