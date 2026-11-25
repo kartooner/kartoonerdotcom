@@ -12,7 +12,7 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs, flakeGeometry } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
-import { makeWater, blockShape, blockSolid } from './water.js';
+import { makeWater, makeJarMaterial, blockShape, blockSolid } from './water.js';
 import { makeLeafPiles } from './leaves.js';
 import { makeProps } from './props.js';
 import './buddy.js';               // the mascot's blinks and glances
@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-51';
+const BUILD = '1.5-52';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -79,33 +79,12 @@ const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
 const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
-// Test: water jars, behind ?water=1. One jar a zone; pop it and the water spills down and pools
-// on the floor. Looks only, for now: balls and blocks don't feel it.
+// Test: water jars, behind ?water=1. Now and then a zone has a jar (small or big); pop it and
+// the water runs down over the blocks and pools on the floor, where balls slosh through it.
 const WATER_TEST = (() => { try { return new URLSearchParams(location.search).has('water'); } catch { return false; } })();
-const JAR = { light: 0x6fb3dc, dark: 0x3f86b0 }, GLASS = { light: 0xfdfaf3, dark: 0x4a545b };
-// The jar is Erik's drawing, split into layers so it takes the theme's colours:
-// red = ink, green = water, blue = the glass inside (or, under the water, the water's darker shading).
-// (No alpha channel: browsers can throw away the colour of see-through pixels.)
-const jarTex = WATER_TEST ? new THREE.TextureLoader().load('img/jar.png') : null;
-const jarMat = WATER_TEST ? new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false,
-    uniforms: { uMap: { value: jarTex }, uInk: { value: new THREE.Color() }, uWater: { value: new THREE.Color() }, uGlass: { value: new THREE.Color() } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: `uniform sampler2D uMap; uniform vec3 uInk, uWater, uGlass; varying vec2 vUv;
-        void main(){
-            vec4 t = texture2D(uMap, vUv);
-            float wet = step(0.5, t.g);
-            vec3 col = uGlass; float a = mix(t.b, 1.0, wet) * 0.9;
-            col = mix(col, uWater * (1.0 - 0.45 * t.b * wet), t.g); a = max(a, t.g);
-            col = mix(col, uInk, t.r); a = max(a, t.r);
-            if (a < 0.02) discard;
-            gl_FragColor = vec4(col, a);
-            #include <colorspace_fragment>
-        }`,
-}) : null;
-if (jarMat) jarMat.userData.keep = true;
-const jarGeo = new THREE.PlaneGeometry(1.12, 1.12);
-jarGeo.userData.keep = true;
+const WATER = { light: [0x559fc6, 0x3b7fa8], dark: [0x3d9ad6, 0x24618d] };    // fill, and deeper down
+const GLASS = { light: 0xeef7fa, dark: 0x9db6c1 };
+const jarMats = new Set();          // one per jar on the board (each has its own size and wobble)
 const water = WATER_TEST ? makeWater(scene, renderer) : null;
 const waterShapes = new Map();      // block id → its shape, for the water to flow round
 const jarIds = new Set();
@@ -368,14 +347,21 @@ function buildBlockView(b) {
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
     if (b.jar) {
-        // A jar (always a single square): drawn in place of the block, with its number on the water.
+        // A jar (one square, or a big one of four): drawn in place of the block, number on the water.
         jarIds.add(b.id);
         mesh.visible = false;
-        const jar = new THREE.Mesh(jarGeo, jarMat);
-        jar.position.set(0, 0.02, 0.1);
+        const size = b.cells.length === 4 ? 2 : 1;
+        const mat = makeJarMaterial();
+        mat.uniforms.uSize.value = size;
+        mat.uniforms.uSeed.value = (b.id * 7.31) % 50;
+        tintJar(mat, themeName());
+        jarMats.add(mat);
+        const jar = new THREE.Mesh(new THREE.PlaneGeometry(1.15 * size, 1.15 * size), mat);
+        jar.position.z = 0.1;
         jar.renderOrder = 1;
+        jar.userData.jarMat = mat;
         group.add(jar);
-        label.userData.cell = [0, -0.2];
+        label.userData.cell = [0, -0.2 * size];
     }
     let star = null;
     if (b.gold) {
@@ -395,7 +381,7 @@ function buildBlockView(b) {
         group.add(bomb.group);
     }
     scene.add(group);
-    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5, trail: [], cells: b.cells, jar: b.jar };
+    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5 || (b.jar && b.cells.length === 4), trail: [], cells: b.cells, jar: b.jar };
     blockViews.set(b.id, v);
     return v;
 }
@@ -456,7 +442,7 @@ function updateBlockView(v, b, frameDt) {
         if (v.hp !== -1) v.punch = 1;
         v.labelAt = now;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : b.gold ? GOLD : b.jar ? { fill: JAR[themeName()], pattern: -1, text: '#2b2622' } : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
+        const look = b.jello ? JELLO : b.gold ? GOLD : b.jar ? { fill: WATER[themeName()][0], pattern: -1, text: '#2b2622' } : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -599,7 +585,7 @@ function syncView(frameDt) {
     const s = sim.s;
     moveLauncherView(frameDt);
     for (const [id, v] of blockViews) {
-        if (!s.blocks[id]) { discard(v.group); blockViews.delete(id); }
+        if (!s.blocks[id]) { v.group.traverse((o) => o.userData.jarMat && jarMats.delete(o.userData.jarMat)); discard(v.group); blockViews.delete(id); }
     }
     for (const id in s.blocks) {
         const b = s.blocks[id];
@@ -797,7 +783,8 @@ function consumeEvents() {
             if (phase === 'play' && ++turnPops >= 3) addFloater(`×${turnPops}`, e.x, e.y + 0.45, Math.min(1.15, 0.85 + 0.05 * (turnPops - 3)));
             if (v?.big) stopFor(0.045);            // a big block going is worth a beat
             if (water && jarIds.has(e.id)) {
-                water.spill(e.x, e.y, 200);
+                const big = v?.cells.length === 4;
+                water.spill(e.x, e.y, big ? 260 : 130, big ? 1.2 : 0.6);
                 crumbs.spray([[e.x, e.y + 0.3], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y - 0.2]], [0xffffff, GOLF_WATER[themeName()], theme.edge]);   // glass
                 jarIds.delete(e.id);
             }
@@ -1515,16 +1502,18 @@ function startZone() {
     phase = 'descend';
 }
 
-// The water test's jar: one of the zone's smallest plain blocks.
+// The water test's jar: the first zone always has one, then about every other zone. Small ones
+// take over a single square; big ones (four squares) go in an open spot.
 function addJar() {
-    if (sim.s.bonus) return;
-    const ok = Object.values(sim.s.blocks).filter((b) => !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
-    // One or two of its single squares; two now and then, so the pools add up.
-    const singles = ok.filter((b) => b.cells.length === 1).sort(() => Math.random() - 0.5);
-    const jars = Math.random() < 0.4 ? 2 : 1;
-    for (const b of singles.slice(0, jars)) b.jar = true;
-    // Not enough single squares: add a jar in an open spot (with room all round it).
-    for (let k = singles.length; k < jars; k++) {
+    if (sim.s.bonus || (sim.s.depth > 1 && Math.random() < 0.5)) return;
+    const big = Math.random() < 0.35;
+    if (!big) {
+        const singles = Object.values(sim.s.blocks).filter((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
+        if (singles.length) { singles[Math.floor(Math.random() * singles.length)].jar = true; return; }
+    }
+    // An open spot, with a square of room all round it.
+    {
+        const n = big ? 2 : 1;
         const taken = new Set();
         const mark = (x, y, r = 1) => { for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) taken.add(`${Math.floor(x) + dx},${Math.floor(-y) + dy}`); };
         for (const id in sim.s.blocks) {
@@ -1538,16 +1527,22 @@ function addJar() {
             for (const l of pr.links ?? []) { const t = sim.world.getRigidBody(l.body).translation(); mark(t.x, t.y, 0); }   // a vine, link by link
         }
         const open = [];
-        for (let c = 0; c < W; c++) for (let r = 4; r <= 12; r++) {
+        for (let c = 0; c <= W - n; c++) for (let r = 4; r <= 13 - n; r++) {
             let free = true;
-            for (let dc = -1; dc <= 1 && free; dc++) for (let dr = -1; dr <= 1 && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
+            for (let dc = -1; dc <= n && free; dc++) for (let dr = -1; dr <= n && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
             if (free) open.push([c, r]);
         }
-        if (!open.length) break;
-        const b = sim.addBlock([open[Math.floor(Math.random() * open.length)]], 2);
+        if (!open.length) return;
+        const [c, r] = open[Math.floor(Math.random() * open.length)];
+        const b = sim.addBlock(big ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]], big ? 5 : 2);
         b.jar = true;
         sim.s.zoneHp0 += b.hp;
     }
+}
+function tintJar(mat, name) {
+    const u = mat.uniforms;
+    u.uInk.value.setHex(theme.edge); u.uGlass.value.setHex(GLASS[name]);
+    u.uWater.value.setHex(WATER[name][0]); u.uDeep.value.setHex(WATER[name][1]);
 }
 // The water, each frame: flow round the blocks where they are now.
 function updateWater(dt) {
@@ -1562,8 +1557,14 @@ function updateWater(dt) {
         blocks.push(sh);
     }
     if (waterShapes.size > blocks.length + 20) for (const id of waterShapes.keys()) if (!sim.s.blocks[id]) waterShapes.delete(id);
-    water.update(dt, blockSolid(blocks));
+    const balls = sim.s.balls.map((b) => {
+        const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
+        return { x: t.x, y: t.y, vx: v.x, vy: v.y };
+    });
+    water.update(dt, blockSolid(blocks), balls);
     if (water.moving()) animating = true;
+    const now = performance.now() / 1000 % 1000;
+    for (const m of jarMats) m.uniforms.uTime.value = now;
     // Leaves float on the pool once it has settled (and sink back when it drains).
     if (!leafPiles) return;
     const top = !water.active() ? null : water.moving() ? waterTop : water.surface();
@@ -1671,7 +1672,7 @@ function restart(saved = null) {
     crumbs.clear();
     leafPiles?.clear();
     leafPiles?.setWater(null);
-    water?.clear(); waterShapes.clear(); jarIds.clear(); waterTop = null;
+    water?.clear(); waterShapes.clear(); jarIds.clear(); jarMats.clear(); waterTop = null;
     keyAim = false;
     if (saved) {
         sim = saved;
@@ -1866,12 +1867,8 @@ function applyTheme(name) {
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
     propArt.setTheme(name);
-    water?.setColors(GOLF_WATER[name], theme.edge);
-    if (jarMat) {
-        jarMat.uniforms.uInk.value.setHex(name === 'dark' ? theme.line : theme.edge);   // dark ink would vanish on the dark board
-        jarMat.uniforms.uWater.value.setHex(JAR[name]);
-        jarMat.uniforms.uGlass.value.setHex(GLASS[name]);
-    }
+    water?.setColors(WATER[name][0], WATER[name][1], theme.edge);
+    for (const m of jarMats) tintJar(m, name);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
@@ -2216,6 +2213,7 @@ checkForUpdate();
 // For automated checks.
 window.__boop = {
     get sim() { return sim; },
+    get water() { return water; },
     get phase() { return phase; },
     fire: (angle) => fire(angle),
     get aim() { return shownAngle(); },

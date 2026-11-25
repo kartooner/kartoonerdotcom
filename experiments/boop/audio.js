@@ -4,7 +4,7 @@
 //   last note, so a good shot turns into a little tune (it starts over each shot)
 // - only a few sounds at once, a soft limiter, low volume, and quiet while paused
 // Off until you turn it on (browsers need a tap first anyway).
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-51');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-52');   // build stamp: game.js checks every file matches
 
 const SCALE = [0, 2, 4, 7, 9];            // major pentatonic, in semitones
 const ROOT = 392;                         // G4: warm, not shrill

@@ -223,14 +223,14 @@ From watching a tester's kids: they loved popping blocks when the board was simp
 
 An early look at flowing water. Nothing changes in the real game until we decide it's worth keeping.
 
-- One jar per zone, in a random spot. It's a small block with a low number.
-- Pop it and 60 to 120 drops spill out, run down around the blocks and pool on the floor.
-- Looks only, for now: balls and blocks ignore the water.
-- The water is its own little sim in water.js, not Rapier bodies, so it stays cheap on phones and stays out of saves.
-- Drawn soft and merged into one wobbly blob, so it matches the crayon look. Leaves float on the pool (setWater already does this for golf).
+- A jar in the first zone, then in about every other zone. Small ones (one square) or big ones (four).
+- Drawn like the blocks: thick wobbly ink edge, glass with a jelly-style shine, water inside that sloshes.
+- Pop it and the water pours out, runs off block tops, slips through the cracks between blocks and pools on the floor. It only collects where there's no way out (a cup, a pocket against a wall).
+- The pool has a light top line with a moving sheen, deeper colour lower down, faint caustics, and foam where it's churned up. Leaves float on it.
+- Balls splash through it and throw water around. The water doesn't slow balls: every ball moves at one speed, which keeps the aiming guide honest.
+- The water is its own little sim in water.js (under 1 ms a frame), not Rapier bodies, so it stays cheap and out of saves.
 - It drains when the zone clears.
-- Check it holds up on an iPhone 13 screen, and cap the drops if it doesn't.
-- After playing with it, decide: free Boop!, Plooka! only, or neither. Things to try later: slowing balls, nudging loose blocks, a rising floor.
+- Still to decide: free Boop!, Plooka! only, or neither. Then maybe: water that carries over and rises zone to zone.
 
 ## Later: a bigger version (app or Steam)
 
