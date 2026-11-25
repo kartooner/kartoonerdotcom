@@ -9,15 +9,17 @@
 import * as THREE from 'three';
 import { W, H } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-50'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-51'];
 
 const R = 0.13;                // how close a drop gets to a wall or block
 const SPAN = 0.42;             // how far drops feel each other
 const REST = 1.2, STIFF = 1000, NEAR = 2000;   // how tightly they pack, and how hard they push back
 const GRAVITY = -26;
-const STEPS = 3;               // sub-steps a frame, so fast drops don't tunnel through thin blocks
+const STEPS = 3;
+const MAX_SPEED = 14;               // sub-steps a frame, so fast drops don't tunnel through thin blocks
 export const MAX_DROPS = 520;
-const SLIDE = 7;               // how hard water on top of a block runs off toward the nearer edge
+const SLIDE = 7;
+const CLING = 45, DRIP = 14, BAND = 0.2;   // how hard water hugs a block's side, and its underside (less than gravity, so it drips), and from how far               // how hard water on top of a block runs off toward the nearer edge
 
 // ---------- the flow ----------
 
@@ -35,10 +37,17 @@ export class WaterSim {
     spill(x, y, n) { this.pour.push({ x, y, left: n }); }
     emit() {
         for (const p of this.pour) {
-            for (let k = 0; k < 3 && p.left > 0 && this.n < MAX_DROPS; k++, p.left--) {
+            // A few drops a sub-step, and only where there's room, so the jar never packs water
+            // tighter than it likes to sit (packed too tight, it bursts outward across the board).
+            for (let tries = 0; tries < 3 && p.left > 0 && this.n < MAX_DROPS; tries++) {
+                const ex = p.x + (Math.random() - 0.5) * 0.6, ey = p.y + (Math.random() - 0.5) * 0.4;
+                let crowded = false;
+                for (let j = Math.max(0, this.n - 40); j < this.n && !crowded; j++) crowded = (this.x[j] - ex) ** 2 + (this.y[j] - ey) ** 2 < 0.03;
+                if (crowded) continue;
                 const i = this.n++;
-                this.x[i] = p.x + (Math.random() - 0.5) * 0.5; this.y[i] = p.y + (Math.random() - 0.5) * 0.3;
-                this.vx[i] = (Math.random() - 0.5) * 1.6; this.vy[i] = Math.random() * 1.2 - 0.8;
+                p.left--;
+                this.x[i] = ex; this.y[i] = ey;
+                this.vx[i] = (Math.random() - 0.5) * 1.2; this.vy[i] = -Math.random();
             }
         }
         this.pour = this.pour.filter((p) => p.left > 0 && this.n < MAX_DROPS);
@@ -63,14 +72,24 @@ export class WaterSim {
             // Walls and floor (the ceiling too, in case a burst flings drops up there).
             if (x[i] < R) x[i] = R; else if (x[i] > W - R) x[i] = W - R;
             if (y[i] < -H + R) y[i] = -H + R; else if (y[i] > -R) y[i] = -R;
-            const out = solid(x[i], y[i]);
-            if (out) { x[i] = out[0]; y[i] = out[1]; }
+            const hit = solid(x[i], y[i]);
+            if (hit && !hit.stick) { x[i] = hit.x; y[i] = hit.y; }
             let nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
-            if (out?.[2] != null) {
+            const sp = nvx * nvx + nvy * nvy;
+            if (sp > MAX_SPEED * MAX_SPEED) { const k = MAX_SPEED / Math.sqrt(sp); nvx *= k; nvy *= k; }   // no drop ever shoots off
+            if (hit?.stick) {
+                // Just off a block's side or underside: it clings, so water runs down the side in
+                // a thin stream. Gravity's stronger, so under a block it gathers and drips.
+                const [nx, ny] = hit.stick, pull = ny > 0.6 ? DRIP : CLING;    // ny > 0.6: the block is above it
+                nvx += nx * pull * dt; nvy += ny * pull * dt;
+                const toward = nvx * nx + nvy * ny;
+                if (toward < 0) { nvx -= toward * nx * 0.3; nvy -= toward * ny * 0.3; }   // slow it leaving the surface
+            } else if (hit?.slide) {
                 // Sitting on top of a block: it runs off toward the nearer edge instead of
                 // staying put (a flat top is never quite flat).
-                nvx += out[2] * SLIDE * dt; nvy += out[3] * SLIDE * dt;
-            } else if (out || x[i] === R || x[i] === W - R) {
+                nvx += hit.slide[0] * SLIDE * dt; nvy += hit.slide[1] * SLIDE * dt;
+                nvx *= 0.985; nvy *= 0.985;         // and it runs, it doesn't race
+            } else if (hit || x[i] === R || x[i] === W - R) {
                 nvx *= 0.97; nvy *= 0.97;          // a little drag down the sides of things
             }
             vx[i] = nvx; vy[i] = nvy;
@@ -122,45 +141,51 @@ export class WaterSim {
     }
 }
 
-// A block, for the water: its cells in its own space, and where it is now. Drops are pushed
-// out of the nearest open side of whatever cell they've sunk into.
+// The blocks, for the water. For a drop at (px, py) it says one of:
+//   { x, y, slide }  it sank into a block: push it out to (x, y). `slide` is set if that's the
+//                    block's top: which way the water runs off it.
+//   { stick }        it's just outside a block: which way the surface is, so it can cling.
+//   null             nowhere near.
 export function blockSolid(blocks) {
     return (px, py) => {
+        let near = null, nearD = BAND;
         for (const b of blocks) {
             const dx = px - b.x, dy = py - b.y;
             if (dx * dx + dy * dy > b.reach2) continue;
             const c = Math.cos(b.a), s = Math.sin(b.a);
             const lx = (dx * c + dy * s) / b.k, ly = (-dx * s + dy * c) / b.k;    // into the block's own space
             const gx = Math.round(lx - b.ox), gy = Math.round(ly - b.oy);
-            if (!b.set.has(gx * 64 + gy)) {
-                // Not inside a cell, but maybe within a drop's reach of one: check the neighbours.
-                let hit = false;
-                for (let ex = -1; ex <= 1 && !hit; ex++) for (let ey = -1; ey <= 1 && !hit; ey++) if (b.set.has((gx + ex) * 64 + gy + ey)) hit = true;
-                if (!hit) continue;
-            }
-            // Distance to each open side of the cells around, and the shortest way out.
             const r = R / b.k;
             let best = null, bestD = Infinity;
             for (let ex = -1; ex <= 1; ex++) for (let ey = -1; ey <= 1; ey++) {
                 const cx = gx + ex, cy = gy + ey;
                 if (!b.set.has(cx * 64 + cy)) continue;
                 const ccx = cx + b.ox, ccy = cy + b.oy;
-                const ix = 0.5 + r - Math.abs(lx - ccx), iy = 0.5 + r - Math.abs(ly - ccy);
-                if (ix <= 0 || iy <= 0) continue;          // not touching this cell
-                // Push along x or y, whichever is shorter, unless a neighbour cell is that way.
+                const ax = Math.abs(lx - ccx) - 0.5 - r, ay = Math.abs(ly - ccy) - 0.5 - r;
                 const sx = lx >= ccx ? 1 : -1, sy = ly >= ccy ? 1 : -1;
+                if (ax > 0 || ay > 0) {
+                    // Outside this cell: how far from it, and which way it is.
+                    const qx = Math.max(ax, 0), qy = Math.max(ay, 0), d = Math.hypot(qx, qy) * b.k;
+                    if (d < nearD) {
+                        nearD = d;
+                        const ux = -sx * qx, uy = -sy * qy, l = Math.hypot(ux, uy);
+                        near = [(ux * c - uy * s) / l, (ux * s + uy * c) / l];
+                    }
+                    continue;
+                }
+                // Inside: push along x or y, whichever is shorter, unless a neighbour cell is that way.
                 const openX = !b.set.has((cx + sx) * 64 + cy), openY = !b.set.has(cx * 64 + cy + sy);
-                if (openX && ix < bestD) { bestD = ix; best = [lx + sx * ix, ly, 0]; }
-                if (openY && iy < bestD) { bestD = iy; best = [lx, ly + sy * iy, sy]; }
+                if (openX && -ax < bestD) { bestD = -ax; best = [lx + sx * -ax, ly, 0]; }
+                if (openY && -ay < bestD) { bestD = -ay; best = [lx, ly + sy * -ay, sy]; }
             }
             if (!best) continue;
             const wx = best[0] * b.k, wy = best[1] * b.k;
-            const at = [b.x + wx * c - wy * s, b.y + wx * s + wy * c];
-            // On top: which way it runs off, along the block's top (away from its middle).
-            if (best[2] > 0 && c > 0.5) { const d = Math.abs(lx) < 0.05 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(lx); at.push(d * c, d * s); }
-            return at;
+            const out = { x: b.x + wx * c - wy * s, y: b.y + wx * s + wy * c, slide: null };
+            // On top: it runs off along the block's top, away from its middle.
+            if (best[2] > 0 && c > 0.5) { const d = Math.abs(lx) < 0.05 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(lx); out.slide = [d * c, d * s]; }
+            return out;
         }
-        return null;
+        return near && { stick: near };
     };
 }
 // The shape of a sim block, for blockSolid (built once per block, then just moved).
