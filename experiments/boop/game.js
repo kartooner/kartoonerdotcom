@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, LAP, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, LAP, MULTISHOT_AT, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-34';
+const BUILD = '1.5-37';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -75,7 +75,7 @@ function fitCamera() {
     renderer.setSize(w, h);
     const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
     // A phone on its side is short: give the side HUD a narrower column so it fits too.
-    const hudW = h < 520 ? 140 : 200, hudGap = h < 520 ? 20 : 28;
+    const hudW = h < 520 ? 140 : 160, hudGap = h < 520 ? 16 : 20;      // the side column sits close to the board
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
     // the HUD in a column beside it and give the board the full height.
     const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
@@ -996,9 +996,11 @@ function syncView(frameDt) {
         hud.shots.textContent = s.relaxed ? '∞' : s.supply;      // Relaxed: shots never run out
         hud.shotsLabel.textContent = s.relaxed ? 'Shots' : 'Shots left';
         hud.parBox.classList.toggle('relaxed', !!s.relaxed);   // and there's no par
-        hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+        // Balls per shot: said for a couple of zones after each upgrade (Boop announces it too), then it's quiet.
+        const justUpgraded = Object.keys(MULTISHOT_AT).some((d) => s.depth >= +d && s.depth < +d + 2);
+        hud.volley.textContent = s.volley > 1 && justUpgraded && !s.bonus ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
-        hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
+        hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'Par';
         hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? `${s.bonus.shots} ${s.bonus.shots === 1 ? 'drop' : 'drops'}` : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
         hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
         hud.parBox.classList.toggle('bonus', !!s.bonus);
@@ -1689,8 +1691,11 @@ function gameOver() {
     $('over-result').textContent = `You reached depth ${d}.`;
     // One line of how the run went: blocks popped, and zones cleared under par if any.
     const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
-    $('over-stats').textContent = !popped ? '' : [`${popped} block${popped === 1 ? '' : 's'} popped`,
-        under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean).join(' · ');
+    const statParts = !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
+    $('over-stats').replaceChildren(...statParts.flatMap((t, i) => {     // each stat kept whole: the line breaks between them
+        const span = document.createElement('span'); span.textContent = t;
+        return [span];
+    }));
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
@@ -2091,17 +2096,19 @@ function applyTheme(name) {
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
-    themeButton.textContent = next === 'dark' ? 'Dark mode' : 'Light mode';
     themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
+    $('theme-switch').setAttribute('aria-checked', String(name === 'dark'));
     guideAngle = null;   // redraw the guide in the new colours
 }
 const currentTheme = () => readThemePick() ?? (systemDark.matches ? 'dark' : 'light');
 systemDark.addEventListener('change', () => { if (!readThemePick()) applyTheme(currentTheme()); });
-themeButton.addEventListener('click', () => {
+const flipTheme = () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     writeThemePick(next);
     applyTheme(next);
-});
+};
+themeButton.addEventListener('click', flipTheme);
+$('theme-switch').addEventListener('click', flipTheme);     // Settings: Dark mode
 applyTheme(currentTheme());
 
 // ---------- start screen ----------
@@ -2177,9 +2184,9 @@ function showNewsLine() {
     let played = readBest() > 0 || Object.keys(readTips()).length > 0;
     try { played = played || !!localStorage.getItem(SAVE_KEY) || !!localStorage.getItem(RELAXED_SAVE_KEY); } catch { /* storage blocked */ }
     const fresh = played && readNewsSeen() !== WHATS_NEW[0].version && (!runStarted || fromSave);   // not on a mid-run pause
-    // The link beside Send feedback says what's new until it's been seen (no extra room needed).
+    // The What's new link gets a dot until the latest has been seen (same words either way).
     const link = $('btn-news');
-    link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>New in ${WHATS_NEW[0].version}` : "What's new";
+    link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>What's new` : "What's new";
     link.classList.toggle('fresh', fresh);
     // Where there's room (tablets, desktop), Boop says it too.
     const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;

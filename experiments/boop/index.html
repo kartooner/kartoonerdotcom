@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-34">
+<html lang="en" data-build="1.5-37">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -131,7 +131,8 @@
             color: var(--ink-soft);
         }
         .stat { display: flex; flex-direction: column; line-height: 1.1; }
-        .stat span { font-size: 0.75rem; font-weight: 600; }
+        .stat span { font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        body.narrow-board .stat span, body.narrow-board .stat small { font-size: 0.6875rem; }
         .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
         .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
         .stat-main { align-items: center; text-align: center; }
@@ -145,10 +146,12 @@
         /* Zone progress: how much of the zone's numbers you've cleared. */
         #progress {
             grid-column: 1 / -1;
-            height: 5px;
-            border-radius: 3px;
-            background: color-mix(in srgb, var(--ink) 15%, transparent);
+            height: 8px;
+            border-radius: 4px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
             overflow: hidden;
+            filter: url(#sketchy);           /* a hand-drawn bar, like the board's frame */
         }
         #progress-fill {
             height: 100%;
@@ -330,7 +333,7 @@
         #rotate .rotate-buddy { width: 56px; height: 61px; }
         #rotate p { margin: 0; font-size: 1rem; line-height: 1.5; }
         /* A narrow board leaves little room for the links under it. */
-        body.narrow-board #back, body.narrow-board #theme-toggle { font-size: 0.75rem; }
+        body.narrow-board #back { font-size: 0.75rem; }
         #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
         #updating .btn { width: 100%; max-width: 280px; }
         #updating .error-detail { font-size: 0.75rem; color: var(--ink-soft); word-break: break-word; }
@@ -339,21 +342,6 @@
             margin: 0; padding: 10px 12px; border-radius: 8px;
             background: var(--ink); color: var(--paper, #f1e8d2);
             font-size: 0.8rem; line-height: 1.4; word-break: break-word; cursor: pointer;
-        }
-        #theme-toggle {
-            position: fixed;
-            z-index: 11;
-            right: var(--board-left, 16px);
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
-            padding: 4px 0;
-            background: none;
-            border: 0;
-            font: inherit;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            color: var(--ink);
-            text-decoration: underline;
-            cursor: pointer;
         }
         /* Start screen and how-to: full screens over the game, not pop-ups. */
         .screen {
@@ -377,10 +365,14 @@
             min-height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             text-align: center;
+            padding-bottom: calc(64px + env(safe-area-inset-bottom));     /* clear of the links along the bottom */
         }
+        /* Centred, but never pushed up or down past the edges when there's little room (small phones):
+           the auto margins centre it, and give way to scrolling instead of overflowing. */
+        #menu .screen-inner > :first-child, #over .screen-inner > :first-child { margin-top: auto; }
+        #menu .screen-inner > :last-child, #over .screen-inner > :last-child { margin-bottom: auto; }
         #menu .mascot { width: 72px; height: 78px; margin-bottom: 4px; transform: rotate(-7deg); }
         #menu h1 {
             margin: 0;
@@ -406,6 +398,11 @@
         #menu .tagline { margin: 10px 0 32px; font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-size: 1.25rem; font-weight: normal; line-height: 1.3; color: var(--ink-soft); text-wrap: balance; }
         /* Paused or saved: the tagline becomes the state, a step up in weight. */
         #menu .tagline.state { color: var(--ink); font-size: 1.5rem; }
+        /* Paused (or picking a run back up): the title steps down, so the buttons come up. */
+        #menu:has(.tagline.state) h1 { font-size: clamp(3rem, 15vw, 4.25rem); }
+        #menu:has(.tagline.state) .mascot { width: 56px; height: 61px; }
+        /* With a screen open, the numbers along the top don't show through behind it. */
+        body:has(.screen:not([hidden])) :is(#hud, #note, #buddy, #tipshade) { visibility: hidden; }
         /* Which mode Play starts or continues, when it's Relaxed. */
         #menu .mode-label { margin: -22px 0 16px; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
         #menu .menu-links .feedback { margin: 0; }
@@ -425,13 +422,25 @@
         }
         #over .over-buddy { width: 60px; height: 65px; margin: 4px auto 10px; display: block; transform: rotate(-7deg); }
         #over .result { margin: 14px 0 6px; font-size: 1.125rem; font-weight: 600; }
-        #over .stats { margin: 0 0 4px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-soft); }
+        #over .stats { margin: 0 0 4px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-soft); text-wrap: balance; }
+        #over .stats span { display: block; }             /* one stat per line: no dot left hanging at a line's end */
         #over .stats:empty { display: none; }
         #over .best { margin: 0 0 32px; font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
         #over .best.new { color: var(--accent); font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-size: 1.375rem; font-weight: normal; }
         #over .feedback { margin-top: 20px; }
-        #menu .version { font-weight: 600; }
-        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
+        #over .result { text-wrap: balance; }
+        /* Short screens (an iPhone SE): everything a little tighter, so the whole screen fits above
+           the links along the bottom without scrolling. */
+        @media (max-height: 700px) {
+            #over .over-buddy { width: 48px; height: 52px; margin: 2px auto 6px; }
+            #over .say { margin-bottom: 8px; }
+            #over .result { margin: 8px 0 4px; font-size: 1rem; }
+            #over .best { margin-bottom: 18px; }
+            #over .actions { gap: 10px; }
+            #over .actions .btn { padding: 12px 20px; }
+            #over .feedback { margin-top: 12px; }
+        }
+        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; }      /* buttons run the full width of the screen's column */
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
            behind the label, roughed up by the #sketchy SVG filter; the text stays crisp. */
         .btn {
@@ -454,15 +463,16 @@
             z-index: -1;
             border: 2.5px solid var(--ink);
             border-radius: 10px;
+            background: var(--paper);       /* solid, so the board never shows through a button */
             filter: url(#sketchy);
         }
         .btn-primary { color: var(--paper); }
         .btn-primary::before { background: var(--ink); }
         .btn:active::before { transform: translateY(1px); }
-        .btn:focus-visible, #theme-toggle:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .btn:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
         /* Small text links keep their look but get a hit area at least 44pt tall. */
-        .link-btn { position: relative; }      /* (#back and #theme-toggle are already positioned) */
-        .link-btn::after, #back::after, #theme-toggle::after { content: ''; position: absolute; inset: -12px -8px; }
+        .link-btn { position: relative; }      /* (#back is already positioned) */
+        .link-btn::after, #back::after { content: ''; position: absolute; inset: -12px -8px; }
         .link-btn {
             font: inherit;
             font-size: 0.9375rem;
@@ -560,7 +570,7 @@
         #btn-news.fresh { color: var(--ink); }
         #btn-news .new-dot { display: inline-block; width: 7px; height: 7px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--accent); vertical-align: middle; }
         /* One quiet footer line: version, What's new, Feedback. */
-        #menu .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
+        #menu .menu-links { margin: 16px 0 0; line-height: 1.2; display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 8px; align-items: baseline; justify-content: center; font-size: 0.875rem; color: var(--ink-soft); }
         #menu .menu-links .link-btn { font-size: inherit; }
         /* The smallest phones: the footer stays one line. */
         @media (max-width: 360px) {
@@ -591,7 +601,9 @@
         }
         .close-x svg { width: 20px; height: 20px; }
         .close-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
-        body.howto-open #back, body.howto-open #theme-toggle, body.howto-open #btn-open-menu { display: none; }
+        body.howto-open #back, body.howto-open .glyph-btn { display: none; }
+        /* While you play, only the two glyphs sit under the board (Games is on the menu screens). */
+        body.playing #back { display: none; }
         /* "Boop!" sits centred between the two links while you play. */
         #brand {
             display: none;
@@ -631,34 +643,38 @@
             row-gap: 18px;
         }
         body.wide .stat-main, body.wide .stat-par { align-items: flex-start; text-align: left; }
-        /* Menu: opens the pause screen mid-run. Centred under the board, only while playing. */
-        #btn-open-menu {
+        /* Under the board while playing: a menu glyph on the left, a sun/moon on the right.
+           The glyph shows where a tap takes you (moon in light mode, sun in dark). */
+        .glyph-btn {
             display: none;
             position: fixed;
             z-index: 11;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
-            padding: 4px 0;
+            bottom: max(2px, calc(env(safe-area-inset-bottom) - 10px));
+            width: 40px; height: 40px;
+            padding: 8px;
             background: none; border: 0;
-            font: inherit; font-size: 0.8125rem; font-weight: 700;
             color: var(--ink);
-            text-decoration: underline;
             cursor: pointer;
         }
-        body.playing #btn-open-menu { display: block; }
-        body.narrow-board #btn-open-menu { font-size: 0.75rem; }
-        #btn-open-menu::after { content: ''; position: absolute; inset: -12px -8px; }
-        #btn-open-menu:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .glyph-btn svg { display: block; width: 24px; height: 24px; filter: url(#sketchy); overflow: visible; }
+        .glyph-btn::after { content: ''; position: absolute; inset: -4px; }
+        .glyph-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; border-radius: 8px; }
+        #btn-open-menu { left: calc(var(--board-left, 16px) - 8px); }
+        #theme-toggle { right: calc(var(--board-left, 16px) - 8px); }
+        body.playing .glyph-btn { display: block; }
+        #theme-toggle .sun, [data-theme="dark"] #theme-toggle .moon { display: none; }
+        [data-theme="dark"] #theme-toggle .sun { display: block; }
         /* Settings: a plain list of rows, one switch each. */
         #settings h2 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; margin: 12px 0 20px; font-size: 2.25rem; }
         .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1.5px solid var(--ink-soft); }
         .setting:has(+ .actions) { border-bottom: 1.5px solid var(--ink-soft); }
+        .setting-label { flex: 1; }       /* the words take the row's width; the switch keeps its own */
         .setting-label b { display: block; font-size: 1.0625rem; }
-        .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); }
+        .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); text-wrap: pretty; }
         .switch {
             flex: none; position: relative; width: 52px; height: 30px; padding: 0;
-            border: 2px solid var(--ink); border-radius: 15px; background: none; cursor: pointer;
+            border: 2.5px solid var(--ink); border-radius: 15px; background: var(--paper); cursor: pointer;
+            filter: url(#sketchy);           /* drawn by hand, like the buttons */
         }
         .switch::before {
             content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
@@ -686,7 +702,7 @@
     <div id="hud" aria-live="polite">
         <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
-        <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
+        <div class="stat stat-par" id="hud-par-box"><span>Par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
     <div id="tipshade" hidden></div>
@@ -709,7 +725,7 @@
                 <button class="btn" id="btn-howto" type="button">How to play</button>
                 <button class="btn" id="btn-new" type="button" hidden>New game</button>
             </div>
-            <p class="menu-links"><span class="version">v1.5</span><span aria-hidden="true">·</span><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><button class="link-btn" id="btn-settings" type="button">Settings</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
+            <p class="menu-links"><button class="link-btn" id="btn-news" type="button">What's new</button><span aria-hidden="true">·</span><button class="link-btn" id="btn-settings" type="button">Settings</button><span aria-hidden="true">·</span><a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a></p>
         </div>
     </section>
 
@@ -731,12 +747,16 @@
             <button class="link-btn" id="btn-settings-back" type="button">← Back</button>
             <h2 id="settings-title">Settings</h2>
             <div class="setting">
-                <div class="setting-label" id="sound-label"><b>Sound</b><span>Turn sound effects on or off.</span></div>
+                <div class="setting-label" id="sound-label"><b>Sound</b><span>Blips when you hit blocks.</span></div>
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
             </div>
             <div class="setting">
-                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Simpler zones, and shots never run out. Your regular run waits until you switch back.</span></div>
+                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Easier zones, endless shots.</span></div>
                 <button class="switch" id="relaxed-switch" type="button" role="switch" aria-checked="false" aria-labelledby="relaxed-label"></button>
+            </div>
+            <div class="setting">
+                <div class="setting-label" id="theme-label"><b>Dark mode</b></div>
+                <button class="switch" id="theme-switch" type="button" role="switch" aria-checked="false" aria-labelledby="theme-label"></button>
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-settings-play" type="button">Play</button>
@@ -754,9 +774,9 @@
             <p class="best" id="over-best"></p>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-again" type="button">Play again</button>
-                <button class="btn" id="btn-over-menu" type="button">Main menu</button>
+                <button class="btn" id="btn-over-menu" type="button">Menu</button>
             </div>
-            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Send feedback</a>
+            <a class="link-btn feedback" href="/contact/?about=boop" target="_blank" rel="noopener">Feedback</a>
         </div>
     </section>
 
@@ -789,13 +809,13 @@
             <div class="mini-hud" aria-hidden="true">
                 <div><span>Depth</span><b>3</b></div>
                 <div class="mid"><span>Shots left</span><b>18</b></div>
-                <div class="end"><span>This zone / par</span><b>2/6</b></div>
+                <div class="end"><span>Par</span><b>2/6</b></div>
                 <i class="bar"><i></i></i>
             </div>
             <dl class="legend">
                 <div><dt>Depth</dt><dd>How far down you are. It never ends.</dd></div>
                 <div><dt>Shots left</dt><dd>One per launch. When they run out, the run is over.</dd></div>
-                <div><dt>This zone / par</dt><dd>Shots used here, against the zone's target.</dd></div>
+                <div><dt>Par</dt><dd>Shots used in this zone, against its target.</dd></div>
                 <div><dt>The bar</dt><dd>How much of the zone you've cleared.</dd></div>
             </dl>
 
@@ -853,8 +873,13 @@
             <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
     </svg>
-    <button id="btn-open-menu" type="button">Menu</button>
-    <button id="theme-toggle" type="button">Dark mode</button>
+    <button id="btn-open-menu" class="glyph-btn" type="button" aria-label="Menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <button id="theme-toggle" class="glyph-btn" type="button" aria-label="Switch to dark mode">
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+    </button>
 
     <!-- Build stamp: every game file is loaded with ?v=BUILD so a cached old script can't
          run against a newer page (or the reverse). When any .js file changes, bump it here
@@ -865,35 +890,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-34",
-                "./zones.js": "./zones.js?v=1.5-34",
-                "./blockshader.js": "./blockshader.js?v=1.5-34",
-                "./sketch.js": "./sketch.js?v=1.5-34",
-                "./balls.js": "./balls.js?v=1.5-34",
-                "./labels.js": "./labels.js?v=1.5-34",
-                "./audio.js": "./audio.js?v=1.5-34",
-                "./theme.js": "./theme.js?v=1.5-34",
-                "./crumbs.js": "./crumbs.js?v=1.5-34",
-                "./buddy.js": "./buddy.js?v=1.5-34",
-                "./season.js": "./season.js?v=1.5-34",
-                "./leaves.js": "./leaves.js?v=1.5-34"
+                "./sim.js": "./sim.js?v=1.5-37",
+                "./zones.js": "./zones.js?v=1.5-37",
+                "./blockshader.js": "./blockshader.js?v=1.5-37",
+                "./sketch.js": "./sketch.js?v=1.5-37",
+                "./balls.js": "./balls.js?v=1.5-37",
+                "./labels.js": "./labels.js?v=1.5-37",
+                "./audio.js": "./audio.js?v=1.5-37",
+                "./theme.js": "./theme.js?v=1.5-37",
+                "./crumbs.js": "./crumbs.js?v=1.5-37",
+                "./buddy.js": "./buddy.js?v=1.5-37",
+                "./season.js": "./season.js?v=1.5-37",
+                "./leaves.js": "./leaves.js?v=1.5-37"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-34">
-    <link rel="modulepreload" href="./sim.js?v=1.5-34">
-    <link rel="modulepreload" href="./zones.js?v=1.5-34">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-34">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-34">
-    <link rel="modulepreload" href="./balls.js?v=1.5-34">
-    <link rel="modulepreload" href="./labels.js?v=1.5-34">
-    <link rel="modulepreload" href="./audio.js?v=1.5-34">
-    <link rel="modulepreload" href="./theme.js?v=1.5-34">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-34">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-34">
-    <link rel="modulepreload" href="./season.js?v=1.5-34">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-34">
+    <link rel="modulepreload" href="./game.js?v=1.5-37">
+    <link rel="modulepreload" href="./sim.js?v=1.5-37">
+    <link rel="modulepreload" href="./zones.js?v=1.5-37">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-37">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-37">
+    <link rel="modulepreload" href="./balls.js?v=1.5-37">
+    <link rel="modulepreload" href="./labels.js?v=1.5-37">
+    <link rel="modulepreload" href="./audio.js?v=1.5-37">
+    <link rel="modulepreload" href="./theme.js?v=1.5-37">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-37">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-37">
+    <link rel="modulepreload" href="./season.js?v=1.5-37">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-37">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -936,6 +961,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-34"></script>
+    <script type="module" src="./game.js?v=1.5-37"></script>
 </body>
 </html>

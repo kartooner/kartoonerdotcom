@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-34');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-37');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -49,7 +49,7 @@ const KNOCK_MAX = 0.75;
 const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
 const BOXED_STEPS = 150;            // ...for this long (1.25s) without scoring is stuck, and gets kicked free
 // The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
-const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
+export const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
 // Par: a target number of shots for each zone, from its total and your balls per shot.
 // Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
 // Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
