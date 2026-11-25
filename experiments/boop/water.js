@@ -14,9 +14,10 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-63'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-64'];
 
-const R = 0.13;                // how close a drop gets to the walls and floor
+const R = 0.13;                // how close a drop gets to the floor
+const RW = 0.05;               // ...and to the side walls (close, so a mushroom growing off a wall doesn't wedge drops)
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
 const SPAN = 0.42;             // how far drops feel each other
 const REST = 1.2, STIFF = 1000, NEAR = 2000;   // how tightly they pack, and how hard they push back
@@ -83,17 +84,23 @@ export class WaterSim {
         this.relax(dt);
         this.slosh();
         for (let i = 0; i < n; i++) {
-            if (x[i] < R) x[i] = R; else if (x[i] > W - R) x[i] = W - R;
+            if (x[i] < RW) x[i] = RW; else if (x[i] > W - RW) x[i] = W - RW;
             if (y[i] < -H + R) y[i] = -H + R; else if (y[i] > -R) y[i] = -R;
-            const hit = solid(x[i], y[i], i);
-            if (hit) { x[i] = hit.x; y[i] = hit.y; }
+            let hit = solid(x[i], y[i], i);
+            if (hit) {
+                x[i] = hit.x; y[i] = hit.y;
+                // Pushed out of one thing, it may now be in the next (a mushroom growing off a
+                // block, a bomb hanging from one): one more look.
+                const again = solid(x[i], y[i], -1);
+                if (again) { x[i] = again.x; y[i] = again.y; if (again.vx || again.vy) hit = again; }
+            }
             let nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
             if (hit && (hit.vx || hit.vy)) { nvx = nvx * 0.4 + hit.vx * 1.1; nvy = nvy * 0.4 + hit.vy * 1.1; }   // a moving block shoves the water along
             if (hit?.slide) {
                 // On top of a block: it runs off toward the nearer edge instead of sitting there
                 // (a flat top is never quite flat), but it runs, it doesn't race.
                 nvx = (nvx + hit.slide[0] * SLIDE * dt) * 0.985; nvy = (nvy + hit.slide[1] * SLIDE * dt) * 0.985;
-            } else if (hit || x[i] === R || x[i] === W - R) {
+            } else if (hit || x[i] === RW || x[i] === W - RW) {
                 nvx *= 0.97; nvy *= 0.97;          // a little drag down the sides of things
             }
             const sp = nvx * nvx + nvy * nvy;
