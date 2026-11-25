@@ -1,9 +1,8 @@
-// Boop: how a block is drawn. One quad per block; the shader works out the
-// block's whole outline from its cells, so there are no seams between cells.
-// It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
-// fill so the number tiers can be told apart without colour.
+// How a block is drawn: one quad, and the shader works out the whole outline from its cells,
+// so there are no seams. It wobbles the edge so it looks hand-drawn, and each number tier gets
+// its own pattern so you can tell them apart without relying on colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -51,9 +50,8 @@ uniform vec3 uTrail[10];   // jello: recent ball positions (x, y, strength) - a 
 uniform float uNeutral;    // 1 for unbreakable blocks: plain fill, no pattern
 uniform float uGold;       // 1 for the gold block: metal shading, flecks and a passing sheen
 uniform float uTime;       // seconds, for the gold sheen and fleck twinkle (only moves when the board redraws)
-// Nails, drawn here rather than as meshes of their own (two fewer draws per block): a tack
-// head with an ink rim. x, y in the block's scaled space; z = wear 0-1 (it tips and shows its
-// side); w = tilt. uNailFill is white for ones that come out, grey for ones that never do.
+// Nails are drawn here instead of as their own meshes (two fewer draws per block). x, y is
+// where the nail sits, z how worn it is (0-1), w its tilt. White ones come out, grey ones don't.
 uniform vec4 uNail[2];
 uniform vec3 uNailFill[2];
 uniform float uNailCrack[2];   // 0 none, 1 one crack, 2 two: the nail is nearly out
@@ -177,9 +175,8 @@ void main() {
     float alpha = inside * mix(1.0, mix(0.6, 0.4, fillMask), uJello);
 
     if (uJello > 0.5) {
-        // Rudimentary specular: one light from the top left, fixed on screen, so the
-        // shine stays put while the jello wobbles. The edge's outward direction comes
-        // from how the distance changes across the screen.
+        // A simple shine from a light at the top left. It's fixed on screen, so the shine stays
+        // put while the jelly wobbles.
         vec2 n = normalize(vec2(dFdx(dSmooth), dFdy(dSmooth)) + 1e-6);
         // The light swings a little with the wobble, so the shine slides as it jiggles.
         float la = 2.14 + uWobble * 4.0;
@@ -244,9 +241,8 @@ void main() {
     #include <colorspace_fragment>
 }`;
 
-// cells: block-local cell centres (unscaled). Returns a mesh whose material
-// uniforms the caller updates as the block wears down.
-// corner: optional rounding override (0.5 on a single cell draws a circle, e.g. a bomb).
+// cells: the block's cell centres in its own space. The caller updates the uniforms as the
+// block wears down. corner: optional rounding (0.5 on a single cell makes a circle, like a bomb).
 export function makeBlockMesh(cells, jello, seed, corner) {
     const has = (x, y) => cells.some(([cx, cy]) => Math.abs(cx - x) < 0.01 && Math.abs(cy - y) < 0.01);
     const r = corner ?? (jello ? JELLO_CORNER : CORNER);
@@ -305,10 +301,9 @@ export function makeBlockMesh(cells, jello, seed, corner) {
 }
 
 // ---------- the golf hill ----------
-// The mini-golf hill drawn the way blocks are: a green fill with the zigzag pattern, and the same
-// hand-drawn, crayon-grained ink edge. Its top is a height curve (heights sampled evenly across
-// its width). The hole is cut into the top: an oval whose back tucks behind the hill's top edge,
-// with a strip of green over the front of its rim, so it sits in the ground.
+// Drawn like a block: green zigzag fill and the same crayon edge. Its top is a list of heights.
+// The hole is an oval tucked into the top, with a lip of green over its front edge so it
+// looks set into the ground.
 const HILL_N = 64;
 const hillFragment = /* glsl */`
 uniform float uH[${HILL_N}];
@@ -400,8 +395,8 @@ export function makeHillMesh(outline, hole, { x0, x1, bottom, top, fill, ink, ho
 }
 
 // ---------- a basketball net ----------
-// A funnel hanging from a rim: crossed diagonal crayon strokes and a few rings round it, wider at
-// the top and tapering down, drawn in ink with crayon grain. Its top edge is at y = 0.
+// A funnel of crossed crayon strokes hanging from the rim, wide at the top and narrowing
+// down. Its top edge is at y = 0.
 const netFragment = /* glsl */`
 uniform vec3 uInk;
 uniform vec3 uSize;        // top half-width, bottom half-width, height

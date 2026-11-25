@@ -1,9 +1,7 @@
-// Boop!: the block buddy's little life. He always breathes (CSS). Every few seconds,
-// at random, he opens his eyes and either blinks or glances around, then settles.
-// Tap him and he wiggles.
-// Each buddy on the page keeps its own timing. With reduced motion he doesn't breathe
-// or wiggle, but still blinks and glances: small, and nothing on screen moves around.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+// Buddy's little life. He breathes (that's CSS), and every few seconds he opens his eyes to
+// blink or glance around, then settles. Tap him and he wiggles. With Reduce Motion on he
+// skips the breathing and wiggling but still blinks.
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 const still = window.matchMedia('(prefers-reduced-motion: reduce)');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

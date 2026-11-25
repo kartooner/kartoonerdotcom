@@ -1,8 +1,7 @@
-// Boop: hand-drawn simple shapes (the board frame, props, +1 rings, the launcher).
-// Same idea as the block shader: a shape is a distance field, its edge is wobbled
-// with a slow bend and fine grain so it reads as drawn, not machined.
+// Hand-drawn simple shapes: the board frame, props, +1 rings, the launcher. Same trick as
+// the block shader: the edge gets a slow bend and fine grain so it looks drawn, not machined.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 export const SHAPE = { BOX: 0, CIRCLE: 1, RING: 2, CAP: 3 };
 
@@ -120,9 +119,8 @@ export function forgetSketch(object) {
     });
 }
 
-// The board's background: the plain field colour with faint crayon hatching that
-// builds up toward the bottom, like shading on the underside of a drawn cloud.
-// Strokes are short, slightly wavy diagonals broken up by noise; very low contrast.
+// The board's background: the field colour with faint crayon hatching that builds up toward
+// the bottom, like shading under a drawn cloud. Very low contrast on purpose.
 const fieldFragment = /* glsl */`
 uniform vec3 uField;
 uniform vec3 uHatch;

@@ -1,9 +1,8 @@
-// Boop: physics and game rules. No rendering in here.
-// The aim preview clones this whole sim and runs it forward, so the guide line
-// uses the exact same code and numbers as the real shot.
+// The rules and the physics, with no drawing in here. The aim guide clones this whole sim and
+// plays the shot ahead, so the dotted line always matches what the real shot will do.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -13,9 +12,8 @@ export const H = 16;                // field height in cells (y runs 0 → -H)
 export const LAUNCHER = { x: W - 0.62, y: -0.7 };
 export const LAUNCH_EDGE = 0.62;    // how close to a side wall it can go (the corner spot)
 export const clampLaunch = (x) => Math.min(W - LAUNCH_EDGE, Math.max(LAUNCH_EDGE, x));
-// How far the aim can turn toward each side, for a launcher at x. Near a wall, shallow shots
-// would point straight into it a few steps away, so that side stops steeper (about 40°
-// below flat); with room, it goes nearly flat.
+// How far the aim can turn each way from x. Next to a wall a flat shot would just hit the
+// wall, so that side stops at about 40° below flat; with room, it goes nearly flat.
 export function aimRange(x) {
     const lim = (gap) => gap <= 1.4 ? 0.7 : gap >= 2.6 ? 0.12 : 0.7 - (gap - 1.4) / 1.2 * 0.58;
     return { min: -Math.PI + lim(x), max: -lim(W - x) };
@@ -25,12 +23,11 @@ export const BALL_R = 0.17;
 export const BALL_SPEED = 18;      // balls always travel at this speed (jelly aside)
 export const START_SUPPLY = 22;
 export const START_VOLLEY = 1;      // one ball per shot, so every bounce can be followed
-// Shots for clearing a zone: generous early so the middle zones come quickly, leaner deeper.
-// Past 25 a clear pays one: the deep end gets tighter through scarcer shots, not longer zones.
-// Relaxed mode (s.relaxed, set by the game for its own separate run): shots never run out,
-// numbers are smaller, and zones leave out grey blocks, vines (and hanging bombs), seesaws,
-// crooked blocks, gold blocks and +1 rings. Windmills, mushrooms, jelly and bombs stay. No par.
+// Relaxed mode (s.relaxed): shots never run out, numbers are smaller, no par, and zones leave
+// out grey blocks, vines, seesaws, crooked blocks, gold blocks and +1 rings.
 export const RELAXED_HP = 0.6;
+// Shots for clearing a zone: generous early, leaner deeper (the deep end gets tighter through
+// scarcer shots, not longer zones).
 export const zoneBonus = (d) => (d <= 10 ? 5 : d <= 15 ? 3 : d <= 25 ? 2 : 1);
 const REFUND_MIN_HP = 13;           // popping a block that started this high gives a ball back
 
@@ -41,29 +38,20 @@ const BLOCK_FALL = 3;               // loose blocks fall as if gravity were -15
 const SHOT_GAP = 8;                 // steps between balls in a volley
 const HIT_COOLDOWN = 10;            // steps before the same pair can hit again
 const MIN_IMPACT = 3;               // a hit only counts if the bounce really changed the ball's speed
-// A hit knocks the block a little (it shifts and springs back), so one light ball
-// still makes blocks jiggle. Part of the physics, so the guide stays exact.
-// Pushed through the centre: off-centre twists were snapping blocks loose.
+// A hit knocks the block a little (it shifts and springs back), pushed through its centre.
+// Part of the physics, so the guide stays exact.
 const KNOCK = 0.04;                 // block speed per unit of impact
 const KNOCK_MAX = 0.75;
 const BOXED_RADIUS = 0.7;           // a ball that stays this close to one spot...
 const BOXED_STEPS = 150;            // ...for this long (1.25s) without scoring is stuck, and gets kicked free
 // The launcher earns an extra ball per shot at these zones. A shot still costs 1 ball.
 export const MULTISHOT_AT = { 6: 2, 11: 3, 16: 4 };
-// Par: a target number of shots for each zone, from its total and your balls per shot.
-// Clear a zone under par and you get the shots you saved back (up to PAR_BONUS_MAX).
-// Balls keep full speed and the field is closed, so a shot does a lot: numbers match.
-// Eased in over the first zones so zone 1 stays friendly.
-// How much block numbers are scaled up with depth. It climbs gently through the early
-// zones so they go quickly, reaching full size around depth 11.
+// How much block numbers are scaled up with depth: gently through the early zones, full size
+// around depth 11.
 const hpScale = (d) => Math.min(5.5, 1.6 + 0.4 * (d - 1));
-// Par: about how much a good shot takes off at this depth (measured with bots; a shot
-// does more deeper down, with bigger blocks and more traps). Independent of hpScale,
-// so lighter early zones also get a lower par.
-// Retuned in 1.3.1 from bot runs at several skill levels: what an average player's ball
-// actually takes off per shot at each depth (with more balls per shot, each does a bit
-// less), set a little generous so a good zone beats par about a third of the time.
-// 1.4.1: eased a touch from 12 to 25 along with zoneTrim below, so par is still beaten about a third of the time.
+// Par: a target number of shots for each zone. Clear it under par and the shots you saved come
+// back (up to PAR_BONUS_MAX). PAR_TABLE is how much an average player's shot takes off at each
+// depth (measured with bots), set so a good zone beats par about a third of the time.
 const PAR_TABLE = [[1, 30], [5, 36], [8, 62], [12, 52], [16, 39], [22, 33], [30, 42], [40, 50]];
 const parHpPerShot = (d) => {
     const i = PAR_TABLE.findIndex(([at]) => at > d);
@@ -72,28 +60,22 @@ const parHpPerShot = (d) => {
     const [d0, v0] = PAR_TABLE[i - 1], [d1, v1] = PAR_TABLE[i];
     return (v0 + (v1 - v0) * (d - d0) / (d1 - d0)) * 1.02;      // par is a target, not a given: beaten about a third of the time
 };
-// Deeper zones are trimmed so they take a handful of good shots, not twenty: the challenge
-// comes from layout and from income not keeping up, not from waiting on big numbers.
-// Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
-// 1.4.1: about 10% more from 11 on. The aim range (no shots flat into a wall) made each shot count
-// for more, and average bots got about 3 zones deeper than in 1.3; this brings them back.
-// Laps: past depth 80 the game isn't a wall that only gets steeper. At 81 it eases back to about
-// depth 30's difficulty (still a challenge, not punishing) and builds up again to depth 80's by 160,
-// then eases again, and so on: room for another 80. The bonus stages start over each lap (the same
-// schedule, and generous tries again). The depth shown, the best depth and the launcher's
-// upgrades follow the real depth; only how hard a zone is follows the lap.
+// Laps: at 81 the difficulty eases back to about depth 30's and builds up again to depth 80's
+// by 160, and so on. The bonus stages start over each lap. Only how hard a zone is follows the
+// lap; the depth shown, the best depth and the launcher's upgrades follow the real depth.
 export const LAP = 80;
 const LAP_EASE = 30;                 // where each new lap starts: about depth 30's difficulty
 export const lapDepth = (d) => (d <= LAP ? d : Math.floor(LAP_EASE + ((d - LAP - 1) % LAP) * (LAP - LAP_EASE) / (LAP - 1)));
+// Deeper zones are trimmed so they take a handful of good shots, not twenty; past 25 they grow
+// again, a little each zone.
 const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.88 : d <= 25 ? 0.69 : Math.min(0.88, 0.69 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
 const STUCK_SPEED = 1.2;
 const STUCK_STEPS = 60;
-// When a ball's shot ends: the field is closed on all sides, so a ball keeps going as
-// long as it keeps hitting blocks (jelly counts). Walls, the floor, props and grey
-// blocks don't count: a ball that's only been bouncing off those for RETIRE_IDLE
-// is in a loop and fades out.
+// The board is closed on every side, so a ball keeps going as long as it keeps hitting
+// blocks. If it's only been hitting walls, props or grey blocks for a while, it's stuck in
+// a loop and fades out.
 const RETIRE_IDLE = 480;            // 4s without hitting a block
 // A ball that's been going a while hits harder, so a long trap chews through blocks
 // instead of dragging on: +1 damage per 6s alive, up to 4 per hit.
@@ -109,9 +91,8 @@ const STRETCH_BLOCKS = 3;
 const WALL_DONE = [[1, 0.4], [1.5, 0.7]];
 const GREY_PIECES = 4;                // grey pieces in a zone at most
 const ballPower = (ball) => Math.min(4, 1 + Math.floor((ball?.age ?? 0) / POWER_EVERY));
-// After 6s alive, the time a ball may go without a hit shrinks, to 1.5s by about 14s:
-// a busy trap keeps going; one that only now and then finds a block winds down.
-// Keeps the wait between shots short.
+// After 6 seconds that allowance shrinks (to 1.5s by about 14s), so a busy trap keeps going
+// but a ball that only now and then finds a block winds down. Keeps turns short.
 const idleLimit = (ball) => ball.age < 720 ? RETIRE_IDLE : Math.max(180, RETIRE_IDLE - (ball.age - 720) * 0.3);
 // How far a ball is through its fade timer, 0 (just hit a block) to 1 (about to fade).
 // The renderer greys the ball by this, so the timer can be seen.
@@ -126,12 +107,10 @@ const BLOCK_DENSITY = 1.5;
 // Pinned (nailed) blocks are heavier, so a ball nudges them less: a firm bump that
 // springs back. Resting blocks keep the lighter density and move freely.
 const PINNED_DENSITY = 3;
-// Nails. Every block fixed in place (pinned, jelly, grey) has two, near its top corners.
-// A ball hitting close to a nail wears it down. A nail's strength grows slowly with the
-// block's starting number and tops out at 10 hits (nailHpFor), so popping nails stays a real
-// option on big deep blocks instead of taking 30-50 hits. With one nail left the block swings
-// down and hangs from it; with none it falls and becomes a resting block. Only single
-// squares' nails never come out (hp -1).
+// Nails. Every fixed block has two, in opposite corners, and a hit close to one wears it
+// down. They top out at 10 hits, so knocking nails out stays a real option on big blocks.
+// Lose one and the block swings from the other; lose both and it falls. Single squares'
+// nails never come out (hp -1).
 const NAIL_INSET = 0.17;
 const NAIL_REACH = 0.34;             // how close (cells, from the ball's edge) a hit must land
 const nailHpFor = (hp) => Math.min(10, Math.max(2, Math.round(1.5 + Math.sqrt(hp) * 0.75)));   // 4 → 3, 14 → 4, 50 → 7, 100+ → 9-10
@@ -150,12 +129,8 @@ const TWIST_K = 130, TWIST_C = 7;
 // Mushroom stems: a springy hinge (stiffness, damping), light enough to wobble when hit.
 const MUSH_K = 360, MUSH_C = 6, MUSH_DENSITY = 1.2;
 const MUSH_FALL_MAX = 300;          // a fallen mushroom fades out after at most 2.5s
-// Vines (from depth 9): short chains hanging under a block. Each link takes a few hits;
-// a broken link drops everything below it (which fades once it lands). Sometimes a vine
-// holds a small block at its end, like a chandelier: cut it and the block falls.
-// Bombs (from depth 15): a round cartoon bomb sitting in a gap between blocks. A ball hitting
-// it lights the fuse; a moment later it bursts, taking a chunk off every block within reach
-// (and snapping vines, and lighting other bombs). It takes a couple of hits to light.
+// Bombs (from depth 15) sit in gaps between blocks. Two hits light the fuse, then it bursts
+// and takes a chunk off everything in reach (it snaps vines and lights other bombs too).
 const BOMB_FROM = 15;
 const BOMB_CHANCE = 0.33;           // after depth 15, the share of zones with a bomb
 const BOMB_HITS = 2;                // hits it takes to light the fuse
@@ -165,12 +140,12 @@ const BOMB_CHAIN = 18;              // a bomb lit by another's burst goes off th
 const BOMB_REACH = 1.9;             // cells from the bomb's centre to a neighbour's nearest cell centre
 const BOMB_JOLT = 0.6;              // a nailed block's jolt: a bump that springs back
 const BOMB_SHARE = 0.5;             // a neighbour loses this share of its starting number...
-const BOMB_KNOCK = 4.5;               // ...and anything loose gets shoved away this hard
+const BOMB_KNOCK = 4.5;             // ...and anything loose gets shoved away this hard
+// Vines (from depth 9): chains hanging under a block or strung across a gap. Snap a link and
+// whatever it held drops.
 const VINE_FROM = 9;
-// Bonus stages (from depth 12): now and then a zone has a gold block. Pop it before the zone
-// is cleared and the next stage is a bonus: three free shots (your supply isn't touched), no
-// depth, then on to the next zone. Ring run, piñata and chain reaction take turns. What you
-// collect is capped, so a great bonus helps without breaking the climb; clearing it all adds one.
+// Gold blocks (from depth 12): pop one and the next stage is a bonus: three free shots, no
+// depth. Rings, piñata and chain reaction take turns. What it pays is capped; clearing it all adds one.
 const GOLD_FROM = 12, GOLD_CHANCE = 0.15;
 const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
@@ -186,28 +161,22 @@ const BONUS_NOTES = {
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
-// On the stages with a ball config, balls are slowed down and float, so shots fly in clear arcs
-// (and the aim guide shows the arc). The tower stage keeps the normal fast ball.
-// Surprise stages (not in What's new or How to play): little bonus games between zones, a reward
-// for deep runs (gold blocks give earlier players their bonuses), after clearing set depths
-// and then every few zones at random. Not in Relaxed mode, where shots
-// never run out anyway. Each has its own shots and its own cap on what it pays; on the
-// ones with a ball config, balls fall for real (gravity, no constant speed, softer bounces).
-//   tower:    a tower or two of stacked blocks (pillars and planks); each block knocked over is +1.
-//   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
-//   pachinko: three drops of five balls through nails into pockets (see below).
-//   hoops:    five shots at baskets scattered about, with grey blocks to bank off; each basket is +2.
+// Surprise stages: little bonus games for deep runs, at set depths and then every few zones
+// at random. They're kept out of What's new and How to play on purpose, and out of Relaxed
+// mode. A `ball` config means slow, floaty balls, so shots fly in arcs.
 const SPECIAL_AT = { 25: 'pachinko', 30: 'tower', 35: 'golf', 40: 'hoops' };
 const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
 const SPECIALS = ['tower', 'golf', 'pachinko', 'hoops'];
-// Like a carnival game: the first time a stage comes up you get plenty of tries to get the hang
-// of it (shots); each time it comes back deeper in the run, one fewer, down to `fewest`.
+// Tries: plenty the first visit, one fewer each time it comes back, down to `fewest`.
 const STAGES = {
     tower: { shots: 4, fewest: 2, cap: 10 },
     golf: { shots: 4, fewest: 2, cap: 8, ball: { speed: 6.5, gravity: 1.0, rest: 0.35, settle: true } },
     pachinko: { shots: 4, fewest: 2, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
     hoops: { shots: 6, fewest: 3, cap: 10, ball: { speed: 6, gravity: 0.9, rest: 0.6, settle: true, life: 8 } },
 };
+// For the game: is this a surprise stage, and does it fly slow arcing shots (the guide shows the whole arc)?
+export const isStage = (kind) => !!STAGES[kind];
+export const arcShots = (kind) => !!STAGES[kind]?.ball;
 const TOWER_KNOCK = 5;                 // a ball shoves a tower block harder, at the point it hits, so it tips
 const TOWER_HP = [2, 4, 6, 9, 14, 24, 39];   // just for their colours: tower blocks have no number and don't break
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
@@ -220,18 +189,16 @@ const HOOP_HALF = 0.55;                 // a basket's half-width
 // Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
 const PACHINKO_POCKETS = [0, 1, 0, 0, 2, 0, 0, 1, 0];   // one per column, left to right (the edges, where the walls steer balls, pay nothing)
 const PEG_R = 0.09;
-// Seesaws (from depth 13): a long bar held by one nail in its middle. A hit rocks it and it
-// settles back level; it's slippery, so whatever rests on it slides off as it tips. Knock
-// the nail out and it drops like any block.
+// Seesaws (from depth 13): a bar on one nail in the middle. Hit an end and it rocks, and
+// anything sitting on it slides off. Knock the nail out and it drops like any block.
 const SEESAW_FROM = 13;
 const SEESAW_CHANCE = 0.45;           // after that, the share of zones with one
 const SEESAW_K = 14, SEESAW_C = 4;  // a weak pull back to level: it rocks a few times, then rests
 const SEESAW_LIMIT = 0.5, SEESAW_STOP_K = 300;   // tips at most about 30 degrees
 const SEESAW_FRICTION = 0.1;
 const SEESAW_NAIL_Y = -0.27;          // the nail sits in the middle, just below the number
-// Hanging bombs (from depth 18): a bomb on a hanging vine, in place of a chandelier's block,
-// over a short target block. Hit it twice and it bursts where it hangs; cut the vine and it
-// lights as it drops and bursts when it lands (or soon after). Another burst lights it too.
+// Hanging bombs (from depth 18): a bomb on a vine over a block. Hit it twice and it bursts
+// where it hangs; cut the vine and it bursts where it lands.
 const HANGBOMB_FROM = 18;
 const HANGBOMB_CHANCE = 0.5;          // after that, the share of chandeliers that are bombs
 const HANGBOMB_DROP_FUSE = 90;        // cut loose: it bursts within 0.75s...
@@ -243,7 +210,7 @@ const VINE_STILL = 0.25, VINE_CALM_STEPS = 30;   // nearly still for 0.25s: let 
 const VINE_PIN_SLOP = 0.005;        // a vine's pin ignores its block's tiny jiggles (invisible), so it can rest
 const VINE_CHECK_EVERY = 4;         // how often (in steps) an awake vine checks whether it can rest
 const VINE_WAKE = 1.2;
-const VINE_WIND = 0.01, VINE_WIND_REACH = 0.9, VINE_WIND_MAX = 1;   // a passing ball's breeze: share of its speed per step, and reach              // ...unless a ball is within this many cells of it
+const VINE_WIND = 0.01, VINE_WIND_REACH = 0.9, VINE_WIND_MAX = 1;   // a passing ball's breeze: share of its speed per step, and reach
 const VINE_LAMP_SIZE = 0.7;         // a chandelier's block is drawn this size, so it swings free
 const VINE_LAMP_FALL = 0.25;        // a hung block's weight, as a share of a falling one's
 export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.25s
@@ -251,13 +218,11 @@ export const VINE_DEBRIS_STEPS = 150;      // fallen bits of vine fade after 1.2
 // Jello: balls pass through, slowed hard while inside.
 const JELLO_DRAG = 0.94;            // velocity kept per step inside jello
 const JELLO_MIN_SPEED = 4.5;        // but never slower than this, so balls always come out the far side
-// Inside jelly a ball holds the line it came in on (gravity would otherwise drag a slow ball
-// down through a big piece), sagging only a touch, and comes out the far side at full speed
-// in that same direction: a slow push through, then on its way again.
+// Inside jelly a ball keeps the line it came in on (sagging just a touch) and comes out the
+// far side at full speed: a slow push through, then off it goes.
 const JELLO_SAG = 0.0012;           // per step, how much the held direction leans downward
-// Consistent speed: a ball always travels at BALL_SPEED. Bounces and gravity change its
-// direction, not how fast it goes. Lost speed (a bounce, a pass through jelly) eases back
-// over a few steps instead of snapping, so it reads as smooth, not jerky.
+// Balls always travel at BALL_SPEED: bounces and gravity change direction, not speed. Speed
+// lost in a bounce eases back over a few steps, so it looks smooth instead of jerky.
 const SPEED_EASE = 0.15;
 
 const G = { BALL: 1, BLOCK: 2, WALL: 4, PICKUP: 8, LOOSE: 16, PROP: 64, JELLO: 128, JELLY_BODY: 256 };
@@ -265,10 +230,9 @@ const groups = (member, filter) => ((member & 0xffff) << 16) | (filter & 0xffff)
 // Balls pass through each other: in a multishot each ball flies its own path.
 const BALL_FILTER = G.BLOCK | G.WALL | G.PICKUP | G.LOOSE | G.PROP | G.JELLO;
 
-// Bigger numbers are bulkier. A block loses some mass as it's worn down, never more than ~18%.
+// Bigger numbers look a bit bulkier, and a block shrinks a little as it wears down, but never
+// below about 85%: the last blocks of a zone shouldn't turn into slivers.
 export function blockScale(hp, hp0) {
-    // Bigger numbers look a bit bulkier, and a block shrinks a little as it wears down,
-    // but never below about 85%: the last blocks of a zone shouldn't turn into slivers.
     const bulk = 0.9 + 0.1 * Math.min(1, Math.log(hp0) / Math.log(60));
     return bulk * (0.94 + 0.06 * Math.max(0, hp) / hp0);
 }
@@ -314,6 +278,10 @@ export class Sim {
         w.timestep = DT;
         const sim = new Sim(R, w, JSON.parse(s));
         sim.s.launchX ??= LAUNCHER.x;       // saves from before the launcher could move
+        // A save from mid-shot (older builds could make one when an update reloaded the page):
+        // drop the balls still flying, or they'd still be bouncing when you take your next shot.
+        for (const b of [...sim.s.balls]) sim.removeBall(b.body);
+        sim.s.shots = null;
         // Saves from build 1.5-32, where a topple tower's blocks were left in the next zone (they
         // can't be broken, so that zone could never be cleared): take them away.
         if (sim.s.bonus?.kind !== 'tower') for (const id in sim.s.blocks) if (sim.s.blocks[id].tower) sim.removeBlock(sim.s.blocks[id], false);
@@ -363,9 +331,8 @@ export class Sim {
     }
 
     // ---------- blocks ----------
-    // Four kinds: pinned (held on a spring), loose (gravity only, rests on and
-    // tumbles off other blocks), jello (balls pass through) and neutral (can't be
-    // broken, no number: just something to bounce off).
+    // Four kinds: pinned (nailed in place on a spring), loose (just resting, can tumble), jello
+    // (balls pass through) and neutral (grey: can't be broken, just something to bounce off).
 
     addBlock(cells, hp, kind = 'pinned', tilt = 0, dx = 0, dy = 0) {
         const { R, world, s } = this;
@@ -726,9 +693,8 @@ export class Sim {
             const p = body.translation();
             if (b.loose) {
                 if (p.y < -H - 2) { this.removeBlock(b, true); continue; }
-                // A grey block knocked fully loose has done its job as a bumper. Left lying around
-                // it could wall off a breakable block for good (it can't be broken), so once it
-                // lands and settles (or after a few seconds whatever it's doing) it crumbles.
+                // A grey block knocked loose could wall off a breakable one for good, so once it
+                // lands (or after a few seconds) it crumbles.
                 if (b.neutral && !b.bomb && b.hung == null) {
                     b.looseT = (b.looseT ?? 0) + 1;
                     const v = body.linvel(), still = Math.abs(v.x) + Math.abs(v.y) + Math.abs(body.angvel()) < GREY_STILL;
@@ -736,7 +702,6 @@ export class Sim {
                     if (b.calmT >= GREY_CALM || b.looseT >= GREY_MAX) this.removeBlock(b, true);
                 }
             }
-            // Pinned blocks no longer snap loose from a hard knock: only their nails let go.
         }
     }
 
@@ -952,9 +917,8 @@ export class Sim {
             return true;
         };
 
-        // Props first, so blocks fill in around them. Windmills take open space; mushrooms
-        // grow off a wall or a block, so they're placed once the blocks are planned.
-        // At most two mushrooms a zone.
+        // Props first, so blocks fill in around them. Mushrooms grow off walls and blocks, so
+        // they're placed later, once the blocks are planned (two at most).
         let mushrooms = 0, windmills = 0;
         for (let i = 0; i < spec.props; i++) {
             if (mushrooms < 2 && this.rand() < (spec.props === 1 ? 0.5 : 0.4)) mushrooms += 1;
@@ -972,9 +936,8 @@ export class Sim {
         if (s.relaxed) vines = 0;
         if (D === VINE_FROM) { windmills = 0; mushrooms = 0; }
         else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
-        // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
-        // in three has one (deeper down, now and then two). A bomb is a prop, so a zone with one
-        // keeps just one other kind (at most two kinds of props a zone).
+        // Bombs are a treat, not a fixture: about one zone in three from depth 15, now and then
+        // two deeper down. A zone never has more than two kinds of props.
         const hangIntro = !s.relaxed && D === HANGBOMB_FROM;
         if (hangIntro) vines = Math.max(1, vines);
         let bombs = hangIntro ? 0 : D < BOMB_FROM ? 0 : D === BOMB_FROM ? 1
@@ -1000,9 +963,8 @@ export class Sim {
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
         const bigMul = Math.min(5, 2.6 + 0.3 * D);    // chunky shapes dominate, more so deeper down
-        // Variety: straight pieces (bars, rectangles) are easy to read but get samey, so past the
-        // first zones the interlocking shapes (L, T, S and their big versions) come up more,
-        // long bars are rare early, and big rectangles get a smaller share of the chunky boost.
+        // Bars and rectangles are easy to read but get samey, so after the first zones the
+        // L, T and S shapes come up more often.
         const deep = D >= 7;
         const straight = (sh) => (!sh.rect ? (deep ? 2.5 : D >= 3 ? 1.9 : 1.2)
             : sh.long >= 4 ? (D <= 4 ? 0 : 0.5)
@@ -1062,10 +1024,9 @@ export class Sim {
                 break;
             }
         }
-        // Vines are planned with their blocks, before the rest fill in, so there's always room.
-        // They stay in the middle and lower part of the zone, out of the way of the first shots.
-        // Two kinds: strung across a short gap (between blocks, or a block and a wall), or
-        // hanging under a block, sometimes holding a small block like a chandelier.
+        // Vines get planned with their blocks before the rest fill in, so there's room for them.
+        // Two kinds: strung across a short gap, or hanging under a block (sometimes holding a
+        // little block, like a chandelier). They stay low, out of the way of your first shots.
         const vineSpots = [];
         const hostAt = (cells) => {
             plan.push({ cells, kind: 'pinned', tilt: 0, dx: 0, dy: 0, wantsGap: false, vine: true });
@@ -1156,9 +1117,8 @@ export class Sim {
             for (const sh of pool) { if ((pick -= weight(sh)) <= 0) { shape = sh; break; } }
             if ((used[shape.canon] ?? 0) >= (shape.size === 1 ? 3 : 2)) continue;
             const wantsGap = this.rand() < style.gap;
-            // Interlocking: more often the deeper you go (and in packed layouts), a piece tries a
-            // few spots and takes the one that hugs its neighbours most, so L, T and S shapes
-            // tuck into each other's notches instead of sitting side by side.
+            // Deeper down a piece tries a few spots and takes the one that hugs its neighbours
+            // most, so L, T and S shapes tuck into each other's notches.
             const snug = !wantsGap && this.rand() < Math.min(0.85, 0.15 + D * 0.025 + (styleName === 'packed' ? 0.2 : 0));
             let cells = null, bestHug = -1;
             for (let k = 0; k < (snug ? 8 : 1); k++) {
@@ -1180,9 +1140,8 @@ export class Sim {
         // Jello shows up here and there: often none, usually one, sometimes two (a jelly zone, two or three).
         if (has('jelly') || this.rand() < spec.jello) {
             const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (D - 6) * 0.06) ? 1 : 0);
-            // Jelly comes in all sizes once it's been introduced: each piece rolls small (1-2 cells),
-            // medium (3-4) or large (5-6) and takes the closest piece the layout has, so a zone
-            // with two or three usually mixes them. The very first (depth 5) stays small and clear.
+            // Jelly comes in small, medium and large, so a zone with a few of them mixes sizes.
+            // The very first one (depth 5) stays small.
             const pool = plan.filter((p) => p.cells.length <= 6 && !p.cup && !p.vine && !p.seesaw && !p.target && p.kind === 'pinned');
             for (let i = 0; i < count && pool.length; i++) {
                 const r = this.rand();
@@ -1193,9 +1152,8 @@ export class Sim {
             }
         }
 
-        // Neutral blocks (deeper down): a few small pieces become unbreakable bumpers.
-        // Never in the zone's top two rows, and never more than four: grey pieces across the top
-        // made a lid that kept every shot off the blocks below (a tester's depth-66 wall).
+        // Grey blocks (deeper down): a few small pieces become unbreakable bumpers. Never more
+        // than four, and never in the top two rows, so they can't form a lid over everything.
         const greys = s.relaxed ? 0 : Math.min(GREY_PIECES, spec.neutral + (has('greymaze') ? 2 : 0));
         if (greys) {
             const pool = plan.filter((p) => p.kind === 'pinned' && !p.cup && !p.seesaw && !p.target && p.cells.length <= 4 && Math.min(...p.cells.map(([, r]) => r)) >= 2);
@@ -1273,9 +1231,8 @@ export class Sim {
             for (let r = 1; r < ROWS - 1; r++) for (let c = 0; c < W; c++) if (free(c, r)) spots.push({ c, r, n: around(c, r) });
             spots.sort((a, b) => b.n - a.n || this.rand() - 0.5);
             for (let i = 0; i < bombs; i++) {
-                // The first goes where it'll do the most (one of the best few spots); a second anywhere snug.
-                // Snug and clear of other props if possible; failing that, snug; failing that, beside a block.
-                // Room above for the fuse is preferred, so it doesn't poke into a block.
+                // The first bomb goes in one of the best few spots; a second anywhere snug.
+                // We'd like room above for the fuse, but we'll settle for beside a block.
                 const open = spots.filter((o) => free(o.c, o.r));
                 let pool = open.filter((o) => o.n >= 2 && roomy(o.c + 0.5, o.r + 0.5) && free(o.c, o.r - 1));
                 if (!pool.length) pool = open.filter((o) => o.n >= 2 && roomy(o.c + 0.5, o.r + 0.5));
@@ -1289,9 +1246,8 @@ export class Sim {
             }
         }
 
-        // Numbers. First the zone's total: what each block would get on its own, summed.
-        // Then that total is shared out by size, so bigger blocks always hold the bigger
-        // numbers and a lone square never ends up a slog to chip down.
+        // Numbers. We work out the zone's total, then share it out by size, so bigger blocks
+        // always get bigger numbers and a lone square is never a slog.
         const grow = multishotGrowth(s.volley) * hpScale(D) * zoneTrim(D) * (s.relaxed ? RELAXED_HP : 1);   // deeper zones and multishot
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
@@ -1307,10 +1263,8 @@ export class Sim {
         // No runaway block: none holds more than twice the next biggest.
         const byW = [...plan].sort((a, b) => b.w - a.w);
         if (byW.length >= 2 && byW[0].w > byW[1].w * 2) byW[0].w = byW[1].w * 2;
-        // The number reads like the block's size: the shares are handed out in order, the biggest
-        // block getting the biggest, so a small piece never shows more than a bigger one beside it.
-        // Jelly then keeps half (it's soft) and resting blocks a little less (they can tumble
-        // somewhere awkward); a big jelly still outnumbers a small one.
+        // Biggest block gets the biggest share, so a small piece never outnumbers a bigger one.
+        // Jelly keeps half (it's soft) and resting blocks a bit less (they can roll somewhere awkward).
         const shares = plan.map((p) => zoneHp * p.w / weights).sort((a, b) => b - a);
         [...plan].sort((a, b) => b.cells.length - a.cells.length || b.w - a.w)
             .forEach((p, k) => { p.hp = shares[k] * (p.kind === 'jello' ? 0.5 : p.kind === 'loose' ? 0.8 : 1); });
@@ -1326,9 +1280,8 @@ export class Sim {
                 && p.cells.length <= 3 && !mushSpots.some((m) => m.p === p));
             if (pool.length) { const g = pool[Math.floor(this.rand() * pool.length)]; g.gold = true; g.block.gold = true; }
         }
-        // Unsettled (from depth 8): a block or two start the zone already hanging from one nail,
-        // crooked, as if something knocked it loose. Never a cup, a vine's block, a seesaw,
-        // a hanging bomb's target or a mushroom's block.
+        // From depth 8, a block or two start the zone hanging crooked from one nail, as if
+        // something already knocked them (never one that holds something else up).
         if (!s.relaxed && D >= 8) {
             const n = D < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
             const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target && !p.gold
@@ -1460,18 +1413,14 @@ export class Sim {
 
     // ---------- props ----------
 
-    // A free-spinning cross on a pin. Balls set it turning; it swats the next ones.
-    // A vine: a chain of small link bodies joined end to end. It hangs from one end (under a
-    // block) or is strung between two (blocks or walls) with a little slack. Each end is
-    // { block, lx, ly } in the block's unscaled cell space, or { x, y } on a wall.
-    // Only balls touch the links; a snapped link splits the chain, and whatever is no longer
-    // held by an end falls (and fades). A hanging vine can hold a block like a chandelier.
+    // A vine is a chain of small links. It hangs from a block or is strung between two points
+    // with a little slack. Each end is { block, lx, ly } on a block or { x, y } on a wall.
+    // Only balls touch the links; snap one and whatever's no longer held falls and fades.
     addVine(endA, endB, lamp) {
         const { R, world, s } = this;
         const id = s.nextId++;
-        // Each end is a small pin with nothing to hit: fixed on a wall, and on a block one that
-        // follows the block around (see updateVines). The vine never pulls on the block itself,
-        // so a nailed block and its vine can both come to rest.
+        // Each end is a little pin that follows its block around (see updateVines). The vine
+        // never pulls on the block itself, so both can come to rest.
         const ends = [endA, endB].filter(Boolean).map((e, side) => {
             const end = e.block ? { side, host: e.block.id, lx: e.lx, ly: e.ly, alive: true } : { side, host: null, alive: true };
             const at = e.block ? this.vineEndPoint(end) : { x: e.x, y: e.y };
@@ -1647,9 +1596,8 @@ export class Sim {
         return { x: t.x + (e.lx * c - e.ly * sn) * k, y: t.y + (e.lx * sn + e.ly * c) * k };
     }
 
-    // Vines stay dormant unless something happens to them: a ball comes close (it stirs up a
-    // little wind as it passes), a ball hits one, or the block it hangs from moves. Once a
-    // vine has been nearly still for a moment with nothing close, it goes back to sleep.
+    // Vines sleep until something happens: a ball passes close (its breeze sways them), hits
+    // them, or their block moves. Once a vine's been still for a moment, it goes back to sleep.
     restVine(pr, ballsAt) {
         const { world, s } = this;
         if (!pr.links.length) return;
@@ -1697,16 +1645,13 @@ export class Sim {
         }
     }
 
-    // Topple tower: one or two towers on the floor, stacked the way a child stacks blocks:
-    // pillars standing up, a plank across them, again, and something on top. The blocks are
-    // ordinary resting blocks in the usual colours, but with no number and they don't break:
-    // here you knock them over. Each one that tips well over or drops a good way pays (checkTowers).
+    // Topple tower: a tower or two stacked the way a kid stacks blocks, pillars and planks with
+    // something on top. The blocks have no numbers and don't break; you knock them over, and
+    // each one that tips or drops pays (checkTowers).
     addTowers() {
         const pick = () => TOWER_HP[Math.floor(this.rand() * TOWER_HP.length)];
         const add = (cells) => { const b = this.addBlock(cells, pick(), 'loose'); b.tower = true; b.home = null; };
-        // A tower: `stories` levels of two pillars and a plank, `w` cells wide (3 or 4), standing on
-        // row `floor`, with something on top. Pillars are 2 or 3 tall; the top is a little block, a
-        // short bar, a tall one, or a small stack.
+        // One tower: `stories` levels of two pillars and a plank, `w` cells wide, on row `floor`.
         const build = (c, w, stories, floor = H - 1) => {
             for (let k = 0; k < stories; k++) {
                 const h = this.rand() < 0.3 ? 3 : 2;
@@ -1762,10 +1707,9 @@ export class Sim {
         }
     }
 
-    // Mini golf: a little hill standing in the water, somewhere new each time: rounded sides,
-    // a flat green top, and the hole a bowl dipped into it. Its outline (one chain of points) is
-    // both what the ball rolls on and what the game draws. Ledges up top get in the way, one of
-    // them sometimes right over the hole. A ball that misses the hill lands in the water.
+    // Mini golf: a little hill in the water, somewhere new each time, with the hole on top.
+    // One outline is both what the ball rolls on and what gets drawn. A few ledges get in the
+    // way (sometimes right over the hole), and a miss lands in the water.
     addGolf() {
         const { R, world, s } = this;
         const id = s.nextId++;
@@ -1829,9 +1773,9 @@ export class Sim {
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
-    // Hoops: three or four baskets (a rim and a net) scattered across the board, and a few grey blocks to bank shots off (their nails never come out). Now and then a
-    // mushroom on a wall for a lucky bounce. A ball through a basket from above pays, once per
-    // basket per ball, so one good ball can drop through two.
+    // Hoops: three or four baskets scattered across the board, a few grey blocks to bank shots
+    // off, and now and then a mushroom on a wall. A ball through a basket from above pays, once
+    // per basket per ball, so one good ball can drop through two.
     addHoops() {
         const { R, world, s } = this;
         const n = 3 + (this.rand() < 0.4 ? 1 : 0), spots = [];
@@ -1910,6 +1854,7 @@ export class Sim {
         s.props[id] = { id, kind: 'pachinko', x: 0, y: 0, pegs, postH: POST_H, pockets: [...PACHINKO_POCKETS], bodies: [body.handle], cols };
     }
 
+    // A windmill: a free-spinning cross on a pin. Balls set it turning and it swats the next ones.
     addWindmill(x, y) {
         const { R, world, s } = this;
         const id = s.nextId++;
@@ -1928,12 +1873,10 @@ export class Sim {
         s.props[id] = { id, kind: 'windmill', x, y, rotor: rotor.handle, bodies: [rotor.handle, pin.handle], cols };
     }
 
-    // A mushroom grows off a wall or a block. Its cap kicks balls back harder than they
-    // came in, and the stem is a springy hinge, so a hit makes it wobble. It hangs on to
-    // its block as the block jiggles or shrinks; if the block pops, it falls.
-    // host: a block, or null for a wall. (lx, ly): where it grows from, in the host's
-    // unscaled cell space (or the world, for a wall). dir: the way it points (radians,
-    // 0 = up, -PI/2 = right, PI/2 = left).
+    // A mushroom grows off a wall or a block. The cap kicks balls back harder and the stem is
+    // springy, so it wobbles when hit. If its block pops, it falls.
+    // host: a block, or null for a wall. (lx, ly): where it grows from. dir: which way it points
+    // (radians: 0 up, -PI/2 right, PI/2 left).
     addMushroom(host, lx, ly, dir) {
         const { R, world, s } = this;
         const id = s.nextId++;
@@ -2338,7 +2281,6 @@ export class Sim {
         }
     }
 
-    // A ball that just scored is "working": it loses any extra weight and keeps going.
     // Is a ball at p moving along v aimed at a block (not a grey one) within GRACE_RANGE cells?
     headingAtBlock(p, v) {
         const sp = Math.hypot(v.x, v.y);
@@ -2442,9 +2384,8 @@ export class Sim {
     }
 }
 
-// Run one ball forward in a copy of the world and return its path.
-// Each contact carries the surface normal, worked out from how the ball's
-// direction changed across the bounce.
+// Play one ball forward in a copy of the world and return its path, with each bounce and
+// the surface normal there (worked out from how the ball's direction changed).
 export function predict(sim, angle, maxContacts = 3, maxSteps = 300) {
     const p = sim.clone();
     p.s.supply = Math.max(1, p.s.supply);

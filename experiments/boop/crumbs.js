@@ -1,8 +1,7 @@
-// Boop: crayon bits. When a block pops it breaks into a little burst of crayon
-// shavings in its own colour, with a few flecks of ink from its outline.
-// Purely for show: the bits don't touch the physics.
+// Crayon bits: a popped block bursts into shavings in its own colour, with a few flecks of
+// ink. Just for show, they don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-41');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-44');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel
@@ -21,7 +20,7 @@ function shardGeometry() {
 }
 
 // In fall: a little pointed leaf instead of a shard (the leaf piles use it too).
-export function leafGeometry() {
+function leafGeometry() {
     const g = new THREE.BufferGeometry();
     const v = new Float32Array([
         -0.2, 0, 0, 0, -0.1, 0, 0.2, 0, 0,
