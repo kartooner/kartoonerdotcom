@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-44';
+const BUILD = '1.5-45';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 13;
 const stamps = globalThis.boopBuilds || [];
@@ -55,7 +55,16 @@ const hud = {
 
 // ---------- three.js setup ----------
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// Some browsers can't hand out WebGL (hardware acceleration off, GPU blocked, too many tabs using it).
+// Try once more without antialiasing; if that fails too, say so plainly instead of a blank screen.
+function makeRenderer() {
+    for (const antialias of [true, false]) {
+        try { return new THREE.WebGLRenderer({ antialias }); } catch { /* try the next option */ }
+    }
+    globalThis.boopNoWebGL?.();
+    throw new Error('Boop: no WebGL');
+}
+const renderer = makeRenderer();
 // Resolution steps down if frames run slow (the hand-drawn block shader runs on every pixel).
 const PIXEL_RATIOS = [2, 1.5, 1].filter((r) => r <= Math.max(1, window.devicePixelRatio));
 let pixelStep = 0;
