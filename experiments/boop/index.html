@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-45">
+<html lang="en" data-build="1.5-48">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -717,7 +717,7 @@
             <button class="link-btn" id="btn-settings-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="settings-title">Settings</h2>
             <div class="setting">
-                <div class="setting-label" id="sound-label"><b>Sound</b><span>Blips when you hit blocks.</span></div>
+                <div class="setting-label" id="sound-label"><b>Sound</b><span>Soft notes on every hit.</span></div>
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
             </div>
             <div class="setting">
@@ -754,25 +754,25 @@
         <div class="screen-inner">
             <button class="link-btn" id="btn-howto-back" type="button"><span class="arrow" aria-hidden="true">←</span>Back</button>
             <h2 id="howto-title">How to play</h2>
-            <p class="intro">Shoot balls at numbered blocks. Each hit knocks the number down, and at 0 a block pops. Clear a zone to dig deeper. Shots are limited, so make them count.</p>
+            <p class="intro">Shoot balls at the blocks. Every hit takes 1 off a block's number, and at 0 it pops. Pop them all and you dig down to the next zone. Shots run out, though, so make them count.</p>
 
-            <h3>A shot, step by step</h3>
+            <h3>Taking a shot</h3>
             <div class="shot-split">
                 <ol class="steps">
-                    <li><b>Move the launcher</b> if you like: tap it, then drag it along the top.</li>
-                    <li><b>Touch where</b> you want to shoot, and slide to adjust. With a mouse, just point.</li>
-                    <li><b>Read the guide.</b> <span class="dot">Orange dots</span> mark each hit.</li>
-                    <li><b>Let go</b> (or click) to fire. Changed your mind? Slide off the board and let go.</li>
-                    <li><b>Long bounce?</b> Press and hold anywhere while balls fly to speed things up.</li>
+                    <li><b>Move the launcher</b> Want a better angle? Tap it and drag it along the top.</li>
+                    <li><b>Aim</b> Touch where you want to shoot and slide your finger to fine-tune. Using a mouse? Just point.</li>
+                    <li><b>Check the dotted line</b> That's where your ball will go. Each <span class="dot">orange dot</span> is a hit.</li>
+                    <li><b>Shoot</b> Let go (or click). Changed your mind? Slide off the board first.</li>
+                    <li><b>Speed it up</b> Ball taking forever? Press and hold anywhere while it bounces.</li>
                 </ol>
                 <figure class="tilt">
                     <span class="pic"><img src="img/howto-aim.webp" width="600" height="1054" alt="Aiming: a dotted line runs from the launcher at the top, bouncing off a block, with orange dots at each hit"></span>
-                    <figcaption>Your ball's path. Orange dots mark each hit.</figcaption>
+                    <figcaption>The dotted line is your ball's path. Each orange dot is a hit.</figcaption>
                 </figure>
             </div>
-            <p class="note"><b>Sound</b> is off to start. Turn it on in Settings, on the start screen.</p>
-            <p class="note"><b>Playing with a child?</b> Relaxed mode, in Settings, has simpler zones and shots that never run out. It keeps its own run, so yours waits for you.</p>
-            <p class="note"><b>Keyboard:</b> ← → aim (Shift for fine), Space fires (hold it to speed up), Alt (Option) + ← → moves the launcher, Esc cancels or pauses, M sound on/off.</p>
+            <p class="note"><b>Sound</b> starts off. Flip it on in Settings.</p>
+            <p class="note"><b>Playing with a kid?</b> Try Relaxed mode in Settings. The zones are easier, and the shots never run out. It keeps its own game, so yours stays right where you left it.</p>
+            <p class="note"><b>Using a keyboard?</b> Aim with ← and → (hold Shift to go slow) and press Space to shoot. Hold Space to speed things up. Alt (Option) with ← or → moves the launcher, Esc cancels or pauses, and M turns sound on or off.</p>
 
             <h3>Reading the top</h3>
             <div class="mini-hud" aria-hidden="true">
@@ -782,41 +782,41 @@
                 <i class="bar"><i></i></i>
             </div>
             <dl class="legend">
-                <div><dt>Depth</dt><dd>How far down you are. It never ends.</dd></div>
-                <div><dt>Shots left</dt><dd>One per launch. When they run out, the run is over.</dd></div>
-                <div><dt>Par</dt><dd>Shots used in this zone, against its target.</dd></div>
-                <div><dt>The bar</dt><dd>How much of the zone you've cleared.</dd></div>
+                <div><dt>Depth</dt><dd>How deep you've dug. There's no bottom. I checked.</dd></div>
+                <div><dt>Shots left</dt><dd>Each shot uses one. When they're gone, the game's over.</dd></div>
+                <div><dt>Par</dt><dd>Shots you've used in this zone, and how many it should take.</dd></div>
+                <div><dt>The bar</dt><dd>How much of the zone you've cleared so far.</dd></div>
             </dl>
 
             <h3>Hit harder</h3>
             <ul class="tags">
-                <li>Long rallies hit harder, up to <b>4</b></li>
-                <li>Last 3 blocks: hits <b>×2</b></li>
+                <li>Balls hit harder the longer they bounce, up to <b>4</b> a hit</li>
+                <li>Down to the last 3 blocks? Every hit counts <b>double</b></li>
             </ul>
 
             <h3>Earn more shots</h3>
             <ul class="tags">
-                <li>Grab a <b>+1</b> ring</li>
+                <li>Fly a ball through a <b>+1</b> ring</li>
                 <li>Pop a big block</li>
-                <li>Clear a zone: <b>+5</b> (fewer deeper down)</li>
-                <li>Beat <b>par</b>: saved shots come back</li>
+                <li>Clear a zone for <b>+5</b> (a bit less the deeper you go)</li>
+                <li>Beat <b>par</b> and you get your saved shots back</li>
             </ul>
 
             <h3>Things you'll meet</h3>
             <ul class="meet">
-                <li><img src="img/meet-block.webp" alt="" width="64" height="64"><div><b>Blocks</b><span class="say-more">Nailed in place. Hit near a nail to knock it out: with one left the block swings, with none it falls. Grey nails never come out.</span></div></li>
-                <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b><span class="say-more">Spin when hit and swat the next ball.</span></div></li>
-                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b><span class="say-more">Grow off walls and blocks. Their caps kick balls back harder.</span></div></li>
-                <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b><span class="say-more">Fly a ball through one for an extra shot.</span></div></li>
-                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b><span class="say-more">No nails. Knock out what holds them up and they tumble.</span></div></li>
-                <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b><span class="say-more">Balls pass through, slowed down. Each pass takes 1 off.</span></div></li>
-                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in to grab the +1 and rattle around.</span></div></li>
-                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">Can't be broken. Bank shots off them, or knock their nails out and they crumble.</span></div></li>
-                <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">Snap after a few hits. Anything they hold drops.</span></div></li>
-                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it. It bursts and knocks a chunk off everything around it.</span></div></li>
+                <li><img src="img/meet-block.webp" alt="" width="64" height="64"><div><b>Blocks</b><span class="say-more">Most are nailed in place. Hit near a nail to knock it out. One nail left and the block swings. None left and it falls. Grey nails never come out.</span></div></li>
+                <li><img src="img/meet-windmill.webp" alt="" width="64" height="64"><div><b>Windmills</b><span class="say-more">Hit one and it spins, then swats the next ball that comes by.</span></div></li>
+                <li><img src="img/meet-mushroom.webp" alt="" width="64" height="64"><div><b>Mushrooms</b><span class="say-more">They grow on walls and blocks. Their caps bounce balls back extra hard.</span></div></li>
+                <li><img src="img/meet-ring.webp" alt="" width="64" height="64"><div><b>+1 rings</b><span class="say-more">Fly a ball through one and you get an extra shot.</span></div></li>
+                <li><img src="img/meet-stack.webp" alt="" width="62" height="64"><div><b>Resting blocks</b><span class="say-more">No nails at all. Knock out what's holding them up and down they go.</span></div></li>
+                <li><img src="img/meet-jelly.webp" alt="" width="64" height="64"><div><b>Jelly blocks</b><span class="say-more">Balls go right through, just slower. Each pass takes 1 off.</span></div></li>
+                <li><img src="img/meet-cup.webp" alt="" width="62" height="64"><div><b>Cups</b><span class="say-more">Drop a ball in for a +1. It'll rattle around in there for a bit.</span></div></li>
+                <li><img src="img/meet-grey.webp" alt="" width="64" height="44"><div><b>Grey blocks</b><span class="say-more">You can't break these, but you can bounce shots off them. Knock their nails out and they crumble.</span></div></li>
+                <li><img src="img/meet-vine.webp" alt="" width="64" height="64"><div><b>Vines</b><span class="say-more">A few hits and they snap. Whatever they're holding comes down too.</span></div></li>
+                <li><img src="img/meet-bomb.webp" alt="" width="64" height="64"><div><b>Bombs</b><span class="say-more">Hit one twice to light it, and it knocks a chunk off everything nearby. Trust me on this one.</span></div></li>
             </ul>
             <p class="note">Boop! is made by Erik Sagen.</p>
-            <p class="note">Boop explains the rest as it comes up. <button class="link-btn" id="btn-tips-reset" type="button">Show his tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
+            <p class="note">Boop, the little blue block, explains the rest as you play. <button class="link-btn" id="btn-tips-reset" type="button">See Boop's tips again</button> <span id="tips-reset-done" hidden>Done.</span></p>
 
             <div class="actions">
                 <button class="btn btn-primary" id="btn-howto-play" type="button">Play</button>
@@ -859,37 +859,37 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-45",
-                "./zones.js": "./zones.js?v=1.5-45",
-                "./blockshader.js": "./blockshader.js?v=1.5-45",
-                "./sketch.js": "./sketch.js?v=1.5-45",
-                "./balls.js": "./balls.js?v=1.5-45",
-                "./labels.js": "./labels.js?v=1.5-45",
-                "./audio.js": "./audio.js?v=1.5-45",
-                "./theme.js": "./theme.js?v=1.5-45",
-                "./crumbs.js": "./crumbs.js?v=1.5-45",
-                "./buddy.js": "./buddy.js?v=1.5-45",
-                "./season.js": "./season.js?v=1.5-45",
-                "./leaves.js": "./leaves.js?v=1.5-45",
-                "./props.js": "./props.js?v=1.5-45"
+                "./sim.js": "./sim.js?v=1.5-48",
+                "./zones.js": "./zones.js?v=1.5-48",
+                "./blockshader.js": "./blockshader.js?v=1.5-48",
+                "./sketch.js": "./sketch.js?v=1.5-48",
+                "./balls.js": "./balls.js?v=1.5-48",
+                "./labels.js": "./labels.js?v=1.5-48",
+                "./audio.js": "./audio.js?v=1.5-48",
+                "./theme.js": "./theme.js?v=1.5-48",
+                "./crumbs.js": "./crumbs.js?v=1.5-48",
+                "./buddy.js": "./buddy.js?v=1.5-48",
+                "./season.js": "./season.js?v=1.5-48",
+                "./leaves.js": "./leaves.js?v=1.5-48",
+                "./props.js": "./props.js?v=1.5-48"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-45">
-    <link rel="modulepreload" href="./sim.js?v=1.5-45">
-    <link rel="modulepreload" href="./zones.js?v=1.5-45">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-45">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-45">
-    <link rel="modulepreload" href="./balls.js?v=1.5-45">
-    <link rel="modulepreload" href="./labels.js?v=1.5-45">
-    <link rel="modulepreload" href="./audio.js?v=1.5-45">
-    <link rel="modulepreload" href="./theme.js?v=1.5-45">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-45">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-45">
-    <link rel="modulepreload" href="./season.js?v=1.5-45">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-45">
-    <link rel="modulepreload" href="./props.js?v=1.5-45">
+    <link rel="modulepreload" href="./game.js?v=1.5-48">
+    <link rel="modulepreload" href="./sim.js?v=1.5-48">
+    <link rel="modulepreload" href="./zones.js?v=1.5-48">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-48">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-48">
+    <link rel="modulepreload" href="./balls.js?v=1.5-48">
+    <link rel="modulepreload" href="./labels.js?v=1.5-48">
+    <link rel="modulepreload" href="./audio.js?v=1.5-48">
+    <link rel="modulepreload" href="./theme.js?v=1.5-48">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-48">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-48">
+    <link rel="modulepreload" href="./season.js?v=1.5-48">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-48">
+    <link rel="modulepreload" href="./props.js?v=1.5-48">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -937,6 +937,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-45"></script>
+    <script type="module" src="./game.js?v=1.5-48"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-45';
+const BUILD = '1.5-48';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 13;
 const stamps = globalThis.boopBuilds || [];
@@ -1357,7 +1357,7 @@ function queueZoneTips() {
     add('hangbomb', block((b) => b.bomb && b.hung != null));
     add('gold', block((b) => b.gold));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
-        tips.unshift({ key: 'private', text: "Nice dig! Heads up: you're in private mode, so I can't save your run if you leave." });
+        tips.unshift({ key: 'private', text: "Hey, are you in a private window? Nice dig so far, but I can't save it if you leave." });
     }
     tipQueue.unshift(...tips);
 }
@@ -1408,13 +1408,13 @@ function gameOver() {
     $('over-best').classList.toggle('new', isNew);
     // Buddy has a kind word, whatever happened.
     const cheers = [
-        "So close! You'll dig even deeper next time.",
-        'Nice run! Shake it off and go again.',
+        "So close. I bet you go deeper next time.",
+        'Nice run. Shake it off and go again?',
         "Those blocks won't know what hit them next time.",
-        'Great digging! One more go?',
-        "Every run teaches you something. You've got this!",
+        'Good digging. One more go?',
+        "Every run teaches you something. Today I learned blocks are sneaky.",
     ];
-    $('over-say').textContent = isNew ? 'New best! I knew you had it in you.' : cheers[Math.floor(Math.random() * cheers.length)];
+    $('over-say').textContent = isNew ? 'A new best? I knew you had it in you.' : cheers[Math.floor(Math.random() * cheers.length)];
     showScreen('over');
 }
 
@@ -1818,39 +1818,39 @@ const ICON = {
 const WHATS_NEW = [
     {
         version: '1.5',
-        line: 'New in 1.5: Relaxed mode, for an easygoing game (or a young player).',
+        line: 'New in 1.5: Relaxed mode, for a laid-back game or a little player.',
         items: [
-            { icon: 'relax', title: 'Relaxed mode', text: 'Turn it on in Settings for simpler zones, smaller numbers and shots that never run out. It keeps its own run: switch back and yours is right where you left it.' },
+            { icon: 'relax', title: 'Relaxed mode', text: 'Flip it on in Settings for easier zones, smaller numbers and shots that never run out. It keeps its own game, so yours stays right where you left it.' },
         ],
     },
     {
         version: '1.4',
-        line: 'New in 1.4: move the launcher, and touch right where you want to aim.',
+        line: 'New in 1.4: move the launcher, and aim right where you touch.',
         items: [
-            { icon: 'move', title: 'Move the launcher', text: 'Tap it, then drag it anywhere along the top for a better angle (or slide it sideways straight away). It stays where you leave it. On a keyboard: Alt (Option) with ← →.' },
-            { icon: 'finger', title: 'Touch to aim', text: 'Touch where you want the ball to go and the launcher points right there. Slide to adjust, let go to fire. A quick tap just aims. Slide off the board to cancel.' },
-            { icon: 'gear', title: 'Menu and Settings', text: 'The game pauses by itself when you switch apps. Menu, under the board, pauses too. Sound now lives in Settings.' },
+            { icon: 'move', title: 'Move the launcher', text: 'Tap it and drag it along the top for a better angle. It stays where you leave it. On a keyboard, hold Alt (Option) and press ← or →.' },
+            { icon: 'finger', title: 'Touch to aim', text: 'Touch where you want the ball to go, and the launcher points right at it. Slide to fine-tune, then let go. A quick tap just aims. Slide off the board if you change your mind.' },
+            { icon: 'gear', title: 'Menu and Settings', text: 'The game pauses itself when you switch apps, and the menu button pauses it too. Sound moved into Settings.' },
         ],
     },
     {
         version: '1.2.3',
-        line: 'New in 1.2.3: hold to speed up, a run summary, and a home screen icon.',
+        line: 'New in 1.2.3: hold to speed up, a run summary and a home screen icon.',
         items: [
-            { icon: 'fast', title: 'Hold to speed up', text: 'Ball stuck looping between a block and the ceiling? Press and hold anywhere while balls fly (or hold Space) and the turn plays three times as fast. Let go and it slows back down.' },
-            { icon: 'summary', title: 'Run summary', text: 'Game over now says how many blocks you popped and how many zones you cleared under par.' },
-            { icon: 'home', title: 'Add to Home Screen', text: "Boop has its own icon and opens full screen, with no browser bars. In Safari: Share, then Add to Home Screen. (A run saved in Safari doesn't carry over.)" },
-            { icon: 'awake', title: 'Screen stays on', text: "While you play, your phone won't dim or lock in the middle of a long bounce." },
+            { icon: 'fast', title: 'Hold to speed up', text: 'Ever had a ball stuck bouncing between a block and the ceiling? Same. Press and hold anywhere (or hold Space) and it goes three times as fast. Let go to slow it back down.' },
+            { icon: 'summary', title: 'Run summary', text: "When your game ends, you'll see how many blocks you popped and how many zones you beat par on." },
+            { icon: 'home', title: 'Add to Home Screen', text: "Boop has its own icon now and opens full screen. In Safari, tap Share, then Add to Home Screen. One catch: a game saved in Safari won't come with you." },
+            { icon: 'awake', title: 'Screen stays on', text: "Your phone won't dim or lock in the middle of a long bounce. Small thing, but it bugged me." },
         ],
     },
     {
         version: '1.2',
-        line: 'New in 1.2: vines, bombs and sound!',
+        line: 'New in 1.2: vines, bombs and sound.',
         items: [
-            { img: 'img/meet-vine.webp', title: 'Vines', text: 'Garlands and hanging vines from depth 9. Snap them and whatever they hold drops.' },
-            { img: 'img/meet-bomb.webp', title: 'Bombs', text: 'A rare treat from depth 15. Hit one twice to light it, then stand back.' },
-            { icon: 'sound', title: 'Sound', text: 'Soft chiptune notes that build into a little tune as your hits chain. Off until you turn it on in Settings, or with M.' },
-            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, point and click. Aim while blocks are still settling. Changed your mind? Slide off the board, right-click or press Esc.' },
-            { icon: 'shapes', title: 'Fresher zones', text: 'More interlocking shapes and more blocks resting loose, so no two zones feel the same.' },
+            { img: 'img/meet-vine.webp', title: 'Vines', text: "Look for garlands and hanging vines from depth 9. Snap one and whatever it's holding falls." },
+            { img: 'img/meet-bomb.webp', title: 'Bombs', text: 'A rare treat from depth 15. Hit one twice to light it, then enjoy the show.' },
+            { icon: 'sound', title: 'Sound', text: 'Soft little notes that build into a tune as your hits chain together. It starts off, so flip it on in Settings or press M.' },
+            { icon: 'aim', title: 'Aiming', text: 'With a mouse or trackpad, just point and click. You can aim while blocks are still settling, too. Changed your mind? Slide off the board, right-click or press Esc.' },
+            { icon: 'shapes', title: 'Fresher zones', text: 'More shapes that fit together and more loose blocks, so no two zones feel quite the same.' },
         ],
     },
 ];
@@ -1974,10 +1974,10 @@ function play() {
     if (phase === 'aim' && !runStarted) {
         // Buddy's whole tour is two tips: this one, and one after your first shot.
         tourTip('intro', finePointer
-            ? "Hi, I'm Boop! Point to aim, then click to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!"
-            : "Hi, I'm Boop! Touch where you want to aim, then let go to fire a ball at a block. Tap the launcher, then drag, to move it. Each hit knocks its number down. Pop every block to dig deeper!", { now: true, stay: true, first: true });
+            ? "Hi, I'm Boop. Point where you want to aim, then click to shoot. Every hit takes 1 off a block's number. Pop them all and we dig deeper. Oh, and you can drag the launcher, too."
+            : "Hi, I'm Boop. Touch where you want to aim, then let go to shoot. Every hit takes 1 off a block's number. Pop them all and we dig deeper. Oh, and you can drag the launcher, too.", { now: true, stay: true, first: true });
         // Next in the tour, ahead of the things on the board: what nails mean.
-        const basics = { key: 'basics', text: 'Nailed blocks stay put till you knock their nails out. Shots are limited: clear zones and grab +1 rings for more!' };
+        const basics = { key: 'basics', text: 'See the little nails? They hold blocks in place until you knock them out. And shots run out, so clear zones and grab +1 rings to get more.' };
         if (!relaxed && tipDue(basics) && !tipQueue.some((t) => t.key === 'basics')) tipQueue.unshift(basics);
     }
     nextTip();

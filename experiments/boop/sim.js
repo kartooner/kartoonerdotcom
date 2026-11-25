@@ -2,7 +2,7 @@
 // plays the shot ahead, so the dotted line always matches what the real shot will do.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-45');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-48');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -150,16 +150,15 @@ const GOLD_FROM = 12, GOLD_CHANCE = 0.15;
 const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const num = (n) => ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'][n] ?? String(n);
-const cap = (w) => w[0].toUpperCase() + w.slice(1);
 const BONUS_NOTES = {
-    rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
+    rings: 'Where are we? A bonus stage. You get three free shots, one ball each. Fly through as many +1 rings as you can.',
     // The surprise stages say how many tries this visit gives (see STAGES).
-    pachinko: (n) => `Bonus stage! ${cap(num(n))} drops of five balls. The pockets at the bottom pay shots.`,
-    tower: (n) => `Bonus stage! Topple the towers: ${num(n)} shots. Every block you knock over is +1.`,
-    golf: (n) => `Bonus stage! Mini golf, ${num(n)} tries: land on the green and sink it by the flag. Miss and it's in the water. First try +8, then +6, then +4.`,
-    hoops: (n) => `Bonus stage! Hoops: ${num(n)} shots, baskets all over. Bank off the grey blocks. Every basket is +2.`,
-    pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
-    chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
+    pachinko: (n) => `Ooh, a bonus stage. You get ${num(n)} drops of five balls each. The pockets at the bottom give you shots.`,
+    tower: (n) => `A bonus stage. See the towers? Knock them over with ${num(n)} shots. Every block that falls is +1.`,
+    golf: (n) => `Is that mini golf? You get ${num(n)} tries. Land on the green and roll it in by the flag. Miss, and splash. Your first try is worth +8, then +6, then +4.`,
+    hoops: (n) => `Hoops? A bonus stage with baskets everywhere. You get ${num(n)} shots. Bounce them off the grey blocks. Every basket is +2.`,
+    pinata: 'A bonus stage. See all the little blocks? You get three free shots, one ball each. Every five you pop is +1.',
+    chain: 'A bonus stage full of bombs. You get three free shots, one ball each. Set them off, and every four pops is +1.',
 };
 // Surprise stages: little bonus games for deep runs, at set depths and then every few zones
 // at random. They're kept out of What's new and How to play on purpose, and out of Relaxed
@@ -894,7 +893,7 @@ export class Sim {
         const upgrade = MULTISHOT_AT[s.depth];
         if (upgrade) {
             s.volley = upgrade;
-            s.note = `Upgrade: your launcher now fires ${upgrade} balls per shot.${s.relaxed ? '' : ' Each shot still costs 1.'}`;
+            s.note = `Whoa, an upgrade. Your launcher shoots ${upgrade} balls at once now${s.relaxed ? '.' : ', and it still only costs 1 shot.'}`;
             s.noteTarget = { kind: 'launcher' };
         }
         // Zone 3 introduces resting blocks, so it always has somewhere for them to rest.
