@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-38';
+const BUILD = '1.5-41';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1138,7 +1138,7 @@ function setRelaxed(on) {
     try { localStorage.setItem(RELAXED_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
     restart(loadRun());                              // the other mode's run, or a fresh one
     showRelaxedState();
-    $('btn-settings-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+    $('btn-settings-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
 }
 relaxedSwitch.addEventListener('click', () => setRelaxed(!relaxed));
 showRelaxedState();
@@ -2263,27 +2263,33 @@ function showScreen(which, moveFocus = true) {
         menuTagline();
         $('btn-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-new').hidden = !runStarted;
-        $('btn-menu-close').setAttribute('aria-label', runStarted ? 'Close and resume' : 'Close and play');
+        $('btn-menu-close').hidden = !runStarted || fromSave;   // only on the pause screen: close and keep playing
         showNewsLine();
         if (moveFocus) $('btn-play').focus();
     } else if (which === 'over') {
         if (moveFocus) $('btn-again').focus();
     } else if (which === 'news') {
         news.scrollTop = 0;
-        $('btn-news-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-news-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-news-back').focus();
         markNewsSeen();
     } else if (which === 'settings') {
         settings.scrollTop = 0;
-        $('btn-settings-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-settings-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         showSoundState();
         if (moveFocus) $('btn-settings-back').focus();
     } else if (which === 'howto') {
         howto.scrollTop = 0;
-        $('btn-howto-play').textContent = !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
+        $('btn-howto-play').textContent = backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume';
         $('btn-howto-back').focus();
     }
 }
+// Settings, What's new and How to play open from the start/pause screen or from game over;
+// Back returns there, and their big button plays on (or, after game over, plays again).
+let backTo = 'menu';
+const openSub = (which) => { backTo = over.hidden ? 'menu' : 'over'; showScreen(which); };
+const goBack = () => showScreen(backTo);
+const subPlay = () => { if (backTo === 'over') { backTo = 'menu'; restart(); } play(); };
 function play() {
     markNewsSeen();          // a new player's first game, or a returning one who's read the line: done
     showScreen(null);
@@ -2302,28 +2308,27 @@ function play() {
     canvas.focus({ preventScroll: true });   // so the keyboard goes straight to aiming
 }
 $('btn-play').addEventListener('click', play);
-$('btn-howto-play').addEventListener('click', play);
-$('btn-howto').addEventListener('click', () => showScreen('howto'));
+$('btn-howto-play').addEventListener('click', subPlay);
+$('btn-howto').addEventListener('click', () => openSub('howto'));
 $('btn-tips-reset').addEventListener('click', () => {
     writeTips({});
     if (sim) sim.s.seen = {};
     $('tips-reset-done').hidden = false;
 });
-$('btn-howto-back').addEventListener('click', () => showScreen('menu'));
-$('btn-news').addEventListener('click', () => showScreen('news'));
-$('btn-news-say').addEventListener('click', () => showScreen('news'));
-$('btn-news-back').addEventListener('click', () => showScreen('menu'));
-$('btn-news-close').addEventListener('click', () => showScreen('menu'));
-$('btn-news-play').addEventListener('click', play);
-$('btn-howto-close').addEventListener('click', () => showScreen('menu'));
+$('btn-howto-back').addEventListener('click', goBack);
+$('btn-news').addEventListener('click', () => openSub('news'));
+$('btn-over-news').addEventListener('click', () => openSub('news'));
+$('btn-news-say').addEventListener('click', () => openSub('news'));
+$('btn-news-back').addEventListener('click', goBack);
+$('btn-news-play').addEventListener('click', subPlay);
 $('btn-menu-close').addEventListener('click', play);
 // Pause: Menu (under the board), Escape or P, or leaving the app or tab mid-run all bring up
 // the start screen.
 $('btn-open-menu').addEventListener('click', () => showScreen('menu'));
-$('btn-settings').addEventListener('click', () => showScreen('settings'));
-$('btn-settings-back').addEventListener('click', () => showScreen('menu'));
-$('btn-settings-close').addEventListener('click', () => showScreen('menu'));
-$('btn-settings-play').addEventListener('click', play);
+$('btn-settings').addEventListener('click', () => openSub('settings'));
+$('btn-over-settings').addEventListener('click', () => openSub('settings'));
+$('btn-settings-back').addEventListener('click', goBack);
+$('btn-settings-play').addEventListener('click', subPlay);
 $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
@@ -2360,7 +2365,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!over.hidden) return;             // the run is over: nothing to pause or resume
         if (!paused() && phase === 'aim' && (aiming || keyAim || mouseDown || moveMode)) { cancelAim(); return; }   // first, put an aim (or a picked-up launcher) away
-        if (!howto.hidden || !news.hidden || !settings.hidden) showScreen('menu');
+        if (!howto.hidden || !news.hidden || !settings.hidden) goBack();
         else if (!menu.hidden) play();
         else showScreen('menu');
         return;
