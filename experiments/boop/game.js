@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-31';
+const BUILD = '1.5-32';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -691,19 +691,16 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'hoop') {
-        // Hoops: a crayon basket. An oval orange rim, seen a little from above; a net hanging from it,
-        // a funnel of crossed strokes; and a small hand-drawn backboard behind, on the side nearer
-        // its wall. (The rim's ends and the backboard are the posts the ball bounces off.)
-        const half = pr.half, back = pr.back;
-        const board = makeSketch({ kind: SHAPE.BOX, size: [0.07, 0.36], round: 0.05, edge: 0.045, wob: 0.6, fill: 0xfbf6ea, seed: pr.id + 7, margin: 0.1 });
-        board.position.set(back * (half + 0.04), 0.28, 0.03);
+        // Hoops: a crayon basket. An oval orange rim, seen a little from above, and a net hanging
+        // from it, a funnel of crossed strokes. (The rim's ends are what the ball bounces off.)
+        const half = pr.half;
         const net = makeNetMesh(half - 0.02, half * 0.55, 0.5, theme.line, pr.id * 0.7);     // the line colour: light on the dark board
         net.position.set(0, 0.1, 0.04);
         const rim = makeSketch({ kind: SHAPE.RING, size: [half], ring: 0.07, edge: 0.03, wob: 0.6, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.1 });
         rim.scale.set(1, 0.28, 1);
         rim.position.set(0, 0.1, 0.06);
         v.net = net;
-        group.add(board, net, rim);
+        group.add(net, rim);
         const label = makeLabel('+2', theme.text, 'hand');
         label.userData.text = '+2';
         label.scale.setScalar(0.8);

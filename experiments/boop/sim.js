@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-31');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-32');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -1814,8 +1814,7 @@ export class Sim {
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
-    // Hoops: three or four baskets scattered across the board, each with a backboard on one side,
-    // and a few grey blocks to bank shots off (their nails never come out). Now and then a
+    // Hoops: three or four baskets (a rim and a net) scattered across the board, and a few grey blocks to bank shots off (their nails never come out). Now and then a
     // mushroom on a wall for a lucky bounce. A ball through a basket from above pays, once per
     // basket per ball, so one good ball can drop through two.
     addHoops() {
@@ -1829,10 +1828,9 @@ export class Sim {
         for (const [x, y] of spots) {
             const id = s.nextId++;
             const body = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y));
-            const cols = [], back = x < W / 2 ? -1 : 1;                // the backboard is on the side nearer its wall
-            for (const dx of [-HOOP_HALF, HOOP_HALF]) {
-                const tall = Math.sign(dx) === back;
-                const c = world.createCollider(R.ColliderDesc.cuboid(0.06, tall ? 0.55 : 0.3).setTranslation(dx, tall ? 0.1 : -0.15)
+            const cols = [];
+            for (const dx of [-HOOP_HALF, HOOP_HALF]) {                 // the rim's two ends
+                const c = world.createCollider(R.ColliderDesc.cuboid(0.06, 0.3).setTranslation(dx, -0.15)
                     .setRestitution(0.4).setFriction(0.2).setCollisionGroups(groups(G.PROP, G.BALL)), body);
                 s.owner[c.handle] = { t: 'peg' };
                 cols.push(c.handle);
@@ -1841,7 +1839,7 @@ export class Sim {
                 .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
             s.owner[c.handle] = { t: 'hoop', id };
             cols.push(c.handle);
-            s.props[id] = { id, kind: 'hoop', x, y, half: HOOP_HALF, back, body: body.handle, bodies: [body.handle], cols };
+            s.props[id] = { id, kind: 'hoop', x, y, half: HOOP_HALF, body: body.handle, bodies: [body.handle], cols };
         }
         // Grey blocks to bank off, away from the baskets.
         const SHAPES_BANK = [[[0, 0], [1, 0]], [[0, 0], [0, 1]], [[0, 0]], [[0, 0], [1, 0], [2, 0]]];
