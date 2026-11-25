@@ -6,7 +6,7 @@
 // - only a few sounds at once, hits on the same block a moment apart merge, a soft limiter,
 //   low volume, and silence while paused or hidden.
 // Off by default. Nothing is created until sound is turned on (browsers need a tap first).
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-24');   // build stamp: game.js checks every file matches
 
 const SCALE = [0, 2, 4, 7, 9];            // major pentatonic, in semitones
 const ROOT = 392;                         // G4: warm, not shrill

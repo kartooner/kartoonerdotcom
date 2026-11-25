@@ -6,7 +6,7 @@
 // their own, so a still board can still rest at a low frame rate.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-24');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -201,7 +201,17 @@ export function makeLeafPiles(scene, season, floorY) {
         }
     }
 
+    // Something afloat at x (a ball bobbing): floating leaves close by drift aside, leaving it a clearing.
+    function part(x, r) {
+        if (water == null) return;
+        for (const l of floor) {
+            const d = l.x - x;
+            if (Math.abs(d) > r || onTop(l.x)) continue;
+            l.vx = (l.vx ?? 0) * 0.8 + (d >= 0 ? 1 : -1) * 1.2 * (1 - Math.abs(d) / r);
+        }
+    }
+
     // Floating leaves keep moving (bobbing) as long as there's water with leaves on it.
-    return { seed, knock, update, stir, blast, clear, setWater, ripple,
+    return { seed, knock, update, stir, blast, clear, setWater, ripple, part,
         active: () => falling.length > 0 || (water != null && floor.length > 0 && !calm?.matches) };
 }
