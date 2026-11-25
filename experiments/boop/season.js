@@ -2,7 +2,7 @@
 // the vines, and a hat for Buddy. The rules never change. A tiny script in index.html picks
 // the season from the device's date before anything draws, so nothing flashes. To test one,
 // add ?season=fall (or none) to the address.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-57');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-58');   // build stamp: game.js checks every file matches
 
 const root = document.documentElement;
 export const season = root.dataset.season || null;

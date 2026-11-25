@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-57';
+const BUILD = '1.5-58';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];

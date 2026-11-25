@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-57'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-58'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
@@ -32,6 +32,7 @@ export class WaterSim {
     constructor() {
         this.x = new Float32Array(MAX_DROPS); this.y = new Float32Array(MAX_DROPS);
         this.vx = new Float32Array(MAX_DROPS); this.vy = new Float32Array(MAX_DROPS);
+        this.size = new Float32Array(MAX_DROPS).fill(1);   // how big each drop is drawn (splash droplets are small)
         this.px = new Float32Array(MAX_DROPS); this.py = new Float32Array(MAX_DROPS);
         this.n = 0;
         this.pour = [];
@@ -58,7 +59,7 @@ export class WaterSim {
                 if (crowded) continue;
                 const i = this.n++;
                 p.left--;
-                this.x[i] = ex; this.y[i] = ey;
+                this.x[i] = ex; this.y[i] = ey; this.size[i] = 1;
                 this.vx[i] = (Math.random() - 0.5) * 1.2; this.vy[i] = -Math.random();
             }
         }
@@ -102,7 +103,7 @@ export class WaterSim {
             for (let i = this.n - 1; i >= 0; i--) {
                 if (vy[i] > 0 || y[i] > this.surface(x[i]) - 0.08) continue;
                 const last = --this.n;
-                x[i] = x[last]; y[i] = y[last]; vx[i] = vx[last]; vy[i] = vy[last];
+                x[i] = x[last]; y[i] = y[last]; vx[i] = vx[last]; vy[i] = vy[last]; this.size[i] = this.size[last];
             }
         }
     }
@@ -291,14 +292,16 @@ export function makeWater(scene, renderer) {
     function splash(balls) {
         const now = performance.now();
         for (const b of balls) {
-            // Coming in fast from just above: a splash, once per ball per dive.
+            // Coming in fast from just above: a small splash, once per ball per dive. A few little
+            // droplets, kicked up a short way either side.
             if (b.vy > -5 || b.y < pool.top - 0.05 || b.y > pool.top + BALL_R + 0.08 || now - (pool.splashed.get(b.id) ?? -1e9) < 400) continue;
             pool.splashed.set(b.id, now);
-            const n = Math.min(14, Math.round(-b.vy));
+            const n = Math.min(6, Math.round(-b.vy / 2));
             for (let k = 0; k < n && sim.n < MAX_DROPS; k++) {
                 const i = sim.n++, side = k % 2 ? 1 : -1;
-                sim.x[i] = b.x + side * (0.12 + Math.random() * 0.2); sim.y[i] = pool.top + 0.05;
-                sim.vx[i] = side * (1 + Math.random() * 2.5) + b.vx * 0.2; sim.vy[i] = 3 + Math.random() * 4;
+                sim.x[i] = b.x + side * (0.1 + Math.random() * 0.12); sim.y[i] = pool.top + 0.04;
+                sim.vx[i] = side * (0.5 + Math.random()) + b.vx * 0.1; sim.vy[i] = 1.5 + Math.random() * 1.5;
+                sim.size[i] = 0.4 + Math.random() * 0.15;
             }
         }
         if (pool.splashed.size > 20) pool.splashed.clear();
@@ -405,7 +408,8 @@ export function makeWater(scene, renderer) {
             if ((sim.calm >= 30 || !sim.n) && !busy && drawn) return;
             drawn = (sim.calm >= 30 || !sim.n) && !busy;
             for (let i = 0; i < sim.n; i++) {
-                m.makeTranslation(sim.x[i], sim.y[i], 0); dots.setMatrixAt(i, m);
+                const k = sim.size[i];
+                m.makeScale(k, k, 1).setPosition(sim.x[i], sim.y[i], 0); dots.setMatrixAt(i, m);
                 speeds.array[i] = Math.min(1, Math.hypot(sim.vx[i], sim.vy[i]) / 9);
             }
             dots.count = sim.n;
