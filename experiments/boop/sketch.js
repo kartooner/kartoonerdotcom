@@ -2,7 +2,7 @@
 // Same idea as the block shader: a shape is a distance field, its edge is wobbled
 // with a slow bend and fine grain so it reads as drawn, not machined.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-8');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-11');   // build stamp: game.js checks every file matches
 
 export const SHAPE = { BOX: 0, CIRCLE: 1, RING: 2, CAP: 3 };
 
@@ -128,6 +128,7 @@ uniform vec3 uField;
 uniform vec3 uHatch;
 uniform float uStrength;   // how strong the darkest strokes get (0-1)
 uniform float uHeight;     // board height in cells
+uniform float uBonus;      // 1 on a bonus stage: crosshatched, reaching a little higher
 varying vec2 vW;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -139,7 +140,7 @@ float noise(vec2 p) {
 
 void main() {
     // 0 above about a third of the way down, rising to 1 at the floor.
-    float depth = clamp((-vW.y - uHeight * 0.33) / (uHeight * 0.67), 0.0, 1.0);
+    float depth = clamp((-vW.y - uHeight * (0.33 - 0.15 * uBonus)) / (uHeight * (0.67 + 0.15 * uBonus)), 0.0, 1.0);
     // Diagonal strokes about a fifth of a cell apart, with a slight wave.
     float across = (vW.x + vW.y) * 4.5 + (noise(vW * 1.7) - 0.5) * 0.6;
     float along = (vW.x - vW.y) * 1.2;
@@ -153,6 +154,15 @@ void main() {
     // Crayon grain inside the stroke.
     float grain = 0.6 + 0.4 * noise(vW * 22.0);
     float a = line * drawn * grain * depth * uStrength;
+    // Bonus stages: a second set of strokes the other way, so the hatching reads as a crosshatch.
+    if (uBonus > 0.5) {
+        float across2 = (vW.x - vW.y) * 4.5 + (noise(vW * 1.9 + 11.0) - 0.5) * 0.6;
+        float lane2 = floor(across2), f2 = fract(across2), w2 = fwidth(across2);
+        float line2 = smoothstep(0.38 - w2, 0.38 + w2, f2) - smoothstep(0.58 - w2, 0.58 + w2, f2);
+        float stroke2 = noise(vec2((vW.x + vW.y) * 1.2 + lane2 * 5.31, lane2 * 2.9));
+        float drawn2 = smoothstep(1.0 - depth * 0.85, 1.0 - depth * 0.85 + 0.12, stroke2 + 0.1);
+        a = max(a, line2 * drawn2 * grain * depth * uStrength * 0.85);
+    }
     gl_FragColor = vec4(mix(uField, uHatch, a), 1.0);
     #include <colorspace_fragment>
 }`;
@@ -173,6 +183,7 @@ export function makeFieldMaterial(height) {
             uHatch: { value: new THREE.Color(0x2b2622) },
             uStrength: { value: 0.07 },
             uHeight: { value: height },
+            uBonus: { value: 0 },
         },
     });
 }

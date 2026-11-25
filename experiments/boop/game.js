@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-8';
+const BUILD = '1.5-11';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -603,6 +603,50 @@ function buildPropView(pr) {
         propViews.set(pr.id, v);
         return v;
     }
+    if (pr.kind === 'golf') {
+        // Mini golf: grey slabs for the ground and ledges, and a flag over the hole.
+        v.greys = [];
+        pr.rects.forEach(([x, y, hx, hy], i) => {
+            const slab = makeSketch({ kind: SHAPE.BOX, size: [hx, hy], round: 0.06, edge: 0.05, wob: 0.35, fill: NEUTRAL[themeName()], seed: i * 3.7 + pr.id, margin: 0.1 });
+            slab.position.set(x, y, 0);
+            group.add(slab);
+            v.greys.push(slab);
+        });
+        const [hx, hy] = pr.hole;
+        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.035, 0.7], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
+        pole.position.set(hx, hy + 0.7, 0.05);
+        const flag = makeSketch({ kind: SHAPE.BOX, size: [0.24, 0.14], round: 0.02, edge: 0.04, wob: 0.4, fill: COLORS.mushroom, seed: pr.id + 2, margin: 0.08 });
+        flag.position.set(hx + 0.26, hy + 1.24, 0.06);
+        group.add(pole, flag);
+        scene.add(group);
+        propViews.set(pr.id, v);
+        return v;
+    }
+    if (pr.kind === 'hoop') {
+        // Hoops: two rim posts, an orange rim between them, and a net hanging under it.
+        // Drawn around the basket's body, which slides side to side (followed below).
+        const half = pr.half;
+        for (const dx of [-half, half]) {
+            const post = makeSketch({ kind: SHAPE.BOX, size: [0.06, 0.3], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + dx * 3, margin: 0.06 });
+            post.position.set(dx, -0.15, 0.05);
+            group.add(post);
+        }
+        const rim = makeSketch({ kind: SHAPE.BOX, size: [half, 0.045], round: 0.03, edge: 0.03, wob: 0.3, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.06 });
+        rim.position.set(0, 0.12, 0.06);
+        const net = makeSketch({ kind: SHAPE.BOX, size: [half - 0.1, 0.24], round: 0.05, role: 'line', filled: false, edge: 0.03, wob: 0.6, seed: pr.id + 5, margin: 0.08 });
+        net.position.set(0, -0.2, 0.04);
+        const label = makeLabel('+2', theme.text, 'hand');
+        label.userData.text = '+2';
+        label.scale.setScalar(0.8);
+        label.position.set(0, -0.75, 0.1);
+        v.labels = [label];
+        group.add(rim, net, label);
+        group.position.set(pr.x, pr.y, 0.05);
+        v.body = pr.body;
+        scene.add(group);
+        propViews.set(pr.id, v);
+        return v;
+    }
     if (pr.kind === 'pachinko') {
         // The pachinko board: small ink nails, thin posts between the pockets, and what each pays.
         pr.pegs.forEach(([x, y], i) => {
@@ -882,7 +926,7 @@ function syncView(frameDt) {
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
         hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
-        hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? '1 drop' : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
+        hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? `${s.bonus.shots} ${s.bonus.shots === 1 ? 'drop' : 'drops'}` : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
         hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
         hud.parBox.classList.toggle('bonus', !!s.bonus);
         hud.progress.style.transform = `scaleX(${done})`;
@@ -925,6 +969,8 @@ function consumeEvents() {
         }
         if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
         if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
+        if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2, 0.75);
+        if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
         if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
@@ -957,6 +1003,7 @@ function playSound(e) {
     else if (e.t === 'gain' && phase === 'play') audio.ring();
     else if (e.t === 'gold') audio.clear();
     else if (e.t === 'catch' && e.n > 0) audio.ring();
+    else if (e.t === 'sunk') audio.clear();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();
@@ -1892,6 +1939,7 @@ function tintField() {
     const band = Math.min(3, Math.floor(((sim?.s.depth ?? 1) - 1) / 10));
     fieldColor.setHex(theme.field).lerp(deepColor.setHex(FIELD_DEEP[themeName()]), band * 0.14);
     fieldMat.uniforms.uField.value.copy(fieldColor);
+    fieldMat.uniforms.uBonus.value = sim?.s.bonus ? 1 : 0;      // bonus stages get a crosshatch
 }
 function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
 function applyTheme(name) {
@@ -1931,6 +1979,7 @@ function applyTheme(name) {
         } else if (v.neutral) v.mesh.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
+    for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
