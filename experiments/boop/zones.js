@@ -71,7 +71,7 @@ export const THING_TIPS = {
     jelly: 'What\'s that wobbly one? Jelly. Balls go right through it, just slower. Each pass takes 1 off.',
     grey: "See the grey blocks? You can't break them, but you can bounce shots off them. Knock their nails out and they crumble.",
     cup: 'You see that cup? Drop a ball in for a +1. It\'ll rattle around in there for a bit.',
-    jar: "Oh, look at that. It's a water jar. Pop it and the water spills out and runs all the way to the bottom.",
+    jar: "Oh, look at that. It's a water jar. Pop it and it tips right over, and the water runs all the way to the bottom.",
     single: 'See that grey nail? Those never come out. This block stays put until you pop it.',
 };
 
