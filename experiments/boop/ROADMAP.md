@@ -223,12 +223,12 @@ From watching a tester's kids: they loved popping blocks when the board was simp
 
 An early look at flowing water. Nothing changes in the real game until we decide it's worth keeping.
 
-- A jar in the first zone, then in about every other zone. Small ones (one square) or big ones (four).
+- Jars are rare: none before depth 25, then about one zone in seven, so they stay a nice surprise. Small ones (one square) or big ones (four). ?water=often puts one in the first zone and about every other zone, for trying it out.
 - Drawn like the blocks: thick wobbly ink edge, glass with a jelly-style shine, water inside that sloshes.
 - Pop it and the water pours out, runs off block tops, slips through the cracks between blocks and pools on the floor. It only collects where there's no way out (a cup, a pocket against a wall).
 - The pool has a light top line with a moving sheen, deeper colour lower down, and foam where it's churned up. Leaves float on it. (Caustics came out: not worth what they cost.)
 - Balls splash through it and throw water around, and moving blocks shove it along. The water doesn't slow balls: every ball moves at one speed, which keeps the aiming guide honest.
-- The golf stage's pool uses the same water (with ?water=1): filled round the hill, the ball bobbing in it.
+- Still water: the golf stage's pool (with ?water=1) is the same water, kept still. Its surface ripples, and a ball dropping in throws up a splash that falls back in. This is the start of the water biome: a whole board of still water to shoot through.
 - Kept cheap: the drawing only covers where the water is, and a still pool stops simulating until something disturbs it.
 - The water is its own little sim in water.js (under 1 ms a frame), not Rapier bodies, so it stays cheap and out of saves.
 - It drains when the zone clears.

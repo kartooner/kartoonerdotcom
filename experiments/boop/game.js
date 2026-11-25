@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-53';
+const BUILD = '1.5-54';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -79,9 +79,11 @@ const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
 const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
-// Test: water jars, behind ?water=1. Now and then a zone has a jar (small or big); pop it and
-// the water runs down over the blocks and pools on the floor, where balls slosh through it.
-const WATER_TEST = (() => { try { return new URLSearchParams(location.search).has('water'); } catch { return false; } })();
+// Test: water jars, behind ?water=1. Once in a while from depth 25 a zone has a jar (small or
+// big); pop it and the water runs down over the blocks and pools on the floor, where balls slosh
+// through it. ?water=often puts one in the first zone and about every other zone, for trying it out.
+const WATER_MODE = (() => { try { return new URLSearchParams(location.search).get('water'); } catch { return null; } })();
+const WATER_TEST = WATER_MODE != null;
 const WATER = { light: [0x559fc6, 0x3b7fa8], dark: [0x3d9ad6, 0x24618d] };    // fill, and deeper down
 const GLASS = { light: 0xeef7fa, dark: 0x9db6c1 };
 const jarMats = new Set();          // one per jar on the board (each has its own size and wobble)
@@ -529,10 +531,11 @@ function buildPropView(pr) {
     scene.add(v.group);
     propViews.set(pr.id, v);
     if (water && pr.kind === 'golf' && pr.water) {
-        // The water test: the golf pool is the water sim, filled round the hill, not a drawn band.
+        // The water test: the golf pool is the same water, kept still (it ripples and splashes,
+        // but doesn't flow). The hill and ledges are solid for any splash.
         v.water.visible = false;
         golfPool = { id: pr.id, ground: groundSolid(pr.outline), rects: pr.rects };
-        water.fill(-H + pr.water, (x, y) => golfPool.ground(x, y) ?? rectSolid(pr.rects, x, y));
+        water.setPool(-H + pr.water);
     }
     return v;
 }
@@ -1510,11 +1513,15 @@ function startZone() {
     phase = 'descend';
 }
 
-// The water test's jar: the first zone always has one, then about every other zone. Small ones
-// take over a single square; big ones (four squares) go in an open spot.
+// The water test's jar: rare, and not before depth 25, so it stays a nice surprise (with
+// ?water=often: the first zone, then about every other zone). Small ones take over a single
+// square; big ones (four squares) go in an open spot.
 function addJar() {
-    if (sim.s.bonus || (sim.s.depth > 1 && Math.random() < 0.5)) return;
-    const big = Math.random() < 0.35;
+    if (sim.s.bonus) return;
+    if (WATER_MODE === 'often' ? sim.s.depth > 1 && Math.random() < 0.5 : sim.s.depth < 25 || Math.random() > 0.15) return;
+    placeJar(Math.random() < 0.35);
+}
+function placeJar(big) {
     if (!big) {
         const singles = Object.values(sim.s.blocks).filter((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
         if (singles.length) { singles[Math.floor(Math.random() * singles.length)].jar = true; return; }
@@ -1540,7 +1547,7 @@ function addJar() {
             for (let dc = -1; dc <= n && free; dc++) for (let dr = -1; dr <= n && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
             if (free) open.push([c, r]);
         }
-        if (!open.length) return;
+        if (!open.length) { if (big) placeJar(false); return; }   // no room for a big one: a small one, then
         const [c, r] = open[Math.floor(Math.random() * open.length)];
         const b = sim.addBlock(big ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]], big ? 5 : 2);
         b.jar = true;
@@ -1577,7 +1584,7 @@ function updateWater(dt) {
     if (waterShapes.size > blocks.length + 20) for (const id of waterShapes.keys()) if (!sim.s.blocks[id]) waterShapes.delete(id);
     const balls = sim.s.balls.map((b) => {
         const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
-        return { x: t.x, y: t.y, vx: v.x, vy: v.y };
+        return { id: b.body, x: t.x, y: t.y, vx: v.x, vy: v.y };
     });
     const onBlocks = blockSolid(blocks);
     let solid = onBlocks;
@@ -1783,6 +1790,10 @@ function tick(frameDt) {
 
 let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
+// The first few seconds after starting (or coming back to the tab) are always a bit rough:
+// shaders compiling, the first zone building, the browser warming up. Frame timing isn't judged
+// until that's over, or a slow start would lower the resolution and the frame rate for nothing.
+let settleUntil = performance.now() + 3000;
 const recentDt = [];
 function watchFrameRate(rawDt) {
     // Learn the screen's own pace first (120, 60, or 30 in Low Power Mode), so a phone capped
@@ -1819,7 +1830,7 @@ function pace(now, workMs) {
     else if (targetFps === 30 && work < 6 && missed < 0.05) paceWindows = paceWindows < 0 ? paceWindows - 1 : -1;
     else paceWindows = 0;
     if (paceWindows >= 2) { targetFps = 30; paceWindows = 0; }          // two rough seconds: settle at 30
-    if (paceWindows <= -10) { targetFps = 60; paceWindows = 0; }        // ~20 easy seconds: try 60 again
+    if (paceWindows <= -4) { targetFps = 60; paceWindows = 0; }         // ~8 easy seconds: try 60 again
     paceFrames = paceMissed = paceWork = 0;
 }
 for (const type of ['pointerdown', 'pointermove', 'keydown', 'wheel']) {
@@ -1832,7 +1843,7 @@ function frame(now) {
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
     last = now;
-    if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
+    if (!document.hidden && rawDt < 0.5 && now > settleUntil) watchFrameRate(rawDt);
     if (sim) {
         // Paused while the start screen or how-to is up: the board stays as it was.
         // (A new zone still slides into place, so the board behind the start screen is ready.)
@@ -1860,7 +1871,7 @@ function frame(now) {
         && now - lastInput > 400 && !crumbs.active();   // (while aiming the world only steps when worldSettling)
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
-    if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
+    if (!document.hidden && rawDt < 0.5 && now > settleUntil) pace(now, performance.now() - workStart);
     requestAnimationFrame(frame);
 }
 
@@ -2145,7 +2156,7 @@ $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
 const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
-document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else checkForUpdate(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else { checkForUpdate(); settleUntil = performance.now() + 2000; } });
 
 // Updates. A Home Screen app never reloads by itself, so whenever the game comes back to the
 // front we ask the server for the current build. If there's a newer one, we save and reload,
