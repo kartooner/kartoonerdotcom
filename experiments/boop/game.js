@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-34';
+const BUILD = '1.5-35';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -75,7 +75,7 @@ function fitCamera() {
     renderer.setSize(w, h);
     const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
     // A phone on its side is short: give the side HUD a narrower column so it fits too.
-    const hudW = h < 520 ? 140 : 200, hudGap = h < 520 ? 20 : 28;
+    const hudW = h < 520 ? 140 : 160, hudGap = h < 520 ? 16 : 20;      // the side column sits close to the board
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
     // the HUD in a column beside it and give the board the full height.
     const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
@@ -1689,8 +1689,11 @@ function gameOver() {
     $('over-result').textContent = `You reached depth ${d}.`;
     // One line of how the run went: blocks popped, and zones cleared under par if any.
     const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
-    $('over-stats').textContent = !popped ? '' : [`${popped} block${popped === 1 ? '' : 's'} popped`,
-        under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean).join(' · ');
+    const statParts = !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
+    $('over-stats').replaceChildren(...statParts.flatMap((t, i) => {     // each stat kept whole: the line breaks between them
+        const span = document.createElement('span'); span.textContent = t;
+        return [span];
+    }));
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
@@ -2177,9 +2180,9 @@ function showNewsLine() {
     let played = readBest() > 0 || Object.keys(readTips()).length > 0;
     try { played = played || !!localStorage.getItem(SAVE_KEY) || !!localStorage.getItem(RELAXED_SAVE_KEY); } catch { /* storage blocked */ }
     const fresh = played && readNewsSeen() !== WHATS_NEW[0].version && (!runStarted || fromSave);   // not on a mid-run pause
-    // The link beside Send feedback says what's new until it's been seen (no extra room needed).
+    // The What's new link gets a dot until the latest has been seen (same words either way).
     const link = $('btn-news');
-    link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>New in ${WHATS_NEW[0].version}` : "What's new";
+    link.innerHTML = fresh ? `<span class="new-dot" aria-hidden="true"></span>What's new` : "What's new";
     link.classList.toggle('fresh', fresh);
     // Where there's room (tablets, desktop), Boop says it too.
     const bubble = fresh && window.innerHeight >= NEWS_BUBBLE_MIN_H;
