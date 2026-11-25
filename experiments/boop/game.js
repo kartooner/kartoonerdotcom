@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-12';
+const BUILD = '1.5-13';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -626,15 +626,16 @@ function buildPropView(pr) {
             const block = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, gh / 2], round: 0.06, edge: 0.05, wob: 0.35, fill: NEUTRAL[themeName()], seed: pr.id + 11, margin: 0.1 });
             block.position.set((gx0 + gx1) / 2, -H + gh / 2, 0);
             v.greys.push(block);
-            const grass = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, 0.08], round: 0.04, edge: 0.04, wob: 0.5, fill: GOLF_GRASS, seed: pr.id + 12, margin: 0.08 });
-            grass.position.set((gx0 + gx1) / 2, gTop - 0.06, 0.02);
+            const grass = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, 0.11], round: 0.04, edge: 0.04, wob: 0.5, fill: GOLF_GRASS, seed: pr.id + 12, margin: 0.08 });
+            grass.position.set((gx0 + gx1) / 2, gTop - 0.08, 0.02);
             const cup = makeSketch({ kind: SHAPE.BOX, size: [pr.holeW / 2, 0.35], round: 0.05, role: 'edge', inkFill: true, wob: 0.3, seed: pr.id + 13, margin: 0.06 });
             cup.position.set(pr.hole[0], gTop - 0.35, 0.03);
             group.add(block, grass, cup);
         }
         const [hx, hy] = pr.hole;
-        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.035, 0.7], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx, hy + 0.7, 0.05);
+        // The flag stands in the hole: its pole runs down into the cup, so it's planted, not floating.
+        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.035, 1.0], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
+        pole.position.set(hx, hy + 0.4, 0.05);
         const flag = makeSketch({ kind: SHAPE.BOX, size: [0.24, 0.14], round: 0.02, edge: 0.04, wob: 0.4, fill: COLORS.mushroom, seed: pr.id + 2, margin: 0.08 });
         flag.position.set(hx + 0.26, hy + 1.24, 0.06);
         group.add(pole, flag);
@@ -919,9 +920,10 @@ function syncView(frameDt) {
     for (let i = booms.length - 1; i >= 0; i--) {
         const b = booms[i];
         b.t += frameDt;
-        const k = Math.min(1, b.t / 0.4), ease = 1 - (1 - k) ** 3;
-        b.ring.scale.setScalar(0.3 + (b.r - 0.3) * ease);
-        b.ring.material.uniforms.uAlpha.value = 1 - k;
+        const k = Math.max(0, Math.min(1, b.t / (b.dur ?? 0.4))), ease = 1 - (1 - k) ** 3;
+        const sc = 0.3 + (b.r - 0.3) * ease;
+        b.ring.scale.set(sc, b.flat ? sc * 0.22 : sc, 1);           // a ripple is a ring seen side-on: flat
+        b.ring.material.uniforms.uAlpha.value = b.t < 0 ? 0 : 1 - k;
         if (k >= 1) { discard(b.ring); booms.splice(i, 1); }
     }
     if (floaters.length || fadingBalls.length || fadingProps.length || booms.length) animating = true;
@@ -991,7 +993,17 @@ function consumeEvents() {
         if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
         if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2, 0.75);
         if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
-        if (e.t === 'splash') { addFloater('Splash!', e.x, e.y + 0.6); crumbs.spray([[e.x, e.y], [e.x - 0.25, e.y], [e.x + 0.25, e.y]], [GOLF_WATER[themeName()], 0xffffff, theme.edge]); }
+        if (e.t === 'splash') {
+            // Into the water: a few drops, and ripples spreading out along the surface.
+            crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
+            for (const [delay, r] of [[0, 0.9], [0.18, 1.3]]) {
+                const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.06, edge: 0, role: 'line', inkFill: true, wob: 0.6, seed: (e.x * 13 + delay * 50) | 0, margin: 0.12 });
+                ring.position.set(e.x, e.y, -0.005);      // over the water, behind the green
+                ring.scale.setScalar(0.001);
+                scene.add(ring);
+                booms.push({ ring, r, t: -delay, dur: 0.7, flat: true });
+            }
+        }
         if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
@@ -1025,6 +1037,7 @@ function playSound(e) {
     else if (e.t === 'gold') audio.clear();
     else if (e.t === 'catch' && e.n > 0) audio.ring();
     else if (e.t === 'sunk') audio.clear();
+    else if (e.t === 'splash') audio.plop();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();

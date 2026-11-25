@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-12');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-13');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -193,7 +193,8 @@ const DOMINO_KNOCK = 2.5;
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
 const GOLF_GREEN_W = 2.6, GOLF_GREEN_H = 3, GOLF_WATER_H = 0.6;   // the raised green's width and height; the water's depth
-const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
+const GOLF_HOLE = 0.26;
+const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades                // half the hole's width: a ball fits, rolling too fast it skips over
 const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
 // Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
 const PACHINKO_POCKETS = [1, 0, 0, 0, 3, 0, 0, 0, 1];   // one per column, left to right
@@ -2157,8 +2158,12 @@ export class Sim {
             return;
         }
         if (b.t === 'water') {
-            this.events.push({ t: 'splash', x: p.x, y: -H + 0.6 });
-            this.removeBall(a.body);
+            // In the water: it splashes, floats up to the surface, bobs a moment and fades (updateBalls).
+            if (ball && !ball.floating) {
+                ball.floating = 1;
+                body.setGravityScale(0, true);
+                this.events.push({ t: 'splash', x: p.x, y: -H + GOLF_WATER_H });
+            }
             return;
         }
         if (b.t === 'hoop') {
@@ -2280,6 +2285,15 @@ export class Sim {
             ball.age += 1;
             ball.idle += 1;
             const drop = STAGES[s.bonus?.kind]?.ball;
+            if (ball.floating) {
+                // Afloat: drawn up to just under the surface, bobbing, drifting to a stop, then gone.
+                ball.floating += 1;
+                const v = body.linvel(), surface = -H + GOLF_WATER_H - 0.06 + 0.035 * Math.sin(ball.floating * 0.09);
+                body.setLinvel({ x: v.x * 0.94, y: (surface - p.y) * 6 }, true);
+                body.setAngvel(body.angvel() * 0.9, true);
+                if (ball.floating > FLOAT_STEPS) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); }
+                continue;
+            }
             if (drop) {
                 ball.idle = 0;                   // no fade: a falling ball ends in a pocket, a hole, or at rest
                 if (ball.age > 30 * 120) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); continue; }

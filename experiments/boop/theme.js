@@ -1,5 +1,5 @@
 // Boop: colours. Light and dark palettes, and the fixed colours of props.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-12');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-13');   // build stamp: game.js checks every file matches
 
 // Light and dark palettes. "line" is for marks drawn on the field (launcher,
 // guide, pickups); "edge" is the outline on blocks, props and balls.
