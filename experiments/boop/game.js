@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-60';
+const BUILD = '1.5-61';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1538,7 +1538,8 @@ function addJar() {
     placeJar(Math.random() < 0.35);
 }
 function placeJar(big) {
-    if (!big) {
+    const testing = WATER_MODE === 'often';        // trying it out: up high, so the water has the whole board to run down
+    if (!big && !testing) {
         const singles = Object.values(sim.s.blocks).filter((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
         if (singles.length) { singles[Math.floor(Math.random() * singles.length)].jar = true; return; }
     }
@@ -1558,13 +1559,15 @@ function placeJar(big) {
             for (const l of pr.links ?? []) { const t = sim.world.getRigidBody(l.body).translation(); mark(t.x, t.y, 0); }   // a vine, link by link
         }
         const open = [];
-        for (let c = 0; c <= W - n; c++) for (let r = 4; r <= 13 - n; r++) {
+        for (let c = 0; c <= W - n; c++) for (let r = testing ? 2 : 4; r <= 13 - n; r++) {
             let free = true;
             for (let dc = -1; dc <= n && free; dc++) for (let dr = -1; dr <= n && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
             if (free) open.push([c, r]);
         }
         if (!open.length) { if (big) placeJar(false); return; }   // no room for a big one: a small one, then
-        const [c, r] = open[Math.floor(Math.random() * open.length)];
+        const top = Math.min(...open.map(([, r]) => r));
+        const pick = testing ? open.filter(([, r]) => r <= top + 1) : open;
+        const [c, r] = pick[Math.floor(Math.random() * pick.length)];
         const b = sim.addBlock(big ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]], big ? 5 : 2);
         b.jar = true;
         sim.s.zoneHp0 += b.hp;
