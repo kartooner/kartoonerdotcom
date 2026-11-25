@@ -772,7 +772,11 @@ function consumeEvents() {
             // A streak: from the third block popped in one turn, a little "×3", "×4"...
             if (phase === 'play' && ++turnPops >= 3) addFloater(`×${turnPops}`, e.x, e.y + 0.45, Math.min(1.15, 0.85 + 0.05 * (turnPops - 3)));
             if (v?.big) stopFor(0.045);            // a big block going is worth a beat
-            if (water && jarIds.has(e.id)) { water.spill(e.x, e.y, 200); jarIds.delete(e.id); }
+            if (water && jarIds.has(e.id)) {
+                water.spill(e.x, e.y, 200);
+                crumbs.spray([[e.x, e.y + 0.3], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y - 0.2]], [0xffffff, GOLF_WATER[themeName()], theme.edge]);   // glass
+                jarIds.delete(e.id);
+            }
             if (v) {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
@@ -1492,9 +1496,10 @@ function addJar() {
     if (sim.s.bonus) return;
     const ok = Object.values(sim.s.blocks).filter((b) => !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
     if (!ok.length) return;
-    const fewest = Math.min(...ok.map((b) => b.cells.length));
-    const pick = ok.filter((b) => b.cells.length === fewest);
-    pick[Math.floor(Math.random() * pick.length)].jar = true;
+    // Smallest first; now and then two, so the pools add up.
+    ok.sort((a, b) => a.cells.length - b.cells.length || Math.random() - 0.5);
+    const jars = Math.random() < 0.4 ? 2 : 1;
+    for (const b of ok.slice(0, jars)) b.jar = true;
 }
 // The water, each frame: flow round the blocks where they are now.
 function updateWater(dt) {
@@ -1813,7 +1818,7 @@ function applyTheme(name) {
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
     propArt.setTheme(name);
-    water?.setColors(JAR[name], theme.edge);
+    water?.setColors(GOLF_WATER[name], theme.edge);
     for (const v of blockViews.values()) if (v.jar) v.mesh.material.uniforms.uFill.value.setHex(JAR[name]);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);

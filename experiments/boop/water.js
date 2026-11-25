@@ -16,7 +16,8 @@ const SPAN = 0.42;             // how far drops feel each other
 const REST = 1.2, STIFF = 1000, NEAR = 2000;   // how tightly they pack, and how hard they push back
 const GRAVITY = -26;
 const STEPS = 3;               // sub-steps a frame, so fast drops don't tunnel through thin blocks
-export const MAX_DROPS = 360;
+export const MAX_DROPS = 520;
+const SLIDE = 7;               // how hard water on top of a block runs off toward the nearer edge
 
 // ---------- the flow ----------
 
@@ -37,7 +38,7 @@ export class WaterSim {
             for (let k = 0; k < 3 && p.left > 0 && this.n < MAX_DROPS; k++, p.left--) {
                 const i = this.n++;
                 this.x[i] = p.x + (Math.random() - 0.5) * 0.5; this.y[i] = p.y + (Math.random() - 0.5) * 0.3;
-                this.vx[i] = (Math.random() - 0.5) * 3; this.vy[i] = Math.random() * 1.5 - 0.5;
+                this.vx[i] = (Math.random() - 0.5) * 1.6; this.vy[i] = Math.random() * 1.2 - 0.8;
             }
         }
         this.pour = this.pour.filter((p) => p.left > 0 && this.n < MAX_DROPS);
@@ -64,10 +65,15 @@ export class WaterSim {
             if (y[i] < -H + R) y[i] = -H + R; else if (y[i] > -R) y[i] = -R;
             const out = solid(x[i], y[i]);
             if (out) { x[i] = out[0]; y[i] = out[1]; }
-            const nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
-            // A little drag where it was pushed (against walls and blocks), so it slides, not skates.
-            const pushed = out || x[i] === R || x[i] === W - R || y[i] === -H + R;
-            vx[i] = pushed ? nvx * 0.96 : nvx; vy[i] = nvy;
+            let nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
+            if (out?.[2] != null) {
+                // Sitting on top of a block: it runs off toward the nearer edge instead of
+                // staying put (a flat top is never quite flat).
+                nvx += out[2] * SLIDE * dt; nvy += out[3] * SLIDE * dt;
+            } else if (out || x[i] === R || x[i] === W - R) {
+                nvx *= 0.97; nvy *= 0.97;          // a little drag down the sides of things
+            }
+            vx[i] = nvx; vy[i] = nvy;
         }
     }
     relax(dt) {
@@ -144,12 +150,15 @@ export function blockSolid(blocks) {
                 // Push along x or y, whichever is shorter, unless a neighbour cell is that way.
                 const sx = lx >= ccx ? 1 : -1, sy = ly >= ccy ? 1 : -1;
                 const openX = !b.set.has((cx + sx) * 64 + cy), openY = !b.set.has(cx * 64 + cy + sy);
-                if (openX && ix < bestD) { bestD = ix; best = [lx + sx * ix, ly]; }
-                if (openY && iy < bestD) { bestD = iy; best = [lx, ly + sy * iy]; }
+                if (openX && ix < bestD) { bestD = ix; best = [lx + sx * ix, ly, 0]; }
+                if (openY && iy < bestD) { bestD = iy; best = [lx, ly + sy * iy, sy]; }
             }
             if (!best) continue;
             const wx = best[0] * b.k, wy = best[1] * b.k;
-            return [b.x + wx * c - wy * s, b.y + wx * s + wy * c];
+            const at = [b.x + wx * c - wy * s, b.y + wx * s + wy * c];
+            // On top: which way it runs off, along the block's top (away from its middle).
+            if (best[2] > 0 && c > 0.5) { const d = Math.abs(lx) < 0.05 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(lx); at.push(d * c, d * s); }
+            return at;
         }
         return null;
     };
