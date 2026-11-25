@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { W, H } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-49'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-50'];
 
 const R = 0.13;                // how close a drop gets to a wall or block
 const SPAN = 0.42;             // how far drops feel each other
@@ -224,6 +224,7 @@ export function makeWater(scene, renderer) {
                     float ink = 1.0 - smoothstep(0.0, 0.1, f - T);                       // the edge
                     col = mix(col, uInk, ink * 0.85);
                     gl_FragColor = vec4(col, smoothstep(T - 0.08, T - 0.02, f) * 0.92);
+                    #include <colorspace_fragment>
                 }`,
         }),
     );
