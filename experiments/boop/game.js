@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-62';
+const BUILD = '1.5-63';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1574,6 +1574,32 @@ function placeJar(big) {
         sim.s.zoneHp0 += b.hp;
     }
 }
+// Props (windmills, mushrooms, vines, bombs, hoops, pegs...), for the water: whatever their shape,
+// the physics engine finds the nearest bit of one. A drop inside it, or touching it, goes out
+// to its surface, and a moving prop (a spinning windmill) carries the water along.
+const PROP_QUERY = ((1 << 16) | 64);       // as a ball (1) looking for props (64): see G in sim.js
+const atPoint = { x: 0, y: 0 };
+// A drop far from every prop can't reach one for a few steps, so it skips asking (a drop moves
+// at most about 0.1 a step; a spinning prop's tip a little more). Saves most of the lookups.
+const propSkip = new Uint8Array(512);
+function propSolid(x, y, i = -1) {
+    if (i >= 0 && propSkip[i] > 0) { propSkip[i]--; return null; }
+    atPoint.x = x; atPoint.y = y;
+    const hit = sim.world.projectPoint(atPoint, false, RAPIER.QueryFilterFlags.EXCLUDE_SENSORS, PROP_QUERY);
+    if (!hit) { if (i >= 0) propSkip[i] = 20; return null; }
+    const px = hit.point.x, py = hit.point.y, dx = x - px, dy = y - py, d = Math.hypot(dx, dy);
+    if (!hit.isInside && d > 0.04) { if (i >= 0) propSkip[i] = Math.min(20, Math.floor((d - 0.04) / 0.16)); return null; }
+    if (d < 1e-6) return null;
+    const s = hit.isInside ? -1 : 1, nx = (dx / d) * s, ny = (dy / d) * s;   // out of the prop
+    const out = { x: px + nx * 0.04, y: py + ny * 0.04, slide: null, vx: 0, vy: 0 };
+    const body = hit.collider.parent();
+    if (body && !body.isFixed()) {
+        const t = body.translation(), v = body.linvel(), w = body.angvel();
+        const vx = v.x - w * (out.y - t.y), vy = v.y + w * (out.x - t.x);
+        if (vx * vx + vy * vy > 0.25) { out.vx = vx; out.vy = vy; }
+    }
+    return out;
+}
 // The golf stage's ledges, for the water: [[x, y, hx, hy], ...]. A drop inside one goes out the top.
 function rectSolid(rects, x, y) {
     for (const [cx, cy, hx, hy] of rects) {
@@ -1635,11 +1661,12 @@ function updateWater(dt) {
         return { id: b.body, x: t.x, y: t.y, vx: v.x, vy: v.y };
     });
     const onBlocks = blockSolid(blocks);
-    let solid = onBlocks;
+    const anyProps = Object.keys(sim.s.props).length > 0;
+    let solid = anyProps ? (x, y, i) => onBlocks(x, y) ?? propSolid(x, y, i) : onBlocks;
     if (golfPool) {
         // The golf stage: the hill and the ledges are solid too.
         const { ground, rects } = golfPool;
-        solid = (x, y) => onBlocks(x, y) ?? ground(x, y) ?? rectSolid(rects, x, y);
+        solid = (x, y, i) => onBlocks(x, y) ?? ground(x, y) ?? rectSolid(rects, x, y) ?? propSolid(x, y, i);
         water.setOffset(zoneOffset);
     }
     updateTipping(dt);

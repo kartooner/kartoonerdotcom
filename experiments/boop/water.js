@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-62'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-63'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
@@ -85,7 +85,7 @@ export class WaterSim {
         for (let i = 0; i < n; i++) {
             if (x[i] < R) x[i] = R; else if (x[i] > W - R) x[i] = W - R;
             if (y[i] < -H + R) y[i] = -H + R; else if (y[i] > -R) y[i] = -R;
-            const hit = solid(x[i], y[i]);
+            const hit = solid(x[i], y[i], i);
             if (hit) { x[i] = hit.x; y[i] = hit.y; }
             let nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
             if (hit && (hit.vx || hit.vy)) { nvx = nvx * 0.4 + hit.vx * 1.1; nvy = nvy * 0.4 + hit.vy * 1.1; }   // a moving block shoves the water along
