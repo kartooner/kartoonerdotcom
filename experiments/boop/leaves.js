@@ -6,7 +6,7 @@
 // their own, so a still board can still rest at a low frame rate.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-14');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-15');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -32,6 +32,11 @@ export function makeLeafPiles(scene, season, floorY) {
 
     let piles = new Map();     // block id → { leaves: [{ lx, ly, a, size, color, wx, wy }], a0 }
     let falling = [], floor = [];
+    // Water (the golf stage): while it's there, the floor leaves float on its surface in a single
+    // loose layer, bobbing and drifting, instead of heaping on the floor. null = no water.
+    let water = null, time = 0;
+    const level = () => water ?? floorY;
+    const heapAt = (x) => floorY + 0.07 * SIZE + Math.min(0.6, floor.filter((l) => Math.abs(l.x - x) < 0.3).length * 0.04 / DENSITY);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3();
     const zAxis = new THREE.Vector3(0, 0, 1);
     const pick = () => new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
@@ -105,13 +110,24 @@ export function makeLeafPiles(scene, season, floorY) {
             f.vx *= 1 - dt * 1.2;
             f.x += f.vx * dt; f.y += f.vy * dt; if (!calm?.matches) f.a += f.va * dt;
             f.x = Math.max(0.1, Math.min(8.9, f.x));
-            // Land on the heap: a little higher where more leaves have gathered.
-            const near = floor.filter((l) => Math.abs(l.x - f.x) < 0.3).length;
-            const rest = floorY + 0.07 * SIZE + Math.min(0.6, near * 0.04 / DENSITY);
+            // Land on the heap (a little higher where more leaves have gathered), or on the water.
+            const heap = heapAt(f.x), off = (Math.random() - 0.5) * 0.05;
+            const rest = water != null ? water + off : heap;
             if (f.y <= rest) {
                 falling.splice(i, 1);
-                floor.push({ x: f.x, y: rest, a: (Math.random() - 0.5) * 0.6, size: f.size, color: f.color });
+                floor.push({ x: f.x, y: rest, heapY: heap, off, vx: water != null ? f.vx * 0.3 : 0, bob: water != null ? 0.6 : 0, a: (Math.random() - 0.5) * 0.6, size: f.size, color: f.color });
                 if (floor.length > floorMax) floor.shift();
+            }
+        }
+        // Floor leaves: on water they rise to the surface, drift and bob; without it, they settle back on the heap.
+        time += dt;
+        for (const l of floor) {
+            const target = water != null ? water + (l.off ?? 0) : (l.heapY ?? l.y);
+            if (Math.abs(target - l.y) > 0.002) l.y += (target - l.y) * Math.min(1, dt * 3);
+            if (water != null && !calm?.matches) {
+                l.x = Math.max(0.1, Math.min(8.9, l.x + (l.vx ?? 0) * dt));
+                l.vx = (l.vx ?? 0) * (1 - Math.min(1, dt * 1.5));
+                l.bob = Math.max(0, (l.bob ?? 0) - dt * 0.8);
             }
         }
         let n = 0;
@@ -123,7 +139,11 @@ export function makeLeafPiles(scene, season, floorY) {
         };
         for (const pile of piles.values()) for (const l of pile.leaves) put(l.wx, l.wy, l.a, l.size, l.color);
         for (const f of falling) put(f.x, f.y, f.a, f.size, f.color);
-        for (const l of floor) put(l.x, l.y, l.a, l.size, l.color);
+        for (const l of floor) {
+            if (water == null || calm?.matches) { put(l.x, l.y, l.a, l.size, l.color); continue; }
+            const w = Math.sin(time * 2.2 + l.x * 2.7), amp = 1 + (l.bob ?? 0) * 3;
+            put(l.x, l.y + w * 0.022 * amp, l.a + w * 0.12 * amp, l.size, l.color);
+        }
         mesh.count = n;
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -132,7 +152,7 @@ export function makeLeafPiles(scene, season, floorY) {
     // Kick floor leaves within reach of (x, y) back into the air. (vx, vy): what's pushing them.
     const KICK_REACH = 0.45, KICK_MAX = 4;
     function kick(x, y, reach, vx, vy, power) {
-        if (y > floorY + reach + 0.7) return;           // nowhere near the floor
+        if (y > level() + reach + 0.7) return;           // nowhere near the floor (or the water)
         for (let i = floor.length - 1; i >= 0; i--) {
             const l = floor[i], dx = l.x - x, dy = l.y - y, d = Math.hypot(dx, dy);
             if (d > reach) continue;
@@ -152,5 +172,25 @@ export function makeLeafPiles(scene, season, floorY) {
 
     function clear() { piles = new Map(); falling = []; floor = []; mesh.count = 0; }
 
-    return { seed, knock, update, stir, blast, clear, active: () => falling.length > 0 };
+    // The golf stage's water: its surface y, or null when it's gone. Leaves on the floor rise to
+    // it (and sink back to the heap after).
+    function setWater(y) {
+        water = y;
+        for (const l of floor) { l.heapY ??= l.y; l.off ??= (Math.random() - 0.5) * 0.05; }
+    }
+    // Something plopped in at x: leaves right there jump, the rest are pushed out with the ripple.
+    function ripple(x, r) {
+        if (water == null) return;
+        kick(x, water, 0.35, 0, 2, 0.7);
+        for (const l of floor) {
+            const d = Math.abs(l.x - x);
+            if (d > r) continue;
+            l.vx = (l.vx ?? 0) + (l.x >= x ? 1 : -1) * 1.3 * (1 - d / r);
+            l.bob = 1;
+        }
+    }
+
+    // Floating leaves keep moving (bobbing) as long as there's water with leaves on it.
+    return { seed, knock, update, stir, blast, clear, setWater, ripple,
+        active: () => falling.length > 0 || (water != null && floor.length > 0 && !calm?.matches) };
 }

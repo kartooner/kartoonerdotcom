@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-14';
+const BUILD = '1.5-15';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -633,6 +633,7 @@ function buildPropView(pr) {
             v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
             v.water.position.set(W / 2, -H + pr.water / 2, -0.01);
             group.add(v.water);
+            leafPiles?.setWater(-H + pr.water - 0.03);          // leaves float on it
         }
         if (pr.green) {
             // The green: a thin strip of grass with an oval hole in it, and the round pocket hanging
@@ -862,6 +863,7 @@ function syncView(frameDt) {
     for (const [id, v] of propViews) {
         if (s.props[id]) continue;
         propViews.delete(id);
+        if (v.water) leafPiles?.setWater(null);           // the golf stage is over: leaves sink back to the floor
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
         else discard(v.group);
@@ -1015,6 +1017,7 @@ function consumeEvents() {
         if (e.t === 'splash') {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
+            leafPiles?.ripple(e.x, 1.4);
             for (const [delay, r] of [[0, 0.9], [0.18, 1.3]]) {
                 const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.06, edge: 0, role: 'line', inkFill: true, wob: 0.6, seed: (e.x * 13 + delay * 50) | 0, margin: 0.12 });
                 ring.position.set(e.x, e.y, -0.005);      // over the water, behind the green
@@ -1816,6 +1819,7 @@ function restart(saved = null) {
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
     leafPiles?.clear();
+    leafPiles?.setWater(null);
     keyAim = false;
     if (saved) {
         sim = saved;
