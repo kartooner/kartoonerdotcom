@@ -6,7 +6,7 @@
 // - only a few sounds at once, hits on the same block a moment apart merge, a soft limiter,
 //   low volume, and silence while paused or hidden.
 // Off by default. Nothing is created until sound is turned on (browsers need a tap first).
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-11');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
 
 const SCALE = [0, 2, 4, 7, 9];            // major pentatonic, in semitones
 const ROOT = 392;                         // G4: warm, not shrill
@@ -127,6 +127,7 @@ export function makeAudio() {
             lastJelly = ctx.currentTime;
             tone({ f: note(-3), type: 'sine', dur: 0.18, vol: 0.18, glide: 0.85 });
         },
+        plop() { tone({ f: note(2), type: 'sine', dur: 0.12, vol: 0.2, glide: 1.9 }); puff({ dur: 0.08, vol: 0.025, from: 1200, to: 500, type: 'lowpass' }); },    // into the water
         boing() {
             if (!live() || ctx.currentTime - lastBoing < 0.1) return;
             lastBoing = ctx.currentTime;

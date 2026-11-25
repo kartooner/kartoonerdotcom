@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-11';
+const BUILD = '1.5-21';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -501,6 +501,53 @@ const BOMB_LOOK = {
     dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
 };
 const bombLook = () => BOMB_LOOK[themeName()];
+const GOLF_WATER = { light: 0x9ccfe4, dark: 0x2e5a70 };     // the golf stage's water
+const GOLF_POCKET = { light: 0x5d5853, dark: 0x3b3632 };    // ...the pocket under its hole
+// A notched flag (a swallowtail), filled orange with an ink outline, its top-left corner at (x, y).
+function notchedFlag(x, y) {
+    const w = 0.56, h = 0.34, notch = 0.16;
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0); shape.lineTo(w, -0.02); shape.lineTo(w - notch, -h / 2); shape.lineTo(w, -h + 0.02); shape.lineTo(0, -h); shape.closePath();
+    const g = new THREE.Group();
+    const fill = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color: COLORS.mushroom, transparent: true, depthWrite: false }));
+    const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(shape.getPoints()), outlineMat);
+    fill.renderOrder = 2; edge.renderOrder = 3;
+    g.add(fill, edge);
+    g.position.set(x, y, 0.06);
+    return g;
+}
+const GOLF_GRASS = 0x6fae4f;
+// A filled shape from a list of points, with an ink outline (or none): for the golf hill.
+function filledShape(pts, color, z, outline = true) {
+    const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+    const fill = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false }));
+    fill.renderOrder = 1;
+    const group = new THREE.Group();
+    group.add(fill);
+    if (outline) {
+        // Inked twice, each a little off, like a crayon going round it.
+        for (const [dx, dy, k] of [[0, 0, 0], [0.012, -0.01, 1]]) {
+            const p2 = pts.map(([x, y], i) => new THREE.Vector3(x + dx + Math.sin(i * 3.1 + k * 5) * 0.012, y + dy + Math.cos(i * 2.3 + k * 7) * 0.012, 0.001));
+            const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(p2), outlineMat);
+            edge.renderOrder = 2;
+            group.add(edge);
+        }
+    }
+    group.position.z = z;
+    return { group, fill };
+}
+const GOLF_RIPPLE = { light: 0x557c8c, dark: 0x9cc6d8 };    // rings on the water: a darker (or, at night, lighter) blue-grey
+// A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
+// behind a floating ball and round in front of it. delay: seconds before it starts.
+function waterRing(x, y, r, dur, delay = 0) {
+    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.9, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
+    ring.position.set(x, y, 0.045);
+    ring.scale.setScalar(0.001);
+    scene.add(ring);
+    booms.push({ ring, r, t: -delay, dur, flat: true });
+}
+const rippleT = new Map();       // floating ball → time since its last ring
+const GOLF_ISLAND = { light: 0x4a8a58, dark: 0x2f6040 };    // the hill                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -612,12 +659,31 @@ function buildPropView(pr) {
             group.add(slab);
             v.greys.push(slab);
         });
+        if (pr.water) {
+            // The water the green stands in: a blue band along the floor, under everything else.
+            v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
+            v.water.position.set(W / 2, -H + pr.water / 2, 0.04);     // in front of the hill's foot, see-through
+            v.water.material.uniforms.uAlpha.value = 0.72;
+            group.add(v.water);
+            leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
+        }
+        if (pr.outline) {
+            // The hill: a green dome, wobbled a touch and inked like crayon, standing in the water
+            // (which is drawn see-through in front of its foot). The hole is a dark oval on top.
+            const wob = (pts, amt, seed) => pts.map(([x, y], i) => [x + Math.sin(i * 2.3 + seed) * amt, y + Math.cos(i * 1.7 + seed) * amt]);
+            const dome = wob(pr.outline, 0.016, pr.id).map(([x, y]) => [Math.min(W, Math.max(0, x)), Math.max(-H, y)]);   // kept inside the board
+            const body = filledShape(dome, GOLF_ISLAND[themeName()], 0);
+            v.island = body.fill;
+            const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [pr.holeW / 2 + 0.05], role: 'edge', inkFill: true, wob: 0.5, seed: pr.id + 15, margin: 0.08 });
+            rim.scale.set(1, 0.36, 1);
+            rim.position.set(pr.hole[0], pr.hole[1] - 0.1, 0.03);         // set down into the hill
+            group.add(body.group, rim);
+        }
         const [hx, hy] = pr.hole;
-        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.035, 0.7], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx, hy + 0.7, 0.05);
-        const flag = makeSketch({ kind: SHAPE.BOX, size: [0.24, 0.14], round: 0.02, edge: 0.04, wob: 0.4, fill: COLORS.mushroom, seed: pr.id + 2, margin: 0.08 });
-        flag.position.set(hx + 0.26, hy + 1.24, 0.06);
-        group.add(pole, flag);
+        // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
+        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.045, 0.78], round: 0.02, role: 'line', inkFill: true, wob: 0.4, seed: pr.id + 1, margin: 0.06 });
+        pole.position.set(hx, hy + 0.66, 0.035);                  // standing in the hole
+        group.add(pole, notchedFlag(hx + 0.02, hy + 1.42));
         scene.add(group);
         propViews.set(pr.id, v);
         return v;
@@ -802,6 +868,16 @@ function syncView(frameDt) {
         v.group.rotation.z = body.rotation();
     }
 
+    // A ball afloat in the golf water sends out a ring every half second while it bobs.
+    for (const b of s.balls) {
+        if (!b.floating) continue;
+        const t = (rippleT.get(b.body) ?? 0.25) + frameDt;
+        if (t < 0.55) { rippleT.set(b.body, t); continue; }
+        rippleT.set(b.body, 0);
+        const p = sim.world.getRigidBody(b.body).translation();
+        waterRing(p.x, p.y + zoneOffset - 0.12, 1.1, 1.1);        // from the waterline, down at the bottom of the ball
+    }
+    if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
         if (s.balls.length) leafPiles.stir(s.balls.map((b) => {
             const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
@@ -822,6 +898,7 @@ function syncView(frameDt) {
     for (const [id, v] of propViews) {
         if (s.props[id]) continue;
         propViews.delete(id);
+        if (v.water) leafPiles?.setWater(null);           // the golf stage is over: leaves sink back to the floor
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
         else discard(v.group);
@@ -899,9 +976,10 @@ function syncView(frameDt) {
     for (let i = booms.length - 1; i >= 0; i--) {
         const b = booms[i];
         b.t += frameDt;
-        const k = Math.min(1, b.t / 0.4), ease = 1 - (1 - k) ** 3;
-        b.ring.scale.setScalar(0.3 + (b.r - 0.3) * ease);
-        b.ring.material.uniforms.uAlpha.value = 1 - k;
+        const k = Math.max(0, Math.min(1, b.t / (b.dur ?? 0.4))), ease = 1 - (1 - k) ** 3;
+        const sc = 0.3 + (b.r - 0.3) * ease;
+        b.ring.scale.set(sc, b.flat ? sc * 0.3 : sc, 1);            // a ripple is a ring seen side-on: flat
+        b.ring.material.uniforms.uAlpha.value = b.t < 0 ? 0 : 1 - k;
         if (k >= 1) { discard(b.ring); booms.splice(i, 1); }
     }
     if (floaters.length || fadingBalls.length || fadingProps.length || booms.length) animating = true;
@@ -969,8 +1047,14 @@ function consumeEvents() {
         }
         if (leafPiles && (e.t === 'jolt' || e.t === 'hit' || e.t === 'snap' || e.t === 'pop' || (e.t === 'contact' && e.with === 'block'))) leafPiles.knock(e.id);
         if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
-        if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2, 0.75);
+        if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2.9, 0.75);
         if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
+        if (e.t === 'splash') {
+            // Into the water: a few drops, and ripples spreading out along the surface.
+            crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
+            leafPiles?.ripple(e.x, 1.4);
+            for (const [delay, r] of [[0, 1.0], [0.16, 1.35], [0.32, 1.7]]) waterRing(e.x, e.y, r, 0.9, delay);
+        }
         if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
@@ -1004,6 +1088,7 @@ function playSound(e) {
     else if (e.t === 'gold') audio.clear();
     else if (e.t === 'catch' && e.n > 0) audio.ring();
     else if (e.t === 'sunk') audio.clear();
+    else if (e.t === 'splash') audio.plop();
     else if (e.t === 'jelly') audio.jelly();
     else if (e.t === 'vinesnap') audio.snap();
     else if (e.t === 'boom') audio.boom();
@@ -1763,6 +1848,7 @@ function restart(saved = null) {
     blockViews.clear(); pickupViews.clear(); propViews.clear(); ballViews.clear();
     crumbs.clear();
     leafPiles?.clear();
+    leafPiles?.setWater(null);
     keyAim = false;
     if (saved) {
         sim = saved;
@@ -1980,6 +2066,8 @@ function applyTheme(name) {
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+    for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
+    for (const v of propViews.values()) { v.pocket?.material.color.setHex(GOLF_POCKET[name]); v.island?.material.color.setHex(GOLF_ISLAND[name]); }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
