@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-35">
+<html lang="en" data-build="1.5-36">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -617,6 +617,9 @@
         .close-x svg { width: 20px; height: 20px; }
         .close-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
         body.howto-open #back, body.howto-open #theme-toggle, body.howto-open #btn-open-menu { display: none; }
+        /* While you play, only Menu sits under the board (Games is on the menu screens; dark mode is in Settings). */
+        body.playing #back { display: none; }
+        #theme-toggle { display: none !important; }
         /* "Boop!" sits centred between the two links while you play. */
         #brand {
             display: none;
@@ -713,7 +716,7 @@
     <div id="hud" aria-live="polite">
         <div class="stat"><span>Depth</span><b id="hud-depth">1</b></div>
         <div class="stat stat-main"><span>Shots left</span><b id="hud-shots">22</b><small id="hud-volley"></small></div>
-        <div class="stat stat-par" id="hud-par-box"><span>This zone / par</span><b id="hud-par">0/5</b></div>
+        <div class="stat stat-par" id="hud-par-box"><span>Par</span><b id="hud-par">0/5</b></div>
         <div id="progress" role="progressbar" aria-label="Zone cleared"><div id="progress-fill"></div></div>
     </div>
     <div id="tipshade" hidden></div>
@@ -764,6 +767,10 @@
             <div class="setting">
                 <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Easier zones, endless shots.</span></div>
                 <button class="switch" id="relaxed-switch" type="button" role="switch" aria-checked="false" aria-labelledby="relaxed-label"></button>
+            </div>
+            <div class="setting">
+                <div class="setting-label" id="theme-label"><b>Dark mode</b></div>
+                <button class="switch" id="theme-switch" type="button" role="switch" aria-checked="false" aria-labelledby="theme-label"></button>
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-settings-play" type="button">Play</button>
@@ -816,13 +823,13 @@
             <div class="mini-hud" aria-hidden="true">
                 <div><span>Depth</span><b>3</b></div>
                 <div class="mid"><span>Shots left</span><b>18</b></div>
-                <div class="end"><span>This zone / par</span><b>2/6</b></div>
+                <div class="end"><span>Par</span><b>2/6</b></div>
                 <i class="bar"><i></i></i>
             </div>
             <dl class="legend">
                 <div><dt>Depth</dt><dd>How far down you are. It never ends.</dd></div>
                 <div><dt>Shots left</dt><dd>One per launch. When they run out, the run is over.</dd></div>
-                <div><dt>This zone / par</dt><dd>Shots used here, against the zone's target.</dd></div>
+                <div><dt>Par</dt><dd>Shots used in this zone, against its target.</dd></div>
                 <div><dt>The bar</dt><dd>How much of the zone you've cleared.</dd></div>
             </dl>
 
@@ -892,35 +899,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-35",
-                "./zones.js": "./zones.js?v=1.5-35",
-                "./blockshader.js": "./blockshader.js?v=1.5-35",
-                "./sketch.js": "./sketch.js?v=1.5-35",
-                "./balls.js": "./balls.js?v=1.5-35",
-                "./labels.js": "./labels.js?v=1.5-35",
-                "./audio.js": "./audio.js?v=1.5-35",
-                "./theme.js": "./theme.js?v=1.5-35",
-                "./crumbs.js": "./crumbs.js?v=1.5-35",
-                "./buddy.js": "./buddy.js?v=1.5-35",
-                "./season.js": "./season.js?v=1.5-35",
-                "./leaves.js": "./leaves.js?v=1.5-35"
+                "./sim.js": "./sim.js?v=1.5-36",
+                "./zones.js": "./zones.js?v=1.5-36",
+                "./blockshader.js": "./blockshader.js?v=1.5-36",
+                "./sketch.js": "./sketch.js?v=1.5-36",
+                "./balls.js": "./balls.js?v=1.5-36",
+                "./labels.js": "./labels.js?v=1.5-36",
+                "./audio.js": "./audio.js?v=1.5-36",
+                "./theme.js": "./theme.js?v=1.5-36",
+                "./crumbs.js": "./crumbs.js?v=1.5-36",
+                "./buddy.js": "./buddy.js?v=1.5-36",
+                "./season.js": "./season.js?v=1.5-36",
+                "./leaves.js": "./leaves.js?v=1.5-36"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-35">
-    <link rel="modulepreload" href="./sim.js?v=1.5-35">
-    <link rel="modulepreload" href="./zones.js?v=1.5-35">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-35">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-35">
-    <link rel="modulepreload" href="./balls.js?v=1.5-35">
-    <link rel="modulepreload" href="./labels.js?v=1.5-35">
-    <link rel="modulepreload" href="./audio.js?v=1.5-35">
-    <link rel="modulepreload" href="./theme.js?v=1.5-35">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-35">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-35">
-    <link rel="modulepreload" href="./season.js?v=1.5-35">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-35">
+    <link rel="modulepreload" href="./game.js?v=1.5-36">
+    <link rel="modulepreload" href="./sim.js?v=1.5-36">
+    <link rel="modulepreload" href="./zones.js?v=1.5-36">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-36">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-36">
+    <link rel="modulepreload" href="./balls.js?v=1.5-36">
+    <link rel="modulepreload" href="./labels.js?v=1.5-36">
+    <link rel="modulepreload" href="./audio.js?v=1.5-36">
+    <link rel="modulepreload" href="./theme.js?v=1.5-36">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-36">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-36">
+    <link rel="modulepreload" href="./season.js?v=1.5-36">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-36">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -963,6 +970,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-35"></script>
+    <script type="module" src="./game.js?v=1.5-36"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, LAP, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, LAP, MULTISHOT_AT, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-35';
+const BUILD = '1.5-36';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -996,9 +996,11 @@ function syncView(frameDt) {
         hud.shots.textContent = s.relaxed ? '∞' : s.supply;      // Relaxed: shots never run out
         hud.shotsLabel.textContent = s.relaxed ? 'Shots' : 'Shots left';
         hud.parBox.classList.toggle('relaxed', !!s.relaxed);   // and there's no par
-        hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
+        // Balls per shot: said for a couple of zones after each upgrade (Boop announces it too), then it's quiet.
+        const justUpgraded = Object.keys(MULTISHOT_AT).some((d) => s.depth >= +d && s.depth < +d + 2);
+        hud.volley.textContent = s.volley > 1 && justUpgraded && !s.bonus ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
-        hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
+        hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'Par';
         hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? `${s.bonus.shots} ${s.bonus.shots === 1 ? 'drop' : 'drops'}` : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
         hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
         hud.parBox.classList.toggle('bonus', !!s.bonus);
@@ -2096,15 +2098,18 @@ function applyTheme(name) {
     const next = name === 'dark' ? 'light' : 'dark';
     themeButton.textContent = next === 'dark' ? 'Dark mode' : 'Light mode';
     themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
+    $('theme-switch').setAttribute('aria-checked', String(name === 'dark'));
     guideAngle = null;   // redraw the guide in the new colours
 }
 const currentTheme = () => readThemePick() ?? (systemDark.matches ? 'dark' : 'light');
 systemDark.addEventListener('change', () => { if (!readThemePick()) applyTheme(currentTheme()); });
-themeButton.addEventListener('click', () => {
+const flipTheme = () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     writeThemePick(next);
     applyTheme(next);
-});
+};
+themeButton.addEventListener('click', flipTheme);
+$('theme-switch').addEventListener('click', flipTheme);     // Settings: Dark mode
 applyTheme(currentTheme());
 
 // ---------- start screen ----------
