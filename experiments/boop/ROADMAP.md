@@ -219,6 +219,19 @@ From watching a tester's kids: they loved popping blocks when the board was simp
 - **Pachinko bonus (a surprise: not in What's new or How to play):** a board of staggered nails and nine pockets along the floor paying +1, +2 and +1 (the edge pockets, where the walls steer balls, pay nothing). Drops of five balls from the launcher (move it and aim before each; each ball after the first goes a little its own way), 4 drops the first time. Balls fall for real and gently and end in a pocket. Pays up to 12, about 7 on a first visit. Earlier versions: one drop of eight (over too soon), then catch cups part-way down that released two more balls (dropped: they didn't make sense). Not in Relaxed mode. Survives closing the app mid-stage.
 - **Tried and dropped:** capping the under-par shots back at 3 (from 5) past depth 30. Bots with the depth limit raised to 80: strong ones ended about 3–6 zones sooner (median 64.5 → 58.5), average ones unchanged. Testers end around 30–40, so it would only have cost them a zone or two; worth revisiting if people start reaching 50.
 
+## Test: water jars (behind ?water=1)
+
+An early look at flowing water. Nothing changes in the real game until we decide it's worth keeping.
+
+- One jar per zone, in a random spot. It's a small block with a low number.
+- Pop it and 60 to 120 drops spill out, run down around the blocks and pool on the floor.
+- Looks only, for now: balls and blocks ignore the water.
+- The water is its own little sim in water.js, not Rapier bodies, so it stays cheap on phones and stays out of saves.
+- Drawn soft and merged into one wobbly blob, so it matches the crayon look. Leaves float on the pool (setWater already does this for golf).
+- It drains when the zone clears.
+- Check it holds up on an iPhone 13 screen, and cap the drops if it doesn't.
+- After playing with it, decide: free Boop!, Plooka! only, or neither. Things to try later: slowing balls, nudging loose blocks, a rising floor.
+
 ## Later: a bigger version (app or Steam)
 
 What could make a paid version worth it, beyond the free web game (decided: biomes and the overworld are for that version only; the web game stays the single endless dig):
