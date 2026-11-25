@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-18';
+const BUILD = '1.5-19';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -547,7 +547,7 @@ function waterRing(x, y, r, dur, delay = 0) {
     booms.push({ ring, r, t: -delay, dur, flat: true });
 }
 const rippleT = new Map();       // floating ball → time since its last ring
-const GOLF_ISLAND = { light: 0x3f7a4c, dark: 0x2c5436 };    // the island's sides, a darker green                                 // ...and its green (its own colour: the leaves change with the seasons)
+const GOLF_ISLAND = { light: 0x4a8a58, dark: 0x2f6040 };    // the hill                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -662,36 +662,28 @@ function buildPropView(pr) {
         if (pr.water) {
             // The water the green stands in: a blue band along the floor, under everything else.
             v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2, 0.04);     // in front of the island's foot
+            v.water.position.set(W / 2, -H + pr.water / 2, 0.04);     // in front of the hill's foot, see-through
+            v.water.material.uniforms.uAlpha.value = 0.72;
             group.add(v.water);
-            leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.top[2], pr.hole[0], pr.top[0], pr.top[1]]);     // leaves float on it, and rest on the hill's top
+            leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
         }
-        if (pr.hill) {
-            // The hill: its outline from the sim, wobbled a touch so it looks drawn, filled dark green,
-            // with a lighter green cap over the top and the bowl of the hole in grey, all inked.
+        if (pr.outline) {
+            // The hill: a green dome, wobbled a touch and inked like crayon, standing in the water
+            // (which is drawn see-through in front of its foot). The hole is a dark oval on top.
             const wob = (pts, amt, seed) => pts.map(([x, y], i) => [x + Math.sin(i * 2.3 + seed) * amt, y + Math.cos(i * 1.7 + seed) * amt]);
-            const hill = wob(pr.hill, 0.03, pr.id).map(([x, y]) => [x, Math.max(-H, y)]);    // not below the floor
-            const [tx0, tx1, tTop] = pr.top, holeX = pr.hole[0], hw = pr.holeW / 2;
-            const body = filledShape([...hill, [hill[hill.length - 1][0], -H], [hill[0][0], -H]], GOLF_ISLAND[themeName()], 0);
+            const dome = wob(pr.outline, 0.016, pr.id).map(([x, y]) => [x, Math.max(-H, y)]);
+            const body = filledShape(dome, GOLF_ISLAND[themeName()], 0);
             v.island = body.fill;
-            // The cap: the part of the outline above the shoulders, closed off a little below the top.
-            const capY = tTop - 0.24;
-            const capPts = hill.filter(([, y]) => y >= capY - 0.02);
-            const cap = filledShape([...capPts, [capPts[capPts.length - 1][0] - 0.05, capY], [capPts[0][0] + 0.05, capY]], GOLF_GRASS, 0.01, false);
-            // The bowl: open at the top, round at the bottom.
-            const bowlPts = pr.hill.filter(([x, y]) => Math.abs(x - holeX) <= hw + 0.001 && y <= tTop + 0.001);
-            const bowl = filledShape(wob(bowlPts, 0.012, pr.id + 3), GOLF_POCKET[themeName()], 0.02);
-            v.pocket = bowl.fill;
-            const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [hw + 0.03], role: 'edge', inkFill: true, wob: 0.4, seed: pr.id + 15, margin: 0.08 });
-            rim.scale.set(1, 0.3, 1);
-            rim.position.set(holeX, tTop, 0.03);
-            group.add(body.group, cap.group, bowl.group, rim);
+            const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [pr.holeW / 2 + 0.05], role: 'edge', inkFill: true, wob: 0.5, seed: pr.id + 15, margin: 0.08 });
+            rim.scale.set(1, 0.38, 1);
+            rim.position.set(pr.hole[0], pr.hole[1] - 0.03, 0.03);
+            group.add(body.group, rim);
         }
         const [hx, hy] = pr.hole;
         // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
-        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.04, 0.9], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx - 0.08, hy + 0.55, 0.025);           // from down in the bowl, behind the ball
-        group.add(pole, notchedFlag(hx - 0.03, hy + 1.52));
+        const pole = makeSketch({ kind: SHAPE.BOX, size: [0.045, 0.78], round: 0.02, role: 'line', inkFill: true, wob: 0.4, seed: pr.id + 1, margin: 0.06 });
+        pole.position.set(hx, hy + 0.74, 0.035);                  // standing in the hole
+        group.add(pole, notchedFlag(hx + 0.02, hy + 1.5));
         scene.add(group);
         propViews.set(pr.id, v);
         return v;

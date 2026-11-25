@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-18');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-19');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -189,13 +189,13 @@ const STAGES = {
     pachinko: { shots: 3, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
     hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true } },
 };
-const DOMINO_KNOCK = 2.5;
-const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
+const DOMINO_KNOCK = 2.5;              // a ball tips a domino harder, at the point it hits, so it topples
+const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_TOP_W = 1.9, GOLF_SLOPE = 1.0, GOLF_HILL_H = 2.2;        // the hill: its flat top's width, how far its sides spread, its height
+const GOLF_BASE = 2.1, GOLF_HILL_H = 2.3, GOLF_ROUND = 2.6;       // the hill: half its width at the floor, its height, how square its dome is
 const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
-const GOLF_HOLE = 0.26;
-const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades                // half the hole's width: a ball fits, rolling too fast it skips over
+const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
+const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades
 const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
 // Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
 const PACHINKO_POCKETS = [1, 0, 0, 0, 3, 0, 0, 0, 1];   // one per column, left to right
@@ -1715,32 +1715,33 @@ export class Sim {
             s.owner[c.handle] = { t: 'peg' };
             cols.push(c.handle); rects.push([x, y, hx, hy]);
         };
-        const gx = 1.8 + this.rand() * (W - 3.6);                          // the hill's middle
-        const top = -H + GOLF_HILL_H, half = GOLF_TOP_W / 2;
-        const holeX = gx + (this.rand() * 2 - 1) * (half - GOLF_HOLE - 0.15);
-        const hill = [];                                                    // the outline, left foot to right foot
-        for (let k = 0; k <= 8; k++) {                                      // left side: a rounded shoulder
-            const a = (k / 8) * Math.PI / 2;
-            hill.push([gx - half - GOLF_SLOPE * Math.cos(a), -H - 0.3 + (GOLF_HILL_H + 0.3) * Math.sin(a)]);
-        }
-        // The bowl: straight down a little, round the bottom, and back up.
-        hill.push([holeX - GOLF_HOLE, top]);
+        const gx = GOLF_BASE + 0.2 + this.rand() * (W - 2 * GOLF_BASE - 0.4);   // the hill's middle
+        // A dome: flat-ish on top, rounded shoulders, its foot under the water. (A superellipse.)
+        const domeY = (x) => {
+            const u = Math.min(1, Math.abs(x - gx) / GOLF_BASE);
+            return -H + GOLF_HILL_H * Math.pow(1 - Math.pow(u, GOLF_ROUND), 1 / GOLF_ROUND);
+        };
+        const holeX = gx + (this.rand() * 2 - 1) * 0.35;
+        const top = domeY(holeX);
+        const outline = [];                                                 // the dome as drawn, left foot to right foot
+        for (let k = 0; k <= 40; k++) { const x = gx - GOLF_BASE + (2 * GOLF_BASE) * (k / 40); outline.push([x, domeY(x)]); }
+        // What the ball rolls on: the same dome, with the hole a bowl dipped into it (hidden under
+        // the dark oval that's drawn; a ball that drops in goes out of sight).
+        const hill = outline.filter(([x]) => x < holeX - GOLF_HOLE);
+        hill.push([holeX - GOLF_HOLE, domeY(holeX - GOLF_HOLE)]);
         for (let k = 0; k <= 10; k++) {
             const a = Math.PI + (k / 10) * Math.PI;
             hill.push([holeX + GOLF_HOLE * Math.cos(a), top - GOLF_BOWL_D + GOLF_HOLE + GOLF_HOLE * Math.sin(a)]);
         }
-        hill.push([holeX + GOLF_HOLE, top]);
-        for (let k = 8; k >= 0; k--) {                                      // right side
-            const a = (k / 8) * Math.PI / 2;
-            hill.push([gx + half + GOLF_SLOPE * Math.cos(a), -H - 0.3 + (GOLF_HILL_H + 0.3) * Math.sin(a)]);
-        }
+        hill.push([holeX + GOLF_HOLE, domeY(holeX + GOLF_HOLE)]);
+        hill.push(...outline.filter(([x]) => x > holeX + GOLF_HOLE));
         const c = world.createCollider(R.ColliderDesc.polyline(new Float32Array(hill.flat()))
             .setRestitution(0.2).setFriction(0.6).setCollisionGroups(groups(G.PROP, G.BALL)), body);
         s.owner[c.handle] = { t: 'peg' };
         cols.push(c.handle);
         // Ledges up top, never over the hill's sides; and now and then a small one right over the
         // hole, so dropping straight down on it doesn't work.
-        const x0 = gx - half - GOLF_SLOPE, x1 = gx + half + GOLF_SLOPE;
+        const x0 = gx - GOLF_BASE, x1 = gx + GOLF_BASE;
         const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -8.5]] : [[5.8, W, -6], [0, 3.8, -8.5]];
         for (const [a, b, y] of ledges) if (x1 < a + 0.6 || x0 > b - 0.6) rect(a, b, y, y - 0.4);
         if (this.rand() < 0.6) {
@@ -1756,10 +1757,9 @@ export class Sim {
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[water.handle] = { t: 'water' };
         cols.push(water.handle);
-        // Where the hill meets the water, for the leaves (they float round it, and rest on its top).
-        const wx = GOLF_SLOPE * Math.cos(Math.asin(Math.min(1, (GOLF_WATER_H + 0.3) / (GOLF_HILL_H + 0.3))));
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, hill, top: [gx - half, gx + half, top],
-            waterline: [gx - half - wx, gx + half + wx], hole: [holeX, top], holeW: GOLF_HOLE * 2, bowl: GOLF_BOWL_D,
+        // Where the hill meets the water, for the leaves (they float round it; any landing on it slide off).
+        const wu = Math.pow(1 - Math.pow(GOLF_WATER_H / GOLF_HILL_H, GOLF_ROUND), 1 / GOLF_ROUND) * GOLF_BASE;
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, waterline: [gx - wu, gx + wu], hole: [holeX, top], holeW: GOLF_HOLE * 2,
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
@@ -2172,7 +2172,7 @@ export class Sim {
         }
         if (b.t === 'hole') {
             // Golf: in the hole. Pays by try, and the stage is done; the ball sits in the pocket, then fades.
-            if (ball) { ball.sunk = true; body.setLinvel({ x: 0, y: Math.min(0, body.linvel().y) * 0.3 }, true); }    // it stays down
+            if (ball) { ball.sunk = b.y; body.setLinvel({ x: 0, y: Math.min(0, body.linvel().y) * 0.3 }, true); }    // it stays down (sunk: the hole's top)
             if (s.bonus && !s.bonus.sunk) {
                 const tries = STAGES.golf.shots - s.bonus.shots;
                 const n = GOLF_PAYS[Math.max(0, Math.min(GOLF_PAYS.length - 1, tries - 1))];
@@ -2321,10 +2321,10 @@ export class Sim {
                 continue;
             }
             if (ball.sunk) {
-                // In the cup: it settles quickly (no bouncing back out), sits a moment, then fades.
+                // In the hole: it doesn't bounce back out, and once it's down in it, it's gone from view.
                 const v = body.linvel();
                 body.setLinvel({ x: v.x * 0.85, y: Math.min(v.y, 0) * 0.9 + (v.y < 0 ? 0 : -0.5) }, true);
-                body.setAngvel(body.angvel() * 0.85, true);
+                if (p.y < ball.sunk - 0.12) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y }); this.removeBall(ball.body); continue; }
             }
             if (drop) {
                 ball.idle = 0;                   // no fade: a falling ball ends in a pocket, a hole, or at rest
