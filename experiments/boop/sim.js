@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-15');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-16');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,7 +192,7 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_GREEN_W = 2.6, GOLF_GREEN_Y = -12, GOLF_GREEN_T = 0.3;   // the green: width, top, thickness
+const GOLF_GREEN_W = 2.6, GOLF_GREEN_Y = -H + 2.4, GOLF_GREEN_T = 0.3;   // the island green: width, top, the grass's thickness
 const GOLF_POCKET_R = 0.36, GOLF_WATER_H = 0.6;                      // the pocket under the hole; the water's depth
 const GOLF_HOLE = 0.26;
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades                // half the hole's width: a ball fits, rolling too fast it skips over
@@ -1719,12 +1719,15 @@ export class Sim {
         };
         const gx = 2 + this.rand() * 5;                                   // the green's centre
         const holeX = gx + (this.rand() < 0.5 ? -1 : 1) * (0.35 + this.rand() * 0.35);
-        // The green: a thin strip of grass, its hole a gap in it, with a round pocket hanging below.
+        // The green: an island standing in the water. Its hole goes down into a round pocket inside it.
         const top = GOLF_GREEN_Y, bot = top - GOLF_GREEN_T, x0 = gx - GOLF_GREEN_W / 2, x1 = gx + GOLF_GREEN_W / 2;
-        rect(x0, holeX - GOLF_HOLE, top, bot, false);
-        rect(holeX + GOLF_HOLE, x1, top, bot, false);
         const pr = GOLF_POCKET_R, open = Math.acos(GOLF_HOLE / pr);         // where the pocket's rim meets the hole's edges
         const pcy = bot - pr * Math.sin(open);
+        rect(x0, holeX - pr, top, -H, false);                               // the island either side of the pocket...
+        rect(holeX + pr, x1, top, -H, false);
+        rect(holeX - pr, holeX - GOLF_HOLE, top, bot, false);               // ...the grass either side of the hole...
+        rect(holeX + GOLF_HOLE, holeX + pr, top, bot, false);
+        rect(holeX - pr, holeX + pr, pcy - pr, -H, false);                  // ...and under the pocket
         const pts = [];
         for (let k = 0; k <= 16; k++) {
             const a = Math.PI - open + (Math.PI + 2 * open) * (k / 16);       // from the left lip, round the bottom, to the right

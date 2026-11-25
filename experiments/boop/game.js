@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-15';
+const BUILD = '1.5-16';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -516,7 +516,8 @@ function notchedFlag(x, y) {
     g.position.set(x, y, 0.06);
     return g;
 }
-const GOLF_GRASS = 0x6fae4f;                                 // ...and its green (its own colour: the leaves change with the seasons)
+const GOLF_GRASS = 0x6fae4f;
+const GOLF_ISLAND = { light: 0x3f7a4c, dark: 0x2c5436 };    // the island's sides, a darker green                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -631,19 +632,22 @@ function buildPropView(pr) {
         if (pr.water) {
             // The water the green stands in: a blue band along the floor, under everything else.
             v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2, -0.01);
+            v.water.position.set(W / 2, -H + pr.water / 2, 0.04);     // in front of the island's foot
             group.add(v.water);
-            leafPiles?.setWater(-H + pr.water - 0.03);          // leaves float on it
+            leafPiles?.setWater(-H + pr.water - 0.03, [...pr.green.slice(0, 3), pr.hole[0]]);     // leaves float on it, and rest on the island
         }
         if (pr.green) {
-            // The green: a thin strip of grass with an oval hole in it, and the round pocket hanging
-            // below the hole where a sunk ball ends up.
-            const [gx0, gx1, gTop, gT] = pr.green, [px, py, pR] = pr.pocket;
+            // The green: an island standing in the water. Darker green sides, a band of grass on top
+            // with the oval hole in it, and the round pocket showing as a window in its side.
+            const [gx0, gx1, gTop] = pr.green, [px, py, pR] = pr.pocket, gw = (gx1 - gx0) / 2, gh = gTop + H;
+            const side = makeSketch({ kind: SHAPE.BOX, size: [gw, gh / 2], round: 0.1, edge: 0.05, wob: 0.5, fill: GOLF_ISLAND[themeName()], seed: pr.id + 11, margin: 0.1 });
+            side.position.set((gx0 + gx1) / 2, -H + gh / 2, 0);
+            v.island = side;
+            const grass = makeSketch({ kind: SHAPE.BOX, size: [gw, 0.14], round: 0.1, edge: 0.05, wob: 0.6, fill: GOLF_GRASS, seed: pr.id + 12, margin: 0.1 });
+            grass.position.set((gx0 + gx1) / 2, gTop - 0.12, 0.01);
             const pocket = makeSketch({ kind: SHAPE.CIRCLE, size: [pR + 0.04], edge: 0.05, wob: 0.5, fill: GOLF_POCKET[themeName()], seed: pr.id + 14, margin: 0.1 });
-            pocket.position.set(px, py, -0.02);
+            pocket.position.set(px, py, 0.02);
             v.pocket = pocket;
-            const grass = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, gT / 2], round: 0.12, edge: 0.05, wob: 0.6, fill: GOLF_GRASS, seed: pr.id + 12, margin: 0.1 });
-            grass.position.set((gx0 + gx1) / 2, gTop - gT / 2, 0.02);
             // The hole seen from a little above: a dark rim round a grey inside, squashed to an oval.
             const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [pr.holeW / 2 + 0.05], role: 'edge', inkFill: true, wob: 0.4, seed: pr.id + 15, margin: 0.08 });
             rim.scale.set(1, 0.42, 1);
@@ -652,7 +656,7 @@ function buildPropView(pr) {
             inside.scale.set(1, 0.36, 1);
             inside.position.set(pr.hole[0], gTop - 0.035, 0.035);
             v.inside = inside;
-            group.add(pocket, grass, rim, inside);
+            group.add(side, grass, pocket, rim, inside);
         }
         const [hx, hy] = pr.hole;
         // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
@@ -1020,7 +1024,7 @@ function consumeEvents() {
             leafPiles?.ripple(e.x, 1.4);
             for (const [delay, r] of [[0, 0.9], [0.18, 1.3]]) {
                 const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.06, edge: 0, role: 'line', inkFill: true, wob: 0.6, seed: (e.x * 13 + delay * 50) | 0, margin: 0.12 });
-                ring.position.set(e.x, e.y, -0.005);      // over the water, behind the green
+                ring.position.set(e.x, e.y, 0.045);       // on the water's surface
                 ring.scale.setScalar(0.001);
                 scene.add(ring);
                 booms.push({ ring, r, t: -delay, dur: 0.7, flat: true });
@@ -2039,6 +2043,7 @@ function applyTheme(name) {
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
     for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
     for (const v of propViews.values()) for (const m of [v.pocket, v.inside]) m?.material.uniforms.uFill.value.setHex(GOLF_POCKET[name]);
+    for (const v of propViews.values()) v.island?.material.uniforms.uFill.value.setHex(GOLF_ISLAND[name]);
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
