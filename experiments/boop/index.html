@@ -455,7 +455,7 @@
             #over .actions .btn { padding: 12px 20px; }
             #over .feedback { margin-top: 12px; }
         }
-        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; }
+        .actions { display: flex; flex-direction: column; gap: 12px; width: 100%; }      /* buttons run the full width of the screen's column */
         /* Buttons are drawn by hand like the board: the border/fill sits on a layer
            behind the label, roughed up by the #sketchy SVG filter; the text stays crisp. */
         .btn {
@@ -679,6 +679,7 @@
         #settings h2 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; margin: 12px 0 20px; font-size: 2.25rem; }
         .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1.5px solid var(--ink-soft); }
         .setting:has(+ .actions) { border-bottom: 1.5px solid var(--ink-soft); }
+        .setting-label { flex: 1; }       /* the words take the row's width; the switch keeps its own */
         .setting-label b { display: block; font-size: 1.0625rem; }
         .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); text-wrap: pretty; }
         .switch {
@@ -761,7 +762,7 @@
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
             </div>
             <div class="setting">
-                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Easier zones, endless shots. Your regular game waits.</span></div>
+                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Easier zones, endless shots.</span></div>
                 <button class="switch" id="relaxed-switch" type="button" role="switch" aria-checked="false" aria-labelledby="relaxed-label"></button>
             </div>
             <div class="actions">
