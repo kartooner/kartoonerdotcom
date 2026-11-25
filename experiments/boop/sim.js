@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-11');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-12');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -166,7 +166,7 @@ const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
     pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
     dominoes: 'Bonus stage! Knock over the dominoes. Each one that falls is +1. Three shots.',
-    golf: 'Bonus stage! Mini golf: sink the ball in the hole by the flag. First try +8, then +6, then +4.',
+    golf: "Bonus stage! Mini golf: land on the green and sink it by the flag. Miss and it's in the water. First try +8, then +6, then +4.",
     hoops: 'Bonus stage! Hoops: five shots at the moving basket. Each one in is +2.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
@@ -192,6 +192,7 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
+const GOLF_GREEN_W = 2.6, GOLF_GREEN_H = 3, GOLF_WATER_H = 0.6;   // the raised green's width and height; the water's depth
 const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
 const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
 // Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
@@ -1696,35 +1697,43 @@ export class Sim {
         }
     }
 
-    // Mini golf: grey ground with a hole in it, a ledge or two on the way, and a flag.
-    // The hole is a gap in the ground with a catcher in it.
+    // Mini golf: a small raised green with the hole in it, standing in water. A ball has to
+    // land on the green and stay there; one that misses or rolls off is lost in the water.
+    // A ledge or two up top gets in the way.
     addGolf() {
         const { R, world, s } = this;
         const id = s.nextId++;
         const body = world.createRigidBody(R.RigidBodyDesc.fixed());
         const cols = [], rects = [];
-        const rect = (x0, x1, y0, y1) => {      // a grey slab from x0 to x1, y0 (top) to y1 (bottom)
+        // A grey slab from x0 to x1, y0 (top) to y1 (bottom). The green's pieces aren't drawn one by
+        // one (the game draws the green whole, with its hole); ledges and lips are.
+        const rect = (x0, x1, y0, y1, drawn = true) => {
             const hx = (x1 - x0) / 2, hy = (y0 - y1) / 2, x = (x0 + x1) / 2, y = (y0 + y1) / 2;
             const c = world.createCollider(R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
                 .setRestitution(0.2).setFriction(0.6).setCollisionGroups(groups(G.PROP, G.BALL)), body);
             s.owner[c.handle] = { t: 'peg' };
-            cols.push(c.handle); rects.push([x, y, hx, hy]);
+            cols.push(c.handle);
+            if (drawn) rects.push([x, y, hx, hy]);
         };
-        const holeX = 1.5 + Math.floor(this.rand() * 6);              // the hole's column centre, 1.5–6.5
-        const groundTop = -H + 1.2;
-        rect(0, holeX - GOLF_HOLE, groundTop, -H);
-        rect(holeX + GOLF_HOLE, W, groundTop, -H);
-        // A ledge or two to play around: never right over the hole.
-        const ledges = this.rand() < 0.5 ? [[0, 3.2, -6.5], [5.2, W, -9.5]] : [[5.8, W, -6.5], [0, 3.8, -9.5]];
-        for (const [x0, x1, y] of ledges) if (holeX < x0 - 0.6 || holeX > x1 + 0.6) rect(x0, x1, y, y - 0.4);
-        // A bump on the green, on the far side of the hole from the launcher.
-        const bumpX = holeX > W / 2 ? holeX - 2 : holeX + 2;
-        rect(bumpX - 0.5, bumpX + 0.5, groundTop + 0.5, groundTop);
-        const c = world.createCollider(R.ColliderDesc.cuboid(GOLF_HOLE - 0.06, 0.2).setTranslation(holeX, -H + 0.35).setSensor(true)
+        const gx = 2 + this.rand() * 5;                                   // the green's centre
+        const holeX = gx + (this.rand() < 0.5 ? -1 : 1) * (0.35 + this.rand() * 0.35);
+        const top = -H + GOLF_GREEN_H, x0 = gx - GOLF_GREEN_W / 2, x1 = gx + GOLF_GREEN_W / 2;
+        rect(x0, holeX - GOLF_HOLE, top, -H, false);
+        rect(holeX + GOLF_HOLE, x1, top, -H, false);
+        rect(holeX - GOLF_HOLE, holeX + GOLF_HOLE, top - 0.7, -H, false);       // the hole's bottom
+        for (const x of [x0 + 0.06, x1 - 0.06]) rect(x - 0.06, x + 0.06, top + 0.14, top);   // low lips at the ends
+        // A ledge or two up top: never right over the green.
+        const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -9]] : [[5.8, W, -6], [0, 3.8, -9]];
+        for (const [a, b, y] of ledges) if (x1 < a - 0.4 || x0 > b + 0.4) rect(a, b, y, y - 0.4);
+        const hole = world.createCollider(R.ColliderDesc.cuboid(GOLF_HOLE - 0.06, 0.15).setTranslation(holeX, top - 0.5).setSensor(true)
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
-        s.owner[c.handle] = { t: 'hole', x: holeX, y: groundTop };
-        cols.push(c.handle);
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, hole: [holeX, groundTop], bodies: [body.handle], cols };
+        s.owner[hole.handle] = { t: 'hole', x: holeX, y: top };
+        cols.push(hole.handle);
+        const water = world.createCollider(R.ColliderDesc.cuboid(W / 2, 0.25).setTranslation(W / 2, -H + 0.25).setSensor(true)
+            .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
+        s.owner[water.handle] = { t: 'water' };
+        cols.push(water.handle);
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, green: [x0, x1, top], holeW: GOLF_HOLE * 2, hole: [holeX, top], water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
     // Hoops: a basket (two rim posts with a catcher between) that slides side to side.
@@ -2145,6 +2154,11 @@ export class Sim {
                 this.events.push({ t: 'sunk', n, x: b.x, y: b.y });
                 this.gain(n, b.x, b.y + 1);
             }
+            return;
+        }
+        if (b.t === 'water') {
+            this.events.push({ t: 'splash', x: p.x, y: -H + 0.6 });
+            this.removeBall(a.body);
             return;
         }
         if (b.t === 'hoop') {

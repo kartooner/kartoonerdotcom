@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-11';
+const BUILD = '1.5-12';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -501,6 +501,8 @@ const BOMB_LOOK = {
     dark: { body: 0x4a4554, shade: 0x2c2933, cap: 0x7a7386, fuse: 0xc9c4ba },
 };
 const bombLook = () => BOMB_LOOK[themeName()];
+const GOLF_WATER = { light: 0x9ccfe4, dark: 0x2e5a70 };     // the golf stage's water
+const GOLF_GRASS = 0x6fae4f;                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -612,6 +614,24 @@ function buildPropView(pr) {
             group.add(slab);
             v.greys.push(slab);
         });
+        if (pr.water) {
+            // The water the green stands in: a blue band along the floor, under everything else.
+            v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
+            v.water.position.set(W / 2, -H + pr.water / 2, -0.01);
+            group.add(v.water);
+        }
+        if (pr.green) {
+            // The green: one grey block standing in the water, grass along its top, the hole cut in.
+            const [gx0, gx1, gTop] = pr.green, gh = gTop + H;
+            const block = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, gh / 2], round: 0.06, edge: 0.05, wob: 0.35, fill: NEUTRAL[themeName()], seed: pr.id + 11, margin: 0.1 });
+            block.position.set((gx0 + gx1) / 2, -H + gh / 2, 0);
+            v.greys.push(block);
+            const grass = makeSketch({ kind: SHAPE.BOX, size: [(gx1 - gx0) / 2, 0.08], round: 0.04, edge: 0.04, wob: 0.5, fill: GOLF_GRASS, seed: pr.id + 12, margin: 0.08 });
+            grass.position.set((gx0 + gx1) / 2, gTop - 0.06, 0.02);
+            const cup = makeSketch({ kind: SHAPE.BOX, size: [pr.holeW / 2, 0.35], round: 0.05, role: 'edge', inkFill: true, wob: 0.3, seed: pr.id + 13, margin: 0.06 });
+            cup.position.set(pr.hole[0], gTop - 0.35, 0.03);
+            group.add(block, grass, cup);
+        }
         const [hx, hy] = pr.hole;
         const pole = makeSketch({ kind: SHAPE.BOX, size: [0.035, 0.7], round: 0.02, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + 1, margin: 0.06 });
         pole.position.set(hx, hy + 0.7, 0.05);
@@ -971,6 +991,7 @@ function consumeEvents() {
         if (e.t === 'catch') addFloater(e.n > 0 ? `+${e.n} balls` : 'Caught!', e.x, e.y + 0.45);
         if (e.t === 'sunk') addFloater(e.n >= 8 ? 'Hole in one!' : 'In the hole!', e.x, e.y + 2, 0.75);
         if (e.t === 'swish') addFloater('Swish!', e.x, e.y + 1.4);
+        if (e.t === 'splash') { addFloater('Splash!', e.x, e.y + 0.6); crumbs.spray([[e.x, e.y], [e.x - 0.25, e.y], [e.x + 0.25, e.y]], [GOLF_WATER[themeName()], 0xffffff, theme.edge]); }
         if (e.t === 'contact') {
             bounced.add(e.ball);
             if (e.with === 'block') { const v = blockViews.get(e.id); if (v) v.wobbleT = 0; }
@@ -1980,6 +2001,7 @@ function applyTheme(name) {
         if (v.jello) { v.label.userData.color = theme.jelloText; drawLabel(v.label, String(v.hp)); }
     }
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
+    for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
