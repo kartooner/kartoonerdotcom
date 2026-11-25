@@ -12,7 +12,7 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs, flakeGeometry } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
-import { makeWater, makeJarMaterial, blockShape, blockSolid } from './water.js';
+import { makeWater, makeJarMaterial, blockShape, blockSolid, groundSolid } from './water.js';
 import { makeLeafPiles } from './leaves.js';
 import { makeProps } from './props.js';
 import './buddy.js';               // the mascot's blinks and glances
@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-52';
+const BUILD = '1.5-53';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -89,6 +89,7 @@ const water = WATER_TEST ? makeWater(scene, renderer) : null;
 const waterShapes = new Map();      // block id → its shape, for the water to flow round
 const jarIds = new Set();
 let waterTop = null;                // where the pool's surface is, for leaves to float on
+let golfPool = null;                // the golf stage's water, when the sim is filling it: { id, ground, rects }
 
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
@@ -527,6 +528,12 @@ function buildPropView(pr) {
     const v = propArt.buildPropView(pr);
     scene.add(v.group);
     propViews.set(pr.id, v);
+    if (water && pr.kind === 'golf' && pr.water) {
+        // The water test: the golf pool is the water sim, filled round the hill, not a drawn band.
+        v.water.visible = false;
+        golfPool = { id: pr.id, ground: groundSolid(pr.outline), rects: pr.rects };
+        water.fill(-H + pr.water, (x, y) => golfPool.ground(x, y) ?? rectSolid(pr.rects, x, y));
+    }
     return v;
 }
 
@@ -629,6 +636,7 @@ function syncView(frameDt) {
         if (s.props[id]) continue;
         propViews.delete(id);
         if (v.water) leafPiles?.setWater(null);           // the golf stage is over: leaves sink back to the floor
+        if (golfPool?.id === id) { golfPool = null; water.drain(); water.setOffset(0); }
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
         else discard(v.group);
@@ -1539,6 +1547,13 @@ function addJar() {
         sim.s.zoneHp0 += b.hp;
     }
 }
+// The golf stage's ledges, for the water: [[x, y, hx, hy], ...]. A drop inside one goes out the top.
+function rectSolid(rects, x, y) {
+    for (const [cx, cy, hx, hy] of rects) {
+        if (Math.abs(x - cx) < hx && Math.abs(y - cy) < hy) return { x, y: cy + hy + 0.03, slide: null };
+    }
+    return null;
+}
 function tintJar(mat, name) {
     const u = mat.uniforms;
     u.uInk.value.setHex(theme.edge); u.uGlass.value.setHex(GLASS[name]);
@@ -1547,13 +1562,16 @@ function tintJar(mat, name) {
 // The water, each frame: flow round the blocks where they are now.
 function updateWater(dt) {
     const blocks = [];
+    let moved = false;
     for (const id in sim.s.blocks) {
         const b = sim.s.blocks[id];
         if (b.jello) continue;                      // water runs through jelly, same as balls
         let sh = waterShapes.get(b.id);
         if (!sh) waterShapes.set(b.id, (sh = blockShape(b)));
-        const body = sim.world.getRigidBody(b.body), p = body.translation();
+        const body = sim.world.getRigidBody(b.body), p = body.translation(), v = body.linvel();
         sh.x = p.x; sh.y = p.y; sh.a = body.rotation(); sh.k = b.scale;
+        sh.vx = v.x; sh.vy = v.y; sh.w = body.angvel();
+        if (v.x * v.x + v.y * v.y > 0.1 || Math.abs(sh.w) > 0.3) moved = true;
         blocks.push(sh);
     }
     if (waterShapes.size > blocks.length + 20) for (const id of waterShapes.keys()) if (!sim.s.blocks[id]) waterShapes.delete(id);
@@ -1561,12 +1579,21 @@ function updateWater(dt) {
         const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
         return { x: t.x, y: t.y, vx: v.x, vy: v.y };
     });
-    water.update(dt, blockSolid(blocks), balls);
+    const onBlocks = blockSolid(blocks);
+    let solid = onBlocks;
+    if (golfPool) {
+        // The golf stage: the hill and the ledges are solid too.
+        const { ground, rects } = golfPool;
+        solid = (x, y) => onBlocks(x, y) ?? ground(x, y) ?? rectSolid(rects, x, y);
+        water.setOffset(zoneOffset);
+    }
+    water.update(dt, solid, balls, moved);
     if (water.moving()) animating = true;
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
-    // Leaves float on the pool once it has settled (and sink back when it drains).
-    if (!leafPiles) return;
+    // Leaves float on the pool once it has settled (and sink back when it drains). The golf
+    // stage sets its own (round its hill).
+    if (!leafPiles || golfPool) return;
     const top = !water.active() ? null : water.moving() ? waterTop : water.surface();
     if ((top == null) !== (waterTop == null) || (top != null && Math.abs(top - waterTop) > 0.05)) { leafPiles.setWater(top); waterTop = top; }
 }
@@ -1672,7 +1699,7 @@ function restart(saved = null) {
     crumbs.clear();
     leafPiles?.clear();
     leafPiles?.setWater(null);
-    water?.clear(); waterShapes.clear(); jarIds.clear(); jarMats.clear(); waterTop = null;
+    water?.clear(); waterShapes.clear(); jarIds.clear(); jarMats.clear(); waterTop = null; golfPool = null;
     keyAim = false;
     if (saved) {
         sim = saved;

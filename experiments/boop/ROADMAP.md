@@ -226,8 +226,10 @@ An early look at flowing water. Nothing changes in the real game until we decide
 - A jar in the first zone, then in about every other zone. Small ones (one square) or big ones (four).
 - Drawn like the blocks: thick wobbly ink edge, glass with a jelly-style shine, water inside that sloshes.
 - Pop it and the water pours out, runs off block tops, slips through the cracks between blocks and pools on the floor. It only collects where there's no way out (a cup, a pocket against a wall).
-- The pool has a light top line with a moving sheen, deeper colour lower down, faint caustics, and foam where it's churned up. Leaves float on it.
-- Balls splash through it and throw water around. The water doesn't slow balls: every ball moves at one speed, which keeps the aiming guide honest.
+- The pool has a light top line with a moving sheen, deeper colour lower down, and foam where it's churned up. Leaves float on it. (Caustics came out: not worth what they cost.)
+- Balls splash through it and throw water around, and moving blocks shove it along. The water doesn't slow balls: every ball moves at one speed, which keeps the aiming guide honest.
+- The golf stage's pool uses the same water (with ?water=1): filled round the hill, the ball bobbing in it.
+- Kept cheap: the drawing only covers where the water is, and a still pool stops simulating until something disturbs it.
 - The water is its own little sim in water.js (under 1 ms a frame), not Rapier bodies, so it stays cheap and out of saves.
 - It drains when the zone clears.
 - Still to decide: free Boop!, Plooka! only, or neither. Then maybe: water that carries over and rises zone to zone.

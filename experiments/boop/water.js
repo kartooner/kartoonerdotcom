@@ -14,14 +14,14 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-52'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-53'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
 const SPAN = 0.42;             // how far drops feel each other
 const REST = 1.2, STIFF = 1000, NEAR = 2000;   // how tightly they pack, and how hard they push back
 const GRAVITY = -26;
-const STEPS = 3;               // sub-steps a frame, so fast drops don't tunnel through thin blocks
+const STEP = 1 / 150;          // longest sub-step: the packing goes unstable with longer ones, and fast drops tunnel through thin blocks
 const MAX_SPEED = 14;
 const SLIDE = 7;               // how hard water on top of a block runs off toward the nearer edge
 export const MAX_DROPS = 300;
@@ -36,7 +36,13 @@ export class WaterSim {
         this.n = 0;
         this.pour = [];
         this.balls = [];
-        this.grid = new Map();
+        // Neighbour lookup: drops sorted into grid cells each step (flat arrays, nothing allocated).
+        this.gw = Math.ceil(W / SPAN) + 2; this.gh = Math.ceil(H / SPAN) + 2;
+        this.cellStart = new Int32Array(this.gw * this.gh + 1);
+        this.cellOf = new Int32Array(MAX_DROPS);
+        this.order = new Int32Array(MAX_DROPS);
+        this.nb = new Float32Array(MAX_DROPS * 4);
+        this.calm = 0;              // frames in a row it's been still; a still pool skips its physics
     }
     // A jar pops: n drops pour out of a w-wide spot at (x, y) over about half a second.
     spill(x, y, n, w = 0.6) { this.pour.push({ x, y, w, left: n }); }
@@ -59,8 +65,8 @@ export class WaterSim {
     }
     clear() { this.n = 0; this.pour = []; }
     step(dt, solid) {
-        const h = dt / STEPS;
-        for (let s = 0; s < STEPS; s++) this.sub(h, solid);
+        const steps = Math.ceil(dt / STEP), h = dt / steps;
+        for (let s = 0; s < steps; s++) this.sub(h, solid);
     }
     sub(dt, solid) {
         if (this.pour.length) this.emit();
@@ -78,6 +84,7 @@ export class WaterSim {
             const hit = solid(x[i], y[i]);
             if (hit) { x[i] = hit.x; y[i] = hit.y; }
             let nvx = (x[i] - px[i]) / dt, nvy = (y[i] - py[i]) / dt;
+            if (hit && (hit.vx || hit.vy)) { nvx = nvx * 0.4 + hit.vx * 1.1; nvy = nvy * 0.4 + hit.vy * 1.1; }   // a moving block shoves the water along
             if (hit?.slide) {
                 // On top of a block: it runs off toward the nearer edge instead of sitting there
                 // (a flat top is never quite flat), but it runs, it doesn't race.
@@ -93,49 +100,56 @@ export class WaterSim {
     // Balls going through: drops in the way are shoved aside and carried along a bit, so a ball
     // hitting the pool throws up a splash and leaves a wake.
     slosh() {
-        const { x, y, vx, vy, n } = this, reach = BALL_R + 0.12;
+        const { x, y, vx, vy, n } = this;
         for (const b of this.balls) {
+            // A ball bobbing in the water just sits in it; a fast one clears a wider path.
+            const reach = BALL_R + (b.vx * b.vx + b.vy * b.vy > 9 ? 0.12 : 0.03);
             for (let i = 0; i < n; i++) {
                 const dx = x[i] - b.x, dy = y[i] - b.y, d2 = dx * dx + dy * dy;
                 if (d2 >= reach * reach) continue;
                 const d = Math.sqrt(d2) || 1e-4, ux = dx / d, uy = dy / d;
                 x[i] = b.x + ux * reach; y[i] = b.y + uy * reach;
                 const along = b.vx * ux + b.vy * uy;     // how hard the ball is coming at this drop
-                const kick = Math.max(0, along) * 0.45 + 1.5;
+                const kick = Math.min(6, Math.max(0, along) * 0.3 + 1.2);
                 vx[i] = vx[i] * 0.4 + b.vx * 0.3 + ux * kick;
-                vy[i] = vy[i] * 0.4 + b.vy * 0.3 + uy * kick + 1.2;
+                vy[i] = vy[i] * 0.4 + b.vy * 0.2 + uy * kick + 0.8;
             }
         }
     }
     relax(dt) {
-        const { x, y, n, grid } = this;
-        grid.clear();
+        const { x, y, n, gw, gh, cellStart, cellOf, order, nb } = this;
+        // Counting sort into grid cells.
+        cellStart.fill(0);
         for (let i = 0; i < n; i++) {
-            const key = Math.floor(x[i] / SPAN) * 1024 + Math.floor(-y[i] / SPAN);
-            let cell = grid.get(key);
-            if (!cell) grid.set(key, (cell = []));
-            cell.push(i);
+            const gx = Math.min(gw - 1, Math.max(0, Math.floor(x[i] / SPAN) + 1));
+            const gy = Math.min(gh - 1, Math.max(0, Math.floor(-y[i] / SPAN) + 1));
+            const c = gy * gw + gx;
+            cellOf[i] = c; cellStart[c + 1]++;
         }
-        const dt2 = dt * dt, nb = [];
+        for (let c = 0; c < gw * gh; c++) cellStart[c + 1] += cellStart[c];
+        const fill = cellStart.slice(0, gw * gh);
+        for (let i = 0; i < n; i++) order[fill[cellOf[i]]++] = i;
+        const dt2 = dt * dt, S2 = SPAN * SPAN;
         for (let i = 0; i < n; i++) {
-            const cx = Math.floor(x[i] / SPAN), cy = Math.floor(-y[i] / SPAN);
-            let rho = 0, near = 0;
-            nb.length = 0;
-            for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) {
-                const cell = grid.get(gx * 1024 + gy);
-                if (!cell) continue;
-                for (const j of cell) {
-                    if (j === i) continue;
-                    const dx = x[j] - x[i], dy = y[j] - y[i], r2 = dx * dx + dy * dy;
-                    if (r2 >= SPAN * SPAN || r2 < 1e-12) continue;
-                    const r = Math.sqrt(r2), q = 1 - r / SPAN;
-                    rho += q * q; near += q * q * q;
-                    nb.push(j, dx / r, dy / r, q);
+            const c = cellOf[i], cx = c % gw, cy = (c - cx) / gw;
+            let rho = 0, near = 0, m = 0;
+            for (let gy = Math.max(0, cy - 1); gy <= Math.min(gh - 1, cy + 1); gy++) {
+                for (let gx = Math.max(0, cx - 1); gx <= Math.min(gw - 1, cx + 1); gx++) {
+                    const cc = gy * gw + gx;
+                    for (let k = cellStart[cc]; k < cellStart[cc + 1]; k++) {
+                        const j = order[k];
+                        if (j === i) continue;
+                        const dx = x[j] - x[i], dy = y[j] - y[i], r2 = dx * dx + dy * dy;
+                        if (r2 >= S2 || r2 < 1e-12) continue;
+                        const r = Math.sqrt(r2), q = 1 - r / SPAN;
+                        rho += q * q; near += q * q * q;
+                        if (m < nb.length) { nb[m] = j; nb[m + 1] = dx / r; nb[m + 2] = dy / r; nb[m + 3] = q; m += 4; }
+                    }
                 }
             }
             const P = STIFF * (rho - REST), Pn = NEAR * near;
             let ax = 0, ay = 0;
-            for (let k = 0; k < nb.length; k += 4) {
+            for (let k = 0; k < m; k += 4) {
                 const j = nb[k], q = nb[k + 3];
                 const D = dt2 * (P * q + Pn * q * q) * 0.5;
                 const dx = D * nb[k + 1], dy = D * nb[k + 2];
@@ -180,11 +194,31 @@ export function blockSolid(blocks) {
             }
             if (!best) continue;
             const wx = best[0] * b.k, wy = best[1] * b.k;
-            const out = { x: b.x + wx * c - wy * s, y: b.y + wx * s + wy * c, slide: null };
+            const out = { x: b.x + wx * c - wy * s, y: b.y + wx * s + wy * c, slide: null, vx: 0, vy: 0 };
+            if (b.w || b.vx || b.vy) {
+                // How fast that spot on the block is moving (spin included).
+                const ox = out.x - b.x, oy = out.y - b.y, vx = b.vx - b.w * oy, vy = b.vy + b.w * ox;
+                if (vx * vx + vy * vy > 0.25) { out.vx = vx; out.vy = vy; }
+            }
             if (best[2] > 0 && c > 0.5) { const d = Math.abs(lx) < 0.05 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(lx); out.slide = [d * c, d * s]; }
             return out;
         }
         return null;
+    };
+}
+// A ground line (the golf hill): drops below it are lifted back on top. outline: [[x, y], ...]
+// left to right.
+export function groundSolid(outline) {
+    const x0 = outline[0][0], x1 = outline[outline.length - 1][0], step = (x1 - x0) / (outline.length - 1);
+    return (px, py) => {
+        if (px <= x0 || px >= x1) return null;
+        const f = (px - x0) / step, k = Math.min(outline.length - 2, Math.floor(f)), t = f - k;
+        const dy = outline[k + 1][1] - outline[k][1], gy = outline[k][1] + dy * t + RB;
+        if (py >= gy) return null;
+        // Out along the slope's normal, not straight up: lifting drops straight up a steep side
+        // would pump the water up the hill.
+        const nx = -dy / step, l = Math.hypot(nx, 1), d = (gy - py) / l;
+        return { x: px + (nx / l) * d, y: py + d / l, slide: null };
     };
 }
 // The shape of a sim block, for blockSolid (built once per block, then just moved).
@@ -192,7 +226,7 @@ export function blockShape(b) {
     const [ox, oy] = [b.cells[0][0] - Math.round(b.cells[0][0]), b.cells[0][1] - Math.round(b.cells[0][1])];
     const set = new Set(b.cells.map(([cx, cy]) => Math.round(cx - ox) * 64 + Math.round(cy - oy)));
     const reach = Math.max(...b.cells.map(([cx, cy]) => Math.hypot(cx, cy))) + 0.75 + RB;
-    return { set, ox, oy, reach2: reach * reach, x: 0, y: 0, a: 0, k: 1 };
+    return { set, ox, oy, reach2: reach * reach, x: 0, y: 0, a: 0, k: 1, vx: 0, vy: 0, w: 0 };
 }
 
 // ---------- drawing ----------
@@ -231,74 +265,73 @@ export function makeWater(scene, renderer) {
     dotScene.add(dots);
 
     const blob = new THREE.Mesh(
-        new THREE.PlaneGeometry(W, H),
+        new THREE.PlaneGeometry(1, 1),
         new THREE.ShaderMaterial({
             transparent: true, depthTest: false, depthWrite: false,
             uniforms: {
                 uMap: { value: target.texture }, uFill: { value: new THREE.Color() }, uDeep: { value: new THREE.Color() },
                 uInk: { value: new THREE.Color() }, uFoam: { value: new THREE.Color(0xffffff) },
-                uPx: { value: new THREE.Vector2(1 / (W * PX), 1 / (H * PX)) }, uTime: { value: 0 },
+                uPx: { value: new THREE.Vector2(1 / (W * PX), 1 / (H * PX)) }, uTime: { value: 0 }, uRect: { value: new THREE.Vector4(0, 0, 1, 1) },
             },
-            vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+            // uRect: the part of the board the quad covers this frame, in the offscreen picture's terms.
+            vertexShader: 'uniform vec4 uRect; varying vec2 vUv; void main(){ vUv = uRect.xy + uv * uRect.zw; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+            // Kept cheap: it only covers where the water is (see update), and does a handful of
+            // texture reads. Enough to read as water: an inked edge, a light line along the top
+            // with a slow sheen, deeper colour lower down, and foam where it's churned up.
             fragmentShader: `
                 uniform sampler2D uMap; uniform vec3 uFill, uDeep, uInk, uFoam; uniform vec2 uPx; uniform float uTime;
                 varying vec2 vUv;
                 ${NOISE}
                 void main(){
-                    if (texture2D(uMap, vUv).r < 0.3) discard;     // no water anywhere near: stop here (most of the board)
-                    vec2 p = vUv * vec2(${W}.0, ${H}.0);           // board units
-                    vec2 wob = (vec2(noise(p * 1.9 + uTime * 0.6), noise(p * 1.9 + 17.0 - uTime * 0.5)) - 0.5) * uPx * 3.0;
-                    vec2 uv = vUv + wob;
-                    vec4 t = texture2D(uMap, uv);
-                    float f = t.r;
+                    vec4 t = texture2D(uMap, vUv);
                     const float T = 0.55;
+                    if (t.r < T - 0.2) discard;
+                    vec2 p = vUv * vec2(${W}.0, ${H}.0);           // board units
+                    float n = noise(p * 2.2 + uTime * 0.5);
+                    vec2 uv = vUv + (n - 0.5) * uPx * 3.0;           // the edge wobbles a touch, like it's drawn
+                    float f = texture2D(uMap, uv).r;
                     if (f < T - 0.08) discard;
-                    // Depth: how much water is above this spot (a few looks straight up).
-                    float depth = 0.0;
-                    depth += step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 6.0)).r);
-                    depth += step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 16.0)).r);
-                    depth += step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 30.0)).r);
-                    depth += step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 48.0)).r);
-                    depth *= 0.25;
-                    vec3 col = mix(uFill, uDeep, depth * 0.8);
-                    // Caustics: two drifting noise fields; where they meet, a faint bright patch. Kept soft,
-                    // or it reads as squiggles.
-                    float c1 = noise(p * 3.4 + vec2(uTime * 0.3, -uTime * 0.18));
-                    float c2 = noise(p * 4.1 - vec2(uTime * 0.22, uTime * 0.27) + 4.0);
-                    float caustic = smoothstep(0.88, 1.0, 1.0 - abs(c1 - c2)) * depth;
-                    col = mix(col, uFoam, caustic * 0.18);
-                    // The surface: a light line along the top where it meets the air, with a slow sheen moving along it.
                     float top = 1.0 - step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 5.0)).r);
-                    float sheen = 0.5 + 0.5 * sin(p.x * 2.2 - uTime * 1.3);
-                    col = mix(col, uFoam, top * (0.45 + 0.3 * sheen));
-                    // Foam where it's churned up: speckled white where the drops are moving fast.
-                    float churn = clamp(t.g / max(f, 0.001), 0.0, 1.0);
-                    float foam = smoothstep(0.55, 0.9, churn) * step(0.55, noise(p * 9.0 + uTime * 3.0));
-                    col = mix(col, uFoam, foam * 0.6);
-                    // Inked edge.
-                    float ink = 1.0 - smoothstep(0.0, 0.1, f - T);
-                    col = mix(col, uInk, ink * 0.85);
+                    float deep = step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 26.0)).r);
+                    vec3 col = mix(uFill, uDeep, deep * 0.7);
+                    col = mix(col, uFoam, top * (0.5 + 0.25 * sin(p.x * 2.2 - uTime * 1.3)));
+                    float churn = clamp(t.g / max(t.r, 0.001), 0.0, 1.0);
+                    col = mix(col, uFoam, smoothstep(0.55, 0.9, churn) * step(0.55, n) * 0.6);
+                    col = mix(col, uInk, (1.0 - smoothstep(0.0, 0.1, f - T)) * 0.85);
                     gl_FragColor = vec4(col, smoothstep(T - 0.08, T - 0.02, f) * 0.94);
                     #include <colorspace_fragment>
                 }`,
         }),
     );
-    blob.position.set(W / 2, -H / 2, 0.02);
     blob.renderOrder = 0.5;                 // behind the blocks, so the edge tucks under them
     blob.visible = false;
     blob.frustumCulled = false;
     scene.add(blob);
 
     const m = new THREE.Matrix4(), clearWas = new THREE.Color();
-    let fade = 0, draining = false, drawn = false;
+    let fade = 0, draining = false, drawn = false, offset = 0;
     return {
         sim,
-        spill(x, y, n, w) { sim.spill(x, y, n, w); fade = 1; draining = false; },
+        spill(x, y, n, w) { sim.spill(x, y, n, w); sim.calm = 0; fade = 1; draining = false; },
+        // Fill the floor up to y with still water, skipping anywhere solid (the golf stage's pool).
+        fill(y, solid) {
+            sim.clear();
+            // Spaced the way the water likes to sit (any tighter and it bursts apart).
+            const gap = 0.235, row = gap * 0.866;
+            for (let yy = -H + R; yy < y && sim.n < MAX_DROPS; yy += row) {
+                for (let xx = R + (Math.round((yy + H) / row) % 2) * gap / 2; xx < W - R && sim.n < MAX_DROPS; xx += gap) {
+                    if (solid(xx, yy)) continue;
+                    const i = sim.n++;
+                    sim.x[i] = xx; sim.y[i] = yy; sim.vx[i] = 0; sim.vy[i] = 0;
+                }
+            }
+            sim.calm = 0; fade = 1; draining = false; drawn = false;
+        },
         // Off it goes: the zone's done. The blob thins out and is gone in about half a second.
         drain() { if (sim.n || sim.pour.length) draining = true; },
-        clear() { sim.clear(); draining = false; drawn = false; blob.visible = false; },
+        clear() { sim.clear(); sim.calm = 0; draining = false; drawn = false; offset = 0; blob.visible = false; },
         active: () => sim.n > 0 || sim.pour.length > 0,
-        moving: () => (sim.n > 0 || sim.pour.length > 0) && (draining || sim.pour.length > 0 || sim.balls.length > 0 || sim.speed() > 0.3),
+        moving: () => (sim.n > 0 || sim.pour.length > 0) && (draining || sim.pour.length > 0 || sim.balls.length > 0 || sim.calm < 30),
         setColors(fill, deep, ink) {
             const u = blob.material.uniforms;
             u.uFill.value.setHex(fill); u.uDeep.value.setHex(deep); u.uInk.value.setHex(ink);
@@ -309,18 +342,33 @@ export function makeWater(scene, renderer) {
             for (let i = 0; i < sim.n; i++) if (sim.y[i] < -H + 1.6) { top = Math.max(top, sim.y[i]); count++; }
             return count > 12 ? top + R : null;
         },
-        // balls: [{ x, y, vx, vy }], the ones on the board right now.
-        update(dt, solid, balls = []) {
+        // Shift the drawing (the golf stage's water rides in with its zone as it slides up).
+        setOffset(y) { offset = y; },
+        // balls: [{ x, y, vx, vy }], the ones on the board right now. wake: something nearby moved
+        // (a block falling), so a still pool should start moving again.
+        update(dt, solid, balls = [], wake = false) {
             if (!sim.n && !sim.pour.length) return;
             sim.balls = balls;
-            if (dt > 0) sim.step(Math.min(dt, 1 / 30), solid);
+            const busy = draining || sim.pour.length > 0 || balls.length > 0 || wake;
+            if (dt > 0 && (busy || sim.calm < 30)) {
+                sim.step(Math.min(dt, 1 / 30), solid);
+                sim.calm = !busy && sim.speed() < 0.15 ? sim.calm + 1 : 0;
+            }
             if (draining) { fade -= dt * 2; if (fade <= 0) { this.clear(); return; } }
             blob.material.uniforms.uTime.value = performance.now() / 1000 % 1000;
             blob.visible = true;
+            // The quad covers just the water (plus a dot's reach), not the whole board.
+            let x0 = W, x1 = 0, y0 = 0, y1 = -H;
+            for (let i = 0; i < sim.n; i++) { const x = sim.x[i], y = sim.y[i]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            x0 = Math.max(0, x0 - DOT); x1 = Math.min(W, x1 + DOT); y0 = Math.max(-H, y0 - DOT); y1 = Math.min(0, y1 + DOT);
+            if (x1 > x0 && y1 > y0) {
+                blob.scale.set(x1 - x0, y1 - y0, 1);
+                blob.position.set((x0 + x1) / 2, (y0 + y1) / 2 + offset, 0.02);
+                blob.material.uniforms.uRect.value.set(x0 / W, (y0 + H) / H, (x1 - x0) / W, (y1 - y0) / H);
+            }
             // All still: the offscreen picture from last time is still right.
-            const still = !draining && !sim.pour.length && !balls.length && sim.speed() < 0.05;
-            if (still && drawn) return;
-            drawn = still;
+            if (sim.calm >= 30 && !busy && drawn) return;
+            drawn = sim.calm >= 30;
             for (let i = 0; i < sim.n; i++) {
                 m.makeTranslation(sim.x[i], sim.y[i], 0); dots.setMatrixAt(i, m);
                 speeds.array[i] = Math.min(1, Math.hypot(sim.vx[i], sim.vy[i]) / 9);
