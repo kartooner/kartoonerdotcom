@@ -1,7 +1,7 @@
 // Zone recipes: which shapes exist, how zones are laid out, and what each depth holds.
 // Just data and small helpers; sim.js builds the zones from these. A biome would mostly
 // live here: its own shapes, recipe weights and numbers.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-47');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-48');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -59,19 +59,19 @@ export const SHAPE_VARIANTS = SHAPES.flatMap((sh) => {
 
 // What each thing says the first time it shows up. The tip points at it (see game.js).
 export const THING_TIPS = {
-    windmill: 'Windmills spin when you hit them, then smack the next ball that comes by.',
-    mushroom: 'Mushrooms grow on walls and blocks. Their caps bounce balls back extra hard!',
-    vine: 'Vines snap after a few hits, and anything hanging from them falls.',
-    bomb: 'Hit a bomb twice to light it. When it bursts, it knocks a chunk off everything nearby!',
-    seesaw: 'That\'s a seesaw! It has one nail in the middle, so hit an end and it tips. Anything on top slides off.',
-    hangbomb: 'A bomb on a vine! Hit it twice to light it, or cut the vine and it\'ll burst where it lands.',
-    gold: 'Ooh, a gold block! Pop it before you clear this zone and you\'ll get a bonus stage next.',
-    ring: 'Fly a ball through a +1 ring to get an extra shot.',
-    resting: 'This block has no nails, so it\'s just resting. Knock out what\'s holding it up and it\'ll tumble.',
-    jelly: 'That\'s jelly! Balls go right through it, but slower. Each pass takes 1 off.',
-    grey: "You can't break grey blocks, but you can bounce shots off them. Knock out their nails and they'll crumble.",
-    cup: 'That\'s a cup! Drop a ball in to get a +1, and watch it rattle around.',
-    single: 'Grey nails never come out, so this block stays put until you pop it.',
+    windmill: 'See that? It\'s a windmill. Hit it and it spins, then swats the next ball that comes by.',
+    mushroom: 'Huh, mushrooms. They grow on walls and blocks, and their caps bounce balls back extra hard.',
+    vine: 'You see that vine? A few hits and it snaps. Whatever it\'s holding comes down with it.',
+    bomb: 'Is that a bomb? Hit it twice to light it. When it goes off, it knocks a chunk off everything nearby.',
+    seesaw: 'Look, a seesaw. It has one nail in the middle, so hit an end and it tips. Anything on top slides right off.',
+    hangbomb: 'Wait, is that a bomb on a vine? Hit it twice to light it. Or cut the vine and it goes off wherever it lands.',
+    gold: 'Ooh, see the gold one? Pop it before you clear this zone and you get a bonus stage. I love those.',
+    ring: 'See that ring with the +1? Fly a ball through it and you get an extra shot.',
+    resting: 'Notice this one has no nails? It\'s just sitting there. Knock out what\'s holding it up and down it goes.',
+    jelly: 'What\'s that wobbly one? Jelly. Balls go right through it, just slower. Each pass takes 1 off.',
+    grey: "See the grey blocks? You can't break them, but you can bounce shots off them. Knock their nails out and they crumble.",
+    cup: 'You see that cup? Drop a ball in for a +1. It\'ll rattle around in there for a bit.',
+    single: 'See that grey nail? Those never come out. This block stays put until you pop it.',
 };
 
 // What each zone holds. New things arrive one at a time, then numbers climb.
