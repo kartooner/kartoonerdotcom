@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-26';
+const BUILD = '1.5-27';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -691,13 +691,19 @@ function buildPropView(pr) {
         return v;
     }
     if (pr.kind === 'hoop') {
-        // Hoops: two rim posts, an orange rim between them, and a net hanging under it.
-        // Drawn around the basket's body, which slides side to side (followed below).
+        // Hoops: two rim posts (the one on the backboard side taller), a backboard, an orange rim
+        // between the posts, and a net hanging under it.
         const half = pr.half;
         for (const dx of [-half, half]) {
-            const post = makeSketch({ kind: SHAPE.BOX, size: [0.06, 0.3], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + dx * 3, margin: 0.06 });
-            post.position.set(dx, -0.15, 0.05);
+            const tall = Math.sign(dx) === pr.back;
+            const post = makeSketch({ kind: SHAPE.BOX, size: [0.06, tall ? 0.55 : 0.3], round: 0.03, role: 'line', inkFill: true, wob: 0.3, seed: pr.id + dx * 3, margin: 0.06 });
+            post.position.set(dx, tall ? 0.1 : -0.15, 0.05);
             group.add(post);
+            if (tall) {
+                const board = makeSketch({ kind: SHAPE.BOX, size: [0.09, 0.32], round: 0.04, edge: 0.04, wob: 0.4, fill: 0xfbf6ea, seed: pr.id + 7, margin: 0.08 });
+                board.position.set(dx + Math.sign(dx) * 0.1, 0.3, 0.045);
+                group.add(board);
+            }
         }
         const rim = makeSketch({ kind: SHAPE.BOX, size: [half, 0.045], round: 0.03, edge: 0.03, wob: 0.3, fill: COLORS.mushroom, seed: pr.id + 4, margin: 0.06 });
         rim.position.set(0, 0.12, 0.06);

@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-26');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-27');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -167,7 +167,7 @@ const BONUS_NOTES = {
     pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
     tower: 'Bonus stage! Topple the towers. Every block you knock over is +1. Three shots.',
     golf: "Bonus stage! Mini golf: land on the green and sink it by the flag. Miss and it's in the water. First try +8, then +6, then +4.",
-    hoops: 'Bonus stage! Hoops: five shots at the moving basket. Each one in is +2.',
+    hoops: 'Bonus stage! Hoops: five shots, baskets all over. Bank off the grey blocks. Every basket is +2.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
@@ -179,7 +179,7 @@ const BONUS_NOTES = {
 //   tower:    a tower or two of stacked blocks (pillars and planks); each block knocked over is +1.
 //   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
 //   pachinko: three drops of five balls through nails into pockets (see below).
-//   hoops:    five shots at a basket sliding side to side; each in is +2.
+//   hoops:    five shots at baskets scattered about, with grey blocks to bank off; each basket is +2.
 const SPECIAL_AT = { 25: 'pachinko', 30: 'tower', 35: 'golf', 40: 'hoops' };
 const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
 const SPECIALS = ['tower', 'golf', 'pachinko', 'hoops'];
@@ -187,7 +187,7 @@ const STAGES = {
     tower: { shots: 3, cap: 10 },
     golf: { shots: 3, cap: 8, ball: { speed: 10, gravity: 1.6, rest: 0.35, settle: true } },
     pachinko: { shots: 3, cap: 12, balls: 5, ball: { speed: 4, gravity: 2.2, rest: 0.45, spread: 0.5 } },
-    hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true } },
+    hoops: { shots: 5, cap: 10, ball: { speed: 8, gravity: 1.3, rest: 0.6, settle: true, life: 7 } },
 };
 const TOWER_KNOCK = 5;                 // a ball shoves a tower block harder, at the point it hits, so it tips
 const TOWER_HP = [2, 4, 6, 9, 14, 24, 39];   // just for their colours: tower blocks have no number and don't break
@@ -197,7 +197,7 @@ const GOLF_BASE = 3.8, GOLF_HILL_H = 2.3, GOLF_SPREAD = 1.5, GOLF_FLAT = 0.5;
 const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
 const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades
-const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
+const HOOP_HALF = 0.55;                 // a basket's half-width
 // Pachinko: a board of nails and pockets along the bottom; each pocket pays what's on it.
 const PACHINKO_POCKETS = [1, 0, 0, 0, 3, 0, 0, 0, 1];   // one per column, left to right
 // Catch cups part-way down: a ball that drops in releases more balls from the launcher.
@@ -820,7 +820,7 @@ export class Sim {
         if (kind === 'pachinko') this.addPachinko();
         else if (kind === 'tower') this.addTowers();
         else if (kind === 'golf') this.addGolf();
-        else if (kind === 'hoops') this.addHoop();
+        else if (kind === 'hoops') this.addHoops();
         else if (kind === 'rings') {
             // A sky full of +1 rings, a few springy mushrooms on the walls, little blocks to keep balls going.
             for (const [right, r] of [[false, 3], [true, 5], [false, 7]]) {
@@ -1674,19 +1674,47 @@ export class Sim {
     addTowers() {
         const pick = () => TOWER_HP[Math.floor(this.rand() * TOWER_HP.length)];
         const add = (cells) => { const b = this.addBlock(cells, pick(), 'loose'); b.tower = true; b.home = null; };
-        const build = (c, stories) => {
-            let floor = H - 1;                                       // the row the next story stands on
+        // A tower: `stories` levels of two pillars and a plank, `w` cells wide (3 or 4), standing on
+        // row `floor`, with something on top. Pillars are 2 or 3 tall; the top is a little block, a
+        // short bar, a tall one, or a small stack.
+        const build = (c, w, stories, floor = H - 1) => {
             for (let k = 0; k < stories; k++) {
-                add([[c, floor - 1], [c, floor]]);                   // pillars
-                add([[c + 2, floor - 1], [c + 2, floor]]);
-                add([[c, floor - 2], [c + 1, floor - 2], [c + 2, floor - 2]]);   // the plank across
-                floor -= 3;
+                const h = this.rand() < 0.3 ? 3 : 2;
+                const col = (x) => Array.from({ length: h }, (_, i) => [x, floor - i]);
+                add(col(c));
+                add(col(c + w - 1));
+                add(Array.from({ length: w }, (_, i) => [c + i, floor - h]));      // the plank across
+                floor -= h + 1;
+                if (floor < 3) return;
             }
-            if (this.rand() < 0.5) add([[c + 1, floor]]);            // a little block on top...
-            else add([[c, floor], [c + 1, floor]]);                  // ...or a short one
+            const tops = [[[1, 0]], [[0, 0], [1, 0]], [[1, 0], [1, -1]], [[0, 0], [1, 0], [1, -1]], [[1, 0], [1, -1], [1, -2]]];
+            const top = tops[Math.floor(this.rand() * tops.length)];
+            const shift = w === 4 && this.rand() < 0.5 ? 1 : 0;
+            add(top.map(([dx, dy]) => [c + dx + shift, floor + dy]));
         };
-        if (this.rand() < 0.35) build(3, 3);                         // one tall tower in the middle
-        else { build(1, 2); build(5, 2 + (this.rand() < 0.4 ? 1 : 0)); }
+        // One to three towers, side by side with gaps, somewhere along the floor; now and then one
+        // stands on a grey ledge, higher up.
+        const plan = [];
+        let room = W;
+        for (let k = 0, n = 1 + Math.floor(this.rand() * 3); k < n; k++) {
+            const w = this.rand() < 0.35 ? 4 : 3, need = w + (plan.length ? 1 : 0);
+            if (room < need) break;
+            plan.push(w); room -= need;
+        }
+        let c = Math.floor(this.rand() * (room + 1));
+        for (const w of plan) {
+            if (c + w > W) break;
+            const ledge = plan.length < 3 && this.rand() < 0.25;
+            let floor = H - 1;
+            if (ledge) {
+                floor = H - 4 - Math.floor(this.rand() * 3);
+                const b = this.addBlock(Array.from({ length: w }, (_, i) => [c + i, floor + 1]), 1, 'neutral');
+                for (const nail of b.nails) nail.hp = nail.hp0 = -1;      // the ledge stays put
+            }
+            const stories = plan.length === 1 ? 2 + Math.floor(this.rand() * 2) : ledge ? 1 + Math.floor(this.rand() * 2) : 1 + Math.floor(this.rand() * 3);
+            build(c, w, stories, floor);                             // (a lone tower is always a tall one)
+            c += w + 1 + (this.rand() < 0.4 && c + w + 2 + 3 <= W ? 1 : 0);
+        }
     }
 
     checkTowers() {
@@ -1720,7 +1748,7 @@ export class Sim {
             s.owner[c.handle] = { t: 'peg' };
             cols.push(c.handle); rects.push([x, y, hx, hy]);
         };
-        const gx = 1.9 + this.rand() * (W - 3.8);                          // the hill's middle (its foot may run under the walls)
+        const gx = 1.4 + this.rand() * (W - 2.8);                          // the hill's middle: anywhere along the bottom (its foot may run under the walls)
         // A hill shaped like a bell curve: a soft round top, sides that curve in, and long feet
         // flaring out under the water. Each side spreads a little differently, so no two match.
         const spread = [GOLF_SPREAD * (0.85 + this.rand() * 0.3), GOLF_SPREAD * (0.85 + this.rand() * 0.3)];
@@ -1771,32 +1799,52 @@ export class Sim {
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
-    // Hoops: a basket (two rim posts with a catcher between) that slides side to side.
-    addHoop() {
+    // Hoops: three or four baskets scattered across the board, each with a backboard on one side,
+    // and a few grey blocks to bank shots off (their nails never come out). Now and then a
+    // mushroom on a wall for a lucky bounce. A ball through a basket from above pays, once per
+    // basket per ball, so one good ball can drop through two.
+    addHoops() {
         const { R, world, s } = this;
-        const id = s.nextId++;
-        const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(W / 2, HOOP_Y));
-        const cols = [];
-        for (const dx of [-HOOP_HALF, HOOP_HALF]) {
-            const c = world.createCollider(R.ColliderDesc.cuboid(0.06, 0.3).setTranslation(dx, -0.15)
-                .setRestitution(0.4).setFriction(0.2).setCollisionGroups(groups(G.PROP, G.BALL)), body);
-            s.owner[c.handle] = { t: 'peg' };
-            cols.push(c.handle);
+        const n = 3 + (this.rand() < 0.4 ? 1 : 0), spots = [];
+        for (let tries = 0; spots.length < n && tries < 200; tries++) {
+            const x = 1.1 + this.rand() * (W - 2.2), y = -5 - this.rand() * 8.5;
+            if (spots.some(([a, b]) => Math.hypot(a - x, (b - y) * 1.2) < 2.4)) continue;
+            spots.push([x, y]);
         }
-        const c = world.createCollider(R.ColliderDesc.cuboid(HOOP_HALF - 0.12, 0.08).setTranslation(0, -0.3).setSensor(true)
-            .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
-        s.owner[c.handle] = { t: 'hoop', id };
-        cols.push(c.handle);
-        s.props[id] = { id, kind: 'hoop', x: W / 2, y: HOOP_Y, half: HOOP_HALF, body: body.handle, bodies: [body.handle], cols };
-    }
-
-    moveHoop() {
-        const { world, s } = this;
-        for (const id in s.props) {
-            const pr = s.props[id];
-            if (pr.kind !== 'hoop') continue;
-            const x = W / 2 + HOOP_SWING * Math.sin(s.step * HOOP_SPEED);
-            world.getRigidBody(pr.body).setNextKinematicTranslation({ x, y: HOOP_Y });
+        for (const [x, y] of spots) {
+            const id = s.nextId++;
+            const body = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y));
+            const cols = [], back = x < W / 2 ? -1 : 1;                // the backboard is on the side nearer its wall
+            for (const dx of [-HOOP_HALF, HOOP_HALF]) {
+                const tall = Math.sign(dx) === back;
+                const c = world.createCollider(R.ColliderDesc.cuboid(0.06, tall ? 0.55 : 0.3).setTranslation(dx, tall ? 0.1 : -0.15)
+                    .setRestitution(0.4).setFriction(0.2).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+                s.owner[c.handle] = { t: 'peg' };
+                cols.push(c.handle);
+            }
+            const c = world.createCollider(R.ColliderDesc.cuboid(HOOP_HALF - 0.12, 0.08).setTranslation(0, -0.3).setSensor(true)
+                .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
+            s.owner[c.handle] = { t: 'hoop', id };
+            cols.push(c.handle);
+            s.props[id] = { id, kind: 'hoop', x, y, half: HOOP_HALF, back, body: body.handle, bodies: [body.handle], cols };
+        }
+        // Grey blocks to bank off, away from the baskets.
+        const SHAPES_BANK = [[[0, 0], [1, 0]], [[0, 0], [0, 1]], [[0, 0]], [[0, 0], [1, 0], [2, 0]]];
+        let banks = 0;
+        for (let tries = 0; banks < 2 + (this.rand() < 0.5 ? 1 : 0) && tries < 200; tries++) {
+            const shape = SHAPES_BANK[Math.floor(this.rand() * SHAPES_BANK.length)];
+            const c0 = Math.floor(this.rand() * (W - 1)), r0 = 3 + Math.floor(this.rand() * 10);
+            const cells = shape.map(([dc, dr]) => [c0 + dc, r0 + dr]);
+            if (cells.some(([c]) => c >= W)) continue;
+            if (cells.some(([c, r]) => spots.some(([x, y]) => Math.hypot(c + 0.5 - x, -(r + 0.5) - y) < 1.5))) continue;
+            if (cells.some(([c, r]) => Object.values(s.blocks).some((b) => b.cells.some(([bx, by]) => Math.abs(bx + b.anchor[0] - (c + 0.5)) < 1.5 && Math.abs(by + b.anchor[1] + (r + 0.5)) < 1.5)))) continue;
+            const b = this.addBlock(cells, 1, 'neutral');
+            for (const nail of b.nails) nail.hp = nail.hp0 = -1;           // they stay put
+            banks++;
+        }
+        if (this.rand() < 0.5) {
+            const right = this.rand() < 0.5, y = -(6 + Math.floor(this.rand() * 6)) - 0.5;
+            if (!spots.some(([x, yy]) => Math.abs((right ? W : 0) - x) < 1.8 && Math.abs(yy - y) < 1.2)) this.addMushroom(null, right ? W : 0, y, right ? Math.PI / 2 : -Math.PI / 2);
         }
     }
 
@@ -2065,7 +2113,6 @@ export class Sim {
             body.setAngvel(body.angvel() * JELLO_DRAG, true);
         }
         const falling = !!STAGES[s.bonus?.kind]?.ball;     // a surprise stage's balls just fall
-        if (s.bonus?.kind === 'hoops') this.moveHoop();
         if (s.bonus?.kind === 'tower') this.checkTowers();
         for (const ball of s.balls) {
             const body = world.getRigidBody(ball.body);
@@ -2203,8 +2250,8 @@ export class Sim {
         if (b.t === 'hoop') {
             // Hoops: through the basket from above, once per ball.
             const v = body.linvel();
-            if (ball && !ball.hooped && v.y < 0) {
-                ball.hooped = true;
+            if (ball && !(ball.hooped ??= []).includes(b.id) && v.y < 0) {
+                ball.hooped.push(b.id);
                 const pr = s.props[b.id], hp = pr ? world.getRigidBody(pr.body).translation() : p;
                 this.events.push({ t: 'swish', x: hp.x, y: hp.y });
                 this.gain(2, hp.x, hp.y + 0.8);
@@ -2336,7 +2383,7 @@ export class Sim {
             }
             if (drop) {
                 ball.idle = 0;                   // no fade: a falling ball ends in a pocket, a hole, or at rest
-                if (ball.age > 30 * 120) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); continue; }
+                if (ball.age > (drop?.life ?? 30) * 120) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); continue; }
                 if (drop.settle) {
                     // Golf and hoops: a ball that has come to rest (or nearly) is done. No kicks.
                     const v = body.linvel();
