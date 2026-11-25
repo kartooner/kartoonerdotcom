@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-54';
+const BUILD = '1.5-55';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1401,6 +1401,7 @@ function queueZoneTips() {
     add('seesaw', block((b) => b.seesaw && !b.loose));
     add('hangbomb', block((b) => b.bomb && b.hung != null));
     add('gold', block((b) => b.gold));
+    add('jar', block((b) => b.jar));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Hey, are you in a private window? Nice dig so far, but I can't save it if you leave." });
     }
