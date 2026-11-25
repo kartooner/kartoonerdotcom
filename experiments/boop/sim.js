@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-32');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-33');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -306,6 +306,9 @@ export class Sim {
         w.timestep = DT;
         const sim = new Sim(R, w, JSON.parse(s));
         sim.s.launchX ??= LAUNCHER.x;       // saves from before the launcher could move
+        // Saves from build 1.5-32, where a topple tower's blocks were left in the next zone (they
+        // can't be broken, so that zone could never be cleared): take them away.
+        if (sim.s.bonus?.kind !== 'tower') for (const id in sim.s.blocks) if (sim.s.blocks[id].tower) sim.removeBlock(sim.s.blocks[id], false);
         return sim;
     }
 
@@ -777,7 +780,8 @@ export class Sim {
             for (const h of pr.cols) delete s.owner[h];
         }
         s.props = {};
-        for (const id in s.blocks) if (s.blocks[id].neutral) this.removeBlock(s.blocks[id], false);
+        // Grey pieces, and a topple tower's blocks (they can't be broken), go with the zone.
+        for (const id in s.blocks) if (s.blocks[id].neutral || s.blocks[id].tower) this.removeBlock(s.blocks[id], false);
     }
 
     // A bonus stage: no depth, three free shots, one of three layouts. Small numbers that grow
