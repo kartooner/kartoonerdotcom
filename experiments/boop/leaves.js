@@ -6,7 +6,7 @@
 // their own, so a still board can still rest at a low frame rate.
 import * as THREE from 'three';
 import { seasonGeometry } from './crumbs.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-17');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-18');   // build stamp: game.js checks every file matches
 
 const MAX = 180;                 // leaves on screen at once (piles, falling and on the floor)
 const FLOOR_MAX = 90;            // the floor heap keeps the newest this many
@@ -34,9 +34,13 @@ export function makeLeafPiles(scene, season, floorY) {
     let falling = [], floor = [];
     // Water (the golf stage): while it's there, the floor leaves float on its surface in a single
     // loose layer, bobbing and drifting, instead of heaping on the floor. null = no water.
-    let water = null, island = null, time = 0;      // island: [x0, x1, top, hole x], the golf green standing in the water
-    // Leaves can lie on the island's grass, just not on its hole.
+    // island: the golf hill standing in the water: [x0, x1 where it meets the water, its top's y,
+    // the hole's x, x0, x1 of its flat top]. Leaves rest on the flat top (not on the hole); any
+    // that land on its slopes slide off into the water beside it.
+    let water = null, island = null, time = 0;
     const offHole = (x) => !island || Math.abs(x - island[3]) > 0.42 ? x : island[3] + (x < island[3] ? -0.42 : 0.42);
+    const onTop = (x) => island && x > island[4] && x < island[5];
+    const place = (x) => (onTop(x) ? offHole(x) : onIsland(x) ? (x < (island[0] + island[1]) / 2 ? island[0] - 0.08 : island[1] + 0.08) : x);
     const level = () => water ?? floorY;
     const onIsland = (x) => island && x > island[0] - 0.05 && x < island[1] + 0.05;
     const heapAt = (x) => floorY + 0.07 * SIZE + Math.min(0.6, floor.filter((l) => Math.abs(l.x - x) < 0.3).length * 0.04 / DENSITY);
@@ -115,8 +119,8 @@ export function makeLeafPiles(scene, season, floorY) {
             f.x = Math.max(0.1, Math.min(8.9, f.x));
             // Land on the heap (a little higher where more leaves have gathered), or on the water.
             const heap = heapAt(f.x), off = (Math.random() - 0.5) * 0.05;
-            if (water != null && onIsland(f.x)) f.x = offHole(f.x);
-            const rest = water != null ? (onIsland(f.x) ? island[2] + 0.03 : water + off) : heap;
+            if (water != null && onIsland(f.x)) f.x = place(f.x);
+            const rest = water != null ? (onTop(f.x) ? island[2] + 0.03 : water + off) : heap;
             if (f.y <= rest) {
                 falling.splice(i, 1);
                 floor.push({ x: f.x, y: rest, heapY: heap, off, vx: water != null ? f.vx * 0.3 : 0, bob: water != null ? 0.6 : 0, a: (Math.random() - 0.5) * 0.6, size: f.size, color: f.color });
@@ -126,8 +130,8 @@ export function makeLeafPiles(scene, season, floorY) {
         // Floor leaves: on water they rise to the surface, drift and bob; without it, they settle back on the heap.
         time += dt;
         for (const l of floor) {
-            if (water != null && onIsland(l.x)) l.x = offHole(l.x);
-            const target = water != null ? (onIsland(l.x) ? island[2] + 0.03 : water + (l.off ?? 0)) : (l.heapY ?? l.y);
+            if (water != null && onIsland(l.x)) l.x = place(l.x);
+            const target = water != null ? (onTop(l.x) ? island[2] + 0.03 : water + (l.off ?? 0)) : (l.heapY ?? l.y);
             if (Math.abs(target - l.y) > 0.002) l.y += (target - l.y) * Math.min(1, dt * 3);
             if (water != null && !calm?.matches && !onIsland(l.x)) {
                 const nx = Math.max(0.1, Math.min(8.9, l.x + (l.vx ?? 0) * dt));

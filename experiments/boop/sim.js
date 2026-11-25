@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-17');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-18');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,8 +192,8 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_GREEN_W = 2.6, GOLF_GREEN_Y = -H + 2.4, GOLF_GREEN_T = 0.3;   // the island green: width, top, the grass's thickness
-const GOLF_POCKET_R = 0.36, GOLF_WATER_H = 0.6;                      // the pocket under the hole; the water's depth
+const GOLF_TOP_W = 1.9, GOLF_SLOPE = 1.0, GOLF_HILL_H = 2.2;        // the hill: its flat top's width, how far its sides spread, its height
+const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
 const GOLF_HOLE = 0.26;
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades                // half the hole's width: a ball fits, rolling too fast it skips over
 const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
@@ -1699,56 +1699,68 @@ export class Sim {
         }
     }
 
-    // Mini golf: a small raised green with the hole in it, standing in water. A ball has to
-    // land on the green and stay there; one that misses or rolls off is lost in the water.
-    // A ledge or two up top gets in the way.
+    // Mini golf: a little hill standing in the water, somewhere new each time: rounded sides,
+    // a flat green top, and the hole a bowl dipped into it. Its outline (one chain of points) is
+    // both what the ball rolls on and what the game draws. Ledges up top get in the way, one of
+    // them sometimes right over the hole. A ball that misses the hill lands in the water.
     addGolf() {
         const { R, world, s } = this;
         const id = s.nextId++;
         const body = world.createRigidBody(R.RigidBodyDesc.fixed());
         const cols = [], rects = [];
-        // A grey slab from x0 to x1, y0 (top) to y1 (bottom). The green's pieces aren't drawn one by
-        // one (the game draws the green whole, with its hole and pocket); ledges are.
-        const rect = (x0, x1, y0, y1, drawn = true) => {
+        const rect = (x0, x1, y0, y1) => {          // a grey ledge from x0 to x1, y0 (top) to y1 (bottom)
             const hx = (x1 - x0) / 2, hy = (y0 - y1) / 2, x = (x0 + x1) / 2, y = (y0 + y1) / 2;
             const c = world.createCollider(R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
                 .setRestitution(0.2).setFriction(0.6).setCollisionGroups(groups(G.PROP, G.BALL)), body);
             s.owner[c.handle] = { t: 'peg' };
-            cols.push(c.handle);
-            if (drawn) rects.push([x, y, hx, hy]);
+            cols.push(c.handle); rects.push([x, y, hx, hy]);
         };
-        const gx = 2 + this.rand() * 5;                                   // the green's centre
-        const holeX = gx + (this.rand() < 0.5 ? -1 : 1) * (0.35 + this.rand() * 0.35);
-        // The green: an island standing in the water. Its hole goes down into a round pocket inside it.
-        const top = GOLF_GREEN_Y, bot = top - GOLF_GREEN_T, x0 = gx - GOLF_GREEN_W / 2, x1 = gx + GOLF_GREEN_W / 2;
-        const pr = GOLF_POCKET_R, open = Math.acos(GOLF_HOLE / pr);         // where the pocket's rim meets the hole's edges
-        const pcy = bot - pr * Math.sin(open);
-        rect(x0, holeX - pr, top, -H, false);                               // the island either side of the pocket...
-        rect(holeX + pr, x1, top, -H, false);
-        rect(holeX - pr, holeX - GOLF_HOLE, top, bot, false);               // ...the grass either side of the hole...
-        rect(holeX + GOLF_HOLE, holeX + pr, top, bot, false);
-        rect(holeX - pr, holeX + pr, pcy - pr, -H, false);                  // ...and under the pocket
-        const pts = [];
-        for (let k = 0; k <= 16; k++) {
-            const a = Math.PI - open + (Math.PI + 2 * open) * (k / 16);       // from the left lip, round the bottom, to the right
-            pts.push(holeX + pr * Math.cos(a), pcy + pr * Math.sin(a));
+        const gx = 1.8 + this.rand() * (W - 3.6);                          // the hill's middle
+        const top = -H + GOLF_HILL_H, half = GOLF_TOP_W / 2;
+        const holeX = gx + (this.rand() * 2 - 1) * (half - GOLF_HOLE - 0.15);
+        const hill = [];                                                    // the outline, left foot to right foot
+        for (let k = 0; k <= 8; k++) {                                      // left side: a rounded shoulder
+            const a = (k / 8) * Math.PI / 2;
+            hill.push([gx - half - GOLF_SLOPE * Math.cos(a), -H - 0.3 + (GOLF_HILL_H + 0.3) * Math.sin(a)]);
         }
-        const pocket = world.createCollider(R.ColliderDesc.polyline(new Float32Array(pts))
-            .setRestitution(0.1).setFriction(0.8).setCollisionGroups(groups(G.PROP, G.BALL)), body);
-        s.owner[pocket.handle] = { t: 'peg' };
-        cols.push(pocket.handle);
-        // A ledge or two up top: never right over the green.
+        // The bowl: straight down a little, round the bottom, and back up.
+        hill.push([holeX - GOLF_HOLE, top]);
+        for (let k = 0; k <= 10; k++) {
+            const a = Math.PI + (k / 10) * Math.PI;
+            hill.push([holeX + GOLF_HOLE * Math.cos(a), top - GOLF_BOWL_D + GOLF_HOLE + GOLF_HOLE * Math.sin(a)]);
+        }
+        hill.push([holeX + GOLF_HOLE, top]);
+        for (let k = 8; k >= 0; k--) {                                      // right side
+            const a = (k / 8) * Math.PI / 2;
+            hill.push([gx + half + GOLF_SLOPE * Math.cos(a), -H - 0.3 + (GOLF_HILL_H + 0.3) * Math.sin(a)]);
+        }
+        const c = world.createCollider(R.ColliderDesc.polyline(new Float32Array(hill.flat()))
+            .setRestitution(0.2).setFriction(0.6).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+        s.owner[c.handle] = { t: 'peg' };
+        cols.push(c.handle);
+        // Ledges up top, never over the hill's sides; and now and then a small one right over the
+        // hole, so dropping straight down on it doesn't work.
+        const x0 = gx - half - GOLF_SLOPE, x1 = gx + half + GOLF_SLOPE;
         const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -8.5]] : [[5.8, W, -6], [0, 3.8, -8.5]];
-        for (const [a, b, y] of ledges) if (x1 < a - 0.4 || x0 > b + 0.4) rect(a, b, y, y - 0.4);
-        const hole = world.createCollider(R.ColliderDesc.ball(0.14).setTranslation(holeX, pcy - pr * 0.45).setSensor(true)
+        for (const [a, b, y] of ledges) if (x1 < a + 0.6 || x0 > b - 0.6) rect(a, b, y, y - 0.4);
+        if (this.rand() < 0.6) {
+            const bx = holeX + (this.rand() - 0.5) * 0.4;
+            rect(bx - 0.55, bx + 0.55, top + 3.2, top + 2.85);
+        }
+        const bowlY = top - GOLF_BOWL_D;
+        const hole = world.createCollider(R.ColliderDesc.ball(0.12).setTranslation(holeX, bowlY + 0.18).setSensor(true)
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[hole.handle] = { t: 'hole', x: holeX, y: top };
         cols.push(hole.handle);
-        const water = world.createCollider(R.ColliderDesc.cuboid(W / 2, 0.25).setTranslation(W / 2, -H + 0.25).setSensor(true)
+        const water = world.createCollider(R.ColliderDesc.cuboid(W / 2, GOLF_WATER_H / 2).setTranslation(W / 2, -H + GOLF_WATER_H / 2).setSensor(true)
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[water.handle] = { t: 'water' };
         cols.push(water.handle);
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, green: [x0, x1, top, GOLF_GREEN_T], holeW: GOLF_HOLE * 2, hole: [holeX, top], pocket: [holeX, pcy, pr], water: GOLF_WATER_H, bodies: [body.handle], cols };
+        // Where the hill meets the water, for the leaves (they float round it, and rest on its top).
+        const wx = GOLF_SLOPE * Math.cos(Math.asin(Math.min(1, (GOLF_WATER_H + 0.3) / (GOLF_HILL_H + 0.3))));
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, hill, top: [gx - half, gx + half, top],
+            waterline: [gx - half - wx, gx + half + wx], hole: [holeX, top], holeW: GOLF_HOLE * 2, bowl: GOLF_BOWL_D,
+            water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
     // Hoops: a basket (two rim posts with a catcher between) that slides side to side.
