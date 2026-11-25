@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-8');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-9');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -164,20 +164,20 @@ const BONUS_SHOTS = 3, BONUS_CAP = 5, BONUS_CLEAR = 1;
 const BONUS_KINDS = ['rings', 'pinata', 'chain'];
 const BONUS_NOTES = {
     rings: 'Bonus stage! Three free shots, one ball each: fly through as many +1 rings as you can.',
-    pachinko: 'Bonus stage! One big drop: eight balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
+    pachinko: 'Bonus stage! Three drops of five balls. Land one in a cup for two more. The pockets at the bottom pay shots.',
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
 // Pachinko (a surprise, so not in What's new): clearing depth 25, 40 or 50 leads to a bonus
-// stage with no blocks, a board of nails and pockets along the bottom. One big drop: ten balls
-// fall from the launcher (pick the spot and the angle) and bounce down through the nails;
-// each pocket pays what's on it. Here balls fall for real: gravity, no constant speed, softer
+// stage with no blocks, a board of nails and pockets along the bottom. Three drops of five balls
+// fall from the launcher (pick the spot and the angle each time) and bounce down through the
+// nails; each pocket pays what's on it. Here balls fall for real: gravity, no constant speed, softer
 // bounces. Not in Relaxed mode, where shots never run out anyway.
 export const PACHINKO_AT = new Set([25, 40, 50]);
-const PACHINKO_BALLS = 8, PACHINKO_CAP = 10;
+const PACHINKO_DROPS = 3, PACHINKO_BALLS = 5, PACHINKO_CAP = 12;
 const PACHINKO_SPEED = 4;             // launch speed (a drop, not a shot)
 const PACHINKO_GRAVITY = 2.2;         // gravity scale on the balls: a gentle fall you can follow
-const PACHINKO_POCKETS = [1, 0, 1, 0, 3, 0, 1, 0, 1];   // one per column, left to right
+const PACHINKO_POCKETS = [1, 0, 0, 0, 3, 0, 0, 0, 1];   // one per column, left to right
 // Catch cups part-way down: a ball that drops in releases more balls from the launcher.
 const PACHINKO_CUPS = [[2, -6.4], [7, -6.4], [4.5, -10.9]];
 const CUP_HALF = 0.36;                // half its width: a ball fits, but it takes a good line
@@ -764,7 +764,7 @@ export class Sim {
             s.bonusCount = (s.bonusCount ?? 0) + 1;
             kind = BONUS_KINDS[(s.bonusCount - 1) % BONUS_KINDS.length];
         }
-        s.bonus = pachinko ? { kind, shots: 1, gain: 0, pops: 0, cap: PACHINKO_CAP } : { kind, shots: BONUS_SHOTS, gain: 0, pops: 0 };
+        s.bonus = pachinko ? { kind, shots: PACHINKO_DROPS, gain: 0, pops: 0, cap: PACHINKO_CAP } : { kind, shots: BONUS_SHOTS, gain: 0, pops: 0 };
         s.par = null; s.zoneShots = 0; s.stretch = false; s.recipe = 'bonus';
         s.note = BONUS_NOTES[kind];
         s.noteTarget = { kind: 'launcher' };

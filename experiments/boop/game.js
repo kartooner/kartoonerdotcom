@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-8';
+const BUILD = '1.5-9';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -882,7 +882,7 @@ function syncView(frameDt) {
         hud.volley.textContent = s.volley > 1 ? `${s.volley} balls per shot` : '';
         // A bonus stage swaps par for its free shots.
         hud.parLabel.textContent = s.bonus ? 'Bonus · free shots' : 'This zone / par';
-        hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? '1 drop' : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
+        hud.par.textContent = s.bonus ? (s.bonus.kind === 'pachinko' ? (s.bonus.shots ? `${s.bonus.shots} ${s.bonus.shots === 1 ? 'drop' : 'drops'}` : 'dropped') : `${s.bonus.shots} left`) : `${used}/${s.par ?? '-'}`;
         hud.parBox.classList.toggle('over', !s.bonus && used > (s.par ?? Infinity));
         hud.parBox.classList.toggle('bonus', !!s.bonus);
         hud.progress.style.transform = `scaleX(${done})`;
