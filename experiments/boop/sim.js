@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-22');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-23');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -2318,7 +2318,7 @@ export class Sim {
             if (ball.floating) {
                 // Afloat: drawn up to just under the surface, bobbing, drifting to a stop, then gone.
                 ball.floating += 1;
-                const v = body.linvel(), surface = -H + GOLF_WATER_H + 0.07 + 0.03 * Math.sin(ball.floating * 0.09);   // riding high, like a bob
+                const v = body.linvel(), surface = -H + GOLF_WATER_H + 0.02 * Math.sin(ball.floating * 0.09);   // sitting in it, about half under
                 body.setLinvel({ x: v.x * 0.94, y: (surface - p.y) * 6 }, true);
                 body.setAngvel(body.angvel() * 0.9, true);
                 if (ball.floating > FLOAT_STEPS) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); }

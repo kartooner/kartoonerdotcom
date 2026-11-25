@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-22';
+const BUILD = '1.5-23';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -536,14 +536,14 @@ function filledShape(pts, color, z, outline = true) {
     group.position.z = z;
     return { group, fill };
 }
-const GOLF_RIPPLE = { light: 0x557c8c, dark: 0x9cc6d8 };    // rings on the water: a darker (or, at night, lighter) blue-grey
+const GOLF_RIPPLE = { light: 0xffffff, dark: 0xd6eaf2 };    // rings on the water: white foam
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
 // behind a floating ball and round in front of it. delay: seconds before it starts.
-function waterRing(x, y, r, dur, delay = 0, r0 = 0.18) {
+function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
     r = Math.min(r, x - 0.08, W - x - 0.08);            // never past the walls
     if (r <= r0) return;
-    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.09, edge: 0, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.5, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
-    ring.position.set(x, y, 0.045);
+    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0.035, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.7, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
+    ring.position.set(x, y, 0.46);                       // on top of the water, wrapping round a floating ball
     ring.scale.setScalar(0.001);
     scene.add(ring);
     booms.push({ ring, r, r0, t: -delay, dur, flat: true });
@@ -665,7 +665,7 @@ function buildPropView(pr) {
         if (pr.water) {
             // The water the green stands in: a blue band along the floor, under everything else.
             v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2 - 0.06, pr.water / 2 - 0.04], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.04);    // inside the frame     // in front of the hill's foot, see-through
+            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.45);    // inside the frame; over a floating ball, so its lower half is under water     // in front of the hill's foot, see-through
             v.water.material.uniforms.uAlpha.value = 0.72;
             group.add(v.water);
             leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
@@ -873,11 +873,12 @@ function syncView(frameDt) {
     // A ball afloat in the golf water sends out a ring every half second while it bobs.
     for (const b of s.balls) {
         if (!b.floating) continue;
-        const t = (rippleT.get(b.body) ?? 0.25) + frameDt;
-        if (t < 0.55) { rippleT.set(b.body, t); continue; }
+        leafPiles?.part(sim.world.getRigidBody(b.body).translation().x, 0.55);      // leaves drift aside round it
+        const t = (rippleT.get(b.body) ?? 0.3) + frameDt;
+        if (t < 0.38) { rippleT.set(b.body, t); continue; }
         rippleT.set(b.body, 0);
         const p = sim.world.getRigidBody(b.body).translation();
-        waterRing(p.x, p.y + zoneOffset - 0.07, 0.48, 1.0);       // from the waterline round the ball, sized to it
+        waterRing(p.x, p.y + zoneOffset - 0.01, 0.42, 0.9);       // foam round the ball at the waterline, sized to it
     }
     if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
@@ -1055,7 +1056,7 @@ function consumeEvents() {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
             leafPiles?.ripple(e.x, 1.4);
-            for (const [delay, r] of [[0, 0.5], [0.14, 0.7], [0.28, 0.9]]) waterRing(e.x, e.y, r, 0.9, delay);
+            for (const [delay, r] of [[0, 0.45], [0.12, 0.62], [0.24, 0.8]]) waterRing(e.x, e.y, r, 0.8, delay);
         }
         if (e.t === 'contact') {
             bounced.add(e.ball);
