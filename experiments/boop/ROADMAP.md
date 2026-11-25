@@ -225,14 +225,15 @@ An early look at flowing water. Nothing changes in the real game until we decide
 
 - Jars are rare: none before depth 25, then about one zone in seven, so they stay a nice surprise. Small ones (one square) or big ones (four). ?water=often puts one in the first zone and about every other zone, for trying it out.
 - Drawn like the blocks: thick wobbly ink edge, glass with a jelly-style shine, water inside that sloshes.
-- Pop it and the water pours out, runs off block tops, slips through the cracks between blocks and pools on the floor. It only collects where there's no way out (a cup, a pocket against a wall).
+- Pop it and the jar tips over toward the middle of the board and the water pours from its mouth (the level inside dropping), then the empty jar shrinks away. The water runs off block tops, slips through the cracks between blocks and pools on the floor. It only collects where there's no way out (a cup, a pocket against a wall).
 - The pool has a light top line with a moving sheen, deeper colour lower down, and foam where it's churned up. Leaves float on it. (Caustics came out: not worth what they cost.)
 - Balls splash through it and throw water around, and moving blocks shove it along. The water doesn't slow balls: every ball moves at one speed, which keeps the aiming guide honest.
 - Still water: the golf stage's pool (with ?water=1) is the same water, kept still. Its surface ripples, and a ball dropping in throws up a splash that falls back in. This is the start of the water biome: a whole board of still water to shoot through.
 - Kept cheap: the drawing only covers where the water is, and a still pool stops simulating until something disturbs it.
 - The water is its own little sim in water.js (under 1 ms a frame), not Rapier bodies, so it stays cheap and out of saves.
 - It drains when the zone clears.
-- Still to decide: free Boop!, Plooka! only, or neither. Then maybe: water that carries over and rises zone to zone.
+- Decided: it goes in free Boop! as a surprise, like the bonus stages. Not in What's new or How to play; Boop explains a jar the first time one turns up. Once it's been played with, turning it on for everyone is one line (WATER_TEST in game.js).
+- Maybe later: water that carries over and rises zone to zone.
 
 ## Later: a bigger version (app or Steam)
 
