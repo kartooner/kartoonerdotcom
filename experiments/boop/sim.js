@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-13');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-14');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,7 +192,8 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling              // a ball tips a domino harder, at the point it hits, so it topples
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_GREEN_W = 2.6, GOLF_GREEN_H = 3, GOLF_WATER_H = 0.6;   // the raised green's width and height; the water's depth
+const GOLF_GREEN_W = 2.6, GOLF_GREEN_Y = -12, GOLF_GREEN_T = 0.3;   // the green: width, top, thickness
+const GOLF_POCKET_R = 0.36, GOLF_WATER_H = 0.6;                      // the pocket under the hole; the water's depth
 const GOLF_HOLE = 0.26;
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades                // half the hole's width: a ball fits, rolling too fast it skips over
 const HOOP_Y = -10.5, HOOP_HALF = 0.55, HOOP_SWING = 2.6, HOOP_SPEED = 0.011;   // where it hangs, its half-width, how far and fast it slides
@@ -1707,7 +1708,7 @@ export class Sim {
         const body = world.createRigidBody(R.RigidBodyDesc.fixed());
         const cols = [], rects = [];
         // A grey slab from x0 to x1, y0 (top) to y1 (bottom). The green's pieces aren't drawn one by
-        // one (the game draws the green whole, with its hole); ledges and lips are.
+        // one (the game draws the green whole, with its hole and pocket); ledges are.
         const rect = (x0, x1, y0, y1, drawn = true) => {
             const hx = (x1 - x0) / 2, hy = (y0 - y1) / 2, x = (x0 + x1) / 2, y = (y0 + y1) / 2;
             const c = world.createCollider(R.ColliderDesc.cuboid(hx, hy).setTranslation(x, y)
@@ -1718,15 +1719,25 @@ export class Sim {
         };
         const gx = 2 + this.rand() * 5;                                   // the green's centre
         const holeX = gx + (this.rand() < 0.5 ? -1 : 1) * (0.35 + this.rand() * 0.35);
-        const top = -H + GOLF_GREEN_H, x0 = gx - GOLF_GREEN_W / 2, x1 = gx + GOLF_GREEN_W / 2;
-        rect(x0, holeX - GOLF_HOLE, top, -H, false);
-        rect(holeX + GOLF_HOLE, x1, top, -H, false);
-        rect(holeX - GOLF_HOLE, holeX + GOLF_HOLE, top - 0.7, -H, false);       // the hole's bottom
-        for (const x of [x0 + 0.06, x1 - 0.06]) rect(x - 0.06, x + 0.06, top + 0.14, top);   // low lips at the ends
+        // The green: a thin strip of grass, its hole a gap in it, with a round pocket hanging below.
+        const top = GOLF_GREEN_Y, bot = top - GOLF_GREEN_T, x0 = gx - GOLF_GREEN_W / 2, x1 = gx + GOLF_GREEN_W / 2;
+        rect(x0, holeX - GOLF_HOLE, top, bot, false);
+        rect(holeX + GOLF_HOLE, x1, top, bot, false);
+        const pr = GOLF_POCKET_R, open = Math.acos(GOLF_HOLE / pr);         // where the pocket's rim meets the hole's edges
+        const pcy = bot - pr * Math.sin(open);
+        const pts = [];
+        for (let k = 0; k <= 16; k++) {
+            const a = Math.PI - open + (Math.PI + 2 * open) * (k / 16);       // from the left lip, round the bottom, to the right
+            pts.push(holeX + pr * Math.cos(a), pcy + pr * Math.sin(a));
+        }
+        const pocket = world.createCollider(R.ColliderDesc.polyline(new Float32Array(pts))
+            .setRestitution(0.1).setFriction(0.8).setCollisionGroups(groups(G.PROP, G.BALL)), body);
+        s.owner[pocket.handle] = { t: 'peg' };
+        cols.push(pocket.handle);
         // A ledge or two up top: never right over the green.
-        const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -9]] : [[5.8, W, -6], [0, 3.8, -9]];
+        const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -8.5]] : [[5.8, W, -6], [0, 3.8, -8.5]];
         for (const [a, b, y] of ledges) if (x1 < a - 0.4 || x0 > b + 0.4) rect(a, b, y, y - 0.4);
-        const hole = world.createCollider(R.ColliderDesc.cuboid(GOLF_HOLE - 0.06, 0.15).setTranslation(holeX, top - 0.5).setSensor(true)
+        const hole = world.createCollider(R.ColliderDesc.ball(0.14).setTranslation(holeX, pcy - pr * 0.45).setSensor(true)
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[hole.handle] = { t: 'hole', x: holeX, y: top };
         cols.push(hole.handle);
@@ -1734,7 +1745,7 @@ export class Sim {
             .setCollisionGroups(groups(G.PICKUP, G.BALL)).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), body);
         s.owner[water.handle] = { t: 'water' };
         cols.push(water.handle);
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, green: [x0, x1, top], holeW: GOLF_HOLE * 2, hole: [holeX, top], water: GOLF_WATER_H, bodies: [body.handle], cols };
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, green: [x0, x1, top, GOLF_GREEN_T], holeW: GOLF_HOLE * 2, hole: [holeX, top], pocket: [holeX, pcy, pr], water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
     // Hoops: a basket (two rim posts with a catcher between) that slides side to side.
@@ -2145,15 +2156,15 @@ export class Sim {
             return;
         }
         if (b.t === 'hole') {
-            // Golf: in the hole. Pays by try, and the stage is done.
-            this.removeBall(a.body);
+            // Golf: in the hole. Pays by try, and the stage is done; the ball sits in the pocket, then fades.
+            if (ball) { ball.sunk = true; body.setLinvel({ x: 0, y: Math.min(0, body.linvel().y) * 0.3 }, true); }    // it stays down
             if (s.bonus && !s.bonus.sunk) {
                 const tries = STAGES.golf.shots - s.bonus.shots;
                 const n = GOLF_PAYS[Math.max(0, Math.min(GOLF_PAYS.length - 1, tries - 1))];
                 s.bonus.sunk = true;
                 s.bonus.shots = 0;
                 this.events.push({ t: 'sunk', n, x: b.x, y: b.y });
-                this.gain(n, b.x, b.y + 1);
+                this.gain(n, b.x, b.y + 2.1);         // above the flag
             }
             return;
         }
@@ -2294,6 +2305,12 @@ export class Sim {
                 if (ball.floating > FLOAT_STEPS) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); }
                 continue;
             }
+            if (ball.sunk) {
+                // In the cup: it settles quickly (no bouncing back out), sits a moment, then fades.
+                const v = body.linvel();
+                body.setLinvel({ x: v.x * 0.85, y: Math.min(v.y, 0) * 0.9 + (v.y < 0 ? 0 : -0.5) }, true);
+                body.setAngvel(body.angvel() * 0.85, true);
+            }
             if (drop) {
                 ball.idle = 0;                   // no fade: a falling ball ends in a pocket, a hole, or at rest
                 if (ball.age > 30 * 120) { this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true }); this.removeBall(ball.body); continue; }
@@ -2301,7 +2318,7 @@ export class Sim {
                     // Golf and hoops: a ball that has come to rest (or nearly) is done. No kicks.
                     const v = body.linvel();
                     ball.rest = Math.hypot(v.x, v.y) < 0.6 ? (ball.rest ?? 0) + 1 : 0;
-                    if (ball.rest > 60 || (s.bonus.kind === 'hoops' && p.y < -H + 0.4)) {
+                    if (ball.rest > (ball.sunk ? 120 : 60) || (s.bonus.kind === 'hoops' && p.y < -H + 0.4)) {
                         this.events.push({ t: 'out', ball: ball.body, x: p.x, y: p.y, faded: true });
                         this.removeBall(ball.body);
                     }
