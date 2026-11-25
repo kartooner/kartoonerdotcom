@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-22');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -302,4 +302,99 @@ export function makeBlockMesh(cells, jello, seed, corner) {
         },
     });
     return new THREE.Mesh(geo, material);
+}
+
+// ---------- the golf hill ----------
+// The mini-golf hill drawn the way blocks are: a green fill with the zigzag pattern, and the same
+// hand-drawn, crayon-grained ink edge. Its top is a height curve (heights sampled evenly across
+// its width). The hole is cut into the top: an oval whose back tucks behind the hill's top edge,
+// with a strip of green over the front of its rim, so it sits in the ground.
+const HILL_N = 64;
+const hillFragment = /* glsl */`
+uniform float uH[${HILL_N}];
+uniform vec2 uSpan;        // x of the first and last height sample
+uniform vec3 uFill;
+uniform vec3 uInk;
+uniform vec3 uHole;
+uniform vec4 uHoleE;       // the hole: centre x, centre y, half-width, half-height
+uniform float uSeed;
+varying vec2 vP;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float aastep(float t, float x) { float w = fwidth(x) * 0.75; return smoothstep(t - w, t + w, x); }
+float band(float lo, float hi, float x) { return aastep(lo, x) - aastep(hi, x); }
+float heightAt(float x) {
+    float t = clamp((x - uSpan.x) / (uSpan.y - uSpan.x), 0.0, 1.0) * float(${HILL_N - 1});
+    int i = int(floor(t));
+    float a = 0.0, b = 0.0;
+    for (int k = 0; k < ${HILL_N}; k++) { if (k == i) a = uH[k]; if (k == i + 1) b = uH[k]; }
+    if (i >= ${HILL_N - 1}) b = a;
+    return mix(a, b, fract(t));
+}
+// Signed distance to an ellipse, roughly (good enough for an outline this thin).
+float sdEllipse(vec2 p, vec2 c, vec2 r) { vec2 q = (p - c) / r; return (length(q) - 1.0) * min(r.x, r.y); }
+
+void main() {
+    vec2 p = vP;
+    vec2 q = p + uSeed;
+    float wob = (noise(q * 2.6) - 0.5) * 0.07 + (noise(q * 19.0) - 0.5) * 0.035;
+    // Distance to the top edge, measured across the slope, then wobbled like a block's edge.
+    float dx = 0.02, h = heightAt(p.x), slope = (heightAt(p.x + dx) - heightAt(p.x - dx)) / (2.0 * dx);
+    float d = (p.y - h) / sqrt(1.0 + slope * slope) + wob;
+    float aa = fwidth(d);
+    float inside = 1.0 - smoothstep(-aa, aa, d);
+    float edgeW = 0.06 + (noise(q * 31.0) - 0.5) * 0.02;
+    float fillMask = 1.0 - smoothstep(-aa, aa, d + edgeW);
+    vec3 fill = mix(uFill, uFill * 0.8, band(0.65, 0.9, fract(p.y * 4.0 + abs(fract(p.x * 2.5) - 0.5) * 1.8)));   // zigzag
+    // The hole: the oval, minus a green lip over its front (a second oval lower down).
+    vec2 c = uHoleE.xy, r = uHoleE.zw;
+    float e = sdEllipse(p, c, r) + wob * 0.3;
+    float lip = sdEllipse(p, c - vec2(0.0, r.y * 1.75), r * vec2(1.15, 1.0)) + wob * 0.3;
+    float ae = fwidth(e), al = fwidth(lip);
+    float inHole = (1.0 - smoothstep(-ae, ae, e)) * smoothstep(-al, al, lip);
+    float holeInk = (1.0 - smoothstep(0.0, 0.035, abs(e))) * smoothstep(-al, al, lip)
+                  + (1.0 - smoothstep(0.0, 0.035, abs(lip))) * (1.0 - smoothstep(-ae, ae, e));
+    vec3 col = mix(fill, uHole, inHole);
+    col = mix(col, uInk, clamp(holeInk, 0.0, 1.0) * fillMask);
+    col = mix(uInk, col, fillMask);
+    gl_FragColor = vec4(col, inside);
+    #include <colorspace_fragment>
+}`;
+
+// outline: [[x, y], ...] the hill's top from left foot to right foot. hole: [x, y, half-width, half-height].
+// Drawn over [x0, x1] x [bottom, top]: clip it to the board by passing those.
+export function makeHillMesh(outline, hole, { x0, x1, bottom, top, fill, ink, holeColor, seed = 0 }) {
+    const xs = outline.map(([x]) => x), first = xs[0], last = xs[xs.length - 1];
+    const at = (x) => {
+        let i = 0;
+        while (i < outline.length - 2 && outline[i + 1][0] < x) i++;
+        const [ax, ay] = outline[i], [bx, by] = outline[i + 1];
+        return ay + (by - ay) * Math.max(0, Math.min(1, (x - ax) / (bx - ax || 1)));
+    };
+    const hs = Array.from({ length: HILL_N }, (_, k) => at(first + (last - first) * (k / (HILL_N - 1))));
+    const geo = new THREE.PlaneGeometry(x1 - x0, top - bottom);
+    geo.translate((x0 + x1) / 2, (top + bottom) / 2, 0);
+    const material = new THREE.ShaderMaterial({
+        vertexShader: vertex,
+        fragmentShader: hillFragment,
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+            uH: { value: hs },
+            uSpan: { value: new THREE.Vector2(first, last) },
+            uFill: { value: new THREE.Color(fill) },
+            uInk: { value: new THREE.Color(ink) },
+            uHole: { value: new THREE.Color(holeColor) },
+            uHoleE: { value: new THREE.Vector4(...hole) },
+            uSeed: { value: seed },
+        },
+    });
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.renderOrder = 1;
+    return mesh;
 }

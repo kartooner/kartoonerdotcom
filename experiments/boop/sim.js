@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-22');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,7 +192,8 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;              // a ball tips a domino harder, at the point it hits, so it topples
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_BASE = 3.8, GOLF_HILL_H = 2.3, GOLF_SPREAD = 1.6;      // the hill: how far its feet run each way, its height, how wide its bell is
+// The golf hill: how far its feet run each way, its height, how wide its bell is, and the half-width of the level spot on top.
+const GOLF_BASE = 3.8, GOLF_HILL_H = 2.3, GOLF_SPREAD = 1.5, GOLF_FLAT = 0.5;
 const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
 const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades
@@ -1719,11 +1720,12 @@ export class Sim {
         // A hill shaped like a bell curve: a soft round top, sides that curve in, and long feet
         // flaring out under the water. Each side spreads a little differently, so no two match.
         const spread = [GOLF_SPREAD * (0.85 + this.rand() * 0.3), GOLF_SPREAD * (0.85 + this.rand() * 0.3)];
+        // Its top levels off into a small flat spot where the hole sits.
         const domeY = (x) => {
-            const d = (x - gx) / spread[x < gx ? 0 : 1];
+            const d = Math.max(0, Math.abs(x - gx) - GOLF_FLAT) / spread[x < gx ? 0 : 1];
             return -H - 0.05 + (GOLF_HILL_H + 0.05) * Math.exp(-d * d);
         };
-        const holeX = gx + (this.rand() * 2 - 1) * 0.3;
+        const holeX = gx + (this.rand() * 2 - 1) * (GOLF_FLAT - GOLF_HOLE - 0.08);
         const top = domeY(holeX);
         const outline = [];                                                 // the dome as drawn, left foot to right foot
         for (let k = 0; k <= 48; k++) { const x = gx - GOLF_BASE + (2 * GOLF_BASE) * (k / 48); outline.push([x, domeY(x)]); }
@@ -1761,7 +1763,7 @@ export class Sim {
         cols.push(water.handle);
         // Where the hill meets the water, for the leaves (they float round it; any landing on it slide off).
         const wu = Math.sqrt(Math.log((GOLF_HILL_H + 0.05) / (GOLF_WATER_H + 0.05)));
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, waterline: [gx - wu * spread[0], gx + wu * spread[1]], hole: [holeX, top], holeW: GOLF_HOLE * 2,
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, peak: gx, waterline: [gx - wu * spread[0], gx + wu * spread[1]], hole: [holeX, top], holeW: GOLF_HOLE * 2,
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 

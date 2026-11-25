@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import RAPIER from 'rapier';
 import { Sim, predict, W, H, DT, LAUNCHER, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
-import { makeBlockMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
+import { makeBlockMesh, makeHillMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
 import { THEMES, COLORS } from './theme.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-21';
+const BUILD = '1.5-22';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -539,15 +539,18 @@ function filledShape(pts, color, z, outline = true) {
 const GOLF_RIPPLE = { light: 0x557c8c, dark: 0x9cc6d8 };    // rings on the water: a darker (or, at night, lighter) blue-grey
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
 // behind a floating ball and round in front of it. delay: seconds before it starts.
-function waterRing(x, y, r, dur, delay = 0) {
-    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.9, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
+function waterRing(x, y, r, dur, delay = 0, r0 = 0.18) {
+    r = Math.min(r, x - 0.08, W - x - 0.08);            // never past the walls
+    if (r <= r0) return;
+    const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.09, edge: 0, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.5, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
     ring.position.set(x, y, 0.045);
     ring.scale.setScalar(0.001);
     scene.add(ring);
-    booms.push({ ring, r, t: -delay, dur, flat: true });
+    booms.push({ ring, r, r0, t: -delay, dur, flat: true });
 }
 const rippleT = new Map();       // floating ball → time since its last ring
-const GOLF_ISLAND = { light: 0x4a8a58, dark: 0x2f6040 };    // the hill                                 // ...and its green (its own colour: the leaves change with the seasons)
+const GOLF_ISLAND = { light: 0x6fae6a, dark: 0x3f7a4c };    // the hill (its zigzag is drawn a shade darker)
+const GOLF_HOLE_C = { light: 0x2b2622, dark: 0x120f0d };     // ...and its hole                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
 // Points around the bomb's centre at radius r, from angle a0 to a1 (radians).
@@ -661,28 +664,27 @@ function buildPropView(pr) {
         });
         if (pr.water) {
             // The water the green stands in: a blue band along the floor, under everything else.
-            v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2, pr.water / 2], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
-            v.water.position.set(W / 2, -H + pr.water / 2, 0.04);     // in front of the hill's foot, see-through
+            v.water = makeSketch({ kind: SHAPE.BOX, size: [W / 2 - 0.06, pr.water / 2 - 0.04], round: 0.02, edge: 0.04, wob: 0.6, fill: GOLF_WATER[themeName()], seed: pr.id + 9, margin: 0.1 });
+            v.water.position.set(W / 2, -H + pr.water / 2 + 0.02, 0.04);    // inside the frame     // in front of the hill's foot, see-through
             v.water.material.uniforms.uAlpha.value = 0.72;
             group.add(v.water);
             leafPiles?.setWater(-H + pr.water - 0.03, [...pr.waterline, pr.hole[1], pr.hole[0], 0, 0]);     // leaves float on it, round the hill
         }
         if (pr.outline) {
-            // The hill: a green dome, wobbled a touch and inked like crayon, standing in the water
-            // (which is drawn see-through in front of its foot). The hole is a dark oval on top.
-            const wob = (pts, amt, seed) => pts.map(([x, y], i) => [x + Math.sin(i * 2.3 + seed) * amt, y + Math.cos(i * 1.7 + seed) * amt]);
-            const dome = wob(pr.outline, 0.016, pr.id).map(([x, y]) => [Math.min(W, Math.max(0, x)), Math.max(-H, y)]);   // kept inside the board
-            const body = filledShape(dome, GOLF_ISLAND[themeName()], 0);
-            v.island = body.fill;
-            const rim = makeSketch({ kind: SHAPE.CIRCLE, size: [pr.holeW / 2 + 0.05], role: 'edge', inkFill: true, wob: 0.5, seed: pr.id + 15, margin: 0.08 });
-            rim.scale.set(1, 0.36, 1);
-            rim.position.set(pr.hole[0], pr.hole[1] - 0.1, 0.03);         // set down into the hill
-            group.add(body.group, rim);
+            // The hill, drawn like a block: zigzag green, a crayon edge, the hole cut into its top.
+            // Kept inside the board: it stops at the walls and the floor.
+            const [hx, hy] = pr.hole;
+            const hill = makeHillMesh(pr.outline, [hx, hy - 0.05, pr.holeW / 2 + 0.07, 0.13], {
+                x0: Math.max(0.06, pr.outline[0][0]), x1: Math.min(W - 0.06, pr.outline[pr.outline.length - 1][0]), bottom: -H + 0.06, top: hy + 0.25,
+                fill: GOLF_ISLAND[themeName()], ink: theme.edge, holeColor: GOLF_HOLE_C[themeName()], seed: pr.id * 1.3,
+            });
+            v.hill = hill;
+            group.add(hill);
         }
         const [hx, hy] = pr.hole;
         // The flag stands in the hole: its pole starts at the back of the hole, and the flag is notched.
         const pole = makeSketch({ kind: SHAPE.BOX, size: [0.045, 0.78], round: 0.02, role: 'line', inkFill: true, wob: 0.4, seed: pr.id + 1, margin: 0.06 });
-        pole.position.set(hx, hy + 0.66, 0.035);                  // standing in the hole
+        pole.position.set(hx, hy + 0.71, 0.035);                  // standing in the hole: its foot just inside the rim
         group.add(pole, notchedFlag(hx + 0.02, hy + 1.42));
         scene.add(group);
         propViews.set(pr.id, v);
@@ -875,7 +877,7 @@ function syncView(frameDt) {
         if (t < 0.55) { rippleT.set(b.body, t); continue; }
         rippleT.set(b.body, 0);
         const p = sim.world.getRigidBody(b.body).translation();
-        waterRing(p.x, p.y + zoneOffset - 0.12, 1.1, 1.1);        // from the waterline, down at the bottom of the ball
+        waterRing(p.x, p.y + zoneOffset - 0.07, 0.48, 1.0);       // from the waterline round the ball, sized to it
     }
     if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
@@ -977,8 +979,8 @@ function syncView(frameDt) {
         const b = booms[i];
         b.t += frameDt;
         const k = Math.max(0, Math.min(1, b.t / (b.dur ?? 0.4))), ease = 1 - (1 - k) ** 3;
-        const sc = 0.3 + (b.r - 0.3) * ease;
-        b.ring.scale.set(sc, b.flat ? sc * 0.3 : sc, 1);            // a ripple is a ring seen side-on: flat
+        const r0 = b.r0 ?? 0.3, sc = r0 + (b.r - r0) * ease;
+        b.ring.scale.set(sc, b.flat ? sc * 0.22 : sc, 1);           // a ripple is a ring seen side-on: flat
         b.ring.material.uniforms.uAlpha.value = b.t < 0 ? 0 : 1 - k;
         if (k >= 1) { discard(b.ring); booms.splice(i, 1); }
     }
@@ -1053,7 +1055,7 @@ function consumeEvents() {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
             leafPiles?.ripple(e.x, 1.4);
-            for (const [delay, r] of [[0, 1.0], [0.16, 1.35], [0.32, 1.7]]) waterRing(e.x, e.y, r, 0.9, delay);
+            for (const [delay, r] of [[0, 0.5], [0.14, 0.7], [0.28, 0.9]]) waterRing(e.x, e.y, r, 0.9, delay);
         }
         if (e.t === 'contact') {
             bounced.add(e.ball);
@@ -2067,7 +2069,11 @@ function applyTheme(name) {
     }
     for (const v of propViews.values()) for (const g of v.greys ?? []) g.material.uniforms.uFill.value.setHex(NEUTRAL[name]);
     for (const v of propViews.values()) v.water?.material.uniforms.uFill.value.setHex(GOLF_WATER[name]);
-    for (const v of propViews.values()) { v.pocket?.material.color.setHex(GOLF_POCKET[name]); v.island?.material.color.setHex(GOLF_ISLAND[name]); }
+    for (const v of propViews.values()) {
+        if (!v.hill) continue;
+        const u = v.hill.material.uniforms;
+        u.uFill.value.setHex(GOLF_ISLAND[name]); u.uInk.value.setHex(theme.edge); u.uHole.value.setHex(GOLF_HOLE_C[name]);
+    }
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
