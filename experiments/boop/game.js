@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-10';
+const BUILD = '1.5-11';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1939,6 +1939,7 @@ function tintField() {
     const band = Math.min(3, Math.floor(((sim?.s.depth ?? 1) - 1) / 10));
     fieldColor.setHex(theme.field).lerp(deepColor.setHex(FIELD_DEEP[themeName()]), band * 0.14);
     fieldMat.uniforms.uField.value.copy(fieldColor);
+    fieldMat.uniforms.uBonus.value = sim?.s.bonus ? 1 : 0;      // bonus stages get a crosshatch
 }
 function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
 function applyTheme(name) {

@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-10');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-11');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -171,16 +171,17 @@ const BONUS_NOTES = {
     pinata: 'Bonus stage! Three free shots, one ball each: pop the little blocks. Every five pops is +1.',
     chain: 'Bonus stage! Three free shots, one ball each: set off the bombs. Every four pops is +1.',
 };
-// Surprise stages (not in What's new or How to play): little bonus games between zones, after
-// clearing set depths and then every few zones at random. Not in Relaxed mode, where shots
+// Surprise stages (not in What's new or How to play): little bonus games between zones, a reward
+// for deep runs (gold blocks give earlier players their bonuses), after clearing set depths
+// and then every few zones at random. Not in Relaxed mode, where shots
 // never run out anyway. Each has its own shots and its own cap on what it pays; on the
 // ones with a ball config, balls fall for real (gravity, no constant speed, softer bounces).
 //   dominoes: rows of standing grey dominoes; each one that topples is +1.
 //   golf:     sink one ball in the hole: +8 first try, +6, +4; a miss pays 1 for trying.
 //   pachinko: three drops of five balls through nails into pockets (see below).
 //   hoops:    five shots at a basket sliding side to side; each in is +2.
-const SPECIAL_AT = { 10: 'dominoes', 20: 'golf', 25: 'pachinko', 30: 'hoops' };
-const SPECIAL_RANDOM_FROM = 35, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
+const SPECIAL_AT = { 25: 'pachinko', 30: 'dominoes', 35: 'golf', 40: 'hoops' };
+const SPECIAL_RANDOM_FROM = 45, SPECIAL_EVERY = 5;      // then a random one every 5 zones, never twice running
 const SPECIALS = ['dominoes', 'golf', 'pachinko', 'hoops'];
 const STAGES = {
     dominoes: { shots: 3, cap: 7 },
