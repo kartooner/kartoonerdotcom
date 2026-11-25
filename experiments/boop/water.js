@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-59'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-61'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
@@ -46,21 +46,23 @@ export class WaterSim {
         this.nb = new Float32Array(MAX_DROPS * 4);
         this.calm = 0;              // frames in a row it's been still; a still pool skips its physics
     }
-    // A jar pops: n drops pour out of a w-wide spot at (x, y) over about half a second.
-    spill(x, y, n, w = 0.6) { this.pour.push({ x, y, w, left: n }); }
+    // Water pours from a w-wide spot at (x, y): n drops, `rate` a sub-step at most, thrown out
+    // at (vx, vy). Returns the pour, so whoever's pouring can move it (a tipping jar's mouth).
+    // `room`: how close a new drop may start to the last ones (a moving stream can pack tighter).
+    spill(x, y, n, w = 0.6, rate = 4, vx = 0, vy = -0.5, room = 0.17) { const p = { x, y, w, rate, vx, vy, room: room * room, left: n, n }; this.pour.push(p); return p; }
     emit() {
         for (const p of this.pour) {
             // A few drops a sub-step, and only where there's room: packed tighter than water likes
             // to sit, it would burst outward across the board.
-            for (let tries = 0; tries < 4 && p.left > 0 && this.n < MAX_DROPS; tries++) {
+            for (let tries = 0; tries < p.rate && p.left > 0 && this.n < MAX_DROPS; tries++) {
                 const ex = p.x + (Math.random() - 0.5) * p.w, ey = p.y + (Math.random() - 0.5) * p.w * 0.7;
                 let crowded = false;
-                for (let j = Math.max(0, this.n - 60); j < this.n && !crowded; j++) crowded = (this.x[j] - ex) ** 2 + (this.y[j] - ey) ** 2 < 0.03;
+                for (let j = Math.max(0, this.n - 60); j < this.n && !crowded; j++) crowded = (this.x[j] - ex) ** 2 + (this.y[j] - ey) ** 2 < p.room;
                 if (crowded) continue;
                 const i = this.n++;
                 p.left--;
                 this.x[i] = ex; this.y[i] = ey; this.size[i] = 1;
-                this.vx[i] = (Math.random() - 0.5) * 1.2; this.vy[i] = -Math.random();
+                this.vx[i] = p.vx + (Math.random() - 0.5) * 1.2; this.vy[i] = p.vy + (Math.random() - 0.5);
             }
         }
         this.pour = this.pour.filter((p) => p.left > 0 && this.n < MAX_DROPS);
@@ -355,7 +357,7 @@ export function makeWater(scene, renderer) {
     let fade = 0, draining = false, drawn = false, offset = 0;
     return {
         sim,
-        spill(x, y, n, w) { sim.spill(x, y, n, w); sim.calm = 0; fade = 1; draining = false; },
+        spill(...a) { sim.calm = 0; fade = 1; draining = false; return sim.spill(...a); },
         // Off it goes: the zone's done. The blob thins out and is gone in about half a second.
         drain() { if (sim.n || sim.pour.length || pool.top != null) draining = true; },
         clear() { sim.clear(); sim.calm = 0; draining = false; drawn = false; offset = 0; blob.visible = false; this.setPool(null); },
@@ -437,12 +439,12 @@ export function makeJarMaterial() {
     return new THREE.ShaderMaterial({
         transparent: true, depthWrite: false,
         uniforms: {
-            uSize: { value: 1 }, uSeed: { value: 0 }, uTime: { value: 0 },
+            uSize: { value: 1 }, uSeed: { value: 0 }, uTime: { value: 0 }, uAngle: { value: 0 }, uLeft: { value: 1 },
             uInk: { value: new THREE.Color() }, uGlass: { value: new THREE.Color() }, uWater: { value: new THREE.Color() }, uDeep: { value: new THREE.Color() },
         },
         vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
         fragmentShader: `
-            uniform float uSize, uSeed, uTime; uniform vec3 uInk, uGlass, uWater, uDeep;
+            uniform float uSize, uSeed, uTime, uAngle, uLeft; uniform vec3 uInk, uGlass, uWater, uDeep;
             varying vec2 vP;
             ${NOISE}
             float sdBox(vec2 p, vec2 b){ vec2 d = abs(p) - b; return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0); }
@@ -462,10 +464,14 @@ export function makeJarMaterial() {
                 float inner = smoothstep(-aa, aa, -(d + edgeW));    // 1 inside the ink
                 // Glass, then the water in its belly, its surface tipping a little as it sloshes.
                 vec3 col = uGlass;
-                float level = -0.06 + u.x * 0.07 * sin(uTime * 1.4 + uSeed) + 0.015 * sin(uTime * 2.3);
-                float wet = step(u.y, level) * step(body, -0.02);
-                vec3 water = mix(uWater, uDeep, smoothstep(level, -0.5, u.y) * 0.6);
-                water = mix(water, uDeep * 0.8, (1.0 - smoothstep(0.0, 0.05, level - u.y)) * 0.7);   // the darker top of the water, seen from just above
+                // The water's surface stays level with the world as the jar tips, and drops as it
+                // pours out (uLeft: how much is left).
+                vec2 up = vec2(sin(uAngle), cos(uAngle));
+                float h = dot(u - vec2(0.0, -0.08), up);
+                float level = mix(-0.46, 0.02, uLeft) + dot(u, vec2(up.y, -up.x)) * 0.07 * sin(uTime * 1.4 + uSeed) + 0.015 * sin(uTime * 2.3);
+                float wet = step(h, level) * step(shape, -0.02) * step(0.01, uLeft);
+                vec3 water = mix(uWater, uDeep, smoothstep(level, -0.5, h) * 0.6);
+                water = mix(water, uDeep * 0.8, (1.0 - smoothstep(0.0, 0.05, level - h)) * 0.7);   // the darker top of the water, seen from just above
                 col = mix(col, water, wet);
                 // The lip's ridge.
                 col = mix(col, uInk, (1.0 - smoothstep(0.0, 0.02, abs(u.y - 0.4))) * step(abs(u.x), 0.2) * 0.8);

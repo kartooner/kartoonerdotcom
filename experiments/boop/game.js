@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-59';
+const BUILD = '1.5-61';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -364,6 +364,7 @@ function buildBlockView(b) {
         jar.position.z = 0.1;
         jar.renderOrder = 1;
         jar.userData.jarMat = mat;
+        jar.userData.size = size;
         group.add(jar);
         label.userData.cell = [0, -0.2 * size];
     }
@@ -386,6 +387,7 @@ function buildBlockView(b) {
     }
     scene.add(group);
     const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5 || (b.jar && b.cells.length === 4), trail: [], cells: b.cells, jar: b.jar };
+    if (b.jar) v.jarMesh = group.children.find((o) => o.userData.jarMat);
     blockViews.set(b.id, v);
     return v;
 }
@@ -811,13 +813,8 @@ function consumeEvents() {
             // A streak: from the third block popped in one turn, a little "×3", "×4"...
             if (phase === 'play' && ++turnPops >= 3) addFloater(`×${turnPops}`, e.x, e.y + 0.45, Math.min(1.15, 0.85 + 0.05 * (turnPops - 3)));
             if (v?.big) stopFor(0.045);            // a big block going is worth a beat
-            if (water && jarIds.has(e.id)) {
-                const big = v?.cells.length === 4;
-                water.spill(e.x, e.y, big ? 260 : 130, big ? 1.2 : 0.6);
-                crumbs.spray([[e.x, e.y + 0.3], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y - 0.2]], [0xffffff, GOLF_WATER[themeName()], theme.edge]);   // glass
-                jarIds.delete(e.id);
-            }
-            if (v) {
+            if (water && jarIds.has(e.id)) { tipJar(v, e); jarIds.delete(e.id); }
+            if (v && !v.jar) {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
             }
@@ -1541,7 +1538,8 @@ function addJar() {
     placeJar(Math.random() < 0.35);
 }
 function placeJar(big) {
-    if (!big) {
+    const testing = WATER_MODE === 'often';        // trying it out: up high, so the water has the whole board to run down
+    if (!big && !testing) {
         const singles = Object.values(sim.s.blocks).filter((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
         if (singles.length) { singles[Math.floor(Math.random() * singles.length)].jar = true; return; }
     }
@@ -1561,13 +1559,15 @@ function placeJar(big) {
             for (const l of pr.links ?? []) { const t = sim.world.getRigidBody(l.body).translation(); mark(t.x, t.y, 0); }   // a vine, link by link
         }
         const open = [];
-        for (let c = 0; c <= W - n; c++) for (let r = 4; r <= 13 - n; r++) {
+        for (let c = 0; c <= W - n; c++) for (let r = testing ? 2 : 4; r <= 13 - n; r++) {
             let free = true;
             for (let dc = -1; dc <= n && free; dc++) for (let dr = -1; dr <= n && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
             if (free) open.push([c, r]);
         }
         if (!open.length) { if (big) placeJar(false); return; }   // no room for a big one: a small one, then
-        const [c, r] = open[Math.floor(Math.random() * open.length)];
+        const top = Math.min(...open.map(([, r]) => r));
+        const pick = testing ? open.filter(([, r]) => r <= top + 1) : open;
+        const [c, r] = pick[Math.floor(Math.random() * pick.length)];
         const b = sim.addBlock(big ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]], big ? 5 : 2);
         b.jar = true;
         sim.s.zoneHp0 += b.hp;
@@ -1579,6 +1579,34 @@ function rectSolid(rects, x, y) {
         if (Math.abs(x - cx) < hx && Math.abs(y - cy) < hy) return { x, y: cy + hy + 0.03, slide: null };
     }
     return null;
+}
+// A jar that's been popped doesn't vanish: it tips over toward the middle of the board and the
+// water pours out of its mouth, the level inside dropping, then the empty jar shrinks away.
+const tipping = [];
+function tipJar(v, e) {
+    const big = v?.cells.length === 4, n = big ? 260 : 130;
+    const mesh = v?.jarMesh;
+    if (!mesh) { water.spill(e.x, e.y, n, big ? 1.2 : 0.6); return; }
+    scene.attach(mesh);                                  // out of the block (it's going), staying where it is
+    const a0 = mesh.rotation.z;
+    tipping.push({ mesh, mat: mesh.userData.jarMat, size: mesh.userData.size, n, a0, to: a0 + (e.x < W / 2 ? -1.9 : 1.9), t: 0, pour: null, gone: 0 });
+}
+function updateTipping(dt) {
+    for (let i = tipping.length - 1; i >= 0; i--) {
+        const j = tipping[i], m = j.mesh, u = j.mat.uniforms;
+        j.t += dt;
+        const k = Math.min(1, j.t / 0.45), a = j.a0 + (j.to - j.a0) * (1 - (1 - k) ** 3);
+        m.rotation.z = a; u.uAngle.value = a;
+        const r = 0.5 * j.size, mx = m.position.x - r * Math.sin(a), my = m.position.y + r * Math.cos(a);   // its mouth
+        if (!j.pour && Math.abs(a - j.a0) > 1) j.pour = water.spill(mx, my, j.n, 0.2 * j.size, j.size > 1 ? 3 : 2, -Math.sin(a) * 3, Math.cos(a) * 3 - 0.5, 0.09);
+        if (j.pour) { j.pour.x = mx; j.pour.y = my; u.uLeft.value = j.pour.left / j.n; }
+        if (j.pour && j.pour.left <= 0) {
+            j.gone += dt;
+            m.scale.setScalar(Math.max(0, 1 - j.gone / 0.35));
+            if (j.gone >= 0.35) { jarMats.delete(j.mat); discard(m); tipping.splice(i, 1); }
+        }
+        animating = true;
+    }
 }
 function tintJar(mat, name) {
     const u = mat.uniforms;
@@ -1613,10 +1641,12 @@ function updateWater(dt) {
         solid = (x, y) => onBlocks(x, y) ?? ground(x, y) ?? rectSolid(rects, x, y);
         water.setOffset(zoneOffset);
     }
+    updateTipping(dt);
     water.update(dt, solid, balls, moved);
     if (water.moving()) animating = true;
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
+    for (const v of blockViews.values()) if (v.jarMesh) v.jarMesh.userData.jarMat.uniforms.uAngle.value = v.group.rotation.z;   // its water stays level if the block swings
     // Leaves float on the pool once it has settled (and sink back when it drains). The golf
     // stage sets its own (round its hill).
     if (!leafPiles || golfPool) return;
@@ -1728,6 +1758,8 @@ function restart(saved = null) {
     leafPiles?.clear();
     leafPiles?.setWater(null);
     water?.clear(); waterShapes.clear(); jarIds.clear(); jarMats.clear(); waterTop = null; golfPool = null;
+    for (const j of tipping) discard(j.mesh);
+    tipping.length = 0;
     keyAim = false;
     if (saved) {
         sim = saved;
