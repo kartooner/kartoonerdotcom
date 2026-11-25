@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-23';
+const BUILD = '1.5-24';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -549,7 +549,7 @@ function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
     booms.push({ ring, r, r0, t: -delay, dur, flat: true });
 }
 const rippleT = new Map();       // floating ball → time since its last ring
-const GOLF_ISLAND = { light: 0x6fae6a, dark: 0x3f7a4c };    // the hill (its zigzag is drawn a shade darker)
+const GOLF_ISLAND = { light: 0x6fae6a, dark: 0x67a663 };    // the hill (its zigzag is drawn a shade darker); bright in the dark too, like the blocks
 const GOLF_HOLE_C = { light: 0x2b2622, dark: 0x120f0d };     // ...and its hole                                 // ...and its green (its own colour: the leaves change with the seasons)
 const fuseMat = mat(BOMB_LOOK.light.fuse), shadeMat = mat(BOMB_LOOK.light.shade);
 fuseMat.userData.keep = shadeMat.userData.keep = true;
@@ -674,7 +674,7 @@ function buildPropView(pr) {
             // The hill, drawn like a block: zigzag green, a crayon edge, the hole cut into its top.
             // Kept inside the board: it stops at the walls and the floor.
             const [hx, hy] = pr.hole;
-            const hill = makeHillMesh(pr.outline, [hx, hy - 0.05, pr.holeW / 2 + 0.07, 0.13], {
+            const hill = makeHillMesh(pr.outline, [hx, hy - 0.07, pr.holeW / 2 + 0.12, 0.16], {
                 x0: Math.max(0.06, pr.outline[0][0]), x1: Math.min(W - 0.06, pr.outline[pr.outline.length - 1][0]), bottom: -H + 0.06, top: hy + 0.25,
                 fill: GOLF_ISLAND[themeName()], ink: theme.edge, holeColor: GOLF_HOLE_C[themeName()], seed: pr.id * 1.3,
             });
@@ -878,7 +878,7 @@ function syncView(frameDt) {
         if (t < 0.38) { rippleT.set(b.body, t); continue; }
         rippleT.set(b.body, 0);
         const p = sim.world.getRigidBody(b.body).translation();
-        waterRing(p.x, p.y + zoneOffset - 0.01, 0.42, 0.9);       // foam round the ball at the waterline, sized to it
+        waterRing(p.x, p.y + zoneOffset - 0.09, 0.42, 0.9);       // foam round the ball, just below the water's top line, sized to it
     }
     if (rippleT.size > 8) rippleT.clear();
     if (leafPiles) {
@@ -1056,7 +1056,7 @@ function consumeEvents() {
             // Into the water: a few drops, and ripples spreading out along the surface.
             crumbs.spray([[e.x, e.y], [e.x - 0.15, e.y], [e.x + 0.15, e.y]], [GOLF_WATER[themeName()], 0xffffff, GOLF_WATER[themeName()]]);
             leafPiles?.ripple(e.x, 1.4);
-            for (const [delay, r] of [[0, 0.45], [0.12, 0.62], [0.24, 0.8]]) waterRing(e.x, e.y, r, 0.8, delay);
+            for (const [delay, r] of [[0, 0.45], [0.12, 0.62], [0.24, 0.8]]) waterRing(e.x, e.y - 0.09, r, 0.8, delay);
         }
         if (e.t === 'contact') {
             bounced.add(e.ball);
@@ -2405,6 +2405,7 @@ window.__boop = {
     get feel() { return { autoSpeed, hitStop, turnPops }; },
     get moveMode() { return moveMode; },
     get railOn() { return rail.visible; },
+    clearLeaves: () => leafPiles?.clear(),       // for checks: a board without leaves
     get fast() { return fastForward(); },
     get guideInk() { return dots.material.opacity; },
     get pixelRatio() { return renderer.getPixelRatio(); },

@@ -3,7 +3,7 @@
 // It also wobbles the edge so it reads hand-drawn, and lays a pattern on the
 // fill so the number tiers can be told apart without colour.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-23');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-24');   // build stamp: game.js checks every file matches
 
 // Tiers by the number on the block. Each has a colour AND a pattern.
 // Number colour is chosen for contrast (all pass 3:1 for large bold text, most pass 4.5:1).
@@ -354,11 +354,11 @@ void main() {
     // The hole: the oval, minus a green lip over its front (a second oval lower down).
     vec2 c = uHoleE.xy, r = uHoleE.zw;
     float e = sdEllipse(p, c, r) + wob * 0.3;
-    float lip = sdEllipse(p, c - vec2(0.0, r.y * 1.75), r * vec2(1.15, 1.0)) + wob * 0.3;
+    float lip = sdEllipse(p, c - vec2(0.0, r.y * 1.85), r * vec2(1.12, 1.0)) + wob * 0.3;
     float ae = fwidth(e), al = fwidth(lip);
     float inHole = (1.0 - smoothstep(-ae, ae, e)) * smoothstep(-al, al, lip);
-    float holeInk = (1.0 - smoothstep(0.0, 0.035, abs(e))) * smoothstep(-al, al, lip)
-                  + (1.0 - smoothstep(0.0, 0.035, abs(lip))) * (1.0 - smoothstep(-ae, ae, e));
+    float holeInk = (1.0 - smoothstep(0.0, 0.05, abs(e))) * smoothstep(-al, al, lip)
+                  + (1.0 - smoothstep(0.0, 0.045, abs(lip))) * (1.0 - smoothstep(-ae, ae, e));
     vec3 col = mix(fill, uHole, inHole);
     col = mix(col, uInk, clamp(holeInk, 0.0, 1.0) * fillMask);
     col = mix(uInk, col, fillMask);
