@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-55'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-56'];
 
 const R = 0.13;                // how close a drop gets to the walls and floor
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
@@ -274,71 +274,34 @@ export function makeWater(scene, renderer) {
     dotScene.add(dots);
 
     // Still water (the golf pool; one day a whole flooded board): a body of water up to `top`,
-    // drawn into the same picture as the drops, so it looks the same. It doesn't flow. Its surface
-    // is a row of little springs: balls make ripples, and a ball dropping in throws up a splash of
-    // drops (which fall back in).
-    const COLS = 72;
-    const pool = { top: null, h: new Float32Array(COLS + 1), v: new Float32Array(COLS + 1), calm: 0, splashed: new Map() };
-    const poolPos = new Float32Array((COLS + 1) * 2 * 3), poolIdx = [];
-    for (let i = 0; i < COLS; i++) { const a = i * 2, b = a + 1, c = a + 2, d = a + 3; poolIdx.push(a, b, c, b, d, c); }
-    const poolGeo = new THREE.BufferGeometry();
-    poolGeo.setAttribute('position', new THREE.BufferAttribute(poolPos, 3));
-    poolGeo.setIndex(poolIdx);
+    // drawn into the same picture as the drops, so it looks the same. It doesn't flow or ripple.
+    // A ball diving in throws up a splash of drops, which fall back in.
+    const pool = { top: null, splashed: new Map() };
     const poolMat = new THREE.ShaderMaterial({
         transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
         uniforms: { uFade: dots.material.uniforms.uFade },
         vertexShader: 'void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
         fragmentShader: 'uniform float uFade; void main(){ gl_FragColor = vec4(uFade, 0.0, 0.0, 1.0); }',
     });
-    const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+    const poolMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, 1), poolMat);
     poolMesh.frustumCulled = false;
     poolMesh.visible = false;
     dotScene.add(poolMesh);
-    const surfaceAt = (x) => {
-        const f = Math.max(0, Math.min(COLS, (x / W) * COLS)), i = Math.min(COLS - 1, Math.floor(f)), t = f - i;
-        return pool.top + pool.h[i] + (pool.h[i + 1] - pool.h[i]) * t;
-    };
-    function stepPool(dt, balls) {
-        const { h, v } = pool;
+    const surfaceAt = () => pool.top;
+    function splash(balls) {
+        const now = performance.now();
         for (const b of balls) {
-            const surf = surfaceAt(b.x), c = Math.round((b.x / W) * COLS);
-            if (Math.abs(b.y - surf) > BALL_R + 0.08) continue;
-            // In the surface: push it the way the ball's going (a bobbing ball makes small rings).
-            const push = Math.max(-10, Math.min(10, b.vy)) * 0.5;
-            for (let k = -1; k <= 1; k++) { const j = c + k; if (j >= 0 && j <= COLS) v[j] += push * (k ? 0.5 : 1) * dt * 20; }
-            // Coming in fast from above: a splash, once per ball per dive.
-            const last = pool.splashed.get(b.id) ?? -1;
-            const now = performance.now();
-            if (b.vy < -5 && b.y > surf - 0.05 && now - last > 400) {
-                pool.splashed.set(b.id, now);
-                const n = Math.min(14, Math.round(-b.vy));
-                for (let k = 0; k < n && sim.n < MAX_DROPS; k++) {
-                    const i = sim.n++, side = k % 2 ? 1 : -1;
-                    sim.x[i] = b.x + side * (0.12 + Math.random() * 0.2); sim.y[i] = surf + 0.05;
-                    sim.vx[i] = side * (1 + Math.random() * 2.5) + b.vx * 0.2; sim.vy[i] = 3 + Math.random() * 4;
-                }
+            // Coming in fast from just above: a splash, once per ball per dive.
+            if (b.vy > -5 || b.y < pool.top - 0.05 || b.y > pool.top + BALL_R + 0.08 || now - (pool.splashed.get(b.id) ?? -1e9) < 400) continue;
+            pool.splashed.set(b.id, now);
+            const n = Math.min(14, Math.round(-b.vy));
+            for (let k = 0; k < n && sim.n < MAX_DROPS; k++) {
+                const i = sim.n++, side = k % 2 ? 1 : -1;
+                sim.x[i] = b.x + side * (0.12 + Math.random() * 0.2); sim.y[i] = pool.top + 0.05;
+                sim.vx[i] = side * (1 + Math.random() * 2.5) + b.vx * 0.2; sim.vy[i] = 3 + Math.random() * 4;
             }
         }
         if (pool.splashed.size > 20) pool.splashed.clear();
-        let energy = 0;
-        for (let s = 0; s < 2; s++) {
-            const h2 = dt / 2;
-            for (let i = 0; i <= COLS; i++) {
-                const l = h[Math.max(0, i - 1)], r = h[Math.min(COLS, i + 1)];
-                v[i] += (900 * (l + r - 2 * h[i]) / 4 - 30 * h[i]) * h2;
-                v[i] *= 1 - 1.6 * h2;
-            }
-            for (let i = 0; i <= COLS; i++) { h[i] = Math.max(-0.35, Math.min(0.35, h[i] + v[i] * h2)); energy += Math.abs(v[i]); }
-        }
-        pool.calm = energy < 0.02 ? pool.calm + 1 : 0;
-    }
-    function shapePool() {
-        for (let i = 0; i <= COLS; i++) {
-            const x = (i / COLS) * W, a = i * 6;
-            poolPos[a] = x; poolPos[a + 1] = pool.top + pool.h[i]; poolPos[a + 2] = 0;
-            poolPos[a + 3] = x; poolPos[a + 4] = -H - 0.5; poolPos[a + 5] = 0;
-        }
-        poolGeo.attributes.position.needsUpdate = true;
     }
 
     const blob = new THREE.Mesh(
@@ -348,7 +311,7 @@ export function makeWater(scene, renderer) {
             uniforms: {
                 uMap: { value: target.texture }, uFill: { value: new THREE.Color() }, uDeep: { value: new THREE.Color() },
                 uInk: { value: new THREE.Color() }, uFoam: { value: new THREE.Color(0xffffff) },
-                uPx: { value: new THREE.Vector2(1 / (W * PX), 1 / (H * PX)) }, uTime: { value: 0 }, uRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+                uPx: { value: new THREE.Vector2(1 / (W * PX), 1 / (H * PX)) }, uRect: { value: new THREE.Vector4(0, 0, 1, 1) },
             },
             // uRect: the part of the board the quad covers this frame, in the offscreen picture's terms.
             vertexShader: 'uniform vec4 uRect; varying vec2 vUv; void main(){ vUv = uRect.xy + uv * uRect.zw; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
@@ -356,7 +319,7 @@ export function makeWater(scene, renderer) {
             // texture reads. Enough to read as water: an inked edge, a light line along the top
             // with a slow sheen, deeper colour lower down, and foam where it's churned up.
             fragmentShader: `
-                uniform sampler2D uMap; uniform vec3 uFill, uDeep, uInk, uFoam; uniform vec2 uPx; uniform float uTime;
+                uniform sampler2D uMap; uniform vec3 uFill, uDeep, uInk, uFoam; uniform vec2 uPx;
                 varying vec2 vUv;
                 ${NOISE}
                 void main(){
@@ -364,14 +327,14 @@ export function makeWater(scene, renderer) {
                     const float T = 0.55;
                     if (t.r < T - 0.2) discard;
                     vec2 p = vUv * vec2(${W}.0, ${H}.0);           // board units
-                    float n = noise(p * 2.2 + uTime * 0.5);
+                    float n = noise(p * 2.2);                      // fixed, so still water stays still
                     vec2 uv = vUv + (n - 0.5) * uPx * 3.0;           // the edge wobbles a touch, like it's drawn
                     float f = texture2D(uMap, uv).r;
                     if (f < T - 0.08) discard;
                     float top = 1.0 - step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 5.0)).r);
                     float deep = step(T, texture2D(uMap, uv + vec2(0.0, uPx.y * 26.0)).r);
                     vec3 col = mix(uFill, uDeep, deep * 0.7);
-                    col = mix(col, uFoam, top * (0.5 + 0.25 * sin(p.x * 2.2 - uTime * 1.3)));
+                    col = mix(col, uFoam, top * (0.5 + 0.25 * sin(p.x * 2.2)));
                     float churn = clamp(t.g / max(t.r, 0.001), 0.0, 1.0);
                     col = mix(col, uFoam, smoothstep(0.55, 0.9, churn) * step(0.55, n) * 0.6);
                     col = mix(col, uInk, (1.0 - smoothstep(0.0, 0.1, f - T)) * 0.85);
@@ -396,13 +359,13 @@ export function makeWater(scene, renderer) {
         active: () => sim.n > 0 || sim.pour.length > 0 || pool.top != null,
         // Still water up to y (null: none).
         setPool(y) {
-            pool.top = y; pool.h.fill(0); pool.v.fill(0); pool.calm = 0;
+            pool.top = y;
             sim.surface = y == null ? null : surfaceAt;
             poolMesh.visible = y != null;
+            if (y != null) { poolMesh.scale.y = y + H + 0.5; poolMesh.position.set(W / 2, (y - H - 0.5) / 2, 0); }
             fade = 1; draining = false; drawn = false;
-            if (y != null) shapePool();
         },
-        moving: () => (draining || (sim.n > 0 && (sim.pour.length > 0 || sim.balls.length > 0 || sim.calm < 30)) || (pool.top != null && pool.calm < 30)),
+        moving: () => draining || (sim.n > 0 && (sim.pour.length > 0 || sim.balls.length > 0 || sim.calm < 30)),
         setColors(fill, deep, ink) {
             const u = blob.material.uniforms;
             u.uFill.value.setHex(fill); u.uDeep.value.setHex(deep); u.uInk.value.setHex(ink);
@@ -420,17 +383,13 @@ export function makeWater(scene, renderer) {
         update(dt, solid, balls = [], wake = false) {
             if (!sim.n && !sim.pour.length && pool.top == null) return;
             sim.balls = balls;
-            let poolMoving = false;
-            if (pool.top != null && dt > 0) {
-                if (balls.length || pool.calm < 30) { stepPool(Math.min(dt, 1 / 30), balls); shapePool(); poolMoving = true; }
-            }
-            const busy = draining || sim.pour.length > 0 || balls.length > 0 || wake || poolMoving;
+            if (pool.top != null && dt > 0) splash(balls);
+            const busy = draining || sim.pour.length > 0 || balls.length > 0 || wake;
             if (dt > 0 && (sim.n || sim.pour.length) && (busy || sim.calm < 30)) {
                 sim.step(Math.min(dt, 1 / 30), solid);
                 sim.calm = !busy && sim.speed() < 0.15 ? sim.calm + 1 : 0;
             }
             if (draining) { fade -= dt * 2; if (fade <= 0) { this.clear(); return; } }
-            blob.material.uniforms.uTime.value = performance.now() / 1000 % 1000;
             blob.visible = true;
             // The quad covers just the water (plus a dot's reach), not the whole board.
             let x0 = W, x1 = 0, y0 = 0, y1 = -H;

@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-55';
+const BUILD = '1.5-56';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -512,6 +512,7 @@ const GOLF_RIPPLE = { light: 0xffffff, dark: 0xd6eaf2 };    // rings on the wate
 // A ring spreading out on the water from (x, y): a circle seen side-on, so it's flat. It passes
 // behind a floating ball and round in front of it. delay: seconds before it starts.
 function waterRing(x, y, r, dur, delay = 0, r0 = 0.2) {
+    if (golfPool) return;                                // the water test's still pool: no rings
     r = Math.min(r, x - 0.08, W - x - 0.08);            // never past the walls
     if (r <= r0) return;
     const ring = makeSketch({ kind: SHAPE.RING, size: [1], ring: 0.16, edge: 0.035, role: 'line', fill: GOLF_RIPPLE[themeName()], wob: 0.7, seed: (x * 13 + delay * 50 + r * 7) | 0, margin: 0.12 });
