@@ -2,7 +2,7 @@
 // Physics and rules: sim.js. Drawing helpers: blockshader.js, sketch.js, balls.js, labels.js. Colours: theme.js.
 import * as THREE from 'three';
 import RAPIER from 'rapier';
-import { Sim, predict, W, H, DT, LAUNCHER, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
+import { Sim, predict, W, H, DT, LAUNCHER, LAP, aimRange, ballFuse, VINE_DEBRIS_STEPS } from './sim.js';
 import { makeBlockMesh, makeHillMesh, makeNetMesh, tierFor, JELLO, NEUTRAL, TIERS } from './blockshader.js';
 import { makeSketch, SHAPE, setSketchInk, forgetSketch, makeFieldMaterial, sketchMats } from './sketch.js';
 import { makeAudio } from './audio.js';
@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-33';
+const BUILD = '1.5-34';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1720,11 +1720,13 @@ function zoneCleared() {
 // a run goes past your best depth, and at a few milestones. Nothing to tap, nothing paused.
 // The best depth is only written at game over, so "past your best" happens once per run
 // by itself (and survives a saved run). Relaxed runs have no best depth, just the milestones.
-const DEPTH_MARKS = new Set([25, 40, 50]);
+// Past 80 the game runs in laps (see LAP in sim.js): a new lap gets its own banner, and every 40 after 80 is a milestone.
+const DEPTH_MARKS = new Set([25, 40, 50, 80]);
 function depthMark(d) {
     const best = relaxed ? 0 : readBest();
+    if (d > LAP && (d - 1) % LAP === 0) return `Lap ${(d - 1) / LAP + 1}!`;
     if (best >= 5 && d === best + 1) return 'New best!';
-    if (DEPTH_MARKS.has(d)) return `Depth ${d}!`;
+    if (DEPTH_MARKS.has(d) || (d > LAP && d % 40 === 0)) return `Depth ${d}!`;
     return null;
 }
 

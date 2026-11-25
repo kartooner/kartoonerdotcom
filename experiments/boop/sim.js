@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-33');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-34');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -77,6 +77,14 @@ const parHpPerShot = (d) => {
 // Past 25 they grow again, a little each zone: the ramp that makes the deep end tricky.
 // 1.4.1: about 10% more from 11 on. The aim range (no shots flat into a wall) made each shot count
 // for more, and average bots got about 3 zones deeper than in 1.3; this brings them back.
+// Laps: past depth 80 the game isn't a wall that only gets steeper. At 81 it eases back to about
+// depth 30's difficulty (still a challenge, not punishing) and builds up again to depth 80's by 160,
+// then eases again, and so on: room for another 80. The bonus stages start over each lap (the same
+// schedule, and generous tries again). The depth shown, the best depth and the launcher's
+// upgrades follow the real depth; only how hard a zone is follows the lap.
+export const LAP = 80;
+const LAP_EASE = 30;                 // where each new lap starts: about depth 30's difficulty
+export const lapDepth = (d) => (d <= LAP ? d : Math.floor(LAP_EASE + ((d - LAP - 1) % LAP) * (LAP - LAP_EASE) / (LAP - 1)));
 const zoneTrim = (d) => (d <= 10 ? 1 : d <= 15 ? 0.88 : d <= 25 ? 0.69 : Math.min(0.88, 0.69 + (d - 25) * 0.025));
 const PAR_BONUS_MAX = 5;
 const MIN_SMASH_SPEED = 2.5;        // blocks only hurt each other when they really land
@@ -550,7 +558,7 @@ export class Sim {
             const every = s.bonus.kind === 'chain' ? 4 : s.bonus.kind === 'pinata' ? 5 : 0;
             if (every && s.bonus.pops % every === 0) this.gain(1, p.x, p.y);
         }
-        if (popped && !s.quiet && !s.bonus && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(s.depth)) this.gain(1, p.x, p.y);
+        if (popped && !s.quiet && !s.bonus && !b.neutral && b.hp0 >= REFUND_MIN_HP * multishotGrowth(s.volley) * hpScale(lapDepth(s.depth))) this.gain(1, p.x, p.y);
         this.wakeLoose();
     }
 
@@ -876,8 +884,9 @@ export class Sim {
         }
     }
 
-    // Which surprise stage (if any) follows clearing depth d.
-    specialFor(d) {
+    // Which surprise stage (if any) follows clearing depth d. Each lap runs the same way.
+    specialFor(depth) {
+        const d = depth > LAP ? ((depth - 1) % LAP) + 1 : depth;
         if (SPECIAL_AT[d]) return SPECIAL_AT[d];
         if (d < SPECIAL_RANDOM_FROM || d % SPECIAL_EVERY !== 0) return null;
         const pool = SPECIALS.filter((k) => k !== this.s.lastSpecial);
@@ -905,10 +914,12 @@ export class Sim {
         if (s.bonusNext && !s.retries) { this.genBonus(); return; }
         this.clearZoneLeftovers();
         s.depth += 1;
+        if (s.depth > LAP && (s.depth - 1) % LAP === 0) s.stageVisits = {};    // a new lap: the bonus stages are generous again
+        const D = lapDepth(s.depth);                                            // how hard this zone is (see LAP)
         s.stretch = false;
-        const spec = zoneSpec(s.depth);
+        const spec = zoneSpec(D);
         // What this zone leans on (see RECIPES in zones.js): never the same as the last.
-        const recipe = pickRecipe(s.depth, s.recipe, () => this.rand(), s.relaxed);
+        const recipe = pickRecipe(D, s.recipe, () => this.rand(), s.relaxed);
         s.recipe = recipe;
         const has = (k) => recipe.split('+').includes(k);      // deep zones can mix two recipes
         // The game introduces each new thing itself (see game.js). The sim only announces
@@ -922,7 +933,7 @@ export class Sim {
             s.noteTarget = { kind: 'launcher' };
         }
         // Zone 3 introduces resting blocks, so it always has somewhere for them to rest.
-        const names = s.depth < 3 ? ['packed', 'airy', 'mixed'] : s.depth === 3 ? ['stacked', 'packed'] : ['packed', 'airy', 'mixed', 'stacked'];
+        const names = D < 3 ? ['packed', 'airy', 'mixed'] : D === 3 ? ['stacked', 'packed'] : ['packed', 'airy', 'mixed', 'stacked'];
         const styleName = has('tower') ? 'stacked' : has('pinball') ? 'airy' : names[Math.floor(this.rand() * names.length)];
         const style = STYLES[styleName];
         s.style = styleName;
@@ -950,24 +961,24 @@ export class Sim {
             else windmills += 1;
         }
         // Mushrooms arrive at their own depth (windmills come first).
-        if (s.depth < MUSHROOM_FROM) { windmills += mushrooms; mushrooms = 0; }
-        else if (s.depth === MUSHROOM_FROM) { mushrooms = 1; windmills = 0; }
+        if (D < MUSHROOM_FROM) { windmills += mushrooms; mushrooms = 0; }
+        else if (D === MUSHROOM_FROM) { mushrooms = 1; windmills = 0; }
         if (has('windmills')) { windmills = 3; mushrooms = 0; }
         if (has('pinball')) { mushrooms = 3; windmills = 0; }
         // Vines: shown on their own first (depth 9), then one a zone while you learn them,
         // then one or two once they're familiar. Never more than two kinds of prop in a zone.
-        let vines = s.depth < VINE_FROM ? 0 : s.depth === VINE_FROM ? 1 : s.depth <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
+        let vines = D < VINE_FROM ? 0 : D === VINE_FROM ? 1 : D <= VINE_FROM + 3 ? 1 : (this.rand() < 0.5 ? 2 : 1);
         if (has('vines')) vines = 2;
         if (s.relaxed) vines = 0;
-        if (s.depth === VINE_FROM) { windmills = 0; mushrooms = 0; }
+        if (D === VINE_FROM) { windmills = 0; mushrooms = 0; }
         else if (vines && windmills && mushrooms) { if (this.rand() < 0.5) { windmills += mushrooms; mushrooms = 0; } else { mushrooms = Math.min(2, mushrooms + windmills); windmills = 0; } }
         // Bombs are a treat, not a fixture: one introduces them at depth 15, then about one zone
         // in three has one (deeper down, now and then two). A bomb is a prop, so a zone with one
         // keeps just one other kind (at most two kinds of props a zone).
-        const hangIntro = !s.relaxed && s.depth === HANGBOMB_FROM;
+        const hangIntro = !s.relaxed && D === HANGBOMB_FROM;
         if (hangIntro) vines = Math.max(1, vines);
-        let bombs = hangIntro ? 0 : s.depth < BOMB_FROM ? 0 : s.depth === BOMB_FROM ? 1
-            : this.rand() >= BOMB_CHANCE ? 0 : s.depth >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
+        let bombs = hangIntro ? 0 : D < BOMB_FROM ? 0 : D === BOMB_FROM ? 1
+            : this.rand() >= BOMB_CHANCE ? 0 : D >= BOMB_FROM + 7 && this.rand() < 0.2 ? 2 : 1;
         if (has('bombs')) bombs = 2;
         if (bombs) {
             const kinds = [vines && 'vine', windmills && 'windmill', mushrooms && 'mushroom'].filter(Boolean);
@@ -981,21 +992,21 @@ export class Sim {
         // no more than three windmills and mushrooms together.
         windmills = Math.min(windmills, has('windmills') ? 3 : 2);
         if (!has('windmills') && !has('pinball')) mushrooms = Math.min(mushrooms, 3 - windmills);
-        const chandelierChance = s.depth === VINE_FROM ? 0 : s.depth <= VINE_FROM + 3 ? 0.5 : 0.4;
-        const seesaws = s.relaxed ? 0 : has('seesaws') ? 2 : s.depth < SEESAW_FROM ? 0 : s.depth === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
+        const chandelierChance = D === VINE_FROM ? 0 : D <= VINE_FROM + 3 ? 0.5 : 0.4;
+        const seesaws = s.relaxed ? 0 : has('seesaws') ? 2 : D < SEESAW_FROM ? 0 : D === SEESAW_FROM ? 1 : this.rand() < SEESAW_CHANCE ? 1 : 0;
         // Prop centres in grid units, to keep props apart.
         const propAt = [];
-        const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(s.depth));
+        const roomy = (x, y) => propAt.every(([px, py]) => Math.hypot(px - x, py - y) >= propGap(D));
 
         const isTall = (sh) => sh.c.length >= 2 && sh.c.every(([c]) => c === 0);
-        const bigMul = Math.min(5, 2.6 + 0.3 * s.depth);    // chunky shapes dominate, more so deeper down
+        const bigMul = Math.min(5, 2.6 + 0.3 * D);    // chunky shapes dominate, more so deeper down
         // Variety: straight pieces (bars, rectangles) are easy to read but get samey, so past the
         // first zones the interlocking shapes (L, T, S and their big versions) come up more,
         // long bars are rare early, and big rectangles get a smaller share of the chunky boost.
-        const deep = s.depth >= 7;
-        const straight = (sh) => (!sh.rect ? (deep ? 2.5 : s.depth >= 3 ? 1.9 : 1.2)
-            : sh.long >= 4 ? (s.depth <= 4 ? 0 : 0.5)
-            : sh.long === 3 && sh.size === 3 ? (s.depth <= 3 ? 0.4 : deep ? 0.55 : 0.7)
+        const deep = D >= 7;
+        const straight = (sh) => (!sh.rect ? (deep ? 2.5 : D >= 3 ? 1.9 : 1.2)
+            : sh.long >= 4 ? (D <= 4 ? 0 : 0.5)
+            : sh.long === 3 && sh.size === 3 ? (D <= 3 ? 0.4 : deep ? 0.55 : 0.7)
             : sh.size === 2 ? (deep ? 0.75 : 1) : 1);
         const weight = (sh) => sh.w * (isTall(sh) ? style.tall : 1) * straight(sh)
             * (sh.size >= 5 ? (sh.rect ? 1 + (bigMul - 1) * 0.55 : bigMul) : 1);
@@ -1064,7 +1075,7 @@ export class Sim {
         };
         // Never two hanging vines: two vines are always one of each kind, for variety.
         const vineKinds = vines === 2 ? (this.rand() < 0.5 ? ['strung', 'hang'] : ['hang', 'strung'])
-            : vines === 1 ? [hangIntro ? 'hang' : s.depth === VINE_FROM || this.rand() < 0.5 ? 'strung' : 'hang'] : [];
+            : vines === 1 ? [hangIntro ? 'hang' : D === VINE_FROM || this.rand() < 0.5 ? 'strung' : 'hang'] : [];
         for (let i = 0, tries = 0; i < vineKinds.length && tries < 80; tries++) {
             if (tries === 40 && i < vineKinds.length) { i++; if (i >= vineKinds.length) break; }   // that one didn't fit: move on
             if (vineKinds[i] === 'strung') {
@@ -1091,7 +1102,7 @@ export class Sim {
                 // Hanging: the block sits in rows 3–6 (3–5 with a chandelier, which needs more room).
                 const c = Math.floor(this.rand() * W);
                 const chand = hangIntro || this.rand() < chandelierChance;
-                const bomb = chand && s.depth >= HANGBOMB_FROM && (hangIntro || this.rand() < HANGBOMB_CHANCE);
+                const bomb = chand && D >= HANGBOMB_FROM && (hangIntro || this.rand() < HANGBOMB_CHANCE);
                 const r = 3 + Math.floor(this.rand() * (bomb ? ROWS - 9 : chand ? ROWS - 7 : ROWS - 6));
                 const shapes = [[[c, r], [c + 1, r]], [[c, r], [c + 1, r], [c, r - 1], [c + 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r]],
                     [[c, r], [c + 1, r], [c + 1, r - 1]], [[c - 1, r], [c, r], [c - 1, r - 1]], [[c - 1, r], [c, r], [c + 1, r], [c, r - 1]],
@@ -1148,7 +1159,7 @@ export class Sim {
             // Interlocking: more often the deeper you go (and in packed layouts), a piece tries a
             // few spots and takes the one that hugs its neighbours most, so L, T and S shapes
             // tuck into each other's notches instead of sitting side by side.
-            const snug = !wantsGap && this.rand() < Math.min(0.85, 0.15 + s.depth * 0.025 + (styleName === 'packed' ? 0.2 : 0));
+            const snug = !wantsGap && this.rand() < Math.min(0.85, 0.15 + D * 0.025 + (styleName === 'packed' ? 0.2 : 0));
             let cells = null, bestHug = -1;
             for (let k = 0; k < (snug ? 8 : 1); k++) {
                 const col = Math.floor(this.rand() * W), row = Math.floor(this.rand() * ROWS);
@@ -1168,14 +1179,14 @@ export class Sim {
 
         // Jello shows up here and there: often none, usually one, sometimes two (a jelly zone, two or three).
         if (has('jelly') || this.rand() < spec.jello) {
-            const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (s.depth - 6) * 0.06) ? 1 : 0);
+            const count = has('jelly') ? 2 + (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < Math.min(0.6, (D - 6) * 0.06) ? 1 : 0);
             // Jelly comes in all sizes once it's been introduced: each piece rolls small (1-2 cells),
             // medium (3-4) or large (5-6) and takes the closest piece the layout has, so a zone
             // with two or three usually mixes them. The very first (depth 5) stays small and clear.
             const pool = plan.filter((p) => p.cells.length <= 6 && !p.cup && !p.vine && !p.seesaw && !p.target && p.kind === 'pinned');
             for (let i = 0; i < count && pool.length; i++) {
                 const r = this.rand();
-                const want = s.depth <= 5 ? 2 : r < 0.38 ? 1.5 : r < 0.72 ? 3.5 : 5.5;
+                const want = D <= 5 ? 2 : r < 0.38 ? 1.5 : r < 0.72 ? 3.5 : 5.5;
                 let best = 0, bestD = Infinity;
                 pool.forEach((p, k) => { const d = Math.abs(p.cells.length - want) + this.rand() * 0.9; if (d < bestD) { bestD = d; best = k; } });
                 pool.splice(best, 1)[0].kind = 'jello';
@@ -1198,7 +1209,7 @@ export class Sim {
             const g = r + 1 < ROWS ? grid[r + 1][c] : 0;
             return g > 0 && plan[g - 1] !== p && (plan[g - 1].kind === 'pinned' || plan[g - 1].kind === 'neutral');
         });
-        const wantLoose = Math.round(plan.length * (has('tower') ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(s.depth >= 20 ? 0.46 : 0.4, spec.loose * style.loose)));
+        const wantLoose = Math.round(plan.length * (has('tower') ? Math.min(0.5, spec.loose * style.loose * 1.3) : Math.min(D >= 20 ? 0.46 : 0.4, spec.loose * style.loose)));
         for (let i = 0, made = 0; i < plan.length * 3 && made < wantLoose; i++) {
             const p = plan[Math.floor(this.rand() * plan.length)];
             // One-square blocks never rest loose: on the floor they'd be too hard to hit.
@@ -1281,7 +1292,7 @@ export class Sim {
         // Numbers. First the zone's total: what each block would get on its own, summed.
         // Then that total is shared out by size, so bigger blocks always hold the bigger
         // numbers and a lone square never ends up a slog to chip down.
-        const grow = multishotGrowth(s.volley) * hpScale(s.depth) * zoneTrim(s.depth) * (s.relaxed ? RELAXED_HP : 1);   // deeper zones and multishot
+        const grow = multishotGrowth(s.volley) * hpScale(D) * zoneTrim(D) * (s.relaxed ? RELAXED_HP : 1);   // deeper zones and multishot
         let zoneHp = 0, weights = 0;
         for (const p of plan) {
             const t = this.rand();
@@ -1310,7 +1321,7 @@ export class Sim {
             if (p.seesaw) this.makeSeesaw(p.block);
         }
         // A gold block (from depth 12; always the first time): pop it for a bonus stage next.
-        if (!s.relaxed && s.depth >= GOLD_FROM && (s.depth === GOLD_FROM || this.rand() < GOLD_CHANCE)) {
+        if (!s.relaxed && D >= GOLD_FROM && (D === GOLD_FROM || this.rand() < GOLD_CHANCE)) {
             const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target
                 && p.cells.length <= 3 && !mushSpots.some((m) => m.p === p));
             if (pool.length) { const g = pool[Math.floor(this.rand() * pool.length)]; g.gold = true; g.block.gold = true; }
@@ -1318,8 +1329,8 @@ export class Sim {
         // Unsettled (from depth 8): a block or two start the zone already hanging from one nail,
         // crooked, as if something knocked it loose. Never a cup, a vine's block, a seesaw,
         // a hanging bomb's target or a mushroom's block.
-        if (!s.relaxed && s.depth >= 8) {
-            const n = s.depth < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
+        if (!s.relaxed && D >= 8) {
+            const n = D < 15 ? (this.rand() < 0.5 ? 1 : 0) : 1 + (this.rand() < 0.4 ? 1 : 0);
             const pool = plan.filter((p) => p.kind === 'pinned' && p.block && !p.cup && !p.vine && !p.seesaw && !p.target && !p.gold
                 && p.cells.length >= 2 && p.block.nails?.length === 2 && !mushSpots.some((m) => m.p === p));
             for (let i = 0; i < n && pool.length; i++) {
@@ -1345,7 +1356,7 @@ export class Sim {
             if (v.lamp.length) {
                 // A little one-square block with no nails, numbered like the zone's small blocks.
                 const small = plan.filter((p) => p.block && p.cells.length <= 2 && !p.block.neutral).map((p) => p.block.hp0 / p.cells.length).sort((a, b) => a - b);
-                const hp = Math.max(2, Math.round(small.length ? small[Math.floor(small.length / 2)] : 3 * hpScale(s.depth)));
+                const hp = Math.max(2, Math.round(small.length ? small[Math.floor(small.length / 2)] : 3 * hpScale(D)));
                 lamp = this.addBlock(v.lamp.map(([c, r]) => [c, r + TOP_ROW]), hp, 'loose');
                 lamp.mini = VINE_LAMP_SIZE;
                 if (v.bomb) { lamp.neutral = true; lamp.bomb = true; lamp.taps = 0; lamp.lit = 0; }   // no number: it's a bomb
@@ -1413,14 +1424,14 @@ export class Sim {
             return;
         }
         s.retries = 0;
-        if (s.depth > 1) this.gain(zoneBonus(s.depth), W / 2, -2.5);
+        if (D > 1) this.gain(zoneBonus(D), W / 2, -2.5);
         if (s.pendingPar > 0) { this.gain(s.pendingPar, W / 2, -3.3); this.events.push({ t: 'par', n: s.pendingPar }); }
         s.pendingPar = 0;
         s.zoneHp0 = this.hpLeft();
         // How much this zone's numbers are scaled up; block colours divide it back out,
         // so every zone keeps the full range of colours and patterns.
-        s.tierScale = hpScale(s.depth) * multishotGrowth(s.volley);
-        s.par = s.relaxed ? null : Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(s.depth) * s.volley))));
+        s.tierScale = hpScale(D) * multishotGrowth(s.volley);
+        s.par = s.relaxed ? null : Math.max(3, Math.min(30, Math.round(s.zoneHp0 / (parHpPerShot(D) * s.volley))));
         s.zoneShots = 0;
 
     }
