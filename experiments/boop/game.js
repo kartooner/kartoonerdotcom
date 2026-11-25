@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-37';
+const BUILD = '1.5-38';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -73,7 +73,11 @@ const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
-    const pad = 0.25, bottomPx = 44;            // bottom: room for the Games / theme links
+    // Bottom: room for the menu and theme glyphs. They sit above the home indicator
+    // (safe-area inset), so on a notched iPhone they need more than a flat 44px.
+    const probe = document.getElementById('safe-probe');
+    const inset = probe ? probe.offsetHeight : 0;
+    const pad = 0.25, bottomPx = Math.max(44, Math.max(2, inset - 10) + 44);
     // A phone on its side is short: give the side HUD a narrower column so it fits too.
     const hudW = h < 520 ? 140 : 160, hudGap = h < 520 ? 16 : 20;      // the side column sits close to the board
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
