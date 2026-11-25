@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-36';
+const BUILD = '1.5-37';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -2096,7 +2096,6 @@ function applyTheme(name) {
     for (const g of pickupViews.values()) { g.userData.label.userData.color = theme.text; drawLabel(g.userData.label, '+1'); }
     for (const v of propViews.values()) for (const l of v.labels ?? []) { l.userData.color = theme.text; drawLabel(l, l.userData.text); }
     const next = name === 'dark' ? 'light' : 'dark';
-    themeButton.textContent = next === 'dark' ? 'Dark mode' : 'Light mode';
     themeButton.setAttribute('aria-label', `Switch to ${next} mode`);
     $('theme-switch').setAttribute('aria-checked', String(name === 'dark'));
     guideAngle = null;   // redraw the guide in the new colours

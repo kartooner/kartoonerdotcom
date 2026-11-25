@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-36">
+<html lang="en" data-build="1.5-37">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -333,7 +333,7 @@
         #rotate .rotate-buddy { width: 56px; height: 61px; }
         #rotate p { margin: 0; font-size: 1rem; line-height: 1.5; }
         /* A narrow board leaves little room for the links under it. */
-        body.narrow-board #back, body.narrow-board #theme-toggle { font-size: 0.75rem; }
+        body.narrow-board #back { font-size: 0.75rem; }
         #updating p { max-width: 280px; margin: 0; line-height: 1.5; }
         #updating .btn { width: 100%; max-width: 280px; }
         #updating .error-detail { font-size: 0.75rem; color: var(--ink-soft); word-break: break-word; }
@@ -342,21 +342,6 @@
             margin: 0; padding: 10px 12px; border-radius: 8px;
             background: var(--ink); color: var(--paper, #f1e8d2);
             font-size: 0.8rem; line-height: 1.4; word-break: break-word; cursor: pointer;
-        }
-        #theme-toggle {
-            position: fixed;
-            z-index: 11;
-            right: var(--board-left, 16px);
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
-            padding: 4px 0;
-            background: none;
-            border: 0;
-            font: inherit;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            color: var(--ink);
-            text-decoration: underline;
-            cursor: pointer;
         }
         /* Start screen and how-to: full screens over the game, not pop-ups. */
         .screen {
@@ -484,10 +469,10 @@
         .btn-primary { color: var(--paper); }
         .btn-primary::before { background: var(--ink); }
         .btn:active::before { transform: translateY(1px); }
-        .btn:focus-visible, #theme-toggle:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .btn:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
         /* Small text links keep their look but get a hit area at least 44pt tall. */
-        .link-btn { position: relative; }      /* (#back and #theme-toggle are already positioned) */
-        .link-btn::after, #back::after, #theme-toggle::after { content: ''; position: absolute; inset: -12px -8px; }
+        .link-btn { position: relative; }      /* (#back is already positioned) */
+        .link-btn::after, #back::after { content: ''; position: absolute; inset: -12px -8px; }
         .link-btn {
             font: inherit;
             font-size: 0.9375rem;
@@ -616,10 +601,9 @@
         }
         .close-x svg { width: 20px; height: 20px; }
         .close-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
-        body.howto-open #back, body.howto-open #theme-toggle, body.howto-open #btn-open-menu { display: none; }
-        /* While you play, only Menu sits under the board (Games is on the menu screens; dark mode is in Settings). */
+        body.howto-open #back, body.howto-open .glyph-btn { display: none; }
+        /* While you play, only the two glyphs sit under the board (Games is on the menu screens). */
         body.playing #back { display: none; }
-        #theme-toggle { display: none !important; }
         /* "Boop!" sits centred between the two links while you play. */
         #brand {
             display: none;
@@ -659,25 +643,27 @@
             row-gap: 18px;
         }
         body.wide .stat-main, body.wide .stat-par { align-items: flex-start; text-align: left; }
-        /* Menu: opens the pause screen mid-run. Centred under the board, only while playing. */
-        #btn-open-menu {
+        /* Under the board while playing: a menu glyph on the left, a sun/moon on the right.
+           The glyph shows where a tap takes you (moon in light mode, sun in dark). */
+        .glyph-btn {
             display: none;
             position: fixed;
             z-index: 11;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: max(8px, calc(env(safe-area-inset-bottom) - 4px));
-            padding: 4px 0;
+            bottom: max(2px, calc(env(safe-area-inset-bottom) - 10px));
+            width: 40px; height: 40px;
+            padding: 8px;
             background: none; border: 0;
-            font: inherit; font-size: 0.8125rem; font-weight: 700;
             color: var(--ink);
-            text-decoration: underline;
             cursor: pointer;
         }
-        body.playing #btn-open-menu { display: block; }
-        body.narrow-board #btn-open-menu { font-size: 0.75rem; }
-        #btn-open-menu::after { content: ''; position: absolute; inset: -12px -8px; }
-        #btn-open-menu:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .glyph-btn svg { display: block; width: 24px; height: 24px; filter: url(#sketchy); overflow: visible; }
+        .glyph-btn::after { content: ''; position: absolute; inset: -4px; }
+        .glyph-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; border-radius: 8px; }
+        #btn-open-menu { left: calc(var(--board-left, 16px) - 8px); }
+        #theme-toggle { right: calc(var(--board-left, 16px) - 8px); }
+        body.playing .glyph-btn { display: block; }
+        #theme-toggle .sun, [data-theme="dark"] #theme-toggle .moon { display: none; }
+        [data-theme="dark"] #theme-toggle .sun { display: block; }
         /* Settings: a plain list of rows, one switch each. */
         #settings h2 { font-family: 'Cartridge Rough', 'Manrope', system-ui, sans-serif; font-weight: normal; margin: 12px 0 20px; font-size: 2.25rem; }
         .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1.5px solid var(--ink-soft); }
@@ -887,8 +873,13 @@
             <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
     </svg>
-    <button id="btn-open-menu" type="button">Menu</button>
-    <button id="theme-toggle" type="button">Dark mode</button>
+    <button id="btn-open-menu" class="glyph-btn" type="button" aria-label="Menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <button id="theme-toggle" class="glyph-btn" type="button" aria-label="Switch to dark mode">
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+    </button>
 
     <!-- Build stamp: every game file is loaded with ?v=BUILD so a cached old script can't
          run against a newer page (or the reverse). When any .js file changes, bump it here
@@ -899,35 +890,35 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-36",
-                "./zones.js": "./zones.js?v=1.5-36",
-                "./blockshader.js": "./blockshader.js?v=1.5-36",
-                "./sketch.js": "./sketch.js?v=1.5-36",
-                "./balls.js": "./balls.js?v=1.5-36",
-                "./labels.js": "./labels.js?v=1.5-36",
-                "./audio.js": "./audio.js?v=1.5-36",
-                "./theme.js": "./theme.js?v=1.5-36",
-                "./crumbs.js": "./crumbs.js?v=1.5-36",
-                "./buddy.js": "./buddy.js?v=1.5-36",
-                "./season.js": "./season.js?v=1.5-36",
-                "./leaves.js": "./leaves.js?v=1.5-36"
+                "./sim.js": "./sim.js?v=1.5-37",
+                "./zones.js": "./zones.js?v=1.5-37",
+                "./blockshader.js": "./blockshader.js?v=1.5-37",
+                "./sketch.js": "./sketch.js?v=1.5-37",
+                "./balls.js": "./balls.js?v=1.5-37",
+                "./labels.js": "./labels.js?v=1.5-37",
+                "./audio.js": "./audio.js?v=1.5-37",
+                "./theme.js": "./theme.js?v=1.5-37",
+                "./crumbs.js": "./crumbs.js?v=1.5-37",
+                "./buddy.js": "./buddy.js?v=1.5-37",
+                "./season.js": "./season.js?v=1.5-37",
+                "./leaves.js": "./leaves.js?v=1.5-37"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-36">
-    <link rel="modulepreload" href="./sim.js?v=1.5-36">
-    <link rel="modulepreload" href="./zones.js?v=1.5-36">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-36">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-36">
-    <link rel="modulepreload" href="./balls.js?v=1.5-36">
-    <link rel="modulepreload" href="./labels.js?v=1.5-36">
-    <link rel="modulepreload" href="./audio.js?v=1.5-36">
-    <link rel="modulepreload" href="./theme.js?v=1.5-36">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-36">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-36">
-    <link rel="modulepreload" href="./season.js?v=1.5-36">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-36">
+    <link rel="modulepreload" href="./game.js?v=1.5-37">
+    <link rel="modulepreload" href="./sim.js?v=1.5-37">
+    <link rel="modulepreload" href="./zones.js?v=1.5-37">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-37">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-37">
+    <link rel="modulepreload" href="./balls.js?v=1.5-37">
+    <link rel="modulepreload" href="./labels.js?v=1.5-37">
+    <link rel="modulepreload" href="./audio.js?v=1.5-37">
+    <link rel="modulepreload" href="./theme.js?v=1.5-37">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-37">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-37">
+    <link rel="modulepreload" href="./season.js?v=1.5-37">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-37">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -970,6 +961,6 @@
             addEventListener('load', function () { setTimeout(function () { if (!self.boopReady) self.boopUpdating(); }, 4000); });
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-36"></script>
+    <script type="module" src="./game.js?v=1.5-37"></script>
 </body>
 </html>
