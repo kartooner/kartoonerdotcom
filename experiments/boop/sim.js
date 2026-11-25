@@ -3,7 +3,7 @@
 // uses the exact same code and numbers as the real shot.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-20');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-21');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -192,7 +192,7 @@ const STAGES = {
 const DOMINO_KNOCK = 2.5;              // a ball tips a domino harder, at the point it hits, so it topples
 const DOMINO_FALL = 0.012;             // per step, a nudge that keeps a tipping domino falling
 const GOLF_PAYS = [8, 6, 4], GOLF_TRY = 1;
-const GOLF_BASE = 2.6, GOLF_HILL_H = 2.4, GOLF_ROUND = 1.3;       // the hill: half its width at the floor, its height, how its slopes curve
+const GOLF_BASE = 3.8, GOLF_HILL_H = 2.3, GOLF_SPREAD = 1.6;      // the hill: how far its feet run each way, its height, how wide its bell is
 const GOLF_BOWL_D = 0.5, GOLF_WATER_H = 1.0;                         // the hole's depth; the water's depth
 const GOLF_HOLE = 0.26;                // half the hole's width: a ball fits, rolling too fast it skips over
 const FLOAT_STEPS = 150;               // a ball in the water floats this long (1.25s) before it fades
@@ -1716,15 +1716,17 @@ export class Sim {
             cols.push(c.handle); rects.push([x, y, hx, hy]);
         };
         const gx = 1.9 + this.rand() * (W - 3.8);                          // the hill's middle (its foot may run under the walls)
-        // A hill: rounded on top, sloping away on each side, its foot under the water.
+        // A hill shaped like a bell curve: a soft round top, sides that curve in, and long feet
+        // flaring out under the water. Each side spreads a little differently, so no two match.
+        const spread = [GOLF_SPREAD * (0.85 + this.rand() * 0.3), GOLF_SPREAD * (0.85 + this.rand() * 0.3)];
         const domeY = (x) => {
-            const u = Math.min(1, Math.abs(x - gx) / GOLF_BASE);
-            return -H + GOLF_HILL_H * Math.pow(1 - u * u, GOLF_ROUND);
+            const d = (x - gx) / spread[x < gx ? 0 : 1];
+            return -H - 0.05 + (GOLF_HILL_H + 0.05) * Math.exp(-d * d);
         };
         const holeX = gx + (this.rand() * 2 - 1) * 0.3;
         const top = domeY(holeX);
         const outline = [];                                                 // the dome as drawn, left foot to right foot
-        for (let k = 0; k <= 40; k++) { const x = gx - GOLF_BASE + (2 * GOLF_BASE) * (k / 40); outline.push([x, domeY(x)]); }
+        for (let k = 0; k <= 48; k++) { const x = gx - GOLF_BASE + (2 * GOLF_BASE) * (k / 48); outline.push([x, domeY(x)]); }
         // What the ball rolls on: the same dome, with the hole a bowl dipped into it (hidden under
         // the dark oval that's drawn; a ball that drops in goes out of sight).
         const hill = outline.filter(([x]) => x < holeX - GOLF_HOLE);
@@ -1741,7 +1743,7 @@ export class Sim {
         cols.push(c.handle);
         // Ledges up top, never over the hill's sides; and now and then a small one right over the
         // hole, so dropping straight down on it doesn't work.
-        const x0 = gx - GOLF_BASE, x1 = gx + GOLF_BASE;
+        const x0 = gx - 1.1 * spread[0], x1 = gx + 1.1 * spread[1];        // the hill above the water
         const ledges = this.rand() < 0.5 ? [[0, 3.2, -6], [5.2, W, -8.5]] : [[5.8, W, -6], [0, 3.8, -8.5]];
         for (const [a, b, y] of ledges) if (x1 < a + 0.6 || x0 > b - 0.6) rect(a, b, y, y - 0.4);
         if (this.rand() < 0.6) {
@@ -1758,8 +1760,8 @@ export class Sim {
         s.owner[water.handle] = { t: 'water' };
         cols.push(water.handle);
         // Where the hill meets the water, for the leaves (they float round it; any landing on it slide off).
-        const wu = Math.sqrt(1 - Math.pow(GOLF_WATER_H / GOLF_HILL_H, 1 / GOLF_ROUND)) * GOLF_BASE;
-        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, waterline: [gx - wu, gx + wu], hole: [holeX, top], holeW: GOLF_HOLE * 2,
+        const wu = Math.sqrt(Math.log((GOLF_HILL_H + 0.05) / (GOLF_WATER_H + 0.05)));
+        s.props[id] = { id, kind: 'golf', x: 0, y: 0, rects, outline, waterline: [gx - wu * spread[0], gx + wu * spread[1]], hole: [holeX, top], holeW: GOLF_HOLE * 2,
             water: GOLF_WATER_H, bodies: [body.handle], cols };
     }
 
