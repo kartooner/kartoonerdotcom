@@ -12,6 +12,7 @@ import { makeLabel as labelMesh, drawLabel } from './labels.js';
 import { makeBallView, shapeBall } from './balls.js';
 import { makeCrumbs, flakeGeometry } from './crumbs.js';
 import { applySeason, seasonGreeting } from './season.js';
+import { makeWater, makeJarMaterial, blockShape, blockSolid, groundSolid } from './water.js';
 import { makeLeafPiles } from './leaves.js';
 import { makeProps } from './props.js';
 import './buddy.js';               // the mascot's blinks and glances
@@ -19,9 +20,9 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-48';
+const BUILD = '1.5-55';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
-const MODULES = 13;
+const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
 if (document.documentElement.dataset.build !== BUILD || stamps.length !== MODULES || stamps.some((b) => b !== BUILD)) {
     let tried = false;
@@ -78,6 +79,19 @@ const seasonLook = applySeason({ THEMES, TIERS, JELLO, COLORS });
 const crumbs = makeCrumbs(scene, seasonLook);
 const leafPiles = seasonLook?.leaves ? makeLeafPiles(scene, seasonLook, -H) : null;   // fall leaves / winter snow on a block
 const camera = new THREE.OrthographicCamera(0, W, 0, -H, -10, 10);
+// Test: water jars, behind ?water=1. Once in a while from depth 25 a zone has a jar (small or
+// big); pop it and the water runs down over the blocks and pools on the floor, where balls slosh
+// through it. ?water=often puts one in the first zone and about every other zone, for trying it out.
+const WATER_MODE = (() => { try { return new URLSearchParams(location.search).get('water'); } catch { return null; } })();
+const WATER_TEST = WATER_MODE != null;
+const WATER = { light: [0x559fc6, 0x3b7fa8], dark: [0x3d9ad6, 0x24618d] };    // fill, and deeper down
+const GLASS = { light: 0xeef7fa, dark: 0x9db6c1 };
+const jarMats = new Set();          // one per jar on the board (each has its own size and wobble)
+const water = WATER_TEST ? makeWater(scene, renderer) : null;
+const waterShapes = new Map();      // block id → its shape, for the water to flow round
+const jarIds = new Set();
+let waterTop = null;                // where the pool's surface is, for leaves to float on
+let golfPool = null;                // the golf stage's water, when the sim is filling it: { id, ground, rects }
 
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
@@ -335,6 +349,23 @@ function buildBlockView(b) {
         mesh.material.uniforms.uNeutral.value = 1;
         mesh.material.uniforms.uFill.value.setHex(NEUTRAL[themeName()]);
     }
+    if (b.jar) {
+        // A jar (one square, or a big one of four): drawn in place of the block, number on the water.
+        jarIds.add(b.id);
+        mesh.visible = false;
+        const size = b.cells.length === 4 ? 2 : 1;
+        const mat = makeJarMaterial();
+        mat.uniforms.uSize.value = size;
+        mat.uniforms.uSeed.value = (b.id * 7.31) % 50;
+        tintJar(mat, themeName());
+        jarMats.add(mat);
+        const jar = new THREE.Mesh(new THREE.PlaneGeometry(1.15 * size, 1.15 * size), mat);
+        jar.position.z = 0.1;
+        jar.renderOrder = 1;
+        jar.userData.jarMat = mat;
+        group.add(jar);
+        label.userData.cell = [0, -0.2 * size];
+    }
     let star = null;
     if (b.gold) {
         // A gold block gets a little white star in its top corner that twinkles.
@@ -353,7 +384,7 @@ function buildBlockView(b) {
         group.add(bomb.group);
     }
     scene.add(group);
-    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5, trail: [], cells: b.cells };
+    const v = { group, mesh, label, nailWob: {}, hp: -1, punch: 0, jello: b.jello, neutral: b.neutral, bomb, star, big: b.cells.length >= 5 || (b.jar && b.cells.length === 4), trail: [], cells: b.cells, jar: b.jar };
     blockViews.set(b.id, v);
     return v;
 }
@@ -414,7 +445,7 @@ function updateBlockView(v, b, frameDt) {
         if (v.hp !== -1) v.punch = 1;
         v.labelAt = now;
         v.hp = b.hp;
-        const look = b.jello ? JELLO : b.gold ? GOLD : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
+        const look = b.jello ? JELLO : b.gold ? GOLD : b.jar ? { fill: WATER[themeName()][0], pattern: -1, text: '#2b2622' } : tierFor(b.tower ? b.hp : b.hp / (sim.s.tierScale || 1));   // tower blocks: their number is just a colour
         v.label.userData.color = look.text;
         drawLabel(v.label, String(b.hp));
         if (!b.jello) { u.uFill.value.setHex(look.fill); u.uPattern.value = look.pattern; }
@@ -499,6 +530,13 @@ function buildPropView(pr) {
     const v = propArt.buildPropView(pr);
     scene.add(v.group);
     propViews.set(pr.id, v);
+    if (water && pr.kind === 'golf' && pr.water) {
+        // The water test: the golf pool is the same water, kept still (it ripples and splashes,
+        // but doesn't flow). The hill and ledges are solid for any splash.
+        v.water.visible = false;
+        golfPool = { id: pr.id, ground: groundSolid(pr.outline), rects: pr.rects };
+        water.setPool(-H + pr.water);
+    }
     return v;
 }
 
@@ -557,7 +595,7 @@ function syncView(frameDt) {
     const s = sim.s;
     moveLauncherView(frameDt);
     for (const [id, v] of blockViews) {
-        if (!s.blocks[id]) { discard(v.group); blockViews.delete(id); }
+        if (!s.blocks[id]) { v.group.traverse((o) => o.userData.jarMat && jarMats.delete(o.userData.jarMat)); discard(v.group); blockViews.delete(id); }
     }
     for (const id in s.blocks) {
         const b = s.blocks[id];
@@ -601,6 +639,7 @@ function syncView(frameDt) {
         if (s.props[id]) continue;
         propViews.delete(id);
         if (v.water) leafPiles?.setWater(null);           // the golf stage is over: leaves sink back to the floor
+        if (golfPool?.id === id) { golfPool = null; water.drain(); water.setOffset(0); }
         // A fallen mushroom fades out; anything else (a cleared zone) just goes.
         if (v.falling) fadingProps.push({ v, t: 0 });
         else discard(v.group);
@@ -754,6 +793,12 @@ function consumeEvents() {
             // A streak: from the third block popped in one turn, a little "×3", "×4"...
             if (phase === 'play' && ++turnPops >= 3) addFloater(`×${turnPops}`, e.x, e.y + 0.45, Math.min(1.15, 0.85 + 0.05 * (turnPops - 3)));
             if (v?.big) stopFor(0.045);            // a big block going is worth a beat
+            if (water && jarIds.has(e.id)) {
+                const big = v?.cells.length === 4;
+                water.spill(e.x, e.y, big ? 260 : 130, big ? 1.2 : 0.6);
+                crumbs.spray([[e.x, e.y + 0.3], [e.x - 0.3, e.y], [e.x + 0.3, e.y], [e.x, e.y - 0.2]], [0xffffff, GOLF_WATER[themeName()], theme.edge]);   // glass
+                jarIds.delete(e.id);
+            }
             if (v) {
                 const u = v.mesh.material.uniforms;
                 crumbs.burst(v.cells, e.x, e.y, v.group.rotation.z, u.uK.value, v.jello ? JELLO.fill : u.uFill.value, theme.edge);
@@ -1356,6 +1401,7 @@ function queueZoneTips() {
     add('seesaw', block((b) => b.seesaw && !b.loose));
     add('hangbomb', block((b) => b.bomb && b.hung != null));
     add('gold', block((b) => b.gold));
+    add('jar', block((b) => b.jar));
     if (privateTab && s.depth >= 2 && tipDue({ key: 'private' })) {
         tips.unshift({ key: 'private', text: "Hey, are you in a private window? Nice dig so far, but I can't save it if you leave." });
     }
@@ -1453,6 +1499,7 @@ const TIDY_EVERY = 5;           // zones between tidy-ups (see tidyUp)
 function startZone() {
     if (runStarted) audio.clear();
     sim.genZone();
+    if (water) { water.drain(); addJar(); }
     tintField();
     if (sim.s.bonusPaid != null) {                       // just out of a bonus stage: what it paid
         addFloater(sim.s.bonusPaid > 0 ? `Bonus +${sim.s.bonusPaid}` : 'Bonus over', W / 2, -2.2);
@@ -1465,6 +1512,98 @@ function startZone() {
     zoneOffset = -H;
     descendT = 0;
     phase = 'descend';
+}
+
+// The water test's jar: rare, and not before depth 25, so it stays a nice surprise (with
+// ?water=often: the first zone, then about every other zone). Small ones take over a single
+// square; big ones (four squares) go in an open spot.
+function addJar() {
+    if (sim.s.bonus) return;
+    if (WATER_MODE === 'often' ? sim.s.depth > 1 && Math.random() < 0.5 : sim.s.depth < 25 || Math.random() > 0.15) return;
+    placeJar(Math.random() < 0.35);
+}
+function placeJar(big) {
+    if (!big) {
+        const singles = Object.values(sim.s.blocks).filter((b) => b.cells.length === 1 && !b.neutral && !b.jello && !b.gold && !b.bomb && !b.tower && !b.cup && !b.seesaw);
+        if (singles.length) { singles[Math.floor(Math.random() * singles.length)].jar = true; return; }
+    }
+    // An open spot, with a square of room all round it.
+    {
+        const n = big ? 2 : 1;
+        const taken = new Set();
+        const mark = (x, y, r = 1) => { for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) taken.add(`${Math.floor(x) + dx},${Math.floor(-y) + dy}`); };
+        for (const id in sim.s.blocks) {
+            const b = sim.s.blocks[id], p = sim.world.getRigidBody(b.body).translation();
+            for (const [cx, cy] of b.cells) mark(p.x + cx, p.y + cy, 0);
+        }
+        for (const id in sim.s.pickups) mark(sim.s.pickups[id].x, sim.s.pickups[id].y, 0);
+        for (const id in sim.s.props) {
+            const pr = sim.s.props[id];
+            if (pr.x || pr.y) mark(pr.x, pr.y, 2);
+            for (const l of pr.links ?? []) { const t = sim.world.getRigidBody(l.body).translation(); mark(t.x, t.y, 0); }   // a vine, link by link
+        }
+        const open = [];
+        for (let c = 0; c <= W - n; c++) for (let r = 4; r <= 13 - n; r++) {
+            let free = true;
+            for (let dc = -1; dc <= n && free; dc++) for (let dr = -1; dr <= n && free; dr++) if (taken.has(`${c + dc},${r + dr}`)) free = false;
+            if (free) open.push([c, r]);
+        }
+        if (!open.length) { if (big) placeJar(false); return; }   // no room for a big one: a small one, then
+        const [c, r] = open[Math.floor(Math.random() * open.length)];
+        const b = sim.addBlock(big ? [[c, r], [c + 1, r], [c, r + 1], [c + 1, r + 1]] : [[c, r]], big ? 5 : 2);
+        b.jar = true;
+        sim.s.zoneHp0 += b.hp;
+    }
+}
+// The golf stage's ledges, for the water: [[x, y, hx, hy], ...]. A drop inside one goes out the top.
+function rectSolid(rects, x, y) {
+    for (const [cx, cy, hx, hy] of rects) {
+        if (Math.abs(x - cx) < hx && Math.abs(y - cy) < hy) return { x, y: cy + hy + 0.03, slide: null };
+    }
+    return null;
+}
+function tintJar(mat, name) {
+    const u = mat.uniforms;
+    u.uInk.value.setHex(theme.edge); u.uGlass.value.setHex(GLASS[name]);
+    u.uWater.value.setHex(WATER[name][0]); u.uDeep.value.setHex(WATER[name][1]);
+}
+// The water, each frame: flow round the blocks where they are now.
+function updateWater(dt) {
+    const blocks = [];
+    let moved = false;
+    for (const id in sim.s.blocks) {
+        const b = sim.s.blocks[id];
+        if (b.jello) continue;                      // water runs through jelly, same as balls
+        let sh = waterShapes.get(b.id);
+        if (!sh) waterShapes.set(b.id, (sh = blockShape(b)));
+        const body = sim.world.getRigidBody(b.body), p = body.translation(), v = body.linvel();
+        sh.x = p.x; sh.y = p.y; sh.a = body.rotation(); sh.k = b.scale;
+        sh.vx = v.x; sh.vy = v.y; sh.w = body.angvel();
+        if (v.x * v.x + v.y * v.y > 0.1 || Math.abs(sh.w) > 0.3) moved = true;
+        blocks.push(sh);
+    }
+    if (waterShapes.size > blocks.length + 20) for (const id of waterShapes.keys()) if (!sim.s.blocks[id]) waterShapes.delete(id);
+    const balls = sim.s.balls.map((b) => {
+        const rb = sim.world.getRigidBody(b.body), t = rb.translation(), v = rb.linvel();
+        return { id: b.body, x: t.x, y: t.y, vx: v.x, vy: v.y };
+    });
+    const onBlocks = blockSolid(blocks);
+    let solid = onBlocks;
+    if (golfPool) {
+        // The golf stage: the hill and the ledges are solid too.
+        const { ground, rects } = golfPool;
+        solid = (x, y) => onBlocks(x, y) ?? ground(x, y) ?? rectSolid(rects, x, y);
+        water.setOffset(zoneOffset);
+    }
+    water.update(dt, solid, balls, moved);
+    if (water.moving()) animating = true;
+    const now = performance.now() / 1000 % 1000;
+    for (const m of jarMats) m.uniforms.uTime.value = now;
+    // Leaves float on the pool once it has settled (and sink back when it drains). The golf
+    // stage sets its own (round its hill).
+    if (!leafPiles || golfPool) return;
+    const top = !water.active() ? null : water.moving() ? waterTop : water.surface();
+    if ((top == null) !== (waterTop == null) || (top != null && Math.abs(top - waterTop) > 0.05)) { leafPiles.setWater(top); waterTop = top; }
 }
 
 // Every few zones, as the next one slides in: tidy the physics bookkeeping, forget any sketch
@@ -1568,6 +1707,7 @@ function restart(saved = null) {
     crumbs.clear();
     leafPiles?.clear();
     leafPiles?.setWater(null);
+    water?.clear(); waterShapes.clear(); jarIds.clear(); jarMats.clear(); waterTop = null; golfPool = null;
     keyAim = false;
     if (saved) {
         sim = saved;
@@ -1651,6 +1791,10 @@ function tick(frameDt) {
 
 let last = performance.now();
 let slowFrames = 0, timedFrames = 0;
+// The first few seconds after starting (or coming back to the tab) are always a bit rough:
+// shaders compiling, the first zone building, the browser warming up. Frame timing isn't judged
+// until that's over, or a slow start would lower the resolution and the frame rate for nothing.
+let settleUntil = performance.now() + 3000;
 const recentDt = [];
 function watchFrameRate(rawDt) {
     // Learn the screen's own pace first (120, 60, or 30 in Low Power Mode), so a phone capped
@@ -1687,7 +1831,7 @@ function pace(now, workMs) {
     else if (targetFps === 30 && work < 6 && missed < 0.05) paceWindows = paceWindows < 0 ? paceWindows - 1 : -1;
     else paceWindows = 0;
     if (paceWindows >= 2) { targetFps = 30; paceWindows = 0; }          // two rough seconds: settle at 30
-    if (paceWindows <= -10) { targetFps = 60; paceWindows = 0; }        // ~20 easy seconds: try 60 again
+    if (paceWindows <= -4) { targetFps = 60; paceWindows = 0; }         // ~8 easy seconds: try 60 again
     paceFrames = paceMissed = paceWork = 0;
 }
 for (const type of ['pointerdown', 'pointermove', 'keydown', 'wheel']) {
@@ -1700,7 +1844,7 @@ function frame(now) {
     const rawDt = (now - last) / 1000;
     const frameDt = Math.min(0.12, rawDt);   // slow frames catch up instead of playing in slow motion
     last = now;
-    if (!document.hidden && rawDt < 0.5) watchFrameRate(rawDt);
+    if (!document.hidden && rawDt < 0.5 && now > settleUntil) watchFrameRate(rawDt);
     if (sim) {
         // Paused while the start screen or how-to is up: the board stays as it was.
         // (A new zone still slides into place, so the board behind the start screen is ready.)
@@ -1714,6 +1858,7 @@ function frame(now) {
         if (noteShown) placeNote();
         animating = false;          // set by syncView if anything on the board is still moving
         syncView(dt);
+        if (water) updateWater(dt);
         crumbs.update(dt);
     }
     // Short shake when a tumbling block lands hard.
@@ -1727,7 +1872,7 @@ function frame(now) {
         && now - lastInput > 400 && !crumbs.active();   // (while aiming the world only steps when worldSettling)
     const every = still ? 500 : idle ? 100 : 0;
     if (now - lastRender >= every) { renderer.render(scene, camera); lastRender = now; }
-    if (!document.hidden && rawDt < 0.5) pace(now, performance.now() - workStart);
+    if (!document.hidden && rawDt < 0.5 && now > settleUntil) pace(now, performance.now() - workStart);
     requestAnimationFrame(frame);
 }
 
@@ -1761,6 +1906,8 @@ function applyTheme(name) {
     outlineMat.color.setHex(theme.edge);
     setSketchInk(theme.line, theme.edge);
     propArt.setTheme(name);
+    water?.setColors(WATER[name][0], WATER[name][1], theme.edge);
+    for (const m of jarMats) tintJar(m, name);
     ballMat.color.setHex(theme.ball);
     dotInk.setHex(theme.line);
     dotFade.setHex(theme.guideEnd);
@@ -2010,7 +2157,7 @@ $('btn-new').addEventListener('click', () => { restart(); play(); });
 $('btn-again').addEventListener('click', () => { restart(); play(); });
 $('btn-over-menu').addEventListener('click', () => { restart(); showScreen('menu'); });
 const autoPause = () => { if (runStarted && document.body.classList.contains('playing')) showScreen('menu', false); };
-document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else checkForUpdate(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else { checkForUpdate(); settleUntil = performance.now() + 2000; } });
 
 // Updates. A Home Screen app never reloads by itself, so whenever the game comes back to the
 // front we ask the server for the current build. If there's a newer one, we save and reload,
@@ -2105,6 +2252,7 @@ checkForUpdate();
 // For automated checks.
 window.__boop = {
     get sim() { return sim; },
+    get water() { return water; },
     get phase() { return phase; },
     fire: (angle) => fire(angle),
     get aim() { return shownAngle(); },

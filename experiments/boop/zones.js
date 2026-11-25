@@ -1,7 +1,7 @@
 // Zone recipes: which shapes exist, how zones are laid out, and what each depth holds.
 // Just data and small helpers; sim.js builds the zones from these. A biome would mostly
 // live here: its own shapes, recipe weights and numbers.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-48');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-55');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
@@ -71,6 +71,7 @@ export const THING_TIPS = {
     jelly: 'What\'s that wobbly one? Jelly. Balls go right through it, just slower. Each pass takes 1 off.',
     grey: "See the grey blocks? You can't break them, but you can bounce shots off them. Knock their nails out and they crumble.",
     cup: 'You see that cup? Drop a ball in for a +1. It\'ll rattle around in there for a bit.',
+    jar: "Oh, look at that. It's a water jar. Pop it and the water spills out and runs all the way to the bottom.",
     single: 'See that grey nail? Those never come out. This block stays put until you pop it.',
 };
 
