@@ -1,7 +1,7 @@
 // Crayon bits: a popped block bursts into shavings in its own colour, with a few flecks of
 // ink. Just for show, they don't touch the physics.
 import * as THREE from 'three';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-48');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-49');   // build stamp: game.js checks every file matches
 
 const MAX = 240;
 const GRAVITY = -16;           // cells per second², a touch heavier than the balls feel
