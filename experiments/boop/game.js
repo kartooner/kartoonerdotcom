@@ -19,7 +19,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Right after an update, a cache can briefly hand out a mix of old and new files. Then:
 // reload once; if it's still mixed, say so plainly (with a Reload button) rather than run
 // a game that half works.
-const BUILD = '1.5-24';
+const BUILD = '1.5-25';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 12;
 const stamps = globalThis.boopBuilds || [];
@@ -1683,8 +1683,8 @@ function readBest() { try { return Number(localStorage.getItem('boop-best-depth'
 function writeBest(d) { try { localStorage.setItem('boop-best-depth', String(d)); } catch { /* storage blocked */ } }
 
 function gameOver() {
-    const d = sim.s.depth, before = readBest(), best = Math.max(before, d);
-    writeBest(best);
+    const d = sim.s.depth, before = readBest(), best = TEST_STAGE ? before : Math.max(before, d);
+    if (!TEST_STAGE) writeBest(best);
     clearSave();
     audio.over();
     phase = 'over';
@@ -1798,7 +1798,12 @@ function readyToAim() {
 // in flight): the physics world as bytes, the game state as JSON. Closing the page
 // mid-shot loses only that shot. Game over or New game clears it.
 const SAVE_KEY = 'boop-save-v1', RELAXED_SAVE_KEY = 'boop-save-relaxed-v1';
-const saveKey = () => (relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
+// Test link: ?stage=golf (or pachinko, dominoes, hoops) starts a fresh run right at that bonus
+// stage, to try it without playing down to it. It keeps its own save, so the real run is left
+// alone, and it never counts toward the best depth.
+const TEST_STAGES = { pachinko: 25, dominoes: 30, golf: 35, hoops: 40 };
+const TEST_STAGE = (() => { try { const k = new URLSearchParams(location.search).get('stage'); return TEST_STAGES[k] ? k : null; } catch { return null; } })();
+const saveKey = () => (TEST_STAGE ? 'boop-save-test' : relaxed ? RELAXED_SAVE_KEY : SAVE_KEY);   // each mode keeps its own run
 let fromSave = false;     // this run was picked back up from a save (start screen says Continue)
 
 function toBase64(bytes) {
@@ -1819,6 +1824,7 @@ function saveRun() {
 }
 function clearSave() { try { localStorage.removeItem(saveKey()); } catch { /* storage blocked */ } }
 function loadRun() {
+    if (TEST_STAGE) return null;          // the test link always starts fresh at its stage
     try {
         const raw = localStorage.getItem(saveKey());
         if (!raw) return null;
@@ -1870,6 +1876,12 @@ function restart(saved = null) {
     sim.s.relaxed = relaxed;
     lastShotAngle = null;
     sim.s.seen = readTips();
+    if (TEST_STAGE && !relaxed) {
+        // Straight to the stage: as if the depth before it was just cleared, with a deep run's launcher.
+        sim.s.depth = TEST_STAGES[TEST_STAGE];
+        sim.s.volley = 4;
+        sim.s.supply = 30;
+    }
     startZone();
 }
 
