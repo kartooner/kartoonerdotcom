@@ -680,7 +680,7 @@
         .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1.5px solid var(--ink-soft); }
         .setting:has(+ .actions) { border-bottom: 1.5px solid var(--ink-soft); }
         .setting-label b { display: block; font-size: 1.0625rem; }
-        .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); }
+        .setting-label span { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); text-wrap: pretty; }
         .switch {
             flex: none; position: relative; width: 52px; height: 30px; padding: 0;
             border: 2.5px solid var(--ink); border-radius: 15px; background: var(--paper); cursor: pointer;
@@ -757,11 +757,11 @@
             <button class="link-btn" id="btn-settings-back" type="button">← Back</button>
             <h2 id="settings-title">Settings</h2>
             <div class="setting">
-                <div class="setting-label" id="sound-label"><b>Sound</b><span>Chiptune blips for hits and pops.</span></div>
+                <div class="setting-label" id="sound-label"><b>Sound</b><span>Blips when you hit blocks.</span></div>
                 <button class="switch" id="sound-switch" type="button" role="switch" aria-checked="false" aria-labelledby="sound-label"></button>
             </div>
             <div class="setting">
-                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Simpler zones, and shots never run out. Your regular run waits until you switch back.</span></div>
+                <div class="setting-label" id="relaxed-label"><b>Relaxed mode</b><span>Easier zones, endless shots. Your regular game waits.</span></div>
                 <button class="switch" id="relaxed-switch" type="button" role="switch" aria-checked="false" aria-labelledby="relaxed-label"></button>
             </div>
             <div class="actions">
