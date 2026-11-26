@@ -122,12 +122,6 @@ p { margin: 0 0 14px; max-width: 62ch; }
 .good li:nth-child(4) svg { transform: rotate(7deg); }
 .good li:nth-child(5) svg { transform: rotate(-6deg) scale(1.04); }
 .good b { font-weight: 800; }
-/* The box is drawn like the game's board: a slightly wobbly ink outline, a second faint pass. */
-.panel { position: relative; isolation: isolate; padding: 24px 24px 10px; }
-.panel::before, .panel::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 16px 20px 15px 21px / 19px 15px 21px 16px; }
-.panel::before { background: var(--card); border: 2.5px solid var(--line); filter: url(#rough); }
-.panel::after { inset: 3px -2px -2px 3px; border: 1.25px solid var(--line); opacity: 0.35; filter: url(#rough); }
-.panel h2 { font-size: 1.25rem; }
 
 footer { margin-top: 64px; padding-block: 24px calc(32px + env(safe-area-inset-bottom, 0px)); border-top: 2px solid var(--line); font-size: 0.9375rem; color: var(--soft); }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
@@ -209,7 +203,7 @@ footer a { color: var(--soft); }
         <p>Touch where you want to aim and a dotted line shows every bounce before you shoot. Then knock out the nails and watch blocks swing and fall, set off a bomb, snap a vine. The deeper you dig, the more little surprises turn up.</p>
         <p>Boop, the little blue block, keeps you company and points out new things as you meet them.</p>
       </div>
-      <div class="panel">
+      <div>
         <h2>Made to feel good</h2>
         <ul class="good">
           <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>No ads.</b> Nothing to buy. Pay once and it's yours.</span></li>
