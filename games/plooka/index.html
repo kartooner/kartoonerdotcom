@@ -109,8 +109,17 @@ h2 { margin: 0 0 14px; font-size: clamp(1.5rem, 4vw, 1.875rem); font-weight: 800
 .split > * { min-width: 0; }
 p { margin: 0 0 14px; max-width: 62ch; }
 .good { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.good li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
-.good svg { width: 22px; height: 22px; margin-top: 3px; }
+.good li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+.good svg { width: 26px; height: 26px; margin-top: 0; overflow: visible; filter: url(#crayon); }
+/* A crayon tick: a wobbly stroke that overshoots, a thinner second pass beside it, and each one at
+   its own slight angle, the way you'd tick a list by hand. */
+.good .tick { fill: none; stroke: var(--dot); stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.good .tick-2 { stroke-width: 1.3; opacity: 0.7; }
+.good li:nth-child(1) svg { transform: rotate(-4deg); }
+.good li:nth-child(2) svg { transform: rotate(5deg) translateX(1px); }
+.good li:nth-child(3) svg { transform: rotate(-1deg) scale(0.94); }
+.good li:nth-child(4) svg { transform: rotate(7deg); }
+.good li:nth-child(5) svg { transform: rotate(-6deg) scale(1.04); }
 .good b { font-weight: 800; }
 .panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 22px 8px; }
 .panel h2 { font-size: 1.25rem; }
@@ -147,7 +156,7 @@ footer a { color: var(--soft); }
     <span class="sr-only">Switch to </span><span class="theme-toggle-text">Dark mode</span>
 </button>
 <!-- /partial:theme-toggle -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="rough" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="rough" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="crayon" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
 
 <header>
   <div class="wrap hero">
@@ -183,11 +192,11 @@ footer a { color: var(--soft); }
       <div class="panel">
         <h2>Made to feel good</h2>
         <ul class="good">
-          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>No ads.</b> Nothing to buy. Pay once and it's yours.</span></li>
-          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Relaxed mode</b> for little ones or slow evenings: easier zones, shots that never run out.</span></li>
-          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Saves itself,</b> so you can put it down any time.</span></li>
-          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Par</b> for every zone, if you like a challenge.</span></li>
-          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Easy on the eyes,</b> with dark mode and Reduce Motion support.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>No ads.</b> Nothing to buy. Pay once and it's yours.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>Relaxed mode</b> for little ones or slow evenings: easier zones, shots that never run out.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>Saves itself,</b> so you can put it down any time.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>Par</b> for every zone, if you like a challenge.</span></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tick" d="M2.8 13.1c.9-.4 1.9.3 2.7 1.3.9 1.1 1.6 2.4 2.4 3.9.2.4.6.4.8 0 1.4-2.9 3.2-5.9 5.4-8.6 1.7-2.1 3.6-4 6-5.8"/><path class="tick tick-2" d="M4.1 12.4c1.5.5 2.6 2.1 3.9 4.6 2.2-4.4 5.2-8.6 9.4-11.6 1-.7 2-1.4 3.2-2"/></svg><span><b>Easy on the eyes,</b> with dark mode and Reduce Motion support.</span></li>
         </ul>
       </div>
     </div>
