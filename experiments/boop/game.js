@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-71';
+const BUILD = '1.5-72';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -909,44 +909,48 @@ if (readSoundPick() === 'on') {
 showSoundState();
 
 // Tilt (a switch in Settings, on phones): tip the phone and the water runs to the low side and
-// gathers in that corner, like real water. Only
-// the water: balls, blocks and the aiming guide don't feel it (that would change your shots).
-// It starts off. Turning it on asks the browser for the phone's tilt: iPhones show a question
-// (Allow), most others just say yes. Off with Reduce Motion.
-const TILT_KEY = 'boop-tilt', TILT_MAX = 1.0;          // radians: the phone's real lean (water runs to the low side), well short of sideways
-const tiltAsks = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+// gathers there, like real water, all the way round (upside down too, with the phone's rotation
+// lock on). Only the water: balls, blocks and the aiming guide don't feel it (that would change
+// your shots). It starts off. Turning it on asks the browser for the phone's motion: iPhones show
+// a question (Allow), most others just say yes. Off with Reduce Motion.
+//
+// "Down" comes from the motion sensor's gravity, across the face of the screen, so it works at any
+// angle. (iPhones report it the other way round from everyone else, hence the flip.)
+const TILT_KEY = 'boop-tilt';
+const Motion = typeof DeviceMotionEvent !== 'undefined' ? DeviceMotionEvent : null;
+const tiltAsks = typeof Motion?.requestPermission === 'function';
+const flipsGravity = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const tiltSwitch = $('tilt-switch');
 let tiltOn = false, tiltTarget = 0, tilt = 0;
-function onOrientation(e) {
-    if (e.gamma == null) return;
-    // Sideways lean (gamma), turned into the board's terms for however the screen is turned.
-    const turn = (screen.orientation?.angle ?? window.orientation ?? 0) | 0;
-    const lean = turn === 90 ? e.beta : turn === -90 || turn === 270 ? -e.beta : turn === 180 ? -e.gamma : e.gamma;
-    tiltTarget = Math.max(-TILT_MAX, Math.min(TILT_MAX, (lean * Math.PI) / 180));
+function onMotion(e) {
+    const g = e.accelerationIncludingGravity;
+    if (!g || g.x == null) return;
+    const s = flipsGravity ? -1 : 1, x = g.x * s, y = g.y * s;
+    if (Math.hypot(x, y) < 2.5) return;                  // lying flat: no clear "down" on the screen, keep the last
+    const turn = ((screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI) / 180;   // the page turned with the phone
+    tiltTarget = Math.atan2(-x, y) - turn;               // 0 upright, + the right side lower, ±π upside down
 }
 function setTilt(on) {
     tiltOn = on;
     try { localStorage.setItem(TILT_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
-    if (on) window.addEventListener('deviceorientation', onOrientation);
-    else { window.removeEventListener('deviceorientation', onOrientation); tiltTarget = 0; }
+    if (on) window.addEventListener('devicemotion', onMotion);
+    else { window.removeEventListener('devicemotion', onMotion); tiltTarget = 0; }
     tiltSwitch.setAttribute('aria-checked', String(on));
 }
-if (typeof DeviceOrientationEvent !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
+const askTilt = () => Motion.requestPermission().then((r) => setTilt(r === 'granted')).catch(() => setTilt(false));
+if (Motion && window.matchMedia('(pointer: coarse)').matches) {
     $('tilt-setting').hidden = false;
     const pick = (() => { try { return localStorage.getItem(TILT_KEY); } catch { return null; } })();
-    if (pick === 'on' || (pick == null && !tiltAsks)) {
-        // Remembered on (or a phone that doesn't ask). An iPhone only answers from inside a tap, so
-        // a remembered "on" checks on the first one (it doesn't ask again once allowed).
+    if (pick === 'on') {
+        // Remembered on. An iPhone only answers from inside a tap, so it checks on the first one
+        // (it doesn't ask again once allowed).
         if (!tiltAsks) setTilt(true);
-        else {
-            tiltSwitch.setAttribute('aria-checked', 'true');
-            document.addEventListener('click', () => DeviceOrientationEvent.requestPermission().then((r) => setTilt(r === 'granted')).catch(() => setTilt(false)), { once: true });
-        }
+        else { tiltSwitch.setAttribute('aria-checked', 'true'); document.addEventListener('click', askTilt, { once: true }); }
     }
     tiltSwitch.addEventListener('click', () => {
-        if (tiltOn) { setTilt(false); return; }
-        if (!tiltAsks) { setTilt(true); return; }
-        DeviceOrientationEvent.requestPermission().then((r) => setTilt(r === 'granted')).catch(() => setTilt(false));
+        if (tiltOn) setTilt(false);
+        else if (!tiltAsks) setTilt(true);
+        else askTilt();
     });
 }
 
@@ -1742,9 +1746,11 @@ function updateWater(dt) {
     // Tilt eases toward the phone's lean (slowly, so the water rolls over rather than rushing), and
     // settles back level with Reduce Motion.
     const lean = tiltOn && !calmMotion.matches ? tiltTarget : 0;
-    tilt += (lean - tilt) * Math.min(1, dt * 1.8);
+    const turnBy = ((lean - tilt + Math.PI * 3) % (Math.PI * 2)) - Math.PI;   // the short way round
+    tilt += turnBy * Math.min(1, dt * 1.8);
+    if (tilt > Math.PI) tilt -= Math.PI * 2; else if (tilt < -Math.PI) tilt += Math.PI * 2;
     water.setTilt(tilt);
-    water.update(dt, solid, balls, moved || Math.abs(lean - tilt) > 0.01);
+    water.update(dt, solid, balls, moved || Math.abs(turnBy) > 0.01);
     if (water.moving()) animating = true;
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
