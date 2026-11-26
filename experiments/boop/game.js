@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-74';
+const BUILD = '1.5-75';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1516,7 +1516,7 @@ function gameOver() {
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
     // How the run went: blocks popped, and zones cleared under par if any.
-    showStats($('over-stats'), runStats());
+    showStats($('over-stats'), runStats().slice(0, 2));
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
@@ -2200,17 +2200,16 @@ async function isPrivateTab() {
 let privateTab = false;
 isPrivateTab().then((p) => { privateTab = p; });
 
-// How the run's going, the good bits: how often you've made par, a par streak or your best
-// zone, and blocks popped. Shown when it ends, and on the pause screen for a little lift mid-run.
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+// How the run's going, the good bits, as short "label: value" lines: your best par, a par streak,
+// how often you've made par, blocks popped, best first. Game over shows the top two; the pause
+// screen the top one (with your depth against your best), so they stay tidy.
 function runStats() {
     const s = sim.s, lines = [];
-    const zones = s.parZones ?? 0, made = s.madePar ?? 0;
-    if (zones && made) lines.push(`Made par ${Math.round((made / zones) * 100)}% of the time`);
-    if ((s.parStreak ?? 0) >= 2) lines.push(`On a ${s.parStreak}-zone par streak`);
-    else if ((s.bestStreak ?? 0) >= 3) lines.push(`Best par streak: ${plural(s.bestStreak, 'zone')}`);
-    else if ((s.bestUnder ?? 0) >= 2) lines.push(`Best zone: ${s.bestUnder} under par`);
-    if (s.popped) lines.push(`${plural(s.popped, 'block')} popped`);
+    if ((s.bestUnder ?? 0) >= 1) lines.push(`Your best par: ${s.bestUnder} under`);
+    if ((s.parStreak ?? 0) >= 3) lines.push(`Par streak: ${s.parStreak} zones`);
+    else if ((s.bestStreak ?? 0) >= 3) lines.push(`Best par streak: ${s.bestStreak} zones`);
+    if (s.parZones && s.madePar) lines.push(`Made par: ${Math.round((s.madePar / s.parZones) * 100)}% of zones`);
+    if (s.popped) lines.push(`Blocks popped: ${s.popped}`);
     return lines;
 }
 function showStats(el, lines) {
@@ -2228,9 +2227,8 @@ function menuTagline() {
         : best > 0 ? `Best depth: ${best}` : relaxed ? 'Bounce balls, dig deeper.' : TAGLINE;   // short, with the Relaxed label under it
     $('menu-tagline').classList.toggle('state', runStarted);
     // Paused or picked back up: how it's going so far, and how it stacks up against your best.
-    const lines = runStarted ? runStats() : [];
-    if (lines.length > 2) lines.length = 2;          // the best two; game over has room for them all
-    if (runStarted && !relaxed && best > 0) { if (sim.s.depth > best) lines.unshift('Deeper than your best!'); else lines.push(`Best depth: ${best}`); }   // the best news first
+    const lines = runStarted ? runStats().slice(0, 1) : [];
+    if (runStarted && !relaxed && best > 0) lines.unshift(sim.s.depth > best ? 'Deeper than your best!' : `Best depth: ${best}`);
     showStats($('menu-stats'), lines);
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
