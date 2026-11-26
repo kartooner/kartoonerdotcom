@@ -37,12 +37,13 @@
   --dot: #a8381c;        /* the ! and links */
   --sky: #8fc3e3;        /* Boop */
   --line: #2b2622;
+  --ball: #fffdf7; --ball-edge: #2b2622;   /* same as the game */
   --font: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; color-scheme: dark } }
+  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; --ball: #f6efe2; --ball-edge: #0f0c0a; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; color-scheme: dark }
+  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; --ball: #f6efe2; --ball-edge: #0f0c0a; color-scheme: dark }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -150,7 +151,7 @@ footer a { color: var(--soft); }
 .guide svg { display: block; width: 100%; height: auto; max-height: 120px; overflow: visible; }
 .guide-line { fill: none; stroke: var(--soft); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 13; opacity: 0.8; }
 .guide-hits circle { fill: var(--dot); }
-.ball { fill: var(--card); stroke: var(--ink); stroke-width: 3; }
+.ball { fill: var(--ball); stroke: var(--ball-edge); stroke-width: 3; }
 
 @media (prefers-reduced-motion: reduce) { .boop-body { animation: none; } * { scroll-behavior: auto; } }
 </style>
