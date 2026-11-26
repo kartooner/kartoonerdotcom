@@ -102,7 +102,7 @@ h1 { margin: 0; font-size: 1rem; }   /* the logo is the heading; its text is for
 @media (max-width: 520px) { .shots figure:nth-child(3) { display: none; } .shots figure { flex-basis: 46%; } }
 
 /* About */
-main section { padding-block: 56px 0; }
+main section { padding-block: 32px 0; }
 h2 { margin: 0 0 14px; font-size: clamp(1.5rem, 4vw, 1.875rem); font-weight: 800; line-height: 1.2; text-wrap: balance; }
 .split { display: grid; grid-template-columns: 1fr; gap: 28px; }
 @media (min-width: 760px) { .split { grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: start; } }
@@ -145,6 +145,16 @@ footer a { color: var(--soft); }
 [data-theme="light"] .theme-toggle-icon .icon-moon { display: block; }
 @media (max-width: 600px) { .theme-toggle-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .theme-toggle { padding: 8px; } }
 
+/* Between the top and the details: the game's dotted aim line, with a ball bouncing along it.
+   Just decoration; with Reduce Motion the ball sits still on the line. */
+.guide { margin-top: 8px; }
+.guide svg { display: block; width: 100%; height: auto; max-height: 120px; overflow: visible; }
+.guide-line { fill: none; stroke: var(--soft); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 13; opacity: 0.8; }
+.guide-hits circle { fill: var(--dot); }
+.ball circle, circle.ball { fill: var(--card); stroke: var(--ink); stroke-width: 3; }
+.ball-still { display: none; }
+@media (prefers-reduced-motion: reduce) { .ball-moving { display: none; } .ball-still { display: inline; } }
+
 @media (prefers-reduced-motion: reduce) { .boop-body { animation: none; } * { scroll-behavior: auto; } }
 </style>
 </head>
@@ -183,6 +193,19 @@ footer a { color: var(--soft); }
     </div>
   </div>
 </header>
+
+<div class="wrap guide" aria-hidden="true">
+  <svg viewBox="0 0 1000 120" focusable="false" preserveAspectRatio="xMidYMid meet">
+    <path id="guide-path" class="guide-line" d="M24 14 L300 106 L560 18 L812 104 L976 40"/>
+    <g class="guide-hits"><circle cx="300" cy="106" r="5"/><circle cx="560" cy="18" r="5"/><circle cx="812" cy="104" r="5"/></g>
+    <g class="ball ball-moving">
+      <circle r="9"/>
+      <animateMotion dur="4.2s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.8;1"><mpath href="#guide-path"/></animateMotion>
+      <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.74;0.8;1" dur="4.2s" repeatCount="indefinite"/>
+    </g>
+    <circle class="ball ball-still" cx="560" cy="27" r="9"/>
+  </svg>
+</div>
 
 <main id="about">
   <section class="wrap" aria-labelledby="how">
