@@ -6,7 +6,7 @@ import { W, H } from './sim.js';
 import { makeBlockMesh, makeHillMesh, makeNetMesh, NEUTRAL } from './blockshader.js';
 import { makeSketch, SHAPE } from './sketch.js';
 import { COLORS } from './theme.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-76');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-77');   // build stamp: game.js checks every file matches
 
 const mat = (color, opts = {}) => new THREE.MeshBasicMaterial({ color, ...opts });
 

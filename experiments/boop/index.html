@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-76">
+<html lang="en" data-build="1.5-77">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -399,12 +399,17 @@
             font-size: clamp(4rem, 22vw, 6.5rem);
             font-weight: normal;
             line-height: 1;
-            letter-spacing: -0.05em;
+            letter-spacing: 0;
         }
+        /* Kerned by hand so every pair has the same visible gap, never touching (the font's own
+           spacing left B-o and o-o touching and o-p looser). */
+        #menu h1 .k1 { margin-right: -0.038em; }
+        #menu h1 .k2 { margin-right: -0.031em; }
+        #menu h1 .k3 { margin-right: -0.047em; }
         /* The "!" tips over like a block knocked loose. */
         #menu h1 .bang {
             display: inline-block;
-            margin-left: 0.04em;
+            margin-left: -0.03em;
             transform: rotate(14deg) translateY(-0.02em);
             transform-origin: 50% 90%;
             /* Ink stem, orange dot: the glyph is filled with a hard two-colour split. */
@@ -714,7 +719,7 @@
         <div class="screen-inner">
             <p class="say" id="menu-say" hidden><span id="menu-say-text"></span> <button class="link-btn" id="btn-news-say" type="button">See what's new</button></p>
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
-            <h1 id="menu-title">Boop<span class="bang">!</span></h1>
+            <h1 id="menu-title"><span class="k1">B</span><span class="k2">o</span><span class="k3">o</span>p<span class="bang">!</span></h1>
             <p class="tagline" id="menu-tagline">Bounce balls, wear blocks down, dig deeper.</p>
             <p class="stats" id="menu-stats"></p>
             <p class="mode-label" id="menu-mode" hidden>Relaxed mode</p>
@@ -889,39 +894,39 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-76",
-                "./zones.js": "./zones.js?v=1.5-76",
-                "./blockshader.js": "./blockshader.js?v=1.5-76",
-                "./sketch.js": "./sketch.js?v=1.5-76",
-                "./balls.js": "./balls.js?v=1.5-76",
-                "./labels.js": "./labels.js?v=1.5-76",
-                "./audio.js": "./audio.js?v=1.5-76",
-                "./theme.js": "./theme.js?v=1.5-76",
-                "./crumbs.js": "./crumbs.js?v=1.5-76",
-                "./buddy.js": "./buddy.js?v=1.5-76",
-                "./season.js": "./season.js?v=1.5-76",
-                "./leaves.js": "./leaves.js?v=1.5-76",
-                "./water.js": "./water.js?v=1.5-76",
-                "./props.js": "./props.js?v=1.5-76"
+                "./sim.js": "./sim.js?v=1.5-77",
+                "./zones.js": "./zones.js?v=1.5-77",
+                "./blockshader.js": "./blockshader.js?v=1.5-77",
+                "./sketch.js": "./sketch.js?v=1.5-77",
+                "./balls.js": "./balls.js?v=1.5-77",
+                "./labels.js": "./labels.js?v=1.5-77",
+                "./audio.js": "./audio.js?v=1.5-77",
+                "./theme.js": "./theme.js?v=1.5-77",
+                "./crumbs.js": "./crumbs.js?v=1.5-77",
+                "./buddy.js": "./buddy.js?v=1.5-77",
+                "./season.js": "./season.js?v=1.5-77",
+                "./leaves.js": "./leaves.js?v=1.5-77",
+                "./water.js": "./water.js?v=1.5-77",
+                "./props.js": "./props.js?v=1.5-77"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-76">
-    <link rel="modulepreload" href="./sim.js?v=1.5-76">
-    <link rel="modulepreload" href="./zones.js?v=1.5-76">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-76">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-76">
-    <link rel="modulepreload" href="./balls.js?v=1.5-76">
-    <link rel="modulepreload" href="./labels.js?v=1.5-76">
-    <link rel="modulepreload" href="./audio.js?v=1.5-76">
-    <link rel="modulepreload" href="./theme.js?v=1.5-76">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-76">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-76">
-    <link rel="modulepreload" href="./season.js?v=1.5-76">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-76">
-    <link rel="modulepreload" href="./water.js?v=1.5-76">
-    <link rel="modulepreload" href="./props.js?v=1.5-76">
+    <link rel="modulepreload" href="./game.js?v=1.5-77">
+    <link rel="modulepreload" href="./sim.js?v=1.5-77">
+    <link rel="modulepreload" href="./zones.js?v=1.5-77">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-77">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-77">
+    <link rel="modulepreload" href="./balls.js?v=1.5-77">
+    <link rel="modulepreload" href="./labels.js?v=1.5-77">
+    <link rel="modulepreload" href="./audio.js?v=1.5-77">
+    <link rel="modulepreload" href="./theme.js?v=1.5-77">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-77">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-77">
+    <link rel="modulepreload" href="./season.js?v=1.5-77">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-77">
+    <link rel="modulepreload" href="./water.js?v=1.5-77">
+    <link rel="modulepreload" href="./props.js?v=1.5-77">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -970,6 +975,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-76"></script>
+    <script type="module" src="./game.js?v=1.5-77"></script>
 </body>
 </html>
