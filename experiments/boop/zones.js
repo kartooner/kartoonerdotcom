@@ -1,7 +1,7 @@
 // Zone recipes: which shapes exist, how zones are laid out, and what each depth holds.
 // Just data and small helpers; sim.js builds the zones from these. A biome would mostly
 // live here: its own shapes, recipe weights and numbers.
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-67');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-68');   // build stamp: game.js checks every file matches
 
 // Cell offsets as [col, row]; row grows downward. Weight = how often it shows up.
 export const SHAPES = [
