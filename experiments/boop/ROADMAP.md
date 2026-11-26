@@ -233,6 +233,7 @@ Shipped for everyone, quietly: not in What's new or How to play.
 - The water is its own little sim in water.js (under 1 ms a frame), not Rapier bodies, so it stays cheap and out of saves.
 - It drains when the zone clears.
 - In free Boop! as a surprise, like the bonus stages. Boop explains a jar the first time one turns up. ?water=often puts a jar up high in the first zone and about every other zone, for testing.
+- Tilt (a switch in Settings, phones only, off to start): tip the phone and the water leans and sloshes, half the phone's lean and never more than about 9 degrees. Only the water feels it, never balls, blocks or the aiming guide. iPhones ask permission when it's turned on. Off with Reduce Motion.
 - Maybe later: water that carries over and rises zone to zone.
 
 ## Later: a bigger version (app or Steam)

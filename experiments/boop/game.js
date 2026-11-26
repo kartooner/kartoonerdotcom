@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-68';
+const BUILD = '1.5-69';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -898,6 +898,47 @@ if (readSoundPick() === 'on') {
 }
 showSoundState();
 
+// Tilt (a switch in Settings, on phones): tip the phone and the water leans and sloshes. Only
+// the water: balls, blocks and the aiming guide don't feel it (that would change your shots).
+// It starts off. Turning it on asks the browser for the phone's tilt: iPhones show a question
+// (Allow), most others just say yes. Off with Reduce Motion.
+const TILT_KEY = 'boop-tilt', TILT_MAX = 0.15;         // radians: half the phone's lean, at most this. A slosh, never a pour
+const tiltAsks = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+const tiltSwitch = $('tilt-switch');
+let tiltOn = false, tiltTarget = 0, tilt = 0;
+function onOrientation(e) {
+    if (e.gamma == null) return;
+    // Sideways lean (gamma), turned into the board's terms for however the screen is turned.
+    const turn = (screen.orientation?.angle ?? window.orientation ?? 0) | 0;
+    const lean = turn === 90 ? e.beta : turn === -90 || turn === 270 ? -e.beta : turn === 180 ? -e.gamma : e.gamma;
+    tiltTarget = Math.max(-TILT_MAX, Math.min(TILT_MAX, (lean * Math.PI) / 360));
+}
+function setTilt(on) {
+    tiltOn = on;
+    try { localStorage.setItem(TILT_KEY, on ? 'on' : 'off'); } catch { /* storage blocked */ }
+    if (on) window.addEventListener('deviceorientation', onOrientation);
+    else { window.removeEventListener('deviceorientation', onOrientation); tiltTarget = 0; }
+    tiltSwitch.setAttribute('aria-checked', String(on));
+}
+if (typeof DeviceOrientationEvent !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
+    $('tilt-setting').hidden = false;
+    const pick = (() => { try { return localStorage.getItem(TILT_KEY); } catch { return null; } })();
+    if (pick === 'on' || (pick == null && !tiltAsks)) {
+        // Remembered on (or a phone that doesn't ask). An iPhone only answers from inside a tap, so
+        // a remembered "on" checks on the first one (it doesn't ask again once allowed).
+        if (!tiltAsks) setTilt(true);
+        else {
+            tiltSwitch.setAttribute('aria-checked', 'true');
+            document.addEventListener('click', () => DeviceOrientationEvent.requestPermission().then((r) => setTilt(r === 'granted')).catch(() => setTilt(false)), { once: true });
+        }
+    }
+    tiltSwitch.addEventListener('click', () => {
+        if (tiltOn) { setTilt(false); return; }
+        if (!tiltAsks) { setTilt(true); return; }
+        DeviceOrientationEvent.requestPermission().then((r) => setTilt(r === 'granted')).catch(() => setTilt(false));
+    });
+}
+
 // Relaxed mode (a switch in Settings): simpler zones, smaller numbers, endless shots. It keeps
 // its own saved run, so you can hand the game to a kid and get your run back with one switch.
 // Relaxed runs don't count toward your best depth.
@@ -1630,7 +1671,7 @@ function updateTipping(dt) {
         const j = tipping[i], m = j.mesh, u = j.mat.uniforms;
         j.t += dt;
         const k = Math.min(1, j.t / 0.45), a = j.a0 + (j.to - j.a0) * (1 - (1 - k) ** 3);
-        m.rotation.z = a; u.uAngle.value = a;
+        m.rotation.z = a; u.uAngle.value = a - tilt;
         const r = 0.5 * j.size, mx = m.position.x - r * Math.sin(a), my = m.position.y + r * Math.cos(a);   // its mouth
         if (!j.pour && Math.abs(a - j.a0) > 1) j.pour = water.spill(mx, my, j.n, 0.2 * j.size, j.size > 1 ? 3 : 2, -Math.sin(a) * 3, Math.cos(a) * 3 - 0.5, 0.09);
         if (j.pour) { j.pour.x = mx; j.pour.y = my; u.uLeft.value = j.pour.left / j.n; }
@@ -1687,11 +1728,15 @@ function updateWater(dt) {
         water.setOffset(zoneOffset);
     }
     updateTipping(dt);
-    water.update(dt, solid, balls, moved);
+    // Tilt eases toward the phone's lean (no jitter), and settles back level with Reduce Motion.
+    const lean = tiltOn && !calmMotion.matches ? tiltTarget : 0;
+    tilt += (lean - tilt) * Math.min(1, dt * 4);
+    water.setTilt(tilt);
+    water.update(dt, solid, balls, moved || Math.abs(lean - tilt) > 0.01);
     if (water.moving()) animating = true;
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
-    for (const v of blockViews.values()) if (v.jarMesh) v.jarMesh.userData.jarMat.uniforms.uAngle.value = v.group.rotation.z;   // its water stays level if the block swings
+    for (const v of blockViews.values()) if (v.jarMesh) v.jarMesh.userData.jarMat.uniforms.uAngle.value = v.group.rotation.z - tilt;   // its water stays level if the block swings (or the phone tips)
     // Leaves on the floor float up on the pool as it fills (and sink back when it drains). The
     // golf stage sets its own (round its hill).
     if (!leafPiles || golfPool) return;

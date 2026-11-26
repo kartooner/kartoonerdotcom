@@ -14,14 +14,14 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-68'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-69'];
 
 const R = 0.13;                // how close a drop gets to the floor
 const RW = 0.05;               // ...and to the side walls (close, so a mushroom growing off a wall doesn't wedge drops)
 const RB = 0.035;              // ...and to blocks: small, so water finds the cracks between them
 const SPAN = 0.42;             // how far drops feel each other
 const REST = 1.2, STIFF = 1000, NEAR = 2000;   // how tightly they pack, and how hard they push back
-const GRAVITY = -26;
+const GRAVITY = 26;
 const STEP = 1 / 150;          // longest sub-step: the packing goes unstable with longer ones, and fast drops tunnel through thin blocks
 const MAX_SPEED = 14;
 const SLIDE = 7;               // how hard water on top of a block runs off toward the nearer edge
@@ -39,6 +39,7 @@ export class WaterSim {
         this.pour = [];
         this.balls = [];
         this.surface = null;        // a still pool's surface height at x, when there is one
+        this.gx = 0; this.gy = -GRAVITY;   // which way down is (tipping the phone leans it a little)
         // Neighbour lookup: drops sorted into grid cells each step (flat arrays, nothing allocated).
         this.gw = Math.ceil(W / SPAN) + 2; this.gh = Math.ceil(H / SPAN) + 2;
         this.cellStart = new Int32Array(this.gw * this.gh + 1);
@@ -77,7 +78,7 @@ export class WaterSim {
         if (this.pour.length) this.emit();
         const { x, y, vx, vy, px, py, n } = this;
         for (let i = 0; i < n; i++) {
-            vy[i] += GRAVITY * dt;
+            vx[i] += this.gx * dt; vy[i] += this.gy * dt;
             px[i] = x[i]; py[i] = y[i];
             x[i] += vx[i] * dt; y[i] += vy[i] * dt;
         }
@@ -386,7 +387,7 @@ export function makeWater(scene, renderer) {
         // Too thin to float anything (a few drops along the floor): no pool yet.
         if (surfaceTop != null && surfaceTop < -H + BAND + 0.05) { surfaceTop = null; colTop.fill(0); }
     }
-    let fade = 0, draining = false, drawn = false, offset = 0;
+    let fade = 0, draining = false, drawn = false, offset = 0, tiltWas = 0;
     return {
         sim,
         spill(...a) { sim.calm = 0; fade = 1; draining = false; return sim.spill(...a); },
@@ -414,6 +415,8 @@ export function makeWater(scene, renderer) {
         // at its top is moving. Leaves float on these, so they ride the water and drift with it.
         surfaceAt: (x) => colTop[Math.max(0, Math.min(COLS - 1, Math.floor(x / COL_W)))] || null,
         flowAt: (x) => colFlow[Math.max(0, Math.min(COLS - 1, Math.floor(x / COL_W)))],
+        // Tip the water: t radians, + leans down to the right (the phone tipped that way).
+        setTilt(t) { if (Math.abs(t - tiltWas) > 0.003) sim.calm = 0; tiltWas = t; sim.gx = GRAVITY * Math.sin(t); sim.gy = -GRAVITY * Math.cos(t); },
         // Shift the drawing (the golf stage's water rides in with its zone as it slides up).
         setOffset(y) { offset = y; },
         // balls: [{ x, y, vx, vy }], the ones on the board right now. wake: something nearby moved
