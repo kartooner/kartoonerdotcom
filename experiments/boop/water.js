@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-66'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-67'];
 
 const R = 0.13;                // how close a drop gets to the floor
 const RW = 0.05;               // ...and to the side walls (close, so a mushroom growing off a wall doesn't wedge drops)
@@ -383,10 +383,14 @@ export function makeWater(scene, renderer) {
             u.uFill.value.setHex(fill); u.uDeep.value.setHex(deep); u.uInk.value.setHex(ink);
         },
         // Where the pool on the floor reaches (for leaves to float on), or null if there isn't one.
+        // Measured from the floor up, a band at a time, stopping at the first band with too few
+        // drops to be pool (so splashes and a stream still pouring in don't count).
         surface() {
-            let top = -Infinity, count = 0;
-            for (let i = 0; i < sim.n; i++) if (sim.y[i] < -H + 1.6) { top = Math.max(top, sim.y[i]); count++; }
-            return count > 12 ? top + R : null;
+            const BAND = 0.3, bands = new Uint16Array(Math.ceil(H / BAND));
+            for (let i = 0; i < sim.n; i++) { const k = Math.floor((sim.y[i] + H) / BAND); if (k >= 0 && k < bands.length) bands[k]++; }
+            let k = 0;
+            while (k < bands.length && bands[k] >= 20) k++;
+            return k > 0 ? -H + k * BAND + 0.04 : null;
         },
         // Shift the drawing (the golf stage's water rides in with its zone as it slides up).
         setOffset(y) { offset = y; },

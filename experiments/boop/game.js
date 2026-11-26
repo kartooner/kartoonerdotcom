@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-66';
+const BUILD = '1.5-67';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1692,10 +1692,10 @@ function updateWater(dt) {
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
     for (const v of blockViews.values()) if (v.jarMesh) v.jarMesh.userData.jarMat.uniforms.uAngle.value = v.group.rotation.z;   // its water stays level if the block swings
-    // Leaves float on the pool once it has settled (and sink back when it drains). The golf
-    // stage sets its own (round its hill).
+    // Leaves on the floor float up on the pool as it fills (and sink back when it drains). The
+    // golf stage sets its own (round its hill).
     if (!leafPiles || golfPool) return;
-    const top = !water.active() ? null : water.moving() ? waterTop : water.surface();
+    const top = water.active() ? water.surface() : null;
     if ((top == null) !== (waterTop == null) || (top != null && Math.abs(top - waterTop) > 0.05)) { leafPiles.setWater(top); waterTop = top; }
 }
 
