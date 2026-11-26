@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-75';
+const BUILD = '1.5-76';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -98,13 +98,18 @@ let golfPool = null;                // the golf stage's water, when the sim is f
 function fitCamera() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h);
+    // Big screens (iPads, large monitors): the menus, top bar, buttons and Boop's bubbles scale
+    // up with the screen (CSS reads --ui), so they don't sit phone-sized in the middle of it.
+    // Phones stay at 1; an 11" iPad upright is about 1.3, a 13" one 1.5.
+    const ui = Math.max(1, Math.min(1.5, Math.min(w / 430, h / 900)));
+    document.documentElement.style.setProperty('--ui', ui.toFixed(3));
     // Bottom: room for the menu and theme glyphs. They sit above the home indicator
     // (safe-area inset), so on a notched iPhone they need more than a flat 44px.
     const probe = $('safe-probe');
     const inset = probe ? probe.offsetHeight : 0;
-    const pad = 0.25, bottomPx = Math.max(44, Math.max(2, inset - 10) + 44);
+    const pad = 0.25, bottomPx = Math.max(44 * ui, Math.max(2, inset - 10) + 44 * ui);
     // A phone on its side is short: give the side HUD a narrower column so it fits too.
-    const hudW = h < 520 ? 140 : 160, hudGap = h < 520 ? 16 : 20;      // the side column sits close to the board
+    const hudW = (h < 520 ? 140 : 160) * ui, hudGap = h < 520 ? 16 : 20;      // the side column sits close to the board
     // Wide screens (a tablet or laptop sideways): the board is limited by height, so put
     // the HUD in a column beside it and give the board the full height.
     const wideScale = (h - 16 - bottomPx) / (H + pad * 2);
@@ -1355,13 +1360,14 @@ function noteTargetPoint() {
     }
     return null;
 }
+const uiScale = () => parseFloat(document.documentElement.style.getPropertyValue('--ui')) || 1;
 function placeNote() {
     const t = noteTargetPoint();
     if (!t) { hideNote(); return; }
     const c = toScreen(t.x, t.y);
     const edge = toScreen(t.x + t.r, t.y);
     // A tip about the whole board is said by the block buddy, standing under the bubble.
-    const rPx = t.buddy ? 23 : Math.abs(edge.x - c.x);
+    const rPx = t.buddy ? 23 * uiScale() : Math.abs(edge.x - c.x);
     buddy.toggleAttribute('hidden', !t.buddy);   // an SVG has no .hidden property
     const w = note.offsetWidth, h = note.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight, gutter = 16, gap = 12;
@@ -1369,7 +1375,9 @@ function placeNote() {
     let top, below = false;
     if (t.buddy) {
         // Buddy's tips: the bubble near the top of the board, and Buddy standing right below it.
-        top = Math.max(renderer.domElement.getBoundingClientRect().top + 54, gutter);
+        // (Below the top bar, so it never covers your shots or depth; beside the board on wide screens.)
+        top = document.body.classList.contains('wide') ? Math.max(gutter, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-top')) + 8 || gutter)
+            : $('hud').getBoundingClientRect().bottom + 10;
         buddy.style.left = `${c.x}px`;
         buddy.style.top = `${top + h + gap + rPx}px`;
     } else {
