@@ -148,7 +148,8 @@ footer a { color: var(--soft); }
 
 /* Between the top and the details: the game's dotted aim line with a ball on it. Just decoration. */
 .guide { margin-top: 8px; }
-.guide svg { display: block; width: 100%; height: auto; max-height: 120px; overflow: visible; }
+.guide svg { display: block; width: 100%; height: clamp(84px, 12vw, 120px); overflow: hidden; }   /* crops the sides on narrow screens so the ball keeps its size */
+@media (max-width: 760px) { .guide { padding-inline: 0; } }   /* on phones the line runs to the screen edges */
 .guide-line { fill: none; stroke: var(--soft); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 13; opacity: 0.8; }
 .guide-hits circle { fill: var(--dot); }
 .ball { fill: var(--ball); stroke: var(--ball-edge); stroke-width: 3; }
@@ -193,7 +194,7 @@ footer a { color: var(--soft); }
 </header>
 
 <div class="wrap guide" aria-hidden="true">
-  <svg viewBox="0 0 1000 120" focusable="false" preserveAspectRatio="xMidYMid meet">
+  <svg viewBox="0 0 1000 120" focusable="false" preserveAspectRatio="xMidYMid slice">
     <path class="guide-line" d="M24 14 L300 106 L560 18 L812 104 L976 40"/>
     <g class="guide-hits"><circle cx="300" cy="106" r="5"/><circle cx="560" cy="18" r="5"/><circle cx="812" cy="104" r="5"/></g>
     <circle class="ball" cx="500" cy="38" r="9"/>
