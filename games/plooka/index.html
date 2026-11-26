@@ -121,7 +121,11 @@ p { margin: 0 0 14px; max-width: 62ch; }
 .good li:nth-child(4) svg { transform: rotate(7deg); }
 .good li:nth-child(5) svg { transform: rotate(-6deg) scale(1.04); }
 .good b { font-weight: 800; }
-.panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 22px 8px; }
+/* The box is drawn like the game's board: a slightly wobbly ink outline, a second faint pass. */
+.panel { position: relative; isolation: isolate; padding: 24px 24px 10px; }
+.panel::before, .panel::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 16px 20px 15px 21px / 19px 15px 21px 16px; }
+.panel::before { background: var(--card); border: 2.5px solid var(--line); filter: url(#rough); }
+.panel::after { inset: 3px -2px -2px 3px; border: 1.25px solid var(--line); opacity: 0.35; filter: url(#rough); }
 .panel h2 { font-size: 1.25rem; }
 
 footer { margin-top: 64px; padding-block: 24px calc(32px + env(safe-area-inset-bottom, 0px)); border-top: 2px solid var(--line); font-size: 0.9375rem; color: var(--soft); }
