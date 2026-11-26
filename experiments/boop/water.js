@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { W, H, BALL_R } from './sim.js';
 
-globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-65'];
+globalThis.boopBuilds = [...(globalThis.boopBuilds || []), '1.5-68'];
 
 const R = 0.13;                // how close a drop gets to the floor
 const RW = 0.05;               // ...and to the side walls (close, so a mushroom growing off a wall doesn't wedge drops)
@@ -361,13 +361,38 @@ export function makeWater(scene, renderer) {
     scene.add(blob);
 
     const m = new THREE.Matrix4(), clearWas = new THREE.Color();
+    // Where the pool on the floor is, column by column: measured from the floor up, a band at a
+    // time, stopping at the first band with too few drops to be pool (so splashes and a stream
+    // still pouring in don't count). 0 = no pool in that column.
+    const COL_W = 0.5, COLS = Math.ceil(W / COL_W), BAND = 0.3, ROWS = Math.ceil(H / BAND);
+    const colTop = new Float32Array(COLS), colFlow = new Float32Array(COLS);
+    const cells = new Uint16Array(COLS * ROWS), cellVx = new Float32Array(COLS * ROWS);
+    let surfaceTop = null;
+    function measurePool() {
+        cells.fill(0); cellVx.fill(0);
+        for (let i = 0; i < sim.n; i++) {
+            const c = Math.min(COLS - 1, Math.max(0, Math.floor(sim.x[i] / COL_W))), r = Math.floor((sim.y[i] + H) / BAND);
+            if (r < 0 || r >= ROWS) continue;
+            cells[c * ROWS + r]++; cellVx[c * ROWS + r] += sim.vx[i];
+        }
+        surfaceTop = null;
+        for (let c = 0; c < COLS; c++) {
+            let r = 0;
+            while (r < ROWS && cells[c * ROWS + r] >= 2) r++;
+            colTop[c] = r > 0 ? -H + r * BAND + 0.04 : 0;
+            colFlow[c] = r > 0 ? cellVx[c * ROWS + r - 1] / cells[c * ROWS + r - 1] : 0;
+            if (r > 0) surfaceTop = Math.max(surfaceTop ?? -Infinity, colTop[c]);
+        }
+        // Too thin to float anything (a few drops along the floor): no pool yet.
+        if (surfaceTop != null && surfaceTop < -H + BAND + 0.05) { surfaceTop = null; colTop.fill(0); }
+    }
     let fade = 0, draining = false, drawn = false, offset = 0;
     return {
         sim,
         spill(...a) { sim.calm = 0; fade = 1; draining = false; return sim.spill(...a); },
         // Off it goes: the zone's done. The blob thins out and is gone in about half a second.
         drain() { if (sim.n || sim.pour.length || pool.top != null) draining = true; },
-        clear() { sim.clear(); sim.calm = 0; draining = false; drawn = false; offset = 0; blob.visible = false; this.setPool(null); },
+        clear() { sim.clear(); sim.calm = 0; draining = false; drawn = false; offset = 0; blob.visible = false; this.setPool(null); colTop.fill(0); surfaceTop = null; },
         active: () => sim.n > 0 || sim.pour.length > 0 || pool.top != null,
         // Still water up to y (null: none).
         setPool(y) {
@@ -383,11 +408,12 @@ export function makeWater(scene, renderer) {
             u.uFill.value.setHex(fill); u.uDeep.value.setHex(deep); u.uInk.value.setHex(ink);
         },
         // Where the pool on the floor reaches (for leaves to float on), or null if there isn't one.
-        surface() {
-            let top = -Infinity, count = 0;
-            for (let i = 0; i < sim.n; i++) if (sim.y[i] < -H + 1.6) { top = Math.max(top, sim.y[i]); count++; }
-            return count > 12 ? top + R : null;
-        },
+        // The pool's surface: the highest point of it anywhere along the floor (null: no pool).
+        surface: () => surfaceTop,
+        // ...and right at x: how high the pool comes there (null: none here), and which way the water
+        // at its top is moving. Leaves float on these, so they ride the water and drift with it.
+        surfaceAt: (x) => colTop[Math.max(0, Math.min(COLS - 1, Math.floor(x / COL_W)))] || null,
+        flowAt: (x) => colFlow[Math.max(0, Math.min(COLS - 1, Math.floor(x / COL_W)))],
         // Shift the drawing (the golf stage's water rides in with its zone as it slides up).
         setOffset(y) { offset = y; },
         // balls: [{ x, y, vx, vy }], the ones on the board right now. wake: something nearby moved
@@ -402,6 +428,7 @@ export function makeWater(scene, renderer) {
                 sim.calm = !busy && sim.speed() < 0.15 ? sim.calm + 1 : 0;
             }
             if (draining) { fade -= dt * 2; if (fade <= 0) { this.clear(); return; } }
+            measurePool();
             blob.visible = true;
             // The quad covers just the water (plus a dot's reach), not the whole board.
             let x0 = W, x1 = 0, y0 = 0, y1 = -H;

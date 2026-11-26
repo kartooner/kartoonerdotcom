@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-65';
+const BUILD = '1.5-68';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -141,7 +141,7 @@ function refit() {
     refitTimers.forEach(clearTimeout);
     refitTimers = [120, 350, 800].map((ms) => setTimeout(() => { fitCamera(); checkSideways(); }, ms));
 }
-// A phone turned on its side: too short to play. Pause (so turning back finds Resume) and
+// A phone turned on its side: too short to play. Pause (so turning back finds Continue) and
 // show the "upright" panel. Tablets and desktops play fine in landscape.
 const touchOnly = window.matchMedia('(pointer: coarse)');
 // The phone's Reduce Motion setting: no screen shake, and the gold block's sheen and star stay still.
@@ -1021,7 +1021,7 @@ let aiming = false;
 let aimAngle = -2.2;      // what the barrel and guide show (smoothed)
 let aimTarget = -2.2;     // where the finger points
 let aimCancel = false;
-let runStarted = false;   // a shot has been fired this run (the start screen then offers Resume)
+let runStarted = false;   // a shot has been fired this run (the start screen then offers Continue)
 const finePointer = window.matchMedia('(pointer: fine)').matches;
 
 // Keyboard aiming: ← → turn the launcher (hold Shift for fine aim), Space or Enter fires.
@@ -1692,11 +1692,11 @@ function updateWater(dt) {
     const now = performance.now() / 1000 % 1000;
     for (const m of jarMats) m.uniforms.uTime.value = now;
     for (const v of blockViews.values()) if (v.jarMesh) v.jarMesh.userData.jarMat.uniforms.uAngle.value = v.group.rotation.z;   // its water stays level if the block swings
-    // Leaves float on the pool once it has settled (and sink back when it drains). The golf
-    // stage sets its own (round its hill).
+    // Leaves on the floor float up on the pool as it fills (and sink back when it drains). The
+    // golf stage sets its own (round its hill).
     if (!leafPiles || golfPool) return;
-    const top = !water.active() ? null : water.moving() ? waterTop : water.surface();
-    if ((top == null) !== (waterTop == null) || (top != null && Math.abs(top - waterTop) > 0.05)) { leafPiles.setWater(top); waterTop = top; }
+    const top = water.active() ? water.surface() : null;
+    if ((top == null) !== (waterTop == null) || (top != null && Math.abs(top - waterTop) > 0.05)) { leafPiles.setWater(top, null, water.surfaceAt, water.flowAt); waterTop = top; }
 }
 
 // Every few zones, as the next one slides in: tidy the physics bookkeeping, forget any sketch
@@ -2185,7 +2185,7 @@ function showScreen(which, moveFocus = true) {
     keepAwake(!which);
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
-        // Mid-run, the start screen is the pause screen: Resume, or start over.
+        // Mid-run, the start screen is the pause screen: Continue, or start over.
         menuTagline();
         $('btn-play').textContent = playLabel(true);
         $('btn-new').hidden = !runStarted;
@@ -2213,8 +2213,8 @@ function showScreen(which, moveFocus = true) {
 // Settings, What's new and How to play open from the start/pause screen or from game over;
 // Back returns there, and their big button plays on (or, after game over, plays again).
 let backTo = 'menu';
-// The big button's words: start, pick a saved run back up, carry on, or (after game over) go again.
-const playLabel = (onMenu = false) => (!onMenu && backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume');
+// The big button's words: start, carry on (a saved run or a paused one: always Continue), or (after game over) go again.
+const playLabel = (onMenu = false) => (!onMenu && backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : 'Continue');
 const openSub = (which) => { backTo = over.hidden ? 'menu' : 'over'; showScreen(which); };
 const goBack = () => showScreen(backTo);
 const subPlay = () => { if (backTo === 'over') { backTo = 'menu'; restart(); } play(); };
