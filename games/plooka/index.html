@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plooka!</title>
+<link rel="canonical" href="https://www.kartooner.com/games/plooka/">
+<meta property="og:title" content="Plooka!">
+<meta property="og:description" content="A cozy, hand-drawn game: bounce balls off numbered blocks and dig as deep as you can. Coming soon to iPhone and iPad.">
+<meta property="og:image" content="https://www.kartooner.com/games/plooka/img/aim.webp">
+<meta property="og:url" content="https://www.kartooner.com/games/plooka/">
+<meta name="description" content="Plooka! is a cozy, hand-drawn game where you bounce balls off numbered blocks and dig as deep as you can. Coming soon to iPhone and iPad.">
+<meta name="theme-color" content="#f1e8d2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15120f" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* Layout: one column that reads top to bottom on a phone; on wide screens the shots sit beside the words. */
+:root {
+  --paper: #f1e8d2;      /* the game's paper */
+  --card: #fbf6ea;       /* the board inside the frame */
+  --ink: #2b2622;
+  --soft: #5f564e;
+  --dot: #a8381c;        /* the ! and links */
+  --sky: #8fc3e3;        /* Boop */
+  --line: #2b2622;
+  --font: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #15120f; --card: #221e1a; --ink: #ede4d3; --soft: #b5ac9f; --dot: #ff9466; --line: #ede4d3; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 500 1.0625rem/1.6 var(--font); }
+a { color: var(--ink); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+a:hover { color: var(--dot); }
+:focus-visible { outline: 3px solid var(--dot); outline-offset: 3px; border-radius: 6px; }
+.skip { position: absolute; left: 12px; top: -60px; padding: 10px 14px; background: var(--ink); color: var(--paper); border-radius: 8px; font-weight: 800; z-index: 10; }
+.skip:focus { top: calc(12px + env(safe-area-inset-top, 0px)); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+
+/* Hero */
+header { padding-block: calc(40px + env(safe-area-inset-top, 0px)) 24px; text-align: center; display: grid; justify-items: center; gap: 10px; }
+.boop { width: 72px; height: 78px; transform: rotate(-7deg); overflow: visible; }
+.boop-shadow { fill: var(--ink); opacity: 0.85; }
+.boop-body { transform-origin: 50% 88%; animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-1.5px) scale(1.02, 0.98); } }
+.logo { width: min(440px, 86vw); height: auto; display: block; }
+.logo .ink { fill: var(--ink); }
+.logo .dot { fill: var(--dot); }
+h1 { margin: 0; font-size: 1rem; }   /* the logo is the heading; its text is for screen readers */
+.tagline { margin: 6px 0 0; font-size: clamp(1.375rem, 4.5vw, 1.75rem); font-weight: 800; line-height: 1.25; text-wrap: balance; }
+.lede { margin: 0; max-width: 36ch; color: var(--soft); text-wrap: balance; }
+.status { margin: 14px 0 0; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 2px solid var(--line); border-radius: 999px; font-size: 0.9375rem; font-weight: 800; }
+.status::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--dot); }
+.cta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 22px; border-radius: 12px; font-weight: 800; text-decoration: none; position: relative; isolation: isolate; color: var(--paper); }
+.btn::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ink); border-radius: 12px; filter: url(#rough); }
+.btn:hover { color: var(--paper); }
+.btn:hover::before { background: var(--dot); }
+.note { margin: 8px 0 0; font-size: 0.875rem; color: var(--soft); }
+
+/* Shots */
+.shots { margin-top: 36px; display: flex; justify-content: center; align-items: flex-end; gap: clamp(10px, 3vw, 28px); padding-inline: 4px; }
+.shots figure { margin: 0; flex: 0 1 210px; min-width: 0; }
+.shots figure:nth-child(1) { transform: rotate(-3deg); }
+.shots figure:nth-child(2) { transform: translateY(-18px); }
+.shots figure:nth-child(3) { transform: rotate(3deg); }
+.phone { display: block; padding: 6px; background: var(--card); border: 3px solid var(--line); border-radius: 26px; }
+.phone img { display: block; width: 100%; height: auto; border-radius: 20px; }
+.shots figcaption { margin-top: 10px; text-align: center; font-size: 0.875rem; color: var(--soft); }
+@media (max-width: 520px) { .shots figure:nth-child(3) { display: none; } .shots figure { flex-basis: 46%; } }
+
+/* About */
+main section { padding-block: 56px 0; }
+h2 { margin: 0 0 14px; font-size: clamp(1.5rem, 4vw, 1.875rem); font-weight: 800; line-height: 1.2; text-wrap: balance; }
+.split { display: grid; grid-template-columns: 1fr; gap: 28px; }
+@media (min-width: 760px) { .split { grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: start; } }
+.split > * { min-width: 0; }
+p { margin: 0 0 14px; max-width: 62ch; }
+.good { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.good li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.good svg { width: 22px; height: 22px; margin-top: 3px; }
+.good b { font-weight: 800; }
+.panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 22px 8px; }
+.panel h2 { font-size: 1.25rem; }
+
+footer { margin-top: 64px; padding-block: 24px calc(32px + env(safe-area-inset-bottom, 0px)); border-top: 2px solid var(--line); font-size: 0.9375rem; color: var(--soft); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+footer a { color: var(--soft); }
+
+@media (prefers-reduced-motion: reduce) { .boop-body { animation: none; } * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#about">Skip to the details</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="rough" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+
+<header>
+  <div class="wrap" style="display:grid;justify-items:center;gap:10px">
+    <svg class="boop" viewBox="0 0 48 52" aria-hidden="true" focusable="false"><g filter="url(#rough)"><rect class="boop-shadow" x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="boop-body"><g filter="url(#rough)"><rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5" fill="#2b2622"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5" fill="#2b2622"/><path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/></g></g></svg>
+    <h1><span class="sr-only">Plooka!</span><svg class="logo" aria-hidden="true" focusable="false" viewBox="0 0 302.02 84.99"><path class="ink" d="M28.10 5.09L23.50 4.89L21.10 4.89L20.90 4.89C19.20 4.99 17.90 4.89 16.30 4.69L11.30 4.69L9.00 4.89C7.20 4.89 6.10 5.19 5.30 5.99C4.50 6.89 4.20 7.79 4.10 9.59C4.20 11.29 4.30 12.19 4.20 13.29C4.10 14.39 4.20 15.19 4.30 16.79L4.30 19.19L4.20 21.59L4.00 24.29L4.10 26.59L4.00 28.99L4.20 31.59L4.20 33.99L4.30 36.09L4.30 38.79L4.20 41.19C4.10 42.09 4.10 42.79 4.10 43.59C4.20 45.29 4.30 46.29 4.20 47.09C4.10 47.89 4.10 48.89 4.30 50.79L4.20 53.09C4.20 53.99 4.10 54.79 4.10 55.49C4.20 57.29 4.30 58.59 4.20 60.29L4.20 60.49L4.10 62.59L4.20 65.29L4.30 67.49L4.20 69.99C4.30 71.69 4.60 72.69 5.30 73.49C6.00 74.39 7.00 74.89 8.70 74.99L13.00 74.99C14.60 74.89 15.60 74.49 16.40 73.69C17.10 72.99 17.30 71.99 17.20 70.29L17.20 67.89L17.30 65.49L17.20 63.19L17.20 61.09C17.30 60.19 17.30 59.49 17.30 58.69C17.30 56.89 17.60 55.79 18.50 55.09C19.40 54.29 20.10 54.19 21.00 54.29C22.00 54.49 22.90 54.49 24.80 54.39L27.20 54.09L29.70 53.89C31.40 53.49 32.60 53.49 34.40 53.09C35.20 52.89 36.00 52.59 36.80 52.19L39.10 51.19C40.70 50.49 41.80 49.89 43.20 48.79C44.70 47.79 45.70 46.89 46.80 45.49L48.10 43.59C49.20 42.19 49.90 40.99 50.50 39.29L51.10 37.19C51.60 35.39 51.90 34.09 52.00 32.29L52.00 31.39C52.10 28.59 52.10 26.89 51.80 24.99L51.20 22.59L50.80 20.29L50.40 19.09C50.10 18.19 49.50 17.59 48.40 16.19L47.10 14.19C46.10 12.79 45.30 11.89 44.00 10.59C42.40 9.39 41.40 8.79 39.80 7.99C38.20 7.19 37.20 6.79 35.60 6.29L33.10 5.49C31.30 5.09 30.00 4.99 28.10 5.09ZM18.70 40.49C17.70 39.69 17.30 38.99 17.40 37.99C17.50 37.39 17.40 36.89 17.40 36.09C17.30 34.69 17.30 33.59 17.40 31.79L17.30 29.19C17.40 27.59 17.40 26.39 17.30 24.49L17.30 21.89C17.40 20.09 17.80 18.99 18.60 18.19C19.30 17.39 20.40 16.99 22.10 16.89L24.10 16.89L26.50 16.89C28.30 16.89 29.30 17.09 30.20 17.29C31.10 17.49 32.00 17.99 33.40 18.89C34.90 19.79 35.60 20.29 36.10 20.89C36.60 21.59 37.20 22.39 38.00 23.89L38.00 23.99C38.60 25.49 38.90 26.69 39.20 28.39L39.20 28.69C39.30 30.39 39.10 31.59 38.70 33.09C38.30 34.79 37.60 35.99 36.40 37.19C35.40 38.49 34.40 39.29 32.90 40.09L32.70 40.19C31.10 40.99 30.30 41.19 29.40 41.39C28.50 41.59 27.50 41.59 25.80 41.59L22.90 41.69L22.80 41.69C20.80 41.69 19.60 41.29 18.70 40.49ZM54.32 73.49C55.02 74.29 56.12 74.69 57.82 74.69L59.72 74.89C62.92 74.79 64.52 74.39 65.32 73.59C66.12 72.79 66.42 71.69 66.42 69.99C66.52 68.09 66.52 66.99 66.42 65.39L66.32 62.89L66.32 60.19C66.52 58.59 66.52 57.39 66.42 55.39L66.42 50.69L66.52 48.49C66.62 47.49 66.52 46.69 66.52 45.89C66.42 44.09 66.32 42.79 66.42 41.09L66.42 40.99L66.42 38.49L66.52 36.09L66.52 33.99L66.32 31.29L66.42 28.99L66.62 26.69L66.62 21.89L66.42 19.39L66.52 16.99L66.32 14.59L66.32 12.19L66.62 9.69C66.62 8.09 66.22 6.99 65.42 6.09C64.52 5.19 63.42 4.89 62.02 4.99L59.72 4.89C56.72 4.99 55.12 5.39 54.32 6.19C53.52 6.99 53.12 8.09 53.22 9.79C53.32 11.39 53.42 12.39 53.32 13.29C53.22 14.29 53.22 15.29 53.32 16.89L53.32 19.39L53.42 21.79L53.32 24.09L53.22 26.49L53.32 29.09C53.22 29.99 53.22 30.69 53.22 31.49C53.32 33.19 53.32 34.39 53.22 36.19L53.22 38.79L53.42 40.99L53.22 45.99L53.42 50.59L53.32 53.19L53.12 55.59L53.12 60.39L53.22 62.69L53.32 65.39L53.32 66.39C53.22 69.29 54.32 73.49 54.32 73.49ZM93.43 68.99L95.63 68.89C97.33 68.79 98.63 68.49 100.33 67.99L102.73 67.29C104.33 66.69 105.43 66.19 106.83 65.29C108.33 64.19 109.23 63.39 110.43 61.99L112.33 60.29C113.43 59.09 114.13 58.09 115.03 56.39L115.93 54.49C116.73 52.99 117.13 51.79 117.53 50.09L118.03 47.49C118.43 45.99 118.43 44.29 118.33 41.39L118.33 40.39L118.03 37.89L117.53 35.79C117.23 34.19 116.83 33.09 115.93 31.39L114.93 29.19C114.13 27.69 113.43 26.69 112.23 25.49C110.93 23.99 109.93 23.09 108.63 22.09L106.73 20.79C105.33 19.79 104.23 19.09 102.53 18.49C101.13 17.79 99.93 17.39 98.03 16.99L95.63 16.79L90.93 16.79C89.33 16.89 88.43 16.89 87.53 17.09C86.73 17.29 85.73 17.69 84.23 18.29L82.03 19.59C80.53 20.29 79.73 20.69 79.03 21.19C78.33 21.69 77.43 22.39 76.23 23.69C74.93 24.89 74.13 25.79 73.13 27.19C72.13 28.69 71.63 29.79 70.93 31.29C70.03 32.79 69.53 33.99 69.13 35.79C68.63 37.59 68.43 38.59 68.33 39.39C68.23 40.19 68.23 41.69 68.43 44.49L68.43 45.19L68.73 47.69L69.23 49.89C69.53 51.39 69.93 52.59 70.83 54.29L71.93 56.39C72.93 57.99 73.63 58.99 74.73 60.39C75.83 61.69 76.63 62.59 77.83 63.49L79.83 64.89L80.53 65.29C83.03 66.89 84.63 67.59 86.23 67.99L88.53 68.59C90.43 68.89 91.83 68.99 93.43 68.99ZM79.83 42.99C79.73 41.19 79.93 39.89 80.43 38.19L80.43 38.09L80.43 38.09C81.13 36.49 81.83 35.29 83.03 33.89L83.03 33.89C84.03 32.79 84.83 32.09 86.33 30.99L86.63 30.79C88.03 30.09 88.83 29.69 89.73 29.39C90.53 29.09 91.43 28.99 93.23 28.89L93.43 28.89C95.23 28.79 96.33 28.89 97.13 29.09C97.93 29.29 98.53 29.59 99.33 30.09C100.23 30.59 100.73 30.89 101.33 31.39C101.93 31.89 102.63 32.59 103.73 33.99L103.83 34.09L103.93 34.19C105.03 35.59 105.53 36.39 105.83 36.99C106.13 37.69 106.33 38.29 106.53 39.19C106.73 39.99 106.73 41.09 106.83 42.79L106.83 42.79C106.83 44.49 106.73 45.49 106.63 46.39C106.53 47.29 106.03 48.29 105.13 49.79L105.13 49.79C104.33 51.59 103.53 52.59 102.23 53.69L102.23 53.69C100.93 54.89 100.03 55.49 99.23 55.89C98.43 56.29 97.83 56.49 97.03 56.69C96.23 56.89 95.23 56.99 93.53 57.09L93.33 57.09C91.53 57.09 90.53 56.99 89.73 56.79C88.93 56.59 87.93 56.19 86.43 55.19L86.33 55.09C85.03 54.09 84.13 53.29 82.93 51.89L82.83 51.79C81.73 50.29 81.13 49.29 80.63 47.59C80.13 45.99 79.83 44.69 79.83 42.99ZM143.60 80.99L145.80 80.89C147.50 80.79 148.80 80.49 150.50 79.99L152.90 79.29C154.50 78.69 155.60 78.19 157.00 77.29C158.50 76.19 159.40 75.39 160.60 73.99L162.50 72.29C163.60 71.09 164.30 70.09 165.20 68.39L166.10 66.49C166.90 64.99 167.30 63.79 167.70 62.09L168.20 59.49C168.60 57.99 168.60 56.29 168.50 53.39L168.50 52.39L168.20 49.89L167.70 47.79C167.40 46.19 167.00 45.09 166.10 43.39L165.10 41.19C164.30 39.69 163.60 38.69 162.40 37.49C161.10 35.99 160.10 35.09 158.80 34.09L156.90 32.79C155.50 31.79 154.40 31.09 152.70 30.49C151.30 29.79 150.10 29.39 148.20 28.99L145.80 28.79L141.10 28.79C139.50 28.89 138.60 28.89 137.70 29.09C136.90 29.29 135.90 29.69 134.40 30.29L132.20 31.59C130.70 32.29 129.90 32.69 129.20 33.19C128.50 33.69 127.60 34.39 126.40 35.69C125.10 36.89 124.30 37.79 123.30 39.19C122.30 40.69 121.80 41.79 121.10 43.29C120.20 44.79 119.70 45.99 119.30 47.79C118.80 49.59 118.60 50.59 118.50 51.39C118.40 52.19 118.40 53.69 118.60 56.49L118.60 57.19L118.90 59.69L119.40 61.89C119.70 63.39 120.10 64.59 121.00 66.29L122.10 68.39C123.10 69.99 123.80 70.99 124.90 72.39C126.00 73.69 126.80 74.59 128.00 75.49L130.00 76.89L130.70 77.29C133.20 78.89 134.80 79.59 136.40 79.99L138.70 80.59C140.60 80.89 142.00 80.99 143.60 80.99ZM130.00 54.99C129.90 53.19 130.10 51.89 130.60 50.19L130.60 50.09L130.60 50.09C131.30 48.49 132.00 47.29 133.20 45.89L133.20 45.89C134.20 44.79 135.00 44.09 136.50 42.99L136.80 42.79C138.20 42.09 139.00 41.69 139.90 41.39C140.70 41.09 141.60 40.99 143.40 40.89L143.60 40.89C145.40 40.79 146.50 40.89 147.30 41.09C148.10 41.29 148.70 41.59 149.50 42.09C150.40 42.59 150.90 42.89 151.50 43.39C152.10 43.89 152.80 44.59 153.90 45.99L154.00 46.09L154.10 46.19C155.20 47.59 155.70 48.39 156.00 48.99C156.30 49.69 156.50 50.29 156.70 51.19C156.90 51.99 156.90 53.09 157.00 54.79L157.00 54.79C157.00 56.49 156.90 57.49 156.80 58.39C156.70 59.29 156.20 60.29 155.30 61.79L155.30 61.79C154.50 63.59 153.70 64.59 152.40 65.69L152.40 65.69C151.10 66.89 150.20 67.49 149.40 67.89C148.60 68.29 148.00 68.49 147.20 68.69C146.40 68.89 145.40 68.99 143.70 69.09L143.50 69.09C141.70 69.09 140.70 68.99 139.90 68.79C139.10 68.59 138.10 68.19 136.60 67.19L136.50 67.09C135.20 66.09 134.30 65.29 133.10 63.89L133.00 63.79C131.90 62.29 131.30 61.29 130.80 59.59C130.30 57.99 130.00 56.69 130.00 54.99ZM171.55 6.09C170.85 6.99 170.55 7.69 170.45 8.49C170.35 9.49 170.35 10.39 170.45 12.09L170.25 14.39L170.35 16.89L170.35 19.49L170.55 21.79L170.45 24.09C170.35 25.99 170.35 27.39 170.55 29.09L170.55 31.49L170.45 33.89L170.55 36.29L170.45 38.59C170.35 40.29 170.35 41.59 170.55 43.59L170.55 45.69L170.45 48.19L170.45 50.59C170.35 52.49 170.35 53.69 170.45 55.49L170.55 57.99L170.45 60.29L170.55 62.89L170.55 65.09C170.45 66.99 170.45 68.29 170.55 70.19C170.45 71.79 170.85 72.79 171.65 73.59C172.45 74.39 173.15 74.79 173.85 74.89C174.65 74.99 175.45 74.99 176.95 74.79L179.15 74.79C180.65 74.89 181.65 74.59 182.45 73.59C183.25 72.69 183.65 71.49 183.65 69.69L183.45 67.29L183.55 64.79L183.55 62.09C183.65 60.39 184.05 59.49 184.95 58.79C185.75 58.19 186.85 58.19 188.45 58.69L188.55 58.69C190.25 59.39 191.35 60.09 192.75 61.39L192.75 61.39L192.85 61.49C194.05 62.79 194.85 63.79 195.65 65.19L195.75 65.39C196.45 66.99 196.85 68.19 197.25 69.89C197.45 71.59 197.95 72.59 198.95 73.59C199.95 74.49 201.15 74.99 203.05 74.89L203.15 74.89C204.95 74.79 205.85 74.69 206.85 74.89C207.75 74.99 208.55 74.49 209.25 73.59C210.05 72.59 210.35 71.79 210.25 70.99C210.15 70.19 209.95 69.29 209.45 67.39C209.25 65.59 209.05 64.59 208.75 63.79C208.45 62.99 208.05 61.99 207.15 60.49C206.35 58.79 205.65 57.69 204.45 56.29C203.25 54.89 202.45 54.09 201.05 52.99L199.15 51.89C197.35 50.79 196.55 49.89 196.25 48.89C195.85 47.79 195.95 47.09 196.55 46.39C196.85 45.99 197.25 45.59 197.55 45.09C198.35 43.99 198.85 43.29 199.45 42.69C200.05 42.09 200.55 41.39 201.45 39.99L202.75 38.09L204.15 36.29L205.75 34.29L205.85 34.19C206.85 32.69 207.35 31.99 207.95 31.39C208.55 30.79 209.15 30.09 210.15 28.49C210.95 27.19 211.15 26.39 210.85 25.69C210.55 25.09 209.55 24.89 207.95 24.99L205.45 24.99L203.05 24.79C201.35 24.79 200.05 25.09 198.65 25.79C197.25 26.49 196.15 27.29 195.05 28.69L193.65 30.69L192.35 32.59L190.95 34.19L189.45 36.39L188.05 38.29L186.65 40.09C185.55 41.29 184.75 41.69 184.35 41.59C183.85 41.49 183.55 40.59 183.45 38.89L183.45 36.69L183.65 33.99L183.75 31.79L183.75 29.09L183.65 26.59L183.75 24.19L183.65 21.99L183.55 19.39L183.45 17.19L183.65 14.69L183.55 12.09C183.65 10.29 183.75 9.29 183.65 8.49C183.55 7.69 183.15 6.99 182.35 5.99C181.95 5.59 181.55 5.29 180.95 5.09C179.75 4.79 178.65 4.99 176.95 4.79C173.85 4.89 172.25 5.29 171.55 6.09ZM228.28 75.89L229.08 75.89C231.88 75.89 233.58 75.79 235.18 75.49L237.58 75.19L238.68 74.89C239.18 74.79 239.68 74.59 240.28 74.19C241.38 73.39 242.08 72.99 242.88 72.59C243.58 72.29 244.08 72.19 244.78 72.39C245.38 72.59 245.98 72.89 246.78 73.69C247.58 74.39 248.58 74.69 250.18 74.79C251.78 74.89 252.98 74.89 254.68 74.69C256.08 74.69 257.08 74.39 257.88 73.59C258.68 72.79 258.98 71.89 259.08 70.19L258.88 67.79L258.88 65.19L259.18 62.79L259.18 60.59L259.18 60.59C258.98 58.89 258.88 57.49 258.98 55.79L258.98 55.79C259.08 54.09 259.08 52.89 258.98 51.09L258.88 48.59L259.08 46.49L259.18 43.99L259.08 41.39L259.08 39.09L259.08 39.09C258.98 37.29 258.98 36.09 259.08 34.29L259.08 34.29L259.18 31.99L258.98 29.89C258.88 27.99 258.58 26.89 257.88 26.09C257.48 25.69 256.98 25.39 256.28 25.19C254.98 24.89 253.88 24.99 252.38 24.79L250.18 24.79C249.28 24.89 248.38 25.19 247.58 25.79C246.08 27.09 245.48 27.89 244.88 28.19C244.28 28.59 243.28 28.29 241.98 27.39L239.78 26.29C238.28 25.39 236.98 24.99 235.38 24.79C233.58 24.29 231.78 24.19 228.88 24.29L228.18 24.29L225.78 24.69L223.18 25.49L221.08 26.49C219.38 27.19 218.28 27.79 216.88 28.89L215.08 30.69C213.68 31.79 212.78 32.79 211.68 34.39L210.48 36.29L209.48 38.49L208.28 40.79L207.48 43.09C207.08 44.89 206.88 46.29 206.88 47.99L206.88 53.09L207.18 55.39C207.38 56.99 207.68 58.19 208.38 60.19L209.28 62.29L210.48 64.49L211.88 66.59C212.88 67.89 213.68 68.69 214.98 69.89L215.88 70.59C218.18 72.49 219.38 73.29 220.98 74.09L223.28 74.79C225.08 75.49 226.38 75.69 228.28 75.89ZM218.38 50.39C218.38 48.69 218.48 47.69 218.68 46.79C218.88 45.79 219.28 44.99 220.08 43.39L220.18 43.29C221.18 41.89 221.98 40.89 223.18 39.69L225.08 38.29C226.58 37.39 227.48 36.99 228.28 36.69C229.08 36.39 230.08 36.29 231.88 36.19L231.88 36.19C233.58 36.19 234.98 36.49 236.58 37.19C238.18 37.79 238.98 38.19 239.88 38.69C240.68 39.29 241.38 39.99 242.58 41.29L242.68 41.39C243.68 42.79 244.38 43.89 244.98 45.59L244.98 45.59C245.38 47.19 245.48 48.49 245.48 50.19C245.48 51.89 245.38 52.99 245.18 53.89C244.98 54.89 244.48 55.89 243.78 57.49L243.78 57.49C242.98 58.99 242.18 59.89 240.88 61.19L240.78 61.29C239.48 62.29 238.38 62.89 236.68 63.49C235.08 64.09 233.68 64.39 231.98 64.29C230.28 64.19 229.18 64.09 228.38 63.89C227.48 63.69 226.48 63.39 225.08 62.49C223.58 61.49 222.78 60.89 222.18 60.29C221.48 59.69 220.88 58.79 220.18 57.19C219.28 55.69 218.88 54.79 218.68 53.99C218.48 53.19 218.38 52.19 218.38 50.39ZM286.08 4.71C284.99 5.36 284.43 6.36 283.90 8.08L283.37 10.21L282.67 12.61L282.28 14.99L281.60 17.30L281.14 19.55L280.73 22.03L280.35 24.40L279.64 26.80L279.28 29.08L278.73 31.32L278.10 33.84L277.66 36.00L277.08 38.33C276.74 39.27 276.57 39.95 276.45 40.85C276.02 42.60 276.02 43.42 275.70 44.27C275.41 45.02 275.27 45.60 275.12 46.60C274.98 47.59 275.22 48.27 275.90 49.27C276.58 50.26 277.45 50.89 279.03 51.18L281.31 51.95C283.06 52.39 284.22 52.27 285.31 51.61C286.40 50.96 286.94 50.06 287.35 48.41L287.93 46.08L288.61 43.78C289.23 42.08 289.65 40.84 289.96 39.17L290.52 36.94L291.32 34.56L291.97 32.35C292.28 30.68 292.53 29.71 292.86 28.76C293.20 27.81 293.42 26.94 293.69 25.46L294.44 22.87L294.99 20.63L295.43 18.48L296.08 15.86C296.69 14.25 296.98 13.09 297.32 11.32L297.70 10.18C298.02 9.33 297.78 8.65 297.22 7.58C296.95 7.00 296.44 6.57 295.88 6.32C294.62 5.60 293.77 5.69 293.04 5.31C292.58 5.09 292.10 4.97 291.42 4.80C290.13 4.58 289.04 4.00 287.22 4.27C286.79 4.37 286.45 4.49 286.08 4.71Z"/><path class="dot" d="M269.34 64.43C269.00 66.20 268.88 67.10 268.98 67.95C269.07 68.79 269.32 69.47 269.75 70.20C270.19 70.93 270.68 71.46 271.43 72.16C272.11 72.75 273.15 73.11 274.70 73.50C276.26 73.88 277.27 73.93 278.12 73.83C278.90 73.61 279.55 73.47 280.40 72.96C281.23 72.55 281.74 72.16 282.22 71.45C282.68 70.85 283.00 70.00 283.55 68.18C283.96 66.53 284.01 65.51 283.82 64.64C283.62 63.76 283.35 63.18 283.01 62.48C282.67 61.78 282.26 61.36 281.51 60.66C280.76 59.96 279.81 59.62 278.16 59.21C276.51 58.80 275.52 58.65 274.74 58.87C273.99 58.99 272.95 59.45 271.54 60.55C270.23 61.66 269.63 62.85 269.34 64.43Z"/></svg></h1>
+    <p class="tagline">Bounce. Pop. Dig deeper.</p>
+    <p class="lede">A cozy, hand-drawn game where you bounce balls off numbered blocks and dig as deep as you can.</p>
+    <p class="status">Coming soon to iPhone and iPad</p>
+    <div class="cta">
+      <a class="btn" href="/experiments/boop/">Play the free web version</a>
+    </div>
+    <p class="note">The web version is called Boop!, after the little blue block.</p>
+
+    <div class="shots">
+      <figure><span class="phone"><img src="img/aim.webp" width="640" height="1181" alt="Aiming a shot: a dotted line bounces off a block, with orange dots marking each hit, above a board of numbered hand-drawn blocks"></span><figcaption>See every bounce first</figcaption></figure>
+      <figure><span class="phone"><img src="img/golf.webp" width="640" height="1181" alt="A mini golf bonus stage: a green hill with a flag, surrounded by water, and a dotted arc aiming for the hole"></span><figcaption>Surprises along the way</figcaption></figure>
+      <figure><span class="phone"><img src="img/paused.webp" width="640" height="1181" alt="The pause screen in dark mode, saying the run is deeper than your best"></span><figcaption>Dark mode for late nights</figcaption></figure>
+    </div>
+  </div>
+</header>
+
+<main id="about">
+  <section class="wrap" aria-labelledby="how">
+    <div class="split">
+      <div>
+        <h2 id="how">How it plays</h2>
+        <p>Every block has a number. Each hit knocks it down by one, and at zero it pops. Clear the board and you drop to the next one. There's no bottom, so the only question is how far you'll get.</p>
+        <p>Touch where you want to aim and a dotted line shows every bounce before you shoot. Then knock out the nails and watch blocks swing and fall, set off a bomb, snap a vine. The deeper you dig, the more little surprises turn up.</p>
+        <p>Boop, the little blue block, keeps you company and points out new things as you meet them.</p>
+      </div>
+      <div class="panel">
+        <h2>Made to feel good</h2>
+        <ul class="good">
+          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>No ads.</b> Nothing to buy. Pay once and it's yours.</span></li>
+          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Relaxed mode</b> for little ones or slow evenings: easier zones, shots that never run out.</span></li>
+          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Saves itself,</b> so you can put it down any time.</span></li>
+          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Par</b> for every zone, if you like a challenge.</span></li>
+          <li><svg viewBox="0 0 22 22" aria-hidden="true" focusable="false"><rect x="2" y="2" width="18" height="18" rx="4" fill="#8fc3e3" stroke="currentColor" stroke-width="2" filter="url(#rough)"/><path d="M6.5 11.5l3 3 6-7" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Easy on the eyes,</b> with dark mode and Reduce Motion support.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p style="margin:0">Made by <a href="/">Erik Sagen</a>, who mostly wanted to see if physics could feel cozy.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/games">More games</a></li>
+        <li><a href="/contact/?about=plooka">Contact</a></li>
+        <li><a href="/privacy/">Privacy</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+<script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
