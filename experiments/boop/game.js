@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-72';
+const BUILD = '1.5-73';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -1516,12 +1516,7 @@ function gameOver() {
     phase = 'over';
     $('over-result').textContent = `You reached depth ${d}.`;
     // How the run went: blocks popped, and zones cleared under par if any.
-    const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
-    const stats = !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
-    $('over-stats').replaceChildren(...stats.map((t) => {     // one stat per line
-        const span = document.createElement('span'); span.textContent = t;
-        return span;
-    }));
+    showStats($('over-stats'), runStats());
     const isNew = d > before && before > 0;
     $('over-best').textContent = isNew ? `New best! (was ${before})` : `Best depth: ${best}`;
     $('over-best').classList.toggle('new', isNew);
@@ -2205,6 +2200,18 @@ async function isPrivateTab() {
 let privateTab = false;
 isPrivateTab().then((p) => { privateTab = p; });
 
+// How the run's going: blocks popped, and zones cleared under par if any. Shown when it ends, and
+// on the pause screen to give a little lift mid-run.
+function runStats() {
+    const popped = sim.s.popped ?? 0, under = sim.s.underPar ?? 0;
+    return !popped ? [] : [`${popped} block${popped === 1 ? '' : 's'} popped`, under ? `${under} zone${under === 1 ? '' : 's'} under par` : ''].filter(Boolean);
+}
+function showStats(el, lines) {
+    el.replaceChildren(...lines.map((t) => {     // one stat per line
+        const span = document.createElement('span'); span.textContent = t;
+        return span;
+    }));
+}
 // The one line under the logo. New players: what the game is. Returning players already
 // know that: their best depth. Mid-run: where you are.
 function menuTagline() {
@@ -2213,6 +2220,10 @@ function menuTagline() {
     $('menu-tagline').textContent = runStarted ? (fromSave ? `Saved run · Depth ${sim.s.depth}` : `Paused · Depth ${sim.s.depth}`)
         : best > 0 ? `Best depth: ${best}` : relaxed ? 'Bounce balls, dig deeper.' : TAGLINE;   // short, with the Relaxed label under it
     $('menu-tagline').classList.toggle('state', runStarted);
+    // Paused or picked back up: how it's going so far, and how it stacks up against your best.
+    const lines = runStarted ? runStats() : [];
+    if (runStarted && !relaxed && best > 0) lines.push(sim.s.depth > best ? 'Deeper than your best!' : `Best depth: ${best}`);
+    showStats($('menu-stats'), lines);
 }
 // While you play, the screen stays on: a long bounce with no touching shouldn't let the
 // phone dim or lock mid-shot. Paused, a screen up, or the tab hidden: the phone decides again.
