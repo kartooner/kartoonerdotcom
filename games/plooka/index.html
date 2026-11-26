@@ -91,7 +91,7 @@ h1 { margin: 0; font-size: 1rem; }   /* the logo is the heading; its text is for
 .note { margin: 8px 0 0; font-size: 0.875rem; color: var(--soft); }
 
 /* Shots */
-.shots { margin-top: 36px; display: flex; justify-content: center; align-items: flex-end; gap: clamp(10px, 3vw, 28px); padding-inline: 4px; }
+.shots { margin-top: 36px; display: flex; justify-content: center; align-items: flex-start; gap: clamp(10px, 3vw, 28px); padding-inline: 4px; }
 .shots figure { margin: 0; flex: 0 1 210px; min-width: 0; }
 .shots figure:nth-child(1) { transform: rotate(-3deg); }
 .shots figure:nth-child(2) { transform: translateY(-18px); }
@@ -145,15 +145,12 @@ footer a { color: var(--soft); }
 [data-theme="light"] .theme-toggle-icon .icon-moon { display: block; }
 @media (max-width: 600px) { .theme-toggle-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .theme-toggle { padding: 8px; } }
 
-/* Between the top and the details: the game's dotted aim line, with a ball bouncing along it.
-   Just decoration; with Reduce Motion the ball sits still on the line. */
+/* Between the top and the details: the game's dotted aim line with a ball on it. Just decoration. */
 .guide { margin-top: 8px; }
 .guide svg { display: block; width: 100%; height: auto; max-height: 120px; overflow: visible; }
 .guide-line { fill: none; stroke: var(--soft); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 13; opacity: 0.8; }
 .guide-hits circle { fill: var(--dot); }
-.ball circle, circle.ball { fill: var(--card); stroke: var(--ink); stroke-width: 3; }
-.ball-still { display: none; }
-@media (prefers-reduced-motion: reduce) { .ball-moving { display: none; } .ball-still { display: inline; } }
+.ball { fill: var(--card); stroke: var(--ink); stroke-width: 3; }
 
 @media (prefers-reduced-motion: reduce) { .boop-body { animation: none; } * { scroll-behavior: auto; } }
 </style>
@@ -196,14 +193,9 @@ footer a { color: var(--soft); }
 
 <div class="wrap guide" aria-hidden="true">
   <svg viewBox="0 0 1000 120" focusable="false" preserveAspectRatio="xMidYMid meet">
-    <path id="guide-path" class="guide-line" d="M24 14 L300 106 L560 18 L812 104 L976 40"/>
+    <path class="guide-line" d="M24 14 L300 106 L560 18 L812 104 L976 40"/>
     <g class="guide-hits"><circle cx="300" cy="106" r="5"/><circle cx="560" cy="18" r="5"/><circle cx="812" cy="104" r="5"/></g>
-    <g class="ball ball-moving">
-      <circle r="9"/>
-      <animateMotion dur="4.2s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.8;1"><mpath href="#guide-path"/></animateMotion>
-      <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.06;0.74;0.8;1" dur="4.2s" repeatCount="indefinite"/>
-    </g>
-    <circle class="ball ball-still" cx="560" cy="27" r="9"/>
+    <circle class="ball" cx="660" cy="52" r="9"/>
   </svg>
 </div>
 
