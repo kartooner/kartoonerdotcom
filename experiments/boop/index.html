@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-75">
+<html lang="en" data-build="1.5-76">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -126,19 +126,20 @@
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: end;
-            row-gap: 8px;
+            row-gap: calc(8px * var(--ui, 1));
             pointer-events: none;
             color: var(--ink-soft);
+            font-size: calc(16px * var(--ui, 1));   /* big screens: the whole top bar scales (see --ui) */
         }
         .stat { display: flex; flex-direction: column; line-height: 1.1; }
-        .stat span { font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
-        body.narrow-board .stat span, body.narrow-board .stat small { font-size: 0.6875rem; }
-        .stat b { font-size: 1.375rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
-        .stat small { font-size: 0.75rem; font-weight: 700; color: var(--ink); min-height: 1em; }
+        .stat span { font-size: 0.75em; font-weight: 600; white-space: nowrap; }
+        body.narrow-board .stat span, body.narrow-board .stat small { font-size: 0.6875em; }
+        .stat b { font-size: 1.375em; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .stat small { font-size: 0.75em; font-weight: 700; color: var(--ink); min-height: 1em; }
         .stat-main { align-items: center; text-align: center; }
         #stage canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
         #stage canvas:focus { outline: none; }
-        .stat-main b { font-size: 2rem; line-height: 1; }
+        .stat-main b { font-size: 2em; line-height: 1; }
         .stat-par { align-items: flex-end; text-align: right; }
         .stat-par.over b { color: var(--ink-soft); }
         .stat-par.bonus b { color: var(--accent); }
@@ -184,7 +185,7 @@
         }
         #tipshade.fading { opacity: 0; }
         /* Buddy's bubble sits well inside the board, not edge to edge. */
-        #note.ack { pointer-events: auto; max-width: min(250px, calc(var(--board-w, 100vw) - 64px)); }
+        #note.ack { pointer-events: auto; max-width: min(calc(250px * var(--ui, 1)), calc(var(--board-w, 100vw) - 64px)); }
         /* "Got it": an outlined button across the bubble (light, like How to play), at least
            44pt tall (Apple's minimum). It fades in
            after a beat instead of sitting greyed out, so it never looks disabled. */
@@ -193,13 +194,13 @@
             isolation: isolate;
             display: block;
             width: 100%;               /* full width, like the start screen's buttons */
-            min-height: 46px;
-            margin: 12px 0 2px;
-            padding: 11px 20px;
+            min-height: calc(46px * var(--ui, 1));
+            margin: calc(12px * var(--ui, 1)) 0 2px;
+            padding: calc(11px * var(--ui, 1)) 20px;
             border: 0;
             background: none;
             font: inherit;
-            font-size: 1rem;
+            font-size: calc(1rem * var(--ui, 1));
             font-weight: 800;
             color: var(--ink);
             cursor: pointer;
@@ -217,12 +218,12 @@
         #note {
             position: fixed;
             z-index: 7;
-            max-width: min(240px, calc(100vw - 32px));
+            max-width: min(calc(240px * var(--ui, 1)), calc(100vw - 32px));
             box-sizing: border-box;
             margin: 0;
-            padding: 8px 12px;
+            padding: calc(8px * var(--ui, 1)) calc(12px * var(--ui, 1));
             isolation: isolate;
-            font-size: 0.8125rem;
+            font-size: calc(0.8125rem * var(--ui, 1));
             font-weight: 600;
             line-height: 1.35;
             pointer-events: none;
@@ -271,8 +272,8 @@
         #buddy {
             position: fixed;
             z-index: 7;
-            width: 40px;               /* smaller in the game than on the start screen */
-            height: 43px;
+            width: calc(40px * var(--ui, 1));   /* smaller in the game than on the start screen */
+            height: calc(43px * var(--ui, 1));
             transform: translate(-50%, -50%) rotate(-7deg);
         }
         #note::before, .say::before {
@@ -369,14 +370,18 @@
             user-select: text;
         }
         /* Screens sit inside the framed board with generous room on every side. */
+        /* On big screens (--ui > 1, set in game.js) each screen is zoomed as a whole, so its type,
+           buttons and Boop all grow together instead of sitting phone-sized in the middle. The
+           width is divided back out, so the zoomed screen still lines up with the board. */
         .screen-inner {
             box-sizing: border-box;
-            width: min(480px, var(--board-w, calc(100vw - 32px)));
+            zoom: var(--ui, 1);
+            width: calc(min(480px * var(--ui, 1), var(--board-w, calc(100vw - 32px))) / var(--ui, 1));
             margin: 0 auto;
             padding: max(32px, env(safe-area-inset-top)) clamp(28px, 8vw, 44px) 80px;
         }
         #menu .screen-inner, #over .screen-inner {
-            min-height: 100%;
+            min-height: calc(100% / var(--ui, 1));
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -520,7 +525,7 @@
         }
         /* Steps beside the aiming picture; stacked on a phone. */
         .shot-split { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
-        @media (min-width: 520px) { .shot-split { grid-template-columns: 1fr 170px; } }
+        /* (One column everywhere: the screens are never wider than a phone's, just zoomed on big ones.) */
         .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
         .steps li { position: relative; counter-increment: step; padding-left: 46px; margin-bottom: 14px; min-height: 34px; }
         .steps li::before {
@@ -642,13 +647,13 @@
             position: fixed;
             z-index: 11;
             bottom: max(2px, calc(env(safe-area-inset-bottom) - 10px));
-            width: 40px; height: 40px;
-            padding: 8px;
+            width: calc(40px * var(--ui, 1)); height: calc(40px * var(--ui, 1));
+            padding: calc(8px * var(--ui, 1));
             background: none; border: 0;
             color: var(--ink);
             cursor: pointer;
         }
-        .glyph-btn svg { display: block; width: 24px; height: 24px; filter: url(#sketchy); overflow: visible; }
+        .glyph-btn svg { display: block; width: calc(24px * var(--ui, 1)); height: calc(24px * var(--ui, 1)); filter: url(#sketchy); overflow: visible; }
         .glyph-btn::after { content: ''; position: absolute; inset: -4px; }
         .glyph-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; border-radius: 8px; }
         #btn-open-menu { left: calc(var(--board-left, 16px) - 8px); }
@@ -683,7 +688,7 @@
             z-index: 11;
             left: var(--board-left, 16px);
             bottom: max(12px, env(safe-area-inset-bottom));
-            font-size: 0.8125rem;
+            font-size: calc(0.8125rem * var(--ui, 1));
             font-weight: 700;
             color: var(--ink);
         }
@@ -884,39 +889,39 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-75",
-                "./zones.js": "./zones.js?v=1.5-75",
-                "./blockshader.js": "./blockshader.js?v=1.5-75",
-                "./sketch.js": "./sketch.js?v=1.5-75",
-                "./balls.js": "./balls.js?v=1.5-75",
-                "./labels.js": "./labels.js?v=1.5-75",
-                "./audio.js": "./audio.js?v=1.5-75",
-                "./theme.js": "./theme.js?v=1.5-75",
-                "./crumbs.js": "./crumbs.js?v=1.5-75",
-                "./buddy.js": "./buddy.js?v=1.5-75",
-                "./season.js": "./season.js?v=1.5-75",
-                "./leaves.js": "./leaves.js?v=1.5-75",
-                "./water.js": "./water.js?v=1.5-75",
-                "./props.js": "./props.js?v=1.5-75"
+                "./sim.js": "./sim.js?v=1.5-76",
+                "./zones.js": "./zones.js?v=1.5-76",
+                "./blockshader.js": "./blockshader.js?v=1.5-76",
+                "./sketch.js": "./sketch.js?v=1.5-76",
+                "./balls.js": "./balls.js?v=1.5-76",
+                "./labels.js": "./labels.js?v=1.5-76",
+                "./audio.js": "./audio.js?v=1.5-76",
+                "./theme.js": "./theme.js?v=1.5-76",
+                "./crumbs.js": "./crumbs.js?v=1.5-76",
+                "./buddy.js": "./buddy.js?v=1.5-76",
+                "./season.js": "./season.js?v=1.5-76",
+                "./leaves.js": "./leaves.js?v=1.5-76",
+                "./water.js": "./water.js?v=1.5-76",
+                "./props.js": "./props.js?v=1.5-76"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-75">
-    <link rel="modulepreload" href="./sim.js?v=1.5-75">
-    <link rel="modulepreload" href="./zones.js?v=1.5-75">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-75">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-75">
-    <link rel="modulepreload" href="./balls.js?v=1.5-75">
-    <link rel="modulepreload" href="./labels.js?v=1.5-75">
-    <link rel="modulepreload" href="./audio.js?v=1.5-75">
-    <link rel="modulepreload" href="./theme.js?v=1.5-75">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-75">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-75">
-    <link rel="modulepreload" href="./season.js?v=1.5-75">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-75">
-    <link rel="modulepreload" href="./water.js?v=1.5-75">
-    <link rel="modulepreload" href="./props.js?v=1.5-75">
+    <link rel="modulepreload" href="./game.js?v=1.5-76">
+    <link rel="modulepreload" href="./sim.js?v=1.5-76">
+    <link rel="modulepreload" href="./zones.js?v=1.5-76">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-76">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-76">
+    <link rel="modulepreload" href="./balls.js?v=1.5-76">
+    <link rel="modulepreload" href="./labels.js?v=1.5-76">
+    <link rel="modulepreload" href="./audio.js?v=1.5-76">
+    <link rel="modulepreload" href="./theme.js?v=1.5-76">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-76">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-76">
+    <link rel="modulepreload" href="./season.js?v=1.5-76">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-76">
+    <link rel="modulepreload" href="./water.js?v=1.5-76">
+    <link rel="modulepreload" href="./props.js?v=1.5-76">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -965,6 +970,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-75"></script>
+    <script type="module" src="./game.js?v=1.5-76"></script>
 </body>
 </html>
