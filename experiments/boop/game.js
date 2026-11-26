@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-69';
+const BUILD = '1.5-70';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -898,11 +898,12 @@ if (readSoundPick() === 'on') {
 }
 showSoundState();
 
-// Tilt (a switch in Settings, on phones): tip the phone and the water leans and sloshes. Only
+// Tilt (a switch in Settings, on phones): tip the phone and the water runs to the low side and
+// gathers in that corner, like real water. Only
 // the water: balls, blocks and the aiming guide don't feel it (that would change your shots).
 // It starts off. Turning it on asks the browser for the phone's tilt: iPhones show a question
 // (Allow), most others just say yes. Off with Reduce Motion.
-const TILT_KEY = 'boop-tilt', TILT_MAX = 0.15;         // radians: half the phone's lean, at most this. A slosh, never a pour
+const TILT_KEY = 'boop-tilt', TILT_MAX = 1.2;          // radians: the phone's real lean (water runs to the low side), short of sideways
 const tiltAsks = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
 const tiltSwitch = $('tilt-switch');
 let tiltOn = false, tiltTarget = 0, tilt = 0;
@@ -911,7 +912,7 @@ function onOrientation(e) {
     // Sideways lean (gamma), turned into the board's terms for however the screen is turned.
     const turn = (screen.orientation?.angle ?? window.orientation ?? 0) | 0;
     const lean = turn === 90 ? e.beta : turn === -90 || turn === 270 ? -e.beta : turn === 180 ? -e.gamma : e.gamma;
-    tiltTarget = Math.max(-TILT_MAX, Math.min(TILT_MAX, (lean * Math.PI) / 360));
+    tiltTarget = Math.max(-TILT_MAX, Math.min(TILT_MAX, (lean * Math.PI) / 180));
 }
 function setTilt(on) {
     tiltOn = on;
