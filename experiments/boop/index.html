@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-73">
+<html lang="en" data-build="1.5-74">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -417,6 +417,7 @@
         #menu .stats { margin: 0 0 28px; font-size: 0.9375rem; font-weight: 500; color: var(--ink-soft); }
         #menu .stats span { display: block; }
         #menu .stats:empty { display: none; }
+        @media (max-height: 700px) { #menu .stats span:nth-child(n+3) { display: none; } }   /* small phones: two lines */
         /* Paused (or picking a run back up): the title steps down, so the buttons come up. */
         #menu:has(.tagline.state) h1 { font-size: clamp(3rem, 15vw, 4.25rem); }
         #menu:has(.tagline.state) .mascot { width: 56px; height: 61px; }
@@ -884,39 +885,39 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-73",
-                "./zones.js": "./zones.js?v=1.5-73",
-                "./blockshader.js": "./blockshader.js?v=1.5-73",
-                "./sketch.js": "./sketch.js?v=1.5-73",
-                "./balls.js": "./balls.js?v=1.5-73",
-                "./labels.js": "./labels.js?v=1.5-73",
-                "./audio.js": "./audio.js?v=1.5-73",
-                "./theme.js": "./theme.js?v=1.5-73",
-                "./crumbs.js": "./crumbs.js?v=1.5-73",
-                "./buddy.js": "./buddy.js?v=1.5-73",
-                "./season.js": "./season.js?v=1.5-73",
-                "./leaves.js": "./leaves.js?v=1.5-73",
-                "./water.js": "./water.js?v=1.5-73",
-                "./props.js": "./props.js?v=1.5-73"
+                "./sim.js": "./sim.js?v=1.5-74",
+                "./zones.js": "./zones.js?v=1.5-74",
+                "./blockshader.js": "./blockshader.js?v=1.5-74",
+                "./sketch.js": "./sketch.js?v=1.5-74",
+                "./balls.js": "./balls.js?v=1.5-74",
+                "./labels.js": "./labels.js?v=1.5-74",
+                "./audio.js": "./audio.js?v=1.5-74",
+                "./theme.js": "./theme.js?v=1.5-74",
+                "./crumbs.js": "./crumbs.js?v=1.5-74",
+                "./buddy.js": "./buddy.js?v=1.5-74",
+                "./season.js": "./season.js?v=1.5-74",
+                "./leaves.js": "./leaves.js?v=1.5-74",
+                "./water.js": "./water.js?v=1.5-74",
+                "./props.js": "./props.js?v=1.5-74"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-73">
-    <link rel="modulepreload" href="./sim.js?v=1.5-73">
-    <link rel="modulepreload" href="./zones.js?v=1.5-73">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-73">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-73">
-    <link rel="modulepreload" href="./balls.js?v=1.5-73">
-    <link rel="modulepreload" href="./labels.js?v=1.5-73">
-    <link rel="modulepreload" href="./audio.js?v=1.5-73">
-    <link rel="modulepreload" href="./theme.js?v=1.5-73">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-73">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-73">
-    <link rel="modulepreload" href="./season.js?v=1.5-73">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-73">
-    <link rel="modulepreload" href="./water.js?v=1.5-73">
-    <link rel="modulepreload" href="./props.js?v=1.5-73">
+    <link rel="modulepreload" href="./game.js?v=1.5-74">
+    <link rel="modulepreload" href="./sim.js?v=1.5-74">
+    <link rel="modulepreload" href="./zones.js?v=1.5-74">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-74">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-74">
+    <link rel="modulepreload" href="./balls.js?v=1.5-74">
+    <link rel="modulepreload" href="./labels.js?v=1.5-74">
+    <link rel="modulepreload" href="./audio.js?v=1.5-74">
+    <link rel="modulepreload" href="./theme.js?v=1.5-74">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-74">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-74">
+    <link rel="modulepreload" href="./season.js?v=1.5-74">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-74">
+    <link rel="modulepreload" href="./water.js?v=1.5-74">
+    <link rel="modulepreload" href="./props.js?v=1.5-74">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -965,6 +966,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-73"></script>
+    <script type="module" src="./game.js?v=1.5-74"></script>
 </body>
 </html>

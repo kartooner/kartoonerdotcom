@@ -2,7 +2,7 @@
 // plays the shot ahead, so the dotted line always matches what the real shot will do.
 
 import { SHAPES, SHAPE_VARIANTS, zoneSpec, STYLES, MIN_PICKUP_GAP, propGap, pickRecipe, MUSHROOM_FROM } from './zones.js';
-(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-73');   // build stamp: game.js checks every file matches
+(globalThis.boopBuilds = globalThis.boopBuilds || []).push('1.5-74');   // build stamp: game.js checks every file matches
 export { zoneSpec };
 
 export const W = 9;                 // field width in cells
@@ -861,6 +861,16 @@ export class Sim {
         const s = this.s;
         if (!s.retries) s.pendingPar = s.par ? Math.min(PAR_BONUS_MAX, Math.max(0, s.par - s.zoneShots)) : 0;
         if (!s.retries && s.par && s.zoneShots < s.par) s.underPar = (s.underPar ?? 0) + 1;
+        if (!s.retries && s.par) {
+            // For the run's stats (pause screen and game over): zones at par or better, in a row too,
+            // and the best one.
+            const made = s.zoneShots <= s.par;
+            s.parZones = (s.parZones ?? 0) + 1;
+            s.madePar = (s.madePar ?? 0) + (made ? 1 : 0);
+            s.parStreak = made ? (s.parStreak ?? 0) + 1 : 0;
+            s.bestStreak = Math.max(s.bestStreak ?? 0, s.parStreak);
+            s.bestUnder = Math.max(s.bestUnder ?? 0, s.par - s.zoneShots);
+        }
         if (s.bonus) {
             // Out of a bonus stage: clearing it all adds one (outside the cap), then say what it paid.
             if (this.blockCount() === 0 && !s.bonus.cleared && !STAGES[s.bonus.kind]) { s.bonus.cleared = true; s.supply += BONUS_CLEAR; s.bonus.gain += BONUS_CLEAR; }
