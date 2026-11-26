@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-build="1.5-65">
+<html lang="en" data-build="1.5-66">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -699,7 +699,7 @@
     <!-- The block buddy, Boop!'s mascot (also above the logo): says the tips that aren't about one thing on the board. -->
     <svg id="buddy" class="buddy-face" viewBox="0 0 48 52" aria-hidden="true" hidden><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
     <section id="menu" class="screen" aria-labelledby="menu-title">
-        <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and resume"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+        <button class="close-x" id="btn-menu-close" type="button" aria-label="Close and continue"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
         <div class="screen-inner">
             <p class="say" id="menu-say" hidden><span id="menu-say-text"></span> <button class="link-btn" id="btn-news-say" type="button">See what's new</button></p>
             <svg class="mascot buddy-face" viewBox="0 0 48 52" aria-hidden="true"><g class="buddy-shadow" filter="url(#sketchy)"><rect x="8" y="44" width="32" height="4.6" rx="2.3"/></g><g class="wiggle"><g><g filter="url(#sketchy)"> <rect x="5" y="5" width="38" height="34" rx="4" fill="#8fc3e3" stroke="#2b2622" stroke-width="2.6"/> <path class="eyes-shut" d="M13.5 18.5q3.2 3.4 6.4 0M28.1 18.5q3.2 3.4 6.4 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/><g class="eyes-open" fill="#2b2622"><ellipse cx="16.7" cy="18.6" rx="1.9" ry="2.5"/><ellipse cx="31.3" cy="18.6" rx="1.9" ry="2.5"/></g> <path d="M19.5 26.5q4.5 4 9 0" fill="none" stroke="#2b2622" stroke-width="2" stroke-linecap="round"/> </g></g></g></svg>
@@ -873,39 +873,39 @@
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier2d-compat@0.19.3/rapier.mjs",
-                "./sim.js": "./sim.js?v=1.5-65",
-                "./zones.js": "./zones.js?v=1.5-65",
-                "./blockshader.js": "./blockshader.js?v=1.5-65",
-                "./sketch.js": "./sketch.js?v=1.5-65",
-                "./balls.js": "./balls.js?v=1.5-65",
-                "./labels.js": "./labels.js?v=1.5-65",
-                "./audio.js": "./audio.js?v=1.5-65",
-                "./theme.js": "./theme.js?v=1.5-65",
-                "./crumbs.js": "./crumbs.js?v=1.5-65",
-                "./buddy.js": "./buddy.js?v=1.5-65",
-                "./season.js": "./season.js?v=1.5-65",
-                "./leaves.js": "./leaves.js?v=1.5-65",
-                "./water.js": "./water.js?v=1.5-65",
-                "./props.js": "./props.js?v=1.5-65"
+                "./sim.js": "./sim.js?v=1.5-66",
+                "./zones.js": "./zones.js?v=1.5-66",
+                "./blockshader.js": "./blockshader.js?v=1.5-66",
+                "./sketch.js": "./sketch.js?v=1.5-66",
+                "./balls.js": "./balls.js?v=1.5-66",
+                "./labels.js": "./labels.js?v=1.5-66",
+                "./audio.js": "./audio.js?v=1.5-66",
+                "./theme.js": "./theme.js?v=1.5-66",
+                "./crumbs.js": "./crumbs.js?v=1.5-66",
+                "./buddy.js": "./buddy.js?v=1.5-66",
+                "./season.js": "./season.js?v=1.5-66",
+                "./leaves.js": "./leaves.js?v=1.5-66",
+                "./water.js": "./water.js?v=1.5-66",
+                "./props.js": "./props.js?v=1.5-66"
             }
         }
     </script>
     <!-- Fetch every module at once instead of one after another. -->
-    <link rel="modulepreload" href="./game.js?v=1.5-65">
-    <link rel="modulepreload" href="./sim.js?v=1.5-65">
-    <link rel="modulepreload" href="./zones.js?v=1.5-65">
-    <link rel="modulepreload" href="./blockshader.js?v=1.5-65">
-    <link rel="modulepreload" href="./sketch.js?v=1.5-65">
-    <link rel="modulepreload" href="./balls.js?v=1.5-65">
-    <link rel="modulepreload" href="./labels.js?v=1.5-65">
-    <link rel="modulepreload" href="./audio.js?v=1.5-65">
-    <link rel="modulepreload" href="./theme.js?v=1.5-65">
-    <link rel="modulepreload" href="./buddy.js?v=1.5-65">
-    <link rel="modulepreload" href="./crumbs.js?v=1.5-65">
-    <link rel="modulepreload" href="./season.js?v=1.5-65">
-    <link rel="modulepreload" href="./leaves.js?v=1.5-65">
-    <link rel="modulepreload" href="./water.js?v=1.5-65">
-    <link rel="modulepreload" href="./props.js?v=1.5-65">
+    <link rel="modulepreload" href="./game.js?v=1.5-66">
+    <link rel="modulepreload" href="./sim.js?v=1.5-66">
+    <link rel="modulepreload" href="./zones.js?v=1.5-66">
+    <link rel="modulepreload" href="./blockshader.js?v=1.5-66">
+    <link rel="modulepreload" href="./sketch.js?v=1.5-66">
+    <link rel="modulepreload" href="./balls.js?v=1.5-66">
+    <link rel="modulepreload" href="./labels.js?v=1.5-66">
+    <link rel="modulepreload" href="./audio.js?v=1.5-66">
+    <link rel="modulepreload" href="./theme.js?v=1.5-66">
+    <link rel="modulepreload" href="./buddy.js?v=1.5-66">
+    <link rel="modulepreload" href="./crumbs.js?v=1.5-66">
+    <link rel="modulepreload" href="./season.js?v=1.5-66">
+    <link rel="modulepreload" href="./leaves.js?v=1.5-66">
+    <link rel="modulepreload" href="./water.js?v=1.5-66">
+    <link rel="modulepreload" href="./props.js?v=1.5-66">
     <!-- If the game can't start (say, a cache served a mix of old and new files just after an
          update), show a plain message with a Reload button instead of a page that won't respond. -->
     <!-- A phone on its side leaves the board too small to play (Safari's bars take the height),
@@ -953,6 +953,6 @@
             };
         })();
     </script>
-    <script type="module" src="./game.js?v=1.5-65"></script>
+    <script type="module" src="./game.js?v=1.5-66"></script>
 </body>
 </html>

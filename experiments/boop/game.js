@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-65';
+const BUILD = '1.5-66';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -141,7 +141,7 @@ function refit() {
     refitTimers.forEach(clearTimeout);
     refitTimers = [120, 350, 800].map((ms) => setTimeout(() => { fitCamera(); checkSideways(); }, ms));
 }
-// A phone turned on its side: too short to play. Pause (so turning back finds Resume) and
+// A phone turned on its side: too short to play. Pause (so turning back finds Continue) and
 // show the "upright" panel. Tablets and desktops play fine in landscape.
 const touchOnly = window.matchMedia('(pointer: coarse)');
 // The phone's Reduce Motion setting: no screen shake, and the gold block's sheen and star stay still.
@@ -1021,7 +1021,7 @@ let aiming = false;
 let aimAngle = -2.2;      // what the barrel and guide show (smoothed)
 let aimTarget = -2.2;     // where the finger points
 let aimCancel = false;
-let runStarted = false;   // a shot has been fired this run (the start screen then offers Resume)
+let runStarted = false;   // a shot has been fired this run (the start screen then offers Continue)
 const finePointer = window.matchMedia('(pointer: fine)').matches;
 
 // Keyboard aiming: ← → turn the launcher (hold Shift for fine aim), Space or Enter fires.
@@ -2185,7 +2185,7 @@ function showScreen(which, moveFocus = true) {
     keepAwake(!which);
     audio.setActive(!which || which === 'over');   // quiet while paused; the game-over notes still play
     if (which === 'menu') {
-        // Mid-run, the start screen is the pause screen: Resume, or start over.
+        // Mid-run, the start screen is the pause screen: Continue, or start over.
         menuTagline();
         $('btn-play').textContent = playLabel(true);
         $('btn-new').hidden = !runStarted;
@@ -2213,8 +2213,8 @@ function showScreen(which, moveFocus = true) {
 // Settings, What's new and How to play open from the start/pause screen or from game over;
 // Back returns there, and their big button plays on (or, after game over, plays again).
 let backTo = 'menu';
-// The big button's words: start, pick a saved run back up, carry on, or (after game over) go again.
-const playLabel = (onMenu = false) => (!onMenu && backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : fromSave ? 'Continue' : 'Resume');
+// The big button's words: start, carry on (a saved run or a paused one: always Continue), or (after game over) go again.
+const playLabel = (onMenu = false) => (!onMenu && backTo === 'over' ? 'Play again' : !runStarted ? 'Play' : 'Continue');
 const openSub = (which) => { backTo = over.hidden ? 'menu' : 'over'; showScreen(which); };
 const goBack = () => showScreen(backTo);
 const subPlay = () => { if (backTo === 'over') { backTo = 'menu'; restart(); } play(); };
