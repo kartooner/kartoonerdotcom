@@ -20,7 +20,7 @@ import './buddy.js';               // the mascot's blinks and glances
 // Every file stamps its build as it loads, and they all have to match. Right after an update a
 // cache can hand out a mix of old and new files, so we reload once, and if it's still mixed we
 // say so (with a Reload button) instead of running a game that half works.
-const BUILD = '1.5-70';
+const BUILD = '1.5-71';
 let pendingBuild = null, lastUpdateCheck = 0;   // see checkForUpdate
 const MODULES = 14;
 const stamps = globalThis.boopBuilds || [];
@@ -147,9 +147,19 @@ const touchOnly = window.matchMedia('(pointer: coarse)');
 // The phone's Reduce Motion setting: no screen shake, and the gold block's sheen and star stay still.
 const calmMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function phoneSideways() { return touchOnly.matches && window.innerWidth > window.innerHeight && window.innerHeight < 500; }
+// With Tilt on, someone tipping the phone about will swing past sideways now and then (the
+// browser turns the page; a website can't stop it). A quick swing doesn't count: only staying
+// sideways for a moment pauses, and then the panel says how to tilt freely.
+let sidewaysSince = 0;
 function checkSideways() {
     const side = phoneSideways();
     const panel = $('rotate');
+    const tilting = typeof tiltOn !== 'undefined' && tiltOn;
+    if (side && tilting) {
+        sidewaysSince ||= performance.now();
+        if (performance.now() - sidewaysSince < 1500) { setTimeout(checkSideways, 1600 - (performance.now() - sidewaysSince)); return; }
+    } else sidewaysSince = 0;
+    $('rotate-tilt').hidden = !tilting;
     if (side && panel.hidden && document.body.classList.contains('playing')) showScreen('menu', false);
     panel.hidden = !side;
 }
@@ -903,7 +913,7 @@ showSoundState();
 // the water: balls, blocks and the aiming guide don't feel it (that would change your shots).
 // It starts off. Turning it on asks the browser for the phone's tilt: iPhones show a question
 // (Allow), most others just say yes. Off with Reduce Motion.
-const TILT_KEY = 'boop-tilt', TILT_MAX = 1.2;          // radians: the phone's real lean (water runs to the low side), short of sideways
+const TILT_KEY = 'boop-tilt', TILT_MAX = 1.0;          // radians: the phone's real lean (water runs to the low side), well short of sideways
 const tiltAsks = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
 const tiltSwitch = $('tilt-switch');
 let tiltOn = false, tiltTarget = 0, tilt = 0;
@@ -1729,9 +1739,10 @@ function updateWater(dt) {
         water.setOffset(zoneOffset);
     }
     updateTipping(dt);
-    // Tilt eases toward the phone's lean (no jitter), and settles back level with Reduce Motion.
+    // Tilt eases toward the phone's lean (slowly, so the water rolls over rather than rushing), and
+    // settles back level with Reduce Motion.
     const lean = tiltOn && !calmMotion.matches ? tiltTarget : 0;
-    tilt += (lean - tilt) * Math.min(1, dt * 4);
+    tilt += (lean - tilt) * Math.min(1, dt * 1.8);
     water.setTilt(tilt);
     water.update(dt, solid, balls, moved || Math.abs(lean - tilt) > 0.01);
     if (water.moving()) animating = true;
