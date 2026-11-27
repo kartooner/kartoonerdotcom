@@ -7,7 +7,6 @@ Disallow: /uploads/
 Disallow: /backup/
 Disallow: /aiadvisor/
 Disallow: /coded/
-Disallow: /games/plooka/
 
 # Allow all other pages
 Allow: /
