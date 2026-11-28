@@ -102,7 +102,7 @@ h1 { margin: 0; font-size: 1rem; }   /* the logo is the heading; its text is for
 .shots figure:nth-child(2) { transform: translateY(-18px); }
 .shots figure:nth-child(3) { transform: rotate(3deg); }
 .phone { display: block; padding: 6px; background: var(--card); border: 3px solid var(--line); border-radius: 26px; }
-.phone img { display: block; width: 100%; height: auto; border-radius: 20px; }
+.phone img, .phone video { display: block; width: 100%; height: auto; border-radius: 20px; }
 .shots figcaption { margin-top: 10px; text-align: center; font-size: 0.875rem; color: var(--soft); }
 @media (max-width: 520px) { .shots figure:nth-child(3) { display: none; } .shots figure { flex-basis: 46%; } }
 
@@ -190,7 +190,7 @@ footer a { color: var(--soft); }
   </div>
 
     <div class="shots">
-      <figure><span class="phone"><img src="img/aim.webp" width="640" height="1181" alt="Aiming a shot: a dotted line bounces off a block, with orange dots marking each hit, above a board of numbered hand-drawn blocks"></span><figcaption>See every bounce first</figcaption></figure>
+      <figure><span class="phone"><video id="play-video" src="img/play.mp4" poster="img/play-poster.webp" width="640" height="1182" autoplay muted loop playsinline preload="metadata" aria-label="Plooka! being played: a finger slides the dotted aim line, shoots, and balls bounce through hand-drawn blocks, knocking their numbers down"></video></span><figcaption>See every bounce first</figcaption></figure>
       <figure><span class="phone"><img src="img/golf.webp" width="640" height="1181" alt="A mini golf bonus stage: a green hill with a flag, surrounded by water, and a dotted arc aiming for the hole"></span><figcaption>Surprises along the way</figcaption></figure>
       <figure><span class="phone"><img src="img/paused.webp" width="640" height="1181" alt="The pause screen in dark mode, saying the run is deeper than your best"></span><figcaption>Dark mode for late nights</figcaption></figure>
     </div>
@@ -242,6 +242,14 @@ footer a { color: var(--soft); }
   </div>
 </footer>
 <script src="/js/theme-toggle-loader.js"></script>
+<script>
+  // Reduce Motion: the game clip doesn't play on its own; it shows a still with a play button.
+  (function () {
+    var v = document.getElementById('play-video');
+    if (!v || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    v.removeAttribute('autoplay'); v.pause(); v.controls = true;
+  })();
+</script>
 <script data-goatcounter="https://kartooner.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
